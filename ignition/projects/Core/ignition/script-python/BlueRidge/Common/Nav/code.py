@@ -24,6 +24,6 @@ def categoryForPath(path):
 		return 'quality'
 	if path in ('/downtime-codes', '/shifts'):
 		return 'operations'
-	if path in ('/users', '/audit-log', '/failure-log'):
+	if path in ('/users', '/audit-log', '/failure-log', '/plc-devices'):
 		return 'system'
 	return ''

@@ -43,6 +43,9 @@
 --                       old->new ...> narrative (changed fields only) +
 --                       resolved-FK Old/NewValue JSON (Item). Old values
 --                       captured BEFORE the UPDATE.
+--   2026-07-17 - 2.4 - ClosureMethod is now immutable (the per-method
+--                       discriminator): removed from the UPDATE SET + audit
+--                       diff; a change attempt is rejected pre-transaction.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.ContainerConfig_Update
     @Id                BIGINT,
@@ -86,6 +89,23 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE Id = @Id AND DeprecatedAt IS NULL)
         BEGIN
             SET @Message = N'ContainerConfig not found or deprecated.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerConfig',
+                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- ClosureMethod is immutable (the per-method discriminator). A passed
+        -- value that differs from the row's current method is rejected;
+        -- deprecate + create a new config to switch methods. When @ClosureMethod
+        -- is NULL or matches, the method is simply left unchanged (never SET).
+        IF @ClosureMethod IS NOT NULL
+           AND @ClosureMethod <> (SELECT ClosureMethod FROM Parts.ContainerConfig WHERE Id = @Id)
+        BEGIN
+            SET @Message = N'ClosureMethod is immutable; deprecate and create a new config to change it.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerConfig',
                 @EntityId = @Id, @LogEventTypeCode = N'Updated',
@@ -156,9 +176,6 @@ BEGIN
             CASE WHEN ISNULL(@OldCustomerCode, N'') <> ISNULL(@CustomerCode, N'')
                  THEN N', CustomerCode ' + ISNULL(N'"' + @OldCustomerCode + N'"', N'null') + @Arrow + ISNULL(N'"' + @CustomerCode + N'"', N'null')
                  ELSE N'' END,
-            CASE WHEN ISNULL(@OldClosureMethod, N'') <> ISNULL(@ClosureMethod, N'')
-                 THEN N', ClosureMethod ' + ISNULL(@OldClosureMethod, N'null') + @Arrow + ISNULL(@ClosureMethod, N'null')
-                 ELSE N'' END,
             CASE WHEN ISNULL(@OldTargetWeight, -999999) <> ISNULL(@TargetWeight, -999999)
                  THEN N', TargetWeight ' + ISNULL(CAST(@OldTargetWeight AS NVARCHAR(40)), N'null') + @Arrow + ISNULL(CAST(@TargetWeight AS NVARCHAR(40)), N'null')
                  ELSE N'' END
@@ -175,13 +192,14 @@ BEGIN
 
         BEGIN TRANSACTION;
 
+        -- ClosureMethod is intentionally NOT in the SET list (immutable; the
+        -- pre-transaction guard above rejects any change attempt).
         UPDATE Parts.ContainerConfig
         SET TraysPerContainer = @TraysPerContainer,
             PartsPerTray      = @PartsPerTray,
             IsSerialized      = @IsSerialized,
             DunnageCode       = @DunnageCode,
             CustomerCode      = @CustomerCode,
-            ClosureMethod     = @ClosureMethod,
             TargetWeight      = @TargetWeight,
             UpdatedAt         = SYSUTCDATETIME()
         WHERE Id = @Id;

@@ -83,8 +83,8 @@ INSERT INTO #R EXEC Quality.HoldTypeCode_List;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'HoldTypeCode_List: 3 rows returned by proc',
-    @ExpectedCount = 3,
+    @TestName      = N'HoldTypeCode_List: 4 rows returned by proc',
+    @ExpectedCount = 4,
     @ActualCount   = @Count;
 GO
 

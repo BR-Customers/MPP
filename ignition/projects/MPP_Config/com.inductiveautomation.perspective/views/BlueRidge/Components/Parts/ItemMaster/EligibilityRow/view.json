@@ -151,6 +151,9 @@
         "type": "ia.input.checkbox"
       },
       {
+        "custom": {
+          "this": "value"
+        },
         "events": {
           "dom": {
             "onBlur": {
@@ -163,7 +166,10 @@
           }
         },
         "meta": {
-          "name": "MinField"
+          "name": "MinField",
+          "tooltip": {
+            "text": "this text"
+          }
         },
         "position": {
           "basis": "80px",

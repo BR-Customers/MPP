@@ -7,7 +7,7 @@
 --   Tests for Lots schema reference code tables (Phase 3 read-only).
 --   Covers 6 tables, each with _List and _Get procs:
 --     - Lots.LotOriginType              (3 seeded rows)
---     - Lots.LotStatusCode              (4 seeded rows, +BlocksProduction flag)
+--     - Lots.LotStatusCode              (5 seeded rows incl. Open, +BlocksProduction flag)
 --     - Lots.ContainerStatusCode        (5 seeded rows)
 --     - Lots.GenealogyRelationshipType  (3 seeded rows)
 --     - Lots.PrintReasonCode            (5 seeded rows)
@@ -61,8 +61,8 @@ INSERT INTO #R EXEC Lots.LotStatusCode_List;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'LotStatusCode_List: 4 rows returned by proc',
-    @ExpectedCount = 4,
+    @TestName      = N'LotStatusCode_List: 5 rows returned by proc',
+    @ExpectedCount = 5,
     @ActualCount   = @Count;
 GO
 

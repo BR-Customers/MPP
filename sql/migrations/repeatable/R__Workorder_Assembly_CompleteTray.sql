@@ -1,7 +1,15 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_CompleteTray.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0
+-- Version:     1.1 (2026-07-24) - the component-stock reads (the §7 pre-check
+--              availability sum AND the §B4 FIFO consume walk) now exclude BLOCKED
+--              source LOTs (sc.BlocksProduction = 0, i.e. skip Hold/Scrap), matching
+--              the B2 guard every sibling consume proc already applies
+--              (MachiningOut_Mint's Good-only FIFO, LotGenealogy_RecordConsumption's
+--              inline guard). Before this a held component LOT was counted as
+--              available AND consumed, letting a failed/held part be shipped by
+--              assembly-out / third-party check-out. Both reads must guard in lock-step
+--              so the advisory pre-check and the authoritative walk agree.
 -- Description: Arc 2 machining/assembly flow reconciliation (Spec 2, Task A2).
 --              Assembly-out orchestrator: on tray completion it MINTS a
 --              finished-good LOT (tray = LOT), consumes BOM x PieceCount FIFO from
@@ -73,6 +81,7 @@ BEGIN
     DECLARE @BomId BIGINT, @CellCode NVARCHAR(50), @PartNumber NVARCHAR(50);
     DECLARE @Accum INT, @Target INT, @TrayPosition INT;
     DECLARE @OpenedContainer BIT = 0;
+    DECLARE @OpenCid BIGINT, @OpenAccum INT, @FullTarget INT;
 
     -- FG-LOT mint locals (mirror R__Lots_Lot_Create)
     DECLARE @MintedName NVARCHAR(50),
@@ -88,9 +97,9 @@ BEGIN
         -- ================= Pre-transaction validations (no open txn) =================
 
         -- ---- 1. Required parameters ----
-        IF @FinishedGoodItemId IS NULL OR @PieceCount IS NULL OR @CellLocationId IS NULL OR @AppUserId IS NULL
+        IF @FinishedGoodItemId IS NULL OR @PieceCount IS NULL OR @CellLocationId IS NULL OR @ClosureMethod IS NULL OR @AppUserId IS NULL
         BEGIN
-            SET @Message = N'Required parameter missing (FinishedGoodItemId, PieceCount, CellLocationId, AppUserId).';
+            SET @Message = N'Required parameter missing (FinishedGoodItemId, PieceCount, CellLocationId, ClosureMethod, AppUserId).';
             IF @AppUserId IS NOT NULL
                 EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
                     @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
@@ -121,26 +130,28 @@ BEGIN
             GOTO Reply;
         END
 
-        -- ---- 4. Active ContainerConfig for the FG Item (tray/container sizing) ----
-        SELECT TOP 1 @ContainerConfigId = cc.Id, @PartsPerTray = cc.PartsPerTray,
-               @TraysPerContainer = cc.TraysPerContainer,
-               @ClosureMethod = COALESCE(cc.ClosureMethod, @ClosureMethod, N'ByCount')
-        FROM Parts.ContainerConfig cc
-        WHERE cc.ItemId = @FinishedGoodItemId AND cc.DeprecatedAt IS NULL
-        ORDER BY cc.Id DESC;
-
-        IF @ContainerConfigId IS NULL
+        -- ---- 4a. Closure method (the terminal's active mode) must be a known code ----
+        IF @ClosureMethod NOT IN (N'ByCount', N'ByWeight', N'ByVision')
         BEGIN
-            SET @Message = N'No container configuration for the finished-good Item.';
+            SET @Message = N'ClosureMethod (' + ISNULL(@ClosureMethod, N'(none)') + N') is not a valid closure mode.';
             EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
                 @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
             GOTO Reply;
         END
 
-        IF @ClosureMethod NOT IN (N'ByCount', N'ByWeight', N'ByVision')
+        -- ---- 4b. Resolve the ContainerConfig for THIS (Item, closure method) ----
+        --      Terminal mode selects the pack-out; no TOP-1/COALESCE fallback.
+        SELECT @ContainerConfigId = cc.Id, @PartsPerTray = cc.PartsPerTray,
+               @TraysPerContainer = cc.TraysPerContainer
+        FROM Parts.ContainerConfig cc
+        WHERE cc.ItemId = @FinishedGoodItemId
+          AND cc.ClosureMethod = @ClosureMethod
+          AND cc.DeprecatedAt IS NULL;
+
+        IF @ContainerConfigId IS NULL
         BEGIN
-            SET @Message = N'Configured ClosureMethod (' + ISNULL(@ClosureMethod, N'(none)') + N') is invalid for this container.';
+            SET @Message = N'Part has no ' + @ClosureMethod + N' pack-out configured at this station.';
             EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
                 @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
@@ -186,7 +197,8 @@ BEGIN
             OUTER APPLY (
                 SELECT ISNULL(SUM(l.InventoryAvailable), 0) AS Avail FROM Lots.Lot l
                 INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
-                WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @CellLocationId AND sc.Code <> N'Closed'
+                WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @CellLocationId
+                  AND sc.Code <> N'Closed' AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
             ) s
             WHERE bl.BomId = @BomId AND s.Avail < CAST(bl.QtyPer * @PieceCount AS INT));
 
@@ -198,6 +210,34 @@ BEGIN
                 @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
             GOTO Reply;
+        END
+
+        -- ---- 8. Reject a tray onto an already-FULL open container (over-fill guard). This
+        --      orchestrator does NOT auto-complete a full container (delegation to
+        --      Lots.Container_Complete); until the operator presses Complete the container
+        --      stays Open, so a repeat Complete-Tray would append PAST the target (the
+        --      container-24 incident shipped 5 trays against a 4-tray config). Full =
+        --      accumulated closed-tray parts >= the configured target. No open container yet
+        --      (first tray auto-opens one) or an unlimited config -> nothing to guard. ----
+        IF @TraysPerContainer IS NOT NULL AND @PartsPerTray IS NOT NULL
+        BEGIN
+            SET @FullTarget = @TraysPerContainer * @PartsPerTray;
+            SELECT TOP 1 @OpenCid = Id FROM Lots.Container
+            WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+            ORDER BY OpenedAt, Id;
+            IF @OpenCid IS NOT NULL
+            BEGIN
+                SET @OpenAccum = (SELECT ISNULL(SUM(PartsClosedCount), 0) FROM Lots.ContainerTray WHERE ContainerId = @OpenCid AND ClosedAt IS NOT NULL);
+                IF @OpenAccum >= @FullTarget
+                BEGIN
+                    SET @Message = N'Container is full (' + CAST(@OpenAccum AS NVARCHAR(10)) + N' of '
+                                 + CAST(@FullTarget AS NVARCHAR(10)) + N' parts) -- press Complete to ship before starting a new tray.';
+                    EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
+                        @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
+                        @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+                    GOTO Reply;
+                END
+            END
         END
 
         SET @MaxLotSize  = (SELECT MaxLotSize FROM Parts.Item WHERE Id = @FinishedGoodItemId);
@@ -304,7 +344,8 @@ BEGIN
                        @SrcPieceCount = l.PieceCount, @SrcStatus = l.LotStatusId
                 FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                 WHERE l.ItemId = @ChildItemId AND l.CurrentLocationId = @CellLocationId
-                      AND sc.Code <> N'Closed' AND l.InventoryAvailable > 0
+                      AND sc.Code <> N'Closed' AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
+                      AND l.InventoryAvailable > 0
                 ORDER BY l.CreatedAt, l.Id;              -- FIFO
                 IF @SrcLotId IS NULL
                     RAISERROR(N'Component stock drained mid-consume.', 16, 1);   -- -> CATCH -> ROLLBACK

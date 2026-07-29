@@ -6,4 +6,5 @@ EXEC Workorder.RejectEvent_Record
     @ChargeToArea       = :chargeToArea,
     @Remarks            = :remarks,
     @AppUserId          = :appUserId,
-    @TerminalLocationId = :terminalLocationId
+    @TerminalLocationId = :terminalLocationId,
+    @OperationTypeCode  = :operationTypeCode

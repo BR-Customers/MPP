@@ -336,13 +336,19 @@ def search(query=None, lotStatusId=None, lotOriginTypeId=None, limitRows=100):
     return BlueRidge.Common.Db.execList("lots/Lot_Search", params)
 
 
-def moveToValidated(lotId, toLocationId, appUserId=None, terminalLocationId=None):
+def moveToValidated(lotId, toLocationId, operationTypeCode=None, overrideAppUserId=None,
+                    appUserId=None, terminalLocationId=None):
     """Arc 2 Phase 4. Server-authoritative validated inbound move (the Movement
        Scan commit). The proc re-checks eligibility (FDS-02-012) + MaxParts (OI-12)
-       + not-blocked (B2) and performs the move atomically. Returns {Status, Message}."""
+       + not-blocked (B2), enforces the FORWARD-ONLY route guard when the caller
+       supplies the operation this move is for (operationTypeCode, e.g. 'TrimIn'),
+       and performs the move atomically. A backward move (the operation is already
+       complete on the LOT) rejects unless overrideAppUserId (an elevated supervisor)
+       is supplied. operationTypeCode None = plain storage/hold move, not guarded.
+       Returns {Status, Message}."""
     BlueRidge.Common.Util.log(
-        "lotId=%s toLocationId=%s appUserId=%s terminalLocationId=%s"
-        % (lotId, toLocationId, appUserId, terminalLocationId)
+        "lotId=%s toLocationId=%s operationTypeCode=%s overrideAppUserId=%s appUserId=%s terminalLocationId=%s"
+        % (lotId, toLocationId, operationTypeCode, overrideAppUserId, appUserId, terminalLocationId)
     )
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
@@ -351,6 +357,8 @@ def moveToValidated(lotId, toLocationId, appUserId=None, terminalLocationId=None
         "toLocationId":       _u(toLocationId),
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
+        "operationTypeCode":  _u(operationTypeCode),
+        "overrideAppUserId":  _u(overrideAppUserId),
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_MoveToValidated", params)
 
@@ -384,6 +392,38 @@ def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=No
         "lots/Lot_GetWipQueueByLocation",
         {"locationId": _u(locationId), "operationTypeCode": otc,
          "includeDescendants": bool(includeDescendants)},
+    )
+
+
+def getTrimStorageQueueForLine(lineLocationId, _refreshToken=None, storageLocationId=None):
+    """Trim-Storage model (2026-07-23) Machining IN queue for a LINE: the open LOTs sitting
+       in Trim Storage whose next pending route step is MachiningIn AND whose Item is eligible
+       at this line (ancestor cascade). A part eligible at two lines appears in both lines'
+       queues; claiming it (Machining.recordPick) moves it onto the line and off the others.
+       storageLocationId None => all trim stores (both shops). Same column shape as
+       getWipQueueByLocation, so the MachiningIn view row transform is unchanged.
+       Returns list[dict] (empty when no line bound)."""
+    lineLocationId = _u(lineLocationId)
+    if lineLocationId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetTrimStorageQueueForLine",
+        {"lineLocationId": lineLocationId, "storageLocationId": _u(storageLocationId)},
+    )
+
+
+def getInspectionQueue(locationId, includeDescendants=False, _refreshToken=None):
+    """Third-party inspection station queue: OPEN Received/ReceivedOffsite LOTs at the station
+       (the bought-in parts awaiting inspection / check-out) with their latest inspection
+       result (Pass/Fail/Conditional/None) + vendor lot. Check-out is plain assembly-out
+       (Assembly.completeTray mints the pass-through FG consuming this component), so this read
+       only drives the inspect pick-list + pass gate. Returns list[dict]."""
+    locationId = _u(locationId)
+    if locationId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetInspectionQueueByLocation",
+        {"locationId": locationId, "includeDescendants": bool(includeDescendants)},
     )
 
 
@@ -573,6 +613,60 @@ def shiftScrapForCavityOnTool(toolId, toolCavityId, _refreshToken=None):
     return shiftScrapForCavity(getShiftCavityTally(toolId), toolCavityId)
 
 
+def shiftGoodFromTally(tally):
+    """Press-total 'Good parts this shift' (net of scrap, all cavities) from a tally
+       list -- ShiftGoodTotal is identical on every row, so read the first. Int (0)."""
+    rows = _tallyRows(tally)
+    for r in rows:
+        return r.get("ShiftGoodTotal") or 0
+    return 0
+
+
+def shiftScrapTotalFromTally(tally):
+    """Press-total 'Scrap this shift' across ALL cavities from a tally list --
+       ShiftScrapTotal is identical on every row. Int (0 when empty)."""
+    rows = _tallyRows(tally)
+    for r in rows:
+        return r.get("ShiftScrapTotal") or 0
+    return 0
+
+
+def shiftGoodForTool(toolId, _refreshToken=None):
+    """'Good parts this shift' PRESS-TOTAL KPI (net of scrap, all cavities) from
+       scalar args -- see shiftShotsForTool for the scalar-args rationale."""
+    return shiftGoodFromTally(getShiftCavityTally(toolId))
+
+
+def shiftScrapForTool(toolId, _refreshToken=None):
+    """'Scrap this shift' PRESS-TOTAL KPI (all cavities) from scalar args."""
+    return shiftScrapTotalFromTally(getShiftCavityTally(toolId))
+
+
+def getTerminalRecentCreations(terminalLocationId, topN=15, _refreshToken=None):
+    """Rolling last-N die-cast LOTs created AT THIS TERMINAL (across all its presses),
+       newest first, for the die-cast right-rail activity log. Reshaped to the
+       PeerTallyRow param shape {peer:{Cavity,LotName,PieceCount,LotId}} where Cavity
+       is the cavity Number + Description (the row view prepends 'Cavity '). [] when
+       none. _refreshToken is ignored (bumped by the binding to force a re-read)."""
+    tid = _u(terminalLocationId)
+    if tid is None or tid == "":
+        return []
+    n = _u(topN) or 15
+    rows = BlueRidge.Common.Db.execList(
+        "lots/Lot_GetTerminalRecentCreations",
+        {"terminalLocationId": tid, "topN": n}) or []
+    out = []
+    for r in rows:
+        r = r or {}
+        out.append({"peer": {
+            "Cavity":     r.get("CavityText") or "-",
+            "LotName":    r.get("LotName") or "",
+            "PieceCount": r.get("PieceCount") or 0,
+            "LotId":      r.get("LotId"),
+        }})
+    return out
+
+
 def defaultShiftCavityId(tally):
     """ToolCavityId of the busiest cavity this shift (highest PieceSum) -> the
        default right-rail selection so the card opens on the most accurate shot
@@ -586,3 +680,119 @@ def defaultShiftCavityId(tally):
             bestSum = s
             best = r.get("ToolCavityId")
     return best
+
+
+def openDieCast(data):
+    """Open a new die-cast accumulator basket (Lots.DieCastLot_Open): mints an
+       Open-status LOT for one (Tool, ToolCavity), PieceCount 0 -- the LOT the
+       shift-output recording flow subsequently tops up and Release later closes.
+       data carries itemId, currentLocationId, toolId, toolCavityId, lotName,
+       appUserId, terminalLocationId. Returns {Status, Message, NewId}."""
+    BlueRidge.Common.Util.log("openDieCast data=%s" % data)
+    d = _u(data) or {}
+    appUserId = d.get("appUserId")
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "itemId":             d.get("itemId"),
+        "currentLocationId":  d.get("currentLocationId"),
+        "toolId":             d.get("toolId"),
+        "toolCavityId":       d.get("toolCavityId"),
+        "lotName":            d.get("lotName"),
+        "appUserId":          appUserId,
+        "terminalLocationId": d.get("terminalLocationId"),
+    }
+    return BlueRidge.Common.Db.execMutation("lots/DieCastLot_Open", params)
+
+
+def releaseDieCast(data):
+    """Release (close) an open die-cast basket to storage (Lots.DieCastLot_Release):
+       Open -> Good, moved cell -> storage, carrying an optional final good-piece
+       delta and an optional additive scrap batch. data carries lotId,
+       storageLocationId, finalPieceDelta, scrapLines ([{defectCodeId, quantity},
+       ...], JSON-encoded here for the proc's @ScrapLinesJson), shiftId,
+       appUserId, terminalLocationId. Returns {Status, Message, NewId} (NewId is
+       always None -- Release closes an existing LOT, it never mints one)."""
+    BlueRidge.Common.Util.log("releaseDieCast data=%s" % data)
+    d = _u(data) or {}
+    appUserId = d.get("appUserId")
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    scrapLines = _u(d.get("scrapLines")) or []
+    params = {
+        "lotId":              d.get("lotId"),
+        "storageLocationId":  d.get("storageLocationId"),
+        "finalPieceDelta":    d.get("finalPieceDelta"),
+        "scrapLinesJson":     BlueRidge.Common.Util.convertWrapperObjectToJson(scrapLines) if scrapLines else None,
+        "shiftId":            d.get("shiftId"),
+        "appUserId":          appUserId,
+        "terminalLocationId": d.get("terminalLocationId"),
+    }
+    return BlueRidge.Common.Db.execMutation("lots/DieCastLot_Release", params)
+
+
+def voidDieCast(lotId, appUserId=None, terminalLocationId=None):
+    """Void an EMPTY open die-cast basket (Lots.DieCastLot_Void): Open -> Scrap,
+       no movement (the basket stays wherever it physically is). Returns
+       {Status, Message, NewId} (NewId is always None)."""
+    BlueRidge.Common.Util.log(
+        "voidDieCast lotId=%s appUserId=%s terminalLocationId=%s"
+        % (lotId, appUserId, terminalLocationId)
+    )
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "lotId":              _u(lotId),
+        "appUserId":          appUserId,
+        "terminalLocationId": terminalLocationId,
+    }
+    return BlueRidge.Common.Db.execMutation("lots/DieCastLot_Void", params)
+
+
+def getOpenByTool(toolId, _refreshToken=None):
+    """Open (status 'Open') die-cast accumulator baskets for a tool, one row per
+       cavity currently holding an open basket (Lots.Lot_GetOpenByTool).
+       _refreshToken is ignored -- runScript bindings pass a bumped token to
+       force a re-read after an open/release/void. Returns list[dict]."""
+    toolId = _u(toolId)
+    if not toolId:
+        return []
+    return BlueRidge.Common.Db.execList("lots/Lot_GetOpenByTool", {"toolId": toolId})
+
+
+def getOpenByToolInstances(toolId, _refreshToken=None):
+    """'Currently Open' basket-list instances for DieCastBody (Task 13). One
+       instance per getOpenByTool row with OpenedAt (already ET from the proc)
+       reformatted to a short display string (repeater-param date rule --
+       date math is unreliable once it crosses the params hop, mirrors
+       mapHistoryInstances) and a voidEligible flag (PieceCount == 0) driving
+       the row's Void-button visibility. Scalar args only -- fetches inside
+       (mirrors getLineInventoryCards; a list arg re-evaluates as a Java
+       QualifiedValue[] that neither _u nor the JSON round-trip survive).
+       Returns list[dict]."""
+    toolId = _u(toolId)
+    if toolId is None:
+        return []
+    rows = getOpenByTool(toolId) or []
+    out = []
+    for r in rows:
+        r = r or {}
+        opened = r.get("OpenedAt")
+        openedDisplay = ""
+        if opened is not None:
+            try:
+                openedDisplay = system.date.format(opened, "MM/dd HH:mm")
+            except:
+                openedDisplay = ("%s" % opened)[:16]
+        pieceCount = r.get("PieceCount") or 0
+        out.append({
+            "toolCavityId":     r.get("ToolCavityId"),
+            "cavityNumber":     r.get("CavityNumber") or "",
+            "lotId":            r.get("LotId"),
+            "lotName":          r.get("LotName") or "",
+            "pieceCount":       pieceCount,
+            "contributorCount": r.get("ContributorCount") or 0,
+            "openedAtDisplay":  openedDisplay,
+            "voidEligible":     (pieceCount == 0),
+        })
+    return out

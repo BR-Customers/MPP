@@ -1,0 +1,1061 @@
+<title>MPP MES — Configuration Tool Guide</title>
+<style>
+  :root{
+    --bg:#e9edf2; --surface:#ffffff; --surface-2:#f4f7fa; --surface-3:#eef2f7;
+    --ink:#0f1620; --ink-soft:#45566c; --ink-faint:#7a8aa0;
+    --line:#d7dfea; --line-soft:#e6ecf3;
+    --accent:#0c7d99; --accent-strong:#095e74; --accent-bg:#e0f1f6;
+    --draft:#9a6a12; --draft-bg:#fbf0d8;
+    --pub:#1f7a4d; --pub-bg:#dcf1e5;
+    --dep:#6a7789; --dep-bg:#e7ecf2;
+    --danger:#b23a2e;
+    --shadow:0 1px 2px rgba(16,30,54,.06),0 8px 24px rgba(16,30,54,.08);
+    --shadow-shot:0 2px 6px rgba(10,22,40,.18),0 20px 50px rgba(10,22,40,.16);
+    --radius:12px;
+    --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Code","Cascadia Mono","SF Mono",Consolas,"Roboto Mono",monospace;
+    --maxw:1000px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0a0f16; --surface:#111a24; --surface-2:#0e161f; --surface-3:#152130;
+      --ink:#e7eef6; --ink-soft:#a3b3c7; --ink-faint:#6d7e94;
+      --line:#1f2c3b; --line-soft:#182432;
+      --accent:#38c1de; --accent-strong:#65d2ea; --accent-bg:#102530;
+      --draft:#e0b25a; --draft-bg:#2b2312;
+      --pub:#5fca92; --pub-bg:#10271b;
+      --dep:#8698ad; --dep-bg:#18222e;
+      --danger:#e8776b;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+      --shadow-shot:0 2px 8px rgba(0,0,0,.5),0 24px 60px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#e9edf2; --surface:#ffffff; --surface-2:#f4f7fa; --surface-3:#eef2f7;
+    --ink:#0f1620; --ink-soft:#45566c; --ink-faint:#7a8aa0;
+    --line:#d7dfea; --line-soft:#e6ecf3;
+    --accent:#0c7d99; --accent-strong:#095e74; --accent-bg:#e0f1f6;
+    --draft:#9a6a12; --draft-bg:#fbf0d8; --pub:#1f7a4d; --pub-bg:#dcf1e5;
+    --dep:#6a7789; --dep-bg:#e7ecf2; --danger:#b23a2e;
+    --shadow:0 1px 2px rgba(16,30,54,.06),0 8px 24px rgba(16,30,54,.08);
+    --shadow-shot:0 2px 6px rgba(10,22,40,.18),0 20px 50px rgba(10,22,40,.16);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a0f16; --surface:#111a24; --surface-2:#0e161f; --surface-3:#152130;
+    --ink:#e7eef6; --ink-soft:#a3b3c7; --ink-faint:#6d7e94;
+    --line:#1f2c3b; --line-soft:#182432;
+    --accent:#38c1de; --accent-strong:#65d2ea; --accent-bg:#102530;
+    --draft:#e0b25a; --draft-bg:#2b2312; --pub:#5fca92; --pub-bg:#10271b;
+    --dep:#8698ad; --dep-bg:#18222e; --danger:#e8776b;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    --shadow-shot:0 2px 8px rgba(0,0,0,.5),0 24px 60px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+    line-height:1.6;-webkit-font-smoothing:antialiased;font-size:16px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,.mono{font-family:var(--mono);font-size:.86em;
+    background:var(--surface-3);border:1px solid var(--line-soft);
+    padding:.08em .38em;border-radius:5px;color:var(--ink);white-space:nowrap}
+  h2 code,h3 code{font-size:.8em}
+
+  /* ---- shell layout ---- */
+  .wrap{max-width:1340px;margin:0 auto;padding:0 28px;
+    display:grid;grid-template-columns:264px minmax(0,1fr);gap:52px;align-items:start}
+  .toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;
+    padding:34px 0 40px}
+  .toc-brand{font-weight:800;letter-spacing:-.02em;font-size:1.02rem;margin-bottom:2px}
+  .toc-brand b{color:var(--accent)}
+  .toc-sub{font-size:.74rem;color:var(--ink-faint);margin-bottom:22px;
+    text-transform:uppercase;letter-spacing:.14em}
+  .toc-grp{font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;
+    color:var(--ink-faint);margin:20px 0 7px;font-weight:700}
+  .toc a{display:block;color:var(--ink-soft);font-size:.9rem;padding:4px 10px;
+    border-left:2px solid transparent;margin-left:-2px;border-radius:0 6px 6px 0}
+  .toc a:hover{color:var(--ink);background:var(--surface-2);text-decoration:none}
+  .toc a.active{color:var(--accent);border-left-color:var(--accent);
+    background:var(--accent-bg);font-weight:600}
+
+  main{padding:34px 0 120px;min-width:0}
+
+  /* ---- masthead ---- */
+  .mast{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:8px}
+  .eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.2em;
+    color:var(--accent);font-weight:700}
+  .mast h1{font-size:clamp(1.9rem,3.4vw,2.7rem);line-height:1.08;margin:.34em 0 .3em;
+    letter-spacing:-.025em;text-wrap:balance;font-weight:800}
+  .mast p{color:var(--ink-soft);max-width:64ch;margin:0}
+  .mast .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .tag{font-size:.74rem;background:var(--surface-2);border:1px solid var(--line);
+    color:var(--ink-soft);padding:4px 10px;border-radius:100px}
+  .tag b{color:var(--ink);font-weight:600}
+
+  section{padding-top:46px;scroll-margin-top:20px}
+  section > .eyebrow{display:block}
+  h2{font-size:1.62rem;letter-spacing:-.02em;margin:.18em 0 .5em;font-weight:800;
+    text-wrap:balance}
+  h3{font-size:1.06rem;margin:2em 0 .5em;letter-spacing:-.01em;font-weight:700}
+  p{margin:0 0 1em;max-width:70ch}
+  .lead{font-size:1.06rem;color:var(--ink-soft);max-width:72ch}
+
+  /* ---- what/when/why summary ---- */
+  .www{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;margin:22px 0 8px}
+  .www > div{background:var(--surface);padding:16px 18px}
+  .www h4{margin:0 0 6px;font-size:.72rem;text-transform:uppercase;
+    letter-spacing:.14em;color:var(--accent);font-weight:700}
+  .www p{margin:0;font-size:.92rem;color:var(--ink-soft);max-width:none}
+
+  /* ---- screenshot frame ---- */
+  figure.shot{margin:26px 0;}
+  .frame{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+    box-shadow:var(--shadow-shot);background:#0c1420}
+  .frame-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;
+    background:linear-gradient(var(--surface-2),var(--surface));
+    border-bottom:1px solid var(--line)}
+  .frame-bar .dots{display:flex;gap:6px}
+  .frame-bar .dots i{width:10px;height:10px;border-radius:50%;
+    background:var(--line);display:block}
+  .frame-bar .path{font-family:var(--mono);font-size:.76rem;color:var(--ink-soft)}
+  .frame-bar .path b{color:var(--accent);font-weight:600}
+  .frame img{display:block;width:100%;height:auto}
+  figure.shot figcaption{font-size:.83rem;color:var(--ink-faint);margin-top:9px;
+    padding-left:2px;max-width:74ch}
+  figure.shot figcaption b{color:var(--ink-soft);font-weight:600}
+
+  /* ---- steps ---- */
+  ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0 6px;
+    display:flex;flex-direction:column;gap:12px}
+  ol.steps li{counter-increment:s;position:relative;padding:2px 0 2px 44px;
+    color:var(--ink-soft);max-width:72ch}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:0;
+    width:28px;height:28px;border-radius:8px;background:var(--accent-bg);
+    color:var(--accent-strong);font-weight:700;font-size:.82rem;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--accent);font-family:var(--mono)}
+  ol.steps li b{color:var(--ink);font-weight:600}
+
+  /* ---- field tables ---- */
+  .tbl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);
+    margin:16px 0}
+  table.fields{border-collapse:collapse;width:100%;font-size:.9rem;min-width:520px}
+  table.fields th,table.fields td{text-align:left;padding:11px 16px;
+    border-bottom:1px solid var(--line-soft);vertical-align:top}
+  table.fields thead th{background:var(--surface-2);font-size:.7rem;
+    text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint);font-weight:700}
+  table.fields tbody tr:last-child td{border-bottom:0}
+  table.fields td:first-child{white-space:nowrap;color:var(--ink);font-weight:600}
+  table.fields td b{color:var(--ink)}
+
+  /* ---- chips / callouts ---- */
+  .chip{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.04em;
+    padding:2px 8px;border-radius:100px;vertical-align:middle;
+    text-transform:uppercase;font-family:var(--mono)}
+  .chip-draft{background:var(--draft-bg);color:var(--draft)}
+  .chip-pub{background:var(--pub-bg);color:var(--pub)}
+  .chip-dep{background:var(--dep-bg);color:var(--dep)}
+  .note{display:flex;gap:12px;background:var(--surface-2);border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:10px;padding:14px 16px;
+    margin:20px 0;font-size:.92rem;color:var(--ink-soft)}
+  .note.warn{border-left-color:var(--draft)}
+  .note .ic{flex:none;font-weight:800;color:var(--accent);font-family:var(--mono)}
+  .note.warn .ic{color:var(--draft)}
+  .note b{color:var(--ink)}
+
+  hr.div{border:0;border-top:1px solid var(--line);margin:56px 0 0}
+
+  /* ---- convention cards ---- */
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;box-shadow:var(--shadow)}
+  .card h4{margin:0 0 6px;font-size:.98rem;display:flex;align-items:center;gap:8px}
+  .card h4 .k{font-family:var(--mono);font-size:.7rem;color:var(--accent);
+    background:var(--accent-bg);border:1px solid var(--accent);border-radius:6px;
+    padding:1px 6px;font-weight:700}
+  .card p{margin:0;font-size:.9rem;color:var(--ink-soft);max-width:none}
+
+  .footer{border-top:1px solid var(--line);margin-top:60px;padding-top:22px;
+    font-size:.82rem;color:var(--ink-faint)}
+
+  @media (max-width:900px){
+    .wrap{grid-template-columns:1fr;gap:0;padding:0 20px}
+    .toc{position:static;max-height:none;padding:18px 0 6px;
+      border-bottom:1px solid var(--line);margin-bottom:8px}
+    .toc details{margin-top:10px}
+    .toc summary{cursor:pointer;font-size:.82rem;color:var(--accent);font-weight:600;
+      letter-spacing:.08em;text-transform:uppercase}
+    .toc-body{margin-top:8px}
+    main{padding-top:20px}
+    .www{grid-template-columns:1fr}
+    .cards{grid-template-columns:1fr}
+  }
+  @media (min-width:901px){ .toc summary{display:none} .toc details{display:block} }
+</style>
+
+<div class="wrap">
+  <!-- ============ SIDEBAR / TOC ============ -->
+  <nav class="toc">
+    <div class="toc-brand"><b>MPP</b> MES</div>
+    <div class="toc-sub">Configuration Guide</div>
+    <details open>
+      <summary>On this page</summary>
+      <div class="toc-body">
+        <div class="toc-grp">Start here</div>
+        <a href="#overview">Overview &amp; conventions</a>
+        <div class="toc-grp">Plant</div>
+        <a href="#location-type-definitions">Location Type Definitions</a>
+        <a href="#plant-hierarchy">Plant Hierarchy</a>
+        <div class="toc-grp">Parts</div>
+        <a href="#item-master">Item Master</a>
+        <a href="#operation-templates">Operation Templates</a>
+        <a href="#tools">Tools &amp; Dies</a>
+        <div class="toc-grp">Quality</div>
+        <a href="#quality-specs">Quality Specs</a>
+        <a href="#defect-codes">Defect Codes</a>
+        <div class="toc-grp">Operations</div>
+        <a href="#downtime-codes">Downtime Codes</a>
+        <a href="#shift-schedules">Shift Schedules</a>
+        <div class="toc-grp">System</div>
+        <a href="#users">Users &amp; Operators</a>
+        <a href="#audit-log">Audit Log</a>
+        <a href="#failure-log">Failure Log</a>
+        <a href="#plc-devices">PLC Devices</a>
+      </div>
+    </details>
+  </nav>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+    <header class="mast">
+      <span class="eyebrow">Blue Ridge Automation · Prepared for Madison Precision Products</span>
+      <h1>MES Configuration Tool — a screen-by-screen guide</h1>
+      <p class="lead">The Configuration Tool is where the plant is described to the MES —
+        its lines and machines, the parts that run on them, the routes those parts
+        follow, and the quality, downtime, shift, and operator data that shop-floor
+        screens depend on. This guide walks every configuration screen: what it sets up,
+        when you touch it, and exactly how.</p>
+      <div class="meta">
+        <span class="tag">Prepared by <b>Blue Ridge Automation</b></span>
+        <span class="tag"><b>14</b> configuration screens</span>
+        <span class="tag">Draft <b>v0.1</b> · 2026-07-29</span>
+      </div>
+    </header>
+
+    <!-- ============ OVERVIEW ============ -->
+    <section id="overview">
+      <span class="eyebrow">Start here</span>
+      <h2>Overview &amp; shared conventions</h2>
+      <p class="lead">Every screen in the Configuration Tool is reached from the five
+        category icons in the far-left rail — <b>Plant</b>, <b>Parts</b>, <b>Quality</b>,
+        <b>Ops</b>, and <b>System</b>. Selecting a category reveals its screens in the
+        second column. A handful of patterns repeat across all of them; learn these once
+        and every screen reads the same way.</p>
+
+      <div class="cards">
+        <div class="card">
+          <h4><span class="k">A</span> List &rarr; editor</h4>
+          <p>Most screens put a searchable list on the left and an editor on the right.
+            Click a row to load it; click <code>+ Add</code> to start a new one. Simpler
+            code tables (defect, downtime, shift, users) open a small pop-up editor per row
+            instead.</p>
+        </div>
+        <div class="card">
+          <h4><span class="k">B</span> Draft &rarr; Published &rarr; Deprecated</h4>
+          <p>Routes, BOMs, operation templates and quality specs are <b>versioned</b>.
+            You edit a <span class="chip chip-draft">Draft</span>, then
+            <span class="chip chip-pub">Publish</span> it (optionally with an
+            <b>effective-from</b> date). Published versions are read-only; make changes by
+            creating a <code>+ New Version</code>. Old versions are
+            <span class="chip chip-dep">Deprecated</span>, never deleted.</p>
+        </div>
+        <div class="card">
+          <h4><span class="k">C</span> Deprecate, don't delete</h4>
+          <p>Nothing is hard-deleted — records are <b>deprecated</b> so history and
+            genealogy stay intact. An <code>Include deprecated</code> checkbox on most
+            lists brings retired records back into view.</p>
+        </div>
+        <div class="card">
+          <h4><span class="k">D</span> Schema-driven attributes</h4>
+          <p>Locations and tools carry <b>attributes</b> defined by their type (e.g. a Die
+            Cast machine has <code>Tonnage</code>, <code>NumberOfCavities</code>). The form
+            shows exactly the fields that type allows, with data type and unit — no free-for-all
+            custom columns. Those schemas are set in
+            <a href="#location-type-definitions">Location Type Definitions</a>.</p>
+        </div>
+        <div class="card">
+          <h4><span class="k">E</span> Everything is attributed &amp; audited</h4>
+          <p>Every save is written to the <b>Audit Log</b> with who, when, and the
+            before/after values. Rejected actions land in the <b>Failure Log</b>. You rarely
+            need to prove what changed — the system already recorded it.</p>
+        </div>
+        <div class="card">
+          <h4><span class="k">F</span> Effective dating</h4>
+          <p>Versioned records and shift schedules carry an <b>effective-from</b> date, so a
+            change can be staged today and take effect on a future date without disturbing
+            what's running now.</p>
+        </div>
+      </div>
+
+      <div class="note"><span class="ic">i</span><div>Use the theme toggle in the app's top
+        bar (the sun/moon icon) freely — it only changes appearance. The
+        <code>Sign In</code> button elevates you for protected actions via Active Directory;
+        routine configuration is done as the signed-in operator.</div></div>
+    </section>
+
+    <!-- ============ LOCATION TYPE DEFINITIONS ============ -->
+    <section id="location-type-definitions">
+      <span class="eyebrow">Plant</span>
+      <h2>Location Type Definitions</h2>
+      <p class="lead">This is the schema layer <em>behind</em> the plant hierarchy. The attributes
+        a location carries aren't hard-coded — they're defined here, per ISA-95 tier and per
+        definition. It's what lets a Die Cast machine carry <code>Tonnage</code> while a terminal
+        carries an IP address, a printer, a scanner flag and a closure method — each type with
+        exactly its own fields and nothing else.</p>
+
+      <div class="note"><span class="ic">&#9881;</span><div>Open it from the <b>gear icon</b> at
+        the top-right of the <a href="#plant-hierarchy">Plant Hierarchy</a> screen. This is
+        structural configuration — set up at commissioning and rarely touched afterward; the
+        day-to-day job is filling in attribute <em>values</em> in the hierarchy itself.</div></div>
+
+      <div class="www">
+        <div><h4>What</h4><p>For each ISA-95 tier (Enterprise, Site, Area, Work Center, Cell), the
+          named <b>definitions</b> available and the <b>attribute schema</b> each one carries —
+          attribute name, data type, required, default, UOM.</p></div>
+        <div><h4>When</h4><p>At commissioning, or when a new class of equipment/terminal is
+          introduced, or an attribute must be added to a type (e.g. a new terminal setting).</p></div>
+        <div><h4>Why</h4><p>It makes the hierarchy <b>polymorphic and safe</b>: every location of a
+          given type shares one schema, so there are no free-text columns and no drift between two
+          machines of the same kind.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Plant Hierarchy <b>&rsaquo;</b> Location Type Definitions <b>&rsaquo;</b> Area</span></div>
+          <img src="shots/18_loctype_area.png" alt="Location Type Definitions modal on the Area tier, showing ProductionArea and SupportArea definitions, Definition Details (code, name, icon, description), and an empty attribute-definitions grid.">
+        </div>
+        <figcaption>Pick a <b>tier</b> (here Area), then a <b>definition</b> (ProductionArea /
+          SupportArea). <b>Definition Details</b> sets the display Name, Icon and Description — the
+          <b>Code</b> is fixed once created. The <b>Attribute Definitions</b> grid is the schema
+          every location of this type inherits.</figcaption>
+      </figure>
+
+      <h3>Define a type or add an attribute</h3>
+      <ol class="steps">
+        <li>Choose the <b>Location Type (ISA-95 tier)</b>, then a <b>definition</b> in that tier —
+          or click <code>+ Add</code> to create a new definition.</li>
+        <li>Set the <b>Name</b>, an <b>Icon</b> (<code>Pick…</code>) and an optional description.
+          The <b>Code</b> is the stable identifier and can't be changed later.</li>
+        <li>Under <b>Attribute Definitions</b>, click <code>+ Add Attribute</code> and set the
+          attribute's <b>name</b>, <b>data type</b> (NVARCHAR / BIT / INT / DECIMAL), <b>required</b>
+          flag, <b>default</b> and <b>UOM</b>. Reorder with the arrows.</li>
+        <li>Click <code>Save</code>. Every existing and future location of this type immediately
+          exposes the field in its Attributes grid.</li>
+      </ol>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Location Type Definitions <b>&rsaquo;</b> Cell <b>&rsaquo;</b> Terminal</span></div>
+          <img src="shots/19_loctype_terminal.png" alt="Cell tier showing all equipment definitions (AssemblyStation, CNCMachine, DieCastMachine, InspectionStation, InventoryLocation, Printer, Scale, SerializedAssemblyLine, Terminal, TrimPress) with the Terminal definition selected and its attribute schema beginning with IpAddress, DefaultPrinter, HasBarcodeScanner.">
+        </div>
+        <figcaption>The <b>Cell</b> tier holds the shop-floor equipment definitions —
+          AssemblyStation, CNCMachine, DieCastMachine, InspectionStation, InventoryLocation,
+          Printer, Scale, SerializedAssemblyLine, Terminal, TrimPress. Each carries its own schema;
+          the <b>Terminal</b> definition declares seven attributes (detailed under
+          <a href="#plant-hierarchy">Plant Hierarchy → Configuring a terminal</a>).</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Location Type Definitions <b>&rsaquo;</b> Cell <b>&rsaquo;</b> Printer</span></div>
+          <img src="shots/20_loctype_printer.png" alt="Printer definition on the Cell tier with two attributes: Endpoint (required, NVARCHAR) and Model (NVARCHAR).">
+        </div>
+        <figcaption>The <b>Printer</b> definition is deliberately small: a required
+          <code>Endpoint</code> (the Zebra target — <span class="mono">IP:port</span> or a
+          print-queue name) and a <code>Model</code> (which informs label-template selection).
+          Printers are placed as child locations under the terminals they serve — see
+          <a href="#plant-hierarchy">Attaching a printer</a>.</figcaption>
+      </figure>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ PLANT HIERARCHY ============ -->
+    <section id="plant-hierarchy">
+      <span class="eyebrow">Plant</span>
+      <h2>Plant Hierarchy</h2>
+      <p class="lead">The plant hierarchy is the backbone of the whole system: the ISA-95
+        tree of Enterprise &rarr; Site &rarr; Area &rarr; Line/Cell &rarr; Terminal that every
+        LOT, move, and production event is anchored to. If a machine, line, or terminal
+        isn't in this tree, the shop floor can't use it.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>Defines every physical and logical location — facilities,
+          die-cast machines, trim shops, machining &amp; assembly lines, terminals,
+          warehouse and shipping — and the mounted-tool and attribute data on each.</p></div>
+        <div><h4>When</h4><p>At initial commissioning, and whenever a line is added,
+          a machine is re-arranged, a terminal is installed, or a die is mounted/unmounted.</p></div>
+        <div><h4>Why</h4><p>Terminals zone up to their line so the shop floor knows which
+          LOTs are eligible where; machine attributes feed OEE; the mounted tool ties a
+          die to the machine that's running it.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Plant <b>&rsaquo;</b> Plant Hierarchy</span></div>
+          <img src="shots/01_plant_hierarchy.png" alt="Plant Hierarchy screen showing the location tree, a selected die-cast machine's details, its mounted tool panel, and the attribute grid.">
+        </div>
+        <figcaption>Selecting a node loads three panels: <b>Location Details</b> (name, code,
+          sort order), <b>Mounted Tool</b>, and the type-specific <b>Attributes</b> grid —
+          here a Die Cast machine exposing Tonnage, NumberOfCavities, RefCycleTimeSec and
+          OeeTarget.</figcaption>
+      </figure>
+
+      <h3>How to add a location</h3>
+      <ol class="steps">
+        <li>In the tree, select the <b>parent</b> the new location belongs under (e.g. a Die
+          Cast area to add a machine, or a line to add a terminal).</li>
+        <li>Click <code>+ Add Location</code>. A <b>(new Location)</b> node appears under the
+          parent and the editor switches to a blank form.</li>
+        <li>Pick a <b>Type</b>, then a <b>Definition</b> — the two dropdowns cascade, and the
+          Definition is what pulls in the correct attribute schema below.</li>
+        <li>Enter <b>Name</b> and <b>Code</b>. Names carry meaning in this system (they drive
+          role and default screen), so name deliberately; the Code is the stable identifier.</li>
+        <li>Set <b>Sort Order</b> to position it among its siblings, fill any required
+          attributes, then click <code>Save</code>.</li>
+      </ol>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Plant <b>&rsaquo;</b> Plant Hierarchy <b>&rsaquo;</b> New Location</span></div>
+          <img src="shots/02_plant_add_location.png" alt="Add Location form with cascading Type and Definition dropdowns, Name, Code, Description, Sort Order, and an empty schema-driven attributes grid.">
+        </div>
+        <figcaption>The <b>Type &rarr; Definition</b> cascade is required (marked&nbsp;*). The
+          attribute grid stays empty until a Definition is chosen, then fills with exactly
+          that type's fields.</figcaption>
+      </figure>
+
+      <h3>Configuring a terminal</h3>
+      <p>A terminal is a shop-floor station. Its <b>Attributes</b> (the Terminal schema) are what
+        make the physical station behave correctly — which screen it boots into, which printer and
+        scanner it uses, and how it closes out work. Getting these right is essential: an
+        unconfigured terminal falls back to plant-wide defaults and misbehaves on the floor.</p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Plant <b>&rsaquo;</b> Plant Hierarchy <b>&rsaquo;</b> Terminal</span></div>
+          <img src="shots/21_terminal_config.png" alt="The Assembly Out terminal selected, showing the Terminal-schema attribute values: IpAddress and DefaultPrinter blank, HasBarcodeScanner unchecked, DefaultScreen set to /shop-floor/assembly-nonserialized, CurrentClosureMethod ByVision.">
+        </div>
+        <figcaption>The <b>Assembly Out</b> terminal (<span class="mono">MA1-FP6NA-AOUT</span>).
+          <code>DefaultScreen</code> and <code>CurrentClosureMethod</code> are set;
+          <code>IpAddress</code> and <code>DefaultPrinter</code> are still blank — exactly the
+          fields to fill in before the station goes live.</figcaption>
+      </figure>
+
+      <div class="tbl-scroll"><table class="fields">
+        <thead><tr><th>Terminal attribute</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td>IpAddress</td><td>The terminal's network identity — how a session recognizes
+            <b>which</b> terminal it's running on and binds to that station's line, queue and
+            devices. An unregistered or blank IP drops to the plant-wide <b>Fallback Terminal</b>,
+            which breaks eligibility and shows plant-wide queues. Set it to the station's actual IP.</td></tr>
+          <tr><td>DefaultPrinter</td><td>The label printer this station prints to — point it at the
+            <a href="#plant-hierarchy">Printer entity</a> attached beneath the terminal.</td></tr>
+          <tr><td>HasBarcodeScanner</td><td>Whether the station has a scanner — drives scan-vs-manual
+            entry on the floor. <em>Schema-dependent:</em> present because the terminal's type
+            definition declares it.</td></tr>
+          <tr><td>DefaultScreen</td><td>The Perspective view the terminal opens to at session start
+            (e.g. <span class="mono">/shop-floor/assembly-nonserialized</span>) — this effectively
+            sets the station's role.</td></tr>
+          <tr><td>CurrentClosureMethod</td><td>For assembly-out terminals, the active pack-out mode:
+            <span class="mono">ByCount</span> / <span class="mono">ByWeight</span> /
+            <span class="mono">ByVision</span>. <em>Schema-dependent:</em> only terminals whose
+            definition declares it expose this.</td></tr>
+          <tr><td>RequiresCompletionConfirm</td><td>Whether the terminal prompts for an explicit
+            completion confirmation before finishing work.</td></tr>
+          <tr><td>VisionAppUrl</td><td>The external vision web-app URL embedded in the ByVision
+            assembly screen.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="note"><span class="ic">i</span><div><b>Not every terminal has every field.</b>
+        <code>HasBarcodeScanner</code> and <code>CurrentClosureMethod</code> come from the
+        <a href="#location-type-definitions">type definition</a>, so which attributes a terminal
+        exposes depends on how its definition is set up — a die-cast IN terminal and an assembly-out
+        terminal legitimately differ.</div></div>
+
+      <h3>Attaching a printer</h3>
+      <p>Any terminal with a physical label printer gets a <b>Printer location as a child</b>
+        beneath it. Modeling the printer as its own location keeps the endpoint and model with the
+        station that owns it, and lets the terminal's <code>DefaultPrinter</code> resolve to a real
+        device.</p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Plant <b>&rsaquo;</b> Plant Hierarchy <b>&rsaquo;</b> Printer</span></div>
+          <img src="shots/22_printer_entity.png" alt="Printer P-005 nested under the Assembly Out terminal in the tree, with CELL - PRINTER details (code MA1-FP6NA-AOUT-P1, 'Label printer for MA1-FP6NA-AOUT') and Printer-schema attributes Endpoint (required) and Model.">
+        </div>
+        <figcaption>Printer <span class="mono">P - 005</span> nested under the Assembly Out
+          terminal. Its attributes are <code>Endpoint</code> (required) and <code>Model</code>.</figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li>Select the <b>terminal</b> in the tree, then click <code>+ Add Location</code>.</li>
+        <li>Set <b>Type</b> = <span class="mono">Cell</span>, <b>Definition</b> =
+          <span class="mono">Printer</span>.</li>
+        <li>Name it and give it a code (convention:
+          <span class="mono">&lt;TERMINAL&gt;-P1</span>, e.g.
+          <span class="mono">MA1-FP6NA-AOUT-P1</span>).</li>
+        <li>Set <b>Endpoint</b> (required — the Zebra target as <span class="mono">IP:port</span>
+          or a print-queue name) and <b>Model</b> (drives label-template selection), then
+          <code>Save</code>.</li>
+        <li>Back on the terminal, set <code>DefaultPrinter</code> so its label jobs route to this
+          printer.</li>
+      </ol>
+
+      <h3>Mounting a tool &amp; retiring a location</h3>
+      <ul>
+        <li><b>Mount a die:</b> with a machine selected, pick the tool in the
+          <b>Mounted Tool</b> panel, add an optional note, and click <code>Mount</code>. Use
+          <code>Tool Config</code> to jump to the die's full record.</li>
+        <li><b>Retire:</b> click <code>Deprecate</code> to soft-delete a location. Its
+          children re-anchor to the parent; nothing is lost from history.</li>
+      </ul>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ ITEM MASTER ============ -->
+    <section id="item-master">
+      <span class="eyebrow">Parts</span>
+      <h2>Item Master</h2>
+      <p class="lead">The Item Master is the catalog of every part number the plant handles —
+        raw castings, machined sub-assemblies, purchased components and finished goods — and
+        the packaging, routing, bill-of-materials, quality and line-eligibility data attached
+        to each. It is the single most-configured screen in the tool.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>Part identity plus five configuration tabs:
+          <b>Container Config</b>, <b>Routes</b>, <b>BOMs</b>, <b>Quality Specs</b> and
+          <b>Eligibility</b>.</p></div>
+        <div><h4>When</h4><p>Whenever a new part is introduced, a route or packaging changes,
+          a BOM is revised, or a part becomes eligible on a new line.</p></div>
+        <div><h4>Why</h4><p>Routes drive the shop-floor queue and part identity; BOMs drive
+          consumption/genealogy; eligibility controls where a part is allowed to run.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Parts <b>&rsaquo;</b> Item Master <b>&rsaquo;</b> Identity</span></div>
+          <img src="shots/03_item_master_identity.png" alt="Item Master with a sub-assembly selected, showing part number, item type, UOM, description, Macola part number, PLC/Vision recipe ID, weights and packaging fields, and the five configuration tabs.">
+        </div>
+        <figcaption>The list uses type badges — <span class="chip chip-dep">COMP</span>
+          casting/component, <span class="chip chip-pub">FG</span> finished good,
+          <span class="chip chip-draft">SA</span> sub-assembly. The identity header sets part
+          number, <b>Item Type</b>, UOM, weights, packaging (<b>Default Sub-Lot Qty</b>,
+          <b>Parts Per Basket</b>), <b>Country of Origin</b> and the <b>PLC / Vision Recipe ID</b>
+          used by machine integration.</figcaption>
+      </figure>
+
+      <h3>Add a part</h3>
+      <ol class="steps">
+        <li>Click <code>+ Add Item</code>, then set <b>Part Number</b>, <b>Item Type</b> and
+          <b>UOM</b> — Item Type gates which routes and areas the part may later use.</li>
+        <li>Fill the identity fields (description, weights, Macola part #, recipe ID,
+          packaging) and <code>Save</code>.</li>
+        <li>Configure the five tabs below as needed (they're described next). Each tab saves
+          independently.</li>
+      </ol>
+
+      <h3>Container Config</h3>
+      <p>Defines how finished parts are packed out — <b>By Count</b>, <b>By Weight</b>, or
+        <b>By Vision</b>. Use <code>Add By Count / By Weight / By Vision pack-out</code> to
+        configure the method that applies; a part with none configured shows the "not
+        configured" placeholder. This is what the pack-out station enforces at run time.</p>
+
+      <h3>Routes <span class="chip chip-draft">Draft</span> <span class="chip chip-pub">Published</span></h3>
+      <p>The route is the ordered list of operation steps a part travels — and, in this
+        system, the source of truth for the shop-floor queue and terminal identity. Each step
+        pairs an <b>operation category</b> (Die Cast, Trim, Machining &amp; Assembly) with the
+        <b>operation template</b> that governs it.</p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Parts <b>&rsaquo;</b> Item Master <b>&rsaquo;</b> Routes</span></div>
+          <img src="shots/04_item_master_routes.png" alt="Routes tab showing a published route version v1 with one step: Machining & Assembly using the Assembly Out Standard operation template, marked required.">
+        </div>
+        <figcaption>Pick a version in the dropdown; the <span class="chip chip-pub">Published</span>
+          badge marks the live one. Add steps to the <b>Draft</b>, then <code>Publish</code>.
+          To revise a live route, click <code>+ New Version</code> — you never edit a published
+          version in place.</figcaption>
+      </figure>
+
+      <h3>BOMs <span class="chip chip-pub">Published</span></h3>
+      <p>The bill of materials lists the child components a part consumes, with quantity per
+        and UOM. BOMs are versioned and effective-dated exactly like routes.</p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Parts <b>&rsaquo;</b> Item Master <b>&rsaquo;</b> BOMs</span></div>
+          <img src="shots/05_item_master_boms.png" alt="BOMs tab showing published version v1 effective 2026-07-21 with one component line: the raw fuel-pump casting, quantity 1 EA.">
+        </div>
+        <figcaption>Here the machined sub-assembly consumes one raw casting. The BOM child &rarr;
+          parent relationship is what lets Machining/Assembly mint the finished identity and
+          record genealogy.</figcaption>
+      </figure>
+
+      <h3>Quality Specs &amp; Eligibility</h3>
+      <p>The <b>Quality Specs</b> tab links measurement specifications to the part (authored on
+        the dedicated <a href="#quality-specs">Quality Specs</a> screen). The <b>Eligibility</b>
+        tab controls <em>where</em> the part may run.</p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Parts <b>&rsaquo;</b> Item Master <b>&rsaquo;</b> Eligibility</span></div>
+          <img src="shots/06_item_master_eligibility.png" alt="Eligibility tab showing one production-line row with Consumption, Min, Max, and Default columns and an Add Location button.">
+        </div>
+        <figcaption>Each row ties the part to a <b>location</b> it may run on. Flags for
+          <b>Consumption</b>, <b>Min</b>/<b>Max</b> and <b>Default</b> tune how the part behaves
+          there. Use <code>+ Add Location</code> to grant a new line, then <code>Save</code>.</figcaption>
+      </figure>
+      <div class="note"><span class="ic">i</span><div>Eligibility is checked against the
+        terminal's line, so a part only appears in the queue at stations that belong to a line
+        it's eligible on. Missing eligibility is the usual reason a valid part shows
+        "not eligible" on the floor.</div></div>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ OPERATION TEMPLATES ============ -->
+    <section id="operation-templates">
+      <span class="eyebrow">Parts</span>
+      <h2>Operation Templates</h2>
+      <p class="lead">An operation template is a reusable definition of what happens at a step
+        of a route — its operation type and the data the operator must collect there. Routes
+        reference these templates rather than redefining behavior part by part.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>Named, versioned templates grouped by operation category —
+          Die Cast, Trim IN/OUT, Machining IN/OUT, Assembly OUT — each with a set of
+          data-collection fields.</p></div>
+        <div><h4>When</h4><p>When a new kind of operation is introduced, or the data captured
+          at an operation needs to change (add a reading, make a field required).</p></div>
+        <div><h4>Why</h4><p>Define the operation once and reuse it across every part's route;
+          versioning keeps historical runs pinned to the template they actually used.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Parts <b>&rsaquo;</b> Operation Templates</span></div>
+          <img src="shots/07_operation_templates.png" alt="Operation Templates screen: list grouped by category on the left, and the Die Cast Standard template detail with code, version, operation type, and a Data Collection Fields section.">
+        </div>
+        <figcaption>The list groups templates by category. The detail sets <b>Code</b>,
+          <b>Operation Type</b> and <b>Description</b>, with a
+          <b>Data Collection Fields</b> table (code, name, required) beneath — the fields the
+          operator fills when the step runs.</figcaption>
+      </figure>
+
+      <h3>Create or revise a template</h3>
+      <ol class="steps">
+        <li>Click <code>+ New Template</code>, or select an existing one to revise.</li>
+        <li>Set the <b>Code</b>, <b>Name</b>, and <b>Operation Type</b> (the role this template
+          fills — Die Cast, Machining Out, Assembly Out, etc.).</li>
+        <li>Under <b>Data Collection Fields</b>, use <code>+ Add field</code> to add each
+          reading the operator must capture, mark it required if needed, and
+          <code>Save fields</code>.</li>
+        <li>Use <code>New Version</code> to change a template that's already in use; publish
+          the draft when ready. <code>Deprecate</code> retires a template.</li>
+      </ol>
+      <div class="note warn"><span class="ic">!</span><div>Templates are resolved by their
+        <b>operation-type role</b>, not by their code. That's why a route step "just works"
+        once you pick the right operation type — keep the Operation Type accurate.</div></div>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ TOOLS ============ -->
+    <section id="tools">
+      <span class="eyebrow">Parts</span>
+      <h2>Tools &amp; Dies</h2>
+      <p class="lead">The Tools screen is the registry of dies and cutting tools — their rank,
+        status, cavities, per-tool attributes, and where they're assigned or mounted. It feeds
+        the mounted-tool selection back in the Plant Hierarchy and, ultimately, die-cast
+        traceability.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>Each die's identity (code, name, tool type, <b>die rank</b>,
+          status) plus <b>Attributes</b>, <b>Cavities</b> and <b>Assignments</b> tabs.</p></div>
+        <div><h4>When</h4><p>When a die is received, re-ranked, sent out for repair
+          (status change), or its cavity layout / assignments change.</p></div>
+        <div><h4>Why</h4><p>Die rank and cavity data govern which die may run a part and how
+          shot output is attributed; status keeps retired dies out of selection.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Parts <b>&rsaquo;</b> Tools</span></div>
+          <img src="shots/08_tools.png" alt="Tools screen with a die selected showing Active, Die Cast Die, Rank A, and Mounted-Machine 02 badges, identity fields, and Attributes/Cavities/Assignments tabs.">
+        </div>
+        <figcaption>Status badges tell the story at a glance —
+          <span class="chip chip-pub">Active</span>, tool type, <b>Rank</b>, and a
+          <b>Mounted</b> badge naming the machine it's on. <code>Die Ranks</code> (top-right)
+          manages the rank list; <code>+ Add Die</code> creates a new tool.</figcaption>
+      </figure>
+
+      <h3>Add or maintain a die</h3>
+      <ol class="steps">
+        <li>Click <code>+ Add Die</code>; set <b>Code</b>, <b>Name</b>, <b>Tool Type</b>,
+          <b>Die Rank</b> and <b>Status</b>.</li>
+        <li>On the <b>Attributes</b> tab add any per-die definitions and values; use
+          <b>Cavities</b> to record the cavity layout and <b>Assignments</b> to tie the die to
+          the parts/lines it serves.</li>
+        <li>Change <b>Status</b> (e.g. to send a die out for repair) or click
+          <code>Retire</code> when a die leaves service. Filter the list with the status
+          dropdown.</li>
+      </ol>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ QUALITY SPECS ============ -->
+    <section id="quality-specs">
+      <span class="eyebrow">Quality</span>
+      <h2>Quality Specs</h2>
+      <p class="lead">A quality spec is the set of measurements and tolerances a part (or an
+        operation on a part) must meet. Specs are versioned and effective-dated so a tolerance
+        change can be staged without rewriting history.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>A named spec linked to an item (and optionally an operation
+          template), containing a list of measurement attributes with target and
+          lower/upper limits.</p></div>
+        <div><h4>When</h4><p>When quality introduces a new check, a print revision changes a
+          tolerance, or a spec needs to be linked to a new part/operation.</p></div>
+        <div><h4>Why</h4><p>Shop-floor and inspection screens read the published spec to
+          validate operator entries — it's how out-of-tolerance readings get caught.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Quality <b>&rsaquo;</b> Quality Specs <b>&rsaquo;</b> Attributes</span></div>
+          <img src="shots/09_quality_specs.png" alt="Quality Specs Attributes tab listing measurement attributes: Bore Dia (Numeric, target 25.4, lower 25.38, upper 25.42, required) and Surface (Text).">
+        </div>
+        <figcaption>Each attribute sets a <b>data type</b> (Numeric or Text), <b>UOM</b>,
+          and for numeric checks a <b>Target / Lower / Upper</b> tolerance band and a
+          <b>required</b> flag. Reorder with the arrows; <code>+ Add Attribute</code> adds a
+          check.</figcaption>
+      </figure>
+
+      <h3>Author a spec</h3>
+      <ol class="steps">
+        <li>Click <code>+ New Spec</code>; give it a <b>Name</b> and set the <b>Linked Item</b>
+          (and <b>Linked Operation Template</b> if the check is operation-specific).</li>
+        <li>On <b>Attributes</b>, add each measurement — name, data type, UOM, and the
+          target/tolerance band — and mark the required ones.</li>
+        <li>Set the <b>Effective From</b> date, <code>Save Draft</code>, then
+          <code>Publish</code>. Use <code>+ New Version</code> to revise a published spec; the
+          <b>Version History</b> tab shows every version, its state, and who created it.</li>
+      </ol>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ DEFECT CODES ============ -->
+    <section id="defect-codes">
+      <span class="eyebrow">Quality</span>
+      <h2>Defect Codes</h2>
+      <p class="lead">Defect codes are the standardized reasons a part is scrapped or reworked.
+        They're scoped by area so each part of the plant sees the codes relevant to it, and
+        each can be flagged "excused" to exclude it from defect-rate math.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>A flat, area-scoped list of numbered defect reasons
+          (Soldering, Flash, Short Shot, Bent Pin&hellip;), each with an
+          <b>excused</b> flag.</p></div>
+        <div><h4>When</h4><p>When a new defect mode needs tracking, or an existing code's
+          wording, area, or excused status changes.</p></div>
+        <div><h4>Why</h4><p>Operators pick these when logging scrap; excused codes keep
+          out-of-operator-control losses from skewing quality metrics.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Quality <b>&rsaquo;</b> Defect Codes</span></div>
+          <img src="shots/10_defect_codes.png" alt="Defect Codes table listing codes 100–115 with descriptions, area Die Cast 1, and an Excused checkbox column, filtered by area and search.">
+        </div>
+        <figcaption>Filter by <b>Area</b> or search; <code>Include deprecated</code> reveals
+          retired codes. Each row has an <code>Edit</code> action.</figcaption>
+      </figure>
+
+      <h3>Add or edit a code</h3>
+      <ol class="steps">
+        <li>Click <code>+ Add Code</code>, or <code>Edit</code> on a row.</li>
+        <li>Set the <b>Code</b> (fixed once created), <b>Description</b>, and <b>Area</b>.</li>
+        <li>Tick <b>Excused (excluded from defect rate)</b> if the loss shouldn't count against
+          quality metrics, then <code>Save</code>. Use <code>Deprecate</code> to retire a code.</li>
+      </ol>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Quality <b>&rsaquo;</b> Defect Codes <b>&rsaquo;</b> Edit</span></div>
+          <img src="shots/11_defect_code_editor.png" alt="Edit Defect Code pop-up with read-only Code, Description, Area dropdown, and an Excused checkbox, plus Deprecate/Cancel/Save.">
+        </div>
+        <figcaption>The pop-up editor. Note the <b>Code</b> is read-only after creation —
+          descriptions and area can change, but the identifier is stable.</figcaption>
+      </figure>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ DOWNTIME CODES ============ -->
+    <section id="downtime-codes">
+      <span class="eyebrow">Operations</span>
+      <h2>Downtime Codes</h2>
+      <p class="lead">Downtime codes classify why a machine or line stopped. Like defect codes
+        they're area-scoped and can be excused, and they additionally carry a <b>reason type</b>
+        (e.g. Break) so scheduled stops are distinguished from unplanned ones.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>Area-scoped stop reasons with a <b>type</b> and an
+          <b>excused</b> flag — e.g. BREAK1, LUNCH.</p></div>
+        <div><h4>When</h4><p>When standing up downtime tracking for an area, or adjusting the
+          reason list operators choose from.</p></div>
+        <div><h4>Why</h4><p>They drive OEE availability: excused/scheduled reasons don't count
+          against a line the way unplanned faults do.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Operations <b>&rsaquo;</b> Downtime Codes</span></div>
+          <img src="shots/12_downtime_codes.png" alt="Downtime Codes table with BREAK1, BREAK2 and LUNCH rows scoped to Madison Facility, type Break, all excused, with Area/Reason Type/Search filters.">
+        </div>
+        <figcaption>Filter by <b>Area</b> and <b>Reason Type</b>. Each row edits in a pop-up
+          (Code, Description, Area, Reason Type, Excused) via <code>Edit</code>; add new ones
+          with <code>+ Add Code</code>.</figcaption>
+      </figure>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ SHIFT SCHEDULES ============ -->
+    <section id="shift-schedules">
+      <span class="eyebrow">Operations</span>
+      <h2>Shift Schedules</h2>
+      <p class="lead">Shift schedules define the working windows the plant runs — their days,
+        start/end times, and the date each definition takes effect. They frame every
+        time-based calculation, from OEE buckets to production reporting.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>Named shifts (First/Second/Third) with days-of-week, start and end
+          times, and an effective-from date.</p></div>
+        <div><h4>When</h4><p>At start-up, and whenever the plant changes hours, adds/removes a
+          shift, or moves to a new pattern on a future date.</p></div>
+        <div><h4>Why</h4><p>Downtime, OEE and output are all bucketed against the active shift;
+          overnight shifts (e.g. 23:00&rarr;07:00) are handled by the start/end pair.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Operations <b>&rsaquo;</b> Shift Schedules <b>&rsaquo;</b> Edit</span></div>
+          <img src="shots/13_shift_schedules.png" alt="Edit Shift Schedule pop-up over the shift list, with Name, Description, day-of-week toggle buttons (Mon–Fri selected), start/end time fields, and an effective-from date.">
+        </div>
+        <figcaption>Behind the pop-up, the list shows each shift's days, start, end and
+          effective date. The editor uses <b>day-of-week toggles</b>, free <b>HH:MM</b>
+          start/end, and an <b>Effective From</b> date.</figcaption>
+      </figure>
+
+      <h3>Add or change a shift</h3>
+      <ol class="steps">
+        <li>Click <code>+ Add Schedule</code>, or <code>Edit</code> a shift.</li>
+        <li>Set the <b>Name</b> (and optional description), toggle the <b>days of week</b> it
+          runs, and enter <b>Start</b> and <b>End</b> in HH:MM.</li>
+        <li>Set <b>Effective From</b> — future-date it to stage a change — then
+          <code>Save</code>. <code>Deprecate</code> retires an old pattern while keeping past
+          reporting intact.</li>
+      </ol>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ USERS ============ -->
+    <section id="users">
+      <span class="eyebrow">System</span>
+      <h2>Users &amp; Operators</h2>
+      <p class="lead">This screen is the registry of shop-floor <b>operators</b> — identified by
+        initials for fast attribution at the terminal. It is deliberately not a security system:
+        protected actions still elevate through Active Directory; these records simply say
+        <em>who did it</em>.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>A list of operators, each with <b>initials</b> and a
+          <b>display name</b>.</p></div>
+        <div><h4>When</h4><p>When a new operator joins, initials change, or someone leaves
+          (deprecate).</p></div>
+        <div><h4>Why</h4><p>Every production event and move is stamped with operator initials;
+          this list is the source those initials resolve against.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">System <b>&rsaquo;</b> Users</span></div>
+          <img src="shots/15_users.png" alt="Users table listing operators by initials and display name with created dates and a deprecated column.">
+        </div>
+        <figcaption>Search by initials or name; <code>Include deprecated</code> shows retired
+          operators. Each row edits via <code>Edit</code>.</figcaption>
+      </figure>
+
+      <h3>Add an operator</h3>
+      <ol class="steps">
+        <li>Click <code>+ Add Operator</code>.</li>
+        <li>Enter the operator's <b>Initials</b> (the badge they'll use, e.g. <code>JPD</code>)
+          and their <b>Display Name</b>.</li>
+        <li>Click <code>Save</code>. To retire someone, open their row and deprecate — their
+          past attributions stay intact.</li>
+      </ol>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">System <b>&rsaquo;</b> Users <b>&rsaquo;</b> Add Operator</span></div>
+          <img src="shots/16_user_editor.png" alt="Add Operator pop-up with Initials and Display Name fields and Cancel/Save buttons.">
+        </div>
+        <figcaption>Creating an operator takes just two fields.</figcaption>
+      </figure>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ AUDIT LOG ============ -->
+    <section id="audit-log">
+      <span class="eyebrow">System</span>
+      <h2>Audit Log</h2>
+      <p class="lead">The Audit Log is a read-only record of every configuration change — who
+        changed what, when, and the before/after values. You don't configure anything here; you
+        read it to answer "what changed and why?".</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>A filterable, timestamped feed of changes across all entity types,
+          with severity and a human-readable activity description.</p></div>
+        <div><h4>When</h4><p>When investigating an unexpected change, preparing for an audit, or
+          confirming a config edit actually landed.</p></div>
+        <div><h4>Why</h4><p>Honda-grade traceability requires a defensible change history; this
+          is it, and it's written automatically on every save.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">System <b>&rsaquo;</b> Audit Log</span></div>
+          <img src="shots/14_audit_log.png" alt="Audit Log table with timestamp, user, entity type, event, severity, a changes diff column, and an activity description, plus entity/severity/date filters.">
+        </div>
+        <figcaption>Filter by <b>Entity Type</b>, <b>Severity</b> and a <b>date range</b>, then
+          <code>Apply</code>. The <b>Changes</b> column shows the field-level diff
+          (old&nbsp;&rarr;&nbsp;new); <b>Activity</b> gives the plain-English summary. All
+          timestamps display in Eastern time.</figcaption>
+      </figure>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ FAILURE LOG ============ -->
+    <section id="failure-log">
+      <span class="eyebrow">System</span>
+      <h2>Failure Log</h2>
+      <p class="lead">The Failure Log surfaces actions the system <em>rejected</em> — a move
+        blocked, a duplicate LOT name, a FIFO queue that came up short. It's the first place to
+        look when the floor reports "it wouldn't let me."</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>A read-only feed of rejected operations with the failing
+          procedure, the reason, and who hit it — plus 7-day summaries of the top reasons and
+          top failing procedures.</p></div>
+        <div><h4>When</h4><p>When diagnosing a shop-floor block, a recurring rejection, or a
+          data problem behind a stuck LOT.</p></div>
+        <div><h4>Why</h4><p>Rejections carry the exact business-rule message, so you can tell a
+          config gap from operator error without reproducing it.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">System <b>&rsaquo;</b> Failure Log</span></div>
+          <img src="shots/17_failure_log.png" alt="Failure Log with two summary cards (top rejection reasons and top failing procedures over 7 days) above a detail table of timestamp, user, entity type, procedure, and failure reason.">
+        </div>
+        <figcaption>The two cards rank the most common <b>rejection reasons</b> and
+          <b>failing procedures</b> over the last 7 days; the table below gives every rejection
+          with its full message. Filter by date, entity type, or procedure.</figcaption>
+      </figure>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ PLC DEVICES ============ -->
+    <section id="plc-devices">
+      <span class="eyebrow">System</span>
+      <h2>PLC Devices</h2>
+      <p class="lead">The PLC Device Mapping screen ties a terminal to the OPC/PLC devices it
+        talks to — scales, assembly PLCs and vision systems — so machine-integrated stations
+        know which device paths to read and write.</p>
+      <div class="www">
+        <div><h4>What</h4><p>Per-terminal device mappings: select a terminal, then add the
+          device bindings it uses.</p></div>
+        <div><h4>When</h4><p>When wiring a station to its scale, PLC handshake, or vision
+          system during integration.</p></div>
+        <div><h4>Why</h4><p>The machine-integration layer resolves device addresses through
+          these mappings, per terminal.</p></div>
+      </div>
+      <div class="note warn"><span class="ic">!</span><div><b>Screenshot pending.</b> This
+        screen is under active development (styling in progress), so it isn't captured here yet.
+        Functionally: choose a terminal from the <b>Select a terminal…</b> dropdown, then use
+        <code>+ Add mapping</code> to bind each device the terminal uses. This section will be
+        updated once the UI is finalized.</div></div>
+    </section>
+
+    <div class="footer">
+      <b>MPP MES Configuration Tool — Configuration Guide.</b>
+      Prepared by Blue Ridge Automation for Madison Precision Products, Inc.
+      Draft v0.1, 2026-07-29. Screenshots are drawn from the development environment and use
+      sample data; PLC Devices is omitted pending finalization of that screen. This document
+      will be revised as the system is completed.
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  // Scrollspy: highlight the active TOC link
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var map = {};
+  links.forEach(function(a){ var id=a.getAttribute('href').slice(1); map[id]=a; });
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  var current=null;
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        if(current) current.classList.remove('active');
+        var a=map[e.target.id];
+        if(a){ a.classList.add('active'); current=a; }
+      }
+    });
+  },{rootMargin:'-15% 0px -70% 0px',threshold:0});
+  sections.forEach(function(s){ obs.observe(s); });
+})();
+</script>

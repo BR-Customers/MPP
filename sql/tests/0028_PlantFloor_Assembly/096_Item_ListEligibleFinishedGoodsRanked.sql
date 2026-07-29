@@ -8,7 +8,7 @@ SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0028_PlantFloor_Assembly/096_Item_ListEligibleFinishedGoodsRanked.sql';
 GO
 
-DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-AFIN');
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-AOUT');
 CREATE TABLE #Q (Id BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LinesSatisfied INT, IsRecommended BIT);
 INSERT INTO #Q EXEC Parts.Item_ListEligibleFinishedGoodsRanked @LocationId = @Cell;
 

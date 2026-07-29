@@ -4,4 +4,5 @@ EXEC Workorder.MachiningOut_Mint
     @PieceCount          = :pieceCount,
     @ProducedItemId      = :producedItemId,
     @AppUserId           = :appUserId,
-    @TerminalLocationId  = :terminalLocationId
+    @TerminalLocationId  = :terminalLocationId,
+    @AllowPartial        = :allowPartial

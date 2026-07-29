@@ -6,16 +6,14 @@
 --
 -- Description:
 --   Creates a ContainerConfig for an Item. At most one active config is
---   allowed per Item — enforced both by explicit business-rule check
---   and by the filtered unique index UQ_ContainerConfig_ActiveItemId.
+--   allowed per (Item, ClosureMethod) — enforced both by explicit
+--   business-rule check and by the filtered unique index
+--   UQ_ContainerConfig_ActiveItemMethod. A part carries up to one active
+--   config per closure method (ByCount/ByWeight/ByVision).
 --
---   @ClosureMethod and @TargetWeight are OI-02 columns (scale-driven
---   container closure) — accepted as optional parameters pending MPP
---   customer validation. Today they default to NULL; once OI-02 is
---   resolved and callers start supplying values, no proc change is
---   required. Expected non-null values for ClosureMethod: 'ByCount' or
---   'ByWeight' (not enforced here — treated as a free-text code until
---   the OI resolves).
+--   @ClosureMethod is REQUIRED (the per-method discriminator) and must be
+--   a known Parts.ClosureMethodCode.Code (FK-backed). @TargetWeight stays
+--   optional (used when ClosureMethod = 'ByWeight').
 --
 -- Parameters (input):
 --   @ItemId BIGINT                  - FK → Parts.Item. Required.
@@ -45,6 +43,10 @@
 --                       <PartNumber> . Container Config . Created; <key params>
 --                       narrative Description + resolved-FK NewValue JSON
 --                       (Item {Id, PartNumber, Description}).
+--   2026-07-17 - 2.4 - Per-method configs: @ClosureMethod required + validated
+--                       against Parts.ClosureMethodCode; duplicate check re-keyed
+--                       to (ItemId, ClosureMethod). Closure method is the
+--                       ContainerConfig discriminator (terminal-mode selection).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.ContainerConfig_Create
     @ItemId            BIGINT,
@@ -75,7 +77,7 @@ BEGIN
 
     BEGIN TRY
         -- Parameter validation
-        IF @ItemId IS NULL OR @TraysPerContainer IS NULL OR @PartsPerTray IS NULL OR @AppUserId IS NULL
+        IF @ItemId IS NULL OR @TraysPerContainer IS NULL OR @PartsPerTray IS NULL OR @ClosureMethod IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing.';
             EXEC Audit.Audit_LogFailure
@@ -100,10 +102,27 @@ BEGIN
             RETURN;
         END
 
-        -- Business rule: no active config already exists for this Item
-        IF EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @ItemId AND DeprecatedAt IS NULL)
+        -- Business rule: ClosureMethod must be a known code (FK-backed discriminator)
+        IF NOT EXISTS (SELECT 1 FROM Parts.ClosureMethodCode WHERE Code = @ClosureMethod AND DeprecatedAt IS NULL)
         BEGIN
-            SET @Message = N'An active ContainerConfig already exists for this Item.';
+            SET @Message = N'Invalid ClosureMethod code.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerConfig',
+                @EntityId = NULL, @LogEventTypeCode = N'Created',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- Business rule: no active config already exists for this Item + method.
+        -- (A part carries one active config per closure method; the (ItemId,
+        -- ClosureMethod) filtered unique index UQ_ContainerConfig_ActiveItemMethod
+        -- is the schema-level backstop.)
+        IF EXISTS (SELECT 1 FROM Parts.ContainerConfig
+                   WHERE ItemId = @ItemId AND ClosureMethod = @ClosureMethod AND DeprecatedAt IS NULL)
+        BEGIN
+            SET @Message = N'An active ContainerConfig already exists for this Item and closure method.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerConfig',
                 @EntityId = NULL, @LogEventTypeCode = N'Created',

@@ -24,12 +24,12 @@ EXEC test.BeginTestFile @FileName = N'0022_PlantFloor_DieCast/040_CavityParallel
 GO
 
 -- ---- cleanup any prior fixtures ----
-DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%';
+DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%';
 DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code IN (N'TEST-CP-MULTI', N'TEST-CP-EMPTY');
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code IN (N'TEST-CP-MULTI', N'TEST-CP-EMPTY'));
 DELETE FROM Tools.Tool WHERE Code IN (N'TEST-CP-MULTI', N'TEST-CP-EMPTY');
@@ -147,11 +147,11 @@ DECLARE @Cav2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @MultiToo
 
 DECLARE @Lot1 BIGINT, @Lot2 BIGINT, @S1 BIT, @S2 BIT;
 CREATE TABLE #LA (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #LA EXEC Lots.Lot_Create @ItemId = @DieItemId, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @DieCellId, @PieceCount = 4, @ToolId = @MultiTool, @ToolCavityId = @Cav1, @AppUserId = 1;
+INSERT INTO #LA EXEC Lots.Lot_Create @ItemId = @DieItemId, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @DieCellId, @PieceCount = 4, @ToolId = @MultiTool, @ToolCavityId = @Cav1, @AppUserId = 1, @LotName = N'900000010';
 SELECT @S1 = Status, @Lot1 = NewId FROM #LA; DROP TABLE #LA;
 
 CREATE TABLE #LB (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #LB EXEC Lots.Lot_Create @ItemId = @DieItemId, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @DieCellId, @PieceCount = 6, @ToolId = @MultiTool, @ToolCavityId = @Cav2, @AppUserId = 1;
+INSERT INTO #LB EXEC Lots.Lot_Create @ItemId = @DieItemId, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @DieCellId, @PieceCount = 6, @ToolId = @MultiTool, @ToolCavityId = @Cav2, @AppUserId = 1, @LotName = N'900000011';
 SELECT @S2 = Status, @Lot2 = NewId FROM #LB; DROP TABLE #LB;
 
 DECLARE @S1Str NVARCHAR(10) = CAST(@S1 AS NVARCHAR(10));
@@ -186,12 +186,12 @@ EXEC test.Assert_IsEqual @TestName = N'[CpPeers] LOT2 unaffected (zero checkpoin
 GO
 
 -- ---- cleanup ----
-DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%';
+DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%';
 DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code IN (N'TEST-CP-MULTI', N'TEST-CP-EMPTY');
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code IN (N'TEST-CP-MULTI', N'TEST-CP-EMPTY'));
 DELETE FROM Tools.Tool WHERE Code IN (N'TEST-CP-MULTI', N'TEST-CP-EMPTY');

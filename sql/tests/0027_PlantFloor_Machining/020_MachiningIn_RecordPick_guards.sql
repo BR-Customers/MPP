@@ -1,65 +1,56 @@
 -- =============================================
 -- File:         0027_PlantFloor_Machining/020_MachiningIn_RecordPick_guards.sql
 -- Author:       Blue Ridge Automation
--- Created:      2026-07-06
--- Description:  Rejection guards for Workorder.MachiningIn_RecordPick:
---                 - LOT not checked into the line -> reject
+-- Rewritten:    2026-07-23 - Trim-Storage model (v2). Rejection guards:
+--                 - LOT not in Trim Storage (e.g. still off in a non-storage cell) -> reject
 --                 - terminal not part of the line -> reject
 --                 - Closed LOT -> reject
---               Fixture: P5-CAST-TEST eligible at the LINE MA1-COMPBR. A non-line
---               location (DC1-M05) is used for the off-line cases.
+--               Fixture: routed casting 5G0-c eligible at the LINE MA1-5GOF; Trim Storage
+--               TRIM1-STORE; a non-storage/off-line cell DC1-M05.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0027_PlantFloor_Machining/020_MachiningIn_RecordPick_guards.sql';
 GO
 
--- ---- fixture (idempotent) ----
-DECLARE @Now  DATETIME2(3) = SYSUTCDATETIME();
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR');
-IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST')
-    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, DefaultSubLotQty, MaxLotSize, UomId, CreatedAt, CreatedByUserId)
-    VALUES (2, N'P5-CAST-TEST', N'Phase5 test cast/trim part', 48, NULL, 1, @Now, 1);
-DECLARE @SrcItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @SrcItem AND LocationId = @Line AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt) VALUES (@SrcItem, @Line, 0, @Now);
+DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @Item AND LocationId = @Line AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt) VALUES (@Item, @Line, 0, SYSUTCDATETIME());
+DELETE pe FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE eg FROM Lots.LotEventLog eg INNER JOIN Lots.Lot l ON l.Id = eg.LotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE FROM Lots.Lot WHERE LotName LIKE N'P5T-GUARD-%';
 GO
 
--- ---- LOT cleanup ----
-DELETE pe FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE eg FROM Lots.LotEventLog eg INNER JOIN Lots.Lot l ON l.Id = eg.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-GO
+DECLARE @Item  BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Line  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
+DECLARE @Term  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
+DECLARE @Store BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-STORE');
+DECLARE @OffLoc BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M05');   -- non-storage / off-line
+DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 
-DECLARE @Line   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR');
-DECLARE @Term   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
-DECLARE @OffLoc BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M05');   -- not under MA1-COMPBR
-DECLARE @SrcItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
-
--- ---- Guard 1: LOT not checked into the line ----
+-- ---- Guard 1: LOT not in Trim Storage ----
 DECLARE @Lot1 BIGINT;
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @SrcItem, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Line, @PieceCount = 20, @AppUserId = 1, @LotName = N'P5T-GUARD-A';
+INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Origin, @CurrentLocationId = @Line, @PieceCount = 20, @AppUserId = 1, @LotName = N'P5T-GUARD-A';
 SELECT @Lot1 = NewId FROM #C; DELETE FROM #C;
-UPDATE Lots.Lot SET CurrentLocationId = @OffLoc WHERE Id = @Lot1;   -- move it off the line
-
+UPDATE Lots.Lot SET CurrentLocationId = @OffLoc WHERE Id = @Lot1;   -- not in Trim Storage
 DECLARE @S1 BIT, @M1 NVARCHAR(500);
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R1 EXEC Workorder.MachiningIn_RecordPick @LotId = @Lot1, @LineLocationId = @Line, @AppUserId = 1, @TerminalLocationId = @Term;
 SELECT @S1 = Status, @M1 = Message FROM #R1; DROP TABLE #R1;
 DECLARE @S1c BIT = CASE WHEN @S1 = 0 THEN 1 ELSE 0 END;
-EXEC test.Assert_IsTrue @TestName = N'[MachInGuard] LOT not at the line is rejected', @Condition = @S1c;
-EXEC test.Assert_Contains @TestName = N'[MachInGuard] rejection cites not on the line', @HaystackStr = @M1, @NeedleStr = N'not checked into this line';
+EXEC test.Assert_IsTrue @TestName = N'[MachInGuard] LOT not in Trim Storage is rejected', @Condition = @S1c;
+EXEC test.Assert_Contains @TestName = N'[MachInGuard] rejection cites not in Trim Storage', @HaystackStr = @M1, @NeedleStr = N'not in Trim Storage';
 
--- ---- Guard 2: terminal not part of the line ----
+-- ---- Guard 2: terminal not part of the line (LOT staged in Trim Storage, eligible) ----
 DECLARE @Lot2 BIGINT;
-INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @SrcItem, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Line, @PieceCount = 20, @AppUserId = 1, @LotName = N'P5T-GUARD-B';
+INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Origin, @CurrentLocationId = @Line, @PieceCount = 20, @AppUserId = 1, @LotName = N'P5T-GUARD-B';
 SELECT @Lot2 = NewId FROM #C; DELETE FROM #C;
-
+UPDATE Lots.Lot SET CurrentLocationId = @Store WHERE Id = @Lot2;   -- in Trim Storage
 DECLARE @S2 BIT, @M2 NVARCHAR(500);
 CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R2 EXEC Workorder.MachiningIn_RecordPick @LotId = @Lot2, @LineLocationId = @Line, @AppUserId = 1, @TerminalLocationId = @OffLoc;
@@ -70,10 +61,9 @@ EXEC test.Assert_Contains @TestName = N'[MachInGuard] rejection cites terminal n
 
 -- ---- Guard 3: Closed LOT ----
 DECLARE @Lot3 BIGINT;
-INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @SrcItem, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Line, @PieceCount = 20, @AppUserId = 1, @LotName = N'P5T-GUARD-C';
+INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Origin, @CurrentLocationId = @Line, @PieceCount = 20, @AppUserId = 1, @LotName = N'P5T-GUARD-C';
 SELECT @Lot3 = NewId FROM #C; DROP TABLE #C;
-UPDATE Lots.Lot SET LotStatusId = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed') WHERE Id = @Lot3;
-
+UPDATE Lots.Lot SET CurrentLocationId = @Store, LotStatusId = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed') WHERE Id = @Lot3;
 DECLARE @S3 BIT;
 CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R3 EXEC Workorder.MachiningIn_RecordPick @LotId = @Lot3, @LineLocationId = @Line, @AppUserId = 1, @TerminalLocationId = @Term;
@@ -83,12 +73,12 @@ EXEC test.Assert_IsTrue @TestName = N'[MachInGuard] Closed LOT is rejected', @Co
 GO
 
 -- ---- cleanup ----
-DELETE pe FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE eg FROM Lots.LotEventLog eg INNER JOIN Lots.Lot l ON l.Id = eg.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
+DELETE pe FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE eg FROM Lots.LotEventLog eg INNER JOIN Lots.Lot l ON l.Id = eg.LotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId WHERE l.LotName LIKE N'P5T-GUARD-%';
+DELETE FROM Lots.Lot WHERE LotName LIKE N'P5T-GUARD-%';
 GO
 
 EXEC test.EndTestFile;

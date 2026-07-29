@@ -8,6 +8,11 @@
 
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
+import BlueRidge.Location.Terminal
+import BlueRidge.Lots.Container
+import BlueRidge.Parts.ContainerConfig
+import system.perspective
+import java.lang
 
 
 def scanIn(cellLocationId, lotName=None, lotId=None, appUserId=None, terminalLocationId=None):
@@ -46,13 +51,16 @@ def completeTray(finishedGoodItemId, pieceCount, cellLocationId,
     return BlueRidge.Common.Db.execMutation("workorder/Assembly_CompleteTray", params)
 
 
-def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocationId):
-    """View helper for the non-serialized assembly tray-complete button. Resolves the
-       finished-good Item (the open container's Item, or the operator-selected FG when
-       no container is open yet - completeTray auto-opens one), validates the parts
-       count, and mints the FG LOT via completeTray. Returns the completeTray result
-       dict, or a Status-0 dict on a validation miss (surfaced by notifyResult)."""
+def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocationId, closureMethod=None):
+    """View helper for the assembly tray-complete button. Resolves the finished-good
+       Item (the open container's Item, or the operator-selected FG when no container
+       is open yet - completeTray auto-opens one), validates the parts count, and mints
+       the FG LOT via completeTray. closureMethod is the terminal's active mode
+       (session.custom.closureMethod) - it selects the part's per-method ContainerConfig
+       and is REQUIRED by the proc. Returns the completeTray result dict, or a Status-0
+       dict on a validation miss (surfaced by notifyResult)."""
     cnt = BlueRidge.Common.Util.toIntOrNone(draft.get("partsCount")) if draft else None
+    closureMethod = BlueRidge.Common.Util.extractQualifiedValues(closureMethod)
     if container and container.get("Id") is not None:
         fgItem = container.get("ItemId")
     else:
@@ -61,7 +69,116 @@ def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocatio
         return {"Status": False, "Message": "Select a finished good (or open a container) first."}
     if cnt is None:
         return {"Status": False, "Message": "Enter the parts count for the tray."}
-    return completeTray(fgItem, cnt, cellLocationId, terminalLocationId=cellLocationId)
+    if not closureMethod:
+        return {"Status": False, "Message": "No closure mode set for this terminal."}
+    return completeTray(fgItem, cnt, cellLocationId, closureMethod=closureMethod,
+                        terminalLocationId=cellLocationId)
+
+
+def resolvePlcCloseContext(terminalLocationId, closureMethod):
+    """Headless resolution of everything a PLC-triggered tray close needs, from just
+       the terminal + closure method -- mirrors the operator AssemblyNonSerialized
+       flow so a PLC line and an operator line mint identically:
+         cellLocationId    = the terminal's zone cell (Terminal_List.ZoneId);
+         finishedGoodItemId= the OPEN container's item, else the recommended FG;
+         pieceCount        = the (item, method) ContainerConfig.PartsPerTray;
+         containerId       = the open container's Id, or None (proc auto-opens).
+       Returns that dict, or {"error": <str>} on any missing input -- never a faked
+       default, so the caller logs + alarms instead of minting a wrong LOT."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return {"error": "No terminal bound to the PLC device."}
+    term = BlueRidge.Location.Terminal.findById(BlueRidge.Location.Terminal.listAll(), tid)
+    cell = (term or {}).get("ZoneId")
+    if cell is None:
+        return {"error": "Terminal %s has no zone cell." % tid}
+    containerId = None
+    openRows = BlueRidge.Lots.Container.getOpenByCell(cell) or []
+    if openRows:
+        fgItem = openRows[0].get("ItemId")
+        containerId = openRows[0].get("Id")
+    else:
+        fgItem = getRecommendedFinishedGoodId(cell)
+    if fgItem is None:
+        return {"error": "No open container and no eligible finished good at cell %s." % cell}
+    cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(fgItem, closureMethod) or {}
+    ppt = cfg.get("PartsPerTray")
+    try:
+        ppt = int(ppt) if ppt is not None else None
+    except (ValueError, TypeError):
+        ppt = None
+    if not ppt or ppt <= 0:
+        return {"error": "No %s pack-out (PartsPerTray) configured for finished good %s."
+                % (closureMethod, fgItem)}
+    return {"cellLocationId": cell, "finishedGoodItemId": fgItem,
+            "pieceCount": ppt, "containerId": containerId}
+
+
+def notifyInventoryChanged(cellLocationId, terminalLocationId):
+    """Best-effort live-refresh push after a lights-out PLC completion. Public --
+       called by plcCompleteTray (ByWeight/ByVision) and the MIP watchers
+       (NonSerializedMipWatcher, SerializedMipWatcher) after a successful mint /
+       tray close. The close
+       runs in GATEWAY scope (tag-change script) with no session, so the operator
+       terminal never hears about it -- unlike the operator ByCount path, which
+       refreshes in-session. Send the same 'inventoryChanged' page-scoped message
+       the InventoryManager sends, but carry the event's cellLocationId so each
+       terminal's handler refreshes ONLY when it matches its own cell (the
+       InventoryManager payload has no cellLocationId -> those handlers still
+       refresh unconditionally, preserving manual-move behavior).
+
+       system.perspective.sendMessage in GATEWAY scope REQUIRES an explicit
+       sessionId + pageId (it cannot default to "the current session" -- there is
+       none), so there is no true broadcast: enumerate every open session/page via
+       getSessionInfo() and target each. Non-terminal pages simply have no
+       'inventoryChanged' handler and ignore it. Never raises into the completion
+       path -- a failed UI nudge must not undo a committed tray close. Catches
+       java.lang.Exception too (Jython's `except Exception` does not catch Java
+       throwables)."""
+    payload = {"cellLocationId": cellLocationId,
+               "terminalLocationId": terminalLocationId,
+               "source": "plc"}
+    try:
+        for s in (system.perspective.getSessionInfo() or []):
+            sid = s["id"]
+            for pid in (s["pageIds"] or []):
+                try:
+                    system.perspective.sendMessage(
+                        "inventoryChanged", payload=payload,
+                        scope="page", sessionId=sid, pageId=pid)
+                except (Exception, java.lang.Exception) as e:
+                    BlueRidge.Common.Util.log(
+                        "notifyInventoryChanged send failed sid=%s pid=%s: %s"
+                        % (sid, pid, e), level="warn")
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("notifyInventoryChanged enumerate failed: %s" % e, level="warn")
+
+
+def plcCompleteTray(terminalLocationId, closureMethod):
+    """Shared PLC-triggered tray close for ByWeight / ByVision. Resolves the close
+       context headlessly, then mints the FG LOT + consumes BOM via the SAME
+       Assembly_CompleteTray proc the operator ByCount path uses (identical
+       genealogy). PLC lines run lights-out, so on ContainerFull it auto-completes
+       the container -- AIM claim + label print via Container_Complete with
+       plcCompletionConfirmed=True. Returns the completeTray result dict (with a
+       "ContainerComplete" sub-result when the container was completed), or a
+       {"Status": 0, "Message": <resolution error>} dict with NO LOT minted."""
+    ctx = resolvePlcCloseContext(terminalLocationId, closureMethod)
+    if ctx.get("error"):
+        return {"Status": 0, "Message": ctx["error"]}
+    appUserId = BlueRidge.Common.Util.systemAppUserId()
+    result = completeTray(ctx["finishedGoodItemId"], ctx["pieceCount"], ctx["cellLocationId"],
+                          closureMethod=closureMethod, appUserId=appUserId,
+                          terminalLocationId=terminalLocationId)
+    if result and result.get("Status") and result.get("ContainerFull") and result.get("ContainerId") is not None:
+        result["ContainerComplete"] = BlueRidge.Lots.Container.complete(
+            result.get("ContainerId"), plcCompletionConfirmed=True,
+            appUserId=appUserId, terminalLocationId=terminalLocationId)
+    # Live-refresh the operator terminal at this cell (gateway scope -> no session
+    # unless we push). Best-effort; only fires on a real close.
+    if result and result.get("Status"):
+        notifyInventoryChanged(ctx.get("cellLocationId"), terminalLocationId)
+    return result
 
 
 def _rankedFinishedGoods(cellLocationId):
@@ -100,3 +217,21 @@ def getRecommendedFinishedGoodId(cellLocationId):
         if r.get("IsRecommended"):
             return r.get("Id")
     return None
+
+
+def getComponentProjection(cellLocationId, finishedGoodItemId, closureMethod=None, _refreshToken=None):
+    """DISPLAY-ONLY: per active-BOM component of the finished good, how many will be consumed
+       to COMPLETE the current container + a low-stock flag, for the Assembly OUT line-inventory
+       panel. NOT a gate -- the authoritative sufficiency check is in Assembly_CompleteTray.
+       Thin glue: all math lives in Workorder.Assembly_GetComponentProjection. Returns
+       list[dict] (empty = nothing to show). `_refreshToken` is the ignored runScript re-read
+       arg, consistent with getComponentsAtCell / getOpenByCell."""
+    cellLocationId = BlueRidge.Common.Util.extractQualifiedValues(cellLocationId)
+    finishedGoodItemId = BlueRidge.Common.Util.extractQualifiedValues(finishedGoodItemId)
+    closureMethod = BlueRidge.Common.Util.extractQualifiedValues(closureMethod)
+    if cellLocationId is None or finishedGoodItemId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "workorder/Assembly_GetComponentProjection",
+        {"locationId": cellLocationId, "finishedGoodItemId": finishedGoodItemId,
+         "closureMethod": closureMethod})

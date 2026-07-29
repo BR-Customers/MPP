@@ -1806,6 +1806,21 @@ button {
     border-color: var(--mpp-interactive-primary-hover);
 }
 
+/* Disabled state for all plant-floor buttons: clearly grey + not-allowed,
+   overriding the solid primary/danger fills so a disabled button no longer
+   reads as pressable (props.enabled=false alone kept the coloured fill). */
+.psc-pf-btn:disabled,
+.psc-pf-btn[disabled],
+.psc-pf-primary-button:disabled,
+.psc-pf-primary-button[disabled] {
+    background: var(--mpp-surface-card);
+    border-color: var(--mpp-border-subtle);
+    color: var(--mpp-text-tertiary);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.75;
+}
+
 .psc-pf-btn-danger {
     background: var(--mpp-state-bad-bg);
     border-color: var(--mpp-state-bad-border);
@@ -2350,6 +2365,24 @@ button {
 .psc-pf-queue-row-selected {
     background: var(--mpp-accent-20);
     border-color: var(--mpp-accent-60);
+}
+
+/* Flex variant of the queue row for rows with an optional leading action
+   button (Trim inventory: Select on the left). Same card look as
+   .psc-pf-queue-row but display:flex, so the row's own grow/shrink child
+   layout applies (Info grows, Select/StatusPill fit) regardless of whether
+   the leading button is present - avoids the fixed grid-template-columns of
+   the shared grid row. */
+.psc-pf-inventory-row {
+    display: flex;
+    align-items: center;
+    gap: var(--mpp-space-4);
+    padding: var(--mpp-space-3) var(--mpp-space-4);
+    background: var(--mpp-surface-raised);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: var(--mpp-radius-md);
+    min-height: var(--pf-touch-min);
+    flex-shrink: 0;
 }
 
 .psc-pf-queue-name {

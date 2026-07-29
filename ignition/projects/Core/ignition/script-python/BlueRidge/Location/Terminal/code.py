@@ -162,3 +162,82 @@ def getPrinter(terminalLocationId):
         "endpoint":   row.get("Endpoint") or "",
         "model":      row.get("Model") or "",
     }
+
+
+def getClosureContext(terminalLocationId):
+    """Assembly-out closure context for a terminal:
+       {CurrentClosureMethod, VisionAppUrl, ClosureCapabilities}. The capability
+       set is derived server-side from the terminal's bound PLC devices. Returns
+       {} when unresolved (fallback terminal / no id)."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return {}
+    # Defensive: onStartup runs on every session connect. If the closure procs
+    # are not yet deployed to this gateway's DB, degrade to empty rather than
+    # break session establishment.
+    try:
+        row = BlueRidge.Common.Db.execOne(
+            "location/Terminal_GetClosureContext", {"terminalLocationId": tid})
+        return row if row is not None else {}
+    except Exception as e:
+        BlueRidge.Common.Util.log("getClosureContext failed: %s" % str(e))
+        return {}
+
+
+def applyToSession(session, terminal):
+    """Single source of truth for binding a terminal's FULL context onto a
+       Perspective session. `terminal` is the 7-key session-terminal dict
+       (terminalLocationId, terminalCode, terminalName, zoneLocationId,
+       zoneName, defaultScreen, isFallback).
+
+       Sets, from the one terminalLocationId, everything a screen may read:
+         session.custom.terminal            (+ derived visionAppUrl)
+         session.custom.printer             (getPrinter)
+         session.custom.plcDevices          (TerminalPlcDevice.getByTerminal)
+         session.custom.closureMethod       (getClosureContext)
+         session.custom.closureCapabilities (getClosureContext)
+         session.custom.cell -> CLEARED     (a cell picked at a prior terminal
+                                             must not leak into the new terminal)
+
+       Called by onStartup (IP-resolved), NavigationTree launch, and
+       TerminalSelector.selectTerminal so those three entry points can never
+       drift (previously each set only the terminal dict, leaving printer / PLC
+       / closure / vision stale after a navigate)."""
+    import BlueRidge.Location.TerminalPlcDevice as _tpd
+    t = BlueRidge.Common.Util.extractQualifiedValues(terminal) or {}
+    tid = t.get("terminalLocationId")
+    term = {
+        "terminalLocationId": tid,
+        "terminalCode":       t.get("terminalCode") or "",
+        "terminalName":       t.get("terminalName") or "",
+        "zoneLocationId":     t.get("zoneLocationId"),
+        "zoneName":           t.get("zoneName") or "",
+        "defaultScreen":      t.get("defaultScreen") or "",
+        "isFallback":         bool(t.get("isFallback")),
+        "visionAppUrl":       "",
+    }
+    # Always drop any prior cell selection when the terminal changes.
+    session.custom.cell = {"locationId": None, "code": "", "name": ""}
+    if tid is None:
+        session.custom.terminal = term
+        session.custom.printer = {"locationId": None, "code": "", "endpoint": "", "model": ""}
+        session.custom.plcDevices = []
+        # ByCount is the universal device-free baseline (mirrors the proc default);
+        # keep the count-close UI usable on a fallback / unregistered terminal.
+        session.custom.closureMethod = "ByCount"
+        session.custom.closureCapabilities = ["ByCount"]
+        return
+    prn = getPrinter(tid) or {}
+    session.custom.printer = {
+        "locationId": prn.get("locationId"),
+        "code":       prn.get("code") or "",
+        "endpoint":   prn.get("endpoint") or "",
+        "model":      prn.get("model") or "",
+    }
+    session.custom.plcDevices = _tpd.getByTerminal(tid) or []
+    cc = getClosureContext(tid) or {}
+    session.custom.closureMethod = cc.get("CurrentClosureMethod") or ""
+    caps = cc.get("ClosureCapabilities") or "ByCount"
+    session.custom.closureCapabilities = [c for c in caps.split(",") if c]
+    term["visionAppUrl"] = cc.get("VisionAppUrl") or ""
+    session.custom.terminal = term

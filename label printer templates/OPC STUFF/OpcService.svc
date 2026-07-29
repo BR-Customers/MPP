@@ -1,0 +1,1 @@
+﻿<%@ ServiceHost Language="C#" Debug="true" Service="Flexware.MES.ServiceLayer.OPC.OpcService" CodeBehind="OpcService.svc.cs" %>

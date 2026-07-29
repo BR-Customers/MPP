@@ -1,0 +1,220 @@
+{
+  "custom": {
+    "good": "",
+    "scrapDefectCodeId": null,
+    "scrapQty": "",
+    "overHeadroom": false,
+    "defectOptions": []
+  },
+  "params": {
+    "toolCavityId": null,
+    "cavityNumber": "",
+    "lotId": null,
+    "lotName": "",
+    "isOpen": true,
+    "priorGoodThisShift": 0,
+    "proposedGood": 0,
+    "maxHeadroom": 2147483647
+  },
+  "propConfig": {
+    "params.toolCavityId": { "paramDirection": "input" },
+    "params.cavityNumber": { "paramDirection": "input" },
+    "params.lotId": { "paramDirection": "input" },
+    "params.lotName": { "paramDirection": "input" },
+    "params.isOpen": { "paramDirection": "input" },
+    "params.priorGoodThisShift": { "paramDirection": "input" },
+    "params.maxHeadroom": { "paramDirection": "input" },
+    "params.proposedGood": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tval = self.view.params.proposedGood\n\tself.view.custom.good = str(val) if val is not None else \"\"\n\tself.view.custom.scrapDefectCodeId = None\n\tself.view.custom.scrapQty = \"\"\n\tself.view.custom.overHeadroom = False"
+      }
+    },
+    "custom.defectOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 56, "width": 900 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "alignItems": "center",
+      "style": { "classes": "pf-inventory-row", "gap": "12px", "overflow": "hidden" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "CavityLotBlock" },
+        "position": { "basis": "180px", "shrink": 0 },
+        "props": { "direction": "column", "style": { "gap": "2px", "overflow": "hidden" } },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "CavityLabel" },
+            "propConfig": {
+              "props.text": {
+                "binding": { "type": "expr", "config": { "expression": "\"Cavity \" + toStr({view.params.cavityNumber})" } }
+              }
+            },
+            "props": { "text": "", "style": { "fontWeight": 600 } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "LotLabel" },
+            "propConfig": {
+              "props.text": { "binding": { "type": "property", "config": { "path": "view.params.lotName" } } }
+            },
+            "props": { "text": "", "style": { "classes": "pf-kpi-sub", "fontFamily": "var(--mpp-font-mono)" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "ClosedRefLabel" },
+        "position": { "basis": "0", "grow": 1, "shrink": 0 },
+        "propConfig": {
+          "position.display": { "binding": { "type": "expr", "config": { "expression": "!{view.params.isOpen}" } } },
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "\"Closed mid-shift - credited \" + toStr({view.params.priorGoodThisShift}) + \" pc (reference only, not re-entered)\"" }
+            }
+          }
+        },
+        "props": { "text": "", "style": { "classes": "pf-kpi-sub" } }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "EditableBlock" },
+        "position": { "basis": "0", "grow": 1, "shrink": 0 },
+        "propConfig": {
+          "position.display": { "binding": { "type": "property", "config": { "path": "view.params.isOpen" } } }
+        },
+        "props": { "alignItems": "center", "style": { "gap": "10px", "overflow": "hidden" } },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "GoodBlock" },
+            "position": { "basis": "110px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "gap": "2px" } },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "GoodLabel" },
+                "props": { "text": "Good (pc)", "style": { "classes": "pf-field-label" } }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "GoodInput" },
+                "props": { "text": "", "style": { "classes": "pf-field-input" } },
+                "propConfig": {
+                  "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.good", "bidirectional": true } } }
+                },
+                "events": {
+                  "dom": {
+                    "onBlur": {
+                      "type": "script", "scope": "G",
+                      "config": { "script": "\tself.view.rootContainer.applyGood()" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ReferenceLabel" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "\"prior \" + toStr({view.params.priorGoodThisShift}) + if({view.params.maxHeadroom} < 2147483647, \"  ·  headroom \" + toStr({view.params.maxHeadroom}), \"\")" }
+                }
+              }
+            },
+            "props": { "text": "", "style": { "classes": "pf-kpi-sub" } }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ScrapBlock" },
+            "position": { "basis": "0", "grow": 1, "shrink": 0 },
+            "props": { "alignItems": "center", "style": { "gap": "8px", "overflow": "hidden" } },
+            "children": [
+              {
+                "type": "ia.input.dropdown",
+                "meta": { "name": "ScrapDefectDropdown" },
+                "position": { "basis": "0", "grow": 1, "shrink": 0 },
+                "props": { "placeholder": { "text": "Scrap reason (optional)" } },
+                "propConfig": {
+                  "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.defectOptions" } } },
+                  "props.value": { "binding": { "type": "property", "config": { "path": "view.custom.scrapDefectCodeId", "bidirectional": true } } }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script", "scope": "G",
+                      "config": { "script": "\tself.view.rootContainer.emitRowChanged()" }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "ScrapQtyInput" },
+                "position": { "basis": "80px", "shrink": 0 },
+                "props": { "placeholder": "qty", "text": "", "style": { "classes": "pf-field-input" } },
+                "propConfig": {
+                  "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.scrapQty", "bidirectional": true } } }
+                },
+                "events": {
+                  "dom": {
+                    "onBlur": {
+                      "type": "script", "scope": "G",
+                      "config": { "script": "\tself.view.rootContainer.emitRowChanged()" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "HeadroomWarning" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "position.display": { "binding": { "type": "property", "config": { "path": "view.custom.overHeadroom" } } }
+            },
+            "props": {
+              "text": "Exceeds basket headroom - continuing anyway (soft limit)",
+              "style": { "color": "var(--mpp-warning, #b26a00)", "fontWeight": 600 }
+            }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applyGood",
+          "params": [],
+          "script": "\tgoodTxt = self.view.custom.good\n\ttry:\n\t\tg = int(goodTxt) if goodTxt not in (None, \"\") else 0\n\texcept (ValueError, TypeError):\n\t\tg = 0\n\tmaxH = self.view.params.maxHeadroom\n\tself.view.custom.overHeadroom = (maxH is not None and g > maxH)\n\tself.emitRowChanged()"
+        },
+        {
+          "name": "emitRowChanged",
+          "params": [],
+          "script": "\tsystem.perspective.sendMessage(\"dieCastRowChanged\", payload={\n\t\t\"lotId\": self.view.params.lotId,\n\t\t\"good\": self.view.custom.good,\n\t\t\"scrapDefectCodeId\": self.view.custom.scrapDefectCodeId,\n\t\t\"scrapQty\": self.view.custom.scrapQty,\n\t}, scope=\"page\")"
+        }
+      ]
+    }
+  }
+}

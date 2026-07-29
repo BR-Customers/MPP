@@ -33,7 +33,9 @@
       { "type": "Parameter", "identifier": "lotId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "toLocationId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
+      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "operationTypeCode", "sqlType": 7 },
+      { "type": "Parameter", "identifier": "overrideAppUserId", "sqlType": 3 }
     ]
   }
 }

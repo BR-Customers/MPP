@@ -48,7 +48,7 @@ BEGIN
         SELECT l.Id AS LotId, rs.SequenceNumber, rs.OperationTemplateId,
                ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
         FROM Lots.Lot l
-        INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
+        INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code NOT IN (N'Closed', N'Open')
         INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId
              AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
         INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id

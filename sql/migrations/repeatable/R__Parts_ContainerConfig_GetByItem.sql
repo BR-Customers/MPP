@@ -5,20 +5,21 @@
 -- Version:     2.0
 --
 -- Description:
---   Returns the active ContainerConfig for a given Item. Empty result =
---   no active config. There is at most one active config per Item
---   (enforced by filtered unique index UQ_ContainerConfig_ActiveItemId).
+--   Returns the active ContainerConfig(s) for a given Item, one per closure
+--   method, ordered by ClosureMethodCode.SortOrder. Empty result = no active
+--   config. A part may carry up to one active config per closure method
+--   (enforced by filtered unique index UQ_ContainerConfig_ActiveItemMethod),
+--   so this returns 0-to-N rows -- callers iterate.
 --
---   Includes ClosureMethod and TargetWeight — nullable columns added per
---   OI-02 for anticipated scale-driven container closure on non-serialized
---   lines (pending MPP customer validation). Callers should expect NULL
---   until OI-02 is resolved.
+--   ClosureMethod is the required per-method discriminator (FK to
+--   Parts.ClosureMethodCode); TargetWeight is used when ClosureMethod =
+--   'ByWeight'.
 --
 -- Parameters:
 --   @ItemId BIGINT - FK → Parts.Item. Required.
 --
 -- Result set:
---   Zero or one ContainerConfig row.
+--   Zero-to-N ContainerConfig rows (one per active closure method).
 --
 -- Dependencies:
 --   Tables: Parts.ContainerConfig
@@ -42,6 +43,7 @@ BEGIN
         CreatedAt, UpdatedAt, DeprecatedAt
     FROM Parts.ContainerConfig
     WHERE ItemId = @ItemId
-      AND DeprecatedAt IS NULL;
+      AND DeprecatedAt IS NULL
+    ORDER BY (SELECT cmc.SortOrder FROM Parts.ClosureMethodCode cmc WHERE cmc.Code = ClosureMethod);
 END;
 GO

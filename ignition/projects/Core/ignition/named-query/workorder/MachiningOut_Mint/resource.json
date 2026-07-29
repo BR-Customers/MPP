@@ -35,7 +35,8 @@
       { "type": "Parameter", "identifier": "pieceCount", "sqlType": 3 },
       { "type": "Parameter", "identifier": "producedItemId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
+      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "allowPartial", "sqlType": 6 }
     ]
   }
 }

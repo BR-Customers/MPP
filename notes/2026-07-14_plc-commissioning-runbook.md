@@ -9,8 +9,20 @@ sim/NQs/Sim-Panel, Plan 3 watchers/onStartup/config). Spec:
 repeatables clean; 0039 audit-seed test 2/2). The Ignition layer (UDTs, sim, NQs,
 Sim Panel, watchers, dispatch, entity wrappers, `/plc-devices` editor) is
 file-authored + scanned. **Nothing below has been hardware-smoked** — the watchers
-are dormant until the Designer Tag Change scripts wire them (Step B), then they run
+are dormant until the Designer Tag Change scripts wire them (Step A4), then they run
 against `MPP_Sim` (Step C), then against real devices (Step D).
+
+> **Update 2026-07-21:** **A4 is DONE** — the gateway Tag Change script
+> `TrayDataReady` exists in the MPP project (`MPP/ignition/tag-change/TrayDataReady/`,
+> created by `admin` 2026-07-14, `enabled`, scope G) with the correct
+> `PlcWatcher.dispatch` body and the **33 explicit trigger paths** (not a folder
+> wildcard). **Step B for 59B is DONE** — a `TerminalPlcDevice` mapping row was
+> seeded (terminal 158 `MA2-59B-AOUT1` → ScaleStation → `[MPP]PlcDevices/59B_1_FP_1`).
+> The ByVision + ByWeight tray CLOSE is now wired (see Section E, was a
+> commissioning fill-in): both route through `Assembly.plcCompleteTray` → the same
+> `Assembly_CompleteTray` proc the operator uses. So the 59B ByWeight chain is live
+> and ready for the Sim acceptance pass (Step C) — no Designer work outstanding for
+> 59B. The `/plc-devices` editor is now linked in the Config Tool nav (System).
 
 ---
 
@@ -37,12 +49,25 @@ to `editDraft.identity.plcId` (seed the empty-shape default per
 update, or call `BlueRidge.Parts.Item.setPlcId(itemId, plcId)` directly. This is the
 per-part vision/recipe code the tray watcher validates against.
 
-### A4. Wire the durable edge triggers (gateway Tag Change script) — the one owed step
+### A4. Wire the durable edge triggers (gateway Tag Change script) — ✅ DONE 2026-07-14
 
-This is the only step that stays in Designer: the gateway Tag Change script's
-tag-path binding depends on your actual imported tag paths, and the 8.3 gateway
-tag-change resource schema isn't safely hand-authored. It's a 2-minute
-point-and-click.
+**Status: complete.** The script `TrayDataReady` exists at
+`ignition/projects/MPP/ignition/tag-change/TrayDataReady/` (`enabled`, scope `G`,
+`changeTypes` = ValueChange/QualityChange/TimestampChange). Its body is the
+`PlcWatcher.dispatch` one-liner and its `paths` are the **33 explicit trigger
+tags** below — the surgical allow-list, not a folder wildcard. No further Designer
+work is needed for the tag-change wiring. The rest of this section is retained as
+reference for how it was set up / how to extend it.
+
+This step stays in Designer: the gateway Tag Change script's tag-path binding
+depends on your actual imported tag paths, and the 8.3 gateway tag-change resource
+schema isn't safely hand-authored. It's a 2-minute point-and-click.
+
+**Prefer the explicit-path allow-list over the folder wildcard** (what
+`TrayDataReady` uses): list the 33 boolean trigger members one per line so the
+script fires ONLY on real handshake edges, never on weight-value ticks or other
+members. `[MPP]PlcDevices/*` would also work (dispatch no-ops on non-triggers) but
+over-subscribes.
 
 **Simplest (recommended): one folder-watch script.** Add a **gateway** Tag Change
 script (Designer → Project → Scripting → Gateway Event Scripts → Tag Change) on the

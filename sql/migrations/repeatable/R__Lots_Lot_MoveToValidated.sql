@@ -28,7 +28,9 @@ CREATE OR ALTER PROCEDURE Lots.Lot_MoveToValidated
     @LotId              BIGINT,
     @ToLocationId       BIGINT,
     @AppUserId          BIGINT,
-    @TerminalLocationId BIGINT = NULL
+    @TerminalLocationId BIGINT = NULL,
+    @OperationTypeCode  NVARCHAR(20) = NULL,   -- the operation this move is FOR (e.g. 'TrimIn'); NULL = plain storage/hold move, not route-guarded
+    @OverrideAppUserId  BIGINT       = NULL    -- supervisor (elevated) who authorized a backward move; NULL = enforce forward-only
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -40,7 +42,8 @@ BEGIN
     DECLARE @ProcName NVARCHAR(200) = N'Lots.Lot_MoveToValidated';
     DECLARE @Params   NVARCHAR(MAX) = (
         SELECT @LotId AS LotId, @ToLocationId AS ToLocationId,
-               @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId
+               @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId,
+               @OperationTypeCode AS OperationTypeCode, @OverrideAppUserId AS OverrideAppUserId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @FromLocationId BIGINT;
@@ -143,6 +146,56 @@ BEGIN
             RETURN;
         END
 
+        -- ---- 4b. Forward-only ROUTE guard (operation-aware). ----
+        -- When the caller supplies the operation this move is FOR (@OperationTypeCode --
+        -- e.g. the Trim receive screen supplies 'TrimIn'), reject a BACKWARD move: one
+        -- whose operation sits at a route SequenceNumber BELOW the LOT's next-pending
+        -- step (the LOT has already advanced past it). A supervisor override
+        -- (@OverrideAppUserId) bypasses the guard. No operation supplied => a plain
+        -- storage / hold move => never route-guarded. The next-pending computation
+        -- MIRRORS Lots.Lot_GetWipQueueByLocation (Advance pending until a matching
+        -- ProductionEvent; ConsumeMint always pending; OriginMint never pending).
+        IF @OperationTypeCode IS NOT NULL AND @OverrideAppUserId IS NULL
+        BEGIN
+            DECLARE @AttemptedSeq INT = (
+                SELECT MIN(rs.SequenceNumber)
+                FROM Parts.RouteTemplate rt
+                INNER JOIN Parts.RouteStep rs        ON rs.RouteTemplateId = rt.Id
+                INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+                INNER JOIN Parts.OperationType oty   ON oty.Id = ot.OperationTypeId
+                WHERE rt.ItemId = @ItemId AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+                  AND oty.Code = @OperationTypeCode);
+
+            DECLARE @NextPendingSeq INT = (
+                SELECT MIN(rs.SequenceNumber)
+                FROM Parts.RouteTemplate rt
+                INNER JOIN Parts.RouteStep rs        ON rs.RouteTemplateId = rt.Id
+                INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+                INNER JOIN Parts.OperationType oty   ON oty.Id = ot.OperationTypeId
+                INNER JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
+                WHERE rt.ItemId = @ItemId AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+                  AND (
+                        rk.Code = N'ConsumeMint'
+                     OR (rk.Code = N'Advance' AND NOT EXISTS (
+                            SELECT 1 FROM Workorder.ProductionEvent pe
+                            WHERE pe.LotId = @LotId AND pe.OperationTemplateId = rs.OperationTemplateId))
+                      ));
+
+            -- Guard only when both resolve and the attempted step is strictly behind.
+            IF @AttemptedSeq IS NOT NULL AND @NextPendingSeq IS NOT NULL AND @AttemptedSeq < @NextPendingSeq
+            BEGIN
+                SET @Message = N'Backward move blocked: the ' + @OperationTypeCode
+                    + N' step is already complete for this LOT (a later step is pending). A supervisor override is required to move it back.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                    @EntityId = @LotId, @LogEventTypeCode = N'LotMoved',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message;
+                RETURN;
+            END
+        END
+
         -- ---- 5. MaxParts cap (OI-12). NULL = uncapped. ----
         DECLARE @MaxParts INT = (SELECT MaxParts FROM Parts.Item WHERE Id = @ItemId);
         IF @MaxParts IS NOT NULL
@@ -183,7 +236,8 @@ BEGIN
 
         DECLARE @ActivityRaw NVARCHAR(MAX) =
             @LotName + N' ' + Audit.ufn_MidDot() + N' Movement ' + Audit.ufn_MidDot()
-            + N' ' + ISNULL(@FromName, N'(none)') + NCHAR(8594) + @ToName;
+            + N' ' + ISNULL(@FromName, N'(none)') + NCHAR(8594) + @ToName
+            + CASE WHEN @OverrideAppUserId IS NOT NULL THEN N' (backward-move supervisor override)' ELSE N'' END;
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         BEGIN TRANSACTION;

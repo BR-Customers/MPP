@@ -5,7 +5,8 @@
 -- Description:  Tests for Lots.Lot_Create. Covers the validation rejections
 --               and the accept paths from the plan section "API Layer" / B-3:
 --                 - valid manufacture -> Lot + LotStatusHistory, Tool/Cavity
---                   set, MintedLotName ~ 'MESL%'
+--                   set, MintedLotName echoes the supplied die-cast LTT (die-cast
+--                   origin now REQUIRES a valid 9-digit @LotName; 2026-07-20)
 --                 - die-cast-origin (active ToolAssignment on cell) + NULL
 --                   @ToolId -> reject
 --                 - @ToolId not mounted on @CurrentLocationId -> reject
@@ -30,8 +31,8 @@ GO
 -- DIFFERENT Direct-eligible (Item, Cell) pair (no tool) for the non-die-cast
 -- accept path. Create a Tool with an Active cavity + a Closed cavity, and mount
 -- the Tool on the die-cast cell.
-DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' AND CreatedByUserId = 1
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.Lot WHERE (LotName LIKE N'MESL%' OR LotName LIKE N'90000%') AND CreatedByUserId = 1
     AND ItemId IN (SELECT Id FROM Parts.Item);  -- conservative no-op guard (real cleanup below)
 GO
 
@@ -84,13 +85,13 @@ DECLARE @S BIT, @SStr NVARCHAR(1), @NewId BIGINT, @Minted NVARCHAR(50);
 CREATE TABLE #T1 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #T1 EXEC Lots.Lot_Create
     @ItemId = @DieItemId, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @DieCellId,
-    @PieceCount = 10, @ToolId = @ToolId, @ToolCavityId = @CavId, @AppUserId = 1;
+    @PieceCount = 10, @ToolId = @ToolId, @ToolCavityId = @CavId, @AppUserId = 1, @LotName = N'900000001';
 SELECT @S = Status, @NewId = NewId, @Minted = MintedLotName FROM #T1;
 DROP TABLE #T1;
 
 SET @SStr = CAST(@S AS NVARCHAR(1));
 EXEC test.Assert_IsEqual @TestName = N'[LcValid] Status is 1', @Expected = N'1', @Actual = @SStr;
-EXEC test.Assert_Contains @TestName = N'[LcValid] MintedLotName starts MESL', @HaystackStr = @Minted, @NeedleStr = N'MESL';
+EXEC test.Assert_IsEqual @TestName = N'[LcValid] MintedLotName echoes supplied LTT', @Expected = N'900000001', @Actual = @Minted;
 
 DECLARE @HistCnt INT = (SELECT COUNT(*) FROM Lots.LotStatusHistory WHERE LotId = @NewId AND OldStatusId IS NULL);
 DECLARE @HistStr NVARCHAR(10) = CAST(@HistCnt AS NVARCHAR(10));
@@ -295,11 +296,11 @@ EXEC test.Assert_IsEqual @TestName = N'[LcNoUser] Reject missing @AppUserId', @E
 GO
 
 -- ---- cleanup fixtures ----
-DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%';
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%';
 DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code IN (N'TEST-LC-TOOL', N'TEST-LC-TOOL2');
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code IN (N'TEST-LC-TOOL', N'TEST-LC-TOOL2'));
 DELETE FROM Tools.Tool WHERE Code IN (N'TEST-LC-TOOL', N'TEST-LC-TOOL2');

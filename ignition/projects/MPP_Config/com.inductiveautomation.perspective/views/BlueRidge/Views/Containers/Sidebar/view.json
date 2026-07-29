@@ -1134,6 +1134,63 @@
                   "style": {}
                 },
                 "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/developer_board",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "PLC Devices"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/plc-devices"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemPlcDevices"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} = '/plc-devices', 'nav-item nav-item-active', 'nav-item')"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
               }
             ],
             "meta": {

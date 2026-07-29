@@ -21,6 +21,7 @@
 
 import BlueRidge.Common.Util
 import BlueRidge.Workorder.PlcWatcher
+import BlueRidge.Workorder.Assembly
 import BlueRidge.Lots.Lot
 import BlueRidge.Parts.Item
 
@@ -91,11 +92,22 @@ def _onInspectionComplete(instancePath, terminalLocationId):
         BlueRidge.Common.Util.log("tray %s LINE STOP: %s" % (instancePath, reason), level="warn")
         return
 
-    # Match -> release the tray.
+    # Match -> release the tray (physical handshake first; the DB record follows).
     W.writeMember(instancePath, "OkToContinue", True)
     W.logInterface(device, "Inspection complete -> tray released",
                    requestPayload="lot=%s recipe=%s" % (front.get("Id"), expected),
                    responsePayload="OkToContinue=True", ok=True)
-    # Tray CLOSE (open container resolution, tray position, and passed-parts count
-    # from PartDisposition01..18) is line-specific bookkeeping -> commissioning
-    # fill-in via Container.getOpenByCell + Container.trayClose. Not faked here.
+    # Record the tray close: mint the FG LOT + consume BOM via the shared PLC close
+    # (the SAME Assembly_CompleteTray path the operator ByCount button uses). Piece
+    # count = the finished good's configured ByVision PartsPerTray; the container
+    # auto-completes (AIM + label) when full. A resolution/DB failure alarms the HMI
+    # but leaves the tray released (the parts physically passed inspection).
+    result = BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId, "ByVision")
+    ok = bool(result and result.get("Status"))
+    W.logInterface(device, "ByVision tray close",
+                   requestPayload="terminal=%s recipe=%s" % (terminalLocationId, expected),
+                   responsePayload=str(result), ok=ok,
+                   errorDescription=None if ok else (result or {}).get("Message"))
+    if not ok:
+        W.writeDisplay(instancePath, {"MESAlarmType": 1,
+                                      "MESAlarmText": (result or {}).get("Message") or "Tray close failed"})

@@ -72,6 +72,51 @@ def getByItemOrEmpty(itemId, _refreshToken=None):
     return out
 
 
+def getByItemAll(itemId, _refreshToken=None):
+    """All active ContainerConfigs for an Item -- one per closure method,
+       ordered by method (ByCount/ByWeight/ByVision). Always returns a list
+       (never None) so a runScript-bound list prop is never overwritten with
+       null. Used by the per-method Item Master ContainerConfig editor and by
+       assembly capability resolution.
+       _refreshToken is ignored - runScript bindings pass a bumped token."""
+    itemId = _u(itemId)
+    if not itemId:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "parts/ContainerConfig_GetByItem", {"itemId": itemId}) or []
+
+
+def getByItemAndMethod(itemId, method):
+    """The single active ContainerConfig for (Item, closure method), or {}.
+       This is the assembly-out resolver: the terminal's CurrentClosureMethod
+       selects which of the part's per-method pack-outs applies."""
+    itemId = _u(itemId)
+    method = _u(method)
+    if not itemId or not method:
+        return {}
+    row = BlueRidge.Common.Db.execOne(
+        "parts/ContainerConfig_GetByItemAndMethod",
+        {"itemId": itemId, "closureMethod": method})
+    return row if row is not None else {}
+
+
+def getByItemAndMethodOrEmpty(itemId, method, _refreshToken=None):
+    """Binding-safe getByItemAndMethod: ALWAYS returns the full ContainerConfig key
+       shape (zeros/blanks when the item has no pack-out for that closure method) so
+       nested header/prefill reads like {view.custom.fgConfig.PartsPerTray} never
+       traverse a missing key (pre-declared-bound-props rule). Method-aware sibling
+       of getByItemOrEmpty -- the assembly-out header shows the ACTIVE closure
+       method's pack-out (e.g. the ByWeight 12/6), not the part's first config.
+       _refreshToken is ignored - runScript bindings pass a bumped token."""
+    out = dict(_CONFIG_SHAPE)
+    row = getByItemAndMethod(itemId, method)
+    if row:
+        for k in out.keys():
+            if row.get(k) is not None:
+                out[k] = row.get(k)
+    return out
+
+
 def add(data):
     """Create a new active ContainerConfig for an Item.
 
@@ -98,6 +143,18 @@ def add(data):
             "targetWeight":      data.get("TargetWeight"),
             "appUserId":         BlueRidge.Common.Util._currentAppUserId(),
         },
+    )
+
+
+def deprecate(configId):
+    """Soft-delete (deprecate) one active ContainerConfig row by Id. Used by the
+       per-method Item Master editor to REMOVE a pack-out (e.g. clear ByVision so
+       a part is only ByCount + ByWeight). Returns {Status, Message}."""
+    configId = _u(configId)
+    BlueRidge.Common.Util.log("deprecate configId=%s" % configId)
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ContainerConfig_Deprecate",
+        {"id": configId, "appUserId": BlueRidge.Common.Util._currentAppUserId()},
     )
 
 

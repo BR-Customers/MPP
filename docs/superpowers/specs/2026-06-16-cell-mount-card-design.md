@@ -1,8 +1,12 @@
 # Cell Mount Card — mount-from-location on the Plant Hierarchy
 
 **Date:** 2026-06-16
-**Status:** Approved (design), pending implementation
+**Status:** **Implemented 2026-07-20** (data layer + component were built earlier; the final PlantHierarchy embed landed 2026-07-20).
 **Surface:** Configuration Tool → Plant Hierarchy (`/plant`, project `MPP_Config`)
+
+## Implementation note (2026-07-20)
+
+The only outstanding item — the PlantHierarchy embed (last line of the File Inventory) — was completed. Delta vs. the original diagram: per Jacques's call the card sits **to the right of** the Location Details card rather than below it. `LocationDetailsPanel` + the `CellMountCard` embed are wrapped in a new `DetailTopRow` (flex `direction: row`, `flexWrap: wrap`, `gap: 12px`); `LocationDetailsPanel` gets `position {basis:0, grow:1}` so it flexes, the embed gets `position {basis:460px, shrink:0}`. `view.custom.cellContext` (shaped default) is bound to `runScript(getCellMountContextOrEmpty, {view.custom.selected.id})`; the embed's `position.display` = `{cellContext.IsMountTarget} && {mode} != "view"`, and `params.cellLocationId` ← `{view.custom.selected.id}`. Verified live in the Perspective client: selecting a `DieCastMachine` cell renders the card to the right of the details card (bounding-box check), showing the "No tool mounted" empty state. File-authored + `scan.ps1`; no backend changes.
 
 ## Problem
 

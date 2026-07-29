@@ -1,0 +1,266 @@
+{
+  "custom": {
+    "draft": {
+      "adAccount": "",
+      "password": ""
+    }
+  },
+  "params": {
+    "popupId": "mpp-move-override",
+    "replyMessage": "moveOverrideAuthorized",
+    "reason": ""
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.reason": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 380,
+      "width": 480
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Title"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Supervisor override - backward move",
+          "style": {
+            "fontSize": "18px",
+            "fontWeight": 700,
+            "padding": "16px 16px 4px 16px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Reason"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if(isNull({view.params.reason}) || {view.params.reason} = \"\", \"This move is backward on the route. Authorize with supervisor Active Directory credentials to proceed.\", {view.params.reason} + \"  Authorize with supervisor credentials to proceed.\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "padding": "0 16px 8px 16px"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "AccountField"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-field",
+            "gap": "4px",
+            "padding": "4px 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "AccountLabel"
+            },
+            "props": {
+              "text": "Supervisor AD account",
+              "style": {
+                "classes": "pf-field-label"
+              }
+            }
+          },
+          {
+            "type": "ia.input.text-field",
+            "meta": {
+              "name": "AccountInput"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.draft.adAccount"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": "Account",
+              "style": {
+                "classes": "pf-field-input"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "PasswordField"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-field",
+            "gap": "4px",
+            "padding": "4px 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PasswordLabel"
+            },
+            "props": {
+              "text": "Password",
+              "style": {
+                "classes": "pf-field-label"
+              }
+            }
+          },
+          {
+            "type": "ia.input.password-field",
+            "meta": {
+              "name": "PasswordInput"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.draft.password"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": "Password",
+              "style": {
+                "classes": "pf-field-input"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "alignItems": "end",
+          "justify": "end",
+          "style": {
+            "gap": "8px",
+            "padding": "8px 16px 16px 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "props": {
+              "text": "Cancel",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "AuthorizeButton"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tacct = (d.get(\"adAccount\") or \"\").strip()\n\tpw = d.get(\"password\") or \"\"\n\tif not acct or not pw:\n\t\tBlueRidge.Common.Notify.toast(\"Credentials required\", \"Enter a supervisor account and password.\", \"warning\")\n\t\treturn\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tel = BlueRidge.Location.AppUser.elevate(acct, pw, \"MoveOverride\", termId)\n\tif el and el.get(\"success\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"appUserId\": el.get(\"appUserId\")}, scope=\"page\")\n\t\tsystem.perspective.closePopup(self.view.params.popupId)\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Override denied\", (el or {}).get(\"message\") or \"Elevation failed.\", \"error\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "props": {
+              "text": "Authorize & move",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

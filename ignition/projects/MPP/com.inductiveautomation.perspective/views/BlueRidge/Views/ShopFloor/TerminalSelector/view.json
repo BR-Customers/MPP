@@ -183,7 +183,7 @@
           "params": [
             "row"
           ],
-          "script": "\trow = BlueRidge.Common.Util.extractQualifiedValues(row) or {}\n\ttid = row.get(\"TerminalId\")\n\tif not tid:\n\t\treturn\n\tfull = BlueRidge.Location.Terminal.findById(self.view.custom.terminals, tid) or row\n\tself.session.custom.terminal = {\"terminalLocationId\": full.get(\"TerminalId\"), \"terminalCode\": full.get(\"TerminalCode\"), \"terminalName\": full.get(\"TerminalName\"), \"zoneLocationId\": full.get(\"ZoneId\"), \"zoneName\": full.get(\"ZoneName\"), \"defaultScreen\": full.get(\"DefaultScreen\") or \"\", \"isFallback\": bool(full.get(\"IsFallback\"))}\n\tsystem.perspective.navigate(full.get(\"DefaultScreen\") or \"/\")"
+          "script": "\trow = BlueRidge.Common.Util.extractQualifiedValues(row) or {}\n\ttid = row.get(\"TerminalId\")\n\tif not tid:\n\t\treturn\n\tfull = BlueRidge.Location.Terminal.findById(self.view.custom.terminals, tid) or row\n\tBlueRidge.Location.Terminal.applyToSession(self.session, {\"terminalLocationId\": full.get(\"TerminalId\"), \"terminalCode\": full.get(\"TerminalCode\"), \"terminalName\": full.get(\"TerminalName\"), \"zoneLocationId\": full.get(\"ZoneId\"), \"zoneName\": full.get(\"ZoneName\"), \"defaultScreen\": full.get(\"DefaultScreen\") or \"\", \"isFallback\": bool(full.get(\"IsFallback\"))})\n\tsystem.perspective.navigate(full.get(\"DefaultScreen\") or \"/\")"
         },
         {
           "name": "selectByScan",

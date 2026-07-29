@@ -44,6 +44,10 @@
       "title": "Quality Specs",
       "viewPath": "BlueRidge/Views/Quality/QualitySpecs"
     },
+    "/shifts": {
+      "title": "Shift Schedules",
+      "viewPath": "BlueRidge/Views/Oee/ShiftSchedules"
+    },
     "/users": {
       "title": "Users",
       "viewPath": "BlueRidge/Views/Audit/Users"

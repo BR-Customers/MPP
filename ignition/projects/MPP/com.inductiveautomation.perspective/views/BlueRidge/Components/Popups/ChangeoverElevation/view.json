@@ -1,0 +1,380 @@
+{
+  "custom": {
+    "draft": {
+      "newMethod": "",
+      "adAccount": "",
+      "password": ""
+    }
+  },
+  "params": {
+    "terminalLocationId": null
+  },
+  "propConfig": {
+    "params.terminalLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 400,
+      "width": 480
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "basis": "auto",
+              "grow": 1
+            },
+            "props": {
+              "text": "Change Closure Mode",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Prompt"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Select the new closure mode and authorize with supervisor Active Directory credentials. The mode persists until the next changeover.",
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "13px"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "MethodField"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "MethodLabel"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "New closure mode",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": {
+                  "name": "MethodDropdown"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "session.custom.closureCapabilities"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn [{\"label\": {\"ByCount\": \"By Count\", \"ByWeight\": \"By Weight\", \"ByVision\": \"By Vision\"}.get(m, m), \"value\": m} for m in (value or [])]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.draft.newMethod"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": {
+                    "text": "Select mode"
+                  },
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "AccountField"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "AccountLabel"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "AD account",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "AccountInput"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.draft.adAccount"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "domain\\username",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PasswordField"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PasswordLabel"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Password",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.password-field",
+                "meta": {
+                  "name": "PasswordInput"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.draft.password"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Password",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(\"mpp-changeover\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "props": {
+              "text": "Cancel",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ConfirmButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tr = BlueRidge.Location.ClosureMode.changeover(self.view.params.terminalLocationId, self.view.custom.draft.newMethod, self.view.custom.draft.adAccount, self.view.custom.draft.password)\n\tBlueRidge.Common.Ui.notifyResult(r, \"Closure mode changed\")\n\tif r and r.get(\"Status\"):\n\t\tself.session.custom.closureMethod = self.view.custom.draft.newMethod\n\t\tsystem.perspective.closePopup(\"mpp-changeover\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "props": {
+              "text": "Confirm changeover",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

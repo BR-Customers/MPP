@@ -84,6 +84,14 @@
       "title": "Machining OUT - Split",
       "viewPath": "BlueRidge/Views/ShopFloor/MachiningOutSplit"
     },
+    "/shop-floor/machining": {
+      "title": "Machining IN / OUT",
+      "viewPath": "BlueRidge/Views/ShopFloor/MachiningStation"
+    },
+    "/shop-floor/third-party-inspection": {
+      "title": "Third-Party Inspection",
+      "viewPath": "BlueRidge/Views/ShopFloor/ThirdPartyInspection"
+    },
     "/shop-floor/receiving": {
       "title": "Receiving",
       "viewPath": "BlueRidge/Views/ShopFloor/ReceivingDock"
@@ -165,9 +173,9 @@
         "modal": false,
         "resizable": false,
         "show": "visible",
-        "size": 96,
+        "size": 88,
         "viewParams": {},
-        "viewPath": "BlueRidge/Views/Dev/TestNavHeader"
+        "viewPath": "BlueRidge/Views/ShopFloor/AppHeader"
       }
     ]
   }

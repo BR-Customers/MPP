@@ -1,5 +1,40 @@
 {
-  "custom": {},
+  "custom": {
+    "appUserId": null,
+    "cell": {
+      "code": "",
+      "locationId": null,
+      "name": ""
+    },
+    "closureCapabilities": [],
+    "closureMethod": "",
+    "plcDevices": [],
+    "presence": {
+      "policy": "strict"
+    },
+    "printer": {
+      "code": "",
+      "endpoint": "",
+      "locationId": null,
+      "model": ""
+    },
+    "terminal": {
+      "defaultScreen": "/shop-floor/die-cast",
+      "isFallback": false,
+      "terminalCode": "DC1-T1",
+      "terminalLocationId": 15,
+      "terminalName": "Terminal",
+      "zoneLocationId": 3,
+      "zoneName": "Die Cast 1"
+    },
+    "toastInstances": [],
+    "user": {
+      "appUserId": null,
+      "displayName": "",
+      "ignitionRole": "",
+      "initials": ""
+    }
+  },
   "propConfig": {
     "props.auth": {
       "access": "PRIVATE",
@@ -62,5 +97,12 @@
       "persistent": false
     }
   },
-  "props": {}
+  "props": {
+    "address": "127.0.0.1",
+    "device": {},
+    "geolocation": {},
+    "locale": "en-US",
+    "offline": {},
+    "timeZoneId": "America/Indianapolis"
+  }
 }

@@ -1,6 +1,16 @@
 {
   "custom": {
-    "dirty": false,
+    "cellContext": {
+      "AssignedAt": null,
+      "AssignedBy": "",
+      "IsMountTarget": false,
+      "ToolAssignmentId": null,
+      "ToolCode": "",
+      "ToolId": null,
+      "ToolName": "",
+      "ToolTypeCode": ""
+    },
+    "dirty": true,
     "draftPath": null,
     "editDraft": {
       "attributes": [],
@@ -3796,8 +3806,13 @@
   },
   "params": {},
   "propConfig": {
-    "custom.oldSelectedPath": {
-      "persistent": true
+    "custom.cellContext": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getCellMountContextOrEmpty\", 0, {view.custom.selected.id})"
+        },
+        "type": "expr"
+      }
     },
     "custom.searchFilter": {
       "persistent": true
@@ -4241,6 +4256,8 @@
           },
           {
             "children": [
+              {
+                "children": [
               {
                 "children": [
                   {
@@ -4967,6 +4984,10 @@
                 "meta": {
                   "name": "LocationDetailsPanel"
                 },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
                 "propConfig": {
                   "position.display": {
                     "binding": {
@@ -4982,6 +5003,64 @@
                   "style": {
                     "classes": "detail-panel",
                     "padding": "0"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "ToolConfigCard"
+                },
+                "position": {
+                  "basis": "460px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.cellContext.IsMountTarget} && {view.custom.mode} != \"view\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.params.cellLocationId": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.selected.id"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "params": {
+                    "cellLocationId": null
+                  },
+                  "path": "BlueRidge/Components/Location/CellMountCard"
+                },
+                "type": "ia.display.view"
+              }
+                ],
+                "meta": {
+                  "name": "DetailTopRow"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.mode} != \"view\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "flex-start",
+                  "direction": "row",
+                  "style": {
+                    "flexWrap": "wrap",
+                    "gap": "12px"
                   }
                 },
                 "type": "ia.container.flex"

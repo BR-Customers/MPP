@@ -11,8 +11,11 @@ def _u(value):
 
 
 def record(data, appUserId=None, terminalLocationId=None):
-    """Log a reject + decrement the LOT (D3). data: {lotId, defectCodeId, quantity,
-       chargeToArea, productionEventId, remarks}. Returns {Status, Message, NewId}."""
+    """Log a reject. data: {lotId, defectCodeId, quantity, chargeToArea,
+       productionEventId, remarks, operationTypeCode}. The proc derives additive-vs-
+       subtractive from Parts.OperationType.ScrapIsAdditive for operationTypeCode
+       (0042): die-cast scrap is additive (LOT NOT decremented); downstream scrap
+       decrements + closes-at-zero (D3). Returns {Status, Message, NewId}."""
     BlueRidge.Common.Util.log(
         "record data=%s appUserId=%s terminalLocationId=%s"
         % (data, appUserId, terminalLocationId)
@@ -29,5 +32,6 @@ def record(data, appUserId=None, terminalLocationId=None):
         "remarks":            d.get("remarks"),
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
+        "operationTypeCode":  d.get("operationTypeCode"),
     }
     return BlueRidge.Common.Db.execMutation("workorder/RejectEvent_Record", params)

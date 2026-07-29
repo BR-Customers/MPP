@@ -28,7 +28,8 @@ CREATE OR ALTER PROCEDURE Workorder.MachiningIn_RecordPick
     @LotId              BIGINT,
     @LineLocationId     BIGINT,
     @AppUserId          BIGINT,
-    @TerminalLocationId BIGINT
+    @TerminalLocationId BIGINT,
+    @StorageLocationId  BIGINT = NULL   -- v2 (2026-07-23): Trim Storage to claim FROM; NULL => any trim store
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -131,14 +132,38 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 4. LOT must currently sit at/under the LINE ----
+        -- ---- 4. LOT must currently sit in TRIM STORAGE (v2, 2026-07-23). The line is
+        -- assigned HERE: claiming moves the LOT Trim Storage -> line (step a below), which
+        -- removes it from every OTHER line's storage-filtered queue. If it is no longer in
+        -- Trim Storage it was already claimed by another line. Trim Storage = InventoryLocation
+        -- (def 14) under a TRIM* area; restrict to @StorageLocationId when supplied. ----
         IF NOT EXISTS (
-            SELECT 1 FROM Location.ufn_AncestorLocationIds(@FromLoc)
-            WHERE LocationId = @LineLocationId)
+            SELECT 1 FROM Location.Location s
+            WHERE s.Id = @FromLoc AND s.LocationTypeDefinitionId = 14 AND s.DeprecatedAt IS NULL
+              AND ( (@StorageLocationId IS NOT NULL AND s.Id = @StorageLocationId)
+                    OR (@StorageLocationId IS NULL
+                        AND EXISTS (SELECT 1 FROM Location.Location a WHERE a.Id = s.ParentLocationId AND a.Code LIKE N'TRIM%')) ))
         BEGIN
             DECLARE @FromName NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @FromLoc);
-            SET @Message = N'LOT is not checked into this line (currently at '
-                         + ISNULL(@FromName, N'an unknown location') + N').';
+            SET @Message = N'LOT is not in Trim Storage (currently at '
+                         + ISNULL(@FromName, N'an unknown location') + N'); it may already be claimed by another line.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ---- 4b. Item must be ELIGIBLE at this line (authoritative gate; mirrors the
+        -- Trim-Storage queue read filter -- never trust the client). ----
+        IF NOT EXISTS (
+            SELECT 1 FROM Parts.v_EffectiveItemLocation
+            WHERE ItemId = @ItemId
+              AND LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@LineLocationId)))
+        BEGIN
+            SET @Message = N'This part is not eligible at this line.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
@@ -166,6 +191,32 @@ BEGIN
 
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
+
+        -- (claim) Conditional whole-LOT move Trim Storage -> line. FIRST write in the txn;
+        -- the WHERE re-asserts the LOT is STILL at @FromLoc (Trim Storage). If a concurrent
+        -- pick on another line already moved it, @@ROWCOUNT = 0 -> nothing was written, so
+        -- COMMIT the no-op (never ROLLBACK in an INSERT-EXEC-captured proc; Msg 3915) and
+        -- reject the race loser cleanly. This move is what removes the LOT from every other
+        -- line's storage-filtered queue.
+        UPDATE Lots.Lot
+        SET CurrentLocationId = @LineLocationId, UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
+        WHERE Id = @LotId AND CurrentLocationId = @FromLoc;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            COMMIT TRANSACTION;
+            SET @Message = N'LOT was just claimed by another line.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
+        VALUES (@LotId, @FromLoc, @LineLocationId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
 
         -- (a) One MachiningIn checkpoint ProductionEvent against the SAME LOT.
         INSERT INTO Workorder.ProductionEvent (

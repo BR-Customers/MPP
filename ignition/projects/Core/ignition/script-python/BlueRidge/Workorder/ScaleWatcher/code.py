@@ -5,14 +5,16 @@
      clear NET_DataReady (ack) -> log the weigh to Audit.InterfaceLog -> if the
      target-weight-met flag is set, the scale is COUPLED to container completion.
 
-   Two commissioning fill-ins (deliberately not faked -- spec Sec 5.2):
-   (1) There is no raw-weight persistence proc; the weigh is captured in the
-       InterfaceLog payload. Whether MPP wants the net weight retained as a
-       ProductionEvent / QualitySample is an open decision.
-   (2) On 5G0 the scale MetFlag couples to the MIP line's container completion
-       (legacy hardcoded count=60 -> ContainerConfig closure). That cross-device
-       coupling is line-specific; _completeCoupledContainer is the wired hook,
-       returning None (skip) until the scale<->cell coupling is supplied.
+   On target-weight-met the scale closes the tray for the terminal's cell:
+   _completeCoupledContainer -> Assembly.plcCompleteTray("ByWeight"), the same
+   Assembly_CompleteTray path the operator uses. The scale greenlit the DEFAULT
+   quantity, so the piece count is the finished good's configured ByWeight
+   PartsPerTray (the weight validated the count).
+
+   One commissioning fill-in remains (deliberately not faked -- spec Sec 5.2):
+   there is no raw-weight persistence proc; the weigh is captured in the
+   InterfaceLog payload. Whether MPP wants the net weight retained as a
+   ProductionEvent / QualitySample is an open decision.
 
    Target-weight change (MES -> scale: write TRG_* zero-padded + pulse
    TRG_SendMessage) is initiated from the Sim Panel / operator flow, not this
@@ -21,6 +23,7 @@
 
 import BlueRidge.Common.Util
 import BlueRidge.Workorder.PlcWatcher
+import BlueRidge.Workorder.Assembly
 
 _TRIGGERS = ("NET_DataReady",)
 
@@ -45,16 +48,26 @@ def handleEdge(instancePath, terminalLocationId, member):
                    ok=True)
 
     if metFlag:
-        cid = _completeCoupledContainer(terminalLocationId, device)
-        if cid is None:
-            BlueRidge.Common.Util.log(
-                "scale metFlag on %s: container-completion coupling is a commissioning "
-                "fill-in (skipped)" % instancePath, level="debug")
+        _completeCoupledContainer(instancePath, terminalLocationId, device)
 
 
-def _completeCoupledContainer(terminalLocationId, device):
-    """COMMISSIONING: resolve + complete the container the scale is coupled to
-       (5G0 scale -> MIP cell). Returns the completed ContainerId, or None to skip
-       until the scale<->cell coupling is supplied. Left as a hook so the coupling
-       is a data/config change, not a code change -- and never a faked completion."""
-    return None
+def _completeCoupledContainer(instancePath, terminalLocationId, device):
+    """Scale target-weight-met -> record the tray close for the terminal's cell:
+       mint the FG LOT + consume BOM via the shared PLC close (the SAME
+       Assembly_CompleteTray path the operator ByCount button uses). The scale
+       greenlit the DEFAULT quantity, so piece count = the finished good's
+       configured ByWeight PartsPerTray; the container auto-completes (AIM + label)
+       when full. Returns the ContainerId on success, else None (logged + HMI
+       alarm) -- never a faked completion."""
+    W = BlueRidge.Workorder.PlcWatcher
+    result = BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId, "ByWeight")
+    ok = bool(result and result.get("Status"))
+    W.logInterface(device, "ByWeight tray close",
+                   requestPayload="terminal=%s" % terminalLocationId,
+                   responsePayload=str(result), ok=ok,
+                   errorDescription=None if ok else (result or {}).get("Message"))
+    if not ok:
+        W.writeDisplay(instancePath, {"MESAlarmType": 1,
+                                      "MESAlarmText": (result or {}).get("Message") or "Tray close failed"})
+        return None
+    return result.get("ContainerId")

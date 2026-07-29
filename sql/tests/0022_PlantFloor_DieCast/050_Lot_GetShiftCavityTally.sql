@@ -2,14 +2,55 @@
 -- File:         0022_PlantFloor_DieCast/050_Lot_GetShiftCavityTally.sql
 -- Author:       Blue Ridge Automation
 -- Created:      2026-07-06
+-- Updated:      2026-07-29 (Task 7 / Die-Cast Per-Cavity Lifecycle plan)
 -- Description:  Tests for Lots.Lot_GetShiftCavityTally (die-cast right-rail
---               shift tally), incl. the v1.1 scrap-inclusive change (Jacques
---               2026-07-06): RejectEvent_Record decrements Lot.PieceCount, so
---               the tally adds rejected quantity back per lot.
+--               shift tally).
+--
+--               2026-07-29 REWORK (v1.1 -> v1.2 double-count fix): this file
+--               originally exercised RejectEvent_Record WITHOUT
+--               @OperationTypeCode, which defaults to SUBTRACTIVE (@Additive=0)
+--               -- pre-0042 behavior. The proc's v1.1 "PieceSum = PieceCount +
+--               RejectedQty" add-back existed ONLY to recover the true as-cast
+--               count from a subtractive decrement. Migration 0042 made
+--               DIE-CAST scrap ADDITIVE (OperationType.ScrapIsAdditive=1 for
+--               Code='DieCast') -- production callers (Workorder.
+--               DieCastShiftOutput_Record) never decrement PieceCount for
+--               die-cast scrap. The fixture below now passes
+--               @OperationTypeCode=N'DieCast' to RejectEvent_Record so the
+--               reject is recorded the way real die-cast scrap is (additive,
+--               LOT PieceCount UNCHANGED at 10) -- matching v1.2 of the proc,
+--               which drops the add-back entirely (PieceSum = plain
+--               SUM(Lot.PieceCount)).
+--
+--               BEFORE (subtractive fixture + v1.1 add-back): LotA1.PieceCount
+--               10 -3 (subtractive reject) = 7; tally added the 3 back ->
+--               PieceSum 7+3+8(LotA2) = 18.
+--               AFTER (additive fixture + v1.2 no-add-back): LotA1.PieceCount
+--               stays 10 (additive reject never decrements); tally sums plain
+--               PieceCount -> PieceSum 10+8(LotA2) = 18.
+--               The numeric assertions are UNCHANGED (18/3/5/0/18) because the
+--               two eras' arithmetic coincidentally lands on the same totals
+--               here -- what changed is WHICH mechanism produces them (additive
+--               fixture + no add-back, not subtractive fixture + add-back) and
+--               why: die-cast scrap is additive today, so PieceCount alone is
+--               already the true good count.
+--
+--               Also fixes a LATENT column-count bug: the #T temp table only
+--               declared 6 columns (ToolCavityId..ShiftShots), but the proc has
+--               returned 8 columns (+ShiftGoodTotal, +ShiftScrapTotal) since
+--               2026-07-21 -- INSERT ... EXEC requires an exact column-count
+--               match, so this file's tally assertions batch was silently
+--               throwing Msg 213 and NONE of its 6 asserts were ever recorded
+--               (confirmed empirically: test.TestResults had zero '%Tally%'
+--               rows before this fix, despite an apparently-clean full-suite
+--               run). The temp table now matches the proc's real 8-column
+--               shape, and two new assertions cover the previously-untested
+--               press-total columns.
 --                 - one row per ACTIVE cavity (Closed excluded)
---                 - PieceSum = as-cast total (survives a reject decrement)
+--                 - PieceSum = good pieces (die-cast scrap is additive; no add-back)
 --                 - RejectSum = per-cavity scrapped quantity
 --                 - ShiftShots = MAX(PieceSum) across cavities, same on every row
+--                 - ShiftGoodTotal / ShiftScrapTotal = press-totals across ALL cavities
 --               TEST-TLY-* fixture codes avoid the walkthrough's TEST-DC-*.
 -- =============================================
 SET NOCOUNT ON;
@@ -19,14 +60,14 @@ GO
 
 -- ---- cleanup any prior fixtures (reverse FK order) ----
 DELETE FROM Workorder.ProductionEventValue WHERE ProductionEventId IN (
-    SELECT pe.Id FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.LotName LIKE N'MESL%');
-DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%';
+    SELECT pe.Id FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.LotName LIKE N'MESL%' OR l.LotName LIKE N'90000%');
+DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%';
 DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code = N'TEST-TLY-TOOL';
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-TLY-TOOL');
 DELETE FROM Tools.Tool WHERE Code = N'TEST-TLY-TOOL';
@@ -83,25 +124,30 @@ DECLARE @LotA1 BIGINT;
 CREATE TABLE #L1 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #L1 EXEC Lots.Lot_Create
     @ItemId = @DieItemId, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @DieCellId,
-    @PieceCount = 10, @ToolId = @ToolId, @ToolCavityId = @Cav1, @AppUserId = 1;
+    @PieceCount = 10, @ToolId = @ToolId, @ToolCavityId = @Cav1, @AppUserId = 1, @LotName = N'900000020';
 SELECT @LotA1 = NewId FROM #L1; DROP TABLE #L1;
 
 CREATE TABLE #L2 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #L2 EXEC Lots.Lot_Create
     @ItemId = @DieItemId, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @DieCellId,
-    @PieceCount = 8, @ToolId = @ToolId, @ToolCavityId = @Cav1, @AppUserId = 1;
+    @PieceCount = 8, @ToolId = @ToolId, @ToolCavityId = @Cav1, @AppUserId = 1, @LotName = N'900000021';
 DROP TABLE #L2;
 
 CREATE TABLE #L3 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #L3 EXEC Lots.Lot_Create
     @ItemId = @DieItemId, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @DieCellId,
-    @PieceCount = 5, @ToolId = @ToolId, @ToolCavityId = @Cav2, @AppUserId = 1;
+    @PieceCount = 5, @ToolId = @ToolId, @ToolCavityId = @Cav2, @AppUserId = 1, @LotName = N'900000022';
 DROP TABLE #L3;
 
 DECLARE @DefId BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'TEST-DEF-TLY');
 DECLARE @RS BIT;
 CREATE TABLE #R (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #R EXEC Workorder.RejectEvent_Record @LotId = @LotA1, @DefectCodeId = @DefId, @Quantity = 3, @AppUserId = 1;
+-- @OperationTypeCode=N'DieCast' -> additive scrap (0042): LotA1.PieceCount stays
+-- 10 (not decremented). Real die-cast reject recording always carries this
+-- operation context (Workorder.DieCastShiftOutput_Record's scrap lines are
+-- additive by construction; a raw RejectEvent_Record call in a die-cast
+-- context must pass it explicitly to get the same behavior).
+INSERT INTO #R EXEC Workorder.RejectEvent_Record @LotId = @LotA1, @DefectCodeId = @DefId, @Quantity = 3, @AppUserId = 1, @OperationTypeCode = N'DieCast';
 SELECT @RS = Status FROM #R; DROP TABLE #R;
 DECLARE @RSStr NVARCHAR(10) = CAST(@RS AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[Tally] fixture reject accepted (control)', @Expected = N'1', @Actual = @RSStr;
@@ -111,14 +157,18 @@ GO
 -- Assertions on the tally
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-TLY-TOOL');
-CREATE TABLE #T (ToolCavityId BIGINT, CavityNumber INT, CavityLabel NVARCHAR(60), PieceSum INT, RejectSum INT, ShiftShots INT);
+-- 8 columns matching the proc's real result shape (ShiftGoodTotal/ShiftScrapTotal
+-- added 2026-07-21) -- INSERT ... EXEC requires an exact column-count match;
+-- a 6-column temp table here silently threw Msg 213 and skipped every assert
+-- in this batch (see file header).
+CREATE TABLE #T (ToolCavityId BIGINT, CavityNumber INT, CavityLabel NVARCHAR(60), PieceSum INT, RejectSum INT, ShiftShots INT, ShiftGoodTotal INT, ShiftScrapTotal INT);
 INSERT INTO #T EXEC Lots.Lot_GetShiftCavityTally @ToolId = @ToolId;
 
 DECLARE @RowCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #T);
 EXEC test.Assert_IsEqual @TestName = N'[Tally] one row per ACTIVE cavity (Closed excluded)', @Expected = N'2', @Actual = @RowCnt;
 
 DECLARE @P1 NVARCHAR(10) = (SELECT CAST(PieceSum AS NVARCHAR(10)) FROM #T WHERE CavityNumber = 1);
-EXEC test.Assert_IsEqual @TestName = N'[Tally] cavity 1 PieceSum is as-cast 18 (reject added back)', @Expected = N'18', @Actual = @P1;
+EXEC test.Assert_IsEqual @TestName = N'[Tally] cavity 1 PieceSum is good pieces 18 (10+8, additive scrap not double-counted)', @Expected = N'18', @Actual = @P1;
 
 DECLARE @R1 NVARCHAR(10) = (SELECT CAST(RejectSum AS NVARCHAR(10)) FROM #T WHERE CavityNumber = 1);
 EXEC test.Assert_IsEqual @TestName = N'[Tally] cavity 1 RejectSum is 3', @Expected = N'3', @Actual = @R1;
@@ -133,20 +183,30 @@ DECLARE @ShotsDistinct NVARCHAR(10) = (SELECT CAST(COUNT(DISTINCT ShiftShots) AS
 EXEC test.Assert_IsEqual @TestName = N'[Tally] ShiftShots identical on every row', @Expected = N'1', @Actual = @ShotsDistinct;
 
 DECLARE @Shots NVARCHAR(10) = (SELECT TOP 1 CAST(ShiftShots AS NVARCHAR(10)) FROM #T);
-EXEC test.Assert_IsEqual @TestName = N'[Tally] ShiftShots is the busiest cavity as-cast total (18)', @Expected = N'18', @Actual = @Shots;
+EXEC test.Assert_IsEqual @TestName = N'[Tally] ShiftShots is the busiest cavity good total (18)', @Expected = N'18', @Actual = @Shots;
+
+-- press-totals across ALL cavities (identical on every row): good 18+5=23, scrap 3+0=3
+DECLARE @GoodTotalDistinct NVARCHAR(10) = (SELECT CAST(COUNT(DISTINCT ShiftGoodTotal) AS NVARCHAR(10)) FROM #T);
+EXEC test.Assert_IsEqual @TestName = N'[Tally] ShiftGoodTotal identical on every row', @Expected = N'1', @Actual = @GoodTotalDistinct;
+DECLARE @GoodTotal NVARCHAR(10) = (SELECT TOP 1 CAST(ShiftGoodTotal AS NVARCHAR(10)) FROM #T);
+EXEC test.Assert_IsEqual @TestName = N'[Tally] ShiftGoodTotal is 23 (18+5 across both cavities)', @Expected = N'23', @Actual = @GoodTotal;
+DECLARE @ScrapTotalDistinct NVARCHAR(10) = (SELECT CAST(COUNT(DISTINCT ShiftScrapTotal) AS NVARCHAR(10)) FROM #T);
+EXEC test.Assert_IsEqual @TestName = N'[Tally] ShiftScrapTotal identical on every row', @Expected = N'1', @Actual = @ScrapTotalDistinct;
+DECLARE @ScrapTotal NVARCHAR(10) = (SELECT TOP 1 CAST(ShiftScrapTotal AS NVARCHAR(10)) FROM #T);
+EXEC test.Assert_IsEqual @TestName = N'[Tally] ShiftScrapTotal is 3 (cavity 1 only)', @Expected = N'3', @Actual = @ScrapTotal;
 DROP TABLE #T;
 GO
 
 -- ---- cleanup ----
 DELETE FROM Workorder.ProductionEventValue WHERE ProductionEventId IN (
-    SELECT pe.Id FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.LotName LIKE N'MESL%');
-DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
-DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%';
+    SELECT pe.Id FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.LotName LIKE N'MESL%' OR l.LotName LIKE N'90000%');
+DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'90000%';
 DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code = N'TEST-TLY-TOOL';
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-TLY-TOOL');
 DELETE FROM Tools.Tool WHERE Code = N'TEST-TLY-TOOL';

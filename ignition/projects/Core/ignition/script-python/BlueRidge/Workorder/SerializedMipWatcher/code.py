@@ -15,6 +15,8 @@
 
 import BlueRidge.Common.Util
 import BlueRidge.Workorder.PlcWatcher
+import BlueRidge.Workorder.Assembly
+import BlueRidge.Location.Terminal
 import BlueRidge.Lots.SerializedPart
 import BlueRidge.Lots.Lot
 
@@ -52,6 +54,14 @@ def handleEdge(instancePath, terminalLocationId, member):
             None if ok else msg,
             "PartSN=%s interlock=%s lot=%s" % (partSN, interlock, lotId),
             responsePayload=str(result))
+    if ok:
+        # Live-refresh the operator terminal at this cell. This watcher only has
+        # the terminal, so resolve its zone cell for the push payload (keeps the
+        # handler filter keyed on cellLocationId, same as every other path).
+        cc = BlueRidge.Location.Terminal.getClosureContext(terminalLocationId) or {}
+        cell = cc.get("zoneLocationId")
+        if cell:
+            BlueRidge.Workorder.Assembly.notifyInventoryChanged(cell, terminalLocationId)
     # ContainerCount write-back + container close on the configured limit are
     # scale-coupled (ContainerConfig closure) -- commissioning fill-in.
 

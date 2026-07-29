@@ -1,8 +1,16 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetAttributeHistory.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-06
--- Version:     1.2
+-- Modified:    2026-07-29
+-- Version:     1.3
+--
+--              v1.3 (2026-07-29, Task 7 / Die-Cast Per-Cavity Lifecycle plan):
+--                * New stream 10 'Contribution' - Workorder.DieCastContribution
+--                  rows ('Added <n> pc (<shift schedule name>)') so per-shift
+--                  good-piece top-ups to an open die-cast basket show in the
+--                  timeline. ShiftId is nullable on DieCastContribution, so the
+--                  shift/schedule joins are LEFT and the parenthetical is
+--                  omitted when absent.
 --
 --              v1.2 (Jacques 2026-07-06, LOT Detail enrichment):
 --                * Movement Detail carries location CODES ('Name (CODE)') and the
@@ -39,7 +47,8 @@
 --              Result columns:
 --                EventAt    DATETIME2(3)
 --                EventKind  NVARCHAR(20)   ('Attribute'|'Status'|'Movement'|'Pause'
---                                           |'Resume'|'Genealogy'|'Label')
+--                                           |'Resume'|'Genealogy'|'Label'|'Production'
+--                                           |'Reject'|'Contribution')
 --                Detail     NVARCHAR(500)
 --                ByUserId   BIGINT         (the acting AppUser id)
 --                ByUserName NVARCHAR(200)  (Location.AppUser.DisplayName)
@@ -230,6 +239,23 @@ BEGIN
         INNER JOIN Quality.DefectCode dc ON dc.Id = re.DefectCodeId
         INNER JOIN Location.AppUser au   ON au.Id = re.AppUserId
         WHERE re.LotId = @LotId
+
+        UNION ALL
+
+        -- ---- Stream 10 (v1.3): die-cast contributions ----
+        SELECT
+            c.EventAt                             AS EventAt,
+            CAST(10 AS INT)                       AS SortRank,
+            CAST(N'Contribution' AS NVARCHAR(20)) AS EventKind,
+            CAST(N'Added ' + CAST(c.PieceDelta AS NVARCHAR(20)) + N' pc'
+                 + ISNULL(N' (' + ss.Name + N')', N'') AS NVARCHAR(500)) AS Detail,
+            CAST(c.AppUserId AS BIGINT)           AS ByUserId,
+            CAST(au.DisplayName AS NVARCHAR(200))  AS ByUserName
+        FROM Workorder.DieCastContribution c
+        INNER JOIN Location.AppUser au ON au.Id = c.AppUserId
+        LEFT  JOIN Oee.Shift s          ON s.Id = c.ShiftId
+        LEFT  JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId
+        WHERE c.LotId = @LotId
     ) u
     ORDER BY u.EventAt ASC, u.SortRank ASC;
 END;

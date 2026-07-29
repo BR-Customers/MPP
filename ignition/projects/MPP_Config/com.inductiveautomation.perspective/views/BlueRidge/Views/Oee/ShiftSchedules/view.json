@@ -1,0 +1,418 @@
+{
+  "custom": {
+    "filter": {
+      "includeDeprecated": false,
+      "searchText": ""
+    }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.filter.includeDeprecated": {
+      "persistent": true
+    },
+    "custom.filter.searchText": {
+      "persistent": true
+    },
+    "custom.rows": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.ShiftSchedule.search\", 0, {view.custom.filter})"
+        },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 720,
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "BreadcrumbCategory"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb"
+                      },
+                      "text": "Operations"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbSep"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb crumb-sep"
+                      },
+                      "text": "›"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbActive"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "crumb-active"
+                      },
+                      "text": "Shift Schedules"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Breadcrumb"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "classes": "title-row-h1"
+                  },
+                  "text": "Shift Schedules"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TitleColumn"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "TitleRowSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "classes": "title-row-spacer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "SearchInput"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.filter.searchText"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": "Search…",
+              "style": {
+                "classes": "search-input",
+                "marginRight": "12px",
+                "width": "220px"
+              }
+            },
+            "type": "ia.input.text-field"
+          },
+          {
+            "meta": {
+              "name": "IncludeDeprecated"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.selected": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.filter.includeDeprecated"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "12px",
+                "marginRight": "12px",
+                "whiteSpace": "nowrap"
+              },
+              "text": "Include deprecated"
+            },
+            "type": "ia.input.checkbox"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(id=\"mpp-shift-schedule-editor\", view=\"BlueRidge/Components/Popups/ShiftScheduleEditor\", modal=True, showCloseIcon=False, draggable=False, params={\"mode\": \"create\", \"editId\": None})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "AddScheduleButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary",
+                "marginRight": "12px"
+              },
+              "text": "+ Add Schedule"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "TitleRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "classes": "title-row",
+            "paddingBottom": "8px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ColName"
+                    },
+                    "position": {
+                      "basis": "220px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Name"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColDays"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Days"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColStart"
+                    },
+                    "position": {
+                      "basis": "90px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Start"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColEnd"
+                    },
+                    "position": {
+                      "basis": "90px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "End"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColEffectiveFrom"
+                    },
+                    "position": {
+                      "basis": "130px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Effective From"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColEdit"
+                    },
+                    "position": {
+                      "basis": "80px",
+                      "shrink": 0
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "TableHeader"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "background": "var(--mpp-surface-card)",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "padding": "8px 12px",
+                    "textTransform": "uppercase"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Rows"
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.rows"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn [\n\t\t{\n\t\t\t\"id\":            r.get(\"Id\"),\n\t\t\t\"name\":          r.get(\"Name\"),\n\t\t\t\"daysLabel\":     r.get(\"DaysLabel\"),\n\t\t\t\"startTime\":     r.get(\"StartTimeText\"),\n\t\t\t\"endTime\":       r.get(\"EndTimeText\"),\n\t\t\t\"effectiveFrom\": r.get(\"EffectiveFromText\"),\n\t\t\t\"deprecated\":    r.get(\"DeprecatedAt\") is not None,\n\t\t\t\"selected\":      False\n\t\t}\n\t\tfor r in (value or [])\n\t]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "48px",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/ShiftScheduleRow",
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": {
+              "name": "DataPanel"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "detail-panel",
+                "overflowX": "auto",
+                "padding": "0"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "ContentArea"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "background": "var(--mpp-surface-canvas)",
+            "overflowY": "auto",
+            "padding": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "screen-active"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "shiftSchedulesRefresh",
+          "pageScope": true,
+          "script": "\tself.view.custom.filter = dict(self.view.custom.filter)",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "custom": {},
+  "params": {
+    "ItemPartNumber": "",
+    "OnHand": 0,
+    "ProjectedRemainingConsumption": 0,
+    "IsLow": false
+  },
+  "propConfig": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "gap": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PartNum"
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontWeight": 600
+          }
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.ItemPartNumber}"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Need"
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px",
+            "opacity": 0.85
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.ProjectedRemainingConsumption}) + \" needed / \" + toStr({view.params.OnHand}) + \" have\""
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Low"
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "#e05a4d",
+            "fontWeight": 700,
+            "fontSize": "12px",
+            "minWidth": "34px",
+            "textAlign": "right"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.IsLow}, \"LOW\", \"\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
