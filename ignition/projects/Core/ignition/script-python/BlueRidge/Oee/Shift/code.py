@@ -102,38 +102,39 @@ def acknowledgeHandover(shiftId, cellLocationId=None, appUserId=None, terminalLo
     return BlueRidge.Common.Db.execMutation("oee/ShiftHandover_Acknowledge", params)
 
 
-def getRecentOptions(limitRows=20):
-    """[{label, value}] for the die-cast shift-output entry's shift picker
-       (Die-Cast Per-Cavity Lifecycle, Task 12): the most recent shift
-       instances, newest first, label 'ScheduleName  MM/dd HH:mm-HH:mm' (or
-       '-open' for the still-open shift). Display only -- ActualStart/End are
-       shown as stored (UTC per Shift_List; not converted to ET here), same
-       precision-only-no-TZ-conversion pattern already used by the arrival/
-       history display helpers elsewhere in this module (mapTrimInventoryInstances
-       et al) -- a full ET conversion sweep is tracked separately as OI-36."""
+def getRecentOptions(_arg=None):
+    """[{label, value}] for the die-cast shift-output entry's shift picker: ONLY
+       the CURRENT (open) shift and the LAST (most-recent ended) shift -- the two
+       an operator actually reports against. Label 'ScheduleName - MM/dd (current|
+       last)'; the odd actual-tick times are intentionally hidden (they read as
+       noise). Display only. (Jacques smoke feedback 2026-07-30 -- was: all recent
+       instances with raw HH:mm-HH:mm actual times.)"""
     rows = listRecent() or []
-    out = []
-    n = 0
+    current = None
+    last = None
     for r in rows:
         r = r or {}
-        n += 1
-        if n > limitRows:
+        if r.get("ActualEnd") is None and current is None:
+            current = r
+        elif r.get("ActualEnd") is not None and last is None:
+            last = r
+        if current is not None and last is not None:
             break
+
+    def _opt(r, tag):
         start = r.get("ActualStart")
-        end = r.get("ActualEnd")
         try:
-            startTxt = system.date.format(start, "MM/dd HH:mm") if start is not None else "?"
+            d = system.date.format(start, "MM/dd") if start is not None else "?"
         except:
-            startTxt = ("%s" % start)[:16]
-        if end is not None:
-            try:
-                endTxt = system.date.format(end, "HH:mm")
-            except:
-                endTxt = ("%s" % end)[:16]
-        else:
-            endTxt = "open"
-        label = "%s  %s-%s" % (r.get("ScheduleName") or "Shift", startTxt, endTxt)
-        out.append({"label": label, "value": r.get("Id")})
+            d = ("%s" % start)[:10]
+        return {"label": "%s - %s (%s)" % (r.get("ScheduleName") or "Shift", d, tag),
+                "value": r.get("Id")}
+
+    out = []
+    if current is not None:
+        out.append(_opt(current, "current"))
+    if last is not None:
+        out.append(_opt(last, "last"))
     return out
 
 

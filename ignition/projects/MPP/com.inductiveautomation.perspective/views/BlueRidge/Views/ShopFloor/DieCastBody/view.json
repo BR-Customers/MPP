@@ -151,7 +151,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "{session.custom.cell.name} + \"  Â·  SHARED TERMINAL  Â·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
+                        "expression": "{session.custom.cell.name} + \"  Ã‚Â·  SHARED TERMINAL  Ã‚Â·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
                       },
                       "type": "expr"
                     }
@@ -506,19 +506,6 @@
                       },
                       "text": "Pre-printed 9-digit LTT (FRS 2.2.1). One basket per (tool, cavity) at a time."
                     }
-                  },
-                  {
-                    "meta": {
-                      "name": "BarcodeScannerInput"
-                    },
-                    "type": "ia.input.barcodescannerinput",
-                    "position": {
-                      "basis": "80px"
-                    },
-                    "props": {
-                      "captureMode": "keyup",
-                      "prefix": "P12"
-                    }
                   }
                 ]
               },
@@ -624,9 +611,10 @@
                 "type": "ia.container.flex",
                 "props": {
                   "style": {
-                    "gap": "10px",
+                    "gap": "12px",
                     "overflow": "hidden"
-                  }
+                  },
+                  "direction": "column"
                 },
                 "children": [
                   {
@@ -635,7 +623,8 @@
                     },
                     "type": "ia.container.flex",
                     "position": {
-                      "grow": 1
+                      "basis": "auto",
+                      "shrink": 0
                     },
                     "props": {
                       "direction": "column",
@@ -726,7 +715,8 @@
                     },
                     "type": "ia.container.flex",
                     "position": {
-                      "grow": 1
+                      "basis": "auto",
+                      "shrink": 0
                     },
                     "props": {
                       "direction": "column",
@@ -1274,8 +1264,9 @@
             },
             "type": "ia.container.flex",
             "position": {
-              "basis": "620px",
-              "grow": 1
+              "basis": "360px",
+              "grow": 0,
+              "shrink": 0
             },
             "props": {
               "direction": "column",
@@ -1484,10 +1475,10 @@
                     "propConfig": {
                       "props.text": {
                         "binding": {
+                          "type": "expr",
                           "config": {
-                            "expression": "toStr(len({view.custom.terminalRecent})) + \" recent at this terminal\""
-                          },
-                          "type": "expr"
+                            "expression": "\"Recent activity\""
+                          }
                         }
                       }
                     },

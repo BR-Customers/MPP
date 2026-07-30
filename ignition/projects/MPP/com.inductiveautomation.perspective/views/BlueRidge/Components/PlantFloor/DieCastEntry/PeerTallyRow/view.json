@@ -89,7 +89,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "toStr({view.params.peer.PieceCount}) + \" pcs\""
+                "expression": "if({view.params.peer.PieceCount} > 0, toStr({view.params.peer.PieceCount}) + \" pcs\", \"lot opened\")"
               }
             }
           }
