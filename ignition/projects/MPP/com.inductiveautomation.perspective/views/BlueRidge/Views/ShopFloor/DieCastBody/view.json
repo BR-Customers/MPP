@@ -9,6 +9,7 @@
       "scannedLtt": "",
       "toolCavityId": null
     },
+    "pendingSubmit": {},
     "pendingReleaseLotId": null,
     "pendingReleaseLotName": "",
     "pendingVoidLotId": null,
@@ -1653,7 +1654,7 @@
         {
           "name": "submitShiftOutput",
           "params": [],
-          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.breakdown) or []\n\tentries \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.breakdownEntries) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tlines \u003d []\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\tif not r.get(\"IsOpen\"):\n\t\t\tcontinue\n\t\tlotId \u003d r.get(\"LotId\")\n\t\te \u003d entries.get(\"%s\" % lotId) or {}\n\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif good is None:\n\t\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\tscrapLines \u003d []\n\t\tfor sl in (BlueRidge.Common.Util.extractQualifiedValues(e.get(\"scrapLines\")) or []):\n\t\t\tsl \u003d sl or {}\n\t\t\td \u003d sl.get(\"defectCodeId\")\n\t\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif d and q:\n\t\t\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\t\tlines.append({\"lotId\": lotId, \"pieceDelta\": good, \"scrapLines\": scrapLines})\n\tif not lines:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to submit\", \"Compute a breakdown first (enter gross shots and press Compute).\", \"warning\")\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\tdata \u003d {\n\t\t\"shiftId\": self.view.custom.selectedShiftId,\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"lines\": lines,\n\t\t\"shotLoss\": [],\n\t}\n\tresult \u003d BlueRidge.Workorder.DieCast.recordShiftOutput(data, appUserId\u003dself.session.custom.appUserId, terminalLocationId\u003dterm)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Shift output recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.grossShots \u003d \"\"\n\t\tself.view.custom.breakdown \u003d []\n\t\tself.view.custom.breakdownEntries \u003d {}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.breakdown) or []\n\tentries = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.breakdownEntries) or {}\n\ttool = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tlines = []\n\toverflow = []\n\tfor r in rows:\n\t\tr = r or {}\n\t\tif not r.get(\"IsOpen\"):\n\t\t\tcontinue\n\t\tlotId = r.get(\"LotId\")\n\t\te = entries.get(\"%s\" % lotId) or {}\n\t\tgood = BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif good is None:\n\t\t\tgood = BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\tscrapLines = []\n\t\tfor sl in (BlueRidge.Common.Util.extractQualifiedValues(e.get(\"scrapLines\")) or []):\n\t\t\tsl = sl or {}\n\t\t\td = sl.get(\"defectCodeId\")\n\t\t\tq = BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif d and q:\n\t\t\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\t\tlines.append({\"lotId\": lotId, \"pieceDelta\": good, \"scrapLines\": scrapLines})\n\t\th = BlueRidge.Common.Util.toIntOrNone(r.get(\"MaxHeadroom\"))\n\t\tif h is not None and h < 2147483647 and good > h:\n\t\t\toverflow.append({\"lotId\": lotId, \"lotName\": r.get(\"LotName\") or \"\",\n\t\t\t\t\"cavityNumber\": r.get(\"CavityNumber\") or \"\", \"toolCavityId\": r.get(\"ToolCavityId\"),\n\t\t\t\t\"itemId\": r.get(\"ItemId\"), \"headroom\": h, \"good\": good,\n\t\t\t\t\"remainder\": good - h, \"scrapLines\": scrapLines})\n\tif not lines:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to submit\", \"Compute a breakdown first (enter gross shots and press Compute).\", \"warning\")\n\t\treturn\n\tterm = None\n\ttry:\n\t\tterm = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm = None\n\tif overflow:\n\t\tself.view.custom.pendingSubmit = {\"lines\": lines, \"overflow\": overflow,\n\t\t\t\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"),\n\t\t\t\"cellLocationId\": cell.get(\"locationId\"), \"terminalLocationId\": term}\n\t\tsystem.perspective.openPopup(\"mpp-diecast-overflow\",\n\t\t\t\"BlueRidge/Components/Popups/DieCastOverflow\",\n\t\t\tparams={\"replyMessage\": \"dieCastOverflowResult\", \"popupId\": \"mpp-diecast-overflow\", \"overflow\": overflow},\n\t\t\tmodal=True, showCloseIcon=True)\n\t\treturn\n\tdata = {\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"), \"lines\": lines, \"shotLoss\": []}\n\tresult = BlueRidge.Workorder.DieCast.recordShiftOutput(data, appUserId=self.session.custom.appUserId, terminalLocationId=term)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Shift output recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself._afterSubmit()"
         },
         {
           "name": "registerShotLoss",
@@ -1685,6 +1686,19 @@
           "name": "voidBasket",
           "params": [],
           "script": "\tlotId \u003d self.view.custom.pendingVoidLotId\n\tif lotId is None:\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\tresult \u003d BlueRidge.Lots.Lot.voidDieCast(lotId, appUserId\u003dself.session.custom.appUserId, terminalLocationId\u003dterm)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Basket voided\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pendingVoidLotId \u003d None\n\t\tself.view.custom.pendingVoidLotName \u003d \"\"\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+        },
+        {
+          "name": "_afterSubmit",
+          "params": [],
+          "script": "\tself.view.custom.pendingSubmit = {}\n\tself.view.custom.grossShots = \"\"\n\tself.view.custom.breakdown = []\n\tself.view.custom.breakdownEntries = {}\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        },
+        {
+          "name": "resolveOverflow",
+          "params": [
+            "action",
+            "ltts"
+          ],
+          "script": "\tps = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.pendingSubmit) or {}\n\tif not ps:\n\t\treturn\n\tlines = BlueRidge.Common.Util.extractQualifiedValues(ps.get(\"lines\")) or []\n\toverflow = BlueRidge.Common.Util.extractQualifiedValues(ps.get(\"overflow\")) or []\n\tshiftId = ps.get(\"shiftId\")\n\ttoolId = ps.get(\"toolId\")\n\tcellId = ps.get(\"cellLocationId\")\n\tterm = ps.get(\"terminalLocationId\")\n\tappUserId = self.session.custom.appUserId\n\tif action == \"cancel\":\n\t\tself.view.custom.pendingSubmit = {}\n\t\treturn\n\tif action == \"overfill\":\n\t\tdata = {\"shiftId\": shiftId, \"toolId\": toolId, \"lines\": lines, \"shotLoss\": []}\n\t\tresult = BlueRidge.Workorder.DieCast.recordShiftOutput(data, appUserId=appUserId, terminalLocationId=term)\n\t\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Shift output recorded (baskets overfilled)\")\n\t\tif result and result.get(\"Status\"):\n\t\t\tself._afterSubmit()\n\t\treturn\n\tltts = BlueRidge.Common.Util.extractQualifiedValues(ltts) or {}\n\toverLotIds = set(o.get(\"lotId\") for o in overflow)\n\tnonOverflow = [ln for ln in lines if ln.get(\"lotId\") not in overLotIds]\n\tif nonOverflow:\n\t\tr0 = BlueRidge.Workorder.DieCast.recordShiftOutput(\n\t\t\t{\"shiftId\": shiftId, \"toolId\": toolId, \"lines\": nonOverflow, \"shotLoss\": []},\n\t\t\tappUserId=appUserId, terminalLocationId=term)\n\t\tBlueRidge.Common.Ui.notifyResult(r0, successTitle=\"Cavities within capacity recorded\")\n\t\tif not (r0 and r0.get(\"Status\")):\n\t\t\treturn\n\tfor o in overflow:\n\t\toldLot = o.get(\"lotId\")\n\t\tnewLtt = (ltts.get(\"%s\" % oldLot) or ltts.get(oldLot) or \"\")\n\t\tnewLtt = (\"%s\" % newLtt).strip()\n\t\trel = BlueRidge.Lots.Lot.releaseDieCast({\"lotId\": oldLot, \"finalPieceDelta\": o.get(\"headroom\"),\n\t\t\t\"scrapLines\": o.get(\"scrapLines\") or [], \"shiftId\": shiftId,\n\t\t\t\"appUserId\": appUserId, \"terminalLocationId\": term})\n\t\tBlueRidge.Common.Ui.notifyResult(rel, successTitle=\"Basket \" + (o.get(\"lotName\") or \"\") + \" filled + released\")\n\t\tif not (rel and rel.get(\"Status\")):\n\t\t\treturn\n\t\topened = BlueRidge.Lots.Lot.openDieCast({\"itemId\": o.get(\"itemId\"), \"currentLocationId\": cellId,\n\t\t\t\"toolId\": toolId, \"toolCavityId\": o.get(\"toolCavityId\"), \"lotName\": newLtt,\n\t\t\t\"appUserId\": appUserId, \"terminalLocationId\": term})\n\t\tBlueRidge.Common.Ui.notifyResult(opened, successTitle=\"New basket \" + newLtt + \" opened\")\n\t\tif not (opened and opened.get(\"Status\")):\n\t\t\treturn\n\t\tnewLot = opened.get(\"NewId\")\n\t\trem = BlueRidge.Workorder.DieCast.recordShiftOutput(\n\t\t\t{\"shiftId\": shiftId, \"toolId\": toolId,\n\t\t\t \"lines\": [{\"lotId\": newLot, \"pieceDelta\": o.get(\"remainder\"), \"scrapLines\": []}], \"shotLoss\": []},\n\t\t\tappUserId=appUserId, terminalLocationId=term)\n\t\tBlueRidge.Common.Ui.notifyResult(rem, successTitle=\"Remainder recorded to \" + newLtt)\n\t\tif not (rem and rem.get(\"Status\")):\n\t\t\treturn\n\tself._afterSubmit()"
         }
       ],
       "extensionFunctions": null,
@@ -1728,6 +1742,13 @@
           "messageType": "voidConfirmResult",
           "pageScope": true,
           "script": "\tif payload and payload.get(\"action\") \u003d\u003d \"confirm\":\n\t\tself.voidBasket()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "dieCastOverflowResult",
+          "pageScope": true,
+          "script": "\tif payload:\n\t\tself.resolveOverflow(payload.get(\"action\"), payload.get(\"ltts\"))",
           "sessionScope": false,
           "viewScope": false
         }
