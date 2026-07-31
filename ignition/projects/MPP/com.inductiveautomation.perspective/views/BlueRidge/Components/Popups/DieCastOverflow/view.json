@@ -1,0 +1,52 @@
+{
+  "custom": { "decisions": {} },
+  "params": { "overflow": [], "replyMessage": "dieCastOverflowResult", "popupId": "mpp-diecast-overflow" },
+  "propConfig": {
+    "params.overflow":     { "paramDirection": "input" },
+    "params.replyMessage": { "paramDirection": "input" },
+    "params.popupId":      { "paramDirection": "input" }
+  },
+  "props": { "defaultSize": { "height": 440, "width": 580 } },
+  "root": {
+    "type": "ia.container.flex", "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "padding": "18px" } },
+    "children": [
+      { "type": "ia.display.label", "meta": { "name": "Title" },
+        "props": { "text": "Basket capacity exceeded", "style": { "classes": "pf-panel-header", "fontSize": "18px", "fontWeight": 700 } } },
+      { "type": "ia.display.label", "meta": { "name": "Sub" },
+        "props": { "text": "For each cavity, either scan a new LTT to fill the current basket, release it, and roll the remainder into a new basket — or tick Overfill to push the extra onto the current basket. Choose per cavity, then Apply.",
+                   "style": { "classes": "pf-kpi-sub" } } },
+      { "type": "ia.display.flex-repeater", "meta": { "name": "Rows" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": { "props.instances": { "binding": { "type": "property",
+          "config": { "path": "view.params.overflow" },
+          "transforms": [ { "type": "script", "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"lotId\": r.get(\"lotId\"), \"lotName\": r.get(\"lotName\") or \"\", \"cavityNumber\": r.get(\"cavityNumber\") or \"\", \"headroom\": r.get(\"headroom\") or 0, \"good\": r.get(\"good\") or 0, \"remainder\": r.get(\"remainder\") or 0} for r in rows]" } ] } } },
+        "props": { "direction": "column", "path": "BlueRidge/Components/Popups/DieCastOverflowRow",
+                   "elementPosition": { "basis": "auto", "shrink": 0 },
+                   "style": { "gap": "8px", "overflowY": "auto" },
+                   "useDefaultViewHeight": false, "useDefaultViewWidth": false } },
+      { "type": "ia.container.flex", "meta": { "name": "Actions" },
+        "position": { "shrink": 0 },
+        "props": { "justify": "flex-end", "alignItems": "center", "style": { "gap": "10px", "paddingTop": "6px" } },
+        "children": [
+          { "type": "ia.input.button", "meta": { "name": "CancelButton" },
+            "props": { "text": "Cancel", "style": { "classes": "pf-btn pf-btn-secondary" } },
+            "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G", "config": {
+              "script": "\tself.view.getChild(\"root\").reply(\"cancel\")" } } } } },
+          { "type": "ia.input.button", "meta": { "name": "ApplyButton" },
+            "propConfig": { "props.enabled": { "binding": { "type": "expr", "config": {
+              "expression": "runScript(\"BlueRidge.Common.Util.overflowDecisionsComplete\", 0, {view.custom.decisions}, {view.params.overflow})" } } } },
+            "props": { "text": "Apply", "style": { "classes": "pf-btn pf-btn-primary" } },
+            "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G", "config": {
+              "script": "\tself.view.getChild(\"root\").reply(\"apply\")" } } } } }
+        ] }
+    ],
+    "events": { "component": {}, "dom": {}, "system": {} },
+    "scripts": { "customMethods": [
+      { "name": "reply", "params": [ "action" ], "script": "\tpayload = {\"action\": action}\n\tif action == \"apply\":\n\t\tpayload[\"decisions\"] = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.decisions) or {}\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload=payload, scope=\"page\")\n\tsystem.perspective.closePopup(self.view.params.popupId)" }
+    ], "messageHandlers": [
+      { "messageType": "overflowDecisionChanged", "pageScope": true, "sessionScope": false, "viewScope": false,
+        "script": "\tm = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.decisions) or {}\n\tm = dict(m)\n\tm[\"%s\" % payload.get(\"lotId\")] = {\"mode\": payload.get(\"mode\") or \"fill\", \"ltt\": (payload.get(\"ltt\") or \"\").strip()}\n\tself.view.custom.decisions = m" }
+    ] }
+  }
+}

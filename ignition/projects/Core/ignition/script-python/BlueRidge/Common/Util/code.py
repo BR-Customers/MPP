@@ -178,6 +178,48 @@ def toDecimalOrNone(v):
         return None
 
 
+def allLttsPresent(ltts, expectedCount):
+    """True when the overflow-popup LTT map holds `expectedCount` DISTINCT
+       non-blank entries (one unique scanned LTT per overflowing cavity).
+       Enables the popup's Fill button. Distinct-count (not raw count) so
+       scanning the same LTT into two rows does not satisfy the gate -- each
+       overflow basket needs its own LTT (a duplicate LotName is rejected
+       downstream by DieCastLot_Open anyway). Returns bool."""
+    m = extractQualifiedValues(ltts) or {}
+    filled = set(("%s" % v).strip() for v in m.values()
+                 if v is not None and ("%s" % v).strip() != "")
+    try:
+        return len(filled) >= int(expectedCount)
+    except (ValueError, TypeError):
+        return False
+
+
+def overflowDecisionsComplete(decisions, overflow):
+    """True when EVERY overflow cavity has a resolved per-lot decision for the
+       die-cast overflow popup: either mode 'overfill' (no LTT needed), or mode
+       'fill' with a non-blank LTT. Fill LTTs must be DISTINCT across rows (each
+       new basket needs its own LotName; a duplicate is rejected downstream by
+       DieCastLot_Open). Enables the popup's Apply button. Returns bool.
+       `decisions` is a {lotId(str) -> {mode, ltt}} map; `overflow` the list."""
+    decisions = extractQualifiedValues(decisions) or {}
+    overflow = extractQualifiedValues(overflow) or []
+    fillLtts = []
+    for o in overflow:
+        o = o or {}
+        lotId = o.get("lotId")
+        dec = decisions.get("%s" % lotId)
+        if dec is None:
+            dec = decisions.get(lotId)
+        dec = extractQualifiedValues(dec) or {}
+        if dec.get("mode") == "overfill":
+            continue
+        ltt = ("%s" % (dec.get("ltt") or "")).strip()
+        if not ltt:
+            return False
+        fillLtts.append(ltt)
+    return len(fillLtts) == len(set(fillLtts))
+
+
 def extractQualifiedValues(data):
     """
     Recursively unwrap QualifiedValue (from tag / property bindings) through
