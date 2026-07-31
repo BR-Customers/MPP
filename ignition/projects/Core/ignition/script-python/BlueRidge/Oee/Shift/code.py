@@ -103,23 +103,15 @@ def acknowledgeHandover(shiftId, cellLocationId=None, appUserId=None, terminalLo
 
 
 def getRecentOptions(_arg=None):
-    """[{label, value}] for the die-cast shift-output entry's shift picker: ONLY
-       the CURRENT (open) shift and the LAST (most-recent ended) shift -- the two
-       an operator actually reports against. Label 'ScheduleName - MM/dd (current|
-       last)'; the odd actual-tick times are intentionally hidden (they read as
-       noise). Display only. (Jacques smoke feedback 2026-07-30 -- was: all recent
-       instances with raw HH:mm-HH:mm actual times.)"""
+    """[{label, value}] for the die-cast shift-output entry's shift picker: the
+       three most-recent shift instances (newest-first) -- the CURRENT (open)
+       shift plus the two most-recently ended shifts, so the overnight shift the
+       operator may be reporting against is reachable. Label 'ScheduleName - MM/dd
+       (current|last|prior)'; the odd actual-tick times are intentionally hidden
+       (they read as noise). Display only. (Jacques smoke feedback 2026-07-30 --
+       was: all recent instances with raw HH:mm-HH:mm actual times. 2026-07-31 --
+       widened current+last to the last 3 shifts so the overnight shift shows.)"""
     rows = listRecent() or []
-    current = None
-    last = None
-    for r in rows:
-        r = r or {}
-        if r.get("ActualEnd") is None and current is None:
-            current = r
-        elif r.get("ActualEnd") is not None and last is None:
-            last = r
-        if current is not None and last is not None:
-            break
 
     def _opt(r, tag):
         start = r.get("ActualStart")
@@ -131,10 +123,19 @@ def getRecentOptions(_arg=None):
                 "value": r.get("Id")}
 
     out = []
-    if current is not None:
-        out.append(_opt(current, "current"))
-    if last is not None:
-        out.append(_opt(last, "last"))
+    ended = 0
+    for r in rows:
+        r = r or {}
+        if r.get("Id") is None:
+            continue
+        if r.get("ActualEnd") is None:
+            tag = "current"
+        else:
+            tag = "last" if ended == 0 else "prior"
+            ended += 1
+        out.append(_opt(r, tag))
+        if len(out) >= 3:
+            break
     return out
 
 
