@@ -8,7 +8,13 @@
     "scrap2Defect": null,
     "scrap2Qty": "",
     "scrap3Defect": null,
-    "scrap3Qty": ""
+    "scrap3Qty": "",
+    "scrap4Defect": null,
+    "scrap4Qty": "",
+    "scrap5Defect": null,
+    "scrap5Qty": "",
+    "scrap6Defect": null,
+    "scrap6Qty": ""
   },
   "params": {
     "toolCavityId": null,
@@ -46,7 +52,7 @@
       "paramDirection": "input",
       "onChange": {
         "enabled": true,
-        "script": "\tval = self.view.params.proposedGood\n\tself.view.custom.good = str(val) if val is not None else \"\"\n\tself.view.custom.scrap1Defect = None\n\tself.view.custom.scrap2Defect = None\n\tself.view.custom.scrap3Defect = None\n\tself.view.custom.scrap1Qty = \"\"\n\tself.view.custom.scrap2Qty = \"\"\n\tself.view.custom.scrap3Qty = \"\"\n\tself.view.custom.overHeadroom = False"
+        "script": "\tval = self.view.params.proposedGood\n\tself.view.custom.good = str(val) if val is not None else \"\"\n\tself.view.custom.scrap1Defect = None\n\tself.view.custom.scrap2Defect = None\n\tself.view.custom.scrap3Defect = None\n\tself.view.custom.scrap4Defect = None\n\tself.view.custom.scrap5Defect = None\n\tself.view.custom.scrap6Defect = None\n\tself.view.custom.scrap1Qty = \"\"\n\tself.view.custom.scrap2Qty = \"\"\n\tself.view.custom.scrap3Qty = \"\"\n\tself.view.custom.scrap4Qty = \"\"\n\tself.view.custom.scrap5Qty = \"\"\n\tself.view.custom.scrap6Qty = \"\"\n\tself.view.custom.overHeadroom = False"
       }
     },
     "custom.defectOptions": {
@@ -84,7 +90,7 @@
           "name": "CavityLotBlock"
         },
         "position": {
-          "basis": "180px",
+          "basis": "110px",
           "shrink": 0
         },
         "props": {
@@ -306,11 +312,12 @@
               "shrink": 1
             },
             "props": {
-              "direction": "column",
+              "direction": "row",
               "style": {
-                "gap": "6px",
+                "gap": "8px",
                 "overflow": "hidden"
-              }
+              },
+              "wrap": "wrap"
             },
             "children": [
               {
@@ -319,7 +326,9 @@
                   "name": "ScrapSlot1"
                 },
                 "position": {
-                  "shrink": 0
+                  "basis": "260px",
+                  "grow": 1,
+                  "shrink": 1
                 },
                 "props": {
                   "alignItems": "center",
@@ -344,7 +353,7 @@
                       },
                       "style": {
                         "classes": "pf-field-select",
-                        "minWidth": "180px"
+                        "minWidth": "120px"
                       }
                     },
                     "propConfig": {
@@ -425,7 +434,9 @@
                   "name": "ScrapSlot2"
                 },
                 "position": {
-                  "shrink": 0
+                  "basis": "260px",
+                  "grow": 1,
+                  "shrink": 1
                 },
                 "props": {
                   "alignItems": "center",
@@ -450,7 +461,7 @@
                       },
                       "style": {
                         "classes": "pf-field-select",
-                        "minWidth": "180px"
+                        "minWidth": "120px"
                       }
                     },
                     "propConfig": {
@@ -541,7 +552,9 @@
                   "name": "ScrapSlot3"
                 },
                 "position": {
-                  "shrink": 0
+                  "basis": "260px",
+                  "grow": 1,
+                  "shrink": 1
                 },
                 "props": {
                   "alignItems": "center",
@@ -566,7 +579,7 @@
                       },
                       "style": {
                         "classes": "pf-field-select",
-                        "minWidth": "180px"
+                        "minWidth": "120px"
                       }
                     },
                     "propConfig": {
@@ -650,6 +663,360 @@
                     }
                   }
                 }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ScrapSlot4"
+                },
+                "position": {
+                  "basis": "260px",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {
+                      "name": "ScrapDefect4"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1,
+                      "shrink": 1
+                    },
+                    "props": {
+                      "placeholder": {
+                        "text": "Add another reason"
+                      },
+                      "style": {
+                        "classes": "pf-field-select",
+                        "minWidth": "120px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.defectOptions"
+                          }
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.scrap4Defect",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "ScrapQty4"
+                    },
+                    "position": {
+                      "basis": "80px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "placeholder": "qty",
+                      "text": "",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.scrap4Qty",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onBlur": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ],
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.scrap3Defect})"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ScrapSlot5"
+                },
+                "position": {
+                  "basis": "260px",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {
+                      "name": "ScrapDefect5"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1,
+                      "shrink": 1
+                    },
+                    "props": {
+                      "placeholder": {
+                        "text": "Add another reason"
+                      },
+                      "style": {
+                        "classes": "pf-field-select",
+                        "minWidth": "120px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.defectOptions"
+                          }
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.scrap5Defect",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "ScrapQty5"
+                    },
+                    "position": {
+                      "basis": "80px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "placeholder": "qty",
+                      "text": "",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.scrap5Qty",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onBlur": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ],
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.scrap4Defect})"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ScrapSlot6"
+                },
+                "position": {
+                  "basis": "260px",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {
+                      "name": "ScrapDefect6"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1,
+                      "shrink": 1
+                    },
+                    "props": {
+                      "placeholder": {
+                        "text": "Add another reason"
+                      },
+                      "style": {
+                        "classes": "pf-field-select",
+                        "minWidth": "120px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.defectOptions"
+                          }
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.scrap6Defect",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "ScrapQty6"
+                    },
+                    "position": {
+                      "basis": "80px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "placeholder": "qty",
+                      "text": "",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.scrap6Qty",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onBlur": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ],
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.scrap5Defect})"
+                      }
+                    }
+                  }
+                }
               }
             ]
           },
@@ -692,7 +1059,7 @@
         {
           "name": "emitRowChanged",
           "params": [],
-          "script": "\tc = self.view.custom\n\tlines = []\n\tfor d, q in ((c.scrap1Defect, c.scrap1Qty), (c.scrap2Defect, c.scrap2Qty), (c.scrap3Defect, c.scrap3Qty)):\n\t\tif d is not None and q not in (None, ''):\n\t\t\tlines.append({'defectCodeId': d, 'quantity': q})\n\tsystem.perspective.sendMessage('dieCastRowChanged', payload={\n\t\t'lotId': self.view.params.lotId,\n\t\t'good': c.good,\n\t\t'scrapLines': lines,\n\t}, scope='page')"
+          "script": "\tc = self.view.custom\n\tlines = []\n\tfor d, q in ((c.scrap1Defect, c.scrap1Qty), (c.scrap2Defect, c.scrap2Qty), (c.scrap3Defect, c.scrap3Qty), (c.scrap4Defect, c.scrap4Qty), (c.scrap5Defect, c.scrap5Qty), (c.scrap6Defect, c.scrap6Qty)):\n\t\tif d is not None and q not in (None, ''):\n\t\t\tlines.append({'defectCodeId': d, 'quantity': q})\n\tsystem.perspective.sendMessage('dieCastRowChanged', payload={\n\t\t'lotId': self.view.params.lotId,\n\t\t'good': c.good,\n\t\t'scrapLines': lines,\n\t}, scope='page')"
         }
       ]
     }
