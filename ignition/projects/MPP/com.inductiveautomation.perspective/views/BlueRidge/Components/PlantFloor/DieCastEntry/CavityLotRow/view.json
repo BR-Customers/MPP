@@ -211,7 +211,7 @@
               "name": "GoodBlock"
             },
             "position": {
-              "basis": "110px",
+              "basis": "120px",
               "shrink": 0
             },
             "props": {
@@ -275,6 +275,7 @@
               "name": "ReferenceLabel"
             },
             "position": {
+              "basis": "150px",
               "shrink": 0
             },
             "propConfig": {
@@ -282,7 +283,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "\"prior \" + toStr({view.params.priorGoodThisShift}) + if({view.params.maxHeadroom} < 2147483647, \"  Ã‚Â·  headroom \" + toStr({view.params.maxHeadroom}), \"\")"
+                    "expression": "\"prior \" + toStr({view.params.priorGoodThisShift}) + if({view.params.maxHeadroom} < 2147483647, \"  ·  headroom \" + toStr({view.params.maxHeadroom}), \"\")"
                   }
                 }
               }
@@ -340,6 +341,10 @@
                     "props": {
                       "placeholder": {
                         "text": "Scrap reason"
+                      },
+                      "style": {
+                        "classes": "pf-field-select",
+                        "minWidth": "180px"
                       }
                     },
                     "propConfig": {
@@ -442,6 +447,10 @@
                     "props": {
                       "placeholder": {
                         "text": "Add another reason"
+                      },
+                      "style": {
+                        "classes": "pf-field-select",
+                        "minWidth": "180px"
                       }
                     },
                     "propConfig": {
@@ -554,6 +563,10 @@
                     "props": {
                       "placeholder": {
                         "text": "Add another reason"
+                      },
+                      "style": {
+                        "classes": "pf-field-select",
+                        "minWidth": "180px"
                       }
                     },
                     "propConfig": {
