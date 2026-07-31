@@ -1,5 +1,6 @@
 {
   "custom": {
+    "activeTab": 0,
     "breakdown": [],
     "breakdownEntries": {},
     "grossShots": "",
@@ -135,7 +136,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "{session.custom.cell.name} + \"  Ãƒâ€šÃ‚Â·  SHARED TERMINAL  Ãƒâ€šÃ‚Â·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} \u003d \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
+                        "expression": "{session.custom.cell.name} + \"  ·  SHARED TERMINAL  ·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} \u003d \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
                       },
                       "type": "expr"
                     }
@@ -345,6 +346,7 @@
                 "text": "Scan or pick a cell"
               },
               "style": {
+                "classes": "pf-field-select",
                 "width": "300px"
               }
             },
@@ -388,6 +390,65 @@
       },
       {
         "children": [
+          {
+            "type": "ia.container.tab",
+            "meta": {
+              "name": "TabContainer"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.currentTabIndex": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.activeTab"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "currentTabIndex": 0,
+              "menuType": "modern",
+              "tabs": [
+                {
+                  "text": "Open Basket",
+                  "runWhileHidden": true,
+                  "disabled": false
+                },
+                {
+                  "text": "Record Shift Output",
+                  "runWhileHidden": true,
+                  "disabled": false
+                },
+                {
+                  "text": "Lot Release",
+                  "runWhileHidden": true,
+                  "disabled": false
+                }
+              ],
+              "menuStyle": {
+                "classes": "tab-strip"
+              },
+              "contentStyle": {
+                "classes": "tab-content-fill"
+              },
+              "tabStyle": {
+                "active": {
+                  "classes": "tab-item tab-item-active"
+                },
+                "inactive": {
+                  "classes": "tab-item"
+                },
+                "disabled": {
+                  "classes": "tab-item"
+                }
+              }
+            },
+            "children": [
           {
             "children": [
               {
@@ -504,6 +565,9 @@
                     "props": {
                       "placeholder": {
                         "text": "Select an item"
+                      },
+                      "style": {
+                        "classes": "pf-field-select"
                       }
                     },
                     "type": "ia.input.dropdown"
@@ -694,6 +758,7 @@
                             "text": "Select an active cavity"
                           },
                           "style": {
+                            "classes": "pf-field-select",
                             "width": "100%"
                           }
                         },
@@ -805,8 +870,7 @@
               "name": "OpenPanel"
             },
             "position": {
-              "basis": "380px",
-              "shrink": 0
+              "grow": 1
             },
             "props": {
               "direction": "column",
@@ -874,6 +938,9 @@
                         "props": {
                           "placeholder": {
                             "text": "Select a shift"
+                          },
+                          "style": {
+                            "classes": "pf-field-select"
                           }
                         },
                         "type": "ia.input.dropdown"
@@ -1096,6 +1163,9 @@
                     "props": {
                       "placeholder": {
                         "text": "Defect reason"
+                      },
+                      "style": {
+                        "classes": "pf-field-select"
                       }
                     },
                     "type": "ia.input.dropdown"
@@ -1213,7 +1283,6 @@
               "name": "ShiftOutputPanel"
             },
             "position": {
-              "basis": "620px",
               "grow": 1
             },
             "props": {
@@ -1302,8 +1371,7 @@
               "name": "CurrentlyOpenPanel"
             },
             "position": {
-              "basis": "360px",
-              "shrink": 0
+              "grow": 1
             },
             "props": {
               "direction": "column",
@@ -1315,6 +1383,8 @@
               }
             },
             "type": "ia.container.flex"
+          }
+            ]
           },
           {
             "children": [
@@ -1516,7 +1586,7 @@
           }
         ],
         "meta": {
-          "name": "Body"
+          "name": "MainRow"
         },
         "position": {
           "grow": 1
@@ -1524,8 +1594,7 @@
         "props": {
           "style": {
             "gap": "16px"
-          },
-          "wrap": "wrap"
+          }
         },
         "type": "ia.container.flex"
       }
@@ -1574,7 +1643,7 @@
         {
           "name": "clearOpenDraft",
           "params": [],
-          "script": "\t# Keep the Item selected (fast repeat-opens across cavities); clear only LTT + cavity.\n\tself.view.custom.openDraft.scannedLtt \u003d \"\"\n\tself.view.custom.openDraft.toolCavityId \u003d None\n\ttry:\n\t\tself.getChild(\"Body\").getChild(\"OpenPanel\").getChild(\"LttField\").getChild(\"LttInput\").focus()\n\texcept:\n\t\tpass"
+          "script": "\t# Keep the Item selected (fast repeat-opens across cavities); clear only LTT + cavity.\n\tself.view.custom.openDraft.scannedLtt \u003d \"\"\n\tself.view.custom.openDraft.toolCavityId \u003d None\n\ttry:\n\t\tself.getChild(\"MainRow\").getChild(\"TabContainer\").getChild(\"OpenPanel\").getChild(\"LttField\").getChild(\"LttInput\").focus()\n\texcept:\n\t\tpass"
         },
         {
           "name": "computeBreakdown",
