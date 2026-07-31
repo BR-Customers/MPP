@@ -39,6 +39,12 @@
 
 ---
 
+## 🔖 2026-07-31 — Shift Boundary Reconcile-to-Now
+
+Replaced the shift-boundary gateway ticker's naive tick-time stamping with `Oee.Shift_Reconcile`: snaps open/closing shifts to their scheduled boundary instant instead of the wall-clock tick moment, and runs a bounded (max 7-day) full-timeline backfill so gateway-downtime gaps no longer leave whole shifts missing — idempotent, safe to re-run. `ShiftBoundaryTicker` rewired to call the new proc; never throws. The die-cast shift-output entry picker (`Oee.Shift.getRecentOptions`) now lists the last 3 shifts so an operator can attribute output to a just-closed shift. Design spec `docs/superpowers/specs/2026-07-31-shift-boundary-reconcile-design.md`; dev seed `sql/scratch/seed_shifts.sql`. New **OI-38** logged: the shift subsystem intentionally stores/compares LOCAL time, diverging from the store-UTC convention (couples to OI-36). Full `MPP_MES_Test` suite green including the new `0046_Shift_Reconcile` tests and the untouched `030_Shift_lifecycle` procs.
+
+---
+
 ## 🔖 2026-07-29 — Die Cast per-cavity lifecycle
 
 Redesigned die-cast entry from a **one-basket-per-create origin mint** into a **per-cavity Open → accumulate → release lifecycle**: each cavity of a mounted die owns an independent accumulating basket that fills across operators and shifts, and is released to storage (its first route movement) only when the operator says it's full. Design spec: `docs/superpowers/specs/2026-07-28-diecast-per-cavity-lifecycle-design.md`. Executed as a 14-task SDD plan (`docs/superpowers/plans/2026-07-28-diecast-per-cavity-lifecycle.md`) subagent-driven, one review per task plus a final whole-branch review. Full task ledger: `.superpowers/sdd/progress.md`.
