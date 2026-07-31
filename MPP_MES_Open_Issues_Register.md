@@ -990,6 +990,17 @@ The audit + interface tables are structurally larger than the entire traceabilit
 
 ---
 
+### OI-38 — Shift subsystem stores/compares LOCAL time (store-UTC convention divergence) — ⬜ Open (new, 2026-07-31)
+
+**Priority:** LOW
+**Owner:** Blue Ridge Automation
+**FDS §:** cross-cutting (store-UTC convention; see CLAUDE.md § SQL design)
+**References:** `docs/superpowers/specs/2026-07-31-shift-boundary-reconcile-design.md` §7; OI-36 (UTC-display read sweep); `Oee.Shift_GetActive`; `Oee.Shift_Reconcile`
+
+**Description:** `Oee.Shift_GetActive` compares `CAST(@Moment AS TIME(0))` against local schedule `StartTime`/`EndTime`; the ticker feeds `system.date.now()` (local); `Oee.Shift.ActualStart`/`ActualEnd` therefore store local wall-clock, and `Oee.Shift_Reconcile` (2026-07-31) intentionally follows suit for consistency. Diverges from the store-UTC convention (CLAUDE.md § SQL design); related to OI-36 (UTC-display read sweep). A future change would convert schedule `TIME` → UTC per-date (DST-aware), migrate existing `Oee.Shift` rows, and audit every shift read/display. Not scoped now — flagged for a deliberate decision.
+
+---
+
 # Part B — User Journey Assumptions & Decisions
 
 These are the 19 assumptions from `MPP_MES_USER_JOURNEYS.md`. Each gates one or more Perspective screens. Cross-references to Part A items are noted per entry.

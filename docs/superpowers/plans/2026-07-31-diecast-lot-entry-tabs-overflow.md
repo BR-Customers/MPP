@@ -4,9 +4,9 @@
 
 **Goal:** Restructure the Die Cast LOT Entry screen into three tabs (Open Basket / Record Shift Output / Lot Release) with a persistent KPI rail, add a hard basket-overflow gate with a resolution popup, fix mojibake, and make input sizing uniform.
 
-**Architecture:** File-authored edits to Ignition Perspective `view.json` + the Core stylesheet + one repeatable SQL proc, then `scan.ps1` to sync the gateway. The overflow flow (Option A) composes three existing procs (`releaseDieCast` with `finalPieceDelta` → `openDieCast` → `recordShiftOutput`) orchestrated from a view `customMethod`; the only SQL change is adding `ItemId` to the breakdown read proc so the resolver can open the next basket with the right item.
+**Architecture:** File-authored edits to Ignition Perspective `view.json` + one repeatable SQL proc, then `scan.ps1` to sync the gateway. The overflow flow (Option A) composes three existing procs (`releaseDieCast` with `finalPieceDelta` → `openDieCast` → `recordShiftOutput`) orchestrated from a view `customMethod`; the only SQL change is adding `ItemId` to the breakdown read proc so the resolver can open the next basket with the right item.
 
-**Tech Stack:** Ignition 8.3 Perspective (`view.json`), Jython 2.7 view `customMethods`, SQL Server 2022 (repeatable migration + `test.*` sqlcmd harness), CSS.
+**Tech Stack:** Ignition 8.3 Perspective (`view.json`), Jython 2.7 view `customMethods`, SQL Server 2022 (repeatable migration + `test.*` sqlcmd harness).
 
 **Design spec:** `docs/superpowers/specs/2026-07-31-diecast-lot-entry-tabs-overflow-design.md`
 
@@ -14,7 +14,8 @@
 
 - **Branch:** commit on `jacques/working`. Stage **explicit paths only** — never `git add -A`/`-u` (the tree carries concurrent work). Omit the `Co-Authored-By: Claude` trailer.
 - **After any Ignition resource write, run `.\scan.ps1`** (from repo root) so the gateway re-scans. New views also need a `resource.json` beside `view.json` (`scope:"G"`, `files:["view.json"]`) or they render "View Not Found".
-- **File-edit boundary:** `DieCastBody` and `CavityLotRow` are **existing** views with a Designer cache — author carefully; after scanning, the human reopens them in Designer. New views (`DieCastOverflow*`) have no cache and are file-safe. Ask the human to close those two views in Designer before editing if it is open.
+- **File-edit boundary:** `DieCastBody` and `CavityLotRow` are **existing** views with a Designer cache — author carefully; after scanning, the human reopens them in Designer. New views (`DieCastOverflow*`) have no cache and are file-safe. Ask the human to close those two views in Designer before editing if open.
+- **Sizing is a view-config fix, NOT a stylesheet change.** Touch-height for inputs is already provided by the existing `.psc-pf-field-input` / `.psc-pf-field-select` classes (`min-height: var(--pf-touch-min)`, 44px). The DieCast dropdowns render class-less, which is why they mismatch the text fields. Fix = apply `pf-field-select` to those dropdowns in the views. Do **not** add a global `.ia_dropdown` rule — it would override deliberately-unstyled dropdowns elsewhere.
 - **Expression string literals** cannot use `\u` escapes — embed the literal middot `·` (U+00B7) directly (matches `OpenBasketRow`, which renders it correctly). Files are UTF-8; never reintroduce the Windows-codepage double-encoding.
 - **When writing multi-line Jython or expressions INTO `view.json` strings**, apply the Designer serialization convention: newlines → `\n`, tabs → `\t` (event/method bodies start with a leading `\t`), quotes → `\"`, and `=`→`=`, `<`→`<`, `>`→`>`, `&`→`&`. The readable code in this plan is the intent; escape it on write.
 - **No business logic in Python entity scripts.** The overflow orchestration lives in the *view* `customMethod` (UI flow the operator explicitly confirms), not in a `BlueRidge.*` entity script; quantity/eligibility rules stay in SQL.
@@ -28,13 +29,13 @@
 |---|---|---|
 | `sql/migrations/repeatable/R__Workorder_DieCast_GetShiftOutputBreakdown.sql` | Breakdown read proc — add `ItemId` | Modify |
 | `sql/tests/0045_DieCast_Lifecycle/030_ShiftOutput_Record.sql` | Add `ItemId` to the 3 INSERT-EXEC temp tables + assert | Modify |
-| `ignition/projects/Core/com.inductiveautomation.perspective/stylesheet/stylesheet.css` | `.ia_dropdown` uniform height | Modify |
-| `…/Components/PlantFloor/DieCastEntry/CavityLotRow/view.json` | Mojibake fix + column sizing | Modify |
+| `…/Components/PlantFloor/DieCastEntry/CavityLotRow/view.json` | Mojibake fix + column sizing + `pf-field-select` on scrap dropdowns | Modify |
 | `…/Components/Popups/DieCastOverflowRow/{view.json,resource.json}` | One overflow-cavity row: LTT input, emits `overflowLttChanged` | **New** |
 | `…/Components/Popups/DieCastOverflow/{view.json,resource.json}` | Overflow popup: repeater + Fill/Overfill/Cancel | **New** |
-| `…/Views/ShopFloor/DieCastBody/view.json` | Tab restructure, Subtitle mojibake, `activeTab`, overflow wiring | Modify |
+| `Core/…/BlueRidge/Common/Util/code.py` | `allLttsPresent` helper for the popup's Fill-button enable | Modify |
+| `…/Views/ShopFloor/DieCastBody/view.json` | Tab restructure, Subtitle mojibake, `activeTab`, `pf-field-select` on its dropdowns, overflow wiring | Modify |
 
-All Perspective paths are under `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/`.
+Perspective paths are under `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/`.
 
 ---
 
@@ -45,7 +46,7 @@ All Perspective paths are under `ignition/projects/MPP/com.inductiveautomation.p
 - Test: `sql/tests/0045_DieCast_Lifecycle/030_ShiftOutput_Record.sql`
 
 **Interfaces:**
-- Produces: `Workorder.DieCast_GetShiftOutputBreakdown` result set gains a trailing `ItemId BIGINT` column. `view.custom.breakdown` rows (raw proc rows) therefore carry key `ItemId`, consumed by Task 6's `submitShiftOutput`.
+- Produces: `Workorder.DieCast_GetShiftOutputBreakdown` result set gains a trailing `ItemId BIGINT` column. `view.custom.breakdown` rows (raw proc rows) therefore carry key `ItemId`, consumed by Task 5's `submitShiftOutput`.
 
 - [ ] **Step 1: Add the `ItemId` column + assertion to the test (RED)**
 
@@ -79,7 +80,7 @@ CTE (was `SELECT l.Id AS LotId, l.LotName, l.ToolCavityId, l.PieceCount, l.MaxPi
 ```sql
         SELECT l.Id AS LotId, l.LotName, l.ToolCavityId, l.ItemId, l.PieceCount, l.MaxPieceCount,
 ```
-Final SELECT — change the last projected column line to keep `MaxHeadroom` and append `ItemId`:
+Final SELECT — keep `MaxHeadroom`, append `ItemId`:
 ```sql
         CASE WHEN lo.MaxPieceCount IS NULL THEN 2147483647 ELSE lo.MaxPieceCount - lo.PieceCount END AS MaxHeadroom,
         lo.ItemId AS ItemId
@@ -101,61 +102,7 @@ git commit -m "feat(diecast): breakdown proc returns ItemId for overflow re-open
 
 ---
 
-## Task 2: Uniform dropdown height (stylesheet)
-
-**Files:**
-- Modify: `ignition/projects/Core/com.inductiveautomation.perspective/stylesheet/stylesheet.css` (the `.ia_dropdown, .ia_textArea, .ia_datetime_input` rule, ~line 379)
-
-**Interfaces:** Produces: every `ia.input.dropdown` renders at `--pf-touch-min` (44px) height, matching `.psc-pf-field-input` text fields, and never wraps its placeholder.
-
-- [ ] **Step 1: Add min-height + nowrap to the dropdown rule**
-
-In the existing rule block starting `.ia_dropdown,` (shared with `.ia_textArea, .ia_datetime_input`), add two declarations so dropdowns match the 44px touch target and single-line their label:
-
-```css
-.ia_dropdown,
-.ia_textArea,
-.ia_datetime_input {
-    background-color: var(--mpp-surface-raised);
-    color: var(--mpp-text-primary);
-    border: 1px solid var(--mpp-border-default);
-    border-radius: var(--mpp-radius-sm);
-    padding: var(--mpp-space-2) var(--mpp-space-3);
-    font-family: var(--mpp-font-sans);
-    font-size: var(--mpp-fs-base);
-    min-height: var(--pf-touch-min);
-    transition: border-color var(--mpp-transition-fast),
-                box-shadow var(--mpp-transition-fast);
-}
-/* Keep the selected/placeholder label on one line — narrow scrap dropdowns
-   were wrapping "Add another reason" across three lines. */
-.ia_dropdown .ia_dropdown__valueContainer,
-.ia_dropdown .iaDropdownCommon_placeholder {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-```
-
-(`min-height` on `.ia_textArea` is harmless — text areas are already ≥ this. Do **not** add `white-space: nowrap` to the shared block; scope it to `.ia_dropdown` children only.)
-
-- [ ] **Step 2: Scan + verify in a running session/Designer (DevTools)**
-
-```bash
-pwsh -File scan.ps1
-```
-Open any plant-floor screen with a dropdown + text field in the same row (e.g. the Die Cast shot-loss row). In browser DevTools confirm the `.ia_dropdown` computed height equals the sibling `.psc-pf-field-input` height (44px), and a long placeholder shows an ellipsis rather than wrapping. Confirm Config-app dropdowns (Item Master) still look correct — no clipped multi-line dropdowns.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add ignition/projects/Core/com.inductiveautomation.perspective/stylesheet/stylesheet.css
-git commit -m "style(plantfloor): uniform dropdown height + single-line label"
-```
-
----
-
-## Task 3: `CavityLotRow` — mojibake fix + column sizing
+## Task 2: `CavityLotRow` — mojibake fix + uniform sizing
 
 **Files:**
 - Modify: `…/Components/PlantFloor/DieCastEntry/CavityLotRow/view.json`
@@ -170,45 +117,46 @@ Find the `ReferenceLabel` component's `props.text` expression (currently contain
 "prior " + toStr({view.params.priorGoodThisShift}) + if({view.params.maxHeadroom} < 2147483647, "  ·  headroom " + toStr({view.params.maxHeadroom}), "")
 ```
 
-(On write, `<` becomes `<` per the escaping constraint; the middot stays a literal `·`.)
+(On write, `<` becomes `<`; the middot stays a literal `·`.)
 
-- [ ] **Step 2: Fix column bases so cavity rows align**
+- [ ] **Step 2: Apply the existing sizing class to the scrap dropdowns + fix columns**
 
-- `GoodBlock` (`position.basis`): change from `"110px"` to a fixed `"120px"` and keep `shrink:0`.
-- `ReferenceLabel`: add `position: { "basis": "150px", "shrink": 0 }` so the "prior/headroom" text column is a fixed width across rows.
-- `ScrapDefect1` / `ScrapDefect2` / `ScrapDefect3` dropdowns: add `"minWidth": "180px"` to each `props.style` so the placeholder never wraps (defense-in-depth with Task 2).
+- `ScrapDefect1` / `ScrapDefect2` / `ScrapDefect3` dropdowns: set `props.style.classes` to `"pf-field-select"` (they are currently class-less — this is the height fix, reusing the existing class) and add `"minWidth": "180px"` to the same `props.style` so the placeholder never wraps.
+- `GoodBlock` (`position.basis`): change `"110px"` → `"120px"`, keep `shrink:0`.
+- `ReferenceLabel`: add `position: { "basis": "150px", "shrink": 0 }` so the "prior/headroom" column is a fixed width across rows.
 
 - [ ] **Step 3: Scan + visual verify**
 
 ```bash
 pwsh -File scan.ps1
 ```
-On the Die Cast screen, Compute a breakdown with ≥2 open cavities. Confirm: the "prior … · headroom …" text renders with a clean middot (no `Ã…`), the Good input / reference / scrap columns line up across all cavity rows, and scrap dropdowns are single-line at the same height as the Good input.
+On the Die Cast screen, Compute a breakdown with ≥2 open cavities. Confirm: the "prior … · headroom …" text renders with a clean middot (no `Ã…`); Good input / reference / scrap columns line up across all cavity rows; scrap dropdowns are single-line and the same height as the Good input (44px in DevTools).
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/PlantFloor/DieCastEntry/CavityLotRow/view.json"
-git commit -m "fix(diecast): CavityLotRow middot mojibake + uniform column widths"
+git commit -m "fix(diecast): CavityLotRow middot mojibake + uniform dropdown/column sizing"
 ```
 
 ---
 
-## Task 4: `DieCastOverflow` popup (+ row sub-view)
+## Task 3: `DieCastOverflow` popup (+ row sub-view)
 
 **Files:**
 - Create: `…/Components/Popups/DieCastOverflowRow/view.json`
 - Create: `…/Components/Popups/DieCastOverflowRow/resource.json`
 - Create: `…/Components/Popups/DieCastOverflow/view.json`
 - Create: `…/Components/Popups/DieCastOverflow/resource.json`
+- Modify: `Core/…/BlueRidge/Common/Util/code.py` (add `allLttsPresent`)
 
 **Interfaces:**
-- Consumes: opened by Task 6 with `params = {overflow: [ {lotId, lotName, cavityNumber, headroom, good, remainder} … ], replyMessage: "dieCastOverflowResult", popupId: "mpp-diecast-overflow"}`.
-- Produces: fires page-scoped `replyMessage` with one of `{action:"fill", ltts:{ "<lotId>": "<ltt>" }}`, `{action:"overfill"}`, `{action:"cancel"}`, then closes itself.
+- Consumes: opened by Task 5 with `params = {overflow: [ {lotId, lotName, cavityNumber, headroom, good, remainder} … ], replyMessage: "dieCastOverflowResult", popupId: "mpp-diecast-overflow"}`.
+- Produces: fires page-scoped `replyMessage` with one of `{action:"fill", ltts:{ "<lotId>": "<ltt>" }}`, `{action:"overfill"}`, `{action:"cancel"}`, then closes itself. New `BlueRidge.Common.Util.allLttsPresent(ltts, expectedCount) -> bool`.
 
 - [ ] **Step 1: Create both `resource.json` files**
 
-Copy the shape of an existing popup's resource.json (`…/Components/Popups/ConfirmAction/resource.json`) into each new folder. Expected content:
+Copy an existing popup's resource.json (`…/Components/Popups/ConfirmAction/resource.json`) verbatim into each new folder (`DieCastOverflow/`, `DieCastOverflowRow/`). Shape:
 
 ```json
 {
@@ -222,8 +170,6 @@ Copy the shape of an existing popup's resource.json (`…/Components/Popups/Conf
 ```
 
 - [ ] **Step 2: Create `DieCastOverflowRow/view.json`**
-
-A single overflow-cavity row: a description label + an LTT text field. On blur it emits its LTT to the popup. Full view:
 
 ```jsonc
 {
@@ -268,8 +214,6 @@ A single overflow-cavity row: a description label + an LTT text field. On blur i
 ```
 
 - [ ] **Step 3: Create `DieCastOverflow/view.json`**
-
-Header + repeater over `params.overflow` (embedding the row) + three action buttons. `view.custom.ltts` accumulates `{lotId → ltt}`; the Fill button enables only when every overflow row has a non-empty LTT. Full view:
 
 ```jsonc
 {
@@ -328,7 +272,7 @@ Header + repeater over `params.overflow` (embedding the row) + three action butt
 
 - [ ] **Step 4: Add the `allLttsPresent` helper to `Common.Util`**
 
-The Fill-button enable expression needs a helper that returns True when the `ltts` map has `expectedCount` non-empty entries. Add to `ignition/projects/Core/ignition/script-python/BlueRidge/Common/Util/code.py`:
+Add to `ignition/projects/Core/ignition/script-python/BlueRidge/Common/Util/code.py` (call `extractQualifiedValues` bare — same module, no import):
 
 ```python
 def allLttsPresent(ltts, expectedCount):
@@ -343,14 +287,12 @@ def allLttsPresent(ltts, expectedCount):
         return False
 ```
 
-(`extractQualifiedValues` is defined in this same module — call it bare, no import.)
-
 - [ ] **Step 5: Scan + smoke the popup render**
 
 ```bash
 pwsh -File scan.ps1
 ```
-Temporarily test the render: in Designer, open `DieCastOverflow` and set its `params.overflow` preview to a 2-element list of `{lotId, lotName, cavityNumber, headroom, good, remainder}`; confirm two rows render with the description + LTT field, that filling both LTTs enables "Fill, release & continue", and that clearing one disables it again. No DB calls here.
+In Designer open `DieCastOverflow`, set its `params.overflow` preview to a 2-element list of `{lotId, lotName, cavityNumber, headroom, good, remainder}`; confirm two rows render with the description + LTT field, that filling both LTTs enables "Fill, release & continue", and clearing one disables it again. No DB calls here.
 
 - [ ] **Step 6: Commit**
 
@@ -361,7 +303,7 @@ git commit -m "feat(diecast): overflow-resolution popup + row sub-view + allLtts
 
 ---
 
-## Task 5: `DieCastBody` — tab restructure, Subtitle mojibake, `activeTab`
+## Task 4: `DieCastBody` — tab restructure, Subtitle mojibake, `activeTab`, dropdown sizing
 
 **Files:**
 - Modify: `…/Views/ShopFloor/DieCastBody/view.json`
@@ -374,21 +316,25 @@ git commit -m "feat(diecast): overflow-resolution popup + row sub-view + allLtts
 
 - [ ] **Step 1: Fix the Subtitle mojibake**
 
-In the `Subtitle` component's `props.text` expression, replace both mojibake middot runs (`Ãƒâ€šÃ‚Â·`) with a clean literal `·` so it reads:
+In the `Subtitle` component's `props.text` expression, replace both mojibake middot runs (`Ãƒâ€šÃ‚Â·`) with a clean literal `·`:
 
 ```
 {session.custom.cell.name} + "  ·  SHARED TERMINAL  ·  " + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = "", "No die mounted", "Tool " + {view.custom.activeTool.ToolCode})
 ```
 
-(On write: `=` → `=`, `||` stays; middot literal.)
+(On write: `=` → `=`; middot literal.)
 
 - [ ] **Step 2: Add the `activeTab` custom prop**
 
 In the top-level `custom` block, add `"activeTab": 0`.
 
-- [ ] **Step 3: Wrap the three panels in a tab container inside a new `MainRow`**
+- [ ] **Step 3: Apply `pf-field-select` to the class-less dropdowns**
 
-The current `root.children[2]` is the `Body` flex container holding, in order: `OpenPanel`, `ShiftOutputPanel`, `CurrentlyOpenPanel`, `RightRail`. Replace `Body` with a `MainRow` that holds a `TabContainer` (3 tabs) + the existing `RightRail`. Move the three panel containers **verbatim** (do not edit their internals) into the tab container as children[0..2]; move `RightRail` verbatim as `MainRow`'s second child.
+For uniform height with the text fields, add `"classes": "pf-field-select"` to `props.style` of these dropdowns (preserve any existing inline `width`): `ItemDropdown`, `ShiftDropdown`, `CavityDropdown` (keep its `width:"100%"`), `ShotLossReasonDropdown`, `CellPickerDropdown` (keep its `width:"300px"`).
+
+- [ ] **Step 4: Wrap the three panels in a tab container inside a new `MainRow`**
+
+`root.children[2]` is the `Body` flex container holding, in order: `OpenPanel`, `ShiftOutputPanel`, `CurrentlyOpenPanel`, `RightRail`. Replace `Body` with a `MainRow` holding a `TabContainer` (3 tabs) + the existing `RightRail`. Move the three panel containers **verbatim** (do not edit their internals beyond the position change below) into the tab container as children[0..2]; move `RightRail` verbatim as `MainRow`'s second child.
 
 New `MainRow` node (panels shown as placeholders — paste the existing container objects unchanged):
 
@@ -433,13 +379,13 @@ New `MainRow` node (panels shown as placeholders — paste the existing containe
 ```
 
 Notes:
-- The tab child order **must** match the `tabs[]` order: OpenPanel, ShiftOutputPanel, CurrentlyOpenPanel.
-- On each moved panel, **remove** any `position.basis`/`grow`/`shrink` that assumed the old 4-wide row (e.g. OpenPanel's `basis:"380px"`, ShiftOutputPanel's `basis:"620px",grow:1`, CurrentlyOpenPanel's `basis:"360px"`); inside the tab-content each panel should fill, so set each moved panel's `position` to `{ "grow": 1 }`. Keep `RightRail`'s `position.basis:"320px"`.
+- Tab child order **must** match `tabs[]`: OpenPanel, ShiftOutputPanel, CurrentlyOpenPanel.
+- On each moved panel, **remove** the old row-width `position` (`OpenPanel` `basis:"380px"`; `ShiftOutputPanel` `basis:"620px",grow:1`; `CurrentlyOpenPanel` `basis:"360px"`) and set each to `position: { "grow": 1 }` so it fills the tab content. Keep `RightRail`'s `position.basis:"320px"`.
 - Drop the old `Body` container's `wrap:"wrap"`.
 
-- [ ] **Step 4: Fix the `clearOpenDraft` focus path**
+- [ ] **Step 5: Fix the `clearOpenDraft` focus path**
 
-`clearOpenDraft` focuses the LTT input via `self.getChild("Body").getChild("OpenPanel")…`. `Body` no longer exists. Update the path to walk the new tree:
+`clearOpenDraft` focuses the LTT input via `self.getChild("Body").getChild("OpenPanel")…`. `Body` no longer exists. Update to:
 
 ```python
 	self.getChild("MainRow").getChild("TabContainer").getChild("OpenPanel").getChild("LttField").getChild("LttInput").focus()
@@ -447,38 +393,36 @@ Notes:
 
 (Keep the surrounding `try/except`. Other methods use `self.view.rootContainer.*` / `self.view.custom.*` and are unaffected.)
 
-- [ ] **Step 5: Scan + verify the restructure**
+- [ ] **Step 6: Scan + verify the restructure**
 
 ```bash
 pwsh -File scan.ps1
 ```
-Reopen `DieCastShared` and `DieCastDedicated` in Designer (they embed `DieCastBody`). In a session confirm: header + Active Cell + KPI right rail are persistent; three tabs ("Open Basket", "Record Shift Output", "Lot Release") switch correctly; Subtitle shows clean `·` separators; Open (basket), Compute/Preview, shot loss, Release, Void, operator switch, cell picker all still work; clicking Clear after an Open returns focus to the LTT field.
+Reopen `DieCastShared` and `DieCastDedicated` in Designer (they embed `DieCastBody`). In a session confirm: header + Active Cell + KPI right rail are persistent; three tabs switch correctly; Subtitle shows clean `·`; every dropdown matches the text-field height; Open, Compute/Preview, shot loss, Release, Void, operator switch, cell picker still work; Clear after Open returns focus to the LTT field.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/DieCastBody/view.json"
-git commit -m "feat(diecast): tab restructure (Open/Record/Release) + persistent KPI rail + Subtitle mojibake"
+git commit -m "feat(diecast): tab restructure (Open/Record/Release) + KPI rail + Subtitle mojibake + dropdown sizing"
 ```
 
 ---
 
-## Task 6: `DieCastBody` — overflow gate wiring
+## Task 5: `DieCastBody` — overflow gate wiring
 
 **Files:**
 - Modify: `…/Views/ShopFloor/DieCastBody/view.json`
 
 **Interfaces:**
-- Consumes: Task 1's `ItemId` on breakdown rows; Task 4's `DieCastOverflow` popup + reply contract; existing `BlueRidge.Lots.Lot.releaseDieCast`/`openDieCast` and `BlueRidge.Workorder.DieCast.recordShiftOutput`.
-- Produces: `submitShiftOutput` now gates on overflow; new `resolveOverflow(action, ltts)` + `_afterSubmit()` methods; new `view.custom.pendingSubmit`; new `dieCastOverflowResult` message handler.
+- Consumes: Task 1's `ItemId` on breakdown rows; Task 3's `DieCastOverflow` popup + reply contract; existing `BlueRidge.Lots.Lot.releaseDieCast`/`openDieCast` and `BlueRidge.Workorder.DieCast.recordShiftOutput`.
+- Produces: `submitShiftOutput` gates on overflow; new `resolveOverflow(action, ltts)` + `_afterSubmit()` methods; new `view.custom.pendingSubmit`; new `dieCastOverflowResult` message handler.
 
 - [ ] **Step 1: Add `pendingSubmit` custom prop**
 
 In the top-level `custom` block add `"pendingSubmit": {}`.
 
-- [ ] **Step 2: Replace `submitShiftOutput` with the overflow-aware version**
-
-Replace the `submitShiftOutput` customMethod body with (readable form — escape on write):
+- [ ] **Step 2: Replace `submitShiftOutput` with the overflow-aware version** (readable form — escape on write)
 
 ```python
 	rows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.breakdown) or []
@@ -622,10 +566,10 @@ Add to the view's `messageHandlers` (mirror the `releaseConfirmResult` entry —
 pwsh -File scan.ps1
 ```
 Using the dev DB (seed a capped-`MaxLotSize` item; see `project_mpp_plant_floor_smoke_seed`), open a basket on a cavity, drive its `PieceCount` near the cap, enter a gross that overflows that cavity, Submit:
-- **No overflow** case (small gross): submits directly, one write, KPIs update — unchanged behavior.
+- **No overflow** (small gross): submits directly, one write, KPIs update — unchanged.
 - **Overflow → Fill**: popup lists the overflow cavity; scan a new LTT; "Fill, release & continue" → basket 1 released at exactly cap, new basket opened on the scanned LTT with the remainder, KPIs sum correctly, both lots visible on the Lot Release tab.
 - **Overflow → Overfill**: single basket exceeds cap (one write), no new basket.
-- **Multi-cavity overflow**: one LTT field per overflowing cavity; Fill button stays disabled until all are entered.
+- **Multi-cavity overflow**: one LTT field per overflowing cavity; Fill button disabled until all entered.
 - **Cancel**: nothing written; re-Submit still available.
 
 - [ ] **Step 7: Commit**
@@ -641,12 +585,11 @@ git commit -m "feat(diecast): basket-overflow gate — fill+release+new-LTT or o
 
 - [ ] Run `pwsh -File sql/tests/Run-Tests.ps1 -Filter 0045_DieCast_Lifecycle` — all green.
 - [ ] Full screen pass on `DieCastShared` (cell picker) and `DieCastDedicated` (fixed cell): three tabs, persistent KPI rail, clean middots, uniform input heights, overflow popup both paths, no console errors (DevTools).
-- [ ] `git log --oneline` shows Tasks 1–6 as discrete commits on `jacques/working`.
+- [ ] `git log --oneline` shows Tasks 1–5 as discrete commits on `jacques/working`.
 - [ ] Push: `git push origin jacques/working`.
 
 ## Notes / risks (carried from the spec)
 
 - **Overflow fill is not one transaction** — each of release/open/record is individually atomic; a mid-sequence failure surfaces via `notifyResult` and stops, leaving a consistent, operator-recoverable state. Accepted trade-off of Option A.
 - **New basket may itself exceed cap** — the full remainder goes into one new basket; no recursive splitting (documented, matches operator's mental model).
-- **`.ia_dropdown` height is global** — re-verify Config-app dropdowns after Task 2.
 - **File-edit boundary** — `DieCastBody`/`CavityLotRow` are existing views; edit with Designer closed, scan, reopen. New popups are file-safe.

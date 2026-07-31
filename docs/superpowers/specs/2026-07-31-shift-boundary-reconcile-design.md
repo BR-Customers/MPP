@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-31
 **Author:** Blue Ridge Automation
-**Status:** Draft for review (design artifact; implementation follows via writing-plans).
+**Status:** Implemented 2026-07-31 (proc + tests + ticker wiring + dev seed). OI-38 logged for the local-time divergence.
 **Arc / Phase:** Arc 2 (Plant Floor) — OEE / Shift lifecycle (Phase 8 foundation).
 **Affects:** `ignition/.../timer/ShiftBoundaryTicker/handleTimerEvent.py`, `BlueRidge.Oee.Shift` (`code.py`), new `R__Oee_Shift_Reconcile.sql`, new NQ `oee/Shift_Reconcile`, new `sql/tests/0046_Shift_Reconcile/*`, new `sql/scratch/seed_shifts.sql`. Reads only (no schema change) against `Oee.Shift` + `Oee.ShiftSchedule`.
 
