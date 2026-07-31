@@ -46,6 +46,36 @@ EXEC test.Assert_IsEqual @TestName = N'[Reconcile.open] exactly one open shift',
      @Expected = N'1', @Actual = @openCnt;
 GO
 
+-- =============================================
+-- Test 2: idempotent. Re-run at the same @Now -> no-op, no duplicate.
+-- =============================================
+DECLARE @r2 TABLE (Status BIT, Message NVARCHAR(500), ShiftsClosed INT, ShiftsBackfilled INT, ShiftOpened BIGINT);
+INSERT INTO @r2 EXEC Oee.Shift_Reconcile @NowLocal = '2026-06-10T10:00:00', @AppUserId = 1;
+DECLARE @noop NVARCHAR(10) = (SELECT CASE WHEN ShiftsClosed = 0 AND ShiftsBackfilled = 0
+    AND ShiftOpened IS NULL THEN N'1' ELSE N'0' END FROM @r2);
+EXEC test.Assert_IsEqual @TestName = N'[Reconcile.idem] second run is a no-op', @Expected = N'1', @Actual = @noop;
+DECLARE @rowCnt NVARCHAR(10) = CAST((SELECT COUNT(*) FROM Oee.Shift
+    WHERE ShiftScheduleId IN (SELECT Id FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%')) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Reconcile.idem] still exactly one row', @Expected = N'1', @Actual = @rowCnt;
+GO
+
+-- =============================================
+-- Test 3: snap a ragged open start (07:03 -> 07:00), no new rows.
+-- =============================================
+DELETE FROM Oee.Shift WHERE ShiftScheduleId IN (SELECT Id FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%');
+DECLARE @Fid BIGINT = (SELECT Id FROM Oee.ShiftSchedule WHERE Name = N'TEST_R_First');
+INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd) VALUES (@Fid, '2026-06-10T07:03:11', NULL);
+DECLARE @r3 TABLE (Status BIT, Message NVARCHAR(500), ShiftsClosed INT, ShiftsBackfilled INT, ShiftOpened BIGINT);
+INSERT INTO @r3 EXEC Oee.Shift_Reconcile @NowLocal = '2026-06-10T10:00:00', @AppUserId = 1;
+DECLARE @snapped NVARCHAR(30) = (SELECT CONVERT(NVARCHAR(30), ActualStart, 121) FROM Oee.Shift
+    WHERE ShiftScheduleId = @Fid AND ActualEnd IS NULL);
+EXEC test.Assert_IsEqual @TestName = N'[Reconcile.snap] ragged start snapped to 07:00',
+     @Expected = N'2026-06-10 07:00:00.000', @Actual = @snapped;
+DECLARE @snapCnt NVARCHAR(10) = CAST((SELECT COUNT(*) FROM Oee.Shift
+    WHERE ShiftScheduleId IN (SELECT Id FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%')) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Reconcile.snap] no new rows created', @Expected = N'1', @Actual = @snapCnt;
+GO
+
 -- ---- cleanup ----
 DELETE FROM Oee.Shift WHERE ShiftScheduleId IN (SELECT Id FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%');
 DELETE FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%';
