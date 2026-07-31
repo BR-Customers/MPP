@@ -76,6 +76,21 @@ EXEC test.Assert_IsEqual @TestName = N'[Backfill.overnight] exactly one shift op
 
 DECLARE @bf2 NVARCHAR(10) = (SELECT CAST(ShiftsBackfilled AS NVARCHAR(10)) FROM @b2);
 EXEC test.Assert_IsEqual @TestName = N'[Backfill.overnight] exactly one shift backfilled', @Expected = N'1', @Actual = @bf2;
+
+-- Audit coverage: Second closes (ShiftEnded), Third backfills born-closed
+-- (ShiftStarted + ShiftEnded), First opens (ShiftStarted) -> >=2 of each.
+-- Scope EntityId to CURRENT Oee.Shift rows so stale audit rows from earlier
+-- tests don't count.
+DECLARE @startAud NVARCHAR(10) = (SELECT CASE WHEN COUNT(*) >= 2 THEN N'1' ELSE N'0' END
+    FROM Audit.OperationLog ol JOIN Audit.LogEventType et ON et.Id = ol.LogEventTypeId
+    WHERE et.Code = N'ShiftStarted'
+      AND ol.EntityId IN (SELECT Id FROM Oee.Shift WHERE ShiftScheduleId IN (@F2,@S2,@T2)));
+EXEC test.Assert_IsEqual @TestName = N'[Backfill.overnight] ShiftStarted audit emitted (backfilled + opened)', @Expected = N'1', @Actual = @startAud;
+DECLARE @endAud NVARCHAR(10) = (SELECT CASE WHEN COUNT(*) >= 2 THEN N'1' ELSE N'0' END
+    FROM Audit.OperationLog ol JOIN Audit.LogEventType et ON et.Id = ol.LogEventTypeId
+    WHERE et.Code = N'ShiftEnded'
+      AND ol.EntityId IN (SELECT Id FROM Oee.Shift WHERE ShiftScheduleId IN (@F2,@S2,@T2)));
+EXEC test.Assert_IsEqual @TestName = N'[Backfill.overnight] ShiftEnded audit emitted (closed + backfilled)', @Expected = N'1', @Actual = @endAud;
 GO
 
 -- =============================================
