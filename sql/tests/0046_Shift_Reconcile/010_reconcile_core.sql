@@ -76,6 +76,46 @@ DECLARE @snapCnt NVARCHAR(10) = CAST((SELECT COUNT(*) FROM Oee.Shift
 EXEC test.Assert_IsEqual @TestName = N'[Reconcile.snap] no new rows created', @Expected = N'1', @Actual = @snapCnt;
 GO
 
+-- =============================================
+-- Test 4: cross-day SAME-schedule stale open. Open First shift is left over
+-- from Monday (2026-06-08 07:00). Reconcile at Tuesday 2026-06-09 08:00 ->
+-- active instance is ALSO First, but Tuesday's 07:00 instance, not Monday's.
+-- Must close Monday's First at its scheduled end (15:00 Mon), backfill the
+-- missed Second (Mon 15-23), and open a fresh First at Tue 07:00 -- NOT
+-- relabel Monday's row to Tuesday's start.
+-- NOTE: TEST_R_Third is bitmask 62 = Tue-Sat only (Monday's bit, 1, is not
+-- set) -- it does not fire Monday night, so only Second backfills in this
+-- gap (ShiftsBackfilled = 1), not 2. Verified against the fixture bitmask,
+-- not assumed.
+-- =============================================
+DELETE FROM Oee.Shift WHERE ShiftScheduleId IN (SELECT Id FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%');
+DECLARE @Fid4 BIGINT = (SELECT Id FROM Oee.ShiftSchedule WHERE Name = N'TEST_R_First');
+INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd) VALUES (@Fid4, '2026-06-08T07:00:00', NULL);
+DECLARE @r4 TABLE (Status BIT, Message NVARCHAR(500), ShiftsClosed INT, ShiftsBackfilled INT, ShiftOpened BIGINT);
+INSERT INTO @r4 EXEC Oee.Shift_Reconcile @NowLocal = '2026-06-09T08:00:00', @AppUserId = 1;
+
+DECLARE @mondayEnd NVARCHAR(30) = (
+    SELECT CONVERT(NVARCHAR(30), ActualEnd, 121) FROM Oee.Shift
+    WHERE ShiftScheduleId = @Fid4 AND ActualStart = '2026-06-08T07:00:00');
+EXEC test.Assert_IsEqual @TestName = N'[Reconcile.crossday] Monday First closed at scheduled 15:00',
+     @Expected = N'2026-06-08 15:00:00.000', @Actual = @mondayEnd;
+
+DECLARE @tuesOpenStart NVARCHAR(30) = (
+    SELECT CONVERT(NVARCHAR(30), ActualStart, 121) FROM Oee.Shift
+    WHERE ShiftScheduleId = @Fid4 AND ActualEnd IS NULL);
+EXEC test.Assert_IsEqual @TestName = N'[Reconcile.crossday] new open First at Tuesday 07:00',
+     @Expected = N'2026-06-09 07:00:00.000', @Actual = @tuesOpenStart;
+
+DECLARE @bfCount NVARCHAR(10) = (SELECT CAST(ShiftsBackfilled AS NVARCHAR(10)) FROM @r4);
+EXEC test.Assert_IsEqual @TestName = N'[Reconcile.crossday] one shift backfilled (Second; Third is Tue-Sat only)',
+     @Expected = N'1', @Actual = @bfCount;
+
+DECLARE @openCnt4 NVARCHAR(10) = CAST((SELECT COUNT(*) FROM Oee.Shift
+    WHERE ActualEnd IS NULL AND ShiftScheduleId IN (SELECT Id FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%')) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Reconcile.crossday] exactly one open shift remains',
+     @Expected = N'1', @Actual = @openCnt4;
+GO
+
 -- ---- cleanup ----
 DELETE FROM Oee.Shift WHERE ShiftScheduleId IN (SELECT Id FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%');
 DELETE FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%';

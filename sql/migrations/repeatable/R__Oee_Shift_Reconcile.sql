@@ -1,8 +1,8 @@
-﻿-- ============================================================
+-- ============================================================
 -- Repeatable:  R__Oee_Shift_Reconcile.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-07-31
--- Version:     1.0
+-- Version:     1.1
 -- Description: Reconciles Oee.Shift runtime instances to the schedule up to
 --              @NowLocal. Idempotent. LOCAL TIME (matches Shift_GetActive).
 --              Behaviors (see spec 2026-07-31-shift-boundary-reconcile-design):
@@ -13,8 +13,16 @@
 --              Inlines all mutations + audit (captured via INSERT-EXEC; must not
 --              EXEC sibling status-row procs). Rejections before BEGIN TRAN;
 --              ROLLBACK only in CATCH. No OUTPUT params (FDS-11-011).
+--              (A)/(B) discriminate "open shift IS the active instance" by the
+--              open shift's SCHEDULED INSTANCE START (@OpenSchedStart), not by
+--              ShiftScheduleId alone -- two different calendar days can share
+--              the same schedule id (cross-day outage). See fix 1.1.
 -- Change Log:
 --   2026-07-31 - 1.0 - Initial version (replaces per-tick start/end orchestration).
+--   2026-07-31 - 1.1 - Fix: discriminate same-instance by scheduled start, not
+--                       schedule id, so a cross-day stale open (same schedule,
+--                       different day) is closed + backfilled instead of
+--                       silently relabeled (branch A) / skipped (branch B).
 -- ============================================================
 CREATE OR ALTER PROCEDURE Oee.Shift_Reconcile
     @NowLocal           DATETIME2(3)  = NULL,
@@ -61,6 +69,7 @@ BEGIN
 
         DECLARE @ActiveSchedId BIGINT = NULL, @ActiveStart DATETIME2(3) = NULL, @ActiveEnd DATETIME2(3) = NULL;
 
+        -- Boundary math uses DATEADD(SECOND,...) -- schedule times are TIME(0) (whole-second).
         ;WITH cand AS (
             SELECT TOP 1
                 ss.Id,
@@ -106,10 +115,16 @@ BEGIN
             RETURN;
         END
 
-        -- ---- Derive the open shift's scheduled EndLocal (for stale close) ----
+        -- ---- Derive the open shift's scheduled StartLocal/EndLocal (for the
+        --      same-instance test and stale close). StartLocal discriminates
+        --      "open shift IS the active instance" by scheduled INSTANCE START,
+        --      not by schedule id alone -- two different calendar days can
+        --      share the same ShiftScheduleId (see cross-day regression). ----
+        DECLARE @OpenSchedStart DATETIME2(3) = NULL;
         DECLARE @OpenSchedEnd DATETIME2(3) = NULL;
         IF @OpenId IS NOT NULL
-            SELECT @OpenSchedEnd = CASE WHEN ss.EndTime > ss.StartTime
+            SELECT @OpenSchedStart = DATEADD(SECOND, DATEDIFF(SECOND, 0, ss.StartTime), CAST(CAST(@OpenStart AS DATE) AS DATETIME2(3))),
+                   @OpenSchedEnd = CASE WHEN ss.EndTime > ss.StartTime
                         THEN DATEADD(SECOND, DATEDIFF(SECOND, 0, ss.EndTime), CAST(CAST(@OpenStart AS DATE) AS DATETIME2(3)))
                         ELSE DATEADD(SECOND, DATEDIFF(SECOND, 0, ss.EndTime), CAST(DATEADD(DAY,1,CAST(@OpenStart AS DATE)) AS DATETIME2(3))) END
             FROM Oee.ShiftSchedule ss WHERE ss.Id = @OpenSchedId;
@@ -119,16 +134,20 @@ BEGIN
         -- ============================================================
         BEGIN TRANSACTION;
 
-        -- (A) Open shift IS the active instance but ragged -> snap start.
+        -- (A) Open shift IS the active instance (same scheduled INSTANCE START,
+        --     not just same schedule id) but ragged -> snap start.
         IF @OpenId IS NOT NULL AND @ActiveSchedId IS NOT NULL
-           AND @OpenSchedId = @ActiveSchedId AND @OpenStart <> @ActiveStart
+           AND @OpenSchedId = @ActiveSchedId AND @OpenSchedStart = @ActiveStart AND @OpenStart <> @ActiveStart
         BEGIN
             UPDATE Oee.Shift SET ActualStart = @ActiveStart WHERE Id = @OpenId;
         END
 
-        -- (B) Open shift is STALE (no active, or different schedule) -> close at scheduled end.
+        -- (B) Open shift is STALE (no active; different schedule; OR same
+        --     schedule but a different day/instance -- e.g. an outage spanning
+        --     a full cycle leaves Monday's First open while Tuesday's First is
+        --     now active) -> close at ITS scheduled end.
         --     Mirror of Oee.Shift_End (ActualEnd + ShiftEnded audit).
-        IF @OpenId IS NOT NULL AND (@ActiveSchedId IS NULL OR @OpenSchedId <> @ActiveSchedId)
+        IF @OpenId IS NOT NULL AND (@ActiveSchedId IS NULL OR @OpenSchedId <> @ActiveSchedId OR @OpenSchedStart <> @ActiveStart)
         BEGIN
             DECLARE @CloseAt DATETIME2(3) = ISNULL(@OpenSchedEnd, @Now);
             IF @CloseAt < @OpenStart SET @CloseAt = @Now;   -- never end before start
