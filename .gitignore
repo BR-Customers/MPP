@@ -78,3 +78,7 @@ ignition/projects/Refrence project/Spinner (2).zip
 ignition/projects/Refrence project/Spinner_test.zip
 ignition/projects/Refrence project/Spinner/com.inductiveautomation.perspective/views/BlueRidge/Components/_HMI/_CNCLoader/Popups/ProgramPreview/resource.json
 ignition/projects/Refrence project/Spinner/com.inductiveautomation.perspective/views/BlueRidge/Components/_HMI/_CNCLoader/Popups/ProgramPreview/view.json
+
+# AIM Vision vendor help dump (9,323 files) - reference only, kept out of the repo.
+# The interface contract that matters is committed at AIM_docs/customer_AIM_http
+AIM_docs/customer_docs/
