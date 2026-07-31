@@ -10,6 +10,8 @@ GO
 
 DELETE FROM Oee.Shift WHERE ShiftScheduleId IN (SELECT Id FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%');
 DELETE FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_R_%';
+-- Isolate the test week: temp-deprecate any non-TEST_R_ schedule that could resolve
+-- as "active" for a 06-08..06-14 @NowLocal. Run-Tests targets the throwaway MPP_MES_Test DB.
 UPDATE Oee.ShiftSchedule SET DeprecatedAt = SYSUTCDATETIME()
 WHERE DeprecatedAt IS NULL AND Name NOT LIKE N'TEST_R_%';
 INSERT INTO Oee.ShiftSchedule (Name, Description, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedByUserId)
@@ -38,6 +40,8 @@ EXEC test.Assert_IsEqual @TestName = N'[Backfill.single] Second opened at 15:00'
      @Expected = N'2026-06-10 15:00:00.000', @Actual = @secStart;
 DECLARE @bf1 NVARCHAR(10) = (SELECT CAST(ShiftsBackfilled AS NVARCHAR(10)) FROM @b1);
 EXEC test.Assert_IsEqual @TestName = N'[Backfill.single] nothing backfilled', @Expected = N'0', @Actual = @bf1;
+DECLARE @openCnt1 NVARCHAR(10) = CAST((SELECT COUNT(*) FROM Oee.Shift WHERE ActualEnd IS NULL AND ShiftScheduleId IN (@F,@S,@T)) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Backfill.single] exactly one shift open (B3)', @Expected = N'1', @Actual = @openCnt1;
 GO
 
 -- =============================================
@@ -66,6 +70,9 @@ EXEC test.Assert_IsEqual @TestName = N'[Backfill.overnight] Third backfilled 23:
 DECLARE @firstOpen NVARCHAR(30) = (SELECT CONVERT(NVARCHAR(30), ActualStart, 121) FROM Oee.Shift WHERE ShiftScheduleId=@F2 AND ActualEnd IS NULL);
 EXEC test.Assert_IsEqual @TestName = N'[Backfill.overnight] First open at 06-11 07:00',
      @Expected = N'2026-06-11 07:00:00.000', @Actual = @firstOpen;
+
+DECLARE @openCnt2 NVARCHAR(10) = CAST((SELECT COUNT(*) FROM Oee.Shift WHERE ActualEnd IS NULL AND ShiftScheduleId IN (@F2,@S2,@T2)) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Backfill.overnight] exactly one shift open (B3)', @Expected = N'1', @Actual = @openCnt2;
 
 DECLARE @bf2 NVARCHAR(10) = (SELECT CAST(ShiftsBackfilled AS NVARCHAR(10)) FROM @b2);
 EXEC test.Assert_IsEqual @TestName = N'[Backfill.overnight] exactly one shift backfilled', @Expected = N'1', @Actual = @bf2;
