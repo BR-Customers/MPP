@@ -21,7 +21,7 @@ DECLARE @S BIGINT = (SELECT Id FROM Oee.ShiftSchedule WHERE Name = N'TEST_R_Seco
 DECLARE @T BIGINT = (SELECT Id FROM Oee.ShiftSchedule WHERE Name = N'TEST_R_Third');
 
 -- =============================================
--- Test 1: 7-day cap. A closed shift ended 06-01 23:00 (9 days before now);
+-- Test 1: 7-day cap. A closed shift ended 06-01 23:00 (~8.5 days before now);
 --   no open shift. now = Wed 06-10 10:00 -> First. Gap exceeds 7d -> NO backfill,
 --   just open First 06-10 07:00.
 -- =============================================
