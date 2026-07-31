@@ -178,6 +178,18 @@ def toDecimalOrNone(v):
         return None
 
 
+def allLttsPresent(ltts, expectedCount):
+    """True when the overflow-popup LTT map holds `expectedCount` non-blank
+       entries (one scanned LTT per overflowing cavity). Enables the popup's
+       Fill button. Returns bool."""
+    m = extractQualifiedValues(ltts) or {}
+    filled = [v for v in m.values() if v is not None and ("%s" % v).strip() != ""]
+    try:
+        return len(filled) >= int(expectedCount)
+    except (ValueError, TypeError):
+        return False
+
+
 def extractQualifiedValues(data):
     """
     Recursively unwrap QualifiedValue (from tag / property bindings) through
