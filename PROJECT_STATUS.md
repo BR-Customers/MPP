@@ -12,7 +12,18 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-07-28 — **Dual-transport label printing built end-to-end on `hunter/explore`: the MES now prints to BOTH networked Zebras (raw TCP) and USB printers shared as Windows print queues, chosen from the syntax of the printer's `Endpoint`. Container shipping labels now actually dispatch — before this they printed nothing at all. Suite 2167 assertions / 0 FAIL.**
+**Last updated:** 2026-07-31 — **⛔→✅ THE AIM INTEGRATION IS UNBLOCKED. Both Honda-EDI endpoints are now proven against MPP's live AIM server.** The 2026-07-16 "BLOCKED pending customer input" call is **superseded**: the interface contract was found in the repo (`AIM_docs/customer_AIM_http`), and the real wire format was reverse-engineered from AIM's own `acsMobileLog` after the written agreement turned out to be **wrong about how the payload is transmitted**.
+
+> **The contract.** `nextserial.csv` issues a 9-digit, zero-padded, per-company-code serial. `postserial.csv` binds content to it. **The payload goes in the QUERY STRING with an EMPTY body** (`Content-Length: 0`) — not in the POST body as the agreement describes — and the delimiters are **literal backslash escapes** (`%5Cr%5Cn` = the text `\r\n`, `%5Ct` = the text `\t`), not control characters:
+> `POST /mes/floor/{Company}/636652666553236784/postserial.csv?\r\n{serial}\t{part}\t{qty}\t{lot}\r\n`
+> **Success = an 11-byte reply** (`{serial}{CRLF}`). A ~91-byte **echo of the request** is the listener's unrecognized-request fallback — a usable synchronous error signal, which removes the "no success signal" design worry recorded earlier.
+> **Verified end-to-end** against test company `01`: serial `000000024` produced a real AIM label — `112006FB A000`, qty 15, lot `000000024`, destination `GNSE 25 - Honda` — confirmed positively on the Unshipped Labels report. Negative control: all eight body-format attempts (`…016`–`…023`) created nothing.
+> **Two design consequences.** (1) **The pool must collapse from per-part to per-company-code** — `nextserial.csv` takes **no part parameter**, so FDS-07-010's per-part topup loop is unimplementable as specced; `AimShipperIdPool.PartNumber NOT NULL` is wrong. (2) **The customer-part number is NOT derivable from our part number** — AIM's X-Ref shows `11300R70 A000`→`11300R7- A000` and `112006FBAA000`→`112006FB A000`; `Parts.Item` needs a **stored** customer-part value sourced from AIM.
+> **Still open:** `previousSerial` has no equivalent in this interface (blocks FDS-07-012 Sort-Cage re-pack traceability); **holds have no interface at all** in the agreement — Appendix L's aside implies QA does them by hand in AIM's UI, so FDS-07-011 may be specced against something that was never scoped; OI-33 empty-pool policy remains a business call.
+> **⚠️ Company `01` ONLY.** Production runs on company `99` from the legacy MES box (`172.17.10.8`), counter at ~13.84M. Never point MES traffic at `99`.
+> Full contract, the complete diagnostic history, the AIM Vision menu paths, and a server-side test plan: **`notes/2026-07-28_aim-interface-contract.md`**. **Next: the Ignition build** (see that note's implementation section).
+
+**Prior header (2026-07-28):** **Dual-transport label printing built end-to-end on `hunter/explore`: the MES now prints to BOTH networked Zebras (raw TCP) and USB printers shared as Windows print queues, chosen from the syntax of the printer's `Endpoint`. Container shipping labels now actually dispatch — before this they printed nothing at all. Suite 2167 assertions / 0 FAIL.**
 
 > **The transport layer.** New `BlueRidge.Lots.LabelTransport` is the ONE place ZPL bytes leave the Gateway: `send()`, `describeEndpoint()` (a pure config-time validator), and `logDispatch()`. Grammar: `host:port` → raw TCP (**port mandatory** — that is what makes a bare name unambiguously a queue, where the old code silently guessed `hostname:9100`); `\\HOST\Queue` or a bare name → Windows print queue via `javax.print`. Both dispatchers' byte-identical `_dispatchZpl`/`_logDispatch` copies are deleted. **Verified live in the Script Console:** the queue path enumerates correctly and the Gateway service account CAN see printers, including `Zebra GX420d (RAW)` — which was the single biggest risk to the whole hardwired design.
 > **Label-type routing.** `Location.Terminal_GetPrinter` v2.0 takes an optional `@LabelTypeCode` and prefers a printer whose new `LabelTypes` CSV attribute contains it, falling back to the previous single-printer behaviour when nothing matches — so every existing caller and every seeded printer is unaffected. Wired through the NQ, `Terminal.getPrinter`, and both dispatchers.
@@ -131,7 +142,15 @@ Worked a live shop-floor smoke list end-to-end on `jacques/working`; reconciled 
 **Dev DB (`MPP_MES_Dev`) applied this session — all data-safe, NO reset (live test data preserved):** versioned `0037`/`0038`/`0039` (were unapplied — quality-capture + PLC foundation incl. `Item.PlcId`) + all 349 repeatables re-run, then the route-aware `MachiningIn_RecordPick`, `Lot_Create` warehouse deposit, and `Assembly_CompleteTray` message.
 ---
 
-## 🔖 2026-07-16 — AIM integration researched end-to-end; ⛔ BLOCKED pending customer input
+## 🔖 2026-07-16 — AIM integration researched end-to-end; ⛔ BLOCKED — **✅ SUPERSEDED 2026-07-31**
+
+> **⚠️ THIS SECTION IS HISTORICAL.** The blocker was resolved on 2026-07-31 — both endpoints are
+> proven against the live AIM server. Blockers 1 (transport/authority) and 3 (message contract) are
+> **answered**; blocker 2 (per-part vs generic pool) is **decided by the contract** — it must be
+> generic, because `nextserial.csv` accepts no part parameter. Blocker 4 (OI-33) and the hold
+> interface remain open. See the 2026-07-31 header at the top and
+> **`notes/2026-07-28_aim-interface-contract.md`** for the verified contract. Read the rest of this
+> section only for the design rationale behind the built pool layer.
 
 **Come back to this.** Did a full repo sweep of the AIM (Honda EDI) footprint this session — FRS
 contract, design, and the actual build. Conclusion: **the local pool layer is built + tested, but
