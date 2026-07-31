@@ -154,13 +154,117 @@
             "meta": {
               "name": "TitleBlock"
             },
-            "position": {
-              "grow": 1
-            },
+            "position": {},
             "props": {
               "direction": "column"
             },
             "type": "ia.container.flex"
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "HeaderCellPicker"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.cellPickerEnabled"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "gap": "8px"
+              }
+            },
+            "children": [
+              {
+                "meta": {
+                  "name": "ActiveCellLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-cell-context-label"
+                  },
+                  "text": "Active Cell"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.applyCell(self.props.value)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "CellPickerDropdown"
+                },
+                "position": {
+                  "basis": "300px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.cells"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\tcells = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "path": "session.custom.cell.locationId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": {
+                    "text": "Scan or pick a cell"
+                  },
+                  "style": {
+                    "classes": "pf-field-select",
+                    "width": "300px"
+                  }
+                },
+                "type": "ia.input.dropdown"
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": ""
+            }
           },
           {
             "events": {
@@ -280,110 +384,6 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
-          }
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
-          {
-            "meta": {
-              "name": "ActiveCellLabel"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-cell-context-label"
-              },
-              "text": "Active Cell"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "CellPickerDropdown"
-            },
-            "position": {
-              "basis": "300px",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.cells"
-                  },
-                  "transforms": [
-                    {
-                      "code": "\tcells = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
-                      "type": "script"
-                    }
-                  ],
-                  "type": "property"
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "config": {
-                    "path": "session.custom.cell.locationId"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "placeholder": {
-                "text": "Scan or pick a cell"
-              },
-              "style": {
-                "classes": "pf-field-select",
-                "width": "300px"
-              }
-            },
-            "type": "ia.input.dropdown"
-          },
-          {
-            "meta": {
-              "name": "Spacer"
-            },
-            "position": {
-              "grow": 1
-            },
-            "type": "ia.display.label"
-          }
-        ],
-        "meta": {
-          "name": "ContextBar"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "config": {
-                "path": "view.params.cellPickerEnabled"
-              },
-              "type": "property"
-            }
-          }
-        },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "classes": "pf-terminal-cell-context",
-            "gap": "12px",
             "overflow": "hidden"
           }
         },
@@ -1695,9 +1695,9 @@
           "name": "resolveOverflow",
           "params": [
             "action",
-            "ltts"
+            "decisions"
           ],
-          "script": "\traw = self.view.custom.pendingSubmit\n\tps = system.util.jsonDecode(raw) if raw else None\n\tif not ps:\n\t\treturn\n\tlines = ps.get(\"lines\") or []\n\toverflow = ps.get(\"overflow\") or []\n\tshiftId = ps.get(\"shiftId\")\n\ttoolId = ps.get(\"toolId\")\n\tcellId = ps.get(\"cellLocationId\")\n\tterm = ps.get(\"terminalLocationId\")\n\tappUserId = self.session.custom.appUserId\n\tif action == \"cancel\":\n\t\tself.view.custom.pendingSubmit = {}\n\t\treturn\n\tif action == \"overfill\":\n\t\tdata = {\"shiftId\": shiftId, \"toolId\": toolId, \"lines\": lines, \"shotLoss\": []}\n\t\tresult = BlueRidge.Workorder.DieCast.recordShiftOutput(data, appUserId=appUserId, terminalLocationId=term)\n\t\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Shift output recorded (baskets overfilled)\")\n\t\tif result and result.get(\"Status\"):\n\t\t\tself._afterSubmit()\n\t\treturn\n\tltts = BlueRidge.Common.Util.extractQualifiedValues(ltts) or {}\n\toverLotIds = set(o.get(\"lotId\") for o in overflow)\n\tnonOverflow = [ln for ln in lines if ln.get(\"lotId\") not in overLotIds]\n\tif nonOverflow:\n\t\tr0 = BlueRidge.Workorder.DieCast.recordShiftOutput(\n\t\t\t{\"shiftId\": shiftId, \"toolId\": toolId, \"lines\": nonOverflow, \"shotLoss\": []},\n\t\t\tappUserId=appUserId, terminalLocationId=term)\n\t\tBlueRidge.Common.Ui.notifyResult(r0, successTitle=\"Cavities within capacity recorded\")\n\t\tif not (r0 and r0.get(\"Status\")):\n\t\t\treturn\n\tfor o in overflow:\n\t\toldLot = o.get(\"lotId\")\n\t\tnewLtt = (ltts.get(\"%s\" % oldLot) or ltts.get(oldLot) or \"\")\n\t\tnewLtt = (\"%s\" % newLtt).strip()\n\t\trel = BlueRidge.Lots.Lot.releaseDieCast({\"lotId\": oldLot, \"finalPieceDelta\": o.get(\"headroom\"),\n\t\t\t\"scrapLines\": o.get(\"scrapLines\") or [], \"shiftId\": shiftId,\n\t\t\t\"appUserId\": appUserId, \"terminalLocationId\": term})\n\t\tBlueRidge.Common.Ui.notifyResult(rel, successTitle=\"Basket \" + (o.get(\"lotName\") or \"\") + \" filled + released\")\n\t\tif not (rel and rel.get(\"Status\")):\n\t\t\treturn\n\t\topened = BlueRidge.Lots.Lot.openDieCast({\"itemId\": o.get(\"itemId\"), \"currentLocationId\": cellId,\n\t\t\t\"toolId\": toolId, \"toolCavityId\": o.get(\"toolCavityId\"), \"lotName\": newLtt,\n\t\t\t\"appUserId\": appUserId, \"terminalLocationId\": term})\n\t\tBlueRidge.Common.Ui.notifyResult(opened, successTitle=\"New basket \" + newLtt + \" opened\")\n\t\tif not (opened and opened.get(\"Status\")):\n\t\t\treturn\n\t\tnewLot = opened.get(\"NewId\")\n\t\trem = BlueRidge.Workorder.DieCast.recordShiftOutput(\n\t\t\t{\"shiftId\": shiftId, \"toolId\": toolId,\n\t\t\t \"lines\": [{\"lotId\": newLot, \"pieceDelta\": o.get(\"remainder\"), \"scrapLines\": []}], \"shotLoss\": []},\n\t\t\tappUserId=appUserId, terminalLocationId=term)\n\t\tBlueRidge.Common.Ui.notifyResult(rem, successTitle=\"Remainder recorded to \" + newLtt)\n\t\tif not (rem and rem.get(\"Status\")):\n\t\t\treturn\n\tself._afterSubmit()"
+          "script": "\traw = self.view.custom.pendingSubmit\n\tps = system.util.jsonDecode(raw) if raw else None\n\tif not ps:\n\t\treturn\n\tlines = ps.get(\"lines\") or []\n\toverflow = ps.get(\"overflow\") or []\n\tshiftId = ps.get(\"shiftId\")\n\ttoolId = ps.get(\"toolId\")\n\tcellId = ps.get(\"cellLocationId\")\n\tterm = ps.get(\"terminalLocationId\")\n\tappUserId = self.session.custom.appUserId\n\tif action == \"cancel\":\n\t\tself.view.custom.pendingSubmit = \"\"\n\t\treturn\n\tdecisions = BlueRidge.Common.Util.extractQualifiedValues(decisions) or {}\n\tdef _dec(lotId):\n\t\tdd = decisions.get(\"%s\" % lotId)\n\t\tif dd is None:\n\t\t\tdd = decisions.get(lotId)\n\t\tdd = BlueRidge.Common.Util.extractQualifiedValues(dd) or {}\n\t\treturn (dd.get(\"mode\") or \"fill\"), (\"%s\" % (dd.get(\"ltt\") or \"\")).strip()\n\toverLotIds = set(o.get(\"lotId\") for o in overflow)\n\toverfillIds = set(o.get(\"lotId\") for o in overflow if _dec(o.get(\"lotId\"))[0] == \"overfill\")\n\tbatch = [ln for ln in lines if (ln.get(\"lotId\") not in overLotIds) or (ln.get(\"lotId\") in overfillIds)]\n\tif batch:\n\t\tr0 = BlueRidge.Workorder.DieCast.recordShiftOutput({\"shiftId\": shiftId, \"toolId\": toolId, \"lines\": batch, \"shotLoss\": []}, appUserId=appUserId, terminalLocationId=term)\n\t\tBlueRidge.Common.Ui.notifyResult(r0, successTitle=\"Cavities recorded\")\n\t\tif not (r0 and r0.get(\"Status\")):\n\t\t\treturn\n\tfor o in overflow:\n\t\tlotId = o.get(\"lotId\")\n\t\tmode, ltt = _dec(lotId)\n\t\tif mode != \"fill\":\n\t\t\tcontinue\n\t\trel = BlueRidge.Lots.Lot.releaseDieCast({\"lotId\": lotId, \"finalPieceDelta\": o.get(\"headroom\"), \"scrapLines\": o.get(\"scrapLines\") or [], \"shiftId\": shiftId, \"appUserId\": appUserId, \"terminalLocationId\": term})\n\t\tBlueRidge.Common.Ui.notifyResult(rel, successTitle=\"Basket \" + (o.get(\"lotName\") or \"\") + \" filled + released\")\n\t\tif not (rel and rel.get(\"Status\")):\n\t\t\treturn\n\t\topened = BlueRidge.Lots.Lot.openDieCast({\"itemId\": o.get(\"itemId\"), \"currentLocationId\": cellId, \"toolId\": toolId, \"toolCavityId\": o.get(\"toolCavityId\"), \"lotName\": ltt, \"appUserId\": appUserId, \"terminalLocationId\": term})\n\t\tBlueRidge.Common.Ui.notifyResult(opened, successTitle=\"New basket \" + ltt + \" opened\")\n\t\tif not (opened and opened.get(\"Status\")):\n\t\t\treturn\n\t\tnewLot = opened.get(\"NewId\")\n\t\trem = BlueRidge.Workorder.DieCast.recordShiftOutput({\"shiftId\": shiftId, \"toolId\": toolId, \"lines\": [{\"lotId\": newLot, \"pieceDelta\": o.get(\"remainder\"), \"scrapLines\": []}], \"shotLoss\": []}, appUserId=appUserId, terminalLocationId=term)\n\t\tBlueRidge.Common.Ui.notifyResult(rem, successTitle=\"Remainder recorded to \" + ltt)\n\t\tif not (rem and rem.get(\"Status\")):\n\t\t\treturn\n\tself._afterSubmit()"
         }
       ],
       "extensionFunctions": null,
@@ -1747,7 +1747,7 @@
         {
           "messageType": "dieCastOverflowResult",
           "pageScope": true,
-          "script": "\tif payload:\n\t\tself.resolveOverflow(payload.get(\"action\"), payload.get(\"ltts\"))",
+          "script": "\tif payload:\n\t\tself.resolveOverflow(payload.get(\"action\"), payload.get(\"decisions\"))",
           "sessionScope": false,
           "viewScope": false
         }
