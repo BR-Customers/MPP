@@ -9,9 +9,6 @@
    steps). The ShippingLabel.PrintedAt / PrintFailedAt write-back + the stranded-print
    safety sweep + reprint/void are the Phase 7 print-failure lifecycle.
 """
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Location.Terminal
 
 from java.net import Socket, InetSocketAddress
 from java.lang import String as JString

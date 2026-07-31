@@ -4,11 +4,6 @@
    signature: NO eventAt param (the proc stamps SYSUTCDATETIME()), and the JSON
    children param is @FieldValuesJson (mapped from the dcValues dict)."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Lots.Lot
-import BlueRidge.Parts.OperationTemplate
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)

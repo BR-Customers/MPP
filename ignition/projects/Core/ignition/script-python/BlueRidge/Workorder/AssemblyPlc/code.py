@@ -15,10 +15,6 @@
    TOPServer/MIP/OmniServer tag wiring + the per-line tag map are a commissioning activity
    (consolidated handoff). PLC-driven actions are attributed to the system AppUser (1).
 """
-import BlueRidge.Common.Util
-import BlueRidge.Lots.Container
-import BlueRidge.Lots.SerializedPart
-import BlueRidge.Workorder.Consumption
 import system.tag
 
 # Commissioning config -- one entry per watched assembly line, e.g.:

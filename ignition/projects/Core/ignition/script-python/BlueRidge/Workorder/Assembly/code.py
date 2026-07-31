@@ -6,11 +6,6 @@
    BlueRidge.Common.Db.execMutation; appUserId defaults to the current operator
    when None."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Location.Terminal
-import BlueRidge.Lots.Container
-import BlueRidge.Parts.ContainerConfig
 import system.perspective
 import java.lang
 

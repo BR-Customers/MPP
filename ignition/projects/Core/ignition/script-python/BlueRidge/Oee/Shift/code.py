@@ -4,8 +4,6 @@
    the session-resolved current user when the caller passes None; the plant
    floor passes appUserId / terminalLocationId explicitly."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
 import java.lang
 
 

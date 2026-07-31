@@ -13,10 +13,6 @@
      genealogyRows(lotId, _refreshToken=None)        -> table rows (Relation/LotName/...)"""
 
 import system
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Lots.Lot
-import BlueRidge.Workorder.ProductionEvent
 
 
 def _u(value):

@@ -5,9 +5,6 @@
    BlueRidge.Common.Db.execMutation; appUserId defaults to the current operator
    when None."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def recordWithBomCheck(sourceLotId, producingLotId, cellLocationId, consumedPieceCount,
                        containerSerialId=None, overrideAppUserId=None, overrideAuthorized=False,

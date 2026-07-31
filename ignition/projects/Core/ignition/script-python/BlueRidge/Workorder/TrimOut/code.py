@@ -2,9 +2,6 @@
 
    Wrappers only; no business logic. Arc 2 Phase 4 (FDS-06-006)."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)

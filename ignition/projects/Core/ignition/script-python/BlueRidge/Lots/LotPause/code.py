@@ -1,6 +1,4 @@
 """BlueRidge.Lots.LotPause - thin access to the LOT pause lifecycle reads + resume."""
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
 
 
 def getCountByLocation(locationId):

@@ -13,8 +13,6 @@
    no-ops here. Building Lots.ShippingLabel_GetStranded + _RecordDispatch and wiring the
    re-dispatch is the print-failure commissioning step. Fully guarded.
 """
-import BlueRidge.Common.Util
-import BlueRidge.Lots.ShippingDispatcher
 
 
 def sweepTick():

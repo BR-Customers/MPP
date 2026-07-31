@@ -12,8 +12,6 @@
      getTriggerOptions(_refreshToken=None)                 -> [{label, value}]"""
 
 import system
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
 
 
 def _u(value):

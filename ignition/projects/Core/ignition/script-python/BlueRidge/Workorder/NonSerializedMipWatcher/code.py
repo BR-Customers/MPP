@@ -15,10 +15,6 @@
    PartType + alarm writes are HMI-display (gated, spec Sec 5.1/5.3).
 """
 
-import BlueRidge.Common.Util
-import BlueRidge.Workorder.PlcWatcher
-import BlueRidge.Workorder.Assembly
-import BlueRidge.Location.Terminal
 
 _TRIGGERS = ("DataReady",)
 

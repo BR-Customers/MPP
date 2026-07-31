@@ -5,9 +5,6 @@
    proc). appUserId defaults to the current operator via
    BlueRidge.Common.Util._currentAppUserId() when None. Logs at default INFO."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def migrateSerial(containerSerialId, newContainerId, newTrayPosition=None,
                   migrationReasonCode="SortCage", appUserId=None, terminalLocationId=None):

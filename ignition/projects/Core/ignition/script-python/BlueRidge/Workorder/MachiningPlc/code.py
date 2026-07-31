@@ -11,7 +11,6 @@
    it is a NEW watcher that calls that mint -- a separate design/commissioning effort,
    not this auto-move. The gateway timer that invokes tickWatcher can be removed.
 """
-import BlueRidge.Common.Util
 
 
 def tickWatcher():

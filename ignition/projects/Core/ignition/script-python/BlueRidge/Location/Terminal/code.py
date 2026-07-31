@@ -15,9 +15,6 @@
        2026-06-11 - Add listContextCells + getContextCellsForDropdown
                     (location/Terminal_ListContextCells NQ access layer)."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def getByIpAddress(ipAddress):
     """Resolve the terminal (and its zone / default screen) for the
@@ -203,7 +200,6 @@ def applyToSession(session, terminal):
        TerminalSelector.selectTerminal so those three entry points can never
        drift (previously each set only the terminal dict, leaving printer / PLC
        / closure / vision stale after a navigate)."""
-    import BlueRidge.Location.TerminalPlcDevice as _tpd
     t = BlueRidge.Common.Util.extractQualifiedValues(terminal) or {}
     tid = t.get("terminalLocationId")
     term = {
@@ -234,7 +230,7 @@ def applyToSession(session, terminal):
         "endpoint":   prn.get("endpoint") or "",
         "model":      prn.get("model") or "",
     }
-    session.custom.plcDevices = _tpd.getByTerminal(tid) or []
+    session.custom.plcDevices = BlueRidge.Location.TerminalPlcDevice.getByTerminal(tid) or []
     cc = getClosureContext(tid) or {}
     session.custom.closureMethod = cc.get("CurrentClosureMethod") or ""
     caps = cc.get("ClosureCapabilities") or "ByCount"

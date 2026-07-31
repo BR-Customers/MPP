@@ -6,9 +6,6 @@
    current operator via BlueRidge.Common.Util._currentAppUserId() when None. Logs at
    default INFO."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def get(_refreshToken=None):
     """Read the single-row AIM pool config (thresholds + last-updated attribution).
