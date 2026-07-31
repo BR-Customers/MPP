@@ -76,6 +76,10 @@
       "title": "LOT Search",
       "viewPath": "BlueRidge/Views/ShopFloor/LotSearch"
     },
+    "/shop-floor/machining": {
+      "title": "Machining IN / OUT",
+      "viewPath": "BlueRidge/Views/ShopFloor/MachiningStation"
+    },
     "/shop-floor/machining-in": {
       "title": "Machining IN",
       "viewPath": "BlueRidge/Views/ShopFloor/MachiningIn"
@@ -83,14 +87,6 @@
     "/shop-floor/machining-out": {
       "title": "Machining OUT - Split",
       "viewPath": "BlueRidge/Views/ShopFloor/MachiningOutSplit"
-    },
-    "/shop-floor/machining": {
-      "title": "Machining IN / OUT",
-      "viewPath": "BlueRidge/Views/ShopFloor/MachiningStation"
-    },
-    "/shop-floor/third-party-inspection": {
-      "title": "Third-Party Inspection",
-      "viewPath": "BlueRidge/Views/ShopFloor/ThirdPartyInspection"
     },
     "/shop-floor/receiving": {
       "title": "Receiving",
@@ -115,6 +111,10 @@
     "/shop-floor/terminal-selector": {
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
+    },
+    "/shop-floor/third-party-inspection": {
+      "title": "Third-Party Inspection",
+      "viewPath": "BlueRidge/Views/ShopFloor/ThirdPartyInspection"
     },
     "/shop-floor/trace": {
       "title": "Track \u0026 Trace",
