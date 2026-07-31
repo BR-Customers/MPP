@@ -179,11 +179,15 @@ def toDecimalOrNone(v):
 
 
 def allLttsPresent(ltts, expectedCount):
-    """True when the overflow-popup LTT map holds `expectedCount` non-blank
-       entries (one scanned LTT per overflowing cavity). Enables the popup's
-       Fill button. Returns bool."""
+    """True when the overflow-popup LTT map holds `expectedCount` DISTINCT
+       non-blank entries (one unique scanned LTT per overflowing cavity).
+       Enables the popup's Fill button. Distinct-count (not raw count) so
+       scanning the same LTT into two rows does not satisfy the gate -- each
+       overflow basket needs its own LTT (a duplicate LotName is rejected
+       downstream by DieCastLot_Open anyway). Returns bool."""
     m = extractQualifiedValues(ltts) or {}
-    filled = [v for v in m.values() if v is not None and ("%s" % v).strip() != ""]
+    filled = set(("%s" % v).strip() for v in m.values()
+                 if v is not None and ("%s" % v).strip() != "")
     try:
         return len(filled) >= int(expectedCount)
     except (ValueError, TypeError):

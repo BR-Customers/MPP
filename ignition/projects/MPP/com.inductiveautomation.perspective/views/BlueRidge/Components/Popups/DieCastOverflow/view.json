@@ -29,6 +29,10 @@
         "position": { "shrink": 0 },
         "props": { "justify": "flex-end", "alignItems": "center", "style": { "gap": "10px", "paddingTop": "6px" } },
         "children": [
+          { "type": "ia.input.button", "meta": { "name": "CancelButton" },
+            "props": { "text": "Cancel", "style": { "classes": "pf-btn pf-btn-secondary" } },
+            "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G", "config": {
+              "script": "\tself.view.getChild(\"root\").reply(\"cancel\")" } } } } },
           { "type": "ia.input.button", "meta": { "name": "OverfillButton" },
             "props": { "text": "Overfill baskets", "style": { "classes": "pf-btn pf-btn-danger" } },
             "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G", "config": {

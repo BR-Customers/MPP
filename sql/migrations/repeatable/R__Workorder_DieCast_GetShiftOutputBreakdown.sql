@@ -1,8 +1,11 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCast_GetShiftOutputBreakdown.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-29
--- Version:     1.0
+-- Modified:    2026-07-31
+-- Version:     1.1
+-- Changelog:   1.1 (2026-07-31) added ItemId to the result set (CTE + final
+--              SELECT) so the basket-overflow flow can re-open the next basket
+--              on the same item. Temp-table consumers must carry ItemId BIGINT.
 -- Description: Die-Cast Per-Cavity Lifecycle plan, Task 3 / Phase 2. Pure
 --              READ/computation proc: given a tool, a shift, and the shift's
 --              gross shot count, returns the proposed per-cavity-lot good-
