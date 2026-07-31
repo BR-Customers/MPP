@@ -48,7 +48,7 @@ BEGIN
     -- All lots for this tool that were open at any point during the shift window: currently Open,
     -- OR released/closed with a contribution recorded in the shift window.
     ;WITH Lots AS (
-        SELECT l.Id AS LotId, l.LotName, l.ToolCavityId, l.PieceCount, l.MaxPieceCount,
+        SELECT l.Id AS LotId, l.LotName, l.ToolCavityId, l.ItemId, l.PieceCount, l.MaxPieceCount,
                CASE WHEN sc.Code = N'Open' THEN 1 ELSE 0 END AS IsOpen
         FROM Lots.Lot l
         INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
@@ -77,7 +77,8 @@ BEGIN
                           WHERE c2.ShiftId = @ShiftId AND l2.ToolCavityId = lo.ToolCavityId AND c2.LotId <> lo.LotId), 0)
                   END
         END AS ProposedGood,
-        CASE WHEN lo.MaxPieceCount IS NULL THEN 2147483647 ELSE lo.MaxPieceCount - lo.PieceCount END AS MaxHeadroom
+        CASE WHEN lo.MaxPieceCount IS NULL THEN 2147483647 ELSE lo.MaxPieceCount - lo.PieceCount END AS MaxHeadroom,
+        lo.ItemId AS ItemId
     FROM Lots lo
     INNER JOIN Tools.ToolCavity tc ON tc.Id = lo.ToolCavityId
     LEFT JOIN Prior p ON p.LotId = lo.LotId
