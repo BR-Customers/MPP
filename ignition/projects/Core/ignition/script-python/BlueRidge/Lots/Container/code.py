@@ -94,6 +94,18 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
                 # Gateway scope (PLC auto-complete) has no session to toast into.
                 # The container is already committed; never let a toast failure escape.
                 pass
+    # Report the completed container to AIM. Runs AFTER the proc committed and is fully
+    # guarded: complete, print and post are three separate steps (FDS-07-005/006a/012).
+    # A failure leaves the row owed; AimPostTimer retries it. NEVER lose the container.
+    if result and result.get("Status") and result.get("AimShipperId"):
+        try:
+            result["AimPost"] = BlueRidge.Lots.AimPost.postOne(result.get("AimShipperId"))
+        except Throwable as t:
+            BlueRidge.Common.Util.log("AIM post-back failed: %s" % t, level="error")
+            result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(t)}
+        except Exception as e:
+            BlueRidge.Common.Util.log("AIM post-back failed: %s" % e, level="error")
+            result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(e)}
     return result
 
 

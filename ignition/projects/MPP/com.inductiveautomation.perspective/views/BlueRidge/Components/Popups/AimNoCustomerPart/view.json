@@ -1,0 +1,179 @@
+{
+  "custom": {},
+  "params": {
+    "partNumber": "",
+    "popupId": "mpp-aim-no-customer-part"
+  },
+  "propConfig": {
+    "params.partNumber": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 260,
+      "width": 480
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "WarnIcon"
+            },
+            "position": {
+              "basis": "22px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/warning",
+              "style": {
+                "width": "22px",
+                "height": "22px",
+                "color": "var(--mpp-warning, #b26a00)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "basis": "auto",
+              "grow": 1
+            },
+            "props": {
+              "text": "AIM Not Updated - No Customer Part Number"
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body",
+            "gap": "6px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Message"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Part \" + {view.params.partNumber} + \" has no AIM customer part number configured. The container completed and the label printed, but Honda's system was not updated. A supervisor must set this in Item Master.\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "14px",
+                "lineHeight": "1.5"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "OkButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "OK",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
