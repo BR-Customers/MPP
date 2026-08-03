@@ -1,23 +1,15 @@
 {
   "custom": {},
   "params": {
-    "index": 0,
-    "id": null,
     "deviceCode": "",
     "deviceTypeName": "",
+    "id": null,
+    "index": 0,
     "plcDeviceTypeId": null,
-    "udtInstancePath": "",
-    "sortOrder": null
+    "sortOrder": null,
+    "udtInstancePath": ""
   },
   "propConfig": {
-    "params.index": {
-      "paramDirection": "input",
-      "persistent": true
-    },
-    "params.id": {
-      "paramDirection": "input",
-      "persistent": true
-    },
     "params.deviceCode": {
       "paramDirection": "input",
       "persistent": true
@@ -26,49 +18,81 @@
       "paramDirection": "input",
       "persistent": true
     },
-    "params.plcDeviceTypeId": {
+    "params.id": {
       "paramDirection": "input",
       "persistent": true
     },
-    "params.udtInstancePath": {
+    "params.index": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.plcDeviceTypeId": {
       "paramDirection": "input",
       "persistent": true
     },
     "params.sortOrder": {
       "paramDirection": "input",
       "persistent": true
+    },
+    "params.udtInstancePath": {
+      "paramDirection": "input",
+      "persistent": true
     }
   },
   "props": {
     "defaultSize": {
-      "width": 640,
-      "height": 60
+      "height": 60,
+      "width": 640
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "justify": "space-between",
-      "style": {
-        "gap": "10px",
-        "padding": "8px",
-        "classes": "surface-card"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "RowCode"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "coalesce({view.params.deviceCode}, \"\") + \"  (\" + coalesce({view.params.deviceTypeName}, \"\") + \")\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "RowPath"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.udtInstancePath}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "text-muted"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
         "meta": {
           "name": "Info"
         },
         "position": {
-          "grow": 1,
-          "basis": "0"
+          "basis": "0",
+          "grow": 1
         },
         "props": {
           "direction": "column",
@@ -76,95 +100,67 @@
             "gap": "2px"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "RowCode"
-            },
-            "props": {},
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "coalesce({view.params.deviceCode}, \"\") + \"  (\" + coalesce({view.params.deviceTypeName}, \"\") + \")\""
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "RowPath"
-            },
-            "props": {
-              "style": {
-                "classes": "text-muted"
-              }
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.params.udtInstancePath}"
-                  }
-                }
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.input.button",
-        "version": 0,
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"plcMappingEdit\", {\"id\": self.view.params.id, \"plcDeviceTypeId\": self.view.params.plcDeviceTypeId, \"deviceCode\": self.view.params.deviceCode, \"udtInstancePath\": self.view.params.udtInstancePath, \"sortOrder\": self.view.params.sortOrder}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
         "meta": {
           "name": "EditBtn"
         },
         "props": {
-          "text": "Edit",
           "style": {
             "classes": "btn"
-          }
+          },
+          "text": "Edit"
         },
+        "type": "ia.input.button"
+      },
+      {
         "events": {
           "component": {
             "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"plcMappingEdit\", {\"id\": self.view.params.id, \"plcDeviceTypeId\": self.view.params.plcDeviceTypeId, \"deviceCode\": self.view.params.deviceCode, \"udtInstancePath\": self.view.params.udtInstancePath, \"sortOrder\": self.view.params.sortOrder}, scope=\"page\")"
-              }
+                "script": "\tsystem.perspective.sendMessage(\"plcMappingDeprecate\", {\"id\": self.view.params.id}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
             }
           }
-        }
-      },
-      {
-        "type": "ia.input.button",
-        "version": 0,
+        },
         "meta": {
           "name": "DeprecateBtn"
         },
         "props": {
-          "text": "Remove",
           "style": {
             "classes": "btn btn-danger"
-          }
+          },
+          "text": "Remove"
         },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"plcMappingDeprecate\", {\"id\": self.view.params.id}, scope=\"page\")"
-              }
-            }
-          }
-        }
+        "type": "ia.input.button"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "justify": "space-between",
+      "style": {
+        "classes": "surface-card",
+        "gap": "10px",
+        "padding": "8px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

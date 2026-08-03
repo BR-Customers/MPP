@@ -184,7 +184,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(id=\"mpp-shift-schedule-editor\", view=\"BlueRidge/Components/Popups/ShiftScheduleEditor\", modal=True, showCloseIcon=False, draggable=False, params={\"mode\": \"create\", \"editId\": None})"
+                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-shift-schedule-editor\", view\u003d\"BlueRidge/Components/Popups/ShiftScheduleEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, draggable\u003dFalse, params\u003d{\"mode\": \"create\", \"editId\": None})"
                   },
                   "scope": "G",
                   "type": "script"
@@ -195,6 +195,7 @@
               "name": "AddScheduleButton"
             },
             "position": {
+              "basis": "124px",
               "shrink": 0
             },
             "props": {
@@ -407,7 +408,7 @@
         {
           "messageType": "shiftSchedulesRefresh",
           "pageScope": true,
-          "script": "\tself.view.custom.filter = dict(self.view.custom.filter)",
+          "script": "\tself.view.custom.filter \u003d dict(self.view.custom.filter)",
           "sessionScope": false,
           "viewScope": false
         }
