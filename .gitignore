@@ -82,3 +82,6 @@ ignition/projects/Refrence project/Spinner/com.inductiveautomation.perspective/v
 # AIM Vision vendor help dump (9,323 files) - reference only, kept out of the repo.
 # The interface contract that matters is committed at AIM_docs/customer_AIM_http
 AIM_docs/customer_docs/
+
+# Jython cache from local contract verification (see Plan 2 Task 1)
+.jython_cache/

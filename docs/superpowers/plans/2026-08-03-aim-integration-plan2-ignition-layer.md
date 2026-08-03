@@ -80,7 +80,18 @@ Production AIM runs on company **`99`** from the legacy MES box (`172.17.10.8`),
 >
 > **Therefore you MUST NOT use `system.net.httpClient()`.** It builds a `java.net.URI`, which percent-encodes the `%` in our already-encoded string, turning `%5C` into `%255C`. AIM then receives the literal text `%5C` and fails exactly the way this integration failed for two days before the format was reverse-engineered from AIM's own log.
 >
-> Use **`java.net.URL`** (which performs no encoding) + `openConnection()`. Task 1's gate proves it.
+> Use **`java.net.URL`** (which performs no encoding) + `openConnection()`.
+>
+> ### VERIFIED 2026-08-03 - this is a fact, not a hypothesis
+> Run against **Ignition's own Jython 2.7.3** (`lib/core/common/jython-ia-2.7.3.5.jar`) on the dev
+> box, against the live AIM server, company `01`:
+> ```
+> URL.getQuery() preserved the encoded query exactly   (PRESERVED: True)
+> nextSerial  -> HTTP 200  serial='000000029'  9digits=True
+> postSerial  -> HTTP 200  reply='000000029'   SUCCESS: True
+> ```
+> `java.net.URL` does **not** re-encode, and the `HttpURLConnection` shape below works end to end.
+> Transcribe it as written.
 
 - [ ] **Step 1: Read the precedent and the contract**
 
@@ -123,6 +134,10 @@ Create `ignition/projects/Core/ignition/script-python/BlueRidge/Lots/AimHttp/cod
    completion must never hang on AIM."""
 import re
 
+_BS = chr(92)   # literal backslash. Built via chr() ON PURPOSE: this is the single most
+                # escaping-sensitive value in the integration, and a source literal survives
+                # one editor/tool round-trip fewer than you expect. (Verified 2026-08-03:
+                # a heredoc silently collapsed the source literal into a real CRLF.)
 _TIMEOUT_MS = 5000
 _NINE_DIGITS = re.compile(r"^\d{9}$")
 
@@ -143,14 +158,19 @@ def _urlEncodePayload(text):
        inside a customer part number). Everything else in a serial / part / qty / lot
        is URL-safe. Deliberately hand-rolled rather than java.net.URLEncoder, which
        encodes space as '+' - AIM expects %20."""
-    out = text.replace("\\", "%5C").replace(" ", "%20")
+    out = text.replace(_BS, "%5C").replace(" ", "%20")
     return out
 
 
 def _buildPostQuery(serial, customerPart, qty, lot):
     """Build the postserial query string, WITHOUT the leading '?'.
-       Shape: \\r\\n{serial}\\t{part}\\t{qty}\\t{lot}\\r\\n  (literal escape text)."""
-    raw = "\\r\\n%s\\t%s\\t%s\\t%s\\r\\n" % (serial, customerPart, qty, lot)
+       Shape: <BS>r<BS>n{serial}<BS>t{part}<BS>t{qty}<BS>t{lot}<BS>r<BS>n, then URL-encoded,
+       where <BS> is a LITERAL BACKSLASH CHARACTER - not a carriage return, not a tab."""
+    raw = (_BS + "r" + _BS + "n" + str(serial)
+           + _BS + "t" + str(customerPart)
+           + _BS + "t" + str(qty)
+           + _BS + "t" + str(lot)
+           + _BS + "r" + _BS + "n")
     return _urlEncodePayload(raw)
 
 
@@ -944,7 +964,7 @@ git commit -m "feat(aim): AimPoolTile shows global depth and post backlog"
 
 None of these can be done by an agent. Collect them into one Designer/Gateway session:
 
-1. **Task 1 — the encoding gate.** `aim_http_contract.py` in the Script Console. **Everything downstream is untrustworthy until this passes.**
+1. ~~**Task 1 - the encoding gate.**~~ **DISCHARGED 2026-08-03** against Ignition's own Jython jar + the live AIM server (company `01`; serial `000000029` posted and echoed). Re-running `aim_http_contract.py` in the Gateway Script Console is still worth one pass to confirm the *Gateway's* JVM matches the local one, but it no longer blocks anything.
 2. **Task 3** — `aim_post_one.py`: a real row posts; re-posting returns `already_posted` with no attempt increment.
 3. **Task 4** — `aim_topup.py`: depth rises, IDs are 9-digit.
 4. **Task 6** — complete a container with and without an AIM customer part; verify the serial on AIM's Unshipped Labels report.
