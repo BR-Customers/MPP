@@ -31,11 +31,10 @@ Two facts from the verified contract force design changes beyond "fill in the st
 - **B.** `BlueRidge.Lots.AimHttp` — the real HTTP transport, replacing the `topupTick` no-op.
 - **C.** Post-back: payload + status columns on the pool row, synchronous post at completion, and a
   retry sweep with escalation and a manual-resolution path.
+- **D.** `Parts.Item.AimCustomerPartNumber` — the column, its accessor procs, and the Item Master
+  Identity field that maintains it.
 
 **Out of scope**
-
-- `Parts.Item.AimCustomerPartNumber` — the column and its Item Master field are being added
-  separately (Hunter). This design *consumes* it; see §10.
 - AIM hold notifications (FDS-07-011). The agreement covers label creation only; Appendix L implies
   QA performs holds by hand in AIM's UI. Unresolved, tracked in the interface note.
 - Sort Cage re-pack traceability (FDS-07-012's `previousSerial`). No HTTP equivalent exists.
@@ -111,6 +110,21 @@ The path token is configuration rather than a constant because we do not know wh
 environment. The existing depth thresholds mean something different (pool supply, not post backlog),
 hence separate age columns.
 
+**Customer part number** on `Parts.Item`:
+
+| Column | Type | Purpose |
+|---|---|---|
+| `AimCustomerPartNumber` | `NVARCHAR(50) NULL` | AIM's Customer Part for this item — the value `postserial.csv` matches on |
+
+Nullable: not every item ships to Honda, and existing rows have no value until MPP supplies the
+mapping. Name follows the existing `MacolaPartNumber` precedent on the same table (an external
+system's part number stored alongside ours).
+
+**This value is not derivable from `Item.PartNumber`.** AIM's Customer Part / Item Number
+Cross-Reference shows `11300R70 A000` -> `11300R7- A000` and `112006FBAA000` -> `112006FB A000` — a
+`-` where the item number has `0`, a space where it has `A`. No transform reproduces this; it must be
+stored per item and sourced from AIM.
+
 ### 4.2 Procedure changes
 
 | Proc | Change |
@@ -129,6 +143,12 @@ hence separate age columns.
 | `Lots.AimShipperIdPool_RecordPostResult @Id, @Success, @Error` | stamp `PostedAt` or increment attempts + record error |
 | `Lots.AimShipperIdPool_ListUnposted @Top` | sweep + supervisor list read (ET timestamps) |
 | `Lots.AimShipperIdPool_MarkPosted @Id, @AppUserId, @Note` | human-confirmed resolution, audited |
+| `Parts.Item_GetAimCustomerPartNumber @ItemId` | read the customer part for one item |
+| `Parts.Item_SetAimCustomerPartNumber @ItemId, @Value, @AppUserId` | set it, audited |
+
+`Item_Get` / `Item_Update` are **deliberately untouched**. This mirrors the established
+`Item_GetPlcId` / `Item_SetPlcId` pattern (migration `0038`): separate accessors keep the
+`Item_Get`/`_Update` result shapes stable, so no fixed-shape `INSERT-EXEC` test capture breaks.
 
 `Container_Complete`'s terminal `SELECT` is deliberately **unchanged**. Adding payload columns would
 break every fixed-shape `INSERT-EXEC` capture in the existing suite for no benefit, since the post
@@ -279,25 +299,24 @@ counter at ~13.84M. MES traffic must never target `99`.
 
 | Layer | Items |
 |---|---|
-| SQL migration | `0048_aim_pool_generic_and_postback.sql` |
-| SQL procs | 6 modified, 4 new (§4.2) |
+| SQL migration | `0048_aim_pool_generic_and_postback.sql` (pool + config + `Parts.Item.AimCustomerPartNumber`) |
+| SQL procs | 6 modified, 6 new (§4.2) |
 | SQL seed | `028_seed_aim_pool_dev.sql` — drop part column |
-| SQL tests | 2 suites rewritten, 1 new suite |
-| Core scripts | new `AimHttp`, new `AimPost`; `AimPool` + `AimPoolConfig` signatures; `AimPoolGateway.topupTick` implemented, `alarmTick` extended |
-| Named queries | 4 new (one per new proc); 5 modified (`AimShipperIdPool_Claim`/`_Topup`/`_GetDepth`, `AimPoolConfig_Get`/`_Update`) |
+| SQL tests | 2 suites rewritten, 2 new suites (post-back; item accessors) |
+| Core scripts | new `AimHttp`, new `AimPost`; `AimPool` + `AimPoolConfig` signatures; `AimPoolGateway.topupTick` implemented, `alarmTick` extended; `Parts.Item` gains `getAimCustomerPartNumber` / `setAimCustomerPartNumber` |
+| Named queries | 6 new (one per new proc); 5 modified (`AimShipperIdPool_Claim`/`_Topup`/`_GetDepth`, `AimPoolConfig_Get`/`_Update`) |
 | MPP timers | new `AimPostTimer` (disabled at ship) |
-| Views | `AimPoolConfig` screen (config + unposted list + MarkPosted); `AimPoolTile` (drop per-part, add backlog); `Container.complete` popup/toast branch |
+| Views | `AimPoolConfig` screen (config + unposted list + MarkPosted); `AimPoolTile` (drop per-part, add backlog); `Container.complete` popup/toast branch; **MPP_Config Item Master → Identity** gains the AIM customer-part field (loads/saves via the accessors, mirroring `PlcId`) |
 
 ## 10. Dependencies and open items
 
-1. **`Parts.Item.AimCustomerPartNumber`** — owned by Hunter. Name follows the existing
-   `MacolaPartNumber` precedent and must be agreed before the read is written.
-2. **Customer-part data** — the values are not derivable from our part numbers (AIM's X-Ref shows
-   `11300R70 A000` -> `11300R7- A000`, `112006FBAA000` -> `112006FB A000`). Sourcing them from AIM is
-   an ask to MPP.
-3. **Exceptions-folder access** — a rejected duplicate writes **no** exception file, so the folder is
+1. **Customer-part data** — the column and its editor are in scope (§4.1, D), but the *values* are
+   not. They are not derivable from our part numbers, so MPP must supply the mapping — ideally an
+   export of AIM's Customer Part / Item Number Cross-Reference for every Honda-shipped item. Until an
+   item has a value, its containers complete normally and raise the config-gap modal (§6.2).
+2. **Exceptions-folder access** — a rejected duplicate writes **no** exception file, so the folder is
    an incomplete failure oracle. Remote access (`C$`, WinRM) is blocked from the dev box. Needs MPP
    IT before anything is designed on it.
-4. **Production company code** — `01` is test. The production code and its counter position must be
+3. **Production company code** — `01` is test. The production code and its counter position must be
    confirmed with MPP before cutover.
-5. **Holds and `previousSerial`** — no interface exists. FDS-07-011 and FDS-07-012 remain unsatisfied.
+4. **Holds and `previousSerial`** — no interface exists. FDS-07-011 and FDS-07-012 remain unsatisfied.
