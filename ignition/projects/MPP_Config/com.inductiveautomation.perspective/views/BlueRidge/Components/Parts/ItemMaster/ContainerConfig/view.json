@@ -105,8 +105,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 440,
-      "width": 800
+      "height": 440
     }
   },
   "root": {
@@ -150,6 +149,9 @@
             "meta": {
               "name": "BtnDiscard"
             },
+            "position": {
+              "basis": "66px"
+            },
             "propConfig": {
               "meta.visible": {
                 "binding": {
@@ -183,6 +185,9 @@
             "meta": {
               "name": "BtnSave"
             },
+            "position": {
+              "basis": "50px"
+            },
             "propConfig": {
               "meta.visible": {
                 "binding": {
@@ -209,7 +214,8 @@
           "alignItems": "center",
           "style": {
             "gap": "8px",
-            "marginBottom": "4px"
+            "marginBottom": "4px",
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -222,12 +228,8 @@
                 "meta": {
                   "name": "Title_ByCount"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
-                    "classes": "",
                     "fontSize": "12px",
                     "fontWeight": "600",
                     "opacity": "0.85"
@@ -251,37 +253,37 @@
                 "meta": {
                   "name": "Btn_Clear_ByCount"
                 },
+                "position": {
+                  "basis": "53px"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.state.editDraft.ByCount.Active} \u003d true"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "btn btn-sm"
                   },
                   "text": "Clear"
                 },
-                "type": "ia.input.button",
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.state.editDraft.ByCount.Active} = true"
-                      }
-                    }
-                  }
-                }
+                "type": "ia.input.button"
               }
             ],
             "meta": {
               "name": "HeaderRow_ByCount"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "alignItems": "center",
-              "direction": "row",
               "style": {
                 "gap": "8px",
-                "marginBottom": "2px"
+                "marginBottom": "2px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -298,9 +300,6 @@
                         "text": "Number of pieces that fill one tray for this pack-out."
                       }
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -312,9 +311,6 @@
                   {
                     "meta": {
                       "name": "Input_ByCount_PartsPerTray"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -339,9 +335,6 @@
                 "meta": {
                   "name": "Field_ByCount_PartsPerTray"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -361,9 +354,6 @@
                         "text": "Number of trays that fill one shipping container for this pack-out. The container is full once this many trays close."
                       }
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -375,9 +365,6 @@
                   {
                     "meta": {
                       "name": "Input_ByCount_TraysPerContainer"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -402,9 +389,6 @@
                 "meta": {
                   "name": "Field_ByCount_TraysPerContainer"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -421,11 +405,8 @@
                       "name": "Label_ByCount_DunnageCode",
                       "tooltip": {
                         "enabled": true,
-                        "text": "Returnable dunnage (packaging) identifier for this pack-out's container."
+                        "text": "Returnable dunnage (packaging) identifier for this pack-out\u0027s container."
                       }
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "props": {
                       "style": {
@@ -438,9 +419,6 @@
                   {
                     "meta": {
                       "name": "Input_ByCount_DunnageCode"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -465,9 +443,6 @@
                 "meta": {
                   "name": "Field_ByCount_DunnageCode"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -481,21 +456,17 @@
             "meta": {
               "name": "FieldsRow_ByCount"
             },
-            "position": {
-              "basis": "auto"
-            },
             "propConfig": {
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByCount.Active} = true"
+                    "expression": "{view.custom.state.editDraft.ByCount.Active} \u003d true"
                   },
                   "type": "expr"
                 }
               }
             },
             "props": {
-              "direction": "row",
               "style": {
                 "classes": "field-row",
                 "gap": "12px"
@@ -521,7 +492,7 @@
                   "name": "BtnAdd_ByCount"
                 },
                 "position": {
-                  "basis": "auto"
+                  "basis": "149px"
                 },
                 "props": {
                   "style": {
@@ -534,9 +505,6 @@
               {
                 "meta": {
                   "name": "Hint_ByCount"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "style": {
@@ -551,14 +519,11 @@
             "meta": {
               "name": "AddRow_ByCount"
             },
-            "position": {
-              "basis": "auto"
-            },
             "propConfig": {
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByCount.Active} = false"
+                    "expression": "{view.custom.state.editDraft.ByCount.Active} \u003d false"
                   },
                   "type": "expr"
                 }
@@ -566,9 +531,9 @@
             },
             "props": {
               "alignItems": "center",
-              "direction": "row",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -577,14 +542,12 @@
         "meta": {
           "name": "MethodBlock_ByCount"
         },
-        "position": {
-          "basis": "auto"
-        },
         "props": {
           "direction": "column",
           "style": {
             "borderBottom": "1px solid var(--border-subtle)",
             "gap": "4px",
+            "overflow": "visible",
             "paddingBottom": "8px"
           }
         },
@@ -598,12 +561,8 @@
                 "meta": {
                   "name": "Title_ByWeight"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
-                    "classes": "",
                     "fontSize": "12px",
                     "fontWeight": "600",
                     "opacity": "0.85"
@@ -627,37 +586,37 @@
                 "meta": {
                   "name": "Btn_Clear_ByWeight"
                 },
+                "position": {
+                  "basis": "53px"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.state.editDraft.ByWeight.Active} \u003d true"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "btn btn-sm"
                   },
                   "text": "Clear"
                 },
-                "type": "ia.input.button",
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.state.editDraft.ByWeight.Active} = true"
-                      }
-                    }
-                  }
-                }
+                "type": "ia.input.button"
               }
             ],
             "meta": {
               "name": "HeaderRow_ByWeight"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "alignItems": "center",
-              "direction": "row",
               "style": {
                 "gap": "8px",
-                "marginBottom": "2px"
+                "marginBottom": "2px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -674,9 +633,6 @@
                         "text": "Number of pieces that fill one tray for this pack-out."
                       }
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -688,9 +644,6 @@
                   {
                     "meta": {
                       "name": "Input_ByWeight_PartsPerTray"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -715,9 +668,6 @@
                 "meta": {
                   "name": "Field_ByWeight_PartsPerTray"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -737,9 +687,6 @@
                         "text": "Number of trays that fill one shipping container for this pack-out. The container is full once this many trays close."
                       }
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -751,9 +698,6 @@
                   {
                     "meta": {
                       "name": "Input_ByWeight_TraysPerContainer"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -778,9 +722,6 @@
                 "meta": {
                   "name": "Field_ByWeight_TraysPerContainer"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -797,11 +738,8 @@
                       "name": "Label_ByWeight_DunnageCode",
                       "tooltip": {
                         "enabled": true,
-                        "text": "Returnable dunnage (packaging) identifier for this pack-out's container."
+                        "text": "Returnable dunnage (packaging) identifier for this pack-out\u0027s container."
                       }
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "props": {
                       "style": {
@@ -814,9 +752,6 @@
                   {
                     "meta": {
                       "name": "Input_ByWeight_DunnageCode"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -841,9 +776,6 @@
                 "meta": {
                   "name": "Field_ByWeight_DunnageCode"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -863,9 +795,6 @@
                         "text": "Target tray weight that triggers ByWeight closure. Required for the By Weight pack-out."
                       }
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -877,9 +806,6 @@
                   {
                     "meta": {
                       "name": "Input_ByWeight_TargetWeight"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -904,9 +830,6 @@
                 "meta": {
                   "name": "Field_ByWeight_TargetWeight"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -924,14 +847,13 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByWeight.Active} = true"
+                    "expression": "{view.custom.state.editDraft.ByWeight.Active} \u003d true"
                   },
                   "type": "expr"
                 }
               }
             },
             "props": {
-              "direction": "row",
               "style": {
                 "classes": "field-row",
                 "gap": "12px"
@@ -957,7 +879,7 @@
                   "name": "BtnAdd_ByWeight"
                 },
                 "position": {
-                  "basis": "auto"
+                  "basis": "154px"
                 },
                 "props": {
                   "style": {
@@ -970,9 +892,6 @@
               {
                 "meta": {
                   "name": "Hint_ByWeight"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "style": {
@@ -988,13 +907,13 @@
               "name": "AddRow_ByWeight"
             },
             "position": {
-              "basis": "auto"
+              "basis": "30px"
             },
             "propConfig": {
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByWeight.Active} = false"
+                    "expression": "{view.custom.state.editDraft.ByWeight.Active} \u003d false"
                   },
                   "type": "expr"
                 }
@@ -1002,9 +921,9 @@
             },
             "props": {
               "alignItems": "center",
-              "direction": "row",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -1013,14 +932,12 @@
         "meta": {
           "name": "MethodBlock_ByWeight"
         },
-        "position": {
-          "basis": "auto"
-        },
         "props": {
           "direction": "column",
           "style": {
             "borderBottom": "1px solid var(--border-subtle)",
             "gap": "4px",
+            "overflow": "visible",
             "paddingBottom": "8px"
           }
         },
@@ -1034,12 +951,8 @@
                 "meta": {
                   "name": "Title_ByVision"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
-                    "classes": "",
                     "fontSize": "12px",
                     "fontWeight": "600",
                     "opacity": "0.85"
@@ -1063,37 +976,37 @@
                 "meta": {
                   "name": "Btn_Clear_ByVision"
                 },
+                "position": {
+                  "basis": "53px"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.state.editDraft.ByVision.Active} \u003d true"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "btn btn-sm"
                   },
                   "text": "Clear"
                 },
-                "type": "ia.input.button",
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.state.editDraft.ByVision.Active} = true"
-                      }
-                    }
-                  }
-                }
+                "type": "ia.input.button"
               }
             ],
             "meta": {
               "name": "HeaderRow_ByVision"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "alignItems": "center",
-              "direction": "row",
               "style": {
                 "gap": "8px",
-                "marginBottom": "2px"
+                "marginBottom": "2px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -1110,9 +1023,6 @@
                         "text": "Number of pieces that fill one tray for this pack-out."
                       }
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -1124,9 +1034,6 @@
                   {
                     "meta": {
                       "name": "Input_ByVision_PartsPerTray"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -1151,9 +1058,6 @@
                 "meta": {
                   "name": "Field_ByVision_PartsPerTray"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -1173,9 +1077,6 @@
                         "text": "Number of trays that fill one shipping container for this pack-out. The container is full once this many trays close."
                       }
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -1187,9 +1088,6 @@
                   {
                     "meta": {
                       "name": "Input_ByVision_TraysPerContainer"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -1214,9 +1112,6 @@
                 "meta": {
                   "name": "Field_ByVision_TraysPerContainer"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -1233,11 +1128,8 @@
                       "name": "Label_ByVision_DunnageCode",
                       "tooltip": {
                         "enabled": true,
-                        "text": "Returnable dunnage (packaging) identifier for this pack-out's container."
+                        "text": "Returnable dunnage (packaging) identifier for this pack-out\u0027s container."
                       }
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "props": {
                       "style": {
@@ -1250,9 +1142,6 @@
                   {
                     "meta": {
                       "name": "Input_ByVision_DunnageCode"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -1277,9 +1166,6 @@
                 "meta": {
                   "name": "Field_ByVision_DunnageCode"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -1293,21 +1179,17 @@
             "meta": {
               "name": "FieldsRow_ByVision"
             },
-            "position": {
-              "basis": "auto"
-            },
             "propConfig": {
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByVision.Active} = true"
+                    "expression": "{view.custom.state.editDraft.ByVision.Active} \u003d true"
                   },
                   "type": "expr"
                 }
               }
             },
             "props": {
-              "direction": "row",
               "style": {
                 "classes": "field-row",
                 "gap": "12px"
@@ -1333,7 +1215,7 @@
                   "name": "BtnAdd_ByVision"
                 },
                 "position": {
-                  "basis": "auto"
+                  "basis": "149px"
                 },
                 "props": {
                   "style": {
@@ -1346,9 +1228,6 @@
               {
                 "meta": {
                   "name": "Hint_ByVision"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "style": {
@@ -1364,13 +1243,13 @@
               "name": "AddRow_ByVision"
             },
             "position": {
-              "basis": "auto"
+              "basis": "30px"
             },
             "propConfig": {
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ByVision.Active} = false"
+                    "expression": "{view.custom.state.editDraft.ByVision.Active} \u003d false"
                   },
                   "type": "expr"
                 }
@@ -1378,9 +1257,9 @@
             },
             "props": {
               "alignItems": "center",
-              "direction": "row",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -1389,14 +1268,12 @@
         "meta": {
           "name": "MethodBlock_ByVision"
         },
-        "position": {
-          "basis": "auto"
-        },
         "props": {
           "direction": "column",
           "style": {
             "borderBottom": "1px solid var(--border-subtle)",
             "gap": "4px",
+            "overflow": "visible",
             "paddingBottom": "8px"
           }
         },
@@ -1420,31 +1297,31 @@
         {
           "name": "load",
           "params": [],
-          "script": "\titemId = self.view.params.value or 0\n\tmethods = [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\trows = []\n\tif itemId:\n\t\trows = BlueRidge.Parts.ContainerConfig.getByItemAll(itemId) or []\n\tbyMethod = {}\n\tfor r in rows:\n\t\tm = r.get(\"ClosureMethod\")\n\t\tif m:\n\t\t\tbyMethod[m] = r\n\tdef _build():\n\t\tout = {}\n\t\tfor m in methods:\n\t\t\tr = byMethod.get(m)\n\t\t\tif r:\n\t\t\t\tout[m] = {\n\t\t\t\t\t\"Id\":                r.get(\"Id\"),\n\t\t\t\t\t\"ItemId\":            itemId,\n\t\t\t\t\t\"ClosureMethod\":     m,\n\t\t\t\t\t\"Active\":            True,\n\t\t\t\t\t\"PartsPerTray\":      _s(r.get(\"PartsPerTray\")),\n\t\t\t\t\t\"TraysPerContainer\": _s(r.get(\"TraysPerContainer\")),\n\t\t\t\t\t\"DunnageCode\":       _s(r.get(\"DunnageCode\")),\n\t\t\t\t\t\"CustomerCode\":      _s(r.get(\"CustomerCode\")),\n\t\t\t\t\t\"IsSerialized\":      bool(r.get(\"IsSerialized\", False)),\n\t\t\t\t\t\"TargetWeight\":      _s(r.get(\"TargetWeight\")),\n\t\t\t\t}\n\t\t\telse:\n\t\t\t\tout[m] = {\n\t\t\t\t\t\"Id\": None, \"ItemId\": itemId, \"ClosureMethod\": m,\n\t\t\t\t\t\"Active\": False,\n\t\t\t\t\t\"PartsPerTray\": \"\", \"TraysPerContainer\": \"\",\n\t\t\t\t\t\"DunnageCode\": \"\", \"CustomerCode\": \"\",\n\t\t\t\t\t\"IsSerialized\": False, \"TargetWeight\": \"\",\n\t\t\t\t}\n\t\treturn out\n\tself.view.custom.state = {\"selected\": _build(), \"editDraft\": _build()}"
+          "script": "\titemId \u003d self.view.params.value or 0\n\tmethods \u003d [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\trows \u003d []\n\tif itemId:\n\t\trows \u003d BlueRidge.Parts.ContainerConfig.getByItemAll(itemId) or []\n\tbyMethod \u003d {}\n\tfor r in rows:\n\t\tm \u003d r.get(\"ClosureMethod\")\n\t\tif m:\n\t\t\tbyMethod[m] \u003d r\n\tdef _build():\n\t\tout \u003d {}\n\t\tfor m in methods:\n\t\t\tr \u003d byMethod.get(m)\n\t\t\tif r:\n\t\t\t\tout[m] \u003d {\n\t\t\t\t\t\"Id\":                r.get(\"Id\"),\n\t\t\t\t\t\"ItemId\":            itemId,\n\t\t\t\t\t\"ClosureMethod\":     m,\n\t\t\t\t\t\"Active\":            True,\n\t\t\t\t\t\"PartsPerTray\":      _s(r.get(\"PartsPerTray\")),\n\t\t\t\t\t\"TraysPerContainer\": _s(r.get(\"TraysPerContainer\")),\n\t\t\t\t\t\"DunnageCode\":       _s(r.get(\"DunnageCode\")),\n\t\t\t\t\t\"CustomerCode\":      _s(r.get(\"CustomerCode\")),\n\t\t\t\t\t\"IsSerialized\":      bool(r.get(\"IsSerialized\", False)),\n\t\t\t\t\t\"TargetWeight\":      _s(r.get(\"TargetWeight\")),\n\t\t\t\t}\n\t\t\telse:\n\t\t\t\tout[m] \u003d {\n\t\t\t\t\t\"Id\": None, \"ItemId\": itemId, \"ClosureMethod\": m,\n\t\t\t\t\t\"Active\": False,\n\t\t\t\t\t\"PartsPerTray\": \"\", \"TraysPerContainer\": \"\",\n\t\t\t\t\t\"DunnageCode\": \"\", \"CustomerCode\": \"\",\n\t\t\t\t\t\"IsSerialized\": False, \"TargetWeight\": \"\",\n\t\t\t\t}\n\t\treturn out\n\tself.view.custom.state \u003d {\"selected\": _build(), \"editDraft\": _build()}"
         },
         {
           "name": "handleSave",
           "params": [],
-          "script": "\titemId = self.view.params.value or 0\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tmethods = [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _toNum(v):\n\t\tif v is None or v == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttoSave = []\n\ttoDeprecate = []\n\tfor m in methods:\n\t\tblock = draft.get(m) or {}\n\t\tpriorId = block.get(\"Id\")\n\t\tpartsPerTray = _toNum(block.get(\"PartsPerTray\"))\n\t\tif partsPerTray is not None and partsPerTray > 0:\n\t\t\ttrays = _toNum(block.get(\"TraysPerContainer\"))\n\t\t\tif trays is None or trays <= 0:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive trays per container for the %s pack-out.\" % m, \"warning\")\n\t\t\t\treturn\n\t\t\ttargetWeight = None\n\t\t\tif m == \"ByWeight\":\n\t\t\t\ttargetWeight = _toNum(block.get(\"TargetWeight\"))\n\t\t\t\tif targetWeight is None or targetWeight <= 0:\n\t\t\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"The By Weight pack-out requires a positive target weight.\", \"warning\")\n\t\t\t\t\treturn\n\t\t\ttoSave.append({\"Id\": priorId, \"ItemId\": itemId, \"ClosureMethod\": m, \"TraysPerContainer\": trays, \"PartsPerTray\": partsPerTray, \"TargetWeight\": targetWeight, \"DunnageCode\": block.get(\"DunnageCode\"), \"CustomerCode\": block.get(\"CustomerCode\"), \"IsSerialized\": bool(block.get(\"IsSerialized\", False))})\n\t\telif priorId:\n\t\t\ttoDeprecate.append({\"Id\": priorId, \"ClosureMethod\": m})\n\tif not toSave and not toDeprecate:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Add at least one pack-out, or leave it cleared.\", \"info\")\n\t\treturn\n\tfailures = []\n\tfor payload in toSave:\n\t\tif payload.get(\"Id\"):\n\t\t\tresult = BlueRidge.Parts.ContainerConfig.update(payload)\n\t\telse:\n\t\t\tresult = BlueRidge.Parts.ContainerConfig.add(payload)\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg = (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (payload[\"ClosureMethod\"], msg))\n\tfor dep in toDeprecate:\n\t\tresult = BlueRidge.Parts.ContainerConfig.deprecate(dep[\"Id\"])\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg = (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (dep[\"ClosureMethod\"], msg))\n\tif failures:\n\t\tBlueRidge.Common.Notify.toast(\"Some pack-outs not saved\", \"; \".join(failures), \"error\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Container config saved\", \"Pack-out configuration saved.\", \"success\")\n\tself.load()"
+          "script": "\titemId \u003d self.view.params.value or 0\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdraft \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tmethods \u003d [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _toNum(v):\n\t\tif v is None or v \u003d\u003d \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttoSave \u003d []\n\ttoDeprecate \u003d []\n\tfor m in methods:\n\t\tblock \u003d draft.get(m) or {}\n\t\tpriorId \u003d block.get(\"Id\")\n\t\tpartsPerTray \u003d _toNum(block.get(\"PartsPerTray\"))\n\t\tif partsPerTray is not None and partsPerTray \u003e 0:\n\t\t\ttrays \u003d _toNum(block.get(\"TraysPerContainer\"))\n\t\t\tif trays is None or trays \u003c\u003d 0:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive trays per container for the %s pack-out.\" % m, \"warning\")\n\t\t\t\treturn\n\t\t\ttargetWeight \u003d None\n\t\t\tif m \u003d\u003d \"ByWeight\":\n\t\t\t\ttargetWeight \u003d _toNum(block.get(\"TargetWeight\"))\n\t\t\t\tif targetWeight is None or targetWeight \u003c\u003d 0:\n\t\t\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"The By Weight pack-out requires a positive target weight.\", \"warning\")\n\t\t\t\t\treturn\n\t\t\ttoSave.append({\"Id\": priorId, \"ItemId\": itemId, \"ClosureMethod\": m, \"TraysPerContainer\": trays, \"PartsPerTray\": partsPerTray, \"TargetWeight\": targetWeight, \"DunnageCode\": block.get(\"DunnageCode\"), \"CustomerCode\": block.get(\"CustomerCode\"), \"IsSerialized\": bool(block.get(\"IsSerialized\", False))})\n\t\telif priorId:\n\t\t\ttoDeprecate.append({\"Id\": priorId, \"ClosureMethod\": m})\n\tif not toSave and not toDeprecate:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Add at least one pack-out, or leave it cleared.\", \"info\")\n\t\treturn\n\tfailures \u003d []\n\tfor payload in toSave:\n\t\tif payload.get(\"Id\"):\n\t\t\tresult \u003d BlueRidge.Parts.ContainerConfig.update(payload)\n\t\telse:\n\t\t\tresult \u003d BlueRidge.Parts.ContainerConfig.add(payload)\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg \u003d (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (payload[\"ClosureMethod\"], msg))\n\tfor dep in toDeprecate:\n\t\tresult \u003d BlueRidge.Parts.ContainerConfig.deprecate(dep[\"Id\"])\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg \u003d (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (dep[\"ClosureMethod\"], msg))\n\tif failures:\n\t\tBlueRidge.Common.Notify.toast(\"Some pack-outs not saved\", \"; \".join(failures), \"error\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Container config saved\", \"Pack-out configuration saved.\", \"success\")\n\tself.load()"
         },
         {
           "name": "handleDiscard",
           "params": [],
-          "script": "\tsel = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.selected))\n\tself.view.custom.state.editDraft = sel"
+          "script": "\tsel \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.selected))\n\tself.view.custom.state.editDraft \u003d sel"
         },
         {
           "name": "addMethod",
           "params": [
             "method"
           ],
-          "script": "\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tblock = draft.get(method) or {}\n\tblock[\"Active\"] = True\n\tif block.get(\"ClosureMethod\") is None:\n\t\tblock[\"ClosureMethod\"] = method\n\tif block.get(\"ItemId\") is None:\n\t\tblock[\"ItemId\"] = self.view.params.value or 0\n\tdraft[method] = block\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tblock \u003d draft.get(method) or {}\n\tblock[\"Active\"] \u003d True\n\tif block.get(\"ClosureMethod\") is None:\n\t\tblock[\"ClosureMethod\"] \u003d method\n\tif block.get(\"ItemId\") is None:\n\t\tblock[\"ItemId\"] \u003d self.view.params.value or 0\n\tdraft[method] \u003d block\n\tself.view.custom.state.editDraft \u003d draft"
         },
         {
           "name": "clearMethod",
           "params": [
             "method"
           ],
-          "script": "\tst = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)) or {}\n\tsel = st.get(\"selected\") or {}\n\tdraft = st.get(\"editDraft\") or {}\n\tcur = draft.get(method) or {}\n\tdraft[method] = {\"Id\": cur.get(\"Id\"), \"ItemId\": self.view.params.value or 0, \"ClosureMethod\": method, \"Active\": False, \"PartsPerTray\": \"\", \"TraysPerContainer\": \"\", \"DunnageCode\": \"\", \"CustomerCode\": \"\", \"IsSerialized\": False, \"TargetWeight\": \"\"}\n\tself.view.custom.state = {\"selected\": sel, \"editDraft\": draft}"
+          "script": "\tst \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)) or {}\n\tsel \u003d st.get(\"selected\") or {}\n\tdraft \u003d st.get(\"editDraft\") or {}\n\tcur \u003d draft.get(method) or {}\n\tdraft[method] \u003d {\"Id\": cur.get(\"Id\"), \"ItemId\": self.view.params.value or 0, \"ClosureMethod\": method, \"Active\": False, \"PartsPerTray\": \"\", \"TraysPerContainer\": \"\", \"DunnageCode\": \"\", \"CustomerCode\": \"\", \"IsSerialized\": False, \"TargetWeight\": \"\"}\n\tself.view.custom.state \u003d {\"selected\": sel, \"editDraft\": draft}"
         }
       ],
       "extensionFunctions": null,

@@ -97,7 +97,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "coalesce({view.custom.state.editDraft.PartNumber}, '') + ' - ' + coalesce({view.custom.state.editDraft.Description}, '')"
+                    "expression": "coalesce({view.custom.state.editDraft.PartNumber}, \u0027\u0027) + \u0027 - \u0027 + coalesce({view.custom.state.editDraft.Description}, \u0027\u0027)"
                   },
                   "type": "expr"
                 }
@@ -106,7 +106,7 @@
             "props": {
               "style": {
                 "fontSize": "13px",
-                "fontWeight": "600"
+                "fontWeight": 600
               }
             },
             "type": "ia.display.label"
@@ -375,7 +375,7 @@
                   "name": "Label",
                   "tooltip": {
                     "enabled": true,
-                    "text": "Counting unit of measure the part is tracked in (e.g. EA = each)."
+                    "text": "Counting unit of measure the part is tracked in (e.g. EA \u003d each)."
                   }
                 },
                 "props": {
@@ -509,7 +509,7 @@
                   "name": "Label",
                   "tooltip": {
                     "enabled": true,
-                    "text": "Cross-reference to this part's number in Macola (the ERP system). Optional."
+                    "text": "Cross-reference to this part\u0027s number in Macola (the ERP system). Optional."
                   }
                 },
                 "props": {

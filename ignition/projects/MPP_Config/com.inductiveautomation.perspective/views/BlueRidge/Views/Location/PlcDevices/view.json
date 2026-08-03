@@ -2,9 +2,9 @@
   "custom": {
     "editDraft": {
       "deviceCode": "",
-      "id": null,
-      "plcDeviceTypeId": null,
-      "sortOrder": null,
+      "id": "",
+      "plcDeviceTypeId": "",
+      "sortOrder": "",
       "udtInstancePath": ""
     },
     "mappings": [],
@@ -23,16 +23,80 @@
       {
         "children": [
           {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "BreadcrumbCategory"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb"
+                      },
+                      "text": "System"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbSep"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb crumb-sep"
+                      },
+                      "text": "›"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbActive"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "crumb-active"
+                      },
+                      "text": "PLC Devices "
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Breadcrumb"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "style": {
+                    "classes": "title-row-h1"
+                  },
+                  "text": "PLC Device Mapping"
+                },
+                "type": "ia.display.label"
+              }
+            ],
             "meta": {
-              "name": "Title"
+              "name": "FlexContainer"
             },
             "props": {
-              "style": {
-                "classes": "screen-title"
-              },
-              "text": "PLC Device Mapping"
+              "direction": "column"
             },
-            "type": "ia.display.label"
+            "type": "ia.container.flex"
           },
           {
             "children": [
@@ -41,6 +105,9 @@
                   "name": "TerminalLbl"
                 },
                 "props": {
+                  "style": {
+                    "classes": "label-eyebrow"
+                  },
                   "text": "Terminal:"
                 },
                 "type": "ia.display.label"
@@ -84,7 +151,8 @@
             "props": {
               "alignItems": "center",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -100,6 +168,7 @@
           "alignItems": "center",
           "justify": "space-between",
           "style": {
+            "backgroundColor": "var(--mpp-surface-card)",
             "gap": "12px",
             "padding": "8px 4px"
           }
@@ -116,7 +185,8 @@
                 },
                 "props": {
                   "style": {
-                    "classes": "screen-subtitle"
+                    "fontSize": "13px",
+                    "fontWeight": "600"
                   },
                   "text": "Mappings for the selected terminal"
                 },
@@ -199,6 +269,7 @@
             "props": {
               "direction": "column",
               "style": {
+                "classes": "detail-panel",
                 "gap": "8px",
                 "padding": "8px"
               }
@@ -262,7 +333,8 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "4px"
+                    "gap": "4px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -293,6 +365,11 @@
                         }
                       }
                     },
+                    "props": {
+                      "style": {
+                        "classes": "search-input"
+                      }
+                    },
                     "type": "ia.input.text-field"
                   }
                 ],
@@ -302,7 +379,8 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "4px"
+                    "gap": "4px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -350,7 +428,8 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "4px"
+                    "gap": "4px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -381,6 +460,11 @@
                         }
                       }
                     },
+                    "props": {
+                      "style": {
+                        "classes": "search-input"
+                      }
+                    },
                     "type": "ia.input.text-field"
                   }
                 ],
@@ -390,7 +474,8 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "4px"
+                    "gap": "4px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -411,6 +496,9 @@
                     },
                     "meta": {
                       "name": "SaveBtn"
+                    },
+                    "position": {
+                      "basis": "61px"
                     },
                     "props": {
                       "style": {
@@ -435,6 +523,9 @@
                     "meta": {
                       "name": "CancelBtn"
                     },
+                    "position": {
+                      "basis": "72px"
+                    },
                     "props": {
                       "style": {
                         "classes": "btn"
@@ -449,7 +540,8 @@
                 },
                 "props": {
                   "style": {
-                    "gap": "8px"
+                    "gap": "8px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -491,7 +583,9 @@
         },
         "props": {
           "style": {
-            "gap": "12px"
+            "backgroundColor": "var(--mpp-surface-canvas)",
+            "gap": "12px",
+            "padding": "12px"
           }
         },
         "type": "ia.container.flex"
@@ -503,8 +597,7 @@
     "props": {
       "direction": "column",
       "style": {
-        "gap": "10px",
-        "padding": "12px"
+        "classes": "screen-active"
       }
     },
     "scripts": {
