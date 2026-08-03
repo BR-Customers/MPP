@@ -102,12 +102,22 @@ EXEC test.Assert_IsEqual
     @TestName = N'[AimPoolConfig] four-arg threshold save preserves AIM connection settings - values unchanged',
     @Expected = N'01/636652666553236784/http://172.17.10.86:8080/45/90', @Actual = @Preserved;
 
--- restore thresholds to the file's baseline (50/30/20/10) so this file leaves the
--- config as it found it.
+-- restore thresholds AND connection/escalation settings to the file's true baseline
+-- (50/30/20/10 thresholds; seeded AIM connection settings; 30/120 escalation ages) so
+-- this file leaves the config exactly as it found it. This MUST be explicit, not a
+-- four-arg call: AimPoolConfig is a single shared Id=1 row across all test files, and
+-- AimPoolConfig_Update has been preserve-on-omit since 1dda2e1f (a four-arg call leaves
+-- whatever this file's earlier blocks last wrote in AimBaseUrl/AimCompanyCode/
+-- AimPathToken/PostWarningAgeMinutes/PostCriticalAgeMinutes untouched, i.e. still 45/90
+-- from the blocks above). 0049_AimIntegration/010_schema.sql runs later in suite order
+-- and asserts the seeded escalation defaults are 30/120 on this same row.
 DECLARE @U5 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @U5 EXEC Lots.AimPoolConfig_Update
     @TargetBufferDepth = 50, @TopupThreshold = 30,
     @AlarmWarningDepth = 20, @AlarmCriticalDepth = 10,
+    @AimBaseUrl = N'http://172.17.10.86:8080', @AimCompanyCode = N'01',
+    @AimPathToken = N'636652666553236784',
+    @PostWarningAgeMinutes = 30, @PostCriticalAgeMinutes = 120,
     @AppUserId = @CfgUser2;
 GO
 
