@@ -158,14 +158,21 @@
                      'Segoe UI', Roboto, sans-serif;
     --mpp-font-mono: 'JetBrains Mono', 'Roboto Mono', 'Consolas', monospace;
 
-    --mpp-fs-xs:   11px;
-    --mpp-fs-sm:   12px;
-    --mpp-fs-base: 14px;
-    --mpp-fs-md:   16px;
-    --mpp-fs-lg:   18px;
-    --mpp-fs-xl:   22px;
-    --mpp-fs-2xl:  28px;
-    --mpp-fs-3xl:  36px;
+    /* Type scale is ~1.4x a desktop scale ON PURPOSE: the MPP plant floor
+       runs on 1920x1200 tablets at devicePixelRatio 1, so the whole UI lays out
+       at full desktop logical width but on an ~11" panel read at arm's length
+       (gloves, glances, safety glasses). These px are the physical-size we give
+       back. Only plant-floor (MPP) sessions load this stylesheet -- the desktop
+       Config Tool (MPP_Config) carries its own copy of these tokens, so bumps
+       here never touch it. Tune from the tablet, not the Designer preview. */
+    --mpp-fs-xs:   16px;
+    --mpp-fs-sm:   17px;
+    --mpp-fs-base: 20px;
+    --mpp-fs-md:   22px;
+    --mpp-fs-lg:   26px;
+    --mpp-fs-xl:   32px;
+    --mpp-fs-2xl:  40px;
+    --mpp-fs-3xl:  50px;
 
     --mpp-fw-regular:  400;
     --mpp-fw-medium:   500;
@@ -233,11 +240,15 @@
        3. PLANT-FLOOR TOKENS (--pf-*)
        Touch-terminal sizing and status accents specific to Arc 2 UI.
        ======================================================================== */
-    --pf-header-h:    56px;
-    --pf-touch-min:   44px;
+    /* Touch/vertical sizing grows with the type scale (tablet density pass) so
+       controls don't become big-text-in-small-targets on a glove-operated
+       tablet. Widths (tree/kpi/modal) left as-is for now -- bump live if text
+       reflows. */
+    --pf-header-h:    68px;
+    --pf-touch-min:   56px;
     --pf-tree-w:      320px;
-    --pf-tab-h:       42px;
-    --pf-banner-h:    56px;
+    --pf-tab-h:       56px;
+    --pf-banner-h:    68px;
     --pf-kpi-w:       240px;
     --pf-modal-w:     480px;
     --pf-content-pad: 16px;
@@ -2851,6 +2862,30 @@ button {
     font-family: var(--mpp-font-mono);
     letter-spacing: 0.05em;
     color: var(--mpp-text-primary);
+}
+
+/* Plant-floor "recent activity" feed rows (PeerTallyRow, and any future
+   Trim/Machining recent-activity list). Stacked entry: primary line pairs the
+   cavity label with its piece metric (space-between), muted mono lot number
+   beneath. Keeps each entry legible in the narrow ~320px right rail at tablet
+   type scale instead of three labels fighting for one line and wrapping. */
+.psc-pf-feed-cavity {
+    font-size: var(--mpp-fs-sm);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-secondary);
+    white-space: nowrap;
+}
+.psc-pf-feed-metric {
+    font-size: var(--mpp-fs-sm);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-primary);
+    white-space: nowrap;
+}
+.psc-pf-feed-lot {
+    font-size: var(--mpp-fs-xs);
+    font-family: var(--mpp-font-mono);
+    color: var(--mpp-text-tertiary);
+    letter-spacing: 0.02em;
 }
 
 /* MovementScan panels — alias of pf-panel */

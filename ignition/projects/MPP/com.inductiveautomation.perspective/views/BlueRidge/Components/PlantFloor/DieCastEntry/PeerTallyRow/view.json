@@ -15,7 +15,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 32,
+      "height": 52,
       "width": 300
     }
   },
@@ -25,33 +25,72 @@
       "name": "root"
     },
     "props": {
-      "direction": "row",
-      "alignItems": "center",
+      "direction": "column",
       "style": {
-        "gap": "10px"
+        "gap": "3px",
+        "paddingTop": "7px",
+        "paddingBottom": "7px",
+        "borderBottom": "1px solid var(--mpp-border-subtle)"
       }
     },
     "children": [
       {
-        "type": "ia.display.label",
+        "type": "ia.container.flex",
         "meta": {
-          "name": "CavityLabel"
+          "name": "PrimaryLine"
         },
         "props": {
+          "direction": "row",
+          "alignItems": "baseline",
+          "justify": "space-between",
           "style": {
-            "classes": "pf-kpi-sub"
+            "gap": "10px"
           }
         },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "\"Cavity \" + toStr({view.params.peer.Cavity})"
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CavityLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-feed-cavity"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Cavity \" + toStr({view.params.peer.Cavity})"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CountLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-feed-metric"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.peer.PieceCount} > 0, toStr({view.params.peer.PieceCount}) + \" pcs\", \"lot opened\")"
+                  }
+                }
               }
             }
           }
-        }
+        ]
       },
       {
         "type": "ia.display.label",
@@ -60,7 +99,7 @@
         },
         "props": {
           "style": {
-            "classes": "pf-field-mono"
+            "classes": "pf-feed-lot"
           }
         },
         "propConfig": {
@@ -69,27 +108,6 @@
               "type": "property",
               "config": {
                 "path": "view.params.peer.LotName"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.display.label",
-        "meta": {
-          "name": "CountLabel"
-        },
-        "props": {
-          "style": {
-            "classes": "pf-kpi-sub"
-          }
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "if({view.params.peer.PieceCount} > 0, toStr({view.params.peer.PieceCount}) + \" pcs\", \"lot opened\")"
               }
             }
           }
