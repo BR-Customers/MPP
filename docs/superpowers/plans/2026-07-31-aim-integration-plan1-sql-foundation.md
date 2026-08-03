@@ -1039,7 +1039,7 @@ GO
 
 - [ ] **Step 4: Check the audit entity type exists**
 
-`@EntityTypeCode = N'AimShipperIdPool'` must resolve in `Audit.LogEntityType`. Check:
+`@LogEntityTypeCode = N'AimShipperIdPool'` must resolve in `Audit.LogEntityType`. Check:
 
 ```bash
 sqlcmd -S localhost -d MPP_MES_Test -Q "SELECT Id, Code FROM Audit.LogEntityType WHERE Code = 'AimShipperIdPool'"
