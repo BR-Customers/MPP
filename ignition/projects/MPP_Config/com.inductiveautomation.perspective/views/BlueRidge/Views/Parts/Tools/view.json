@@ -526,7 +526,7 @@
                           "props.text": {
                             "binding": {
                               "config": {
-                                "path": "view.custom.editDraft.meta.StatusCode"
+                                "path": "view.custom.editDraft.meta.StatusName"
                               },
                               "type": "property"
                             }
