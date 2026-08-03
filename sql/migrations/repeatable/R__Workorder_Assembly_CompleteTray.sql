@@ -1,7 +1,15 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_CompleteTray.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0
+-- Version:     1.1 (2026-07-24) - the component-stock reads (the §7 pre-check
+--              availability sum AND the §B4 FIFO consume walk) now exclude BLOCKED
+--              source LOTs (sc.BlocksProduction = 0, i.e. skip Hold/Scrap), matching
+--              the B2 guard every sibling consume proc already applies
+--              (MachiningOut_Mint's Good-only FIFO, LotGenealogy_RecordConsumption's
+--              inline guard). Before this a held component LOT was counted as
+--              available AND consumed, letting a failed/held part be shipped by
+--              assembly-out / third-party check-out. Both reads must guard in lock-step
+--              so the advisory pre-check and the authoritative walk agree.
 -- Description: Arc 2 machining/assembly flow reconciliation (Spec 2, Task A2).
 --              Assembly-out orchestrator: on tray completion it MINTS a
 --              finished-good LOT (tray = LOT), consumes BOM x PieceCount FIFO from
@@ -189,7 +197,8 @@ BEGIN
             OUTER APPLY (
                 SELECT ISNULL(SUM(l.InventoryAvailable), 0) AS Avail FROM Lots.Lot l
                 INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
-                WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @CellLocationId AND sc.Code <> N'Closed'
+                WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @CellLocationId
+                  AND sc.Code <> N'Closed' AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
             ) s
             WHERE bl.BomId = @BomId AND s.Avail < CAST(bl.QtyPer * @PieceCount AS INT));
 
@@ -335,7 +344,8 @@ BEGIN
                        @SrcPieceCount = l.PieceCount, @SrcStatus = l.LotStatusId
                 FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                 WHERE l.ItemId = @ChildItemId AND l.CurrentLocationId = @CellLocationId
-                      AND sc.Code <> N'Closed' AND l.InventoryAvailable > 0
+                      AND sc.Code <> N'Closed' AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
+                      AND l.InventoryAvailable > 0
                 ORDER BY l.CreatedAt, l.Id;              -- FIFO
                 IF @SrcLotId IS NULL
                     RAISERROR(N'Component stock drained mid-consume.', 16, 1);   -- -> CATCH -> ROLLBACK

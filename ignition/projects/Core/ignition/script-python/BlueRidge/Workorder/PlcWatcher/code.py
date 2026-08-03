@@ -23,9 +23,6 @@
    watchers -- choreography + proc calls only (matrices/thresholds live in SQL).
 """
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Location.TerminalPlcDevice
 import system.tag
 import java.lang
 

@@ -3,10 +3,6 @@
    All public functions unwrap QualifiedValue wrappers at entry via _u() so
    bidirectional-bound view properties can be passed straight through."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Notify
-import BlueRidge.Common.Util
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)

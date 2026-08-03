@@ -4,7 +4,7 @@
 
 **Goal:** Make the database able to hand out part-agnostic AIM shipper IDs and to record, for every completed container, exactly what must be reported to AIM and whether it has been.
 
-**Architecture:** One versioned migration (`0048`) genericizes `Lots.AimShipperIdPool`, adds post-back payload + status columns to it, extends `Lots.AimPoolConfig` with connection and escalation settings, and adds `Parts.Item.AimCustomerPartNumber`. Existing pool procs lose their `@PartNumber` parameter; `Container_Complete` writes the post-back payload inside its existing claim transaction; four new procs serve the post/retry loop and two new accessors serve the Item Master field.
+**Architecture:** One versioned migration (`0049`) genericizes `Lots.AimShipperIdPool`, adds post-back payload + status columns to it, extends `Lots.AimPoolConfig` with connection and escalation settings, and adds `Parts.Item.AimCustomerPartNumber`. Existing pool procs lose their `@PartNumber` parameter; `Container_Complete` writes the post-back payload inside its existing claim transaction; four new procs serve the post/retry loop and two new accessors serve the Item Master field.
 
 **Tech Stack:** SQL Server 2022, `sqlcmd`, the repo's own SQL test harness (`sql/tests/Run-Tests.ps1`).
 
@@ -59,32 +59,32 @@ Expected: 7 `ERROR running` lines, 0 `FAIL:` lines. If you see a different set, 
 
 ---
 
-### Task 1: Migration 0048 — schema
+### Task 1: Migration 0049 — schema
 
 **Files:**
-- Create: `sql/migrations/versioned/0048_aim_pool_generic_and_postback.sql`
-- Create: `sql/tests/0048_AimIntegration/010_schema.sql`
+- Create: `sql/migrations/versioned/0049_aim_pool_generic_and_postback.sql`
+- Create: `sql/tests/0049_AimIntegration/010_schema.sql`
 
 **Interfaces:**
 - Produces: `Lots.AimShipperIdPool` without `PartNumber`, with `CustomerPartNumber`/`Quantity`/`LotNumber`/`PostedAt`/`PostAttempts`/`LastPostAttemptAt`/`LastPostError`; `Lots.AimPoolConfig` with `AimBaseUrl`/`AimCompanyCode`/`AimPathToken`/`PostWarningAgeMinutes`/`PostCriticalAgeMinutes`; `Parts.Item.AimCustomerPartNumber`.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0048_AimIntegration/010_schema.sql`:
+Create `sql/tests/0049_AimIntegration/010_schema.sql`:
 
 ```sql
 -- =============================================
--- File: 0048_AimIntegration/010_schema.sql
--- Desc: Migration 0048 - pool genericized, post-back columns, config columns,
+-- File: 0049_AimIntegration/010_schema.sql
+-- Desc: Migration 0049 - pool genericized, post-back columns, config columns,
 --       Parts.Item.AimCustomerPartNumber.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0048_AimIntegration/010_schema.sql';
+EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/010_schema.sql';
 GO
 
 DECLARE @Gone NVARCHAR(10) =
     CASE WHEN COL_LENGTH(N'Lots.AimShipperIdPool', N'PartNumber') IS NULL THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] AimShipperIdPool.PartNumber dropped',
+    @TestName = N'[0049] AimShipperIdPool.PartNumber dropped',
     @Expected = N'1', @Actual = @Gone;
 
 DECLARE @Cols NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
@@ -92,21 +92,21 @@ DECLARE @Cols NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
       AND name IN (N'CustomerPartNumber', N'Quantity', N'LotNumber', N'PostedAt',
                    N'PostAttempts', N'LastPostAttemptAt', N'LastPostError'));
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] seven post-back columns present',
+    @TestName = N'[0049] seven post-back columns present',
     @Expected = N'7', @Actual = @Cols;
 
 DECLARE @OldIx NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM sys.indexes
     WHERE object_id = OBJECT_ID(N'Lots.AimShipperIdPool')
       AND name = N'IX_AimShipperIdPool_AvailableByPart');
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] per-part index dropped',
+    @TestName = N'[0049] per-part index dropped',
     @Expected = N'0', @Actual = @OldIx;
 
 DECLARE @NewIx NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM sys.indexes
     WHERE object_id = OBJECT_ID(N'Lots.AimShipperIdPool')
       AND name IN (N'IX_AimShipperIdPool_Available', N'IX_AimShipperIdPool_Unposted'));
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] generic + unposted indexes present',
+    @TestName = N'[0049] generic + unposted indexes present',
     @Expected = N'2', @Actual = @NewIx;
 
 DECLARE @Cfg NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
@@ -114,20 +114,20 @@ DECLARE @Cfg NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
       AND name IN (N'AimBaseUrl', N'AimCompanyCode', N'AimPathToken',
                    N'PostWarningAgeMinutes', N'PostCriticalAgeMinutes'));
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] five AimPoolConfig columns present',
+    @TestName = N'[0049] five AimPoolConfig columns present',
     @Expected = N'5', @Actual = @Cfg;
 
 DECLARE @ItemCol NVARCHAR(10) =
     CASE WHEN COL_LENGTH(N'Parts.Item', N'AimCustomerPartNumber') IS NOT NULL THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] Parts.Item.AimCustomerPartNumber present',
+    @TestName = N'[0049] Parts.Item.AimCustomerPartNumber present',
     @Expected = N'1', @Actual = @ItemCol;
 
 DECLARE @Defaults NVARCHAR(20) = (SELECT
     CAST(PostWarningAgeMinutes AS NVARCHAR(10)) + N'/' + CAST(PostCriticalAgeMinutes AS NVARCHAR(10))
     FROM Lots.AimPoolConfig WHERE Id = 1);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] escalation defaults 30/120 on the config row',
+    @TestName = N'[0049] escalation defaults 30/120 on the config row',
     @Expected = N'30/120', @Actual = @Defaults;
 GO
 
@@ -138,18 +138,18 @@ GO
 - [ ] **Step 2: Run it and verify it fails**
 
 ```bash
-powershell -File sql/tests/Run-Tests.ps1 -Filter "0048_AimIntegration"
+powershell -File sql/tests/Run-Tests.ps1 -Filter "0049_AimIntegration"
 ```
 
 Expected: FAIL on every assertion (the columns do not exist yet).
 
 - [ ] **Step 3: Write the migration**
 
-Create `sql/migrations/versioned/0048_aim_pool_generic_and_postback.sql`:
+Create `sql/migrations/versioned/0049_aim_pool_generic_and_postback.sql`:
 
 ```sql
 -- =============================================
--- Migration:   0048_aim_pool_generic_and_postback.sql
+-- Migration:   0049_aim_pool_generic_and_postback.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-31
 -- Description: Makes the AIM shipper-ID pool part-agnostic and gives it a post-back
@@ -229,9 +229,9 @@ IF COL_LENGTH(N'Parts.Item', N'AimCustomerPartNumber') IS NULL
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion
-               WHERE MigrationId = N'0048_aim_pool_generic_and_postback')
+               WHERE MigrationId = N'0049_aim_pool_generic_and_postback')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0048_aim_pool_generic_and_postback',
+    VALUES (N'0049_aim_pool_generic_and_postback',
         N'AIM pool genericized (PartNumber dropped); post-back payload/status columns; AimPoolConfig connection + escalation settings; Parts.Item.AimCustomerPartNumber.');
 GO
 ```
@@ -240,7 +240,7 @@ GO
 
 ```bash
 powershell -File sql/scripts/Reset-DevDatabase.ps1 -DatabaseName MPP_MES_Test -SkipDemoSeed
-powershell -File sql/tests/Run-Tests.ps1 -Filter "0048_AimIntegration"
+powershell -File sql/tests/Run-Tests.ps1 -Filter "0049_AimIntegration"
 ```
 
 Expected: PASS, 7 assertions.
@@ -248,8 +248,8 @@ Expected: PASS, 7 assertions.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/versioned/0048_aim_pool_generic_and_postback.sql sql/tests/0048_AimIntegration/010_schema.sql
-git commit -m "feat(sql): migration 0048 - generic AIM pool, post-back ledger, Item.AimCustomerPartNumber"
+git add sql/migrations/versioned/0049_aim_pool_generic_and_postback.sql sql/tests/0049_AimIntegration/010_schema.sql
+git commit -m "feat(sql): migration 0049 - generic AIM pool, post-back ledger, Item.AimCustomerPartNumber"
 ```
 
 ---
@@ -431,7 +431,7 @@ git commit -m "feat(sql): AIM pool procs go part-agnostic (nextserial.csv takes 
 
 **Files:**
 - Modify: `sql/migrations/repeatable/R__Lots_Container_Complete.sql`
-- Create: `sql/tests/0048_AimIntegration/020_Container_Complete_payload.sql`
+- Create: `sql/tests/0049_AimIntegration/020_Container_Complete_payload.sql`
 
 **Interfaces:**
 - Consumes: Task 1 columns; Task 2's genericized claim semantics.
@@ -441,15 +441,15 @@ git commit -m "feat(sql): AIM pool procs go part-agnostic (nextserial.csv takes 
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0048_AimIntegration/020_Container_Complete_payload.sql`:
+Create `sql/tests/0049_AimIntegration/020_Container_Complete_payload.sql`:
 
 ```sql
 -- =============================================
--- File: 0048_AimIntegration/020_Container_Complete_payload.sql
+-- File: 0049_AimIntegration/020_Container_Complete_payload.sql
 -- Desc: Container_Complete stamps the AIM post-back payload onto the claimed
 --       pool row, inside the claim transaction, without changing its result shape.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0048_AimIntegration/020_Container_Complete_payload.sql';
+EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/020_Container_Complete_payload.sql';
 GO
 
 -- Arrange: an item with an AIM customer part, a container with one closed tray.
@@ -473,7 +473,7 @@ INSERT INTO @R EXEC Lots.Container_Complete
 
 DECLARE @Ok NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] Container_Complete succeeds',
+    @TestName = N'[0049] Container_Complete succeeds',
     @Expected = N'1', @Actual = @Ok;
 
 DECLARE @Serial NVARCHAR(50) = (SELECT AimShipperId FROM @R);
@@ -482,7 +482,7 @@ DECLARE @Serial NVARCHAR(50) = (SELECT AimShipperId FROM @R);
 DECLARE @Part NVARCHAR(50) = (SELECT CustomerPartNumber FROM Lots.AimShipperIdPool
                               WHERE AimShipperId = @Serial);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] claimed row carries the AIM customer part',
+    @TestName = N'[0049] claimed row carries the AIM customer part',
     @Expected = N'112006FB A000', @Actual = @Part;
 
 DECLARE @QtyOk NVARCHAR(10) = (SELECT CASE WHEN p.Quantity =
@@ -491,19 +491,19 @@ DECLARE @QtyOk NVARCHAR(10) = (SELECT CASE WHEN p.Quantity =
     THEN N'1' ELSE N'0' END
     FROM Lots.AimShipperIdPool p WHERE p.AimShipperId = @Serial);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] quantity equals the sum of closed tray counts',
+    @TestName = N'[0049] quantity equals the sum of closed tray counts',
     @Expected = N'1', @Actual = @QtyOk;
 
 DECLARE @Lot NVARCHAR(50) = (SELECT LotNumber FROM Lots.AimShipperIdPool
                              WHERE AimShipperId = @Serial);
 EXEC test.Assert_IsNotNull
-    @TestName = N'[0048] lot number captured from the first tray FG LOT',
+    @TestName = N'[0049] lot number captured from the first tray FG LOT',
     @Actual = @Lot;
 
 DECLARE @NotPosted NVARCHAR(10) = (SELECT CASE WHEN PostedAt IS NULL AND PostAttempts = 0
     THEN N'1' ELSE N'0' END FROM Lots.AimShipperIdPool WHERE AimShipperId = @Serial);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] row starts owed - PostedAt null, attempts zero',
+    @TestName = N'[0049] row starts owed - PostedAt null, attempts zero',
     @Expected = N'1', @Actual = @NotPosted;
 GO
 
@@ -563,7 +563,7 @@ Drop `AND PartNumber = @PartNumber` from the claim CTE's `WHERE`. Then, immediat
 
 ```bash
 powershell -File sql/scripts/Reset-DevDatabase.ps1 -DatabaseName MPP_MES_Test -SkipDemoSeed
-powershell -File sql/tests/Run-Tests.ps1 -Filter "0048_AimIntegration"
+powershell -File sql/tests/Run-Tests.ps1 -Filter "0049_AimIntegration"
 ```
 
 Expected: PASS, 12 assertions across both files.
@@ -579,7 +579,7 @@ Expected: no new `ERROR running` beyond the Task 0 baseline. If one appears, a f
 - [ ] **Step 6: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_Container_Complete.sql sql/tests/0048_AimIntegration/020_Container_Complete_payload.sql
+git add sql/migrations/repeatable/R__Lots_Container_Complete.sql sql/tests/0049_AimIntegration/020_Container_Complete_payload.sql
 git commit -m "feat(sql): Container_Complete writes the AIM post-back payload in-transaction"
 ```
 
@@ -591,7 +591,7 @@ git commit -m "feat(sql): Container_Complete writes the AIM post-back payload in
 - Create: `sql/migrations/repeatable/R__Lots_AimShipperIdPool_GetForPost.sql`
 - Create: `sql/migrations/repeatable/R__Lots_AimShipperIdPool_RecordPostResult.sql`
 - Create: `sql/migrations/repeatable/R__Lots_AimShipperIdPool_ListUnposted.sql`
-- Create: `sql/tests/0048_AimIntegration/030_postback_procs.sql`
+- Create: `sql/tests/0049_AimIntegration/030_postback_procs.sql`
 
 **Interfaces:**
 - Produces:
@@ -601,14 +601,14 @@ git commit -m "feat(sql): Container_Complete writes the AIM post-back payload in
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0048_AimIntegration/030_postback_procs.sql`:
+Create `sql/tests/0049_AimIntegration/030_postback_procs.sql`:
 
 ```sql
 -- =============================================
--- File: 0048_AimIntegration/030_postback_procs.sql
+-- File: 0049_AimIntegration/030_postback_procs.sql
 -- Desc: GetForPost / RecordPostResult / ListUnposted round-trip.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0048_AimIntegration/030_postback_procs.sql';
+EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/030_postback_procs.sql';
 GO
 
 DECLARE @UserId BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
@@ -628,7 +628,7 @@ DECLARE @G TABLE (Id BIGINT, AimShipperId NVARCHAR(50), CustomerPartNumber NVARC
 INSERT INTO @G EXEC Lots.AimShipperIdPool_GetForPost @AimShipperId = N'000900201';
 DECLARE @GotPart NVARCHAR(50) = (SELECT CustomerPartNumber FROM @G);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] GetForPost returns the customer part',
+    @TestName = N'[0049] GetForPost returns the customer part',
     @Expected = N'112006FB A000', @Actual = @GotPart;
 
 -- Unknown serial returns an empty rowset, not an error.
@@ -636,7 +636,7 @@ DELETE FROM @G;
 INSERT INTO @G EXEC Lots.AimShipperIdPool_GetForPost @AimShipperId = N'999999999';
 DECLARE @NoRows NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @G);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] GetForPost returns empty for an unknown serial',
+    @TestName = N'[0049] GetForPost returns empty for an unknown serial',
     @Expected = N'0', @Actual = @NoRows;
 
 -- ListUnposted sees it.
@@ -647,7 +647,7 @@ DECLARE @L TABLE (Id BIGINT, AimShipperId NVARCHAR(50), ContainerId BIGINT,
 INSERT INTO @L EXEC Lots.AimShipperIdPool_ListUnposted @Top = 50;
 DECLARE @Listed NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L WHERE Id = @PoolId);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] ListUnposted includes an owed row',
+    @TestName = N'[0049] ListUnposted includes an owed row',
     @Expected = N'1', @Actual = @Listed;
 
 -- Failure path: attempts increment, error recorded, still owed.
@@ -657,18 +657,18 @@ INSERT INTO @RR EXEC Lots.AimShipperIdPool_RecordPostResult
 DECLARE @Attempts NVARCHAR(10) = (SELECT CAST(PostAttempts AS NVARCHAR(10))
     FROM Lots.AimShipperIdPool WHERE Id = @PoolId);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] failed post increments PostAttempts',
+    @TestName = N'[0049] failed post increments PostAttempts',
     @Expected = N'1', @Actual = @Attempts;
 
 DECLARE @Err NVARCHAR(500) = (SELECT LastPostError FROM Lots.AimShipperIdPool WHERE Id = @PoolId);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] failed post records the error',
+    @TestName = N'[0049] failed post records the error',
     @Expected = N'AIM rejected: echo', @Actual = @Err;
 
 DECLARE @StillOwed NVARCHAR(10) = (SELECT CASE WHEN PostedAt IS NULL THEN N'1' ELSE N'0' END
     FROM Lots.AimShipperIdPool WHERE Id = @PoolId);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] failed post leaves the row owed',
+    @TestName = N'[0049] failed post leaves the row owed',
     @Expected = N'1', @Actual = @StillOwed;
 
 -- Success path: PostedAt stamped, row leaves the unposted list.
@@ -678,14 +678,14 @@ INSERT INTO @RR EXEC Lots.AimShipperIdPool_RecordPostResult
 DECLARE @Posted NVARCHAR(10) = (SELECT CASE WHEN PostedAt IS NOT NULL THEN N'1' ELSE N'0' END
     FROM Lots.AimShipperIdPool WHERE Id = @PoolId);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] successful post stamps PostedAt',
+    @TestName = N'[0049] successful post stamps PostedAt',
     @Expected = N'1', @Actual = @Posted;
 
 DELETE FROM @L;
 INSERT INTO @L EXEC Lots.AimShipperIdPool_ListUnposted @Top = 50;
 DECLARE @GoneFromList NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L WHERE Id = @PoolId);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] posted row leaves the unposted list',
+    @TestName = N'[0049] posted row leaves the unposted list',
     @Expected = N'0', @Actual = @GoneFromList;
 GO
 
@@ -849,7 +849,7 @@ GO
 
 ```bash
 powershell -File sql/scripts/Reset-DevDatabase.ps1 -DatabaseName MPP_MES_Test -SkipDemoSeed
-powershell -File sql/tests/Run-Tests.ps1 -Filter "0048_AimIntegration"
+powershell -File sql/tests/Run-Tests.ps1 -Filter "0049_AimIntegration"
 ```
 
 Expected: PASS, 21 assertions across the three files.
@@ -857,7 +857,7 @@ Expected: PASS, 21 assertions across the three files.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_AimShipperIdPool_GetForPost.sql sql/migrations/repeatable/R__Lots_AimShipperIdPool_RecordPostResult.sql sql/migrations/repeatable/R__Lots_AimShipperIdPool_ListUnposted.sql sql/tests/0048_AimIntegration/030_postback_procs.sql
+git add sql/migrations/repeatable/R__Lots_AimShipperIdPool_GetForPost.sql sql/migrations/repeatable/R__Lots_AimShipperIdPool_RecordPostResult.sql sql/migrations/repeatable/R__Lots_AimShipperIdPool_ListUnposted.sql sql/tests/0049_AimIntegration/030_postback_procs.sql
 git commit -m "feat(sql): AIM post-back read/record/list procs"
 ```
 
@@ -867,7 +867,7 @@ git commit -m "feat(sql): AIM post-back read/record/list procs"
 
 **Files:**
 - Create: `sql/migrations/repeatable/R__Lots_AimShipperIdPool_MarkPosted.sql`
-- Create: `sql/tests/0048_AimIntegration/040_MarkPosted.sql`
+- Create: `sql/tests/0049_AimIntegration/040_MarkPosted.sql`
 
 **Interfaces:**
 - Produces: `Lots.AimShipperIdPool_MarkPosted @Id BIGINT, @AppUserId BIGINT, @Note NVARCHAR(500)` -> `SELECT Status, Message`
@@ -876,14 +876,14 @@ git commit -m "feat(sql): AIM post-back read/record/list procs"
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0048_AimIntegration/040_MarkPosted.sql`:
+Create `sql/tests/0049_AimIntegration/040_MarkPosted.sql`:
 
 ```sql
 -- =============================================
--- File: 0048_AimIntegration/040_MarkPosted.sql
+-- File: 0049_AimIntegration/040_MarkPosted.sql
 -- Desc: MarkPosted stamps PostedAt with audit attribution and rejects re-marking.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0048_AimIntegration/040_MarkPosted.sql';
+EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/040_MarkPosted.sql';
 GO
 
 DECLARE @UserId BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
@@ -903,20 +903,20 @@ INSERT INTO @M EXEC Lots.AimShipperIdPool_MarkPosted
     @Note = N'Confirmed on AIM Unshipped Labels report';
 DECLARE @Ok NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @M);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] MarkPosted succeeds on an owed row',
+    @TestName = N'[0049] MarkPosted succeeds on an owed row',
     @Expected = N'1', @Actual = @Ok;
 
 DECLARE @Posted NVARCHAR(10) = (SELECT CASE WHEN PostedAt IS NOT NULL THEN N'1' ELSE N'0' END
     FROM Lots.AimShipperIdPool WHERE Id = @PoolId);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] MarkPosted stamps PostedAt',
+    @TestName = N'[0049] MarkPosted stamps PostedAt',
     @Expected = N'1', @Actual = @Posted;
 
 DECLARE @Audited NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
     FROM Audit.ConfigLog
     WHERE Description LIKE N'%000900301%' AND Description LIKE N'%Marked Posted%');
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] MarkPosted writes an audit row naming the serial',
+    @TestName = N'[0049] MarkPosted writes an audit row naming the serial',
     @Expected = N'1', @Actual = @Audited;
 
 -- Re-marking an already-posted row is rejected.
@@ -925,7 +925,7 @@ INSERT INTO @M EXEC Lots.AimShipperIdPool_MarkPosted
     @Id = @PoolId, @AppUserId = @UserId, @Note = N'again';
 DECLARE @Rejected NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @M);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] MarkPosted rejects an already-posted row',
+    @TestName = N'[0049] MarkPosted rejects an already-posted row',
     @Expected = N'0', @Actual = @Rejected;
 GO
 
@@ -1045,7 +1045,7 @@ GO
 sqlcmd -S localhost -d MPP_MES_Test -Q "SELECT Id, Code FROM Audit.LogEntityType WHERE Code = 'AimShipperIdPool'"
 ```
 
-If it returns no row, add a seed block to migration `0048` (before the `SchemaVersion` insert) using the **next free Id** — verify the maximum first, exactly as migration `0044` documents:
+If it returns no row, add a seed block to migration `0049` (before the `SchemaVersion` insert) using the **next free Id** — verify the maximum first, exactly as migration `0044` documents:
 
 ```sql
 DECLARE @NextEntityId INT = (SELECT MAX(Id) + 1 FROM Audit.LogEntityType);
@@ -1062,7 +1062,7 @@ Record the Id you used in the migration header. Two concurrent branches picking 
 
 ```bash
 powershell -File sql/scripts/Reset-DevDatabase.ps1 -DatabaseName MPP_MES_Test -SkipDemoSeed
-powershell -File sql/tests/Run-Tests.ps1 -Filter "0048_AimIntegration"
+powershell -File sql/tests/Run-Tests.ps1 -Filter "0049_AimIntegration"
 ```
 
 Expected: PASS, 25 assertions.
@@ -1070,7 +1070,7 @@ Expected: PASS, 25 assertions.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_AimShipperIdPool_MarkPosted.sql sql/tests/0048_AimIntegration/040_MarkPosted.sql sql/migrations/versioned/0048_aim_pool_generic_and_postback.sql
+git add sql/migrations/repeatable/R__Lots_AimShipperIdPool_MarkPosted.sql sql/tests/0049_AimIntegration/040_MarkPosted.sql sql/migrations/versioned/0049_aim_pool_generic_and_postback.sql
 git commit -m "feat(sql): AimShipperIdPool_MarkPosted - audited human-confirmed resolution"
 ```
 
@@ -1081,7 +1081,7 @@ git commit -m "feat(sql): AimShipperIdPool_MarkPosted - audited human-confirmed 
 **Files:**
 - Create: `sql/migrations/repeatable/R__Parts_Item_GetAimCustomerPartNumber.sql`
 - Create: `sql/migrations/repeatable/R__Parts_Item_SetAimCustomerPartNumber.sql`
-- Create: `sql/tests/0048_AimIntegration/050_Item_accessors.sql`
+- Create: `sql/tests/0049_AimIntegration/050_Item_accessors.sql`
 
 **Interfaces:**
 - Produces:
@@ -1092,14 +1092,14 @@ git commit -m "feat(sql): AimShipperIdPool_MarkPosted - audited human-confirmed 
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0048_AimIntegration/050_Item_accessors.sql`:
+Create `sql/tests/0049_AimIntegration/050_Item_accessors.sql`:
 
 ```sql
 -- =============================================
--- File: 0048_AimIntegration/050_Item_accessors.sql
+-- File: 0049_AimIntegration/050_Item_accessors.sql
 -- Desc: Item AIM customer-part accessors round-trip, allow clearing, and audit.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0048_AimIntegration/050_Item_accessors.sql';
+EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/050_Item_accessors.sql';
 GO
 
 DECLARE @UserId BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
@@ -1110,20 +1110,20 @@ INSERT INTO @S EXEC Parts.Item_SetAimCustomerPartNumber
     @ItemId = @ItemId, @Value = N'112006FB A000', @AppUserId = @UserId;
 DECLARE @SetOk NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @S);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] Item_SetAimCustomerPartNumber succeeds',
+    @TestName = N'[0049] Item_SetAimCustomerPartNumber succeeds',
     @Expected = N'1', @Actual = @SetOk;
 
 DECLARE @G TABLE (ItemId BIGINT, AimCustomerPartNumber NVARCHAR(50));
 INSERT INTO @G EXEC Parts.Item_GetAimCustomerPartNumber @ItemId = @ItemId;
 DECLARE @Got NVARCHAR(50) = (SELECT AimCustomerPartNumber FROM @G);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] Item_GetAimCustomerPartNumber round-trips the value',
+    @TestName = N'[0049] Item_GetAimCustomerPartNumber round-trips the value',
     @Expected = N'112006FB A000', @Actual = @Got;
 
 -- The embedded space is significant to AIM's lookup and must survive.
 DECLARE @Len NVARCHAR(10) = (SELECT CAST(LEN(AimCustomerPartNumber + N'.') - 1 AS NVARCHAR(10)) FROM @G);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] embedded space preserved (13 characters)',
+    @TestName = N'[0049] embedded space preserved (13 characters)',
     @Expected = N'13', @Actual = @Len;
 
 -- Clearing is legal - an item may stop shipping to Honda.
@@ -1133,7 +1133,7 @@ INSERT INTO @S EXEC Parts.Item_SetAimCustomerPartNumber
 DECLARE @Cleared NVARCHAR(10) = (SELECT CASE WHEN AimCustomerPartNumber IS NULL THEN N'1' ELSE N'0' END
     FROM Parts.Item WHERE Id = @ItemId);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] setting NULL clears the value',
+    @TestName = N'[0049] setting NULL clears the value',
     @Expected = N'1', @Actual = @Cleared;
 
 -- Unknown item is rejected, not silently ignored.
@@ -1142,14 +1142,14 @@ INSERT INTO @S EXEC Parts.Item_SetAimCustomerPartNumber
     @ItemId = 99999999, @Value = N'X', @AppUserId = @UserId;
 DECLARE @Bad NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @S);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] unknown item rejected',
+    @TestName = N'[0049] unknown item rejected',
     @Expected = N'0', @Actual = @Bad;
 
 DELETE FROM @G;
 INSERT INTO @G EXEC Parts.Item_GetAimCustomerPartNumber @ItemId = 99999999;
 DECLARE @NoRow NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @G);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0048] get on unknown item returns empty rowset',
+    @TestName = N'[0049] get on unknown item returns empty rowset',
     @Expected = N'0', @Actual = @NoRow;
 GO
 
@@ -1300,7 +1300,7 @@ GO
 
 ```bash
 powershell -File sql/scripts/Reset-DevDatabase.ps1 -DatabaseName MPP_MES_Test -SkipDemoSeed
-powershell -File sql/tests/Run-Tests.ps1 -Filter "0048_AimIntegration"
+powershell -File sql/tests/Run-Tests.ps1 -Filter "0049_AimIntegration"
 ```
 
 Expected: PASS, 31 assertions.
@@ -1308,7 +1308,7 @@ Expected: PASS, 31 assertions.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Parts_Item_GetAimCustomerPartNumber.sql sql/migrations/repeatable/R__Parts_Item_SetAimCustomerPartNumber.sql sql/tests/0048_AimIntegration/050_Item_accessors.sql
+git add sql/migrations/repeatable/R__Parts_Item_GetAimCustomerPartNumber.sql sql/migrations/repeatable/R__Parts_Item_SetAimCustomerPartNumber.sql sql/tests/0049_AimIntegration/050_Item_accessors.sql
 git commit -m "feat(sql): Parts.Item AIM customer-part accessors (mirrors PlcId pattern)"
 ```
 
@@ -1493,7 +1493,7 @@ Record the number in the commit message so the next session has a comparable fig
 ```bash
 git commit --allow-empty -m "test(sql): AIM Plan 1 complete - full suite green against baseline
 
-Migration 0048 + 6 modified procs + 6 new procs + 5 test files.
+Migration 0049 + 6 modified procs + 6 new procs + 5 test files.
 Pre-existing failures unchanged (7 ERROR running, see PROJECT_STATUS 2026-07-28).
 Plan 2 (Ignition layer) consumes the proc signatures produced here."
 ```

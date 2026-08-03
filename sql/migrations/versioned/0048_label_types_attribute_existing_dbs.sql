@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration:   0047_label_types_attribute_existing_dbs.sql
+-- Migration:   0048_label_types_attribute_existing_dbs.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-28
 -- Description: Back-fills the Printer 'LabelTypes' LocationAttributeDefinition into
@@ -47,9 +47,9 @@ IF EXISTS (SELECT 1 FROM Location.LocationTypeDefinition WHERE Id = 16)
          N'Comma-separated Lots.LabelTypeCode codes this printer serves (Primary,Container,Master,Void). Blank = any.');
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0047_label_types_attribute_existing_dbs')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0048_label_types_attribute_existing_dbs')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0047_label_types_attribute_existing_dbs',
+    VALUES (N'0048_label_types_attribute_existing_dbs',
             N'Back-fills Printer.LabelTypes attribute definition into already-existing databases; guarded so a fresh build skips it and the seed layer supplies it instead.');
 GO
 

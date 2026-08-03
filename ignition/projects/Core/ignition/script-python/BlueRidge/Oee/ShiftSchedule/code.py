@@ -4,9 +4,6 @@
    label and the editor chips). All public functions unwrap QualifiedValue
    wrappers at entry via _u()."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Notify
-import BlueRidge.Common.Util
 import system.date
 
 _DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]

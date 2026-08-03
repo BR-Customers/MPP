@@ -19,12 +19,6 @@
    PLC/DB integers, not a business rule. No thresholds/matrices in Python.
 """
 
-import BlueRidge.Common.Util
-import BlueRidge.Workorder.PlcWatcher
-import BlueRidge.Workorder.Assembly
-import BlueRidge.Lots.Lot
-import BlueRidge.Parts.Item
-
 
 def handleEdge(instancePath, terminalLocationId, member):
     if member == "TrayLocked":

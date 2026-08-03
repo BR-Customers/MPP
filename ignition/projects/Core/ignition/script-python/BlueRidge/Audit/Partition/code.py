@@ -2,9 +2,6 @@
    maintenance proc. Wrappers only; no business logic. Defaults appUserId to the
    session-resolved current user when None; callers may pass it explicitly."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def maintain(asOfUtc, retentionMonths=None, appUserId=None, terminalLocationId=None):
     """Roll the monthly partition window forward as of the given UTC moment.

@@ -13,10 +13,6 @@
    ShippingLabel.PrintedAt / PrintFailedAt write-back + the stranded-print safety sweep +
    reprint/void are the Phase 7 print-failure lifecycle.
 """
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Lots.LabelTransport
-import BlueRidge.Location.Terminal
 
 
 def _sessionPrinter():

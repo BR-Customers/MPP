@@ -11,9 +11,6 @@
    machine. PLC-recorded events are attributed to the system user (AppUser 1)
    since there is no operator; DowntimeEvent_End requires a user.
 """
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Oee.DowntimeEvent
 import system.tag
 
 # Commissioning config -- one entry per watched machine:

@@ -12,10 +12,6 @@
    Driven by the MPP AimPoolTopupTimer / AimPoolAlarmTimer gateway timers + the AimHold/
    AimUpdate message handlers (commissioning). Fully guarded -- a timer must never throw.
 """
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Lots.AimPool
-import BlueRidge.Lots.AimPoolConfig
 
 # rising-edge alarm state per part: {partNumber: "ok"|"warning"|"critical"}
 _alarmState = {}

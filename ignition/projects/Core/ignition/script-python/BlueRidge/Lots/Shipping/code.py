@@ -6,10 +6,6 @@
    BlueRidge.Common.Util._currentAppUserId() when None. Each entry logs at default
    INFO."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Lots.ShippingDispatcher
-
 
 def ship(shippingLabelId, appUserId=None, terminalLocationId=None):
     """Ship a Complete container via its shipping label -- validates not-on-hold +

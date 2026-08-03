@@ -2,9 +2,6 @@
 
    Wrappers only; no business logic. Arc 2 Phase 4 (Movement Scan FDS-02-012)."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)

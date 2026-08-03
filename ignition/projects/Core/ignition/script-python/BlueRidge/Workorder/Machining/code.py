@@ -5,11 +5,6 @@
    (mint) that additionally auto-prints the new sublot's LTT label after a
    successful mint. Each entry logs at default INFO (meaningful shop-floor events)."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Common.Notify
-import BlueRidge.Lots.LotLabel
-
 
 def recordPick(lotId, lineLocationId, appUserId=None, terminalLocationId=None):
     """Machining IN (advance): pick a LOT checked into the line to START machining.

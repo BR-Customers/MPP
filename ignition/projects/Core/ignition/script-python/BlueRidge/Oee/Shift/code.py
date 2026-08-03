@@ -4,8 +4,7 @@
    the session-resolved current user when the caller passes None; the plant
    floor passes appUserId / terminalLocationId explicitly."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
+import java.lang
 
 
 def start(shiftScheduleId, actualStart=None, remarks=None, appUserId=None,
@@ -102,34 +101,85 @@ def acknowledgeHandover(shiftId, cellLocationId=None, appUserId=None, terminalLo
     return BlueRidge.Common.Db.execMutation("oee/ShiftHandover_Acknowledge", params)
 
 
-def tickShiftBoundary(nowUtc=None):
-    """Called every 60s by the ShiftBoundaryTicker gateway timer.
+def getRecentOptions(_arg=None):
+    """[{label, value}] for the die-cast shift-output entry's shift picker: the
+       three most-recent shift instances (newest-first) -- the CURRENT (open)
+       shift plus the two most-recently ended shifts, so the overnight shift the
+       operator may be reporting against is reachable. Label 'ScheduleName - MM/dd
+       (current|last|prior)'; the odd actual-tick times are intentionally hidden
+       (they read as noise). Display only. (Jacques smoke feedback 2026-07-30 --
+       was: all recent instances with raw HH:mm-HH:mm actual times. 2026-07-31 --
+       widened current+last to the last 3 shifts so the overnight shift shows.)"""
+    rows = listRecent() or []
 
-       Singleton shift model: at most one active schedule + one open shift.
-       - active schedule = getActive(nowUtc)  (active.Id IS the ShiftScheduleId)
-       - open shift      = getOpen()
-       Starts/ends shifts on boundary crossings. No auto-carryover of open
-       downtime/pause events (UJ-10) - the procs own that. Returns a small
-       dict describing what it did (for logging/testing). The body is fully
-       guarded; a gateway timer must never throw uncaught."""
-    BlueRidge.Common.Util.log("tick nowUtc=%s" % nowUtc, level="debug")
+    def _opt(r, tag):
+        start = r.get("ActualStart")
+        try:
+            d = system.date.format(start, "MM/dd") if start is not None else "?"
+        except:
+            d = ("%s" % start)[:10]
+        return {"label": "%s - %s (%s)" % (r.get("ScheduleName") or "Shift", d, tag),
+                "value": r.get("Id")}
+
+    out = []
+    ended = 0
+    for r in rows:
+        r = r or {}
+        if r.get("Id") is None:
+            continue
+        if r.get("ActualEnd") is None:
+            tag = "current"
+        else:
+            tag = "last" if ended == 0 else "prior"
+            ended += 1
+        out.append(_opt(r, tag))
+        if len(out) >= 3:
+            break
+    return out
+
+
+def defaultEntryShiftId():
+    """Default shift for the die-cast shift-output entry screen (Task 12).
+
+       SIMPLIFIED vs spec Sec 3.3: returns the currently open shift if one
+       exists, else the most recently ended shift. Does NOT implement the
+       'entry within the first hour of the new shift's ActualStart -> default
+       to the just-ended (previous) shift' smart-default rule -- that needs a
+       clock-vs-ActualStart comparison that's easy to get subtly wrong blind
+       (shift-length assumptions, DST). Flagged as a documented follow-up for
+       Jacques to refine; the operator can always override the shift picker,
+       so this is a UX nicety, not a data-integrity gap."""
+    open_ = getOpen()
+    if open_ and open_.get("Id") is not None:
+        return open_.get("Id")
+    rows = listRecent() or []
+    for r in rows:
+        if r.get("Id") is not None:
+            return r.get("Id")
+    return None
+
+
+def reconcile(nowLocal=None, appUserId=None, terminalLocationId=None):
+    """Reconcile Oee.Shift instances to the schedule up to nowLocal (LOCAL time).
+       Thin wrapper -- all logic in Oee.Shift_Reconcile. Returns
+       {Status, Message, ShiftsClosed, ShiftsBackfilled, ShiftOpened}."""
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    return BlueRidge.Common.Db.execMutation("oee/Shift_Reconcile", {
+        "nowLocal":           nowLocal,
+        "appUserId":          appUserId,
+        "terminalLocationId": terminalLocationId,
+    })
+
+
+def tickShiftBoundary(nowLocal=None):
+    """Gateway-timer entrypoint (ShiftBoundaryTicker, 60s). Delegates to
+       Oee.Shift_Reconcile via reconcile(). Guarded: a gateway timer must never
+       throw uncaught (must catch Java Throwables too, not just Python).
+       Returns the reconcile status dict, or an error dict on failure."""
+    BlueRidge.Common.Util.log("tick nowLocal=%s" % nowLocal, level="debug")
     try:
-        active = getActive(nowUtc)      # dict|None; active.Id is the ShiftScheduleId
-        openShift = getOpen()           # dict|None
-        if active is None:
-            # No schedule active right now (gap between shifts). Do nothing -
-            # leave any open shift open; boundary handling happens when the
-            # next schedule becomes active. Phase 1: no gap auto-close.
-            return {"action": "none", "reason": "no active schedule"}
-        activeScheduleId = active.get("Id")
-        if openShift is None:
-            return {"action": "start",
-                    "result": start(activeScheduleId, actualStart=nowUtc)}
-        if openShift.get("ShiftScheduleId") != activeScheduleId:
-            endResult = end(actualEnd=nowUtc)
-            startResult = start(activeScheduleId, actualStart=nowUtc)
-            return {"action": "boundary", "end": endResult, "start": startResult}
-        return {"action": "none", "reason": "open shift matches active schedule"}
-    except Exception as e:
+        return reconcile(nowLocal)
+    except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("tickShiftBoundary error: %s" % e, level="error")
-        return {"action": "error", "error": str(e)}
+        return {"Status": 0, "Message": "reconcile error: %s" % e}

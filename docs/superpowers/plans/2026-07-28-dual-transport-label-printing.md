@@ -56,8 +56,8 @@ under this plan; they are separate pre-existing work.
 | `.../BlueRidge/Lots/Container/code.py` | Gains the dispatch tail on `complete()`. |
 | `.../BlueRidge/Lots/Shipping/code.py` | Gains the dispatch tail on `reprintLabel()`. |
 | `.../BlueRidge/Location/Terminal/code.py` | `getPrinter` gains `labelTypeCode`. |
-| `sql/migrations/versioned/0045_label_type_routing.sql` | `LabelTypes` attribute definition; PrintReasonCode em-dash fix. |
-| `sql/migrations/versioned/0046_container_label_template.sql` | Container ZPL body into `Lots.LabelTemplate`. |
+| `sql/migrations/versioned/0046_label_type_routing.sql` | `LabelTypes` attribute definition; PrintReasonCode em-dash fix. |
+| `sql/migrations/versioned/0047_container_label_template.sql` | Container ZPL body into `Lots.LabelTemplate`. |
 | `sql/migrations/repeatable/R__Location_Terminal_GetPrinter.sql` | v2.0 with `@LabelTypeCode`. |
 | `sql/migrations/repeatable/R__Lots_ShippingLabel_RecordDispatch.sql` | **New** proc — dispatch write-back. |
 | `sql/migrations/repeatable/R__Lots_LabelTemplate_GetActiveByTypeCode.sql` | **New** proc — fetch a configurable ZPL body by label-type code. |
@@ -502,7 +502,7 @@ git commit -m "refactor(labels): both dispatchers onto LabelTransport; fix Inter
 ## Task 3: `LabelTypes` attribute + `Terminal_GetPrinter` v2.0
 
 **Files:**
-- Create: `sql/migrations/versioned/0045_label_type_routing.sql`
+- Create: `sql/migrations/versioned/0046_label_type_routing.sql`
 - Modify: `sql/migrations/repeatable/R__Location_Terminal_GetPrinter.sql`
 - Test: `sql/tests/0025_PlantFloor_Label_Dispatch/030_Terminal_GetPrinter_label_routing.sql`
 
@@ -695,11 +695,11 @@ This rewrites `sql/seeds/011_seed_locations_mpp_plant.sql` and `sql/scripts/reco
 - [ ] **Step 3b: Write migration `0045`**
 
 With the attribute definition moved to the seed layer, `0045` carries only the ASCII correction.
-Create `sql/migrations/versioned/0045_label_type_routing.sql`:
+Create `sql/migrations/versioned/0046_label_type_routing.sql`:
 
 ```sql
 -- ============================================================
--- Migration:   0045_label_type_routing.sql
+-- Migration:   0046_label_type_routing.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-28
 -- Description: Dual-transport label printing (design 2026-07-28) part 1.
@@ -714,9 +714,9 @@ SET Name = N'Reprint - Damaged'
 WHERE Id = 2 AND Name <> N'Reprint - Damaged';
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0045_label_type_routing')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0046_label_type_routing')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0045_label_type_routing',
+    VALUES (N'0046_label_type_routing',
             N'Label-type printer routing: Printer.LabelTypes attribute definition; PrintReasonCode 2 em-dash corrected to ASCII.');
 GO
 
@@ -818,7 +818,7 @@ Expected: no `FAIL:` lines, and **no `ERROR running` line beyond the 7 pre-exist
 - [ ] **Step 7: Commit**
 
 ```bash
-git add sql/migrations/versioned/0045_label_type_routing.sql sql/migrations/repeatable/R__Location_Terminal_GetPrinter.sql sql/tests/0025_PlantFloor_Label_Dispatch/030_Terminal_GetPrinter_label_routing.sql
+git add sql/migrations/versioned/0046_label_type_routing.sql sql/migrations/repeatable/R__Location_Terminal_GetPrinter.sql sql/tests/0025_PlantFloor_Label_Dispatch/030_Terminal_GetPrinter_label_routing.sql
 git commit -m "feat(labels): label-type printer routing on Terminal_GetPrinter v2.0"
 ```
 
@@ -998,7 +998,7 @@ git commit -m "feat(labels): route dispatch to the printer serving the label typ
 
 **Files:**
 - Create: `sql/migrations/repeatable/R__Lots_ShippingLabel_RecordDispatch.sql`
-- Create: `sql/migrations/versioned/0046_container_label_template.sql`
+- Create: `sql/migrations/versioned/0047_container_label_template.sql`
 - Create: `ignition/projects/Core/ignition/named-query/lots/ShippingLabel_RecordDispatch/query.sql`
 - Create: `ignition/projects/Core/ignition/named-query/lots/ShippingLabel_RecordDispatch/resource.json`
 - Test: `sql/tests/0025_PlantFloor_Label_Dispatch/040_ShippingLabel_RecordDispatch.sql`
@@ -1244,11 +1244,11 @@ Expected: 8 assertions, 0 failures.
 
 - [ ] **Step 5: Move the container ZPL into `Lots.LabelTemplate`**
 
-Create `sql/migrations/versioned/0046_container_label_template.sql`. The body is the flattened Honda container label with `{Token}` placeholders — ASCII-only, no apostrophes, so it is safe as a single `N'...'` literal.
+Create `sql/migrations/versioned/0047_container_label_template.sql`. The body is the flattened Honda container label with `{Token}` placeholders — ASCII-only, no apostrophes, so it is safe as a single `N'...'` literal.
 
 ```sql
 -- ============================================================
--- Migration:   0046_container_label_template.sql
+-- Migration:   0047_container_label_template.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-28
 -- Description: Dual-transport label printing (design 2026-07-28) part 2.
@@ -1305,9 +1305,9 @@ WHERE LabelTypeCodeId = (SELECT Id FROM Lots.LabelTypeCode WHERE Code = N'Contai
   AND DeprecatedAt IS NULL;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0046_container_label_template')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0047_container_label_template')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0046_container_label_template',
+    VALUES (N'0047_container_label_template',
             N'Honda container shipping-label ZPL moved from a Python constant into the active Container LabelTemplate.');
 GO
 
@@ -1320,7 +1320,7 @@ GO
 Non-ASCII in a ZPL body becomes mojibake through `sqlcmd`. Confirm before applying:
 
 ```bash
-powershell -Command "$b=[IO.File]::ReadAllBytes('sql/migrations/versioned/0046_container_label_template.sql'); ($b | Where-Object { $_ -gt 127 }).Count"
+powershell -Command "$b=[IO.File]::ReadAllBytes('sql/migrations/versioned/0047_container_label_template.sql'); ($b | Where-Object { $_ -gt 127 }).Count"
 ```
 
 Expected: `0`.
@@ -1390,7 +1390,7 @@ Expected: no `FAIL:` lines, and no `ERROR running` line beyond the 7 pre-existin
 - [ ] **Step 9: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_ShippingLabel_RecordDispatch.sql sql/migrations/versioned/0046_container_label_template.sql sql/tests/0025_PlantFloor_Label_Dispatch/040_ShippingLabel_RecordDispatch.sql ignition/projects/Core/ignition/named-query/lots/ShippingLabel_RecordDispatch
+git add sql/migrations/repeatable/R__Lots_ShippingLabel_RecordDispatch.sql sql/migrations/versioned/0047_container_label_template.sql sql/tests/0025_PlantFloor_Label_Dispatch/040_ShippingLabel_RecordDispatch.sql ignition/projects/Core/ignition/named-query/lots/ShippingLabel_RecordDispatch
 git commit -m "feat(labels): ShippingLabel dispatch write-back + container ZPL into LabelTemplate"
 ```
 

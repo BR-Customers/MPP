@@ -1,9 +1,5 @@
 """BlueRidge.Oee.DowntimeReasonType - read-only access to the 6 seeded reason types."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Notify
-import BlueRidge.Common.Util
-
 
 def getAll():
     """List all DowntimeReasonType rows. Returns list[dict] keyed by SELECT aliases.

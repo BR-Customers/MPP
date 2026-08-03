@@ -19,10 +19,6 @@
 #       -> {Status, Message}
 # =============================================================================
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-import BlueRidge.Location.AppUser
-
 
 def changeover(terminalLocationId, newMethod, adAccount, password):
     """Elevate for 'Changeover', then set the terminal's closure mode.

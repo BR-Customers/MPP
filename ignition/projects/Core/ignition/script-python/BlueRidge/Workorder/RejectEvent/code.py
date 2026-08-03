@@ -2,9 +2,6 @@
    Wrappers only; the decrement + close-at-zero (D3) and the over-quantity / TOCTOU
    guards live in Workorder.RejectEvent_Record."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)

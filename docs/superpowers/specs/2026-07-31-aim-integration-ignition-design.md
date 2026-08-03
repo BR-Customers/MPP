@@ -63,7 +63,7 @@ POST /mes/floor/{Company}/{Token}/postserial.csv?\r\n{serial}\t{part}\t{qty}\t{l
 
 ## 4. Schema
 
-### 4.1 Migration `0048_aim_pool_generic_and_postback.sql`
+### 4.1 Migration `0049_aim_pool_generic_and_postback.sql`
 
 **Genericize.** Drop `IX_AimShipperIdPool_AvailableByPart`, drop column
 `AimShipperIdPool.PartNumber`, create:
@@ -299,7 +299,7 @@ counter at ~13.84M. MES traffic must never target `99`.
 
 | Layer | Items |
 |---|---|
-| SQL migration | `0048_aim_pool_generic_and_postback.sql` (pool + config + `Parts.Item.AimCustomerPartNumber`) |
+| SQL migration | `0049_aim_pool_generic_and_postback.sql` (pool + config + `Parts.Item.AimCustomerPartNumber`) |
 | SQL procs | 6 modified, 6 new (§4.2) |
 | SQL seed | `028_seed_aim_pool_dev.sql` — drop part column |
 | SQL tests | 2 suites rewritten, 2 new suites (post-back; item accessors) |

@@ -13,9 +13,6 @@
      getRequiredInspections(locationId, _refreshToken=None)   -> list[dict]
      flagMissed(lotId, remarks, appUserId=None, terminalLocationId=None)"""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)

@@ -25,8 +25,6 @@
    UNC path is not by itself enough. Real-print certification is a deployment gate."""
 import re
 
-import BlueRidge.Common.Db
-
 _SYSTEM_NAME = "Zebra"
 _TIMEOUT_MS = 4000            # bounded connect + write (spec: 3-5 s)
 # (.*) NOT (.+): an empty host must still MATCH here so the "host missing before

@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration:   0046_container_label_template.sql
+-- Migration:   0047_container_label_template.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-28
 -- Description: Dual-transport label printing (design 2026-07-28) part 2.
@@ -60,9 +60,9 @@ WHERE LabelTypeCodeId = (SELECT Id FROM Lots.LabelTypeCode WHERE Code = N'Contai
   AND DeprecatedAt IS NULL;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0046_container_label_template')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0047_container_label_template')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0046_container_label_template',
+    VALUES (N'0047_container_label_template',
             N'Honda container shipping-label ZPL moved from a Python constant into the active Container LabelTemplate.');
 GO
 

@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration:   0045_label_type_routing.sql
+-- Migration:   0046_label_type_routing.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-28
 -- Description: Dual-transport label printing (design 2026-07-28) part 1.
@@ -34,9 +34,9 @@ SET Name = N'Reprint - Damaged'
 WHERE Id = 2 AND Name <> N'Reprint - Damaged';
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0045_label_type_routing')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0046_label_type_routing')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0045_label_type_routing',
+    VALUES (N'0046_label_type_routing',
             N'Label-type printer routing part 1: PrintReasonCode 2 em-dash corrected to ASCII. Printer.LabelTypes attribute definition added via the seed layer (sql/seeds/gen_locations_mpp.js), not this migration -- see file header.');
 GO
 

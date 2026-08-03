@@ -4,9 +4,6 @@
    the session-resolved current user when the caller passes None; the plant
    floor passes appUserId / terminalLocationId explicitly."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
@@ -680,3 +677,119 @@ def defaultShiftCavityId(tally):
             bestSum = s
             best = r.get("ToolCavityId")
     return best
+
+
+def openDieCast(data):
+    """Open a new die-cast accumulator basket (Lots.DieCastLot_Open): mints an
+       Open-status LOT for one (Tool, ToolCavity), PieceCount 0 -- the LOT the
+       shift-output recording flow subsequently tops up and Release later closes.
+       data carries itemId, currentLocationId, toolId, toolCavityId, lotName,
+       appUserId, terminalLocationId. Returns {Status, Message, NewId}."""
+    BlueRidge.Common.Util.log("openDieCast data=%s" % data)
+    d = _u(data) or {}
+    appUserId = d.get("appUserId")
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "itemId":             d.get("itemId"),
+        "currentLocationId":  d.get("currentLocationId"),
+        "toolId":             d.get("toolId"),
+        "toolCavityId":       d.get("toolCavityId"),
+        "lotName":            d.get("lotName"),
+        "appUserId":          appUserId,
+        "terminalLocationId": d.get("terminalLocationId"),
+    }
+    return BlueRidge.Common.Db.execMutation("lots/DieCastLot_Open", params)
+
+
+def releaseDieCast(data):
+    """Release (close) an open die-cast basket to storage (Lots.DieCastLot_Release):
+       Open -> Good, moved cell -> storage, carrying an optional final good-piece
+       delta and an optional additive scrap batch. data carries lotId,
+       storageLocationId, finalPieceDelta, scrapLines ([{defectCodeId, quantity},
+       ...], JSON-encoded here for the proc's @ScrapLinesJson), shiftId,
+       appUserId, terminalLocationId. Returns {Status, Message, NewId} (NewId is
+       always None -- Release closes an existing LOT, it never mints one)."""
+    BlueRidge.Common.Util.log("releaseDieCast data=%s" % data)
+    d = _u(data) or {}
+    appUserId = d.get("appUserId")
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    scrapLines = _u(d.get("scrapLines")) or []
+    params = {
+        "lotId":              d.get("lotId"),
+        "storageLocationId":  d.get("storageLocationId"),
+        "finalPieceDelta":    d.get("finalPieceDelta"),
+        "scrapLinesJson":     BlueRidge.Common.Util.convertWrapperObjectToJson(scrapLines) if scrapLines else None,
+        "shiftId":            d.get("shiftId"),
+        "appUserId":          appUserId,
+        "terminalLocationId": d.get("terminalLocationId"),
+    }
+    return BlueRidge.Common.Db.execMutation("lots/DieCastLot_Release", params)
+
+
+def voidDieCast(lotId, appUserId=None, terminalLocationId=None):
+    """Void an EMPTY open die-cast basket (Lots.DieCastLot_Void): Open -> Scrap,
+       no movement (the basket stays wherever it physically is). Returns
+       {Status, Message, NewId} (NewId is always None)."""
+    BlueRidge.Common.Util.log(
+        "voidDieCast lotId=%s appUserId=%s terminalLocationId=%s"
+        % (lotId, appUserId, terminalLocationId)
+    )
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "lotId":              _u(lotId),
+        "appUserId":          appUserId,
+        "terminalLocationId": terminalLocationId,
+    }
+    return BlueRidge.Common.Db.execMutation("lots/DieCastLot_Void", params)
+
+
+def getOpenByTool(toolId, _refreshToken=None):
+    """Open (status 'Open') die-cast accumulator baskets for a tool, one row per
+       cavity currently holding an open basket (Lots.Lot_GetOpenByTool).
+       _refreshToken is ignored -- runScript bindings pass a bumped token to
+       force a re-read after an open/release/void. Returns list[dict]."""
+    toolId = _u(toolId)
+    if not toolId:
+        return []
+    return BlueRidge.Common.Db.execList("lots/Lot_GetOpenByTool", {"toolId": toolId})
+
+
+def getOpenByToolInstances(toolId, _refreshToken=None):
+    """'Currently Open' basket-list instances for DieCastBody (Task 13). One
+       instance per getOpenByTool row with OpenedAt (already ET from the proc)
+       reformatted to a short display string (repeater-param date rule --
+       date math is unreliable once it crosses the params hop, mirrors
+       mapHistoryInstances) and a voidEligible flag (PieceCount == 0) driving
+       the row's Void-button visibility. Scalar args only -- fetches inside
+       (mirrors getLineInventoryCards; a list arg re-evaluates as a Java
+       QualifiedValue[] that neither _u nor the JSON round-trip survive).
+       Returns list[dict]."""
+    toolId = _u(toolId)
+    if toolId is None:
+        return []
+    rows = getOpenByTool(toolId) or []
+    out = []
+    for r in rows:
+        r = r or {}
+        opened = r.get("OpenedAt")
+        openedDisplay = ""
+        if opened is not None:
+            try:
+                openedDisplay = system.date.format(opened, "MM/dd HH:mm")
+            except:
+                openedDisplay = ("%s" % opened)[:16]
+        pieceCount = r.get("PieceCount") or 0
+        out.append({
+            "toolCavityId":     r.get("ToolCavityId"),
+            "cavityNumber":     r.get("CavityNumber") or "",
+            "lotId":            r.get("LotId"),
+            "lotName":          r.get("LotName") or "",
+            "pieceCount":       pieceCount,
+            "contributorCount": r.get("ContributorCount") or 0,
+            "openedAtDisplay":  openedDisplay,
+            "voidEligible":     (pieceCount == 0),
+        })
+    return out

@@ -6,11 +6,6 @@
    the read routes through execList. appUserId defaults to the current operator
    via BlueRidge.Common.Util._currentAppUserId() when None."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Notify
-import BlueRidge.Common.Util
-import BlueRidge.Lots.ShippingDispatcher
-
 
 def open(itemId, containerConfigId, cellLocationId, appUserId=None, terminalLocationId=None):
     """Open a new container at a Cell against an item + container config.

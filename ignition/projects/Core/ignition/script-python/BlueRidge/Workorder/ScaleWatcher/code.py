@@ -21,9 +21,6 @@
    read-edge watcher. HMI writes gated (spec Sec 5.1).
 """
 
-import BlueRidge.Common.Util
-import BlueRidge.Workorder.PlcWatcher
-import BlueRidge.Workorder.Assembly
 
 _TRIGGERS = ("NET_DataReady",)
 
