@@ -393,7 +393,7 @@ EXEC test.Assert_IsEqual
 DECLARE @Claimed NVARCHAR(50) = (SELECT AimShipperId FROM @C);
 EXEC test.Assert_IsNotNull
     @TestName = N'[AimPool] claim returns an AimShipperId',
-    @Actual = @Claimed;
+    @Value = @Claimed;
 
 DECLARE @Consumed NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
     FROM Lots.AimShipperIdPool
@@ -598,7 +598,7 @@ DECLARE @Lot NVARCHAR(50) = (SELECT LotNumber FROM Lots.AimShipperIdPool
                              WHERE AimShipperId = @Serial);
 EXEC test.Assert_IsNotNull
     @TestName = N'[0049] lot number captured from the first tray FG LOT',
-    @Actual = @Lot;
+    @Value = @Lot;
 
 DECLARE @NotPosted NVARCHAR(10) = (SELECT CASE WHEN PostedAt IS NULL AND PostAttempts = 0
     THEN N'1' ELSE N'0' END FROM Lots.AimShipperIdPool WHERE AimShipperId = @Serial);
