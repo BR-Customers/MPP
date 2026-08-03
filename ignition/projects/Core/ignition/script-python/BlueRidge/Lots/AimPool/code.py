@@ -36,3 +36,36 @@ def getDepth():
        single-row list[dict] of {Depth, OldestAvailableAt}."""
     BlueRidge.Common.Util.log("getDepth")
     return BlueRidge.Common.Db.execList("lots/AimShipperIdPool_GetDepth", {})
+
+
+def getForPost(aimShipperId):
+    """Read one pool row's AIM post-back payload. Returns list[dict] (empty = not found).
+       CustomerPartNumber is COALESCEd against the live item, so a row completed before
+       the item had an AIM customer part picks the value up once it is configured."""
+    BlueRidge.Common.Util.log("getForPost aimShipperId=%s" % aimShipperId, level="debug")
+    return BlueRidge.Common.Db.execList(
+        "lots/AimShipperIdPool_GetForPost", {"aimShipperId": aimShipperId})
+
+
+def recordPostResult(poolId, success, error=None):
+    """Record one AIM post attempt's outcome. Returns {Status, Message}."""
+    BlueRidge.Common.Util.log(
+        "recordPostResult poolId=%s success=%s" % (poolId, success), level="debug")
+    return BlueRidge.Common.Db.execMutation(
+        "lots/AimShipperIdPool_RecordPostResult",
+        {"id": poolId, "success": 1 if success else 0, "error": error})
+
+
+def listUnposted(top=50):
+    """Rows owed to AIM (consumed, not yet posted), oldest first. Returns list[dict]."""
+    return BlueRidge.Common.Db.execList("lots/AimShipperIdPool_ListUnposted", {"top": top})
+
+
+def markPosted(poolId, note, appUserId=None):
+    """Human-confirmed resolution for a row AIM already has but never acknowledged.
+       Returns {Status, Message}."""
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    return BlueRidge.Common.Db.execMutation(
+        "lots/AimShipperIdPool_MarkPosted",
+        {"id": poolId, "appUserId": appUserId, "note": note})
