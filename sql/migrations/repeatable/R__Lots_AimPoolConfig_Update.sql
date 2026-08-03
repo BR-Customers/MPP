@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_AimPoolConfig_Update.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.1
+-- Version:     1.2
 -- Description: Updates the single-row AIM pool config thresholds (Arc 2 Phase 7 admin;
 --              AD-elevated). Upserts the Id=1 row. Attribution via UpdatedAt /
 --              UpdatedByUserId. No OUTPUT params; single terminal SELECT @Status,@Message.
@@ -11,6 +11,15 @@
 --              (PostWarningAgeMinutes, PostCriticalAgeMinutes). New params carry
 --              defaults so existing callers passing only the original four still
 --              compile.
+--              v1.2: all five new params now default to NULL and are COALESCEd
+--              against the existing row in the UPDATE (preserve-on-omit) — the
+--              threshold-admin screen (AimPoolConfig view -> code.py update() ->
+--              AimPoolConfig_Update NQ) legitimately calls this proc with only the
+--              original four threshold arguments, and SQL Server applies proc
+--              defaults for every omitted parameter. With literal defaults (30/120,
+--              NULL/NULL/NULL) that unconditionally overwrote the columns, every
+--              threshold-only save was silently NULLing the AIM connection settings
+--              and resetting the escalation ages. See sql/tests/0029.../040_AimPoolConfig.sql.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.AimPoolConfig_Update
@@ -21,8 +30,8 @@ CREATE OR ALTER PROCEDURE Lots.AimPoolConfig_Update
     @AimBaseUrl             NVARCHAR(200) = NULL,
     @AimCompanyCode         NVARCHAR(10)  = NULL,
     @AimPathToken           NVARCHAR(50)  = NULL,
-    @PostWarningAgeMinutes  INT           = 30,
-    @PostCriticalAgeMinutes INT           = 120,
+    @PostWarningAgeMinutes  INT           = NULL,
+    @PostCriticalAgeMinutes INT           = NULL,
     @AppUserId              BIGINT
 AS
 BEGIN
@@ -47,27 +56,39 @@ BEGIN
         END
 
         BEGIN TRANSACTION;
+        -- Preserve-on-omit: the threshold-admin screen calls this proc with only the
+        -- original four threshold args, so @AimBaseUrl/@AimCompanyCode/@AimPathToken/
+        -- @PostWarningAgeMinutes/@PostCriticalAgeMinutes arrive as NULL (their proc
+        -- defaults) on that path. COALESCE against the existing column so an omitted
+        -- parameter keeps the stored value instead of being blanked. Deliberate
+        -- consequence: this proc can never CLEAR a connection setting to NULL/empty —
+        -- only set it to a new value — since NULL-in reads as "leave unchanged."
         UPDATE Lots.AimPoolConfig
            SET TargetBufferDepth      = @TargetBufferDepth,
                TopupThreshold         = @TopupThreshold,
                AlarmWarningDepth      = @AlarmWarningDepth,
                AlarmCriticalDepth     = @AlarmCriticalDepth,
-               AimBaseUrl             = @AimBaseUrl,
-               AimCompanyCode         = @AimCompanyCode,
-               AimPathToken           = @AimPathToken,
-               PostWarningAgeMinutes  = @PostWarningAgeMinutes,
-               PostCriticalAgeMinutes = @PostCriticalAgeMinutes,
+               AimBaseUrl             = COALESCE(@AimBaseUrl, AimBaseUrl),
+               AimCompanyCode         = COALESCE(@AimCompanyCode, AimCompanyCode),
+               AimPathToken           = COALESCE(@AimPathToken, AimPathToken),
+               PostWarningAgeMinutes  = COALESCE(@PostWarningAgeMinutes, PostWarningAgeMinutes),
+               PostCriticalAgeMinutes = COALESCE(@PostCriticalAgeMinutes, PostCriticalAgeMinutes),
                UpdatedAt              = SYSUTCDATETIME(),
                UpdatedByUserId        = @AppUserId
          WHERE Id = 1;
         IF @@ROWCOUNT = 0
+            -- No existing row to preserve values from: connection settings land as
+            -- whatever was passed (NULL if omitted); age columns fall back to their
+            -- historical literal defaults (30/120) since ISNULL has no "unchanged" to
+            -- reach for.
             INSERT INTO Lots.AimPoolConfig (
                 Id, TargetBufferDepth, TopupThreshold, AlarmWarningDepth, AlarmCriticalDepth,
                 AimBaseUrl, AimCompanyCode, AimPathToken, PostWarningAgeMinutes, PostCriticalAgeMinutes,
                 UpdatedAt, UpdatedByUserId)
             VALUES (
                 1, @TargetBufferDepth, @TopupThreshold, @AlarmWarningDepth, @AlarmCriticalDepth,
-                @AimBaseUrl, @AimCompanyCode, @AimPathToken, @PostWarningAgeMinutes, @PostCriticalAgeMinutes,
+                @AimBaseUrl, @AimCompanyCode, @AimPathToken,
+                ISNULL(@PostWarningAgeMinutes, 30), ISNULL(@PostCriticalAgeMinutes, 120),
                 SYSUTCDATETIME(), @AppUserId);
         COMMIT TRANSACTION;
 
