@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetWipQueueByLocation.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-07
--- Version:     3.0
+-- Modified:    2026-08-03
+-- Version:     3.1
 -- Description: Terminal-mint model (spec 2026-07-07 §3.2). ROUTE-DRIVEN WIP queue:
 --              for a given terminal role @OperationTypeCode, returns the OPEN
 --              (LotStatusCode <> 'Closed') LOTs at @LocationId (or a descendant when
@@ -25,6 +25,23 @@
 --              LotStatusId, LotStatusCode, LastMovementAt, NextOperationTypeCode,
 --              NextSequenceNumber. Ordered by arrival (LotMovement.MovedAt) ASC.
 --              MAXRECURSION 8.
+--
+--   PARAM  @IncludeDescendants  0 = match only LOTs whose CurrentLocationId is
+--              EXACTLY @LocationId; 1 = also match LOTs residing in ANY descendant
+--              location. Choose it by how the caller's terminal zone maps to where
+--              LOTs physically reside -- it is NOT "always 1":
+--                * Trim Check IN / Trim OUT pass 0. Under the current model a LOT in
+--                  trim resides AT the trim shop (the Area) itself -- never down in a
+--                  Press or Trim Storage child cell. Trim Storage is a child Cell of
+--                  the shop that holds LOTs which have ALREADY trimmed out and are
+--                  staged for Machining IN (next step MachiningIn); passing 1 would
+--                  wrongly pull those post-trim LOTs back into the trim work lists
+--                  (2026-08-03 -- the symptom that drove this note). 0 scopes the
+--                  lists to what is physically at the shop.
+--                * Callers whose zone legitimately spans sub-cells (e.g. Machining
+--                  reading a line with cells beneath it) pass 1.
+--              Prefer the @OperationTypeCode role filter over descendant tricks when
+--              the intent is "LOTs pending a specific step" rather than "LOTs here".
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.Lot_GetWipQueueByLocation
     @LocationId         BIGINT,

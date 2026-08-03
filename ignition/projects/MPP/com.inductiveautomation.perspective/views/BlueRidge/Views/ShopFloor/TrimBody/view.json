@@ -35,7 +35,7 @@
     "custom.trimInventory": {
       "binding": {
         "config": {
-          "expression": "if(isNull({session.custom.terminal.zoneLocationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, true, {view.custom.refreshToken}))"
+          "expression": "if(isNull({session.custom.terminal.zoneLocationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, false, {view.custom.refreshToken}))"
         },
         "type": "expr"
       }
