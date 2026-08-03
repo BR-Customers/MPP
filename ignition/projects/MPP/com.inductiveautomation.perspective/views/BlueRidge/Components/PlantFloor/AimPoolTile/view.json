@@ -1,38 +1,20 @@
 {
   "custom": {
-    "depths": [],
-    "total": 0,
-    "perPartText": "",
-    "valueClass": "pf-kpi-value pf-kpi-value-good"
+    "poolStatus": {
+      "depth": 0,
+      "depthValueClass": "pf-kpi-value pf-kpi-value-good",
+      "backlogCount": 0,
+      "backlogCaption": "no unposted rows",
+      "backlogValueClass": "pf-kpi-value pf-kpi-value-good"
+    }
   },
   "params": {},
   "propConfig": {
-    "custom.depths": {
+    "custom.poolStatus": {
       "binding": {
         "config": { "expression": "runScript(\"BlueRidge.Lots.AimPool.getDepth\")" },
-        "transforms": [ { "code": "\t# TODO(Plan 2): getDepth is global-pool now (single-row {Depth, OldestAvailableAt}, no PartNumber). Keeping the list shape here as a minimal fix; a full tile redesign (adding backlog age) is Plan 2's job.\n\treturn [{\"Depth\": r.get(\"Depth\") or 0} for r in (value or [])]", "type": "script" } ],
+        "transforms": [ { "code": "\tdepthRows = value or []\n\tdepthRow = depthRows[0] if depthRows else {}\n\tdepth = depthRow.get(\"Depth\") or 0\n\n\tcfgRows = BlueRidge.Lots.AimPoolConfig.get() or []\n\tcfg = cfgRows[0] if cfgRows else {}\n\tcritDepth = cfg.get(\"AlarmCriticalDepth\")\n\twarnDepth = cfg.get(\"AlarmWarningDepth\")\n\tcritAge = cfg.get(\"PostCriticalAgeMinutes\")\n\twarnAge = cfg.get(\"PostWarningAgeMinutes\")\n\n\tif critDepth is not None and depth <= critDepth:\n\t\tdepthClass = \"pf-kpi-value pf-kpi-value-bad\"\n\telif warnDepth is not None and depth <= warnDepth:\n\t\tdepthClass = \"pf-kpi-value pf-kpi-value-warn\"\n\telse:\n\t\tdepthClass = \"pf-kpi-value pf-kpi-value-good\"\n\n\tbacklogRows = BlueRidge.Lots.AimPool.listUnposted() or []\n\tbacklogCount = len(backlogRows)\n\tif backlogCount:\n\t\toldestAge = backlogRows[0].get(\"AgeMinutes\") or 0\n\t\tplural = \"\" if backlogCount == 1 else \"s\"\n\t\tbacklogCaption = \"oldest \" + str(oldestAge) + \" min (\" + str(backlogCount) + \" row\" + plural + \")\"\n\t\tif critAge is not None and oldestAge >= critAge:\n\t\t\tbacklogClass = \"pf-kpi-value pf-kpi-value-bad\"\n\t\telif warnAge is not None and oldestAge >= warnAge:\n\t\t\tbacklogClass = \"pf-kpi-value pf-kpi-value-warn\"\n\t\telse:\n\t\t\tbacklogClass = \"pf-kpi-value pf-kpi-value-good\"\n\telse:\n\t\tbacklogCaption = \"no unposted rows\"\n\t\tbacklogClass = \"pf-kpi-value pf-kpi-value-good\"\n\n\treturn {\n\t\t\"depth\": depth,\n\t\t\"depthValueClass\": depthClass,\n\t\t\"backlogCount\": backlogCount,\n\t\t\"backlogCaption\": backlogCaption,\n\t\t\"backlogValueClass\": backlogClass\n\t}", "type": "script" } ],
         "type": "expr"
-      }
-    },
-    "custom.total": {
-      "binding": {
-        "config": { "path": "view.custom.depths" },
-        "transforms": [ { "code": "\treturn sum([(r.get(\"Depth\") or 0) for r in (value or [])])", "type": "script" } ],
-        "type": "property"
-      }
-    },
-    "custom.perPartText": {
-      "binding": {
-        "config": { "path": "view.custom.depths" },
-        "transforms": [ { "code": "\trows = value or []\n\tif not rows:\n\t\treturn \"No available IDs\"\n\treturn str(rows[0].get(\"Depth\") or 0) + \" available\"", "type": "script" } ],
-        "type": "property"
-      }
-    },
-    "custom.valueClass": {
-      "binding": {
-        "config": { "path": "view.custom.total" },
-        "transforms": [ { "code": "\tt = value or 0\n\tif t <= 10:\n\t\treturn \"pf-kpi-value pf-kpi-value-bad\"\n\tif t <= 20:\n\t\treturn \"pf-kpi-value pf-kpi-value-warn\"\n\treturn \"pf-kpi-value pf-kpi-value-good\"", "type": "script" } ],
-        "type": "property"
       }
     }
   },
@@ -45,23 +27,39 @@
       { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "shrink": 0 }, "props": { "text": "AIM Shipper Pool", "style": { "classes": "pf-kpi-label" } } },
       {
         "type": "ia.display.label",
-        "meta": { "name": "Total" },
+        "meta": { "name": "DepthValue" },
         "position": { "shrink": 0 },
         "propConfig": {
-          "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.total})" } } },
-          "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.custom.valueClass" } } }
+          "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.poolStatus.depth})" } } },
+          "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.custom.poolStatus.depthValueClass" } } }
         },
         "props": { "style": { "classes": "pf-kpi-value pf-kpi-value-good" } }
       },
-      { "type": "ia.display.label", "meta": { "name": "Caption" }, "position": { "shrink": 0 }, "props": { "text": "total available IDs in the global pool", "style": { "classes": "pf-kpi-sub" } } },
+      { "type": "ia.display.label", "meta": { "name": "DepthCaption" }, "position": { "shrink": 0 }, "props": { "text": "total available IDs in the global pool", "style": { "classes": "pf-kpi-sub" } } },
       {
         "type": "ia.container.flex",
-        "meta": { "name": "PerPartBlock" },
+        "meta": { "name": "BacklogBlock" },
         "position": { "grow": 1 },
         "props": { "direction": "column", "style": { "gap": "3px", "paddingTop": "8px", "marginTop": "4px", "borderTop": "1px dashed var(--mpp-border-subtle)" } },
         "children": [
-          { "type": "ia.display.label", "meta": { "name": "PerPartLabel" }, "position": { "shrink": 0 }, "props": { "text": "Global pool", "style": { "classes": "pf-kpi-label" } } },
-          { "type": "ia.display.label", "meta": { "name": "PerPart" }, "position": { "grow": 1 }, "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.perPartText" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+          { "type": "ia.display.label", "meta": { "name": "BacklogLabel" }, "position": { "shrink": 0 }, "props": { "text": "Post Backlog", "style": { "classes": "pf-kpi-label" } } },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "BacklogValue" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.poolStatus.backlogCount})" } } },
+              "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.custom.poolStatus.backlogValueClass" } } }
+            },
+            "props": { "style": { "classes": "pf-kpi-value pf-kpi-value-good" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "BacklogCaption" },
+            "position": { "grow": 1 },
+            "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.poolStatus.backlogCaption" } } } },
+            "props": { "style": { "classes": "pf-kpi-sub" } }
+          }
         ]
       }
     ]
