@@ -788,6 +788,8 @@ def getOpenByToolInstances(toolId, _refreshToken=None):
             "lotId":            r.get("LotId"),
             "lotName":          r.get("LotName") or "",
             "pieceCount":       pieceCount,
+            "maxPieceCount":    r.get("MaxPieceCount"),
+            "belowStandard":    bool(r.get("BelowStandardRelease")),
             "contributorCount": r.get("ContributorCount") or 0,
             "openedAtDisplay":  openedDisplay,
             "voidEligible":     (pieceCount == 0),

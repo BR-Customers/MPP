@@ -6,6 +6,8 @@
     "lotId": null,
     "lotName": "",
     "pieceCount": 0,
+    "maxPieceCount": null,
+    "belowStandard": false,
     "contributorCount": 0,
     "openedAtDisplay": "",
     "voidEligible": false
@@ -16,6 +18,8 @@
     "params.lotId": { "paramDirection": "input" },
     "params.lotName": { "paramDirection": "input" },
     "params.pieceCount": { "paramDirection": "input" },
+    "params.maxPieceCount": { "paramDirection": "input" },
+    "params.belowStandard": { "paramDirection": "input" },
     "params.contributorCount": { "paramDirection": "input" },
     "params.openedAtDisplay": { "paramDirection": "input" },
     "params.voidEligible": { "paramDirection": "input" }
@@ -77,7 +81,7 @@
             "onActionPerformed": {
               "type": "script", "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"requestReleaseBasket\", payload={\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName}, scope=\"page\")"
+                "script": "\tsystem.perspective.sendMessage(\"requestReleaseBasket\", payload={\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName, \"pieceCount\": self.view.params.pieceCount, \"maxPieceCount\": self.view.params.maxPieceCount, \"belowStandard\": self.view.params.belowStandard}, scope=\"page\")"
               }
             }
           }

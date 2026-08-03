@@ -1664,9 +1664,12 @@
           "name": "requestRelease",
           "params": [
             "lotId",
-            "lotName"
+            "lotName",
+            "pieceCount",
+            "maxPieceCount",
+            "belowStandard"
           ],
-          "script": "\tself.view.custom.pendingReleaseLotId = lotId\n\tself.view.custom.pendingReleaseLotName = lotName or \"\"\n\tsystem.perspective.openPopup(\"mpp-confirm-release\",\n\t\t\"BlueRidge/Components/Popups/ConfirmAction\",\n\t\tparams={\"replyMessage\": \"releaseConfirmResult\", \"popupId\": \"mpp-confirm-release\",\n\t\t\t\"title\": \"Release basket\", \"confirmText\": \"Release\", \"danger\": False,\n\t\t\t\"message\": \"Release basket \" + (lotName or \"\") + \" to storage? This closes accumulation and moves it onto its route (Trim IN).\"},\n\t\tmodal=True, showCloseIcon=True)"
+          "script": "\tself.view.custom.pendingReleaseLotId = lotId\n\tself.view.custom.pendingReleaseLotName = lotName or \"\"\n\tnm = lotName or \"\"\n\tpc = BlueRidge.Common.Util.toIntOrNone(pieceCount) or 0\n\tmx = BlueRidge.Common.Util.toIntOrNone(maxPieceCount)\n\tif belowStandard and mx:\n\t\tpct = int(round(100.0 * pc / mx))\n\t\ttitle = \"Release under-filled basket\"\n\t\tconfirmText = \"Release anyway\"\n\t\tdanger = True\n\t\tmessage = \"Basket \" + nm + \" holds only \" + str(pc) + \" of \" + str(mx) + \" pc (\" + str(pct) + \"% of standard basket size). Release under-filled? This closes accumulation and moves it onto its route (Trim IN).\"\n\telse:\n\t\ttitle = \"Release basket\"\n\t\tconfirmText = \"Release\"\n\t\tdanger = False\n\t\tmessage = \"Release basket \" + nm + \" to storage? This closes accumulation and moves it onto its route (Trim IN).\"\n\tsystem.perspective.openPopup(\"mpp-confirm-release\",\n\t\t\"BlueRidge/Components/Popups/ConfirmAction\",\n\t\tparams={\"replyMessage\": \"releaseConfirmResult\", \"popupId\": \"mpp-confirm-release\",\n\t\t\t\"title\": title, \"confirmText\": confirmText, \"danger\": danger,\n\t\t\t\"message\": message},\n\t\tmodal=True, showCloseIcon=True)"
         },
         {
           "name": "releaseBasket",
@@ -1719,7 +1722,7 @@
         {
           "messageType": "requestReleaseBasket",
           "pageScope": true,
-          "script": "\tself.requestRelease(payload.get(\"lotId\"), payload.get(\"lotName\"))",
+          "script": "\tself.requestRelease(payload.get(\"lotId\"), payload.get(\"lotName\"), payload.get(\"pieceCount\"), payload.get(\"maxPieceCount\"), payload.get(\"belowStandard\"))",
           "sessionScope": false,
           "viewScope": false
         },
