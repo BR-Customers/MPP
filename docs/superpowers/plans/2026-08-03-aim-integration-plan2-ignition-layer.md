@@ -152,6 +152,19 @@ def _config():
     return (r.get("AimBaseUrl"), r.get("AimCompanyCode"), r.get("AimPathToken"))
 
 
+def _configError(base, company, token):
+    """Build a 'not configured' message naming the specific missing setting(s),
+       rather than one indistinguishable message for every combination."""
+    missing = []
+    if not base:
+        missing.append("base URL")
+    if not company:
+        missing.append("company code")
+    if not token:
+        missing.append("path token")
+    return "AIM connection is not configured: missing %s." % ", ".join(missing)
+
+
 def _urlEncodePayload(text):
     """Percent-encode the postserial payload. Only two characters need encoding for
        our field set: backslash (the literal escape marker) and space (significant
@@ -174,9 +187,34 @@ def _buildPostQuery(serial, customerPart, qty, lot):
     return _urlEncodePayload(raw)
 
 
+def _readAll(stream):
+    """Drain a Java InputStream to a string, one byte at a time (mirrors the
+       original inline loop). Tolerates a None stream - getErrorStream() can
+       legitimately return None when the server sent no error body - by
+       returning "" rather than throwing."""
+    if stream is None:
+        return ""
+    data = []
+    try:
+        while True:
+            b = stream.read()
+            if b == -1:
+                break
+            data.append(chr(b))
+    finally:
+        stream.close()
+    return "".join(data)
+
+
 def _post(urlString, bodyText):
     """POST to a pre-encoded URL string. Returns (ok, replyText, error).
-       java.net.URL does NO encoding - the caller owns the exact bytes of the query."""
+       java.net.URL does NO encoding - the caller owns the exact bytes of the query.
+
+       HttpURLConnection.getInputStream() THROWS on a 4xx/5xx response - the
+       server's error body is only reachable via getErrorStream(). Read from
+       whichever stream matches the status code so a rejection's actual message
+       (e.g. AIM's "Not logged in - AIM Mobility must be restarted.") reaches the
+       caller instead of being replaced by a generic IOException string."""
     from java.lang import Throwable
     from java.net import URL
     conn = None
@@ -197,20 +235,11 @@ def _post(urlString, bodyText):
         finally:
             os.close()
         code = conn.getResponseCode()
-        stream = conn.getInputStream()
-        try:
-            data = []
-            while True:
-                b = stream.read()
-                if b == -1:
-                    break
-                data.append(chr(b))
-            reply = "".join(data)
-        finally:
-            stream.close()
-        if code != 200:
-            return (False, reply, "HTTP %s" % code)
-        return (True, reply, None)
+        if code >= 200 and code < 300:
+            reply = _readAll(conn.getInputStream())
+            return (True, reply, None)
+        errorBody = _readAll(conn.getErrorStream())
+        return (False, errorBody, "HTTP %s: %s" % (code, errorBody))
     except Throwable, t:
         return (False, None, str(t))
     except Exception, e:
@@ -243,13 +272,25 @@ def _logAim(action, detail, ok, err=None):
         pass
 
 
+def _normalizeSerial(value):
+    """Zero-pad a serial to 9 digits before comparing against AIM's echoed reply.
+       postSerial's caller is expected to pass the zero-padded string nextSerial()
+       returned, but this tolerates a bare int/numeric re-derived from a column too
+       (e.g. str(29) would otherwise mismatch AIM's "000000029" echo). Anything not
+       purely digits is returned unchanged - a malformed serial should fail the
+       comparison loudly, not be silently reshaped."""
+    s = str(value)
+    if s.isdigit() and len(s) < 9:
+        return s.zfill(9)
+    return s
+
+
 def nextSerial():
     """Fetch the next AIM shipper ID for the configured company code.
        Returns {ok, serial, error}. Never raises."""
     base, company, token = _config()
     if not base or not company or not token:
-        return {"ok": False, "serial": None,
-                "error": "AIM connection is not configured (base URL, company code, path token)."}
+        return {"ok": False, "serial": None, "error": _configError(base, company, token)}
     url = "%s/mes/floor/%s/%s/nextserial.csv" % (base, company, token)
     ok, reply, err = _post(url, "\r\n\r\n")
     if not ok:
@@ -266,11 +307,13 @@ def nextSerial():
 
 def postSerial(serial, customerPart, qty, lot):
     """Bind content to an issued serial. Returns {ok, error}. Never raises.
-       Success is an EXACT match: AIM echoes back the serial it accepted."""
+       Success is an EXACT match: AIM echoes back the serial it accepted. `serial`
+       is normally the zero-padded 9-digit string nextSerial() returned, but a bare
+       int is also accepted - both are zero-padded via _normalizeSerial() before
+       comparison against AIM's echo."""
     base, company, token = _config()
     if not base or not company or not token:
-        return {"ok": False,
-                "error": "AIM connection is not configured (base URL, company code, path token)."}
+        return {"ok": False, "error": _configError(base, company, token)}
     query = _buildPostQuery(serial, customerPart, qty, lot)
     url = "%s/mes/floor/%s/%s/postserial.csv?%s" % (base, company, token, query)
     ok, reply, err = _post(url, "")
@@ -278,7 +321,7 @@ def postSerial(serial, customerPart, qty, lot):
         _logAim("postserial", url, False, err)
         return {"ok": False, "error": err}
     got = (reply or "").strip()
-    if got == str(serial):
+    if got == _normalizeSerial(serial):
         _logAim("postserial", url, True)
         return {"ok": True, "error": None}
     # A reply starting 'POST ' is the listener echoing an unrecognized request.
