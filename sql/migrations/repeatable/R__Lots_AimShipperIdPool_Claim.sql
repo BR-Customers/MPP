@@ -2,8 +2,10 @@
 -- Repeatable:  R__Lots_AimShipperIdPool_Claim.sql
 -- Author:      Blue Ridge Automation
 -- Version:     1.0
--- Description: Atomically claims the oldest un-consumed AIM shipper ID for a part
---              number (FIFO by FetchedAt; Arc 2 Phase 6 / UJ-04). OI-33 default:
+-- Description: Atomically claims the oldest un-consumed AIM shipper ID (FIFO by
+--              FetchedAt; Arc 2 Phase 6 / UJ-04). Migration 0049: the pool is
+--              part-agnostic (AIM's nextserial.csv accepts no part parameter), so the
+--              claim draws from the whole pool, not a per-part slice. OI-33 default:
 --              HARD-FAIL on an empty pool (Status 0) -- Container_Complete rolls back
 --              its close on this. Standalone proc for direct/test use; Container_Complete
 --              INLINES the same claim logic (FDS-11-011: it is captured via INSERT-EXEC
@@ -15,7 +17,6 @@
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.AimShipperIdPool_Claim
-    @PartNumber  NVARCHAR(50),
     @ContainerId BIGINT,
     @AppUserId   BIGINT
 AS
@@ -31,32 +32,24 @@ BEGIN
     DECLARE @claimed TABLE (Id BIGINT, AimShipperId NVARCHAR(50));
 
     BEGIN TRY
-        IF @PartNumber IS NULL
-        BEGIN
-            SET @Message = N'Required parameter missing (PartNumber).';
-            SELECT @Status AS Status, @Message AS Message, @AimShipperId AS AimShipperId;
-            RETURN;
-        END
-
         -- OI-33 hard-fail: empty pool -> reject BEFORE opening a tran (no ROLLBACK hazard).
-        IF NOT EXISTS (SELECT 1 FROM Lots.AimShipperIdPool WHERE PartNumber = @PartNumber AND ConsumedAt IS NULL)
+        IF NOT EXISTS (SELECT 1 FROM Lots.AimShipperIdPool WHERE ConsumedAt IS NULL)
         BEGIN
-            SET @Message = N'AIM shipper ID pool is empty for part ' + @PartNumber + N'.';
+            SET @Message = N'AIM shipper ID pool is empty.';
             SELECT @Status AS Status, @Message AS Message, @AimShipperId AS AimShipperId;
             RETURN;
         END
 
         BEGIN TRANSACTION;
 
-        -- atomic FIFO claim of the oldest un-consumed ID; READPAST lets concurrent
-        -- claimers skip each other's locked rows.
         ;WITH c AS (
             SELECT TOP 1 Id, AimShipperId, ConsumedAt, ConsumedByContainerId, ConsumedByUserId
             FROM Lots.AimShipperIdPool WITH (ROWLOCK, UPDLOCK, READPAST)
-            WHERE PartNumber = @PartNumber AND ConsumedAt IS NULL
+            WHERE ConsumedAt IS NULL
             ORDER BY FetchedAt, Id)
         UPDATE c
-            SET ConsumedAt = SYSUTCDATETIME(), ConsumedByContainerId = @ContainerId, ConsumedByUserId = @AppUserId
+            SET ConsumedAt = SYSUTCDATETIME(), ConsumedByContainerId = @ContainerId,
+                ConsumedByUserId = @AppUserId
         OUTPUT inserted.Id, inserted.AimShipperId INTO @claimed (Id, AimShipperId);
 
         SELECT @ClaimedId = Id, @AimShipperId = AimShipperId FROM @claimed;
@@ -66,7 +59,7 @@ BEGIN
             -- lost the race (all claimed between pre-check and update): no-op COMMIT (NOT ROLLBACK).
             COMMIT TRANSACTION;
             SET @Status = 0;
-            SET @Message = N'AIM shipper ID pool is empty for part ' + @PartNumber + N'.';
+            SET @Message = N'AIM shipper ID pool is empty.';
             SELECT @Status AS Status, @Message AS Message, @AimShipperId AS AimShipperId;
             RETURN;
         END

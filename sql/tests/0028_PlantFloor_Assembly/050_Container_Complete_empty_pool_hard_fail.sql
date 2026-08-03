@@ -10,7 +10,9 @@ EXEC test.BeginTestFile @FileName = N'0028_PlantFloor_Assembly/050_Container_Com
 GO
 
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
+-- AimShipperIdPool is part-agnostic + global-FIFO (Migration 0049); the empty-pool
+-- hard-fail this file proves is now a GLOBAL empty pool, not a per-part slice.
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-050';
@@ -72,7 +74,9 @@ EXEC test.Assert_IsEqual @TestName = N'[CompleteEmpty] no ShippingLabel created'
 GO
 
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
+-- AimShipperIdPool is part-agnostic + global-FIFO (Migration 0049); the empty-pool
+-- hard-fail this file proves is now a GLOBAL empty pool, not a per-part slice.
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-050';
