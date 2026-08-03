@@ -22,6 +22,53 @@
 - Audit `Description` shape: `<SUBJECT> · <CATEGORY?> · <ACTION>` using `Audit.ufn_MidDot()`, wrapped in `Audit.ufn_TruncateActivity(@text)`. `OldValue`/`NewValue` JSON carries resolved-name FK sub-objects.
 - **Seed/data string values are ASCII-only.** `sqlcmd` reads `.sql` in the Windows codepage, so em-dashes and middle-dots become mojibake.
 - Tests run against **`MPP_MES_Test`** (the runner's default). **Never** point the runner at a `*_Dev` database.
+- **Run the suite from Bash, not the PowerShell tool** (sandbox-blocked this session):
+  `powershell.exe -NoProfile -File "sql	ests\Run-Tests.ps1" -Filter "<pattern>"`. The runner
+  resets `MPP_MES_Test` and applies migrations itself — you do not call `Reset-DevDatabase.ps1`
+  separately.
+
+## Test fixture pattern (FIXTURE BLOCK)
+
+`Run-Tests.ps1` resets with `-SkipDemoSeed`, so **`Lots.Container`, `Lots.Lot` and `Parts.Item` are
+empty of demo data.** A fixture that does `SELECT TOP 1 Id FROM Lots.Container` gets `NULL` and the
+test fails for the wrong reason. Every task below that needs a container **builds its own**, following
+`sql/tests/0028_PlantFloor_Assembly/040_Container_Complete_happy.sql` — read that file first.
+
+Where a task says "open with the FIXTURE BLOCK, PART = `X`", paste this verbatim and substitute `X`:
+
+```sql
+DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'X')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (3, N'X', N'AIM plan-1 test part', 1, @Now, 1);
+DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'X');
+
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Item AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    VALUES (@Item, 1, 15, 0, N'ByCount', @Now);
+DECLARE @Config BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @Item AND DeprecatedAt IS NULL);
+
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+DECLARE @UserId BIGINT = 1;
+
+DECLARE @O TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @O EXEC Lots.Container_Open
+    @ItemId = @Item, @ContainerConfigId = @Config, @CellLocationId = @Cell, @AppUserId = @UserId;
+DECLARE @ContainerId BIGINT = (SELECT NewId FROM @O);
+```
+
+A single-tray `ByCount` config keeps the fixture minimal — no BOM, no staged component LOT, no
+per-tray loop. If a task needs the container **full** (Task 3), close its one tray:
+
+```sql
+DECLARE @TC TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, ContainerAccumulatedParts INT);
+INSERT INTO @TC EXEC Lots.ContainerTray_Close
+    @ContainerId = @ContainerId, @TrayPosition = 1, @PartsCount = 15,
+    @ClosureMethod = N'ByCount', @AppUserId = @UserId;
+```
+
+Delete your fixture's rows at the top of the file (see `040_Container_Complete_happy.sql`'s opening
+`DELETE` block) so re-runs are idempotent.
 
 ---
 
@@ -260,7 +307,25 @@ git commit -m "feat(sql): migration 0049 - generic AIM pool, post-back ledger, I
 - Modify: `sql/migrations/repeatable/R__Lots_AimShipperIdPool_Claim.sql`
 - Modify: `sql/migrations/repeatable/R__Lots_AimShipperIdPool_Topup.sql`
 - Modify: `sql/migrations/repeatable/R__Lots_AimShipperIdPool_GetDepth.sql`
-- Modify: `sql/tests/0028_PlantFloor_Assembly/035_AimPool_claim_topup.sql`
+- Modify (ALL SEVEN call sites — `@PartNumber` no longer exists):
+  - `sql/tests/0028_PlantFloor_Assembly/035_AimPool_claim_topup.sql`
+  - `sql/tests/0028_PlantFloor_Assembly/040_Container_Complete_happy.sql`
+  - `sql/tests/0028_PlantFloor_Assembly/045_Container_Complete_over_target.sql`
+  - `sql/tests/0028_PlantFloor_Assembly/050_Container_Complete_empty_pool_hard_fail.sql`
+  - `sql/tests/0028_PlantFloor_Assembly/060_Container_Complete_with_completion_confirm.sql`
+  - `sql/tests/0029_PlantFloor_Hold_Sort_Shipping_Aim/030_Container_Ship.sql`
+  - `sql/tests/0029_PlantFloor_Hold_Sort_Shipping_Aim/080_ShippingLabel_Void_Reprint.sql`
+- Modify (seed/scratch — same reason):
+  - `sql/seeds/028_seed_aim_pool_dev.sql`
+  - `sql/scratch/seed_demo.sql`
+  - `sql/scratch/clear_demo.sql`
+  - `sql/scratch/smoke_seed_shipping.sql`
+
+In each caller: drop `@PartNumber = N'...'` from `AimShipperIdPool_Topup` / `_Claim` / `_GetDepth`
+calls, and drop `PartNumber` from any direct `INSERT INTO Lots.AimShipperIdPool` or
+`WHERE PartNumber = ...` cleanup. `050_Container_Complete_empty_pool_hard_fail.sql` needs care — it
+proves the empty-pool hard fail, which is now **global** rather than per-part, so its setup must
+leave the *whole* pool empty rather than just one part's rows.
 
 **Interfaces:**
 - Consumes: Task 1's schema.
@@ -301,8 +366,22 @@ EXEC test.Assert_IsEqual
     @Expected = N'1', @Actual = @DepthAtLeast;
 
 -- Claim takes no part number and returns the FIFO-oldest available ID.
-DECLARE @ContainerId BIGINT = (SELECT TOP 1 Id FROM Lots.Container ORDER BY Id);
-DECLARE @UserId BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
+-- -SkipDemoSeed leaves Lots.Container empty, so open one (FIXTURE BLOCK, PART = 'AIM-P1-T2').
+DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+DECLARE @UserId BIGINT = 1;
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-T2')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (3, N'AIM-P1-T2', N'AIM plan-1 claim fixture part', 1, @Now, 1);
+DECLARE @T2Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-T2');
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @T2Item AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    VALUES (@T2Item, 1, 15, 0, N'ByCount', @Now);
+DECLARE @T2Config BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @T2Item AND DeprecatedAt IS NULL);
+DECLARE @T2Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+DECLARE @O2 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @O2 EXEC Lots.Container_Open
+    @ItemId = @T2Item, @ContainerConfigId = @T2Config, @CellLocationId = @T2Cell, @AppUserId = @UserId;
+DECLARE @ContainerId BIGINT = (SELECT NewId FROM @O2);
 DECLARE @C TABLE (Status BIT, Message NVARCHAR(500), AimShipperId NVARCHAR(50));
 INSERT INTO @C EXEC Lots.AimShipperIdPool_Claim
     @ContainerId = @ContainerId, @AppUserId = @UserId;
@@ -452,19 +531,40 @@ Create `sql/tests/0049_AimIntegration/020_Container_Complete_payload.sql`:
 EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/020_Container_Complete_payload.sql';
 GO
 
--- Arrange: an item with an AIM customer part, a container with one closed tray.
-DECLARE @UserId BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
-DECLARE @ItemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+-- Arrange: build our own container (Run-Tests resets with -SkipDemoSeed, so
+-- Lots.Container is EMPTY). FIXTURE BLOCK, PART = 'AIM-P1-T3'.
+DELETE FROM Lots.AimShipperIdPool WHERE AimShipperId LIKE N'0009%';
+DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId
+    INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'AIM-P1-T3';
+DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-T3');
+
+DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-T3')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (3, N'AIM-P1-T3', N'AIM plan-1 test part', 1, @Now, 1);
+DECLARE @ItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-T3');
 UPDATE Parts.Item SET AimCustomerPartNumber = N'112006FB A000' WHERE Id = @ItemId;
+
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @ItemId AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    VALUES (@ItemId, 1, 15, 0, N'ByCount', @Now);
+DECLARE @Config BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @ItemId AND DeprecatedAt IS NULL);
+
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+DECLARE @UserId BIGINT = 1;
+
+DECLARE @O TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @O EXEC Lots.Container_Open
+    @ItemId = @ItemId, @ContainerConfigId = @Config, @CellLocationId = @Cell, @AppUserId = @UserId;
+DECLARE @ContainerId BIGINT = (SELECT NewId FROM @O);
+
+DECLARE @TC TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, ContainerAccumulatedParts INT);
+INSERT INTO @TC EXEC Lots.ContainerTray_Close
+    @ContainerId = @ContainerId, @TrayPosition = 1, @PartsCount = 15,
+    @ClosureMethod = N'ByCount', @AppUserId = @UserId;
 
 INSERT INTO Lots.AimShipperIdPool (AimShipperId, FetchedAt)
 VALUES (N'000900101', SYSUTCDATETIME());
-
-DECLARE @ContainerId BIGINT = (SELECT TOP 1 c.Id
-    FROM Lots.Container c
-    INNER JOIN Lots.ContainerTray t ON t.ContainerId = c.Id AND t.ClosedAt IS NOT NULL
-    WHERE c.ItemId = @ItemId
-    ORDER BY c.Id DESC);
 
 -- Act
 DECLARE @R TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
@@ -611,8 +711,23 @@ Create `sql/tests/0049_AimIntegration/030_postback_procs.sql`:
 EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/030_postback_procs.sql';
 GO
 
-DECLARE @UserId BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
-DECLARE @ContainerId BIGINT = (SELECT TOP 1 Id FROM Lots.Container ORDER BY Id);
+-- Run-Tests resets with -SkipDemoSeed: Lots.Container is EMPTY. Open our own
+-- (FIXTURE BLOCK, PART = 'AIM-P1-FK'); this task only needs a valid container FK.
+DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+DECLARE @UserId BIGINT = 1;
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-FK')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (3, N'AIM-P1-FK', N'AIM plan-1 FK fixture part', 1, @Now, 1);
+DECLARE @FkItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-FK');
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @FkItem AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    VALUES (@FkItem, 1, 15, 0, N'ByCount', @Now);
+DECLARE @FkConfig BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @FkItem AND DeprecatedAt IS NULL);
+DECLARE @FkCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+DECLARE @O TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @O EXEC Lots.Container_Open
+    @ItemId = @FkItem, @ContainerConfigId = @FkConfig, @CellLocationId = @FkCell, @AppUserId = @UserId;
+DECLARE @ContainerId BIGINT = (SELECT NewId FROM @O);
 
 INSERT INTO Lots.AimShipperIdPool
     (AimShipperId, FetchedAt, ConsumedAt, ConsumedByContainerId, ConsumedByUserId,
@@ -886,8 +1001,23 @@ Create `sql/tests/0049_AimIntegration/040_MarkPosted.sql`:
 EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/040_MarkPosted.sql';
 GO
 
-DECLARE @UserId BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
-DECLARE @ContainerId BIGINT = (SELECT TOP 1 Id FROM Lots.Container ORDER BY Id);
+-- Run-Tests resets with -SkipDemoSeed: Lots.Container is EMPTY. Open our own
+-- (FIXTURE BLOCK, PART = 'AIM-P1-FK'); this task only needs a valid container FK.
+DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+DECLARE @UserId BIGINT = 1;
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-FK')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (3, N'AIM-P1-FK', N'AIM plan-1 FK fixture part', 1, @Now, 1);
+DECLARE @FkItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-FK');
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @FkItem AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    VALUES (@FkItem, 1, 15, 0, N'ByCount', @Now);
+DECLARE @FkConfig BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @FkItem AND DeprecatedAt IS NULL);
+DECLARE @FkCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+DECLARE @O TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @O EXEC Lots.Container_Open
+    @ItemId = @FkItem, @ContainerConfigId = @FkConfig, @CellLocationId = @FkCell, @AppUserId = @UserId;
+DECLARE @ContainerId BIGINT = (SELECT NewId FROM @O);
 
 INSERT INTO Lots.AimShipperIdPool
     (AimShipperId, FetchedAt, ConsumedAt, ConsumedByContainerId, ConsumedByUserId,
@@ -1102,8 +1232,13 @@ Create `sql/tests/0049_AimIntegration/050_Item_accessors.sql`:
 EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/050_Item_accessors.sql';
 GO
 
-DECLARE @UserId BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
-DECLARE @ItemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+-- -SkipDemoSeed leaves Parts.Item without demo rows; create our own.
+DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+DECLARE @UserId BIGINT = 1;
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-T6')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (3, N'AIM-P1-T6', N'AIM plan-1 accessor test part', 1, @Now, 1);
+DECLARE @ItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-T6');
 
 DECLARE @S TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @S EXEC Parts.Item_SetAimCustomerPartNumber
