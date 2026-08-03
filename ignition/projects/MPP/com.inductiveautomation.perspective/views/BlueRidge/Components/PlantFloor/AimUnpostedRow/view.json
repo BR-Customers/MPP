@@ -1,0 +1,297 @@
+{
+  "custom": {},
+  "params": {
+    "poolId": 0,
+    "serial": "",
+    "containerId": 0,
+    "customerPartNumber": "",
+    "quantity": 0,
+    "lotNumber": "",
+    "postAttempts": 0,
+    "lastPostError": "",
+    "ageDisplay": ""
+  },
+  "propConfig": {
+    "params.poolId": { "paramDirection": "input" },
+    "params.serial": { "paramDirection": "input" },
+    "params.containerId": { "paramDirection": "input" },
+    "params.customerPartNumber": { "paramDirection": "input" },
+    "params.quantity": { "paramDirection": "input" },
+    "params.lotNumber": { "paramDirection": "input" },
+    "params.postAttempts": { "paramDirection": "input" },
+    "params.lastPostError": { "paramDirection": "input" },
+    "params.ageDisplay": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 64,
+      "width": 1100
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-queue-row",
+        "gap": "14px",
+        "padding": "8px 16px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "SerialLabel"
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.serial"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontFamily": "monospace",
+            "fontSize": "15px",
+            "fontWeight": "600"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ContainerLabel"
+        },
+        "position": {
+          "basis": "110px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.containerId} > 0, \"Ctr \" + toStr({view.params.containerId}), \"\")"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "13px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PartLabel"
+        },
+        "position": {
+          "basis": "160px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.customerPartNumber"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "QtyLabel"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"Qty \" + toStr({view.params.quantity})"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "13px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LotLabel"
+        },
+        "position": {
+          "basis": "140px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.lotNumber"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontFamily": "monospace",
+            "fontSize": "13px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "AgeLabel"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.ageDisplay"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--pf-status-warn-fg)",
+            "fontSize": "13px",
+            "fontWeight": "600"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "AttemptsLabel"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.postAttempts}) + \" tries\""
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "13px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LastPostErrorLabel"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.params.lastPostError}) || {view.params.lastPostError} = \"\", \"no post attempt recorded\", {view.params.lastPostError})"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--pf-status-bad-fg)",
+            "fontSize": "12px",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "MarkPostedButton"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "Mark Posted",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.openPopup(\"mpp-aim-mark-posted\", \"BlueRidge/Components/Popups/AimMarkPostedConfirm\", params={\"poolId\": self.view.params.poolId, \"serial\": self.view.params.serial, \"replyMessage\": \"aimMarkPostedResult\", \"popupId\": \"mpp-aim-mark-posted\"}, modal=True, showCloseIcon=True)"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -14,15 +14,32 @@ def get(_refreshToken=None):
     return BlueRidge.Common.Db.execList("lots/AimPoolConfig_Get")
 
 
-def update(targetBufferDepth, topupThreshold, alarmWarningDepth, alarmCriticalDepth, appUserId=None):
-    """Update the AIM pool thresholds (upserts the single config row). Returns
-       {Status, Message}."""
+def update(targetBufferDepth, topupThreshold, alarmWarningDepth, alarmCriticalDepth,
+           aimBaseUrl=None, aimCompanyCode=None, aimPathToken=None,
+           postWarningAgeMinutes=None, postCriticalAgeMinutes=None, appUserId=None):
+    """Update the AIM pool thresholds and (optionally) the AIM connection settings /
+       post-backlog escalation ages (upserts the single config row). Returns
+       {Status, Message}.
+
+       The five new params ALL default to None so existing four-argument callers
+       (the pre-existing threshold-only save path) keep working unchanged. The
+       proc's Lots.AimPoolConfig_Update COALESCEs each omitted param against the
+       stored value (preserve-on-omit) -- passing None here never blanks a
+       connection setting, it only leaves it untouched. Corollary: this wrapper
+       has no way to CLEAR a connection setting to blank, only overwrite it with
+       a new value."""
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     BlueRidge.Common.Util.log(
-        "update targetBufferDepth=%s topupThreshold=%s alarmWarningDepth=%s alarmCriticalDepth=%s appUserId=%s"
-        % (targetBufferDepth, topupThreshold, alarmWarningDepth, alarmCriticalDepth, appUserId))
+        "update targetBufferDepth=%s topupThreshold=%s alarmWarningDepth=%s alarmCriticalDepth=%s "
+        "aimBaseUrl=%s aimCompanyCode=%s aimPathToken=%s postWarningAgeMinutes=%s "
+        "postCriticalAgeMinutes=%s appUserId=%s"
+        % (targetBufferDepth, topupThreshold, alarmWarningDepth, alarmCriticalDepth,
+           aimBaseUrl, aimCompanyCode, aimPathToken, postWarningAgeMinutes,
+           postCriticalAgeMinutes, appUserId))
     params = {"targetBufferDepth": targetBufferDepth, "topupThreshold": topupThreshold,
               "alarmWarningDepth": alarmWarningDepth, "alarmCriticalDepth": alarmCriticalDepth,
-              "appUserId": appUserId}
+              "aimBaseUrl": aimBaseUrl, "aimCompanyCode": aimCompanyCode,
+              "aimPathToken": aimPathToken, "postWarningAgeMinutes": postWarningAgeMinutes,
+              "postCriticalAgeMinutes": postCriticalAgeMinutes, "appUserId": appUserId}
     return BlueRidge.Common.Db.execMutation("lots/AimPoolConfig_Update", params)

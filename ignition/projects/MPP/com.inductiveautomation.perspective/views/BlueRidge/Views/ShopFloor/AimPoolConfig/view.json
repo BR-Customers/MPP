@@ -6,6 +6,14 @@
       "targetBufferDepth": "",
       "topupThreshold": ""
     },
+    "editDraft": {
+      "aimBaseUrl": "",
+      "aimCompanyCode": "",
+      "aimPathToken": "",
+      "postWarningAgeMinutes": "",
+      "postCriticalAgeMinutes": ""
+    },
+    "unposted": [],
     "refreshToken": 0
   },
   "params": {},
@@ -17,7 +25,7 @@
         },
         "transforms": [
           {
-            "code": "\trows \u003d value or []\n\tr \u003d rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\") or 1, \"TargetBufferDepth\": r.get(\"TargetBufferDepth\") or 0, \"TopupThreshold\": r.get(\"TopupThreshold\") or 0, \"AlarmWarningDepth\": r.get(\"AlarmWarningDepth\") or 0, \"AlarmCriticalDepth\": r.get(\"AlarmCriticalDepth\") or 0}",
+            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\") or 1, \"TargetBufferDepth\": r.get(\"TargetBufferDepth\") or 0, \"TopupThreshold\": r.get(\"TopupThreshold\") or 0, \"AlarmWarningDepth\": r.get(\"AlarmWarningDepth\") or 0, \"AlarmCriticalDepth\": r.get(\"AlarmCriticalDepth\") or 0, \"AimBaseUrl\": r.get(\"AimBaseUrl\") or \"\", \"AimCompanyCode\": r.get(\"AimCompanyCode\") or \"\", \"AimPathToken\": r.get(\"AimPathToken\") or \"\", \"PostWarningAgeMinutes\": r.get(\"PostWarningAgeMinutes\") or 0, \"PostCriticalAgeMinutes\": r.get(\"PostCriticalAgeMinutes\") or 0}",
             "type": "script"
           }
         ],
@@ -508,6 +516,385 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": { "name": "ConnTitle" },
+                "position": { "shrink": 0 },
+                "props": {
+                  "style": { "fontSize": "18px", "fontWeight": "700" },
+                  "text": "AIM connection settings"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "ConnLabel" },
+                "position": { "shrink": 0 },
+                "props": {
+                  "style": { "classes": "pf-kpi-sub" },
+                  "text": "Leave a field blank to keep its current value. This proc cannot clear a setting, only overwrite it."
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": { "name": "L" },
+                        "position": { "shrink": 0 },
+                        "props": { "style": { "classes": "pf-kpi-label" }, "text": "Current base URL" },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": { "name": "V" },
+                        "position": { "shrink": 0 },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": { "expression": "if({view.custom.cfg.AimBaseUrl} = \"\", \"(not set)\", {view.custom.cfg.AimBaseUrl})" },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": { "style": { "classes": "pf-kpi-sub" } },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": { "name": "CurrentBaseUrl" },
+                    "position": { "basis": "260px", "shrink": 0 },
+                    "props": { "direction": "column", "style": { "gap": "2px" } },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": { "name": "L" },
+                        "position": { "shrink": 0 },
+                        "props": { "style": { "classes": "pf-kpi-label" }, "text": "Current company code" },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": { "name": "V" },
+                        "position": { "shrink": 0 },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": { "expression": "if({view.custom.cfg.AimCompanyCode} = \"\", \"(not set)\", {view.custom.cfg.AimCompanyCode})" },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": { "style": { "classes": "pf-kpi-sub" } },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": { "name": "CurrentCompanyCode" },
+                    "position": { "basis": "160px", "shrink": 0 },
+                    "props": { "direction": "column", "style": { "gap": "2px" } },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": { "name": "L" },
+                        "position": { "shrink": 0 },
+                        "props": { "style": { "classes": "pf-kpi-label" }, "text": "Current warn / critical age (min)" },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": { "name": "V" },
+                        "position": { "shrink": 0 },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": { "expression": "toStr({view.custom.cfg.PostWarningAgeMinutes}) + \" / \" + toStr({view.custom.cfg.PostCriticalAgeMinutes})" },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": { "style": { "classes": "pf-kpi-sub" } },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": { "name": "CurrentAges" },
+                    "position": { "basis": "220px", "shrink": 0 },
+                    "props": { "direction": "column", "style": { "gap": "2px" } },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": { "name": "CurrentConnRow" },
+                "position": { "shrink": 0 },
+                "props": { "alignItems": "flex-start", "style": { "gap": "24px" }, "wrap": "wrap" },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": { "name": "L" },
+                        "props": { "style": { "classes": "pf-field-label" }, "text": "AIM base URL" },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": { "name": "AimBaseUrlInput" },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": { "bidirectional": true, "path": "view.custom.editDraft.aimBaseUrl" },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": { "name": "BaseUrlField" },
+                    "position": { "basis": "320px", "shrink": 0 },
+                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": { "name": "L" },
+                        "props": { "style": { "classes": "pf-field-label" }, "text": "AIM company code" },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": { "name": "AimCompanyCodeInput" },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": { "bidirectional": true, "path": "view.custom.editDraft.aimCompanyCode" },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "type": "ia.input.text-field"
+                      },
+                      {
+                        "meta": { "name": "CompanyCodeWarning" },
+                        "props": {
+                          "style": { "color": "var(--pf-status-warn-fg)", "fontSize": "11px", "fontWeight": "600" },
+                          "text": "01 is test. Production runs on 99 -- never point the MES at it."
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": { "name": "CompanyCodeField" },
+                    "position": { "basis": "220px", "shrink": 0 },
+                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": { "name": "L" },
+                        "props": { "style": { "classes": "pf-field-label" }, "text": "AIM path token" },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": { "name": "AimPathTokenInput" },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": { "bidirectional": true, "path": "view.custom.editDraft.aimPathToken" },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": { "name": "PathTokenField" },
+                    "position": { "basis": "220px", "shrink": 0 },
+                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": { "name": "L" },
+                        "props": { "style": { "classes": "pf-field-label" }, "text": "Post warning age (min)" },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": { "name": "PostWarningAgeInput" },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": { "bidirectional": true, "path": "view.custom.editDraft.postWarningAgeMinutes" },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": { "name": "PostWarningAgeField" },
+                    "position": { "basis": "180px", "shrink": 0 },
+                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": { "name": "L" },
+                        "props": { "style": { "classes": "pf-field-label" }, "text": "Post critical age (min)" },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": { "name": "PostCriticalAgeInput" },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": { "bidirectional": true, "path": "view.custom.editDraft.postCriticalAgeMinutes" },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": { "name": "PostCriticalAgeField" },
+                    "position": { "basis": "180px", "shrink": 0 },
+                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": { "name": "ConnFieldRow" },
+                "position": { "shrink": 0 },
+                "props": { "alignItems": "flex-end", "style": { "gap": "12px" }, "wrap": "wrap" },
+                "type": "ia.container.flex"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\td = self.view.custom.editDraft\n\trows = BlueRidge.Lots.AimPoolConfig.get() or []\n\tcur = rows[0] if rows else {}\n\tbaseUrl = d.get(\"aimBaseUrl\") or None\n\tcompanyCode = d.get(\"aimCompanyCode\") or None\n\tpathToken = d.get(\"aimPathToken\") or None\n\twarnAge = BlueRidge.Common.Util.toIntOrNone(d.get(\"postWarningAgeMinutes\"))\n\tcritAge = BlueRidge.Common.Util.toIntOrNone(d.get(\"postCriticalAgeMinutes\"))\n\ttarget = cur.get(\"TargetBufferDepth\") or 0\n\ttopup = cur.get(\"TopupThreshold\") or 0\n\twarn = cur.get(\"AlarmWarningDepth\") or 0\n\tcritical = cur.get(\"AlarmCriticalDepth\") or 0\n\tresult = BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical, baseUrl, companyCode, pathToken, warnAge, critAge)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Connection settings saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.editDraft = {\"aimBaseUrl\": \"\", \"aimCompanyCode\": \"\", \"aimPathToken\": \"\", \"postWarningAgeMinutes\": \"\", \"postCriticalAgeMinutes\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": { "name": "SaveConnButton" },
+                "position": { "shrink": 0 },
+                "props": {
+                  "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" },
+                  "text": "Save connection settings"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": { "name": "ConnectionsPanel" },
+            "position": { "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-panel", "gap": "16px", "padding": "16px" }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": { "name": "UnpostedTitle" },
+                    "position": { "shrink": 0 },
+                    "props": { "style": { "fontSize": "18px", "fontWeight": "700" }, "text": "AIM post backlog" },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": { "name": "UnpostedCountBadge" },
+                    "position": { "shrink": 0 },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": { "expression": "toStr(len({view.custom.unposted})) + \" owed\"" },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "0 owed",
+                      "style": {
+                        "background": "var(--bg-row-alt)",
+                        "borderRadius": "12px",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "13px",
+                        "padding": "4px 10px"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": { "name": "UnpostedHeaderRow" },
+                "position": { "shrink": 0 },
+                "props": { "alignItems": "center", "style": { "gap": "10px" }, "wrap": "wrap" },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": { "name": "UnpostedEmptyState" },
+                "position": { "shrink": 0 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": { "config": { "expression": "len({view.custom.unposted}) = 0" }, "type": "expr" }
+                  }
+                },
+                "props": {
+                  "text": "Nothing owed to AIM.",
+                  "style": { "color": "var(--mpp-text-secondary)", "fontSize": "14px", "padding": "12px 0" }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "UnpostedList" },
+                "position": { "shrink": 0 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": { "config": { "expression": "len({view.custom.unposted}) > 0" }, "type": "expr" }
+                  },
+                  "props.instances": {
+                    "binding": {
+                      "config": { "path": "view.custom.unposted" },
+                      "transforms": [
+                        {
+                          "code": "\treturn [BlueRidge.Common.Util.extractQualifiedValues(r) or {} for r in (value or [])]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": { "basis": "64px", "shrink": 0 },
+                  "path": "BlueRidge/Components/PlantFloor/AimUnpostedRow",
+                  "style": { "gap": "6px", "maxHeight": "420px", "overflowY": "auto" },
+                  "useDefaultViewHeight": true,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": { "name": "UnpostedSection" },
+            "position": { "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-panel", "gap": "12px", "padding": "16px" }
+            },
+            "type": "ia.container.flex"
           }
         ],
         "meta": {
@@ -537,6 +924,35 @@
         "classes": "canvas"
       }
     },
-    "type": "ia.container.flex"
+    "type": "ia.container.flex",
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.loadUnposted()"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "loadUnposted",
+          "params": [],
+          "script": "\trows = BlueRidge.Lots.AimPool.listUnposted(50) or []\n\tmapped = []\n\tfor r in rows:\n\t\tageMin = r.get(\"AgeMinutes\") or 0\n\t\tif ageMin >= 60:\n\t\t\tageDisplay = \"%dh %dm\" % (ageMin // 60, ageMin % 60)\n\t\telse:\n\t\t\tageDisplay = \"%d min\" % ageMin\n\t\tmapped.append({\"poolId\": r.get(\"Id\"), \"serial\": r.get(\"AimShipperId\") or \"\", \"containerId\": r.get(\"ContainerId\") or 0, \"customerPartNumber\": r.get(\"CustomerPartNumber\") or \"\", \"quantity\": r.get(\"Quantity\") or 0, \"lotNumber\": r.get(\"LotNumber\") or \"\", \"postAttempts\": r.get(\"PostAttempts\") or 0, \"lastPostError\": r.get(\"LastPostError\") or \"\", \"ageDisplay\": ageDisplay})\n\tself.view.custom.unposted = mapped"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "aimMarkPostedResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"action\") == \"confirm\":\n\t\tself.loadUnposted()"
+        }
+      ]
+    }
   }
 }
