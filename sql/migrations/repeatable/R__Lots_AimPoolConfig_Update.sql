@@ -1,19 +1,29 @@
 -- ============================================================
 -- Repeatable:  R__Lots_AimPoolConfig_Update.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0
+-- Version:     1.1
 -- Description: Updates the single-row AIM pool config thresholds (Arc 2 Phase 7 admin;
 --              AD-elevated). Upserts the Id=1 row. Attribution via UpdatedAt /
 --              UpdatedByUserId. No OUTPUT params; single terminal SELECT @Status,@Message.
 --              (Full ConfigLog before/after diff is a noted refinement.)
+--              v1.1 (Migration 0049): adds AIM connection settings (AimBaseUrl,
+--              AimCompanyCode, AimPathToken) and post-backlog escalation ages
+--              (PostWarningAgeMinutes, PostCriticalAgeMinutes). New params carry
+--              defaults so existing callers passing only the original four still
+--              compile.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.AimPoolConfig_Update
-    @TargetBufferDepth  INT,
-    @TopupThreshold     INT,
-    @AlarmWarningDepth  INT,
-    @AlarmCriticalDepth INT,
-    @AppUserId          BIGINT
+    @TargetBufferDepth      INT,
+    @TopupThreshold         INT,
+    @AlarmWarningDepth      INT,
+    @AlarmCriticalDepth     INT,
+    @AimBaseUrl             NVARCHAR(200) = NULL,
+    @AimCompanyCode         NVARCHAR(10)  = NULL,
+    @AimPathToken           NVARCHAR(50)  = NULL,
+    @PostWarningAgeMinutes  INT           = 30,
+    @PostCriticalAgeMinutes INT           = 120,
+    @AppUserId              BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -38,13 +48,27 @@ BEGIN
 
         BEGIN TRANSACTION;
         UPDATE Lots.AimPoolConfig
-        SET TargetBufferDepth = @TargetBufferDepth, TopupThreshold = @TopupThreshold,
-            AlarmWarningDepth = @AlarmWarningDepth, AlarmCriticalDepth = @AlarmCriticalDepth,
-            UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
-        WHERE Id = 1;
+           SET TargetBufferDepth      = @TargetBufferDepth,
+               TopupThreshold         = @TopupThreshold,
+               AlarmWarningDepth      = @AlarmWarningDepth,
+               AlarmCriticalDepth     = @AlarmCriticalDepth,
+               AimBaseUrl             = @AimBaseUrl,
+               AimCompanyCode         = @AimCompanyCode,
+               AimPathToken           = @AimPathToken,
+               PostWarningAgeMinutes  = @PostWarningAgeMinutes,
+               PostCriticalAgeMinutes = @PostCriticalAgeMinutes,
+               UpdatedAt              = SYSUTCDATETIME(),
+               UpdatedByUserId        = @AppUserId
+         WHERE Id = 1;
         IF @@ROWCOUNT = 0
-            INSERT INTO Lots.AimPoolConfig (Id, TargetBufferDepth, TopupThreshold, AlarmWarningDepth, AlarmCriticalDepth, UpdatedAt, UpdatedByUserId)
-            VALUES (1, @TargetBufferDepth, @TopupThreshold, @AlarmWarningDepth, @AlarmCriticalDepth, SYSUTCDATETIME(), @AppUserId);
+            INSERT INTO Lots.AimPoolConfig (
+                Id, TargetBufferDepth, TopupThreshold, AlarmWarningDepth, AlarmCriticalDepth,
+                AimBaseUrl, AimCompanyCode, AimPathToken, PostWarningAgeMinutes, PostCriticalAgeMinutes,
+                UpdatedAt, UpdatedByUserId)
+            VALUES (
+                1, @TargetBufferDepth, @TopupThreshold, @AlarmWarningDepth, @AlarmCriticalDepth,
+                @AimBaseUrl, @AimCompanyCode, @AimPathToken, @PostWarningAgeMinutes, @PostCriticalAgeMinutes,
+                SYSUTCDATETIME(), @AppUserId);
         COMMIT TRANSACTION;
 
         SET @Status  = 1;

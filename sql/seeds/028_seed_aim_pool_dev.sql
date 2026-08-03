@@ -22,4 +22,14 @@ WHERE NOT EXISTS (
         SELECT 1 FROM Lots.AimShipperIdPool p
         WHERE p.AimShipperId = N'DEVAIM-' + RIGHT(N'000000' + CAST(n.rn AS NVARCHAR(6)), 6));
 
+-- Dev AIM connection settings (Migration 0049). Company 01 is MPP's TEST company.
+-- Production runs on company 99 from the legacy MES box - MES traffic must never
+-- target 99.
+UPDATE Lots.AimPoolConfig
+   SET AimBaseUrl     = N'http://172.17.10.86:8080',
+       AimCompanyCode = N'01',
+       AimPathToken   = N'636652666553236784'
+ WHERE Id = 1;
+GO
+
 PRINT 'Seed 028 (dev AIM shipper-ID pool placeholder) loaded.';
