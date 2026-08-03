@@ -3,9 +3,9 @@
    - topupTick(): per part below TopupThreshold, AIM GetNextNumber over HTTP up to
      TargetBufferDepth. SIM: no AIM endpoint in dev -> no-op; the 028 dev seed pre-fills
      the pool. Real AIM HTTP wiring is commissioning (A6).
-   - alarmTick(): read per-part depth vs AimPoolConfig thresholds; fire warning/critical
-     session alarms on rising-edge crossings, clear on recovery. FUNCTIONAL (uses the
-     existing AimPool.getDepth + AimPoolConfig.get reads).
+   - alarmTick(): read the global pool depth vs AimPoolConfig thresholds; fire warning/
+     critical session alarms on rising-edge crossings, clear on recovery. FUNCTIONAL
+     (uses the existing AimPool.getDepth + AimPoolConfig.get reads).
    - placeOnHold/releaseFromHold/update(): AIM HTTP handlers. SIM: log the InterfaceLog
      attempt + return a not-configured status (no HTTP in dev).
 
@@ -13,8 +13,8 @@
    AimUpdate message handlers (commissioning). Fully guarded -- a timer must never throw.
 """
 
-# rising-edge alarm state per part: {partNumber: "ok"|"warning"|"critical"}
-_alarmState = {}
+# rising-edge global alarm state: "ok"|"warning"|"critical"
+_alarmState = "ok"
 
 
 def topupTick():
@@ -24,29 +24,29 @@ def topupTick():
 
 
 def alarmTick():
-    """Compare per-part pool depth to AimPoolConfig thresholds; fire a session alarm on a
-       rising-edge crossing into warning/critical, clear on recovery to ok."""
+    """Compare the global pool depth to AimPoolConfig thresholds; fire a session alarm on
+       a rising-edge crossing into warning/critical, clear on recovery to ok."""
+    global _alarmState
     try:
         cfgRows = BlueRidge.Lots.AimPoolConfig.get() or []
         cfg = cfgRows[0] if cfgRows else {}
         warn = cfg.get("AlarmWarningDepth") or 20
         crit = cfg.get("AlarmCriticalDepth") or 10
-        for row in (BlueRidge.Lots.AimPool.getDepth() or []):
-            part = row.get("PartNumber")
-            depth = row.get("Depth") or 0
-            level = "critical" if depth <= crit else ("warning" if depth <= warn else "ok")
-            prev = _alarmState.get(part, "ok")
-            if level != prev and level != "ok":
-                msg = "AIM pool %s for %s: %d remaining" % (level, part, depth)
-                try:
-                    system.perspective.sendMessage(
-                        "aim-pool-alarm",
-                        payload={"partNumber": part, "level": level, "depth": depth, "message": msg},
-                        scope="session")
-                except Exception:
-                    pass
-                BlueRidge.Common.Util.log(msg)
-            _alarmState[part] = level
+        depthRows = BlueRidge.Lots.AimPool.getDepth() or []
+        row = depthRows[0] if depthRows else {}
+        depth = row.get("Depth") or 0
+        level = "critical" if depth <= crit else ("warning" if depth <= warn else "ok")
+        if level != _alarmState and level != "ok":
+            msg = "AIM pool %s: %d remaining" % (level, depth)
+            try:
+                system.perspective.sendMessage(
+                    "aim-pool-alarm",
+                    payload={"level": level, "depth": depth, "message": msg},
+                    scope="session")
+            except Exception:
+                pass
+            BlueRidge.Common.Util.log(msg)
+        _alarmState = level
     except Exception as e:
         BlueRidge.Common.Util.log("alarmTick error: %s" % e, level="error")
 
