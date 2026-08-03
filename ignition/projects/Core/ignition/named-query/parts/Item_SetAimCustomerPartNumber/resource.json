@@ -30,15 +30,8 @@
       "timestamp": "2026-08-03T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "targetBufferDepth", "sqlType": 2 },
-      { "type": "Parameter", "identifier": "topupThreshold", "sqlType": 2 },
-      { "type": "Parameter", "identifier": "alarmWarningDepth", "sqlType": 2 },
-      { "type": "Parameter", "identifier": "alarmCriticalDepth", "sqlType": 2 },
-      { "type": "Parameter", "identifier": "aimBaseUrl", "sqlType": 7 },
-      { "type": "Parameter", "identifier": "aimCompanyCode", "sqlType": 7 },
-      { "type": "Parameter", "identifier": "aimPathToken", "sqlType": 7 },
-      { "type": "Parameter", "identifier": "postWarningAgeMinutes", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "postCriticalAgeMinutes", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "itemId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "value", "sqlType": 7 },
       { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 }
     ]
   }
