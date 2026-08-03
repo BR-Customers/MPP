@@ -8,9 +8,19 @@ GO
 
 -- Arrange: build our own container (Run-Tests resets with -SkipDemoSeed, so
 -- Lots.Container is EMPTY). FIXTURE BLOCK, PART = 'AIM-P1-T3'.
-DELETE FROM Lots.AimShipperIdPool WHERE AimShipperId LIKE N'0009%';
+DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId
+    INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'AIM-P1-T3';
+-- AimShipperIdPool is part-agnostic (Migration 0049) and claim is global FIFO by FetchedAt;
+-- a blanket clear guarantees this file's own topped-up id is claimed first.
+DELETE FROM Lots.AimShipperIdPool;
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId
     INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'AIM-P1-T3';
+DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId
+    WHERE l.LotName = N'AIM-P1-T3-LOT';
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName = N'AIM-P1-T3-LOT';
+DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName = N'AIM-P1-T3-LOT';
+DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName = N'AIM-P1-T3-LOT';
+DELETE FROM Lots.Lot WHERE LotName = N'AIM-P1-T3-LOT';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-T3');
 
 DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
@@ -102,6 +112,20 @@ DECLARE @NotPosted NVARCHAR(10) = (SELECT CASE WHEN PostedAt IS NULL AND PostAtt
 EXEC test.Assert_IsEqual
     @TestName = N'[0049] row starts owed - PostedAt null, attempts zero',
     @Expected = N'1', @Actual = @NotPosted;
+GO
+
+DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId
+    INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'AIM-P1-T3';
+DELETE FROM Lots.AimShipperIdPool;
+DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId
+    INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'AIM-P1-T3';
+DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId
+    WHERE l.LotName = N'AIM-P1-T3-LOT';
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName = N'AIM-P1-T3-LOT';
+DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName = N'AIM-P1-T3-LOT';
+DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName = N'AIM-P1-T3-LOT';
+DELETE FROM Lots.Lot WHERE LotName = N'AIM-P1-T3-LOT';
+DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-T3');
 GO
 
 EXEC test.EndTestFile;
