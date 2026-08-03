@@ -139,6 +139,27 @@ BEGIN
 
         SELECT @ClaimedPoolId = Id, @AimShipperId = AimShipperId FROM @claimed;
 
+        -- AIM post-back payload, frozen at completion. Written in the same transaction
+        -- as the claim: a rolled-back container never leaves a row owed to AIM.
+        DECLARE @PostQty  INT = (SELECT ISNULL(SUM(t.PartsClosedCount), 0)
+                                 FROM Lots.ContainerTray t
+                                 WHERE t.ContainerId = @ContainerId AND t.ClosedAt IS NOT NULL);
+        DECLARE @PostLot  NVARCHAR(50) = (SELECT TOP 1 l.LotName
+                                          FROM Lots.ContainerTray t
+                                          INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
+                                          WHERE t.ContainerId = @ContainerId
+                                          ORDER BY t.TrayPosition);
+        DECLARE @PostPart NVARCHAR(50) = (SELECT i.AimCustomerPartNumber
+                                          FROM Lots.Container c
+                                          INNER JOIN Parts.Item i ON i.Id = c.ItemId
+                                          WHERE c.Id = @ContainerId);
+
+        UPDATE Lots.AimShipperIdPool
+           SET CustomerPartNumber = @PostPart,
+               Quantity           = @PostQty,
+               LotNumber          = @PostLot
+         WHERE Id = @ClaimedPoolId;
+
         IF @ClaimedPoolId IS NULL
         BEGIN
             -- lost the race: no-op COMMIT (never ROLLBACK in an INSERT-EXEC-captured proc)
