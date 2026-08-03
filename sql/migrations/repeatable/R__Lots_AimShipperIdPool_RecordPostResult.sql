@@ -2,11 +2,12 @@
 -- Repeatable:  R__Lots_AimShipperIdPool_RecordPostResult.sql
 -- Author:      Blue Ridge Automation
 -- Version:     1.0
--- Description: Records the outcome of one AIM postserial.csv attempt. Success
---              stamps PostedAt (the row leaves the unposted index); failure
---              increments PostAttempts and stores the reply text. Always bumps
---              LastPostAttemptAt. No OUTPUT params; single terminal SELECT.
---              RAISERROR in the CATCH.
+-- Description: Records the outcome of one AIM postserial.csv attempt. Every
+--              attempt (success or failure) increments PostAttempts and bumps
+--              LastPostAttemptAt. Success additionally stamps PostedAt (the
+--              row leaves the unposted index) and clears LastPostError;
+--              failure stores the reply text in LastPostError. No OUTPUT
+--              params; single terminal SELECT. RAISERROR in the CATCH.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.AimShipperIdPool_RecordPostResult
     @Id      BIGINT,

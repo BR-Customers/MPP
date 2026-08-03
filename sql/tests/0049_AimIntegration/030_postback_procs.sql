@@ -107,12 +107,52 @@ EXEC test.Assert_IsEqual
     @TestName = N'[0049] successful post stamps PostedAt',
     @Expected = N'1', @Actual = @Posted;
 
+-- Success path totals attempts across both calls (this row's earlier failed
+-- attempt + this successful one) -- pins PostAttempts as a count of attempts
+-- made, not a failure-only counter.
+DECLARE @AttemptsAfterSuccess NVARCHAR(10) = (SELECT CAST(PostAttempts AS NVARCHAR(10))
+    FROM Lots.AimShipperIdPool WHERE Id = @PoolId);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] successful post brings PostAttempts to 2',
+    @Expected = N'2', @Actual = @AttemptsAfterSuccess;
+
+DECLARE @ErrAfterSuccess NVARCHAR(500) = (SELECT LastPostError FROM Lots.AimShipperIdPool WHERE Id = @PoolId);
+EXEC test.Assert_IsNull
+    @TestName = N'[0049] successful post clears LastPostError',
+    @Value = @ErrAfterSuccess;
+
 DELETE FROM @L;
 INSERT INTO @L EXEC Lots.AimShipperIdPool_ListUnposted @Top = 50;
 DECLARE @GoneFromList NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L WHERE Id = @PoolId);
 EXEC test.Assert_IsEqual
     @TestName = N'[0049] posted row leaves the unposted list',
     @Expected = N'0', @Actual = @GoneFromList;
+
+-- RecordPostResult with a NULL Id returns Status = 0 (required-parameter guard).
+DELETE FROM @RR;
+INSERT INTO @RR EXEC Lots.AimShipperIdPool_RecordPostResult
+    @Id = NULL, @Success = 1, @Error = NULL;
+DECLARE @NullIdStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @RR);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] RecordPostResult with a NULL Id returns Status = 0',
+    @Expected = N'0', @Actual = @NullIdStatus;
+
+-- RecordPostResult with a non-existent Id returns Status = 0 (not-found guard).
+DELETE FROM @RR;
+INSERT INTO @RR EXEC Lots.AimShipperIdPool_RecordPostResult
+    @Id = 99999999, @Success = 1, @Error = NULL;
+DECLARE @MissingIdStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @RR);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] RecordPostResult with a non-existent Id returns Status = 0',
+    @Expected = N'0', @Actual = @MissingIdStatus;
+
+-- GetForPost with a NULL AimShipperId returns an empty rowset, not an error.
+DELETE FROM @G;
+INSERT INTO @G EXEC Lots.AimShipperIdPool_GetForPost @AimShipperId = NULL;
+DECLARE @NullSerialRows NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @G);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] GetForPost returns empty for a NULL serial',
+    @Expected = N'0', @Actual = @NullSerialRows;
 GO
 
 EXEC test.EndTestFile;
