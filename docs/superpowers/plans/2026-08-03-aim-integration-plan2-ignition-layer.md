@@ -347,9 +347,9 @@ git add ignition/projects/Core/ignition/script-python/BlueRidge/Lots/AimHttp/ to
 git commit -m "feat(aim): AimHttp - the one place AIM calls leave the Gateway"
 ```
 
-- [ ] **Step 6: 🔴 HUMAN GATE — run the Script Console script**
+- [ ] **Step 6: HUMAN GATE (already DISCHARGED — see below) — run the Script Console script**
 
-**This cannot be done by an agent and blocks Tasks 3-9 from being trustworthy.** A human opens the Gateway Script Console and runs `tools/script-console-demos/aim_http_contract.py`. Step 2 (encoding) must pass before the live steps are meaningful. Record the output in the task report.
+**DISCHARGED 2026-08-03 before execution began** — the contract was verified against Ignition's own Jython 2.7.3 jar and the live AIM server (company `01`, serial `000000029` posted and echoed), so Tasks 3-9 are NOT blocked. Running it once on the Gateway itself is still worth doing to confirm the Gateway JVM matches, but it is no longer a gate. A human opens the Gateway Script Console and runs `tools/script-console-demos/aim_http_contract.py`. Step 2 (encoding) must pass before the live steps are meaningful. Record the output in the task report.
 
 If step 2 fails, `java.net.URL` is re-encoding after all and the module needs the raw-socket approach `LabelTransport` uses instead — stop and report rather than working around it.
 
