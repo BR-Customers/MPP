@@ -20,6 +20,8 @@ DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WH
 DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName = N'AIM-P1-FK-LOT';
 DELETE FROM Lots.Lot WHERE LotName = N'AIM-P1-FK-LOT';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-FK');
+-- Self-heal fixture (config-gap test block, PART = 'AIM-P1-HEAL').
+DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-HEAL');
 GO
 
 -- Run-Tests resets with -SkipDemoSeed: Lots.Container is EMPTY. Open our own
@@ -50,7 +52,8 @@ DECLARE @PoolId BIGINT = SCOPE_IDENTITY();
 
 -- GetForPost returns the payload.
 DECLARE @G TABLE (Id BIGINT, AimShipperId NVARCHAR(50), CustomerPartNumber NVARCHAR(50),
-                  Quantity INT, LotNumber NVARCHAR(50), PostedAt DATETIME2(3), PostAttempts INT);
+                  Quantity INT, LotNumber NVARCHAR(50), PostedAt DATETIME2(3), PostAttempts INT,
+                  ContainerId BIGINT, ItemPartNumber NVARCHAR(50));
 INSERT INTO @G EXEC Lots.AimShipperIdPool_GetForPost @AimShipperId = N'000900201';
 DECLARE @GotPart NVARCHAR(50) = (SELECT CustomerPartNumber FROM @G);
 EXEC test.Assert_IsEqual
@@ -153,6 +156,73 @@ DECLARE @NullSerialRows NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FR
 EXEC test.Assert_IsEqual
     @TestName = N'[0049] GetForPost returns empty for a NULL serial',
     @Expected = N'0', @Actual = @NullSerialRows;
+
+-- ---- Config-gap self-heal (the CRITICAL fix: a row snapshotted with a NULL
+-- CustomerPartNumber must rejoin to the live Parts.Item.AimCustomerPartNumber on
+-- every read, not stay NULL forever). ----
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-HEAL')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, AimCustomerPartNumber, CreatedAt, CreatedByUserId)
+    VALUES (3, N'AIM-P1-HEAL', N'AIM self-heal fixture part', 1, N'998877XX B111', SYSUTCDATETIME(), 1);
+DECLARE @HealItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-HEAL');
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @HealItem AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
+    VALUES (@HealItem, 1, 15, 0, N'ByCount', SYSUTCDATETIME());
+DECLARE @HealConfig BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @HealItem AND DeprecatedAt IS NULL);
+DECLARE @OH TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @OH EXEC Lots.Container_Open
+    @ItemId = @HealItem, @ContainerConfigId = @HealConfig, @CellLocationId = @FkCell, @AppUserId = @UserId;
+DECLARE @HealContainerId BIGINT = (SELECT NewId FROM @OH);
+
+-- Row A: snapshot NULL, item HAS a live AimCustomerPartNumber -> GetForPost must
+-- return the LIVE item value (the self-heal).
+INSERT INTO Lots.AimShipperIdPool
+    (AimShipperId, FetchedAt, ConsumedAt, ConsumedByContainerId, ConsumedByUserId,
+     CustomerPartNumber, Quantity, LotNumber)
+VALUES
+    (N'000900401', SYSUTCDATETIME(), SYSUTCDATETIME(), @HealContainerId, @UserId,
+     NULL, 15, N'000900401');
+DELETE FROM @G;
+INSERT INTO @G EXEC Lots.AimShipperIdPool_GetForPost @AimShipperId = N'000900401';
+DECLARE @HealedPart NVARCHAR(50) = (SELECT CustomerPartNumber FROM @G);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] GetForPost self-heals a NULL snapshot from the live item',
+    @Expected = N'998877XX B111', @Actual = @HealedPart;
+
+-- Row B: snapshot IS set, and differs from the item's current value -> GetForPost
+-- must return the FROZEN snapshot, not the live value (precedence check).
+INSERT INTO Lots.AimShipperIdPool
+    (AimShipperId, FetchedAt, ConsumedAt, ConsumedByContainerId, ConsumedByUserId,
+     CustomerPartNumber, Quantity, LotNumber)
+VALUES
+    (N'000900402', SYSUTCDATETIME(), SYSUTCDATETIME(), @HealContainerId, @UserId,
+     N'FROZEN-SNAPSHOT-999', 15, N'000900402');
+DELETE FROM @G;
+INSERT INTO @G EXEC Lots.AimShipperIdPool_GetForPost @AimShipperId = N'000900402';
+DECLARE @FrozenPart NVARCHAR(50) = (SELECT CustomerPartNumber FROM @G);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] GetForPost keeps a set snapshot over a differing live item value',
+    @Expected = N'FROZEN-SNAPSHOT-999', @Actual = @FrozenPart;
+
+-- GetForPost also surfaces ContainerId + ItemPartNumber for the config-gap modal.
+DECLARE @HealedContainerId BIGINT = (SELECT ContainerId FROM @G);
+DECLARE @HealContainerIdStr NVARCHAR(20) = CAST(@HealContainerId AS NVARCHAR(20));
+DECLARE @HealedContainerIdStr NVARCHAR(20) = CAST(@HealedContainerId AS NVARCHAR(20));
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] GetForPost returns the consuming ContainerId',
+    @Expected = @HealContainerIdStr, @Actual = @HealedContainerIdStr;
+
+DECLARE @HealedItemPart NVARCHAR(50) = (SELECT ItemPartNumber FROM @G);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] GetForPost returns the item PartNumber',
+    @Expected = N'AIM-P1-HEAL', @Actual = @HealedItemPart;
+
+-- ListUnposted applies the same self-heal for the supervisor screen.
+DELETE FROM @L;
+INSERT INTO @L EXEC Lots.AimShipperIdPool_ListUnposted @Top = 50;
+DECLARE @ListedHealedPart NVARCHAR(50) = (SELECT CustomerPartNumber FROM @L WHERE AimShipperId = N'000900401');
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] ListUnposted self-heals a NULL snapshot from the live item',
+    @Expected = N'998877XX B111', @Actual = @ListedHealedPart;
 GO
 
 EXEC test.EndTestFile;
@@ -176,4 +246,5 @@ DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WH
 DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName = N'AIM-P1-FK-LOT';
 DELETE FROM Lots.Lot WHERE LotName = N'AIM-P1-FK-LOT';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-FK');
+DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-HEAL');
 GO

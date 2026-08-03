@@ -49,7 +49,33 @@ VALUES
      N'112006FB A000', 15, N'000900301', 12, N'AIM rejected: echo');
 DECLARE @PoolId BIGINT = SCOPE_IDENTITY();
 
+-- A NULL or whitespace-only @Note is rejected -- the note IS the audit
+-- justification, so a blank one defeats the point. Run BEFORE the row is
+-- marked posted so the rejection is attributable to the blank note, not the
+-- already-posted guard.
 DECLARE @M TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @M EXEC Lots.AimShipperIdPool_MarkPosted
+    @Id = @PoolId, @AppUserId = @UserId, @Note = NULL;
+DECLARE @NullNoteStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @M);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] MarkPosted rejects a NULL note',
+    @Expected = N'0', @Actual = @NullNoteStatus;
+
+DELETE FROM @M;
+INSERT INTO @M EXEC Lots.AimShipperIdPool_MarkPosted
+    @Id = @PoolId, @AppUserId = @UserId, @Note = N'   ';
+DECLARE @BlankNoteStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @M);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] MarkPosted rejects a whitespace-only note',
+    @Expected = N'0', @Actual = @BlankNoteStatus;
+
+DECLARE @NotYetPosted NVARCHAR(10) = (SELECT CASE WHEN PostedAt IS NULL THEN N'1' ELSE N'0' END
+    FROM Lots.AimShipperIdPool WHERE Id = @PoolId);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] blank-note rejection leaves the row unposted',
+    @Expected = N'1', @Actual = @NotYetPosted;
+
+DELETE FROM @M;
 INSERT INTO @M EXEC Lots.AimShipperIdPool_MarkPosted
     @Id = @PoolId, @AppUserId = @UserId,
     @Note = N'Confirmed on AIM Unshipped Labels report';

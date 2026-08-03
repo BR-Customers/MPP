@@ -1,15 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Lots_AimShipperIdPool_MarkPosted.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0
+-- Version:     1.1
 -- Description: Human-confirmed resolution for a row stuck owed to AIM. If AIM
 --              accepted a post but the reply was lost, retry gets the rejection
 --              echo forever and AIM has no query endpoint to disambiguate - so a
 --              supervisor confirms the label on AIM's Unshipped Labels report and
 --              marks it posted here. Asserts something the MES cannot verify, so
 --              it is audited as a human decision with the supervisor's note.
---              Rejects an already-posted row. No OUTPUT params; single terminal
---              SELECT. RAISERROR in the CATCH.
+--              Rejects an already-posted row. Rejects a NULL or whitespace-only
+--              @Note -- the note IS the audit justification for an assertion the
+--              MES cannot verify, so a blank note would defeat the point. No
+--              OUTPUT params; single terminal SELECT. RAISERROR in the CATCH.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.AimShipperIdPool_MarkPosted
     @Id        BIGINT,
@@ -46,6 +48,13 @@ BEGIN
         IF EXISTS (SELECT 1 FROM Lots.AimShipperIdPool WHERE Id = @Id AND PostedAt IS NOT NULL)
         BEGIN
             SET @Message = N'This shipper ID is already recorded as posted to AIM.';
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        IF @Note IS NULL OR LTRIM(RTRIM(@Note)) = N''
+        BEGIN
+            SET @Message = N'A justification note is required to mark a shipper ID posted.';
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
         END

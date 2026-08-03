@@ -3,8 +3,9 @@
 -- Description:  Lots.AimShipperIdPool_Topup + _Claim (Arc 2 Phase 6 / UJ-04). Migration
 --               0049: the pool is part-agnostic (AIM's nextserial.csv takes no part
 --               parameter) -- FIFO by FetchedAt across the whole pool; OI-33 empty-pool
---               hard-fail is global. (@ContainerId is required by the genericized
---               _Claim signature; a container is opened as a fixture.)
+--               hard-fail is global. (@ContainerId was always a required parameter of
+--               _Claim; only @PartNumber was dropped by the genericization. A container
+--               is opened as a fixture.)
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;

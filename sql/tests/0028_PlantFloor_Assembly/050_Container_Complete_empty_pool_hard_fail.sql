@@ -56,7 +56,7 @@ BEGIN
     SET @t = @t + 1;
 END
 
--- pool is empty for this part (cleanup deleted it; no topup) -> complete must hard-fail
+-- pool is empty, globally (cleanup deleted it; no topup) -> complete must hard-fail
 DECLARE @R TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
 INSERT INTO @R EXEC Lots.Container_Complete @ContainerId = @Cid, @OperatorConfirmed = 1, @AppUserId = 1, @TerminalLocationId = @Cell;
 DECLARE @S NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R);

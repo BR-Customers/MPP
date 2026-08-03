@@ -2,6 +2,17 @@
 -- File: 0049_AimIntegration/010_schema.sql
 -- Desc: Migration 0049 - pool genericized, post-back columns, config columns,
 --       Parts.Item.AimCustomerPartNumber.
+--
+-- Convention (load-bearing, unwritten elsewhere): Lots.AimShipperIdPool is
+-- part-agnostic and global (Migration 0049). Any test in this suite that needs
+-- an AIM pool ID must blanket-`DELETE FROM Lots.AimShipperIdPool` on entry and
+-- top up its own IDs -- sql/seeds/028_seed_aim_pool_dev.sql's seeded IDs are
+-- destroyed by the first pool-touching test file that runs earlier in the suite
+-- and are NOT available mid-suite. This is exactly the failure mode that already
+-- passed filtered and failed full once: a test that assumes the seeded pool is
+-- still there. See sql/tests/0028_PlantFloor_Assembly/035_AimPool_claim_topup.sql
+-- and sql/tests/0049_AimIntegration/030_postback_procs.sql for the reference
+-- delete-then-insert-own-rows pattern.
 -- =============================================
 EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/010_schema.sql';
 GO

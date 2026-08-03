@@ -12,7 +12,7 @@
 --              defaults so existing callers passing only the original four still
 --              compile.
 --              v1.2: all five new params now default to NULL and are COALESCEd
---              against the existing row in the UPDATE (preserve-on-omit) — the
+--              against the existing row in the UPDATE (preserve-on-omit) -- the
 --              threshold-admin screen (AimPoolConfig view -> code.py update() ->
 --              AimPoolConfig_Update NQ) legitimately calls this proc with only the
 --              original four threshold arguments, and SQL Server applies proc
@@ -61,8 +61,8 @@ BEGIN
         -- @PostWarningAgeMinutes/@PostCriticalAgeMinutes arrive as NULL (their proc
         -- defaults) on that path. COALESCE against the existing column so an omitted
         -- parameter keeps the stored value instead of being blanked. Deliberate
-        -- consequence: this proc can never CLEAR a connection setting to NULL/empty —
-        -- only set it to a new value — since NULL-in reads as "leave unchanged."
+        -- consequence: this proc can never CLEAR a connection setting to NULL/empty --
+        -- only set it to a new value -- since NULL-in reads as "leave unchanged."
         UPDATE Lots.AimPoolConfig
            SET TargetBufferDepth      = @TargetBufferDepth,
                TopupThreshold         = @TopupThreshold,
