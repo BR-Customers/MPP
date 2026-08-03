@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_AimPoolConfig_Update.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.2
+-- Version:     1.3
 -- Description: Updates the single-row AIM pool config thresholds (Arc 2 Phase 7 admin;
 --              AD-elevated). Upserts the Id=1 row. Attribution via UpdatedAt /
 --              UpdatedByUserId. No OUTPUT params; single terminal SELECT @Status,@Message.
@@ -20,6 +20,10 @@
 --              NULL/NULL/NULL) that unconditionally overwrote the columns, every
 --              threshold-only save was silently NULLing the AIM connection settings
 --              and resetting the escalation ages. See sql/tests/0029.../040_AimPoolConfig.sql.
+--              v1.3 (Migration 0050): adds @AimPostingEnabled, same preserve-on-omit
+--              pattern (NULL = leave unchanged) as the v1.2 columns. This is the
+--              transport-layer gate AimHttp._config() reads before any AIM network
+--              call -- a four-arg threshold-only save must never silently flip it.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.AimPoolConfig_Update
@@ -32,6 +36,7 @@ CREATE OR ALTER PROCEDURE Lots.AimPoolConfig_Update
     @AimPathToken           NVARCHAR(50)  = NULL,
     @PostWarningAgeMinutes  INT           = NULL,
     @PostCriticalAgeMinutes INT           = NULL,
+    @AimPostingEnabled      BIT           = NULL,
     @AppUserId              BIGINT
 AS
 BEGIN
@@ -63,6 +68,9 @@ BEGIN
         -- parameter keeps the stored value instead of being blanked. Deliberate
         -- consequence: this proc can never CLEAR a connection setting to NULL/empty --
         -- only set it to a new value -- since NULL-in reads as "leave unchanged."
+        -- Same rule for @AimPostingEnabled: omitted (NULL) means "leave the gate as
+        -- it was," never "turn it off" or "turn it on" -- a four-arg threshold-only
+        -- save must not be able to silently flip the AIM transport gate either way.
         UPDATE Lots.AimPoolConfig
            SET TargetBufferDepth      = @TargetBufferDepth,
                TopupThreshold         = @TopupThreshold,
@@ -73,6 +81,7 @@ BEGIN
                AimPathToken           = COALESCE(@AimPathToken, AimPathToken),
                PostWarningAgeMinutes  = COALESCE(@PostWarningAgeMinutes, PostWarningAgeMinutes),
                PostCriticalAgeMinutes = COALESCE(@PostCriticalAgeMinutes, PostCriticalAgeMinutes),
+               AimPostingEnabled      = COALESCE(@AimPostingEnabled, AimPostingEnabled),
                UpdatedAt              = SYSUTCDATETIME(),
                UpdatedByUserId        = @AppUserId
          WHERE Id = 1;
@@ -80,15 +89,17 @@ BEGIN
             -- No existing row to preserve values from: connection settings land as
             -- whatever was passed (NULL if omitted); age columns fall back to their
             -- historical literal defaults (30/120) since ISNULL has no "unchanged" to
-            -- reach for.
+            -- reach for. AimPostingEnabled falls back to 0 (off) for the same reason --
+            -- the fail-safe default, never fail-open.
             INSERT INTO Lots.AimPoolConfig (
                 Id, TargetBufferDepth, TopupThreshold, AlarmWarningDepth, AlarmCriticalDepth,
                 AimBaseUrl, AimCompanyCode, AimPathToken, PostWarningAgeMinutes, PostCriticalAgeMinutes,
-                UpdatedAt, UpdatedByUserId)
+                AimPostingEnabled, UpdatedAt, UpdatedByUserId)
             VALUES (
                 1, @TargetBufferDepth, @TopupThreshold, @AlarmWarningDepth, @AlarmCriticalDepth,
                 @AimBaseUrl, @AimCompanyCode, @AimPathToken,
                 ISNULL(@PostWarningAgeMinutes, 30), ISNULL(@PostCriticalAgeMinutes, 120),
+                ISNULL(@AimPostingEnabled, 0),
                 SYSUTCDATETIME(), @AppUserId);
         COMMIT TRANSACTION;
 

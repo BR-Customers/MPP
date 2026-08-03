@@ -8,4 +8,5 @@ EXEC Lots.AimPoolConfig_Update
     @AimPathToken           = :aimPathToken,
     @PostWarningAgeMinutes  = :postWarningAgeMinutes,
     @PostCriticalAgeMinutes = :postCriticalAgeMinutes,
+    @AimPostingEnabled      = :aimPostingEnabled,
     @AppUserId              = :appUserId

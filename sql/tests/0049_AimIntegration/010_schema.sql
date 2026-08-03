@@ -65,6 +65,22 @@ DECLARE @Defaults NVARCHAR(20) = (SELECT
 EXEC test.Assert_IsEqual
     @TestName = N'[0049] escalation defaults 30/120 on the config row',
     @Expected = N'30/120', @Actual = @Defaults;
+
+-- Migration 0050: the transport-layer gate. AIM calls consume serials that can
+-- never be handed back, so the integration must ship inert until deliberately
+-- enabled per environment -- assert both that the column exists and that its
+-- seeded value on the Id=1 row is 0 (off).
+DECLARE @GateCol NVARCHAR(10) =
+    CASE WHEN COL_LENGTH(N'Lots.AimPoolConfig', N'AimPostingEnabled') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[0050] AimPoolConfig.AimPostingEnabled column present',
+    @Expected = N'1', @Actual = @GateCol;
+
+DECLARE @GateVal NVARCHAR(10) = (SELECT CAST(AimPostingEnabled AS NVARCHAR(10))
+    FROM Lots.AimPoolConfig WHERE Id = 1);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0050] AimPostingEnabled seeded 0 (off) on the config row',
+    @Expected = N'0', @Actual = @GateVal;
 GO
 
 EXEC test.EndTestFile;

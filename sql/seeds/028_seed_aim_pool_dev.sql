@@ -10,10 +10,23 @@
 -- 9-digit zero-padded numeric serial; these fabricated IDs will NEVER post
 -- successfully to AIM even once AimPostTimer is enabled -- they exist only so
 -- Lots.Container_Complete has something to claim during offline dev/smoke runs.
--- A realistic Dev exercise of the post path means clearing this pool
--- (TRUNCATE / DELETE Lots.AimShipperIdPool WHERE ConsumedAt IS NULL) and letting
--- Lots.AimShipperIdPool_Topup / the topupTick loop fetch real IDs from AIM
--- company 01 (MPP's TEST company) instead.
+--
+-- DO NOT simply clear this pool and expect topupTick to fetch real IDs. Real AIM
+-- traffic is gated TWICE, deliberately, because a fetched or posted AIM serial can
+-- never be handed back:
+--   1. Lots.AimPoolConfig.AimPostingEnabled (Migration 0050) -- read by
+--      BlueRidge.Lots.AimHttp._config() before EVERY nextSerial()/postSerial() call.
+--      Defaults to 0 (off); this seed does NOT set it.
+--   2. The AimPoolTopupTimer and AimPostTimer gateway timers -- both ship with
+--      "enabled": false in their resource.json.
+-- A realistic Dev exercise of the post path requires DELIBERATELY turning ON both
+-- AimPostingEnabled (via the AIM Pool Config admin screen) AND the relevant timer(s)
+-- first, THEN clearing this pool (TRUNCATE / DELETE Lots.AimShipperIdPool WHERE
+-- ConsumedAt IS NULL) so Lots.AimShipperIdPool_Topup / the topupTick loop fetches
+-- real IDs from AIM company 01 (MPP's TEST company) instead. Doing this out of order
+-- -- e.g. clearing the pool while the gate is still off -- is harmless (the loop
+-- simply returns the disabled error and fetches nothing); doing it with the gate ON
+-- against the wrong company code is not.
 --
 -- Range: 999000001-999000500 (9 digits, all-numeric). Chosen to be unreachable by
 -- any real AIM counter: company 01 (test) is running near 000000031 as of this

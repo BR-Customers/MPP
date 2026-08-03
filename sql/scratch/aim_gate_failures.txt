@@ -1,0 +1,6 @@
+  ERROR running 060_Lot_GetWipQueueByLocation.sql: sqlcmd failed on 060_Lot_GetWipQueueByLocation.sql (exit 1)
+  ERROR running 060_OperatorChange_Log.sql: sqlcmd failed on 060_OperatorChange_Log.sql (exit 1)
+  ERROR running 070_MachiningOut_Mint.sql: sqlcmd failed on 070_MachiningOut_Mint.sql (exit 1)
+  ERROR running 076_Assembly_ScanIn.sql: sqlcmd failed on 076_Assembly_ScanIn.sql (exit 1)
+  ERROR running 077_Lot_Search.sql: sqlcmd failed on 077_Lot_Search.sql (exit 1)
+  ERROR running 100_Lot_GetLineInventoryByPart.sql: sqlcmd failed on 100_Lot_GetLineInventoryByPart.sql (exit 1)

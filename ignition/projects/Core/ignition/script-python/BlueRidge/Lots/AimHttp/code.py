@@ -22,7 +22,16 @@
    A reply beginning 'POST ' is the listener's unrecognized-request echo = rejected.
 
    Neither function raises. Both return an outcome dict. Bounded timeouts: a container
-   completion must never hang on AIM."""
+   completion must never hang on AIM.
+
+   THIS is the transport-layer gate (Migration 0050): both nextSerial() and postSerial()
+   check Lots.AimPoolConfig.AimPostingEnabled FIRST, before anything else, and make NO
+   network call when it is false (the shipped default). AIM calls consume serials that
+   can never be handed back, so the gate lives here -- the ONE place a call leaves the
+   Gateway -- rather than in any individual caller (Container.complete's synchronous
+   path, AimPostTimer's retry sweep, AimPoolTopupTimer's commissioning loop). A timer's
+   "enabled": false in resource.json only stops that timer from firing; it cannot stop a
+   different caller reaching this module directly."""
 import re
 
 _BS = chr(92)   # literal backslash. Built via chr() ON PURPOSE: this is the single most
@@ -33,14 +42,21 @@ _TIMEOUT_MS = 5000
 _NINE_DIGITS = re.compile(r"^\d{9}$")
 
 
+_POSTING_DISABLED_ERROR = "AIM posting is disabled in AIM Pool configuration."
+
+
 def _config():
-    """Read AIM connection settings from the single-row Lots.AimPoolConfig.
-       Returns (baseUrl, companyCode, pathToken); any may be None when unconfigured."""
+    """Read AIM connection settings + the posting-enabled gate from the single-row
+       Lots.AimPoolConfig. Returns (baseUrl, companyCode, pathToken, postingEnabled);
+       the first three may be None when unconfigured. postingEnabled is coerced to a
+       bool and defaults to False (fail-safe, never fail-open) both when the config
+       row is missing and when the column reads NULL/0."""
     rows = BlueRidge.Common.Db.execList("lots/AimPoolConfig_Get") or []
     if not rows:
-        return (None, None, None)
+        return (None, None, None, False)
     r = rows[0]
-    return (r.get("AimBaseUrl"), r.get("AimCompanyCode"), r.get("AimPathToken"))
+    return (r.get("AimBaseUrl"), r.get("AimCompanyCode"), r.get("AimPathToken"),
+            bool(r.get("AimPostingEnabled")))
 
 
 def _configError(base, company, token):
@@ -56,14 +72,42 @@ def _configError(base, company, token):
     return "AIM connection is not configured: missing %s." % ", ".join(missing)
 
 
+_UNRESERVED = frozenset(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+
+
 def _urlEncodePayload(text):
-    """Percent-encode the postserial payload. Only two characters need encoding for
-       our field set: backslash (the literal escape marker) and space (significant
-       inside a customer part number). Everything else in a serial / part / qty / lot
-       is URL-safe. Deliberately hand-rolled rather than java.net.URLEncoder, which
-       encodes space as '+' - AIM expects %20."""
-    out = text.replace(_BS, "%5C").replace(" ", "%20")
-    return out
+    """Percent-encode the postserial payload against a WHITELIST (RFC 3986's
+       unreserved set: letters, digits, '-', '.', '_', '~'), not a blacklist of the
+       two characters our own delimiter/space use happened to need. A blacklist
+       misses every other query-string metacharacter, and this field set is NOT
+       machine-only data - Lots.Lot_Create accepts a caller-supplied @LotName (a
+       pre-printed LTT) and AimCustomerPartNumber is free text typed into Item
+       Master, so '#', '&', '%', '+', '=', quotes, etc. can all show up here.
+
+       Each SOURCE character is mapped exactly once (no sequential .replace() calls
+       chained on top of each other's output), so there is no risk of double-encoding
+       an escape this function just inserted - e.g. re-encoding the '%' in a '%5C' it
+       wrote a moment earlier. That single-pass property is what makes this safe
+       without having to reason about ordering:
+         - our own backslash delimiter marker (0x5C)        -> %5C
+         - the significant embedded space (0x20)             -> %20 (NEVER '+' -
+           AIM expects %20, unlike java.net.URLEncoder / application/x-www-form-
+           urlencoded's '+')
+         - a literal '%' in source text (0x25)                -> %25
+         - '#' (truncates a query string - AIM never sees anything after it)
+         - '&' and '=' (delimiter characters - corrupt the fixed <BS>t-delimited
+           format or get parsed as extra query pairs)
+         - '+' (decodes to a space server-side in many implementations, corrupting
+           a literal '+' and colliding with our explicit %20 space encoding)
+       and anything else outside the unreserved set, without needing to enumerate it."""
+    out = []
+    for ch in text:
+        if ch in _UNRESERVED:
+            out.append(ch)
+        else:
+            out.append("%%%02X" % ord(ch))
+    return "".join(out)
 
 
 def _buildPostQuery(serial, customerPart, qty, lot):
@@ -178,8 +222,13 @@ def _normalizeSerial(value):
 
 def nextSerial():
     """Fetch the next AIM shipper ID for the configured company code.
-       Returns {ok, serial, error}. Never raises."""
-    base, company, token = _config()
+       Returns {ok, serial, error}. Never raises.
+
+       Checks AimPostingEnabled FIRST - no network call is made when it is false,
+       regardless of whether the connection settings are otherwise complete."""
+    base, company, token, postingEnabled = _config()
+    if not postingEnabled:
+        return {"ok": False, "serial": None, "error": _POSTING_DISABLED_ERROR}
     if not base or not company or not token:
         return {"ok": False, "serial": None, "error": _configError(base, company, token)}
     url = "%s/mes/floor/%s/%s/nextserial.csv" % (base, company, token)
@@ -201,8 +250,13 @@ def postSerial(serial, customerPart, qty, lot):
        Success is an EXACT match: AIM echoes back the serial it accepted. `serial`
        is normally the zero-padded 9-digit string nextSerial() returned, but a bare
        int is also accepted - both are zero-padded via _normalizeSerial() before
-       comparison against AIM's echo."""
-    base, company, token = _config()
+       comparison against AIM's echo.
+
+       Checks AimPostingEnabled FIRST - no network call is made when it is false,
+       regardless of whether the connection settings are otherwise complete."""
+    base, company, token, postingEnabled = _config()
+    if not postingEnabled:
+        return {"ok": False, "error": _POSTING_DISABLED_ERROR}
     if not base or not company or not token:
         return {"ok": False, "error": _configError(base, company, token)}
     query = _buildPostQuery(serial, customerPart, qty, lot)

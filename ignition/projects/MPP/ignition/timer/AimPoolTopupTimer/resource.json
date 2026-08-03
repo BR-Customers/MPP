@@ -8,10 +8,10 @@
     "delay": 30000,
     "fixedDelay": true,
     "sharedThread": true,
-    "enabled": true,
+    "enabled": false,
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-06-19T12:00:00Z"
+      "timestamp": "2026-08-03T18:00:00Z"
     }
   }
 }

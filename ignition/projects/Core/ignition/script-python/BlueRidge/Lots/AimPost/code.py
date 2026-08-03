@@ -20,11 +20,20 @@
 def postOne(aimShipperId):
     """Post one owed serial to AIM and record the outcome.
        Returns {ok, outcome, error, itemPartNumber}. Outcomes:
-         posted           - AIM accepted it
-         already_posted   - nothing owed; no call made
-         not_found        - no such pool row
-         no_customer_part - item has no AimCustomerPartNumber; NO call made
-         failed           - AIM refused or was unreachable"""
+         posted             - AIM accepted it
+         already_posted     - nothing owed; no call made
+         not_found          - no such pool row
+         no_customer_part   - item has no AimCustomerPartNumber; NO call made
+         incomplete_payload - LotNumber and/or Quantity is NULL on the pool row;
+                               NO call made. Reachable e.g. because
+                               ContainerTray_Close never sets FinishedGoodLotId
+                               and a caller (AssemblyPlc) can complete a container
+                               without ever routing through the proc that does.
+                               AIM has no acceptable placeholder for a missing lot
+                               or quantity - str(None) would silently ship the
+                               literal text "None" on a Honda-facing label, which
+                               is worse than not posting at all.
+         failed              - AIM refused or was unreachable"""
     from java.lang import Throwable
     try:
         rows = BlueRidge.Lots.AimPool.getForPost(aimShipperId) or []
@@ -39,14 +48,31 @@ def postOne(aimShipperId):
 
         customerPart = row.get("CustomerPartNumber")
         itemPartNumber = row.get("ItemPartNumber")
+        lotNumber = row.get("LotNumber")
+        quantity = row.get("Quantity")
         if not customerPart:
             msg = "No AIM customer part configured for %s." % (itemPartNumber or "this item")
             BlueRidge.Lots.AimPool.recordPostResult(row.get("Id"), False, msg)
             return {"ok": False, "outcome": "no_customer_part", "error": msg,
                     "itemPartNumber": itemPartNumber}
 
+        # Never let str(None) reach AIM as the literal text "None" for a missing
+        # lot number or quantity - treat it the same as a missing customer part:
+        # do not call AIM, record why, let the operator/supervisor see it plainly.
+        if lotNumber is None or quantity is None:
+            missing = []
+            if lotNumber is None:
+                missing.append("lot number")
+            if quantity is None:
+                missing.append("quantity")
+            msg = "AIM payload incomplete for %s: missing %s." % (
+                itemPartNumber or "this item", " and ".join(missing))
+            BlueRidge.Lots.AimPool.recordPostResult(row.get("Id"), False, msg)
+            return {"ok": False, "outcome": "incomplete_payload", "error": msg,
+                    "itemPartNumber": itemPartNumber}
+
         res = BlueRidge.Lots.AimHttp.postSerial(
-            aimShipperId, customerPart, row.get("Quantity"), row.get("LotNumber"))
+            aimShipperId, customerPart, quantity, lotNumber)
         BlueRidge.Lots.AimPool.recordPostResult(
             row.get("Id"), res.get("ok"), res.get("error"))
         if res.get("ok"):

@@ -1,6 +1,6 @@
 {
   "scope": "DG",
-  "version": 2,
+  "version": 3,
   "restricted": false,
   "overridable": true,
   "files": [
@@ -27,7 +27,7 @@
     ],
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-08-03T12:00:00Z"
+      "timestamp": "2026-08-03T18:00:00Z"
     },
     "parameters": [
       { "type": "Parameter", "identifier": "targetBufferDepth", "sqlType": 2 },
@@ -39,6 +39,7 @@
       { "type": "Parameter", "identifier": "aimPathToken", "sqlType": 7 },
       { "type": "Parameter", "identifier": "postWarningAgeMinutes", "sqlType": 3 },
       { "type": "Parameter", "identifier": "postCriticalAgeMinutes", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "aimPostingEnabled", "sqlType": 6 },
       { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 }
     ]
   }
