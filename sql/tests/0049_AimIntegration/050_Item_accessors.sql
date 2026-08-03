@@ -51,6 +51,23 @@ EXEC test.Assert_IsEqual
     @TestName = N'[0049] setting NULL clears the value',
     @Expected = N'1', @Actual = @Cleared;
 
+-- A real item with no AIM part configured must still return a row -
+-- Item_GetAimCustomerPartNumber deliberately does NOT filter
+-- AND AimCustomerPartNumber IS NOT NULL (unlike Item_GetPlcId), because a NULL
+-- AIM customer part is a normal "doesn't ship to Honda" state, not a not-found
+-- state. Do not "simplify" this proc to match Item_GetPlcId's filter.
+DELETE FROM @G;
+INSERT INTO @G EXEC Parts.Item_GetAimCustomerPartNumber @ItemId = @ItemId;
+DECLARE @ClearedRowCount NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @G);
+EXEC test.Assert_IsEqual
+    @TestName = N'[0049] get on a real item with NULL AIM part still returns one row (not not-found)',
+    @Expected = N'1', @Actual = @ClearedRowCount;
+
+DECLARE @ClearedValue NVARCHAR(50) = (SELECT AimCustomerPartNumber FROM @G);
+EXEC test.Assert_IsNull
+    @TestName = N'[0049] get on a real item with NULL AIM part returns NULL value, not an empty rowset',
+    @Value = @ClearedValue;
+
 -- Unknown item is rejected, not silently ignored.
 DELETE FROM @S;
 INSERT INTO @S EXEC Parts.Item_SetAimCustomerPartNumber
