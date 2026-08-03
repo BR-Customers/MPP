@@ -1,0 +1,61 @@
+{
+  "custom": { "ltt": "", "overfill": false },
+  "params": {
+    "lotId": null, "lotName": "", "cavityNumber": "",
+    "headroom": 0, "good": 0, "remainder": 0
+  },
+  "propConfig": {
+    "params.lotId":        { "paramDirection": "input" },
+    "params.lotName":      { "paramDirection": "input" },
+    "params.cavityNumber": { "paramDirection": "input" },
+    "params.headroom":     { "paramDirection": "input" },
+    "params.good":         { "paramDirection": "input" },
+    "params.remainder":    { "paramDirection": "input" }
+  },
+  "props": { "defaultSize": { "height": 96, "width": 520 } },
+  "root": {
+    "type": "ia.container.flex", "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "pf-inventory-row", "gap": "6px" } },
+    "children": [
+      {
+        "type": "ia.display.label", "meta": { "name": "Desc" },
+        "propConfig": { "props.text": { "binding": { "type": "expr", "config": {
+          "expression": "\"Cavity \" + toStr({view.params.cavityNumber}) + \"  ·  \" + {view.params.lotName} + \" — basket full. Submitting \" + toStr({view.params.good}) + \" pc: \" + toStr({view.params.headroom}) + \" fits, \" + toStr({view.params.remainder}) + \" overflow.\""
+        } } } },
+        "props": { "text": "", "style": { "fontWeight": 600 } }
+      },
+      {
+        "type": "ia.container.flex", "meta": { "name": "ControlRow" },
+        "props": { "direction": "row", "alignItems": "center", "style": { "gap": "10px" } },
+        "children": [
+          {
+            "type": "ia.input.checkbox", "meta": { "name": "OverfillCheck" },
+            "position": { "shrink": 0 },
+            "propConfig": { "props.selected": { "binding": { "type": "property", "config": {
+              "bidirectional": true, "path": "view.custom.overfill" } } } },
+            "props": { "text": "Overfill this basket" },
+            "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G", "config": {
+              "script": "\tself.view.getChild(\"root\").sendDecision()" } } } }
+          },
+          {
+            "type": "ia.input.text-field", "meta": { "name": "LttInput" },
+            "position": { "basis": "0", "grow": 1, "shrink": 1 },
+            "propConfig": {
+              "props.text": { "binding": { "type": "property", "config": {
+                "bidirectional": true, "path": "view.custom.ltt" } } },
+              "position.display": { "binding": { "type": "expr", "config": {
+                "expression": "!{view.custom.overfill}" } } }
+            },
+            "props": { "placeholder": "Scan new LTT for the overflow basket",
+                       "style": { "classes": "pf-field-input-mono" } },
+            "events": { "dom": { "onBlur": { "type": "script", "scope": "G", "config": {
+              "script": "\tself.view.getChild(\"root\").sendDecision()" } } } }
+          }
+        ]
+      }
+    ],
+    "scripts": { "customMethods": [
+      { "name": "sendDecision", "params": [], "script": "\tmode = \"overfill\" if self.view.custom.overfill else \"fill\"\n\tsystem.perspective.sendMessage(\"overflowDecisionChanged\", payload={\"lotId\": self.view.params.lotId, \"mode\": mode, \"ltt\": self.view.custom.ltt or \"\"}, scope=\"page\")" }
+    ] }
+  }
+}

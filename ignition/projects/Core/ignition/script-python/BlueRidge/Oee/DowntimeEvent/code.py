@@ -1,6 +1,4 @@
 """BlueRidge.Oee.DowntimeEvent - downtime lifecycle + end-of-shift entry + shift-end summary (Arc 2 Phase 8)."""
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
 
 
 def start(locationId, downtimeSourceCodeId=None, downtimeReasonCodeId=None, shotCount=None, appUserId=None, terminalLocationId=None):

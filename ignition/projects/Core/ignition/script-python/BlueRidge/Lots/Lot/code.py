@@ -4,9 +4,6 @@
    the session-resolved current user when the caller passes None; the plant
    floor passes appUserId / terminalLocationId explicitly."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)

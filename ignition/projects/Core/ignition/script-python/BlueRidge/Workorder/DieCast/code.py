@@ -10,9 +10,6 @@
      registerShotLoss(toolId, shiftId, defectCodeId, quantity,
                        appUserId=None, terminalLocationId=None)              -> {Status, Message, NewId}"""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)

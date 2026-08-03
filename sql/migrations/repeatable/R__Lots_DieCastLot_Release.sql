@@ -2,7 +2,13 @@
 -- Repeatable:  R__Lots_DieCastLot_Release.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-07-29
--- Version:     1.0
+-- Version:     1.1
+-- Change:      v1.1 -- pre-transaction defect-code validation: every
+--              @ScrapLinesJson[].defectCodeId must exist and be active in
+--              Quality.DefectCode, else GOTO Fail with a clean Status=0
+--              instead of an in-transaction FK RAISERROR (mirrors
+--              RejectEvent_Record's DeprecatedAt check; parity with
+--              R__Workorder_DieCastShiftOutput_Record.sql's identical fix).
 -- Description: Die-Cast Per-Cavity Lifecycle (plan docs/superpowers/plans/
 --              2026-07-28-diecast-per-cavity-lifecycle.md), Task 6 / Phase 3.
 --              Closes an open accumulator basket: Open -> Good, moved from its
@@ -84,6 +90,15 @@ BEGIN
 
         IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) <> 1
         BEGIN SET @Message = N'ScrapLinesJson is not valid JSON.'; GOTO Fail; END
+
+        -- every scrap defectCodeId must exist and be active -- rejects gracefully
+        -- here instead of hitting the FK constraint mid-transaction (mirrors
+        -- R__Workorder_RejectEvent_Record.sql's DeprecatedAt check)
+        IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) = 1 AND EXISTS (
+            SELECT 1 FROM OPENJSON(@ScrapLinesJson) WITH (defectCodeId BIGINT N'$.defectCodeId') s
+            WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Id = s.defectCodeId AND dc.DeprecatedAt IS NULL)
+        )
+        BEGIN SET @Message = N'One or more scrap defect codes are invalid or deprecated.'; GOTO Fail; END
 
         -- mirrors DieCastShiftOutput_Record's negative-delta guard + DieCastContribution's
         -- CHECK (PieceDelta >= 0): a negative @FinalPieceDelta must reject, not silently

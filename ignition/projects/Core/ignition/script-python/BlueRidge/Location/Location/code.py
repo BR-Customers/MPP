@@ -154,6 +154,22 @@ def getFilteredList(nameFilter):
     return nodes
 
 
+def _seedAttrValue(rawValue, dataType):
+    """Form-init value for an attribute-editor row. A BIT attribute with no
+       persisted value seeds to '0' (false / unchecked) instead of ''.
+
+       An empty string renders the SAME unchecked checkbox but is treated as
+       "no value" by Location_SaveAll -- so a REQUIRED BIT (e.g. Terminal's
+       HasBarcodeScanner) is rejected on save until the operator toggles the
+       box, and to land on false they must click it twice ('' -> '1' -> '0').
+       Seeding '0' gives a valid unchecked default that submits as-is. Non-BIT
+       types keep '' so their text field shows its placeholder."""
+    v = rawValue if rawValue is not None else ""
+    if v == "" and (dataType or "").upper() == "BIT":
+        return "0"
+    return v
+
+
 def getAttributesByLocation(locationId):
     """
     Returns all attribute values for a Location, ordered by definition
@@ -182,7 +198,7 @@ def getAttributesByLocation(locationId):
             "id":           r.get("Id"),
             "definitionId": r.get("LocationAttributeDefinitionId"),
             "name":         r.get("AttributeName") or "",
-            "value":        r.get("AttributeValue") or "",
+            "value":        _seedAttrValue(r.get("AttributeValue"), r.get("DataType")),
             "dataType":     r.get("DataType") or "",
             "uom":          r.get("Uom") or "",
             "required":     bool(r.get("IsRequired")),
@@ -655,7 +671,7 @@ def buildAttributesForType(locationTypeDefinitionId, locationId=None):
                 "id":           r.get("Id"),
                 "definitionId": r.get("LocationAttributeDefinitionId"),
                 "name":         r.get("AttributeName") or "",
-                "value":        r.get("AttributeValue") or "",
+                "value":        _seedAttrValue(r.get("AttributeValue"), r.get("DataType")),
                 "dataType":     r.get("DataType") or "",
                 "uom":          r.get("Uom") or "",
                 "required":     bool(r.get("IsRequired")),
@@ -675,7 +691,7 @@ def buildAttributesForType(locationTypeDefinitionId, locationId=None):
             "id":           None,
             "definitionId": d.get("Id"),
             "name":         d.get("AttributeName") or "",
-            "value":        d.get("DefaultValue") or "",
+            "value":        _seedAttrValue(d.get("DefaultValue"), d.get("DataType")),
             "dataType":     d.get("DataType") or "",
             "uom":          d.get("Uom") or "",
             "required":     bool(d.get("IsRequired")),

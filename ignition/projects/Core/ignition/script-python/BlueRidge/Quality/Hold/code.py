@@ -6,9 +6,6 @@
    operator via BlueRidge.Common.Util._currentAppUserId() when None. Each entry
    logs at default INFO."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def place(holdTypeCodeId, lotId=None, containerId=None, reason=None, appUserId=None, terminalLocationId=None):
     """Place a hold on exactly one of a LOT or a Container. Rejects if an open hold

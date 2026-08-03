@@ -6,9 +6,6 @@
    this module adds the manager reads + edits. ET datetimes are passed as
    'yyyy-MM-dd HH:mm:ss' wall-clock strings (the proc converts ET->UTC)."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def _u(v):
     return BlueRidge.Common.Util.extractQualifiedValues(v)

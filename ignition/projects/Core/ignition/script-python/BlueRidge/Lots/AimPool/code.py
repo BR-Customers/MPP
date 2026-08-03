@@ -6,9 +6,6 @@
    operator when None. topup is system-driven (the AIM fetch loop), so it carries
    no appUserId."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def topup(partNumber, aimShipperId, fetchedInterfaceLogId=None):
     """Add a fetched AIM shipper ID to the pool for a part number, optionally

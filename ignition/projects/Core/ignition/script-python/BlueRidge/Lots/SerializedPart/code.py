@@ -5,9 +5,6 @@
    logs at default INFO. Routes through BlueRidge.Common.Db.execMutation;
    appUserId defaults to the current operator when None."""
 
-import BlueRidge.Common.Db
-import BlueRidge.Common.Util
-
 
 def mint(itemId, producingLotId, appUserId=None, terminalLocationId=None,
          serialNumber=None):

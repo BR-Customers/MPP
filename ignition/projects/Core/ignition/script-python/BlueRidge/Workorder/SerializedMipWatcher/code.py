@@ -13,12 +13,6 @@
    (spec Sec 5.1/5.3). All mutations attribute to the system AppUser.
 """
 
-import BlueRidge.Common.Util
-import BlueRidge.Workorder.PlcWatcher
-import BlueRidge.Workorder.Assembly
-import BlueRidge.Location.Terminal
-import BlueRidge.Lots.SerializedPart
-import BlueRidge.Lots.Lot
 
 _TRIGGERS = ("DataReady", "PartComplete")
 

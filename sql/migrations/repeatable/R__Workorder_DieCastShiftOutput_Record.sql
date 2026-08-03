@@ -2,7 +2,13 @@
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-07-29
--- Version:     1.0
+-- Version:     1.1
+-- Change:      v1.1 -- pre-transaction defect-code validation: every
+--              scrapLines[].defectCodeId (across all lines) and every
+--              shotLoss[].defectCodeId must exist and be active in
+--              Quality.DefectCode, else GOTO Fail with a clean Status=0
+--              instead of an in-transaction FK RAISERROR (mirrors
+--              RejectEvent_Record's DeprecatedAt check).
 -- Description: Die-Cast Per-Cavity Lifecycle plan, Task 4 / Phase 2. The
 --              shift-output recording WRITE proc: fans the operator-confirmed
 --              per-cavity-lot split (Workorder.DieCast_GetShiftOutputBreakdown,
@@ -80,6 +86,21 @@ BEGIN
                    WHERE l.Id IS NULL OR sc.Code <> N'Open' OR l.ToolId <> @ToolId)
         BEGIN SET @Message=N'A submitted lot is not an open basket on this tool.'; GOTO Fail; END
         IF EXISTS (SELECT 1 FROM @Lines WHERE PieceDelta < 0) BEGIN SET @Message=N'pieceDelta cannot be negative.'; GOTO Fail; END
+
+        -- every scrap/shot-loss defectCodeId must exist and be active -- rejects
+        -- gracefully here instead of hitting the FK constraint mid-transaction
+        -- (mirrors R__Workorder_RejectEvent_Record.sql's DeprecatedAt check)
+        IF EXISTS (
+            SELECT 1 FROM @Lines ln
+            CROSS APPLY OPENJSON(ln.ScrapLines) WITH (defectCodeId BIGINT N'$.defectCodeId') s
+            WHERE ln.ScrapLines IS NOT NULL AND ISJSON(ln.ScrapLines) = 1
+              AND NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Id = s.defectCodeId AND dc.DeprecatedAt IS NULL)
+        )
+        OR (@ShotLossJson IS NOT NULL AND ISJSON(@ShotLossJson) = 1 AND EXISTS (
+            SELECT 1 FROM OPENJSON(@ShotLossJson) WITH (defectCodeId BIGINT N'$.defectCodeId') sl
+            WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Id = sl.defectCodeId AND dc.DeprecatedAt IS NULL)
+        ))
+        BEGIN SET @Message=N'One or more scrap/shot-loss defect codes are invalid or deprecated.'; GOTO Fail; END
 
         -- ===== mutation =====
         BEGIN TRANSACTION;
