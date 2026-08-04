@@ -16,146 +16,7 @@
       }
     ],
     "query": "",
-    "results": [
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784215629056
-          ],
-          "$ts": 1784138165344
-        },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 6,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000006",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 93,
-        "TotalCount": 6,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784215629056
-          ],
-          "$ts": 1784138157211
-        },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 5,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000005",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 96,
-        "TotalCount": 6,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784215629056
-          ],
-          "$ts": 1784138149346
-        },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 4,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000004",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 79,
-        "TotalCount": 6,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784215629056
-          ],
-          "$ts": 1784138141346
-        },
-        "CurrentLocationId": 181,
-        "CurrentLocationName": "Warehouse",
-        "Id": 3,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000003",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 96,
-        "TotalCount": 6,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784215629056
-          ],
-          "$ts": 1784137991497
-        },
-        "CurrentLocationId": 81,
-        "CurrentLocationName": "5G0 Front",
-        "Id": 2,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000002",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 70,
-        "TotalCount": 6,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784215629056
-          ],
-          "$ts": 1784137981733
-        },
-        "CurrentLocationId": 81,
-        "CurrentLocationName": "5G0 Front",
-        "Id": 1,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000001",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 96,
-        "TotalCount": 6,
-        "VendorLotNumber": null
-      }
-    ],
+    "results": [],
     "statusId": null,
     "statusOptions": [
       {
@@ -169,6 +30,10 @@
       {
         "label": "Hold",
         "value": 2
+      },
+      {
+        "label": "Open",
+        "value": 5
       },
       {
         "label": "Scrap",
@@ -293,7 +158,8 @@
               "direction": "column",
               "style": {
                 "gap": "4px",
-                "minWidth": "240px"
+                "minWidth": "240px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -446,7 +312,8 @@
               "direction": "column",
               "style": {
                 "gap": "4px",
-                "minWidth": "160px"
+                "minWidth": "160px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -518,7 +385,8 @@
           "alignItems": "flex-end",
           "style": {
             "flexWrap": "wrap",
-            "gap": "12px"
+            "gap": "12px",
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
