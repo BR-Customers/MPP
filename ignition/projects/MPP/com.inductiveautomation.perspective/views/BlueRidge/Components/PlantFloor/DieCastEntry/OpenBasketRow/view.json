@@ -1,107 +1,187 @@
 {
   "custom": {},
   "params": {
-    "toolCavityId": null,
     "cavityNumber": "",
+    "contributorCount": 0,
     "lotId": null,
     "lotName": "",
-    "pieceCount": 0,
-    "contributorCount": 0,
     "openedAtDisplay": "",
+    "pieceCount": 0,
+    "toolCavityId": null,
     "voidEligible": false
   },
   "propConfig": {
-    "params.toolCavityId": { "paramDirection": "input" },
-    "params.cavityNumber": { "paramDirection": "input" },
-    "params.lotId": { "paramDirection": "input" },
-    "params.lotName": { "paramDirection": "input" },
-    "params.pieceCount": { "paramDirection": "input" },
-    "params.contributorCount": { "paramDirection": "input" },
-    "params.openedAtDisplay": { "paramDirection": "input" },
-    "params.voidEligible": { "paramDirection": "input" }
+    "params.cavityNumber": {
+      "paramDirection": "input"
+    },
+    "params.contributorCount": {
+      "paramDirection": "input"
+    },
+    "params.lotId": {
+      "paramDirection": "input"
+    },
+    "params.lotName": {
+      "paramDirection": "input"
+    },
+    "params.openedAtDisplay": {
+      "paramDirection": "input"
+    },
+    "params.pieceCount": {
+      "paramDirection": "input"
+    },
+    "params.toolCavityId": {
+      "paramDirection": "input"
+    },
+    "params.voidEligible": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "height": 56, "width": 900 }
+    "defaultSize": {
+      "height": 56,
+      "width": 900
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "alignItems": "center",
-      "style": { "classes": "pf-inventory-row", "gap": "12px", "overflow": "hidden" }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "InfoBlock" },
-        "position": { "basis": "0", "grow": 1, "shrink": 0 },
-        "props": { "direction": "column", "style": { "gap": "2px", "overflow": "hidden" } },
         "children": [
           {
-            "type": "ia.display.label",
-            "meta": { "name": "TitleLabel" },
+            "meta": {
+              "name": "TitleLabel"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
-                  "config": { "expression": "\"Cavity \" + toStr({view.params.cavityNumber}) + \"  ·  \" + {view.params.lotName}" }
+                  "config": {
+                    "expression": "\"Cavity \" + toStr({view.params.cavityNumber}) + \"  ·  \" + {view.params.lotName}"
+                  },
+                  "type": "expr"
                 }
               }
             },
-            "props": { "text": "", "style": { "fontWeight": 600, "fontFamily": "var(--mpp-font-mono)" } }
+            "props": {
+              "style": {
+                "fontFamily": "var(--mpp-font-mono)",
+                "fontWeight": 600
+              }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
-            "meta": { "name": "SubLabel" },
+            "meta": {
+              "name": "SubLabel"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
                   "config": {
                     "expression": "toStr({view.params.pieceCount}) + \" pc  ·  \" + toStr({view.params.contributorCount}) + \" contributor(s)  ·  opened \" + {view.params.openedAtDisplay}"
-                  }
+                  },
+                  "type": "expr"
                 }
               }
             },
-            "props": { "text": "", "style": { "classes": "pf-kpi-sub" } }
-          }
-        ]
-      },
-      {
-        "type": "ia.input.button",
-        "meta": { "name": "ReleaseButton" },
-        "position": { "basis": "auto", "shrink": 0 },
-        "props": { "text": "Release", "style": { "classes": "pf-btn pf-btn-primary" } },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script", "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"requestReleaseBasket\", payload={\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName}, scope=\"page\")"
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
               }
-            }
+            },
+            "type": "ia.display.label"
           }
-        }
-      },
-      {
-        "type": "ia.input.button",
-        "meta": { "name": "VoidButton" },
-        "position": { "basis": "auto", "shrink": 0 },
-        "propConfig": {
-          "position.display": { "binding": { "type": "property", "config": { "path": "view.params.voidEligible" } } }
+        ],
+        "meta": {
+          "name": "InfoBlock"
         },
-        "props": { "text": "Void", "style": { "classes": "pf-btn pf-btn-danger" } },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
         "events": {
           "component": {
             "onActionPerformed": {
-              "type": "script", "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"requestVoidBasket\", payload={\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName}, scope=\"page\")"
-              }
+                "script": "\tsystem.perspective.sendMessage(\"requestReleaseBasket\", payload\u003d{\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
             }
           }
-        }
+        },
+        "meta": {
+          "name": "ReleaseButton"
+        },
+        "position": {
+          "basis": 95,
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-primary"
+          },
+          "text": "Release"
+        },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"requestVoidBasket\", payload\u003d{\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "VoidButton"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.voidEligible"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-danger"
+          },
+          "text": "Void"
+        },
+        "type": "ia.input.button"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "12px",
+        "overflow": "hidden"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }
