@@ -322,6 +322,28 @@ def getPauses(lotId):
     return BlueRidge.Common.Db.execList("lots/LotPause_GetByLot", {"lotId": lotId})
 
 
+def getLinkedContainer(lotId):
+    """LOT Detail 'Linked Container' tab: the Container a finished-good LOT is packed
+       into, via Lots.ContainerTray.FinishedGoodLotId. Returns the row dict, or None
+       when the LOT is not linked to a container (raw / in-process / not assembled)."""
+    lotId = _u(lotId)
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execOne("lots\Lot_GetLinkedContainer", {"lotId": lotId})
+
+
+def getLinkedContainerOrEmpty(lotId):
+    """Binding-safe variant: ALWAYS the fully-shaped dict (nulls when unlinked) per the
+       pre-declared-bound-props rule; IsLinked flags whether a container is attached."""
+    row = getLinkedContainer(lotId)
+    if row:
+        row["IsLinked"] = True
+        return row
+    return {"IsLinked": False, "ContainerId": None, "ContainerTrayId": None, "TrayPosition": None,
+            "ClosureMethod": None, "TrayClosedAt": None, "ItemId": None, "ItemPartNumber": None,
+            "ContainerStatusCode": None, "ContainerStatusName": None, "CurrentLocationId": None,
+            "CurrentLocationName": None, "OpenedAt": None, "CompletedAt": None, "AimShipperId": None}
+
+
 def getGenealogyTree(lotId, direction="Both"):
     BlueRidge.Common.Util.log("lotId=%s direction=%s" % (lotId, direction))
     return BlueRidge.Common.Db.execList("lots/Lot_GetGenealogyTree", {"lotId": lotId, "direction": direction})
