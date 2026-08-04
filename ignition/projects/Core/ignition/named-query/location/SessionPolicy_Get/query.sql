@@ -1,0 +1,1 @@
+EXEC Location.SessionPolicy_Get

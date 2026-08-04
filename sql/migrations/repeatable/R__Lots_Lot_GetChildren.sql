@@ -16,11 +16,14 @@
 --
 --              Result columns:
 --                ChildLotId BIGINT, ChildLotName NVARCHAR(50), ItemId BIGINT,
---                ItemCode NVARCHAR(50), RelationshipTypeCode NVARCHAR(20),
+--                ItemCode NVARCHAR(50), ItemName NVARCHAR(500),
+--                RelationshipTypeCode NVARCHAR(20),
 --                RelationshipTypeName NVARCHAR(100), PieceCount INT,
 --                EventUserId BIGINT, EventUserName NVARCHAR(200),
 --                EventAt DATETIME2(3)
---              ItemCode is Parts.Item.PartNumber. EventUserName is the acting
+--              ItemCode is Parts.Item.PartNumber; ItemName is Parts.Item.Description
+--              (the human-readable part name of the child LOT -- FAT #18).
+--              EventUserName is the acting
 --              operator resolved from Location.AppUser.DisplayName. Ordered by
 --              EventAt then ChildLotName for a stable, chronological listing.
 -- ============================================================
@@ -36,6 +39,7 @@ BEGIN
         cl.LotName    AS ChildLotName,
         cl.ItemId,
         i.PartNumber  AS ItemCode,
+        i.Description  AS ItemName,
         rt.Code       AS RelationshipTypeCode,
         rt.Name       AS RelationshipTypeName,
         g.PieceCount,

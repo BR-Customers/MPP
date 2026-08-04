@@ -5,6 +5,7 @@
       "ChildLotId": null,
       "ChildLotName": "",
       "ItemCode": "",
+      "ItemName": "",
       "RelationshipTypeName": ""
     }
   },
@@ -80,7 +81,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "toStr({view.params.row.ChildLotName}) + \"  ·  \" + toStr({view.params.row.ItemCode})"
+                "expression": "toStr({view.params.row.ChildLotName}) + \"  ·  \" + toStr({view.params.row.ItemCode}) + if(isNull({view.params.row.ItemName}), \"\", \"  ·  \" + {view.params.row.ItemName})"
               }
             }
           }

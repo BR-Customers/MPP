@@ -214,6 +214,11 @@ def applyToSession(session, terminal):
     }
     # Always drop any prior cell selection when the terminal changes.
     session.custom.cell = {"locationId": None, "code": "", "name": ""}
+    # Global session policy + elevation state (spec 2026-08-04). Seeded before the
+    # tid branch so BOTH the fallback and registered-terminal paths get it.
+    BlueRidge.Common.Session.loadPolicyIntoSession(session)
+    session.custom.elevatedUntil = None
+    session.custom.pendingElevatedAction = None
     if tid is None:
         session.custom.terminal = term
         session.custom.printer = {"locationId": None, "code": "", "endpoint": "", "model": ""}

@@ -46,6 +46,12 @@ WHERE eil.ItemId IN (SELECT Id FROM Parts.Item WHERE MaxLotSize IS NULL)   -- un
                   WHERE ta.CellLocationId = eil.LocationId AND ta.ReleasedAt IS NULL)
 ORDER BY eil.LocationId;
 
+-- FAT #18: the parent/child genealogy reads now surface the LOT's Item DESCRIPTION
+-- (the "part that was consumed") alongside its code. Stamp a deterministic,
+-- non-null Description on the fixture item so the Parents/Children assertions below
+-- prove a real value flows through the join (throwaway test DB -- reset each run).
+UPDATE Parts.Item SET Description = N'FAT18 Consumed Part' WHERE Id = @ItemId;
+
 DECLARE @cr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 
 -- GP: grandparent, 100 pcs.
@@ -182,6 +188,7 @@ DECLARE @P1 BIGINT = (SELECT LotId FROM #GenFix WHERE Tag = N'P1');
 
 IF OBJECT_ID(N'tempdb..#par') IS NOT NULL DROP TABLE #par;
 CREATE TABLE #par (ParentLotId BIGINT, ParentLotName NVARCHAR(50), ItemId BIGINT, ItemCode NVARCHAR(50),
+                   ItemName NVARCHAR(500),
                    RelationshipTypeCode NVARCHAR(20), RelationshipTypeName NVARCHAR(100), PieceCount INT,
                    EventUserId BIGINT, EventUserName NVARCHAR(200), EventAt DATETIME2(3));
 INSERT INTO #par EXEC Lots.Lot_GetParents @LotId = @L1;
@@ -195,6 +202,11 @@ EXEC test.Assert_IsTrue @TestName = N'[Parents] direct parent is P1', @Condition
 
 DECLARE @relCode NVARCHAR(20) = (SELECT RelationshipTypeCode FROM #par);
 EXEC test.Assert_IsEqual @TestName = N'[Parents] relationship is Split', @Expected = N'Split', @Actual = @relCode;
+
+-- FAT #18: the consumed part's DESCRIPTION (Parts.Item.Description) is surfaced.
+DECLARE @parItemName NVARCHAR(500) = (SELECT ItemName FROM #par);
+EXEC test.Assert_IsEqual @TestName = N'[Parents] ItemName is the parent item Description',
+    @Expected = N'FAT18 Consumed Part', @Actual = @parItemName;
 DROP TABLE #par;
 GO
 
@@ -208,6 +220,7 @@ DECLARE @L2 BIGINT = (SELECT LotId FROM #GenFix WHERE Tag = N'L2');
 
 IF OBJECT_ID(N'tempdb..#chl') IS NOT NULL DROP TABLE #chl;
 CREATE TABLE #chl (ChildLotId BIGINT, ChildLotName NVARCHAR(50), ItemId BIGINT, ItemCode NVARCHAR(50),
+                   ItemName NVARCHAR(500),
                    RelationshipTypeCode NVARCHAR(20), RelationshipTypeName NVARCHAR(100), PieceCount INT,
                    EventUserId BIGINT, EventUserName NVARCHAR(200), EventAt DATETIME2(3));
 INSERT INTO #chl EXEC Lots.Lot_GetChildren @LotId = @P1;
@@ -221,9 +234,16 @@ DECLARE @chlMatch BIT = CASE WHEN NOT EXISTS (SELECT 1 FROM #chl WHERE ChildLotI
                          THEN 1 ELSE 0 END;
 EXEC test.Assert_IsTrue @TestName = N'[Children] direct children are exactly L1 and L2', @Condition = @chlMatch;
 
+-- FAT #18: the child part's DESCRIPTION (Parts.Item.Description) is surfaced. Every
+-- fixture LOT shares the same Item, so both children carry the stamped Description.
+DECLARE @chlNameMismatch INT = (SELECT COUNT(*) FROM #chl WHERE ItemName <> N'FAT18 Consumed Part' OR ItemName IS NULL);
+DECLARE @chlNameOk BIT = CASE WHEN @chlNameMismatch = 0 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName = N'[Children] ItemName is the child item Description', @Condition = @chlNameOk;
+
 -- A leaf has no children -> empty result set.
 IF OBJECT_ID(N'tempdb..#chl2') IS NOT NULL DROP TABLE #chl2;
 CREATE TABLE #chl2 (ChildLotId BIGINT, ChildLotName NVARCHAR(50), ItemId BIGINT, ItemCode NVARCHAR(50),
+                    ItemName NVARCHAR(500),
                     RelationshipTypeCode NVARCHAR(20), RelationshipTypeName NVARCHAR(100), PieceCount INT,
                     EventUserId BIGINT, EventUserName NVARCHAR(200), EventAt DATETIME2(3));
 INSERT INTO #chl2 EXEC Lots.Lot_GetChildren @LotId = @L1;
