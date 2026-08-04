@@ -1,8 +1,10 @@
 {
   "custom": {
     "children": [],
+    "samples": [],
     "history": [],
     "lot": {
+      "BomVersionNumber": null,
       "CrtActive": null,
       "CurrentLocationName": "",
       "Id": null,
@@ -25,7 +27,8 @@
       "CounterScrap": 0,
       "RejectedTotal": 0,
       "TotalScrap": 0
-    }
+    },
+    "container": { "IsLinked": false, "ContainerId": null, "ContainerTrayId": null, "TrayPosition": null, "ClosureMethod": null, "TrayClosedAt": null, "ItemId": null, "ItemPartNumber": null, "ContainerStatusCode": null, "ContainerStatusName": null, "CurrentLocationId": null, "CurrentLocationName": null, "OpenedAt": null, "CompletedAt": null, "AimShipperId": null }
   },
   "params": {
     "lotId": null
@@ -70,7 +73,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)"
+          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container = BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples = BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)"
         }
       ],
       "messageHandlers": null,
@@ -167,7 +170,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber}) + \" · \" + if(isNull({view.custom.lot.LotOriginTypeCode}), \"\", {view.custom.lot.LotOriginTypeCode})"
+                        "expression": "if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber}) + \" · \" + if(isNull({view.custom.lot.LotOriginTypeCode}), \"\", {view.custom.lot.LotOriginTypeCode}) + if(isNull({view.custom.lot.BomVersionNumber}), \"\", \" · BOM v\" + toStr({view.custom.lot.BomVersionNumber}))"
                       }
                     }
                   }
@@ -815,6 +818,11 @@
                   "text": "Linked Container",
                   "runWhileHidden": true,
                   "disabled": false
+                },
+                {
+                  "text": "Inspections",
+                  "runWhileHidden": true,
+                  "disabled": false
                 }
               ],
               "menuStyle": {
@@ -1157,20 +1165,31 @@
                 },
                 "props": {
                   "direction": "column",
-                  "alignItems": "center",
-                  "justify": "center",
+                  "alignItems": "stretch",
                   "style": {
-                    "gap": "8px"
+                    "gap": "10px",
+                    "padding": "16px 24px",
+                    "overflowY": "auto"
                   }
                 },
                 "children": [
                   {
                     "type": "ia.display.label",
                     "meta": {
-                      "name": "ContainerStub"
+                      "name": "ContainerEmpty"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!coalesce({view.custom.container.IsLinked}, false)"
+                          }
+                        }
+                      }
                     },
                     "props": {
-                      "text": "Linked container — later phase",
+                      "text": "This LOT is not packed into a container. Finished-good LOTs link to a container at Assembly OUT.",
                       "style": {
                         "classes": "pf-empty-state",
                         "color": "var(--mpp-text-secondary)",
@@ -1181,17 +1200,509 @@
                     }
                   },
                   {
-                    "type": "ia.display.label",
+                    "type": "ia.container.flex",
                     "meta": {
-                      "name": "ContainerDetail"
+                      "name": "ContainerLinked"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "coalesce({view.custom.container.IsLinked}, false)"
+                          }
+                        }
+                      }
                     },
                     "props": {
-                      "text": "Container links land at Assembly when serialized parts produce into a Container (Phase 6).",
+                      "direction": "column",
                       "style": {
-                        "color": "var(--mpp-text-tertiary)",
-                        "fontSize": "13px",
-                        "textAlign": "center",
-                        "maxWidth": "480px"
+                        "gap": "8px",
+                        "maxWidth": "560px",
+                        "padding": "8px 0"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "RowContainer"
+                        },
+                        "props": {
+                          "direction": "row",
+                          "style": {
+                            "gap": "12px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "150px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Container",
+                              "style": {
+                                "color": "var(--mpp-text-secondary)",
+                                "fontSize": "13px"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "V"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "\"#\" + toStr({view.custom.container.ContainerId}) + \"  ·  \" + coalesce({view.custom.container.ItemPartNumber}, \"\")"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "13px",
+                                "fontWeight": "600"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "RowStatus"
+                        },
+                        "props": {
+                          "direction": "row",
+                          "style": {
+                            "gap": "12px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "150px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Status",
+                              "style": {
+                                "color": "var(--mpp-text-secondary)",
+                                "fontSize": "13px"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "V"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "coalesce({view.custom.container.ContainerStatusName}, \"\")"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "13px",
+                                "fontWeight": "600"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "RowLocation"
+                        },
+                        "props": {
+                          "direction": "row",
+                          "style": {
+                            "gap": "12px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "150px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Location",
+                              "style": {
+                                "color": "var(--mpp-text-secondary)",
+                                "fontSize": "13px"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "V"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "coalesce({view.custom.container.CurrentLocationName}, \"\")"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "13px",
+                                "fontWeight": "600"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "RowTray"
+                        },
+                        "props": {
+                          "direction": "row",
+                          "style": {
+                            "gap": "12px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "150px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Tray",
+                              "style": {
+                                "color": "var(--mpp-text-secondary)",
+                                "fontSize": "13px"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "V"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "\"Tray \" + toStr({view.custom.container.TrayPosition}) + \"  (\" + coalesce({view.custom.container.ClosureMethod}, \"\") + \")\""
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "13px",
+                                "fontWeight": "600"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "RowAim"
+                        },
+                        "props": {
+                          "direction": "row",
+                          "style": {
+                            "gap": "12px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "150px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "AIM Shipper ID",
+                              "style": {
+                                "color": "var(--mpp-text-secondary)",
+                                "fontSize": "13px"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "V"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "coalesce({view.custom.container.AimShipperId}, \"—\")"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "13px",
+                                "fontWeight": "600"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "RowOpened"
+                        },
+                        "props": {
+                          "direction": "row",
+                          "style": {
+                            "gap": "12px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "150px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Opened (ET)",
+                              "style": {
+                                "color": "var(--mpp-text-secondary)",
+                                "fontSize": "13px"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "V"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if(isNull({view.custom.container.OpenedAt}), \"—\", dateFormat({view.custom.container.OpenedAt}, \"MM/dd/yyyy HH:mm\"))"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "13px",
+                                "fontWeight": "600"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "RowCompleted"
+                        },
+                        "props": {
+                          "direction": "row",
+                          "style": {
+                            "gap": "12px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "position": {
+                              "basis": "150px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Completed (ET)",
+                              "style": {
+                                "color": "var(--mpp-text-secondary)",
+                                "fontSize": "13px"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "V"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if(isNull({view.custom.container.CompletedAt}), \"—\", dateFormat({view.custom.container.CompletedAt}, \"MM/dd/yyyy HH:mm\"))"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "13px",
+                                "fontWeight": "600"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "PanelInspections"
+                },
+                "position": {
+                  "tabIndex": 4
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "gap": "8px",
+                    "overflowY": "auto"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "EmptyState"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.samples}) = 0"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "No inspections recorded for this LOT.",
+                      "style": {
+                        "classes": "pf-empty-state",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "15px",
+                        "padding": "32px",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "SamplesRepeater"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.samples}) > 0"
+                          }
+                        }
+                      },
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.samples"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/Quality/SampleRow",
+                      "style": {
+                        "gap": "6px"
                       }
                     }
                   }
