@@ -1,3 +1,4 @@
 EXEC Quality.DefectCode_List
-    @IncludeDeprecated = :includeDeprecated,
-    @AreaLocationId    = :areaLocationId
+    @IncludeDeprecated   = :includeDeprecated,
+    @OperationCategoryId = :operationCategoryId,
+    @OperationTypeCode   = :operationTypeCode
