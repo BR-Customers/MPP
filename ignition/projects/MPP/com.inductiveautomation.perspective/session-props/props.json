@@ -8,6 +8,12 @@
     },
     "closureCapabilities": [],
     "closureMethod": "",
+    "elevatedUntil": null,
+    "pendingElevatedAction": null,
+    "policy": {
+      "operatorPresenceTimeoutSeconds": 180,
+      "elevationTimeoutSeconds": 300
+    },
     "plcDevices": [],
     "presence": {
       "policy": "confirm"
