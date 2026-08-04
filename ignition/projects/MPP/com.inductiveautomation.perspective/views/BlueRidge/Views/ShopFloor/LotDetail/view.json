@@ -1877,7 +1877,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tsystem.perspective.navigate(\"/shop-floor/inspection\")"
+                    "script": "\tsystem.perspective.navigate(\"/shop-floor/inspection\", params={\"lotName\": self.view.custom.lot.LotName})"
                   }
                 }
               }
