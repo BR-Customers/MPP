@@ -3,22 +3,27 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-19
-# Version:          1.1
+# Version:          2.0
 #
 # Description:
 #   Read + mutation surface for the Defect Codes Configuration Tool
-#   screen (FDS-08-016 / FDS-08-017). Routes every DB call through
-#   BlueRidge.Common.Db.* helpers.
+#   screen (FDS-08-016 / FDS-08-017) and the plant-floor reject panels.
+#   Routes every DB call through BlueRidge.Common.Db.* helpers.
+#
+#   Defect codes are scoped by Parts.OperationCategory (nullable = plant-wide).
+#   The OperationType -> OperationCategory resolution lives in SQL
+#   (Quality.DefectCode_List), NOT here -- this module is a thin passthrough.
 #
 # Public surface:
 #   search(filter)        -> list[dict]   -- one-shot DB + filter + map
 #                                            for the list view binding
-#   getAll(includeDeprecated=False, areaLocationId=None) -> list[dict]
+#   getAll(includeDeprecated=False, operationCategoryId=None) -> list[dict]
+#   getForDropdown(operationTypeCode=None) -> list[{label, value}]
 #   getOne(defectCodeId)  -> dict | None
 #   add(data)             -> {Status, Message, NewId}
 #   update(data)          -> {Status, Message}
 #   deprecate(defectCodeId) -> {Status, Message}
-#   derivePrefix(areaName)-> str          -- helper for Code auto-suggest
+#   derivePrefix(name)    -> str          -- helper for Code auto-suggest
 #
 # Layer:
 #   View -> BlueRidge.Quality.DefectCode (this module)
@@ -30,11 +35,11 @@
 #                      filterAndMapRows helpers.
 #   2026-05-20 - 1.1 - Replace filterAndMapRows with search(filter)
 #                      following DowntimeReasonCode.search pattern.
-#                      Single-binding architecture (one expr binding ->
-#                      one runScript call -> ready-to-render rows)
-#                      sidesteps the chained-binding runtime failure
-#                      that blocked Task 8 with the prior two-binding
-#                      design (query+transform feeding a runScript expr).
+#   2026-08-04 - 2.0 - Scope by Parts.OperationCategory instead of
+#                      AreaLocationId. getAll/search key on operationCategoryId;
+#                      getForDropdown(operationTypeCode) resolves scope in SQL;
+#                      add/update read data["OperationCategoryId"]. Row maps
+#                      expose category + operationCategoryId.
 # =============================================================================
 
 
@@ -49,15 +54,14 @@ def search(filter=None):
     the list ready to be assigned to a flex-repeater's props.instances.
 
     filter keys (all optional):
-        includeDeprecated  bool, default False (server-side via proc)
-        areaLocationId     BIGINT or None      (server-side via proc)
-        searchText         string or None      (client-side filter here)
+        includeDeprecated    bool, default False (server-side via proc)
+        operationCategoryId  BIGINT or None      (server-side via proc)
+        searchText           string or None      (client-side filter here)
     """
-    BlueRidge.Common.Util.log("filter=%s" % filter)
     f = _u(filter) or {}
     rows = getAll(
         bool(f.get("includeDeprecated", False)),
-        f.get("areaLocationId"),
+        f.get("operationCategoryId"),
     )
     needle = (f.get("searchText") or "").strip().lower()
     out = []
@@ -67,29 +71,30 @@ def search(filter=None):
         if needle and needle not in code.lower() and needle not in description.lower():
             continue
         out.append({
-            "id":             r.get("Id"),
-            "code":           code,
-            "description":    description,
-            "area":           r.get("AreaName") or "",
-            "areaLocationId": r.get("AreaLocationId"),
-            "excused":        bool(r.get("IsExcused")),
-            "deprecated":     r.get("DeprecatedAt") is not None,
-            "selected":       False,
+            "id":                  r.get("Id"),
+            "code":                code,
+            "description":         description,
+            "category":            r.get("CategoryName") or "Plant-wide",
+            "operationCategoryId": r.get("OperationCategoryId"),
+            "excused":             bool(r.get("IsExcused")),
+            "deprecated":          r.get("DeprecatedAt") is not None,
+            "selected":            False,
         })
     return out
 
 
-def getAll(includeDeprecated=False, areaLocationId=None):
-    """List defect codes, optionally including deprecated and/or filtered
-    by area. SQL ORDER BY guarantees (AreaName, Code)."""
-    BlueRidge.Common.Util.log("includeDeprecated=%s areaLocationId=%s"
-                              % (includeDeprecated, areaLocationId))
+def getAll(includeDeprecated=False, operationCategoryId=None):
+    """List defect codes, optionally including deprecated and/or filtered by
+    OperationCategory. SQL ORDER BY guarantees (plant-wide last, CategoryName, Code)."""
+    BlueRidge.Common.Util.log("includeDeprecated=%s operationCategoryId=%s"
+                              % (includeDeprecated, operationCategoryId))
     try:
         return BlueRidge.Common.Db.execList(
             "quality/DefectCode_List",
             {
                 "includeDeprecated": 1 if includeDeprecated else 0,
-                "areaLocationId":    areaLocationId,
+                "operationCategoryId": operationCategoryId,
+                "operationTypeCode":   None,
             },
         )
     except Exception as e:
@@ -98,10 +103,19 @@ def getAll(includeDeprecated=False, areaLocationId=None):
         return []
 
 
-def getForDropdown(areaLocationId=None):
-    """Active defect codes as [{label, value}] for the die-cast Reject panel
-    dropdown. label = 'CODE - Description', value = DefectCode.Id."""
-    rows = getAll(includeDeprecated=False, areaLocationId=areaLocationId) or []
+def getForDropdown(operationTypeCode=None):
+    """Active defect codes as [{label, value}] for a reject panel dropdown,
+    scoped to the terminal's operation category (+ plant-wide) when a type code
+    is given. label = 'CODE - Description', value = DefectCode.Id."""
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "quality/DefectCode_List",
+            {"includeDeprecated": 0, "operationCategoryId": None,
+             "operationTypeCode": operationTypeCode},
+        ) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getForDropdown failed: %s" % str(e))
+        return []
     out = []
     for r in rows:
         code = r.get("Code") or ""
@@ -124,35 +138,37 @@ def getOne(defectCodeId):
 
 
 def add(data):
-    """Insert. data: {Code, Description, AreaLocationId, IsExcused}.
+    """Insert. data: {Code, Description, OperationCategoryId, IsExcused}.
+    A missing/None OperationCategoryId is a valid plant-wide code.
     Returns {Status, Message, NewId}."""
     data = _u(data) or {}
     BlueRidge.Common.Util.log("data=%s" % data)
     return BlueRidge.Common.Db.execMutation(
         "quality/DefectCode_Create",
         {
-            "code":           data.get("Code"),
-            "description":    data.get("Description"),
-            "areaLocationId": data.get("AreaLocationId"),
-            "isExcused":      bool(data.get("IsExcused")),
-            "appUserId":      BlueRidge.Common.Util._currentAppUserId(),
+            "code":                data.get("Code"),
+            "description":         data.get("Description"),
+            "operationCategoryId": data.get("OperationCategoryId"),
+            "isExcused":           bool(data.get("IsExcused")),
+            "appUserId":           BlueRidge.Common.Util._currentAppUserId(),
         },
     )
 
 
 def update(data):
-    """Update existing row. data: {Id, Description, AreaLocationId, IsExcused}.
-    Code is immutable on update (per the underlying proc)."""
+    """Update existing row. data: {Id, Description, OperationCategoryId, IsExcused}.
+    Code is immutable on update (per the underlying proc). A missing/None
+    OperationCategoryId is a valid plant-wide code."""
     data = _u(data) or {}
     BlueRidge.Common.Util.log("data=%s" % data)
     return BlueRidge.Common.Db.execMutation(
         "quality/DefectCode_Update",
         {
-            "id":             data.get("Id"),
-            "description":    data.get("Description"),
-            "areaLocationId": data.get("AreaLocationId"),
-            "isExcused":      bool(data.get("IsExcused")),
-            "appUserId":      BlueRidge.Common.Util._currentAppUserId(),
+            "id":                  data.get("Id"),
+            "description":         data.get("Description"),
+            "operationCategoryId": data.get("OperationCategoryId"),
+            "isExcused":           bool(data.get("IsExcused")),
+            "appUserId":           BlueRidge.Common.Util._currentAppUserId(),
         },
     )
 
@@ -170,16 +186,16 @@ def deprecate(defectCodeId):
     )
 
 
-def derivePrefix(areaName):
-    """Code prefix suggestion from area name.
+def derivePrefix(name):
+    """Code prefix suggestion from a scope name (now the category name).
     - 'Die Cast'         -> 'DC-'
     - 'Machine Shop'     -> 'MS-'
     - 'HSP'              -> 'HSP-'  (single ALL-CAPS word kept whole)
     - 'Production Control' -> 'PC-'
     - '' or None         -> ''"""
-    if not areaName:
+    if not name:
         return ""
-    words = areaName.strip().split()
+    words = name.strip().split()
     if not words:
         return ""
     if len(words) == 1 and words[0].isupper() and len(words[0]) <= 4:
