@@ -1,6 +1,6 @@
 # Plant-floor session, identity & time-boxed elevation — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace per-action AD elevation with a time-boxed elevated mode on the plant-floor terminal (supervisor becomes the session user for a rolling 5-min window), make the operator-presence + elevation timeouts globally configurable, add a Reset Terminal control, and give AD supervisors a clean User-Management link to an `AppUser.Id`.
 
@@ -40,7 +40,7 @@
 
 **Interfaces:** Produces `Location.SessionPolicy` (single row, Id 1) with `OperatorPresenceTimeoutSeconds`, `ElevationTimeoutSeconds`; an `Audit.LogEntityType` code `SessionPolicy`.
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- ============================================================
@@ -86,7 +86,7 @@ PRINT 'Migration 0049 (session_policy) applied.';
 GO
 ```
 
-- [ ] **Step 2: Apply on the test DB, verify**
+- [x] **Step 2: Apply on the test DB, verify**
 
 Run: `.\sql\tests\Run-Tests.ps1 -Filter "__nofile__"` resets `MPP_MES_Test`; then:
 ```bash
@@ -94,7 +94,7 @@ sqlcmd -S localhost -d MPP_MES_Test -Q "SELECT Id, OperatorPresenceTimeoutSecond
 ```
 Expected: one row `1 | 180 | 300`.
 
-- [ ] **Step 3: Commit** — `git add sql/migrations/versioned/0049_session_policy.sql && git commit -m "feat(session): migration 0049 — Location.SessionPolicy global timeouts"`
+- [x] **Step 3: Commit** — `git add sql/migrations/versioned/0049_session_policy.sql && git commit -m "feat(session): migration 0049 — Location.SessionPolicy global timeouts"`
 
 ---
 
@@ -104,7 +104,7 @@ Expected: one row `1 | 180 | 300`.
 
 **Interfaces:** `SessionPolicy_Get()` → one row `{Id, OperatorPresenceTimeoutSeconds, ElevationTimeoutSeconds, UpdatedAt}`. `SessionPolicy_Update @OperatorPresenceTimeoutSeconds, @ElevationTimeoutSeconds, @AppUserId` → `Status, Message`.
 
-- [ ] **Step 1: Write the failing test** `030_SessionPolicy_crud.sql`
+- [x] **Step 1: Write the failing test** `030_SessionPolicy_crud.sql`
 
 ```sql
 EXEC test.BeginTestFile @FileName = N'0020_PlantFloor_Foundation/030_SessionPolicy_crud.sql';
@@ -144,9 +144,9 @@ EXEC test.EndTestFile;
 GO
 ```
 
-- [ ] **Step 2: Run it — expect FAIL** (`Run-Tests.ps1 -Filter "030_SessionPolicy_crud"`): "Could not find stored procedure 'Location.SessionPolicy_Get'".
+- [x] **Step 2: Run it — expect FAIL** (`Run-Tests.ps1 -Filter "030_SessionPolicy_crud"`): "Could not find stored procedure 'Location.SessionPolicy_Get'".
 
-- [ ] **Step 3: Write `R__Location_SessionPolicy_Get.sql`**
+- [x] **Step 3: Write `R__Location_SessionPolicy_Get.sql`**
 
 ```sql
 CREATE OR ALTER PROCEDURE Location.SessionPolicy_Get
@@ -159,7 +159,7 @@ END
 GO
 ```
 
-- [ ] **Step 4: Write `R__Location_SessionPolicy_Update.sql`**
+- [x] **Step 4: Write `R__Location_SessionPolicy_Update.sql`**
 
 ```sql
 CREATE OR ALTER PROCEDURE Location.SessionPolicy_Update
@@ -227,9 +227,9 @@ GO
 
 Note: `Audit.LogEventType` code `Updated` already exists (used by DefectCode/DowntimeReasonCode). If a run reports it missing, seed it the same dynamic-Id way as Task 1's entity type.
 
-- [ ] **Step 5: Run tests — expect PASS** (`Run-Tests.ps1 -Filter "030_SessionPolicy_crud"`). All assertions pass.
+- [x] **Step 5: Run tests — expect PASS** (`Run-Tests.ps1 -Filter "030_SessionPolicy_crud"`). All assertions pass.
 
-- [ ] **Step 6: Commit** — `git add sql/migrations/repeatable/R__Location_SessionPolicy_Get.sql sql/migrations/repeatable/R__Location_SessionPolicy_Update.sql sql/tests/0020_PlantFloor_Foundation/030_SessionPolicy_crud.sql && git commit -m "feat(session): SessionPolicy Get/Update procs + tests"`
+- [x] **Step 6: Commit** — `git add sql/migrations/repeatable/R__Location_SessionPolicy_Get.sql sql/migrations/repeatable/R__Location_SessionPolicy_Update.sql sql/tests/0020_PlantFloor_Foundation/030_SessionPolicy_crud.sql && git commit -m "feat(session): SessionPolicy Get/Update procs + tests"`
 
 ---
 
@@ -239,16 +239,16 @@ Note: `Audit.LogEventType` code `Updated` already exists (used by DefectCode/Dow
 
 **Interfaces:** Consumes Task 2 procs. `SessionPolicy_Get` type `Query`; `SessionPolicy_Update` type `Query` (ends in a SELECT status row — mirror the DefectCode NQ resource.json shape for a status-row proc).
 
-- [ ] **Step 1: `SessionPolicy_Get/query.sql`** → `EXEC Location.SessionPolicy_Get`
-- [ ] **Step 2: `SessionPolicy_Update/query.sql`**
+- [x] **Step 1: `SessionPolicy_Get/query.sql`** → `EXEC Location.SessionPolicy_Get`
+- [x] **Step 2: `SessionPolicy_Update/query.sql`**
 ```sql
 EXEC Location.SessionPolicy_Update
     @OperatorPresenceTimeoutSeconds = :operatorPresenceTimeoutSeconds,
     @ElevationTimeoutSeconds        = :elevationTimeoutSeconds,
     @AppUserId                      = :appUserId
 ```
-- [ ] **Step 3: `resource.json` for each** — copy a sibling `location/*` NQ resource.json; `Get` has no params, `Update` declares `operatorPresenceTimeoutSeconds` (Int4), `elevationTimeoutSeconds` (Int4), `appUserId` (Int8). Both `type: "Query"` (status-row proc → `Query`, per the NQ-type memory).
-- [ ] **Step 4: Scan + commit** — `.\scan.ps1`; `git add ignition/projects/Core/ignition/named-query/location/SessionPolicy_Get ignition/projects/Core/ignition/named-query/location/SessionPolicy_Update && git commit -m "feat(session): SessionPolicy NQs"`
+- [x] **Step 3: `resource.json` for each** — copy a sibling `location/*` NQ resource.json; `Get` has no params, `Update` declares `operatorPresenceTimeoutSeconds` (Int4), `elevationTimeoutSeconds` (Int4), `appUserId` (Int8). Both `type: "Query"` (status-row proc → `Query`, per the NQ-type memory).
+- [x] **Step 4: Scan + commit** — `.\scan.ps1`; `git add ignition/projects/Core/ignition/named-query/location/SessionPolicy_Get ignition/projects/Core/ignition/named-query/location/SessionPolicy_Update && git commit -m "feat(session): SessionPolicy NQs"`
 
 ---
 
@@ -258,7 +258,7 @@ EXEC Location.SessionPolicy_Update
 
 **Interfaces:** Produces `getPolicy()` → dict; `updatePolicy(data)` → `{Status, Message}`.
 
-- [ ] **Step 1: Write the module**
+- [x] **Step 1: Write the module**
 
 ```python
 # BlueRidge.Location.SessionPolicy - global session-timeout policy accessors.
@@ -285,7 +285,7 @@ def updatePolicy(data):
 ```
 Note: `updatePolicy` runs from the config app where the caller passes `appUserId` explicitly if the `_currentAppUserId` fix hasn't landed — the User-Management save (Task 12) passes `self.session.custom.appUserId`; adjust the wrapper to accept an explicit `appUserId` param if that fix is still pending at build time.
 
-- [ ] **Step 2: Scan + commit** — `.\scan.ps1`; `git add .../BlueRidge/Location/SessionPolicy/code.py && git commit -m "feat(session): SessionPolicy entity script"`
+- [x] **Step 2: Scan + commit** — `.\scan.ps1`; `git add .../BlueRidge/Location/SessionPolicy/code.py && git commit -m "feat(session): SessionPolicy entity script"`
 
 ---
 
@@ -304,7 +304,7 @@ Note: `updatePolicy` runs from the config app where the caller passes `appUserId
 - `requireElevation(session, code, label, params)` — Style-2 gate
 - `dispatchElevatedAction(session, code, params)` — explicit code→action map
 
-- [ ] **Step 1: Append the helpers**
+- [x] **Step 1: Append the helpers**
 
 ```python
 import system
@@ -392,7 +392,7 @@ def dispatchElevatedAction(session, code, params):
 ```
 `import java.lang` at module top for the `java.lang.Exception` guard. Replace `moveToValidatedOverride(p)` with the actual override entry the current `MoveOverride` popup calls (confirm during Task 10).
 
-- [ ] **Step 2: Scan + commit** — `.\scan.ps1`; `git add .../BlueRidge/Common/Session/code.py && git commit -m "feat(session): elevation + timeout session helpers"`
+- [x] **Step 2: Scan + commit** — `.\scan.ps1`; `git add .../BlueRidge/Common/Session/code.py && git commit -m "feat(session): elevation + timeout session helpers"`
 
 ---
 
@@ -400,14 +400,14 @@ def dispatchElevatedAction(session, code, params):
 
 **Files:** Modify `ignition/projects/Core/ignition/script-python/BlueRidge/Location/Terminal/code.py` (`applyToSession`); Modify `ignition/projects/MPP/com.inductiveautomation.perspective/session-props/props.json`
 
-- [ ] **Step 1: `applyToSession`** — after `session.custom.cell = {...}` (both the fallback `tid is None` branch and the normal path), add:
+- [x] **Step 1: `applyToSession`** — after `session.custom.cell = {...}` (both the fallback `tid is None` branch and the normal path), add:
 ```python
     BlueRidge.Common.Session.loadPolicyIntoSession(session)
     session.custom.elevatedUntil = None
     session.custom.pendingElevatedAction = None
 ```
 
-- [ ] **Step 2: `session-props/props.json`** — add to the `custom` block defaults:
+- [x] **Step 2: `session-props/props.json`** — add to the `custom` block defaults:
 ```json
     "elevatedUntil": null,
     "pendingElevatedAction": null,
@@ -415,7 +415,7 @@ def dispatchElevatedAction(session, code, params):
 ```
 (session-props is not a view — safe file edit; validate JSON parses, then scan.)
 
-- [ ] **Step 3: Scan + commit** — `.\scan.ps1`; `git add .../BlueRidge/Location/Terminal/code.py ignition/projects/MPP/com.inductiveautomation.perspective/session-props/props.json && git commit -m "feat(session): load policy + init elevation state at terminal bind"`
+- [x] **Step 3: Scan + commit** — `.\scan.ps1`; `git add .../BlueRidge/Location/Terminal/code.py ignition/projects/MPP/com.inductiveautomation.perspective/session-props/props.json && git commit -m "feat(session): load policy + init elevation state at terminal bind"`
 
 ---
 
