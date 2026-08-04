@@ -2,7 +2,26 @@
 
 Raw punch-list from today's FAT, grouped and triaged. Legend:
 **BUG** = defect vs intended behavior · **FEAT** = new/changed behavior · **Q** = decision needed ·
-**COVERED** = already addressed by an in-flight spec/plan.
+**COVERED** = already addressed by an in-flight spec/plan · **DONE** = fixed + verified.
+
+## Progress / decisions (2026-08-04)
+
+- **#4 DONE** — Trim OUT attribution fixed (`submitTrimOut` now passes `session.custom.appUserId`).
+  Root cause: `Common.Util._currentAppUserId()` reads `getSessionInfo()` as a dict but the API
+  returns a LIST → falls back to Dev User (AppUser 2). Same broken pattern in
+  `ShippingDispatcher._sessionPrinter` + `LotLabel._sessionPrinter` → spawned a separate task.
+- **#22 DONE** — Trim OUT re-entry guard added (`@FromLocationId = @TrimStoreId`), TDD red→green
+  (test `050_TrimOut_Record_validation.sql` Test 6, area-level source). Root cause: Trim Storage
+  is a child of the trim area, so the source-ancestor guard didn't block a same-shop re-entry.
+- **#1 defect-code scoping** — spec + plan written; a subagent executed SQL Tasks 1–7 on an
+  isolated branch (33/33 tests). Needs convergence into `jacques/working` + `scan.ps1` + the
+  Designer view edits (Task 8). Migration is `0047` (correct on `jacques/working`, which has `0046`).
+- **#20 decided** — scrap recognized *during a Record Shift Output event* should store the
+  `ProductionEventId` of that shift-output event on the RejectEvent; standalone rejects may stay
+  NULL. Work item: thread `ProductionEventId` through the shift-output → reject path.
+- **#26 direction** — materialized running total on the die (Tool), incremented in the same
+  transaction that records shots (like the B5 Lot quantity pattern), NOT recomputed from all LOTs.
+  Add `ShotLimit` (nullable) + warn near/over limit; optional nightly reconciliation job. Details below.
 
 ---
 
