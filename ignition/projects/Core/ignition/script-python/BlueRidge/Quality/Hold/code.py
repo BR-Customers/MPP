@@ -41,6 +41,18 @@ def getOpenByLot(lotId):
     return BlueRidge.Common.Db.execList("quality/Hold_GetOpenByLot", params)
 
 
+def getOpenByLotOne(lotId):
+    """LOT Detail hold pill / release: the single open hold as a shaped dict
+       (IsHeld flags presence) or a shaped-empty dict when the LOT has no open
+       hold -- keeps the bound custom prop safe per the pre-declared-props rule."""
+    rows = getOpenByLot(lotId) or []
+    if rows:
+        h = dict(rows[0])
+        h["IsHeld"] = True
+        return h
+    return {"IsHeld": False, "Id": None, "HoldTypeCode": None, "Reason": None, "PlacedAt": None}
+
+
 def getOpenByContainer(containerId):
     """Read the open hold for a Container (with HoldTypeCode). Returns list[dict]
        (empty list = no open hold)."""

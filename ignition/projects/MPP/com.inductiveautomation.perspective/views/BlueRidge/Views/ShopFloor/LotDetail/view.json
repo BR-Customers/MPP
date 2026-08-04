@@ -2,6 +2,7 @@
   "custom": {
     "children": [],
     "samples": [],
+    "hold": { "IsHeld": false, "Id": null, "HoldTypeCode": null, "Reason": null, "PlacedAt": null },
     "history": [],
     "lot": {
       "BomVersionNumber": null,
@@ -73,7 +74,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container = BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples = BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)"
+          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container = BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples = BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold = BlueRidge.Quality.Hold.getOpenByLotOne(lotId)"
         }
       ],
       "messageHandlers": null,
@@ -245,7 +246,46 @@
                 "textTransform": "uppercase"
               }
             }
-          }
+          },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "HoldPill"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "coalesce({view.custom.hold.IsHeld}, false)"
+                      }
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "\"ON HOLD  ·  #\" + toStr({view.custom.hold.Id}) + \"  ·  \" + coalesce({view.custom.hold.HoldTypeCode}, \"\")"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "ON HOLD",
+                  "style": {
+                    "classes": "pf-pill pf-pill-hold",
+                    "fontSize": "13px",
+                    "fontWeight": "700",
+                    "padding": "4px 12px",
+                    "borderRadius": "999px",
+                    "textTransform": "uppercase"
+                  }
+                }
+              }
         ]
       },
       {
@@ -1919,6 +1959,44 @@
               }
             }
           },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnReleaseHold"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "coalesce({view.custom.hold.IsHeld}, false)"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Release Hold",
+                  "style": {
+                    "classes": "pf-btn pf-btn-elevated"
+                  },
+                  "toolTipText": "Release this LOT's quality hold and restore its prior status."
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tterm = self.session.custom.terminal\n\tresult = BlueRidge.Quality.Hold.release(self.view.custom.hold.Id, appUserId=self.session.custom.appUserId, terminalLocationId=(term.terminalLocationId if term else None))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Hold\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
+                      }
+                    }
+                  }
+                }
+              },
           {
             "type": "ia.input.button",
             "meta": {
