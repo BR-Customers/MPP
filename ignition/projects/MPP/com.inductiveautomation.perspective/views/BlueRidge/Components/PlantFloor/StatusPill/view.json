@@ -15,12 +15,47 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
+    "children": [
+      {
+        "meta": {
+          "name": "Pill"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.style.classes": {
+            "binding": {
+              "config": {
+                "expression": "\"pf-pill \" + if({view.params.value} \u003d \"Good\", \"pf-pill-good\", if({view.params.value} \u003d \"Held\", \"pf-pill-hold\", if({view.params.value} \u003d \"Scrapped\", \"pf-pill-bad\", if({view.params.value} \u003d \"Rejected\", \"pf-pill-bad\", \"pf-pill\"))))"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.value"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "borderRadius": "999px",
+            "fontSize": "12px",
+            "fontWeight": "600",
+            "padding": "3px 10px"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
     "meta": {
       "name": "root"
     },
     "props": {
-      "direction": "row",
       "alignItems": "center",
       "justify": "center",
       "style": {
@@ -28,45 +63,6 @@
         "width": "100%"
       }
     },
-    "children": [
-      {
-        "type": "ia.display.label",
-        "meta": {
-          "name": "Pill"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.params.value"
-              }
-            }
-          },
-          "props.style.classes": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "\"pf-pill \" + if({view.params.value} = \"Good\", \"pf-pill-good\", if({view.params.value} = \"Held\", \"pf-pill-hold\", if({view.params.value} = \"Scrapped\", \"pf-pill-bad\", if({view.params.value} = \"Rejected\", \"pf-pill-bad\", \"pf-pill\"))))"
-              }
-            }
-          }
-        },
-        "props": {
-          "text": "",
-          "style": {
-            "classes": "pf-pill",
-            "fontSize": "12px",
-            "fontWeight": "600",
-            "padding": "3px 10px",
-            "borderRadius": "999px"
-          }
-        }
-      }
-    ]
+    "type": "ia.container.flex"
   }
 }

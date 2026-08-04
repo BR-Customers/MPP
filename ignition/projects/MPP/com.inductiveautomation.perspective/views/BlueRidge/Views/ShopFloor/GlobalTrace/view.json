@@ -17,7 +17,7 @@
       "LotStatusName": "",
       "PieceCount": 0
     },
-    "refreshToken": 0,
+    "refreshToken": 1,
     "scrap": {
       "CounterScrap": 0,
       "RejectedTotal": 0,
@@ -147,6 +147,7 @@
               }
             },
             "position": {
+              "basis": "94px",
               "shrink": 0
             },
             "props": {
@@ -172,6 +173,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "79px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -191,7 +195,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -290,7 +294,7 @@
               "style": {
                 "classes": "pf-field",
                 "gap": "12px",
-                "overflow": "hidden"
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"

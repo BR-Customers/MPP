@@ -1,20 +1,19 @@
 {
   "custom": {
-    "idleMinutes": 0,
     "modalOpen": false
   },
   "params": {},
   "propConfig": {
     "custom.idleMinutes": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "dateDiff({session.props.lastActivity}, now(30000), \"mn\")"
-        }
+        },
+        "type": "expr"
       },
       "onChange": {
         "enabled": true,
-        "script": "\t# TODO(view-policy): strict-policy idle handling (re-prompt initials on first action after idle, FDS-04-003) is wired when the first shared-flavor work views are built; this watcher currently serves the confirm-policy overlay only.\n\tif self.session.custom.presence.policy != \"confirm\":\n\t\treturn\n\tif self.session.custom.user.appUserId is None:\n\t\treturn\n\tif currentValue.value >= 30 and not self.view.custom.modalOpen:\n\t\tself.view.custom.modalOpen = True\n\t\tsystem.perspective.openPopup(id=\"mpp-idle-reconfirm\", view=\"BlueRidge/Components/PlantFloor/IdleReconfirmModal\", params={\"displayName\": self.session.custom.user.displayName, \"initials\": self.session.custom.user.initials, \"popupId\": \"mpp-idle-reconfirm\", \"replyMessage\": \"idleReconfirmResult\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+        "script": "\t# TODO(view-policy): strict-policy idle handling (re-prompt initials on first action after idle, FDS-04-003) is wired when the first shared-flavor work views are built; this watcher currently serves the confirm-policy overlay only.\n\tif self.session.custom.presence.policy !\u003d \"confirm\":\n\t\treturn\n\tif self.session.custom.user.appUserId is None:\n\t\treturn\n\tif currentValue.value \u003e\u003d 30 and not self.view.custom.modalOpen:\n\t\tself.view.custom.modalOpen \u003d True\n\t\tsystem.perspective.openPopup(id\u003d\"mpp-idle-reconfirm\", view\u003d\"BlueRidge/Components/PlantFloor/IdleReconfirmModal\", params\u003d{\"displayName\": self.session.custom.user.displayName, \"initials\": self.session.custom.user.initials, \"popupId\": \"mpp-idle-reconfirm\", \"replyMessage\": \"idleReconfirmResult\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
       }
     }
   },
@@ -25,7 +24,6 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
     "meta": {
       "name": "root"
     },
@@ -35,16 +33,18 @@
       }
     },
     "scripts": {
+      "customMethods": null,
+      "extensionFunctions": null,
       "messageHandlers": [
         {
           "messageType": "idleReconfirmResult",
           "pageScope": true,
+          "script": "\tif payload and payload.get(\"action\") \u003d\u003d \"continue\":\n\t\tself.view.custom.modalOpen \u003d False",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\tif payload and payload.get(\"action\") == \"continue\":\n\t\tself.view.custom.modalOpen = False"
+          "viewScope": false
         }
       ]
     },
-    "children": []
+    "type": "ia.container.flex"
   }
 }

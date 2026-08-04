@@ -1,24 +1,23 @@
 {
   "custom": {
-    "cells": [],
-    "selectedCellId": null,
-    "scanCode": ""
+    "scanCode": "",
+    "selectedCellId": 3
   },
   "params": {
     "replyMessage": "cellContextChanged"
   },
   "propConfig": {
+    "custom.cells": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId})"
+        },
+        "type": "expr"
+      }
+    },
     "params.replyMessage": {
       "paramDirection": "input",
       "persistent": true
-    },
-    "custom.cells": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId})"
-        }
-      }
     }
   },
   "props": {
@@ -28,12 +27,168 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
+    "children": [
+      {
+        "meta": {
+          "name": "CellLabel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-label",
+            "marginBottom": "0px"
+          },
+          "text": "Cell:"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tself.view.rootContainer.applyCell(self.props.value)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "CellDropdown"
+        },
+        "position": {
+          "basis": "260px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.custom.cells"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.selectedCellId"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "placeholder": "Select cell",
+          "style": {
+            "classes": "pf-field-select"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "meta": {
+          "name": "ScanIcon"
+        },
+        "position": {
+          "basis": "22px",
+          "shrink": 0
+        },
+        "props": {
+          "path": "mpp/qr_code_scanner",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "height": "22px",
+            "width": "22px"
+          }
+        },
+        "type": "ia.display.icon"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tself.view.rootContainer.applyByScan()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ScannerInput"
+        },
+        "position": {
+          "basis": "180px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.scanCode"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "placeholder": "Scan cell",
+          "style": {
+            "classes": "pf-field-input-mono",
+            "textTransform": "uppercase"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "meta": {
+          "name": "SelectedCellName"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({session.custom.cell.name} \u003d \"\", \"No cell selected\", {session.custom.cell.name})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "14px",
+            "marginLeft": "4px"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tc \u003d self.session.custom.cell\n\tif c and c.get(\"locationId\"):\n\t\tself.view.custom.selectedCellId \u003d c.get(\"locationId\")"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
     "meta": {
       "name": "root"
     },
     "props": {
-      "direction": "row",
       "alignItems": "center",
       "style": {
         "classes": "pf-field-row",
@@ -48,175 +203,17 @@
           "params": [
             "cellId"
           ],
-          "script": "\tcellId = BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow = BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.view.custom.selectedCellId = row.get(\"value\")\n\tself.session.custom.cell = {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}, scope=\"page\")"
+          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.view.custom.selectedCellId \u003d row.get(\"value\")\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}, scope\u003d\"page\")"
         },
         {
           "name": "applyByScan",
           "params": [],
-          "script": "\tmatch = BlueRidge.Location.Location.findCellByCode(self.view.custom.cells, self.view.custom.scanCode)\n\tif match is None:\n\t\treturn\n\tself.view.custom.scanCode = \"\"\n\tself.applyCell(match.get(\"value\"))"
+          "script": "\tmatch \u003d BlueRidge.Location.Location.findCellByCode(self.view.custom.cells, self.view.custom.scanCode)\n\tif match is None:\n\t\treturn\n\tself.view.custom.scanCode \u003d \"\"\n\tself.applyCell(match.get(\"value\"))"
         }
-      ]
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
     },
-    "events": {
-      "system": {
-        "onStartup": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": "\tc = self.session.custom.cell\n\tif c and c.get(\"locationId\"):\n\t\tself.view.custom.selectedCellId = c.get(\"locationId\")"
-          }
-        }
-      }
-    },
-    "children": [
-      {
-        "type": "ia.display.label",
-        "meta": {
-          "name": "CellLabel"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "props": {
-          "text": "Cell:",
-          "style": {
-            "classes": "pf-field-label",
-            "marginBottom": "0px"
-          }
-        }
-      },
-      {
-        "type": "ia.input.dropdown",
-        "meta": {
-          "name": "CellDropdown"
-        },
-        "position": {
-          "basis": "260px",
-          "shrink": 0
-        },
-        "propConfig": {
-          "props.options": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.custom.cells"
-              }
-            }
-          },
-          "props.value": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "bidirectional": true,
-                "path": "view.custom.selectedCellId"
-              }
-            }
-          }
-        },
-        "props": {
-          "placeholder": "Select cell",
-          "style": {
-            "classes": "pf-field-select"
-          }
-        },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tself.view.rootContainer.applyCell(self.props.value)"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.display.icon",
-        "meta": {
-          "name": "ScanIcon"
-        },
-        "position": {
-          "basis": "22px",
-          "shrink": 0
-        },
-        "props": {
-          "path": "mpp/qr_code_scanner",
-          "style": {
-            "width": "22px",
-            "height": "22px",
-            "color": "var(--mpp-text-secondary)"
-          }
-        }
-      },
-      {
-        "type": "ia.input.text-field",
-        "meta": {
-          "name": "ScannerInput"
-        },
-        "position": {
-          "basis": "180px",
-          "shrink": 0
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "bidirectional": true,
-                "path": "view.custom.scanCode"
-              }
-            }
-          }
-        },
-        "props": {
-          "placeholder": "Scan cell",
-          "style": {
-            "classes": "pf-field-input-mono",
-            "textTransform": "uppercase"
-          }
-        },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tself.view.rootContainer.applyByScan()"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.display.label",
-        "meta": {
-          "name": "SelectedCellName"
-        },
-        "position": {
-          "basis": "auto",
-          "grow": 1,
-          "shrink": 1
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "if({session.custom.cell.name} = \"\", \"No cell selected\", {session.custom.cell.name})"
-              }
-            }
-          }
-        },
-        "props": {
-          "style": {
-            "color": "var(--mpp-text-secondary)",
-            "fontSize": "14px",
-            "marginLeft": "4px"
-          }
-        }
-      }
-    ]
+    "type": "ia.container.flex"
   }
 }
