@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration:   0047_defect_code_operation_category.sql
+-- Migration:   0048_defect_code_operation_category.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-08-04
 -- Description: Scope defect codes by process, not physical Area.
@@ -15,9 +15,9 @@
 --              Idempotent-guarded; no explicit transaction (repo convention).
 -- ============================================================
 
-IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0047_defect_code_operation_category')
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0048_defect_code_operation_category')
 BEGIN
-    PRINT 'Migration 0047 already applied -- skipping.';
+    PRINT 'Migration 0048 already applied -- skipping.';
     RETURN;
 END
 GO
@@ -71,9 +71,9 @@ IF COL_LENGTH(N'Quality.DefectCode', N'AreaLocationId') IS NOT NULL
 GO
 
 INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-VALUES (N'0047_defect_code_operation_category',
+VALUES (N'0048_defect_code_operation_category',
     N'Defect codes scoped by OperationCategory: add DefectCode.OperationCategoryId (nullable FK, plant-wide=NULL) + index, backfill from AreaLocationId by process family, drop AreaLocationId (FK + index + column).');
 GO
 
-PRINT 'Migration 0047 (defect_code_operation_category) applied.';
+PRINT 'Migration 0048 (defect_code_operation_category) applied.';
 GO
