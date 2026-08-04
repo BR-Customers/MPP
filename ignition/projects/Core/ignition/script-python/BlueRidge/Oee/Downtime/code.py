@@ -71,6 +71,22 @@ def recordHistorical(scopeLocationId, startedAtEt, endedAtEt, downtimeReasonCode
     })
 
 
+def recordApproximate(scopeLocationId, durationMinutes, shiftId=None, downtimeReasonCodeId=None,
+                      remarks=None, terminalLocationId=None):
+    """Enter a duration-only ('approximate') past event -- operator knows the
+       duration but not the exact window. shiftId None -> current open shift.
+       {Status, Message, NewId}."""
+    return BlueRidge.Common.Db.execMutation("oee/DowntimeEvent_RecordApproximate", {
+        "scopeLocationId":      _u(scopeLocationId),
+        "durationMinutes":      _u(durationMinutes),
+        "shiftId":              _u(shiftId),
+        "downtimeReasonCodeId": _u(downtimeReasonCodeId),
+        "remarks":              _u(remarks),
+        "appUserId":            _uid(),
+        "terminalLocationId":   _u(terminalLocationId),
+    })
+
+
 def void(downtimeEventId, voidReason=None, terminalLocationId=None):
     """Soft-void (closes if open). {Status, Message}."""
     return BlueRidge.Common.Db.execMutation("oee/DowntimeEvent_Void", {

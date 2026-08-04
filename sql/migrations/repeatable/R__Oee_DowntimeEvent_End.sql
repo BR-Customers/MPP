@@ -80,9 +80,10 @@ BEGIN
         BEGIN TRANSACTION;
 
         UPDATE Oee.DowntimeEvent
-        SET EndedAt   = @Now,
-            Remarks   = @Remarks,
-            AppUserId = COALESCE(AppUserId, @AppUserId)
+        SET EndedAt         = @Now,
+            DurationMinutes = @DurationMin,
+            Remarks         = @Remarks,
+            AppUserId       = COALESCE(AppUserId, @AppUserId)
         WHERE Id = @DowntimeEventId;
 
         EXEC Audit.Audit_LogOperation

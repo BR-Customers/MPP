@@ -21,7 +21,7 @@
     }
   },
   "props": {
-    "defaultSize": { "height": 620, "width": 940 }
+    "defaultSize": { "height": 640, "width": 1000 }
   },
   "root": {
     "children": [
@@ -67,19 +67,19 @@
           }
         ],
         "meta": { "name": "HeaderBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "position": { "basis": "60px", "shrink": 0 },
         "props": { "alignItems": "center", "style": { "background": "var(--mpp-surface-raised)", "borderBottom": "1px solid var(--mpp-border-subtle)", "gap": "12px", "padding": "0 16px" } },
         "type": "ia.container.flex"
       },
       {
         "children": [
-          { "meta": { "name": "ColTime" }, "position": { "basis": "230px", "shrink": 0 }, "props": { "text": "Time (ET)" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColDur" }, "position": { "basis": "64px", "shrink": 0 }, "props": { "text": "Dur" }, "type": "ia.display.label" },
+          { "meta": { "name": "ColTime" }, "position": { "basis": "180px", "shrink": 0 }, "props": { "text": "Time (ET)" }, "type": "ia.display.label" },
+          { "meta": { "name": "ColDur" }, "position": { "basis": "50px", "shrink": 0 }, "props": { "text": "Dur" }, "type": "ia.display.label" },
           { "meta": { "name": "ColReason" }, "position": { "basis": "0", "grow": 1 }, "props": { "text": "Reason" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColSource" }, "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Source" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColBy" }, "position": { "basis": "50px", "shrink": 0 }, "props": { "text": "By" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColStatus" }, "position": { "basis": "84px", "shrink": 0 }, "props": { "text": "Status" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColActions" }, "position": { "basis": "198px", "shrink": 0 }, "props": { "text": "" }, "type": "ia.display.label" }
+          { "meta": { "name": "ColSource" }, "position": { "basis": "68px", "shrink": 0 }, "props": { "text": "Source" }, "type": "ia.display.label" },
+          { "meta": { "name": "ColBy" }, "position": { "basis": "44px", "shrink": 0 }, "props": { "text": "By" }, "type": "ia.display.label" },
+          { "meta": { "name": "ColStatus" }, "position": { "basis": "76px", "shrink": 0 }, "props": { "text": "Status" }, "type": "ia.display.label" },
+          { "meta": { "name": "ColActions" }, "position": { "basis": "242px", "shrink": 0 }, "props": { "text": "" }, "type": "ia.display.label" }
         ],
         "meta": { "name": "TableHeader" },
         "position": { "shrink": 0 },
@@ -109,7 +109,7 @@
                   "config": { "path": "view.custom.rows" },
                   "transforms": [
                     {
-                      "code": "\tout = []\n\tfor r in (value or []):\n\t\tst = r.get(\"StartedAtEt\"); en = r.get(\"EndedAtEt\")\n\t\tstStr = system.date.format(st, \"MM/dd HH:mm\") if st is not None else \"\"\n\t\tenStr = system.date.format(en, \"HH:mm\") if en is not None else \"open\"\n\t\trc = r.get(\"ReasonCode\"); rd = r.get(\"ReasonDescription\")\n\t\treason = (rc + \" - \" + rd) if rc else \"\"\n\t\tout.append({\n\t\t\t\"downtimeEventId\": r.get(\"DowntimeEventId\"),\n\t\t\t\"timeRange\":       stStr + \"  ->  \" + enStr,\n\t\t\t\"durationMinutes\": r.get(\"DurationMinutes\"),\n\t\t\t\"reasonLabel\":     reason,\n\t\t\t\"sourceCode\":      r.get(\"SourceCode\") or \"\",\n\t\t\t\"initials\":        r.get(\"OperatorInitials\") or \"\",\n\t\t\t\"isOpen\":          bool(r.get(\"IsOpen\")),\n\t\t\t\"isVoided\":        bool(r.get(\"IsVoided\"))\n\t\t})\n\treturn out",
+                      "code": "\tout = []\n\tfor r in (value or []):\n\t\tst = r.get(\"StartedAtEt\"); en = r.get(\"EndedAtEt\")\n\t\tstStr = system.date.format(st, \"MM/dd HH:mm\") if st is not None else \"\"\n\t\tenStr = system.date.format(en, \"HH:mm\") if en is not None else \"open\"\n\t\trc = r.get(\"ReasonCode\"); rd = r.get(\"ReasonDescription\")\n\t\treason = (rc + \" - \" + rd) if rc else \"\"\n\t\tout.append({\n\t\t\t\"downtimeEventId\": r.get(\"DowntimeEventId\"),\n\t\t\t\"reasonCodeId\": r.get(\"DowntimeReasonCodeId\"),\n\t\t\t\"timeRange\":       stStr + \"  ->  \" + enStr,\n\t\t\t\"durationMinutes\": r.get(\"DurationMinutes\"),\n\t\t\t\"reasonLabel\":     reason,\n\t\t\t\"sourceCode\":      r.get(\"SourceCode\") or \"\",\n\t\t\t\"initials\":        r.get(\"OperatorInitials\") or \"\",\n\t\t\t\"isOpen\":          bool(r.get(\"IsOpen\")),\n\t\t\t\"isApproximate\":   bool(r.get(\"IsApproximate\")),\n\t\t\t\"isVoided\":        bool(r.get(\"IsVoided\"))\n\t\t})\n\treturn out",
                       "type": "script"
                     }
                   ],
@@ -119,7 +119,7 @@
             },
             "props": {
               "direction": "column",
-              "elementPosition": { "basis": "52px", "shrink": 0 },
+              "elementPosition": { "basis": "58px", "grow": 0, "shrink": 0 },
               "path": "BlueRidge/Components/PlantFloor/DowntimeManager/EventRow",
               "useDefaultViewHeight": false,
               "useDefaultViewWidth": false
@@ -200,6 +200,13 @@
       ],
       "extensionFunctions": null,
       "messageHandlers": [
+        {
+          "messageType": "dtReasonSelected",
+          "pageScope": true,
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tres = D.updateReason(payload[\"downtimeEventId\"], payload[\"reasonCodeId\"])\n\tUi.notifyResult(res, \"Reason updated\")\n\tself.refreshRows()",
+          "sessionScope": false,
+          "viewScope": false
+        },
         {
           "messageType": "dtEndRequested",
           "pageScope": true,
