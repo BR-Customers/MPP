@@ -1,23 +1,25 @@
 -- ============================================================
 -- Repeatable:  R__Lots_AimShipperIdPool_GetForPost.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.1
+-- Version:     1.2
 -- Description: Reads one pool row's AIM post-back payload by shipper ID, for
 --              BlueRidge.Lots.AimPost.postOne. Re-read on EVERY attempt (not
---              cached by the caller) so a config-gap row self-heals the moment
---              Parts.Item.AimCustomerPartNumber is filled in. Read proc: empty
---              rowset = not found, no invented 404. No OUTPUT params.
---              v1.1: CustomerPartNumber is COALESCE(p.CustomerPartNumber,
---              i.AimCustomerPartNumber) via a LEFT JOIN to Lots.Container and
---              Parts.Item -- the actual self-heal. The snapshot Container_Complete
---              writes at completion is frozen once set (never overwritten by a
---              later item edit), but a row snapshotted NULL (item had no AIM
---              customer part configured yet) now rejoins to the live item value
---              on every read instead of staying NULL forever. LEFT JOIN so a row
---              with an unexpectedly missing container link is still returned.
---              Also returns ContainerId + ItemPartNumber so postOne can render the
---              config-gap modal (spec S6.2) from this one read, including on the
---              retry-sweep path where no container context exists.
+--              cached by the caller). Read proc: empty rowset = not found, no
+--              invented 404. No OUTPUT params.
+--              v1.2 (2026-08-04, Migration 0051): CustomerPartNumber is
+--              COALESCE(p.CustomerPartNumber, Parts.ufn_AimCustomerPartNumber(
+--              i.PartNumber)) via a LEFT JOIN to Lots.Container and Parts.Item.
+--              The snapshot Container_Complete writes at completion is frozen
+--              once set (never overwritten by a later item edit), but a row
+--              snapshotted NULL now rejoins to the DERIVED value on every read
+--              instead of staying NULL forever -- and because the derivation is a
+--              pure function of the NOT NULL PartNumber, this can never actually
+--              stay NULL for a real item (unlike the old stored-column self-heal,
+--              which depended on someone filling in Item.AimCustomerPartNumber).
+--              LEFT JOIN so a row with an unexpectedly missing container link is
+--              still returned. Also returns ContainerId + ItemPartNumber so
+--              postOne can render diagnostics from this one read, including on
+--              the retry-sweep path where no container context exists.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.AimShipperIdPool_GetForPost
     @AimShipperId NVARCHAR(50)
@@ -29,9 +31,9 @@ BEGIN
         RETURN;
 
     SELECT
-        p.Id                                                     AS Id,
-        p.AimShipperId                                           AS AimShipperId,
-        COALESCE(p.CustomerPartNumber, i.AimCustomerPartNumber)  AS CustomerPartNumber,
+        p.Id                                                                          AS Id,
+        p.AimShipperId                                                                AS AimShipperId,
+        COALESCE(p.CustomerPartNumber, Parts.ufn_AimCustomerPartNumber(i.PartNumber))  AS CustomerPartNumber,
         p.Quantity                                                AS Quantity,
         p.LotNumber                                               AS LotNumber,
         p.PostedAt                                                AS PostedAt,

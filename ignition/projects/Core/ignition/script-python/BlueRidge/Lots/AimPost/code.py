@@ -5,9 +5,11 @@
    retry can never drift from first-attempt behaviour.
 
    postOne RE-READS the payload on every attempt rather than trusting a snapshot, so
-   a row that failed because its item had no AIM customer part self-heals the moment
-   someone fills that field in - no requeue, no manual step. (Lots.AimShipperIdPool_
-   GetForPost COALESCEs the frozen snapshot against the live Parts.Item value.)
+   a row snapshotted with a NULL customer part self-heals on the next attempt with
+   no requeue, no manual step. (Lots.AimShipperIdPool_GetForPost COALESCEs the
+   frozen snapshot against Parts.ufn_AimCustomerPartNumber(Item.PartNumber) - the
+   AIM customer part is DERIVED from the item's part number, not a separately
+   maintained field - Migration 0051, 2026-08-04.)
 
    AimHttp.postSerial's error text on a non-2xx is "HTTP <code>: <AIM's message>"
    (e.g. "HTTP 403: Not logged in - AIM Mobility must be restarted.") - that string
@@ -23,7 +25,6 @@ def postOne(aimShipperId):
          posted             - AIM accepted it
          already_posted     - nothing owed; no call made
          not_found          - no such pool row
-         no_customer_part   - item has no AimCustomerPartNumber; NO call made
          incomplete_payload - LotNumber and/or Quantity is NULL on the pool row;
                                NO call made. Reachable e.g. because
                                ContainerTray_Close never sets FinishedGoodLotId
@@ -50,11 +51,12 @@ def postOne(aimShipperId):
         itemPartNumber = row.get("ItemPartNumber")
         lotNumber = row.get("LotNumber")
         quantity = row.get("Quantity")
-        if not customerPart:
-            msg = "No AIM customer part configured for %s." % (itemPartNumber or "this item")
-            BlueRidge.Lots.AimPool.recordPostResult(row.get("Id"), False, msg)
-            return {"ok": False, "outcome": "no_customer_part", "error": msg,
-                    "itemPartNumber": itemPartNumber}
+
+        # No "missing customer part" branch here: CustomerPartNumber is either the
+        # frozen completion-time snapshot or, via AimShipperIdPool_GetForPost's
+        # COALESCE, Parts.ufn_AimCustomerPartNumber(Item.PartNumber) - and
+        # PartNumber is NOT NULL, so this can never be empty for a real item
+        # (Migration 0051, 2026-08-04).
 
         # Never let str(None) reach AIM as the literal text "None" for a missing
         # lot number or quantity - treat it the same as a missing customer part:

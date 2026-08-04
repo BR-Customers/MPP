@@ -157,12 +157,12 @@ EXEC test.Assert_IsEqual
     @TestName = N'[0049] GetForPost returns empty for a NULL serial',
     @Expected = N'0', @Actual = @NullSerialRows;
 
--- ---- Config-gap self-heal (the CRITICAL fix: a row snapshotted with a NULL
--- CustomerPartNumber must rejoin to the live Parts.Item.AimCustomerPartNumber on
--- every read, not stay NULL forever). ----
+-- ---- Config-gap self-heal (a row snapshotted with a NULL CustomerPartNumber
+-- must rejoin to the DERIVED value -- Parts.ufn_AimCustomerPartNumber over the
+-- live Item.PartNumber, Migration 0051 -- on every read, not stay NULL forever). ----
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-HEAL')
-    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, AimCustomerPartNumber, CreatedAt, CreatedByUserId)
-    VALUES (3, N'AIM-P1-HEAL', N'AIM self-heal fixture part', 1, N'998877XX B111', SYSUTCDATETIME(), 1);
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (3, N'AIM-P1-HEAL', N'AIM self-heal fixture part', 1, SYSUTCDATETIME(), 1);
 DECLARE @HealItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-HEAL');
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @HealItem AND DeprecatedAt IS NULL)
     INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
@@ -173,8 +173,8 @@ INSERT INTO @OH EXEC Lots.Container_Open
     @ItemId = @HealItem, @ContainerConfigId = @HealConfig, @CellLocationId = @FkCell, @AppUserId = @UserId;
 DECLARE @HealContainerId BIGINT = (SELECT NewId FROM @OH);
 
--- Row A: snapshot NULL, item HAS a live AimCustomerPartNumber -> GetForPost must
--- return the LIVE item value (the self-heal).
+-- Row A: snapshot NULL -> GetForPost must return the DERIVED value
+-- (Parts.ufn_AimCustomerPartNumber(N'AIM-P1-HEAL') = N'AIMP1HEAL').
 INSERT INTO Lots.AimShipperIdPool
     (AimShipperId, FetchedAt, ConsumedAt, ConsumedByContainerId, ConsumedByUserId,
      CustomerPartNumber, Quantity, LotNumber)
@@ -185,11 +185,11 @@ DELETE FROM @G;
 INSERT INTO @G EXEC Lots.AimShipperIdPool_GetForPost @AimShipperId = N'000900401';
 DECLARE @HealedPart NVARCHAR(50) = (SELECT CustomerPartNumber FROM @G);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0049] GetForPost self-heals a NULL snapshot from the live item',
-    @Expected = N'998877XX B111', @Actual = @HealedPart;
+    @TestName = N'[0051] GetForPost self-heals a NULL snapshot to the derived value',
+    @Expected = N'AIMP1HEAL', @Actual = @HealedPart;
 
--- Row B: snapshot IS set, and differs from the item's current value -> GetForPost
--- must return the FROZEN snapshot, not the live value (precedence check).
+-- Row B: snapshot IS set, and differs from the item's derived value -> GetForPost
+-- must return the FROZEN snapshot, not the derived live value (precedence check).
 INSERT INTO Lots.AimShipperIdPool
     (AimShipperId, FetchedAt, ConsumedAt, ConsumedByContainerId, ConsumedByUserId,
      CustomerPartNumber, Quantity, LotNumber)
@@ -221,8 +221,8 @@ DELETE FROM @L;
 INSERT INTO @L EXEC Lots.AimShipperIdPool_ListUnposted @Top = 50;
 DECLARE @ListedHealedPart NVARCHAR(50) = (SELECT CustomerPartNumber FROM @L WHERE AimShipperId = N'000900401');
 EXEC test.Assert_IsEqual
-    @TestName = N'[0049] ListUnposted self-heals a NULL snapshot from the live item',
-    @Expected = N'998877XX B111', @Actual = @ListedHealedPart;
+    @TestName = N'[0051] ListUnposted self-heals a NULL snapshot to the derived value',
+    @Expected = N'AIMP1HEAL', @Actual = @ListedHealedPart;
 GO
 
 EXEC test.EndTestFile;

@@ -1208,6 +1208,18 @@ git commit -m "feat(sql): AimShipperIdPool_MarkPosted - audited human-confirmed 
 
 ### Task 6: `Parts.Item` AIM customer-part accessors
 
+> **⚠️ SUPERSEDED 2026-08-04.** Live testing against MPP's AIM server proved the customer part is
+> derivable from `Item.PartNumber` (strip dashes, preserve embedded spaces) — the "not derivable,
+> must be stored" premise below was wrong for MPP's own part numbers. Migration
+> `0051_drop_item_aim_customer_part.sql` drops `Parts.Item.AimCustomerPartNumber` and the two
+> procs this task built, and replaces them with a single pure function,
+> `Parts.ufn_AimCustomerPartNumber(@PartNumber)`. `sql/tests/0049_AimIntegration/050_Item_accessors.sql`
+> (created below) was deleted; its coverage was replaced by ufn assertions in
+> `sql/tests/0049_AimIntegration/010_schema.sql`. See
+> `notes/2026-07-28_aim-interface-contract.md` for the evidence and
+> `docs/superpowers/specs/2026-07-31-aim-integration-ignition-design.md` §4.1/§4.2/§10 for the
+> updated design. This task is left below **for historical record only** — do not execute it.
+
 **Files:**
 - Create: `sql/migrations/repeatable/R__Parts_Item_GetAimCustomerPartNumber.sql`
 - Create: `sql/migrations/repeatable/R__Parts_Item_SetAimCustomerPartNumber.sql`

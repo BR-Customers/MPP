@@ -23,12 +23,15 @@ DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHER
 DELETE FROM Lots.Lot WHERE LotName = N'AIM-P1-T3-LOT';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-T3');
 
+-- PartNumber is DASHED on purpose (shaped like the real ones, e.g. AIM-P1-T3):
+-- the AIM customer part is now DERIVED via Parts.ufn_AimCustomerPartNumber
+-- (Migration 0051), not a separately-set stored value, so this fixture proves
+-- the derivation end-to-end through Container_Complete's @PostPart assignment.
 DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'AIM-P1-T3')
     INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
     VALUES (3, N'AIM-P1-T3', N'AIM plan-1 test part', 1, @Now, 1);
 DECLARE @ItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'AIM-P1-T3');
-UPDATE Parts.Item SET AimCustomerPartNumber = N'112006FB A000' WHERE Id = @ItemId;
 
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @ItemId AND DeprecatedAt IS NULL)
     INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt)
@@ -89,8 +92,8 @@ DECLARE @Serial NVARCHAR(50) = (SELECT AimShipperId FROM @R);
 DECLARE @Part NVARCHAR(50) = (SELECT CustomerPartNumber FROM Lots.AimShipperIdPool
                               WHERE AimShipperId = @Serial);
 EXEC test.Assert_IsEqual
-    @TestName = N'[0049] claimed row carries the AIM customer part',
-    @Expected = N'112006FB A000', @Actual = @Part;
+    @TestName = N'[0051] claimed row carries the dash-stripped AIM customer part',
+    @Expected = N'AIMP1T3', @Actual = @Part;
 
 DECLARE @QtyOk NVARCHAR(10) = (SELECT CASE WHEN p.Quantity =
         (SELECT ISNULL(SUM(t.PartsClosedCount), 0) FROM Lots.ContainerTray t

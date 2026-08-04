@@ -82,8 +82,10 @@ def _urlEncodePayload(text):
        two characters our own delimiter/space use happened to need. A blacklist
        misses every other query-string metacharacter, and this field set is NOT
        machine-only data - Lots.Lot_Create accepts a caller-supplied @LotName (a
-       pre-printed LTT) and AimCustomerPartNumber is free text typed into Item
-       Master, so '#', '&', '%', '+', '=', quotes, etc. can all show up here.
+       pre-printed LTT), and the customer part (Parts.ufn_AimCustomerPartNumber,
+       derived from Item.PartNumber - Migration 0051) inherits whatever
+       characters PartNumber contains, so '#', '&', '%', '+', '=', quotes, etc.
+       can all show up here.
 
        Each SOURCE character is mapped exactly once (no sequential .replace() calls
        chained on top of each other's output), so there is no risk of double-encoding

@@ -136,6 +136,40 @@ preserve internal spacing, 4-char suffix). Confirm whether our stored value is t
 form or the AIM form before implementing — and note the legacy export is itself inconsistent
 (`11200-P8A-A00` carries no padding), so a blind rule will not cover every part.
 
+#### ✅ IMPLEMENTED 2026-08-04 — dash-stripping supersedes "not derivable, must be stored" for OUR part numbers
+
+The design that followed this note (`docs/superpowers/specs/2026-07-31-aim-integration-ignition-design.md`
+§4.1, migration `0049`) concluded the AIM customer part **"is not derivable from `Item.PartNumber`"**
+and stored it in a new `Parts.Item.AimCustomerPartNumber` column that a human had to fill in per
+item. **That conclusion is now superseded for MPP's own part numbers.** This week's live testing
+against MPP's AIM server (table below, first captured at the top of migration `0051`'s header)
+confirmed the transform is exactly "strip dashes, preserve embedded spaces" applied to
+`Parts.Item.PartNumber`:
+
+| Value sent to AIM | Result |
+|---|---|
+| `11200-6FB-A00` | Blanket not found |
+| `112006FBA00` | Blanket not found |
+| `112006FB A000` | posted, label created |
+
+The legacy MES material name for that part is `11200-6FB -A000`. Strip the dashes — and *only* the
+dashes, do not trim or collapse whitespace — and the result is `112006FB A000` exactly: the value
+that worked. This is precisely the legacy Base2 `partName.Replace("-", "")` step from §2's "Legacy
+lineage" discussion above, applied at the correct point (the customer part, not the item number).
+
+**Consequence:** `Parts.Item.AimCustomerPartNumber` and its two accessor procs are removed
+(migration `0051_drop_item_aim_customer_part.sql`); `Parts.ufn_AimCustomerPartNumber(@PartNumber)`
+derives the value on every read instead. There is no longer a per-item value for MPP to maintain,
+no config-gap state, and nothing for the Item Master AIM field to edit — that field is deleted.
+
+**Caveat — this does not resolve every part.** The AIM Customer Part / Item Number Cross-Reference
+this note captured above shows one row dash-stripping cannot produce: `11300R70 A000` →
+`11300R7- A000` — a **dash appears** in the AIM-side value exactly where the item number has a `0`.
+No transform of `PartNumber` alone reproduces that. An irregular part shaped like that one may still
+post the wrong customer part and need a manual look; this is a narrower, lower-probability version
+of the original "not derivable" problem, not a fully closed question. If a part is ever observed
+failing `postserial.csv` despite a clean dash-strip, check it against this pattern first.
+
 #### 🔴 Part numbers do NOT match across systems (found 2026-07-30, superseded by the above)
 
 Same physical part, two systems, two different strings:

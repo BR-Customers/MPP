@@ -149,7 +149,11 @@ BEGIN
                                           INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
                                           WHERE t.ContainerId = @ContainerId
                                           ORDER BY t.TrayPosition);
-        DECLARE @PostPart NVARCHAR(50) = (SELECT i.AimCustomerPartNumber
+        -- 2026-08-04: AIM customer part is derived from Item.PartNumber (dash-strip),
+        -- not a stored per-item column (Migration 0051; Parts.ufn_AimCustomerPartNumber
+        -- header has the evidence). PartNumber is NOT NULL, so this can never be NULL
+        -- for a real item.
+        DECLARE @PostPart NVARCHAR(50) = (SELECT Parts.ufn_AimCustomerPartNumber(i.PartNumber)
                                           FROM Lots.Container c
                                           INNER JOIN Parts.Item i ON i.Id = c.ItemId
                                           WHERE c.Id = @ContainerId);

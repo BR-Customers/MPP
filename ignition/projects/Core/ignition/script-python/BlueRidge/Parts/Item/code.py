@@ -461,21 +461,3 @@ def setPlcId(itemId, plcId, appUserId=None):
     return BlueRidge.Common.Db.execMutation(
         "parts/Item_SetPlcId",
         {"itemId": itemId, "plcId": plcId, "appUserId": appUserId})
-
-
-def getAimCustomerPartNumber(itemId):
-    """Read the item's AIM Customer Part - the value AIM's postserial.csv matches on.
-       NOT derivable from PartNumber; sourced from AIM's cross-reference. Returns the
-       string, or None when unset (a normal state - not every item ships to Honda)."""
-    rows = BlueRidge.Common.Db.execList(
-        "parts/Item_GetAimCustomerPartNumber", {"itemId": itemId}) or []
-    return rows[0].get("AimCustomerPartNumber") if rows else None
-
-
-def setAimCustomerPartNumber(itemId, value, appUserId=None):
-    """Set (or clear, with None) the item's AIM Customer Part. Returns {Status, Message}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
-    return BlueRidge.Common.Db.execMutation(
-        "parts/Item_SetAimCustomerPartNumber",
-        {"itemId": itemId, "value": value, "appUserId": appUserId})

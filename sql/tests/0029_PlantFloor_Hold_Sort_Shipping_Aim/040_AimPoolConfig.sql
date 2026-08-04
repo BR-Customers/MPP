@@ -10,7 +10,8 @@ GO
 
 DECLARE @G TABLE (Id INT, TargetBufferDepth INT, TopupThreshold INT, AlarmWarningDepth INT, AlarmCriticalDepth INT,
     AimBaseUrl NVARCHAR(200), AimCompanyCode NVARCHAR(10), AimPathToken NVARCHAR(50),
-    PostWarningAgeMinutes INT, PostCriticalAgeMinutes INT, UpdatedAtEt DATETIME2(3), UpdatedByUserId BIGINT);
+    PostWarningAgeMinutes INT, PostCriticalAgeMinutes INT, AimPostingEnabled BIT,
+    UpdatedAtEt DATETIME2(3), UpdatedByUserId BIGINT);
 INSERT INTO @G EXEC Lots.AimPoolConfig_Get;
 DECLARE @Tgt NVARCHAR(10) = (SELECT CAST(TargetBufferDepth AS NVARCHAR(10)) FROM @G);
 EXEC test.Assert_IsEqual @TestName = N'[AimCfg] seeded TargetBufferDepth 50', @Expected = N'50', @Actual = @Tgt;

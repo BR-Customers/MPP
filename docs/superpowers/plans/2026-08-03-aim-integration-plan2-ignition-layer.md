@@ -811,6 +811,15 @@ git commit -m "feat(aim): AimPostTimer (disabled at ship) + 9-digit dev pool IDs
 
 ### Task 6: Wire the post-back into container completion
 
+> **⚠️ PARTIALLY SUPERSEDED 2026-08-04.** Step 1 (calling `postOne` after completion) is still
+> correct and shipped as-is. Steps 2, 3 and 5 below build/wire the `AimNoCustomerPart` config-gap
+> popup and its `no_customer_part` outcome branch — both are **removed**. Live AIM testing proved
+> the customer part is derivable from `Item.PartNumber`, so with `PartNumber NOT NULL` a configured
+> item can never reach `postOne` missing a customer part; the outcome is unreachable and the modal
+> it triggered has nothing left to report. See Task 7's supersede notice and
+> `docs/superpowers/specs/2026-07-31-aim-integration-ignition-design.md` §6.1/§6.2. Left below for
+> historical record only.
+
 **Files:**
 - Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Lots/Container/code.py`
 - Create: `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/Popups/AimNoCustomerPart/{view.json,resource.json}`
@@ -878,6 +887,17 @@ Complete a container in Dev on an item **with** an AIM customer part (expect sil
 ---
 
 ### Task 7: Item Master — the AIM customer part field
+
+> **⚠️ SUPERSEDED 2026-08-04.** Live testing against MPP's AIM server proved the customer part is
+> derivable from `Item.PartNumber` (strip dashes, preserve embedded spaces) — the "NOT derivable
+> from PartNumber; sourced from AIM's cross-reference" premise below was wrong for MPP's own part
+> numbers. Migration `0051_drop_item_aim_customer_part.sql` drops the column and procs this task's
+> accessors depended on; the `getAimCustomerPartNumber` / `setAimCustomerPartNumber` entity methods
+> and the Identity field this task adds are both **removed**, replaced by nothing — there is no
+> longer a per-item value to view or edit. See `notes/2026-07-28_aim-interface-contract.md` for the
+> evidence and `docs/superpowers/specs/2026-07-31-aim-integration-ignition-design.md` §4.1/§4.2/§9
+> for the updated design. This task is left below **for historical record only** — do not execute
+> it.
 
 **Files:**
 - Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Parts/Item/code.py`

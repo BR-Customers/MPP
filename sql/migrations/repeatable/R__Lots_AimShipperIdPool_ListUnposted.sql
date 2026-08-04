@@ -1,18 +1,19 @@
 -- ============================================================
 -- Repeatable:  R__Lots_AimShipperIdPool_ListUnposted.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.1
+-- Version:     1.2
 -- Description: Rows owed to AIM - consumed but not yet reported. Serves BOTH the
 --              retry sweep (BlueRidge.Lots.AimPost.retryTick) and the supervisor
 --              list on /aim-pool. Oldest-first; order is a fairness choice only,
 --              NOT a requirement - AIM accepts serials in any order (verified
 --              2026-07-31). Timestamps returned in ET for display. Read proc:
 --              empty rowset when nothing is owed.
---              v1.1: CustomerPartNumber is COALESCE(p.CustomerPartNumber,
---              i.AimCustomerPartNumber) via the same LEFT JOIN self-heal as
---              _GetForPost -- the supervisor /aim-pool list no longer shows a
---              blank customer part for a row that is actually already fixable
---              once the item's AimCustomerPartNumber is filled in.
+--              v1.2 (2026-08-04, Migration 0051): CustomerPartNumber is
+--              COALESCE(p.CustomerPartNumber, Parts.ufn_AimCustomerPartNumber(
+--              i.PartNumber)) via the same LEFT JOIN self-heal as _GetForPost --
+--              the supervisor /aim-pool list always shows a derived customer part
+--              for a row whose snapshot came back NULL, since the derivation is a
+--              pure function of the NOT NULL Item.PartNumber.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.AimShipperIdPool_ListUnposted
     @Top INT = 50
@@ -24,10 +25,10 @@ BEGIN
         SET @Top = 50;
 
     SELECT TOP (@Top)
-        p.Id                                                     AS Id,
-        p.AimShipperId                                           AS AimShipperId,
-        p.ConsumedByContainerId                                  AS ContainerId,
-        COALESCE(p.CustomerPartNumber, i.AimCustomerPartNumber)  AS CustomerPartNumber,
+        p.Id                                                                          AS Id,
+        p.AimShipperId                                                                AS AimShipperId,
+        p.ConsumedByContainerId                                                       AS ContainerId,
+        COALESCE(p.CustomerPartNumber, Parts.ufn_AimCustomerPartNumber(i.PartNumber))  AS CustomerPartNumber,
         p.Quantity                                                AS Quantity,
         p.LotNumber                                               AS LotNumber,
         p.PostAttempts                                            AS PostAttempts,

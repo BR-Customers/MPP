@@ -4,6 +4,18 @@
 **Status:** Design — approved in brainstorming, pending spec review
 **Interface reference:** `notes/2026-07-28_aim-interface-contract.md` (verified contract, diagnostic history, AIM Vision menu paths)
 
+> **Superseded 2026-08-04 (workstream D):** live AIM testing proved the customer part is
+> DERIVABLE from `Item.PartNumber` (strip dashes, preserve spaces) — it is not an independent
+> fact that must be sourced from AIM and hand-maintained per item, as workstream D below
+> assumed. `Parts.Item.AimCustomerPartNumber` and its two accessor procs were removed
+> (migration `0051`); `Parts.ufn_AimCustomerPartNumber(@PartNumber)` replaces them everywhere
+> the column was read. See `notes/2026-07-28_aim-interface-contract.md` for the evidence and
+> `docs/superpowers/plans/2026-07-31-aim-integration-plan1-sql-foundation.md` Task 6 /
+> `docs/superpowers/plans/2026-08-03-aim-integration-plan2-ignition-layer.md` Task 7 for the
+> superseded implementation tasks. §4.1, §4.2, §6.1, §6.2, §9 and §10 below are marked inline
+> where this changes them; the rest of the design (generic pool, transport, retry sweep,
+> escalation) is unaffected and still describes the shipped system.
+
 ---
 
 ## 1. Why
@@ -110,7 +122,15 @@ The path token is configuration rather than a constant because we do not know wh
 environment. The existing depth thresholds mean something different (pool supply, not post backlog),
 hence separate age columns.
 
-**Customer part number** on `Parts.Item`:
+**Customer part number on `Parts.Item` — REMOVED 2026-08-04 (migration `0051`).** This
+subsection originally added a stored `AimCustomerPartNumber NVARCHAR(50) NULL` column, reasoning
+(below, struck through by events) that the value could not be derived from `Item.PartNumber`.
+Live testing against MPP's AIM server proved otherwise for MPP's own part numbers — see the
+superseded-notice at the top of this document and `notes/2026-07-28_aim-interface-contract.md`.
+The column and its migration-0049 rationale are kept below **for historical record only**; the
+live schema has no such column. Use `Parts.ufn_AimCustomerPartNumber(@PartNumber)` instead.
+
+<details><summary>Original (superseded) text</summary>
 
 | Column | Type | Purpose |
 |---|---|---|
@@ -124,6 +144,8 @@ system's part number stored alongside ours).
 Cross-Reference shows `11300R70 A000` -> `11300R7- A000` and `112006FBAA000` -> `112006FB A000` — a
 `-` where the item number has `0`, a space where it has `A`. No transform reproduces this; it must be
 stored per item and sourced from AIM.
+
+</details>
 
 ### 4.2 Procedure changes
 
@@ -143,8 +165,13 @@ stored per item and sourced from AIM.
 | `Lots.AimShipperIdPool_RecordPostResult @Id, @Success, @Error` | stamp `PostedAt` or increment attempts + record error |
 | `Lots.AimShipperIdPool_ListUnposted @Top` | sweep + supervisor list read (ET timestamps) |
 | `Lots.AimShipperIdPool_MarkPosted @Id, @AppUserId, @Note` | human-confirmed resolution, audited |
-| `Parts.Item_GetAimCustomerPartNumber @ItemId` | read the customer part for one item |
-| `Parts.Item_SetAimCustomerPartNumber @ItemId, @Value, @AppUserId` | set it, audited |
+| ~~`Parts.Item_GetAimCustomerPartNumber @ItemId`~~ | **REMOVED 2026-08-04** (migration `0051`) — read the customer part for one item |
+| ~~`Parts.Item_SetAimCustomerPartNumber @ItemId, @Value, @AppUserId`~~ | **REMOVED 2026-08-04** (migration `0051`) — set it, audited |
+
+**2026-08-04 addendum:** both accessors above are gone. `Parts.ufn_AimCustomerPartNumber
+(@PartNumber)` (new, migration `0051`) replaces them — a pure scalar function, not a
+stored/audited value, so there is nothing left to "get" or "set" per item. `Item_Get` /
+`Item_Update` remain deliberately untouched, as below.
 
 `Item_Get` / `Item_Update` are **deliberately untouched**. This mirrors the established
 `Item_GetPlcId` / `Item_SetPlcId` pattern (migration `0038`): separate accessors keep the
@@ -197,16 +224,21 @@ Perspective.
 `BlueRidge.Lots.AimPost.postOne(aimShipperId)`:
 
 1. Read the row (`_GetForPost`).
-2. If `CustomerPartNumber` is missing -> return `NoCustomerPart` **without calling AIM**; record the
-   attempt with a config-gap error.
+2. ~~If `CustomerPartNumber` is missing -> return `NoCustomerPart` **without calling AIM**; record
+   the attempt with a config-gap error.~~ **REMOVED 2026-08-04** — `CustomerPartNumber` is now
+   COALESCEd against `Parts.ufn_AimCustomerPartNumber(Item.PartNumber)`, and `PartNumber` is
+   `NOT NULL`, so a configured item can never reach `postOne` with a missing customer part. The
+   `no_customer_part` outcome and its caller branch (`AimNoCustomerPart` popup) are deleted.
 3. Otherwise `AimHttp.postSerial(...)`.
 4. `_RecordPostResult` — stamp `PostedAt` on success, else increment attempts and store the error.
 
 Both the synchronous completion path and the retry sweep call exactly this, so there is one
 definition of "post a serial" and retry cannot drift from first-attempt behaviour.
 
-Because `postOne` **re-reads the payload on every attempt**, a config-gap row self-heals: the moment
-someone sets the item's `AimCustomerPartNumber`, the next tick succeeds with no requeue.
+Because `postOne` **re-reads the payload on every attempt**, a row snapshotted with a NULL
+`CustomerPartNumber` self-heals to the derived value on the very next attempt — automatically, since
+the derivation is a pure function of `PartNumber` rather than a value someone has to remember to
+fill in (superseding the original "someone sets `AimCustomerPartNumber`" self-heal story below).
 
 ### 6.2 Completion
 
@@ -223,15 +255,18 @@ Operator feedback branches on the outcome:
 |---|---|
 | Success | none (normal completion) |
 | Transport failure | toast: *"AIM not updated for `000000024` — will retry automatically."* |
-| `NoCustomerPart` | **modal popup requiring acknowledgement** (below) |
+| ~~`NoCustomerPart`~~ | ~~**modal popup requiring acknowledgement** (below)~~ **REMOVED 2026-08-04** — unreachable now that the customer part is derived from the `NOT NULL` `PartNumber`; see §6.1. |
 
-> **AIM not updated — no customer part number**
-> Part `<PartNumber>` has no AIM customer part number configured. The container completed and the
-> label printed, but Honda's system was not updated. A supervisor must set this in Item Master.
+> ~~**AIM not updated — no customer part number**~~
+> ~~Part `<PartNumber>` has no AIM customer part number configured. The container completed and the
+> label printed, but Honda's system was not updated. A supervisor must set this in Item Master.~~
+>
+> **REMOVED 2026-08-04.** The `AimNoCustomerPart` popup and this modal copy are deleted along with
+> the outcome that triggered them (migration `0051`). Kept here for historical record only.
 
-The config gap is an actionable configuration error, not a transient outage, so it gets a modal the
+~~The config gap is an actionable configuration error, not a transient outage, so it gets a modal the
 operator must dismiss rather than a passive toast. The row is still recorded and still retried in the
-background — the popup is what makes it visible.
+background — the popup is what makes it visible.~~ No longer applicable — see above.
 
 ### 6.3 Retry sweep
 
@@ -299,21 +334,29 @@ counter at ~13.84M. MES traffic must never target `99`.
 
 | Layer | Items |
 |---|---|
-| SQL migration | `0049_aim_pool_generic_and_postback.sql` (pool + config + `Parts.Item.AimCustomerPartNumber`) |
-| SQL procs | 6 modified, 6 new (§4.2) |
+| SQL migration | `0049_aim_pool_generic_and_postback.sql` (pool + config + `Parts.Item.AimCustomerPartNumber`); **`0051_drop_item_aim_customer_part.sql` (2026-08-04) drops that column + its two accessors, adds `Parts.ufn_AimCustomerPartNumber`** |
+| SQL procs | 6 modified, 6 new (§4.2); **2026-08-04: `Item_GetAimCustomerPartNumber` / `Item_SetAimCustomerPartNumber` dropped, `Parts.ufn_AimCustomerPartNumber` added, `Container_Complete` / `AimShipperIdPool_GetForPost` / `AimShipperIdPool_ListUnposted` re-pointed at it** |
 | SQL seed | `028_seed_aim_pool_dev.sql` — drop part column |
-| SQL tests | 2 suites rewritten, 2 new suites (post-back; item accessors) |
-| Core scripts | new `AimHttp`, new `AimPost`; `AimPool` + `AimPoolConfig` signatures; `AimPoolGateway.topupTick` implemented, `alarmTick` extended; `Parts.Item` gains `getAimCustomerPartNumber` / `setAimCustomerPartNumber` |
-| Named queries | 6 new (one per new proc); 5 modified (`AimShipperIdPool_Claim`/`_Topup`/`_GetDepth`, `AimPoolConfig_Get`/`_Update`) |
+| SQL tests | 2 suites rewritten, 2 new suites (post-back; item accessors — **the item-accessor suite file is deleted 2026-08-04, its coverage replaced by ufn assertions in `010_schema.sql`**) |
+| Core scripts | new `AimHttp`, new `AimPost`; `AimPool` + `AimPoolConfig` signatures; `AimPoolGateway.topupTick` implemented, `alarmTick` extended; ~~`Parts.Item` gains `getAimCustomerPartNumber` / `setAimCustomerPartNumber`~~ **removed 2026-08-04**; `AimPost.postOne` loses its `no_customer_part` outcome |
+| Named queries | 6 new (one per new proc); 5 modified (`AimShipperIdPool_Claim`/`_Topup`/`_GetDepth`, `AimPoolConfig_Get`/`_Update`); **2026-08-04: `parts/Item_GetAimCustomerPartNumber` and `parts/Item_SetAimCustomerPartNumber` deleted** |
 | MPP timers | new `AimPostTimer` (disabled at ship) |
-| Views | `AimPoolConfig` screen (config + unposted list + MarkPosted); `AimPoolTile` (drop per-part, add backlog); `Container.complete` popup/toast branch; **MPP_Config Item Master → Identity** gains the AIM customer-part field (loads/saves via the accessors, mirroring `PlcId`) |
+| Views | `AimPoolConfig` screen (config + unposted list + MarkPosted); `AimPoolTile` (drop per-part, add backlog); `Container.complete` popup/toast branch (**2026-08-04: the `NoCustomerPart` modal branch and `AimNoCustomerPart` popup are deleted**); ~~**MPP_Config Item Master → Identity** gains the AIM customer-part field (loads/saves via the accessors, mirroring `PlcId`)~~ **removed 2026-08-04 — the field is deleted along with the column it edited** |
 
 ## 10. Dependencies and open items
 
-1. **Customer-part data** — the column and its editor are in scope (§4.1, D), but the *values* are
+1. ~~**Customer-part data** — the column and its editor are in scope (§4.1, D), but the *values* are
    not. They are not derivable from our part numbers, so MPP must supply the mapping — ideally an
    export of AIM's Customer Part / Item Number Cross-Reference for every Honda-shipped item. Until an
-   item has a value, its containers complete normally and raise the config-gap modal (§6.2).
+   item has a value, its containers complete normally and raise the config-gap modal (§6.2).~~
+   **RESOLVED 2026-08-04** — the values ARE derivable for MPP's own part numbers (dash-strip,
+   preserve spaces), proven against live AIM testing this week. The stored column, its editor, and
+   the config-gap modal are all removed; `Parts.ufn_AimCustomerPartNumber` derives the value on
+   every read. One known irregular case remains: AIM's Customer Part / Item Number Cross-Reference
+   showed `11300R70 A000` -> `11300R7- A000`, which dash-stripping cannot produce — see
+   `notes/2026-07-28_aim-interface-contract.md` for that caveat. No open item for the general case;
+   an irregular part surfacing a wrong customer part in production is a new, narrower follow-up if
+   it ever occurs.
 2. **Exceptions-folder access** — a rejected duplicate writes **no** exception file, so the folder is
    an incomplete failure oracle. Remote access (`C$`, WinRM) is blocked from the dev box. Needs MPP
    IT before anything is designed on it.

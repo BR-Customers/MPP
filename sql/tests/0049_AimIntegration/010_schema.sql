@@ -53,11 +53,47 @@ EXEC test.Assert_IsEqual
     @TestName = N'[0049] five AimPoolConfig columns present',
     @Expected = N'5', @Actual = @Cfg;
 
+-- Migration 0051 (2026-08-04): the stored per-item AIM customer part is gone --
+-- live AIM testing proved the value is DERIVABLE from Item.PartNumber
+-- (dash-strip), so the column that had to be manually maintained is retired.
+-- See Parts.ufn_AimCustomerPartNumber for the derivation + evidence.
 DECLARE @ItemCol NVARCHAR(10) =
-    CASE WHEN COL_LENGTH(N'Parts.Item', N'AimCustomerPartNumber') IS NOT NULL THEN N'1' ELSE N'0' END;
+    CASE WHEN COL_LENGTH(N'Parts.Item', N'AimCustomerPartNumber') IS NULL THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
-    @TestName = N'[0049] Parts.Item.AimCustomerPartNumber present',
+    @TestName = N'[0051] Parts.Item.AimCustomerPartNumber dropped',
     @Expected = N'1', @Actual = @ItemCol;
+
+DECLARE @GetProcGone NVARCHAR(10) =
+    CASE WHEN OBJECT_ID(N'Parts.Item_GetAimCustomerPartNumber') IS NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[0051] Parts.Item_GetAimCustomerPartNumber dropped',
+    @Expected = N'1', @Actual = @GetProcGone;
+
+DECLARE @SetProcGone NVARCHAR(10) =
+    CASE WHEN OBJECT_ID(N'Parts.Item_SetAimCustomerPartNumber') IS NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[0051] Parts.Item_SetAimCustomerPartNumber dropped',
+    @Expected = N'1', @Actual = @SetProcGone;
+
+-- Parts.ufn_AimCustomerPartNumber: strip dashes only, preserve embedded spaces,
+-- NULL in -> NULL out. This is the evidence-backed replacement for the stored
+-- column -- see the function header for the live-AIM-test table.
+DECLARE @UfnDashed NVARCHAR(50) = (SELECT Parts.ufn_AimCustomerPartNumber(N'AIM-P1-T3'));
+EXEC test.Assert_IsEqual
+    @TestName = N'[0051] ufn_AimCustomerPartNumber strips dashes',
+    @Expected = N'AIMP1T3', @Actual = @UfnDashed;
+
+-- The real evidence case: legacy MES material name for the verified-working part,
+-- dashes stripped, embedded space preserved -> exactly the value that posted.
+DECLARE @UfnSpace NVARCHAR(50) = (SELECT Parts.ufn_AimCustomerPartNumber(N'11200-6FB -A000'));
+EXEC test.Assert_IsEqual
+    @TestName = N'[0051] ufn_AimCustomerPartNumber strips dashes and preserves the embedded space',
+    @Expected = N'112006FB A000', @Actual = @UfnSpace;
+
+DECLARE @UfnNull NVARCHAR(50) = (SELECT Parts.ufn_AimCustomerPartNumber(NULL));
+EXEC test.Assert_IsNull
+    @TestName = N'[0051] ufn_AimCustomerPartNumber returns NULL for NULL input',
+    @Value = @UfnNull;
 
 DECLARE @Defaults NVARCHAR(20) = (SELECT
     CAST(PostWarningAgeMinutes AS NVARCHAR(10)) + N'/' + CAST(PostCriticalAgeMinutes AS NVARCHAR(10))
