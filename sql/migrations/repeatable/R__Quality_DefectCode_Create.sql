@@ -2,26 +2,17 @@
 -- Procedure:   Quality.DefectCode_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.1
+-- Version:     3.0
 --
 -- Description:
---   Creates a new defect code. Code must be unique.
---   AreaLocationId must reference an active Location (typically
---   an Area in the ISA-95 hierarchy).
---
--- Parameters (input):
---   @Code NVARCHAR(20) - Required. Unique.
---   @Description NVARCHAR(500) - Required.
---   @AreaLocationId BIGINT - Required. Area responsible for this defect.
---   @IsExcused BIT - Defaults to 0. Affects OEE quality calc.
---   @AppUserId BIGINT - Required for audit.
+--   Creates a new defect code. Code must be unique. Scoped by
+--   Parts.OperationCategory (nullable = plant-wide, applies everywhere).
 --
 -- Result set:
 --   Single row with Status (BIT), Message (NVARCHAR), NewId (BIGINT).
---   Status=1 on success, 0 on failure. NewId is NULL on failure.
 --
 -- Dependencies:
---   Tables: Quality.DefectCode, Location.Location
+--   Tables: Quality.DefectCode, Parts.OperationCategory
 --   Procs:  Audit.Audit_LogConfigChange, Audit.Audit_LogFailure
 --
 -- Change Log:
@@ -30,13 +21,16 @@
 --   2026-05-29 - 2.1 - Audit-readability convention (Slice 8 Downtime+Defect
 --                       codes): SUBJECT . ACTION narrative Description +
 --                       resolved-FK OldValue/NewValue JSON.
+--   2026-08-04 - 3.0 - Scope by Parts.OperationCategory (nullable = plant-wide)
+--                       instead of AreaLocationId. Audit JSON carries a Category
+--                       sub-object; NULL renders as "Plant-wide".
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.DefectCode_Create
-    @Code            NVARCHAR(20),
-    @Description     NVARCHAR(500),
-    @AreaLocationId  BIGINT,
-    @IsExcused       BIT             = 0,
-    @AppUserId       BIGINT
+    @Code                NVARCHAR(20),
+    @Description         NVARCHAR(500),
+    @OperationCategoryId BIGINT          = NULL,
+    @IsExcused           BIT             = 0,
+    @AppUserId           BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -49,16 +43,14 @@ BEGIN
     DECLARE @ProcName NVARCHAR(200) = N'Quality.DefectCode_Create';
     DECLARE @Params   NVARCHAR(MAX) =
         (SELECT @Code AS Code, @Description AS Description,
-                @AreaLocationId AS AreaLocationId, @IsExcused AS IsExcused
+                @OperationCategoryId AS OperationCategoryId, @IsExcused AS IsExcused
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
-        -- ====================
-        -- Parameter validation
-        -- ====================
+        -- Required params (OperationCategoryId is OPTIONAL: NULL = plant-wide)
         IF @Code IS NULL OR LTRIM(RTRIM(@Code)) = N''
            OR @Description IS NULL OR LTRIM(RTRIM(@Description)) = N''
-           OR @AreaLocationId IS NULL OR @AppUserId IS NULL
+           OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing.';
             EXEC Audit.Audit_LogFailure
@@ -70,12 +62,12 @@ BEGIN
             RETURN;
         END
 
-        -- ====================
-        -- FK existence checks
-        -- ====================
-        IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Id = @AreaLocationId AND DeprecatedAt IS NULL)
+        -- FK check only when a category is supplied
+        IF @OperationCategoryId IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM Parts.OperationCategory
+                           WHERE Id = @OperationCategoryId AND DeprecatedAt IS NULL)
         BEGIN
-            SET @Message = N'Invalid or deprecated AreaLocationId.';
+            SET @Message = N'Invalid or deprecated OperationCategoryId.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'DefectCode',
                 @EntityId = NULL, @LogEventTypeCode = N'Created',
@@ -85,9 +77,6 @@ BEGIN
             RETURN;
         END
 
-        -- ====================
-        -- Business rule: unique code
-        -- ====================
         IF EXISTS (SELECT 1 FROM Quality.DefectCode WHERE Code = LTRIM(RTRIM(@Code)))
         BEGIN
             SET @Message = N'A defect code with this Code already exists.';
@@ -100,38 +89,32 @@ BEGIN
             RETURN;
         END
 
-        -- ====================
-        -- Mutation (atomic)
-        -- ====================
         BEGIN TRANSACTION;
 
         INSERT INTO Quality.DefectCode
-            (Code, Description, AreaLocationId, IsExcused, CreatedAt)
+            (Code, Description, OperationCategoryId, IsExcused, CreatedAt)
         VALUES
-            (LTRIM(RTRIM(@Code)), LTRIM(RTRIM(@Description)), @AreaLocationId, ISNULL(@IsExcused, 0), SYSUTCDATETIME());
+            (LTRIM(RTRIM(@Code)), LTRIM(RTRIM(@Description)), @OperationCategoryId, ISNULL(@IsExcused, 0), SYSUTCDATETIME());
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
-        -- ===== Audit narrative + resolved JSON =====
-
-        DECLARE @AreaName NVARCHAR(200) =
-            (SELECT Name FROM Location.Location WHERE Id = @AreaLocationId);
+        DECLARE @CatName NVARCHAR(100) =
+            ISNULL((SELECT Name FROM Parts.OperationCategory WHERE Id = @OperationCategoryId), N'Plant-wide');
 
         DECLARE @Subject NVARCHAR(600) =
             N'Defect Code ' + LTRIM(RTRIM(@Code)) + N' ' + NCHAR(8212) + N' ' + LTRIM(RTRIM(@Description))
-            + CASE WHEN @AreaName IS NOT NULL THEN N' (' + @AreaName + N')' ELSE N'' END;
+            + N' (' + @CatName + N')';
 
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
             @Subject + N' ' + Audit.ufn_MidDot() + N' Created');
 
-        -- NewValue: created snapshot with resolved Area sub-object
         DECLARE @NewValueResolved NVARCHAR(MAX) = (
             SELECT
                 dc.Code,
                 dc.Description,
-                JSON_QUERY((SELECT l.Id, l.Code, l.Name
-                            FROM Location.Location l WHERE l.Id = dc.AreaLocationId
-                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS Area,
+                JSON_QUERY((SELECT oc.Id, oc.Code, oc.Name
+                            FROM Parts.OperationCategory oc WHERE oc.Id = dc.OperationCategoryId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS Category,
                 dc.IsExcused
             FROM Quality.DefectCode dc
             WHERE dc.Id = @NewId
@@ -143,7 +126,7 @@ BEGIN
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = @Activity,
+            @Description        = @Activity,
             @OldValue          = NULL,
             @NewValue          = @NewValueResolved;
 
@@ -154,30 +137,19 @@ BEGIN
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-
-        DECLARE @ErrMsg   NVARCHAR(4000) = ERROR_MESSAGE();
-        DECLARE @ErrSev   INT            = ERROR_SEVERITY();
-        DECLARE @ErrState INT            = ERROR_STATE();
-
-        SET @Status  = 0;
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        DECLARE @ErrMsg NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrSev INT = ERROR_SEVERITY();
+        DECLARE @ErrState INT = ERROR_STATE();
+        SET @Status = 0; SET @NewId = NULL;
         SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
-        SET @NewId   = NULL;
-
         BEGIN TRY
             EXEC Audit.Audit_LogFailure
-                @AppUserId           = @AppUserId,
-                @LogEntityTypeCode   = N'DefectCode',
-                @EntityId            = NULL,
-                @LogEventTypeCode    = N'Created',
-                @FailureReason       = @Message,
-                @ProcedureName       = @ProcName,
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'DefectCode',
+                @EntityId = NULL, @LogEventTypeCode = N'Created',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
                 @AttemptedParameters = @Params;
-        END TRY
-        BEGIN CATCH
-        END CATCH
-
+        END TRY BEGIN CATCH END CATCH
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
         RAISERROR(@ErrMsg, @ErrSev, @ErrState);
     END CATCH
