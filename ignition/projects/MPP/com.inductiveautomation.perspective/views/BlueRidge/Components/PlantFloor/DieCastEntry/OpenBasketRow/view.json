@@ -150,6 +150,7 @@
           "name": "VoidButton"
         },
         "position": {
+          "basis": "72px",
           "shrink": 0
         },
         "propConfig": {

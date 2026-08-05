@@ -133,6 +133,7 @@
               "name": "AckButton"
             },
             "position": {
+              "basis": "203px",
               "shrink": 0
             },
             "props": {

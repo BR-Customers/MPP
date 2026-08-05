@@ -136,7 +136,7 @@
           "style": {
             "gap": "10px",
             "marginTop": "4px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
