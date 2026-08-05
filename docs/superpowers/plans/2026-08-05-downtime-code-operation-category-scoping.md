@@ -1,6 +1,6 @@
 # Downtime codes scoped by OperationCategory — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement task-by-task. Steps use checkbox (`- [ ]`).
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement task-by-task. Steps use checkbox (`- [x]`).
 
 **Goal:** Replace `Oee.DowntimeReasonCode`'s single physical-Area FK with a nullable `OperationCategoryId` (DieCast / Trim / MachiningAssembly; NULL = plant-wide), so a downtime code shows at every area in its process category — a mechanical mirror of the shipped defect-code refactor (#1).
 
@@ -30,7 +30,7 @@
 
 **Files:** Create `sql/migrations/versioned/0051_downtime_code_operation_category.sql`
 
-- [ ] **Step 1:** Write the migration (verbatim mirror of `0048`, table `Oee.DowntimeReasonCode`):
+- [x] **Step 1:** Write the migration (verbatim mirror of `0048`, table `Oee.DowntimeReasonCode`):
 
 ```sql
 -- ============================================================
@@ -91,8 +91,8 @@ GO
 ```
 Note: if `IX_DowntimeReasonCode_AreaLocationId` doesn't exist under that name, the drop is a guarded no-op — fine.
 
-- [ ] **Step 2:** Reset `MPP_MES_DowntimeCat`, verify `COL_LENGTH('Oee.DowntimeReasonCode','OperationCategoryId')` non-null, `AreaLocationId` NULL.
-- [ ] **Step 3:** Commit `feat(oee): migration 0051 — DowntimeReasonCode.OperationCategoryId replaces AreaLocationId`.
+- [x] **Step 2:** Reset `MPP_MES_DowntimeCat`, verify `COL_LENGTH('Oee.DowntimeReasonCode','OperationCategoryId')` non-null, `AreaLocationId` NULL.
+- [x] **Step 3:** Commit `feat(oee): migration 0051 — DowntimeReasonCode.OperationCategoryId replaces AreaLocationId`.
 
 ---
 
@@ -107,8 +107,8 @@ Note: if `IX_DowntimeReasonCode_AreaLocationId` doesn't exist under that name, t
 - Audit: `@AreaName` → `@CatName = ISNULL((SELECT Name FROM Parts.OperationCategory WHERE Id=@OperationCategoryId),N'Plant-wide')`; subject parenthetical uses `@CatName`; NewValue/OldValue JSON swap the `Area` sub-object for a `Category` one (`SELECT oc.Id, oc.Code, oc.Name FROM Parts.OperationCategory oc WHERE oc.Id = drc.OperationCategoryId`). **Keep the `ReasonType` sub-object.**
 - **Update proc:** field-diff swaps `Area "old"→"new"` for `Category "old"→"new"`; **include** `IF @Fields IS NULL OR @Fields = N'' SET @Fields = N'no changes';` (the STUFF-on-empty→NULL Description guard — bug hit in #1/SessionPolicy).
 
-- [ ] Rewrite both procs per the deltas. Entity code `DowntimeReasonCode`, event codes `Created`/`Updated` already seeded.
-- [ ] Commit `feat(oee): DowntimeReasonCode Create/Update scope by OperationCategory`.
+- [x] Rewrite both procs per the deltas. Entity code `DowntimeReasonCode`, event codes `Created`/`Updated` already seeded.
+- [x] Commit `feat(oee): DowntimeReasonCode Create/Update scope by OperationCategory`.
 
 ---
 
@@ -116,8 +116,8 @@ Note: if `IX_DowntimeReasonCode_AreaLocationId` doesn't exist under that name, t
 
 **Files:** Modify `R__Oee_DowntimeReasonCode_Get.sql`, `R__Oee_DowntimeReasonCode_List.sql`
 
-- [ ] **Get:** SELECT returns `OperationCategoryId`, `oc.Name AS CategoryName` (LEFT JOIN `Parts.OperationCategory oc`) instead of `AreaLocationId`/`AreaName`; **keep** `DowntimeReasonTypeId`/`ReasonTypeName`, `DowntimeSourceCodeId`/`SourceCodeName`, `IsExcused`, `CreatedAt`, `DeprecatedAt`.
-- [ ] **List:** replace `@AreaLocationId` with `@OperationCategoryId BIGINT = NULL`; add `@OperationTypeCode NVARCHAR(20) = NULL`; **keep** `@DowntimeReasonTypeId`, `@IncludeDeprecated`. Body:
+- [x] **Get:** SELECT returns `OperationCategoryId`, `oc.Name AS CategoryName` (LEFT JOIN `Parts.OperationCategory oc`) instead of `AreaLocationId`/`AreaName`; **keep** `DowntimeReasonTypeId`/`ReasonTypeName`, `DowntimeSourceCodeId`/`SourceCodeName`, `IsExcused`, `CreatedAt`, `DeprecatedAt`.
+- [x] **List:** replace `@AreaLocationId` with `@OperationCategoryId BIGINT = NULL`; add `@OperationTypeCode NVARCHAR(20) = NULL`; **keep** `@DowntimeReasonTypeId`, `@IncludeDeprecated`. Body:
 
 ```sql
 CREATE OR ALTER PROCEDURE Oee.DowntimeReasonCode_List
@@ -149,7 +149,7 @@ BEGIN
 END
 GO
 ```
-- [ ] Commit `feat(oee): DowntimeReasonCode Get/List return Category; List resolves OperationType + plant-wide`.
+- [x] Commit `feat(oee): DowntimeReasonCode Get/List return Category; List resolves OperationType + plant-wide`.
 
 ---
 
@@ -157,8 +157,8 @@ GO
 
 **Files:** Modify `oee/DowntimeReasonCode_{Create,Update,Get,List}` `query.sql` + `resource.json`
 
-- [ ] Create/Update: `:areaLocationId` → `:operationCategoryId`. List: `:areaLocationId` → `:operationCategoryId` + add `:operationTypeCode` (String); keep `:downtimeReasonTypeId`, `:includeDeprecated`. Get: unchanged EXEC. Update each `resource.json` param set (mirror the `quality/DefectCode_*` resource.json shapes; numeric = sqlType 3, string = sqlType 7). All `type:"Query"`.
-- [ ] `.\scan.ps1`; commit `feat(oee): DowntimeReasonCode NQs pass operationCategoryId/operationTypeCode`.
+- [x] Create/Update: `:areaLocationId` → `:operationCategoryId`. List: `:areaLocationId` → `:operationCategoryId` + add `:operationTypeCode` (String); keep `:downtimeReasonTypeId`, `:includeDeprecated`. Get: unchanged EXEC. Update each `resource.json` param set (mirror the `quality/DefectCode_*` resource.json shapes; numeric = sqlType 3, string = sqlType 7). All `type:"Query"`.
+- [x] `.\scan.ps1`; commit `feat(oee): DowntimeReasonCode NQs pass operationCategoryId/operationTypeCode`.
 
 ---
 
@@ -166,8 +166,8 @@ GO
 
 **Files:** Modify the downtime-code seed (find via `grep -rl "DowntimeReasonCode" sql/seeds`)
 
-- [ ] Replace the Area-location `DECLARE`s with the three `Parts.OperationCategory` id lookups (`DieCast`/`Trim`/`MachiningAssembly`); map each row's area token → category; site/Break/logistics rows → `NULL` (plant-wide). Rename the temp/insert column `AreaLocationId` → `OperationCategoryId`; drop any `WHERE ... AreaLocationId IS NOT NULL` guard (NULL now valid). ASCII-only — byte-scan before applying.
-- [ ] Reset `MPP_MES_DowntimeCat`, verify category buckets (die-cast codes→DieCast, trim→Trim, machining→MachiningAssembly, Break/site→NULL). Commit `seed(oee): downtime codes scoped by OperationCategory (site/break = plant-wide)`.
+- [x] Replace the Area-location `DECLARE`s with the three `Parts.OperationCategory` id lookups (`DieCast`/`Trim`/`MachiningAssembly`); map each row's area token → category; site/Break/logistics rows → `NULL` (plant-wide). Rename the temp/insert column `AreaLocationId` → `OperationCategoryId`; drop any `WHERE ... AreaLocationId IS NOT NULL` guard (NULL now valid). ASCII-only — byte-scan before applying.
+- [x] Reset `MPP_MES_DowntimeCat`, verify category buckets (die-cast codes→DieCast, trim→Trim, machining→MachiningAssembly, Break/site→NULL). Commit `seed(oee): downtime codes scoped by OperationCategory (site/break = plant-wide)`.
 
 ---
 
@@ -175,8 +175,8 @@ GO
 
 **Files:** Modify `ignition/projects/Core/ignition/script-python/BlueRidge/Oee/DowntimeReasonCode/code.py`
 
-- [ ] Mirror `BlueRidge/Quality/DefectCode/code.py`: `getAll`/`search` param `areaLocationId` → `operationCategoryId`; NQ keys `operationCategoryId` + `operationTypeCode`; row map exposes `category`/`operationCategoryId` (was `area`/`areaLocationId`); `add`/`update` read `OperationCategoryId`. Add `getForDropdown(operationTypeCode=None)` (plant-floor) and `getCategoryOptions(nullLabel=None)` (reuse `BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown`). Preserve any downtimeReasonTypeId passthrough.
-- [ ] `.\scan.ps1`; commit `feat(oee): DowntimeReasonCode entity script scopes by OperationCategory`.
+- [x] Mirror `BlueRidge/Quality/DefectCode/code.py`: `getAll`/`search` param `areaLocationId` → `operationCategoryId`; NQ keys `operationCategoryId` + `operationTypeCode`; row map exposes `category`/`operationCategoryId` (was `area`/`areaLocationId`); `add`/`update` read `OperationCategoryId`. Add `getForDropdown(operationTypeCode=None)` (plant-floor) and `getCategoryOptions(nullLabel=None)` (reuse `BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown`). Preserve any downtimeReasonTypeId passthrough.
+- [x] `.\scan.ps1`; commit `feat(oee): DowntimeReasonCode entity script scopes by OperationCategory`.
 
 ---
 
@@ -184,8 +184,8 @@ GO
 
 **Files:** Modify the DowntimeReasonCode crud test (find via `grep -rl DowntimeReasonCode sql/tests`)
 
-- [ ] Mirror `040_DefectCode_crud.sql`: setup fetches the `DieCast` category id; Create/Update calls `@OperationCategoryId=@CatId`; temp-table shapes replace `AreaLocationId/AreaName` with `OperationCategoryId/CategoryName` (keep the ReasonType/SourceCode columns the Get/List return); invalid-FK test asserts `OperationCategoryId`; add **plant-wide create** (NULL category → Status 1), **List by `@OperationTypeCode='DieCast'`** returns die-cast + plant-wide, excludes Trim; **no-change Update succeeds** (NULL-Description guard); audit Description/JSON assert `Category` sub-object.
-- [ ] Run red→green against `MPP_MES_DowntimeCat`; commit `test(oee): DowntimeReasonCode crud covers OperationCategory + plant-wide + type-resolution`.
+- [x] Mirror `040_DefectCode_crud.sql`: setup fetches the `DieCast` category id; Create/Update calls `@OperationCategoryId=@CatId`; temp-table shapes replace `AreaLocationId/AreaName` with `OperationCategoryId/CategoryName` (keep the ReasonType/SourceCode columns the Get/List return); invalid-FK test asserts `OperationCategoryId`; add **plant-wide create** (NULL category → Status 1), **List by `@OperationTypeCode='DieCast'`** returns die-cast + plant-wide, excludes Trim; **no-change Update succeeds** (NULL-Description guard); audit Description/JSON assert `Category` sub-object.
+- [x] Run red→green against `MPP_MES_DowntimeCat`; commit `test(oee): DowntimeReasonCode crud covers OperationCategory + plant-wide + type-resolution`.
 
 ---
 
