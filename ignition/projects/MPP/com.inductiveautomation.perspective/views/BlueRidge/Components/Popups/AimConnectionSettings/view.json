@@ -120,7 +120,6 @@
               "name": "BaseUrlField"
             },
             "position": {
-              "basis": "320px",
               "shrink": 0
             },
             "props": {
@@ -188,7 +187,6 @@
               "name": "CompanyCodeField"
             },
             "position": {
-              "basis": "220px",
               "shrink": 0
             },
             "props": {
@@ -242,7 +240,6 @@
               "name": "PathTokenField"
             },
             "position": {
-              "basis": "220px",
               "shrink": 0
             },
             "props": {
@@ -296,7 +293,6 @@
               "name": "PostWarningAgeField"
             },
             "position": {
-              "basis": "180px",
               "shrink": 0
             },
             "props": {
@@ -350,7 +346,6 @@
               "name": "PostCriticalAgeField"
             },
             "position": {
-              "basis": "180px",
               "shrink": 0
             },
             "props": {
@@ -370,11 +365,10 @@
           "shrink": 0
         },
         "props": {
-          "alignItems": "flex-end",
+          "alignItems": "stretch",
           "style": {
             "gap": "14px"
           },
-          "wrap": "wrap",
           "direction": "column"
         },
         "type": "ia.container.flex"
@@ -495,5 +489,11 @@
       ]
     },
     "type": "ia.container.flex"
+  },
+  "props": {
+    "defaultSize": {
+      "height": 600,
+      "width": 560
+    }
   }
 }
