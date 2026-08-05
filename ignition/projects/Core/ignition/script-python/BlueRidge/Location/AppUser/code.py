@@ -28,13 +28,15 @@ def getUser(chosenId):
 
 
 def createOperator(meta, appUserId):
-    """Create an Operator-class user (Initials + DisplayName only; AdAccount /
-       IgnitionRole NULL). Returns {Status, Message, NewId}."""
+    """Create a user from the operator editor. Initials + DisplayName always; an
+       optional AdAccount + IgnitionRole link the row to an AD supervisor
+       (empty -> NULL = operator-only). Returns {Status, Message, NewId}."""
+    m = BlueRidge.Common.Util.extractQualifiedValues(meta) or {}
     attributes = {
-        "initials":     meta.initials,
-        "displayName":  meta.displayName,
-        "adAccount":    None,
-        "ignitionRole": None,
+        "initials":     m.get("initials"),
+        "displayName":  m.get("displayName"),
+        "adAccount":    (m.get("adAccount") or None),
+        "ignitionRole": (m.get("ignitionRole") or None),
         "appUserId":    appUserId,
     }
     return createUser(attributes)
@@ -62,14 +64,15 @@ def deprecateUser(chosenId, appUserId):
 
 
 def updateOperator(chosenId, meta, appUserId):
-    """Update an Operator-class user (Initials + DisplayName only).
-       Returns {Status, Message}."""
+    """Update a user from the operator editor (Initials + DisplayName + optional
+       AdAccount/IgnitionRole AD link; empty -> NULL). Returns {Status, Message}."""
+    m = BlueRidge.Common.Util.extractQualifiedValues(meta) or {}
     attributes = {
         "id":           chosenId,
-        "initials":     meta.initials,
-        "displayName":  meta.displayName,
-        "adAccount":    None,
-        "ignitionRole": None,
+        "initials":     m.get("initials"),
+        "displayName":  m.get("displayName"),
+        "adAccount":    (m.get("adAccount") or None),
+        "ignitionRole": (m.get("ignitionRole") or None),
         "appUserId":    appUserId,
     }
     return updateUser(attributes)
@@ -91,6 +94,8 @@ def emptyMeta():
         "id":          None,
         "initials":    "",
         "displayName": "",
+        "adAccount":   "",
+        "ignitionRole": "",
     }
 
 
