@@ -681,6 +681,9 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition WHERE Location
 IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition WHERE LocationTypeDefinitionId = 16 AND AttributeName = N'Model')
     INSERT INTO Location.LocationAttributeDefinition (LocationTypeDefinitionId, AttributeName, DataType, IsRequired, DefaultValue, Uom, SortOrder, Description)
     VALUES (16, N'Model', N'NVARCHAR', 0, NULL, NULL, 2, N'Printer model (informs label-template selection)');
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition WHERE LocationTypeDefinitionId = 16 AND AttributeName = N'ConnectionKind')
+    INSERT INTO Location.LocationAttributeDefinition (LocationTypeDefinitionId, AttributeName, DataType, IsRequired, DefaultValue, Uom, SortOrder, Description)
+    VALUES (16, N'ConnectionKind', N'NVARCHAR', 0, N'Networked', NULL, 3, N'Networked = reachable at Endpoint IP:port (config app can validate); Hardwired = a print-queue name (cannot be validated from the config app)');
 
 IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
         JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
