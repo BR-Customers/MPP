@@ -1,5 +1,18 @@
 {
   "custom": {
+    "cfg": {
+      "Id": 0,
+      "TargetBufferDepth": 0,
+      "TopupThreshold": 0,
+      "AlarmWarningDepth": 0,
+      "AlarmCriticalDepth": 0,
+      "AimBaseUrl": "",
+      "AimCompanyCode": "",
+      "AimPathToken": "",
+      "PostWarningAgeMinutes": 0,
+      "PostCriticalAgeMinutes": 0,
+      "AimPostingEnabled": false
+    },
     "draft": {
       "aimPostingEnabled": false,
       "alarmCriticalDepth": "",
