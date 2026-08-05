@@ -33,9 +33,21 @@ def claim(containerId, appUserId=None):
 
 def getDepth():
     """Read the un-consumed pool depth across the whole pool. Returns a
-       single-row list[dict] of {Depth, OldestAvailableAt}."""
-    BlueRidge.Common.Util.log("getDepth")
-    return BlueRidge.Common.Db.execList("lots/AimShipperIdPool_GetDepth", {})
+       single-row list[dict] of {Depth, OldestAvailableAt}.
+
+       Deliberately does NOT log on the success path: the AIM Pool Config screen
+       binds this on a 5s poll, so an info line per call floods the gateway log
+       (one line per open session per tick). Errors still log, then re-raise so
+       the binding surfaces bad quality rather than silently reading zero."""
+    from java.lang import Throwable
+    try:
+        return BlueRidge.Common.Db.execList("lots/AimShipperIdPool_GetDepth", {})
+    except Throwable, t:
+        BlueRidge.Common.Util.log("getDepth failed: %s" % t, level="error")
+        raise
+    except Exception, e:
+        BlueRidge.Common.Util.log("getDepth failed: %s" % e, level="error")
+        raise
 
 
 def getForPost(aimShipperId):
