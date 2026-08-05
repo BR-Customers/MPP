@@ -1,56 +1,37 @@
 {
   "custom": {
-    "cfg": {
-      "Id": 0,
-      "TargetBufferDepth": 0,
-      "TopupThreshold": 0,
-      "AlarmWarningDepth": 0,
-      "AlarmCriticalDepth": 0,
-      "AimBaseUrl": "",
-      "AimCompanyCode": "",
-      "AimPathToken": "",
-      "PostWarningAgeMinutes": 0,
-      "PostCriticalAgeMinutes": 0,
-      "AimPostingEnabled": false
+    "state": {
+      "selected": {
+        "Id": 0,
+        "TargetBufferDepth": "",
+        "TopupThreshold": "",
+        "AlarmWarningDepth": "",
+        "AlarmCriticalDepth": "",
+        "AimBaseUrl": "",
+        "AimCompanyCode": "",
+        "AimPathToken": "",
+        "PostWarningAgeMinutes": "",
+        "PostCriticalAgeMinutes": "",
+        "AimPostingEnabled": false
+      },
+      "editDraft": {
+        "Id": 0,
+        "TargetBufferDepth": "",
+        "TopupThreshold": "",
+        "AlarmWarningDepth": "",
+        "AlarmCriticalDepth": "",
+        "AimBaseUrl": "",
+        "AimCompanyCode": "",
+        "AimPathToken": "",
+        "PostWarningAgeMinutes": "",
+        "PostCriticalAgeMinutes": "",
+        "AimPostingEnabled": false
+      }
     },
-    "draft": {
-      "aimPostingEnabled": false,
-      "alarmCriticalDepth": "",
-      "alarmWarningDepth": "",
-      "targetBufferDepth": "",
-      "topupThreshold": ""
-    },
-    "editDraft": {
-      "aimBaseUrl": "",
-      "aimCompanyCode": "",
-      "aimPathToken": "",
-      "postWarningAgeMinutes": "",
-      "postCriticalAgeMinutes": ""
-    },
-    "unposted": [],
-    "refreshToken": 0
+    "unposted": []
   },
   "params": {},
-  "propConfig": {
-    "custom.cfg": {
-      "binding": {
-        "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0, runScript(\"BlueRidge.Lots.AimPoolConfig.get\", 0, {view.custom.refreshToken}), \"\")"
-        },
-        "transforms": [
-          {
-            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\") or 1, \"TargetBufferDepth\": r.get(\"TargetBufferDepth\") or 0, \"TopupThreshold\": r.get(\"TopupThreshold\") or 0, \"AlarmWarningDepth\": r.get(\"AlarmWarningDepth\") or 0, \"AlarmCriticalDepth\": r.get(\"AlarmCriticalDepth\") or 0, \"AimBaseUrl\": r.get(\"AimBaseUrl\") or \"\", \"AimCompanyCode\": r.get(\"AimCompanyCode\") or \"\", \"AimPathToken\": r.get(\"AimPathToken\") or \"\", \"PostWarningAgeMinutes\": r.get(\"PostWarningAgeMinutes\") or 0, \"PostCriticalAgeMinutes\": r.get(\"PostCriticalAgeMinutes\") or 0, \"AimPostingEnabled\": r.get(\"AimPostingEnabled\") or False}",
-            "type": "script"
-          }
-        ],
-        "type": "expr"
-      },
-      "onChange": {
-        "enabled": true,
-        "script": "\tc = value or {}\n\tself.view.custom.draft = {\"aimPostingEnabled\": bool(c.get(\"AimPostingEnabled\")), \"alarmCriticalDepth\": str(c.get(\"AlarmCriticalDepth\") or 0), \"alarmWarningDepth\": str(c.get(\"AlarmWarningDepth\") or 0), \"targetBufferDepth\": str(c.get(\"TargetBufferDepth\") or 0), \"topupThreshold\": str(c.get(\"TopupThreshold\") or 0)}"
-      }
-    }
-  },
+  "propConfig": {},
   "props": {
     "defaultSize": {
       "width": 1280
@@ -170,7 +151,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "toStr({view.custom.cfg.TargetBufferDepth})"
+                        "expression": "toStr({view.custom.state.selected.TargetBufferDepth})"
                       },
                       "type": "expr"
                     }
@@ -194,7 +175,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "\u0027Top-up: \u0027 + toStr({view.custom.cfg.TopupThreshold}) + \u0027   |   Warn: \u0027 + toStr({view.custom.cfg.AlarmWarningDepth}) + \u0027   |   Critical: \u0027 + toStr({view.custom.cfg.AlarmCriticalDepth})"
+                        "expression": "'Top-up: ' + toStr({view.custom.state.selected.TopupThreshold}) + '   |   Warn: ' + toStr({view.custom.state.selected.AlarmWarningDepth}) + '   |   Critical: ' + toStr({view.custom.state.selected.AlarmCriticalDepth})"
                       },
                       "type": "expr"
                     }
@@ -283,7 +264,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.draft.targetBufferDepth"
+                                "path": "view.custom.state.editDraft.TargetBufferDepth"
                               },
                               "type": "property"
                             }
@@ -337,7 +318,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.draft.topupThreshold"
+                                "path": "view.custom.state.editDraft.TopupThreshold"
                               },
                               "type": "property"
                             }
@@ -391,7 +372,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.draft.alarmWarningDepth"
+                                "path": "view.custom.state.editDraft.AlarmWarningDepth"
                               },
                               "type": "property"
                             }
@@ -445,7 +426,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.draft.alarmCriticalDepth"
+                                "path": "view.custom.state.editDraft.AlarmCriticalDepth"
                               },
                               "type": "property"
                             }
@@ -503,7 +484,7 @@
                         "binding": {
                           "config": {
                             "bidirectional": true,
-                            "path": "view.custom.draft.aimPostingEnabled"
+                            "path": "view.custom.state.editDraft.AimPostingEnabled"
                           },
                           "type": "property"
                         }
@@ -552,7 +533,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\td \u003d self.view.custom.draft\n\ttarget \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"targetBufferDepth\"))\n\ttopup \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"topupThreshold\"))\n\twarn \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmWarningDepth\"))\n\tcritical \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmCriticalDepth\"))\n\tposting \u003d bool(d.get(\"aimPostingEnabled\"))\n\tif target is None or topup is None or warn is None or critical is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter all four threshold values.\"}, \"AIM Pool Config\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical, aimPostingEnabled\u003dposting)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Thresholds saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\td = self.view.custom.state.editDraft\n\ttarget = BlueRidge.Common.Util.toIntOrNone(d.get(\"TargetBufferDepth\"))\n\ttopup = BlueRidge.Common.Util.toIntOrNone(d.get(\"TopupThreshold\"))\n\twarn = BlueRidge.Common.Util.toIntOrNone(d.get(\"AlarmWarningDepth\"))\n\tcritical = BlueRidge.Common.Util.toIntOrNone(d.get(\"AlarmCriticalDepth\"))\n\tposting = bool(d.get(\"AimPostingEnabled\"))\n\tif target is None or topup is None or warn is None or critical is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter all four threshold values.\"}, \"AIM Pool Config\")\n\t\treturn\n\tresult = BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical, aimPostingEnabled=posting)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Thresholds saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.rootContainer.load()"
                       },
                       "scope": "G",
                       "type": "script"
@@ -593,19 +574,32 @@
           {
             "children": [
               {
-                "meta": { "name": "ConnTitle" },
-                "position": { "shrink": 0 },
+                "meta": {
+                  "name": "ConnTitle"
+                },
+                "position": {
+                  "shrink": 0
+                },
                 "props": {
-                  "style": { "fontSize": "18px", "fontWeight": "700" },
+                  "style": {
+                    "fontSize": "18px",
+                    "fontWeight": "700"
+                  },
                   "text": "AIM connection settings"
                 },
                 "type": "ia.display.label"
               },
               {
-                "meta": { "name": "ConnLabel" },
-                "position": { "shrink": 0 },
+                "meta": {
+                  "name": "ConnLabel"
+                },
+                "position": {
+                  "shrink": 0
+                },
                 "props": {
-                  "style": { "classes": "pf-kpi-sub" },
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
                   "text": "Leave a field blank to keep its current value. This proc cannot clear a setting, only overwrite it."
                 },
                 "type": "ia.display.label"
@@ -615,91 +609,188 @@
                   {
                     "children": [
                       {
-                        "meta": { "name": "L" },
-                        "position": { "shrink": 0 },
-                        "props": { "style": { "classes": "pf-kpi-label" }, "text": "Current base URL" },
+                        "meta": {
+                          "name": "L"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          },
+                          "text": "Current base URL"
+                        },
                         "type": "ia.display.label"
                       },
                       {
-                        "meta": { "name": "V" },
-                        "position": { "shrink": 0 },
+                        "meta": {
+                          "name": "V"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "config": { "expression": "if({view.custom.cfg.AimBaseUrl} = \"\", \"(not set)\", {view.custom.cfg.AimBaseUrl})" },
+                              "config": {
+                                "expression": "if({view.custom.state.selected.AimBaseUrl} = \"\", \"(not set)\", {view.custom.state.selected.AimBaseUrl})"
+                              },
                               "type": "expr"
                             }
                           }
                         },
-                        "props": { "style": { "classes": "pf-kpi-sub" } },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        },
                         "type": "ia.display.label"
                       }
                     ],
-                    "meta": { "name": "CurrentBaseUrl" },
-                    "position": { "basis": "260px", "shrink": 0 },
-                    "props": { "direction": "column", "style": { "gap": "2px" } },
+                    "meta": {
+                      "name": "CurrentBaseUrl"
+                    },
+                    "position": {
+                      "basis": "260px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px"
+                      }
+                    },
                     "type": "ia.container.flex"
                   },
                   {
                     "children": [
                       {
-                        "meta": { "name": "L" },
-                        "position": { "shrink": 0 },
-                        "props": { "style": { "classes": "pf-kpi-label" }, "text": "Current company code" },
+                        "meta": {
+                          "name": "L"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          },
+                          "text": "Current company code"
+                        },
                         "type": "ia.display.label"
                       },
                       {
-                        "meta": { "name": "V" },
-                        "position": { "shrink": 0 },
+                        "meta": {
+                          "name": "V"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "config": { "expression": "if({view.custom.cfg.AimCompanyCode} = \"\", \"(not set)\", {view.custom.cfg.AimCompanyCode})" },
+                              "config": {
+                                "expression": "if({view.custom.state.selected.AimCompanyCode} = \"\", \"(not set)\", {view.custom.state.selected.AimCompanyCode})"
+                              },
                               "type": "expr"
                             }
                           }
                         },
-                        "props": { "style": { "classes": "pf-kpi-sub" } },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        },
                         "type": "ia.display.label"
                       }
                     ],
-                    "meta": { "name": "CurrentCompanyCode" },
-                    "position": { "basis": "160px", "shrink": 0 },
-                    "props": { "direction": "column", "style": { "gap": "2px" } },
+                    "meta": {
+                      "name": "CurrentCompanyCode"
+                    },
+                    "position": {
+                      "basis": "160px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px"
+                      }
+                    },
                     "type": "ia.container.flex"
                   },
                   {
                     "children": [
                       {
-                        "meta": { "name": "L" },
-                        "position": { "shrink": 0 },
-                        "props": { "style": { "classes": "pf-kpi-label" }, "text": "Current warn / critical age (min)" },
+                        "meta": {
+                          "name": "L"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-label"
+                          },
+                          "text": "Current warn / critical age (min)"
+                        },
                         "type": "ia.display.label"
                       },
                       {
-                        "meta": { "name": "V" },
-                        "position": { "shrink": 0 },
+                        "meta": {
+                          "name": "V"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "config": { "expression": "toStr({view.custom.cfg.PostWarningAgeMinutes}) + \" / \" + toStr({view.custom.cfg.PostCriticalAgeMinutes})" },
+                              "config": {
+                                "expression": "toStr({view.custom.state.selected.PostWarningAgeMinutes}) + \" / \" + toStr({view.custom.state.selected.PostCriticalAgeMinutes})"
+                              },
                               "type": "expr"
                             }
                           }
                         },
-                        "props": { "style": { "classes": "pf-kpi-sub" } },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        },
                         "type": "ia.display.label"
                       }
                     ],
-                    "meta": { "name": "CurrentAges" },
-                    "position": { "basis": "220px", "shrink": 0 },
-                    "props": { "direction": "column", "style": { "gap": "2px" } },
+                    "meta": {
+                      "name": "CurrentAges"
+                    },
+                    "position": {
+                      "basis": "220px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px"
+                      }
+                    },
                     "type": "ia.container.flex"
                   }
                 ],
-                "meta": { "name": "CurrentConnRow" },
-                "position": { "shrink": 0 },
-                "props": { "alignItems": "flex-start", "style": { "gap": "24px" }, "wrap": "wrap" },
+                "meta": {
+                  "name": "CurrentConnRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "flex-start",
+                  "style": {
+                    "gap": "24px"
+                  },
+                  "wrap": "wrap"
+                },
                 "type": "ia.container.flex"
               },
               {
@@ -707,145 +798,301 @@
                   {
                     "children": [
                       {
-                        "meta": { "name": "L" },
-                        "props": { "style": { "classes": "pf-field-label" }, "text": "AIM base URL" },
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "AIM base URL"
+                        },
                         "type": "ia.display.label"
                       },
                       {
-                        "meta": { "name": "AimBaseUrlInput" },
+                        "meta": {
+                          "name": "AimBaseUrlInput"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "config": { "bidirectional": true, "path": "view.custom.editDraft.aimBaseUrl" },
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.state.editDraft.AimBaseUrl"
+                              },
                               "type": "property"
                             }
                           }
                         },
-                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "props": {
+                          "placeholder": "leave blank to keep current",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
                         "type": "ia.input.text-field"
                       }
                     ],
-                    "meta": { "name": "BaseUrlField" },
-                    "position": { "basis": "320px", "shrink": 0 },
-                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "meta": {
+                      "name": "BaseUrlField"
+                    },
+                    "position": {
+                      "basis": "320px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px"
+                      }
+                    },
                     "type": "ia.container.flex"
                   },
                   {
                     "children": [
                       {
-                        "meta": { "name": "L" },
-                        "props": { "style": { "classes": "pf-field-label" }, "text": "AIM company code" },
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "AIM company code"
+                        },
                         "type": "ia.display.label"
                       },
                       {
-                        "meta": { "name": "AimCompanyCodeInput" },
+                        "meta": {
+                          "name": "AimCompanyCodeInput"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "config": { "bidirectional": true, "path": "view.custom.editDraft.aimCompanyCode" },
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.state.editDraft.AimCompanyCode"
+                              },
                               "type": "property"
                             }
                           }
                         },
-                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "props": {
+                          "placeholder": "leave blank to keep current",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
                         "type": "ia.input.text-field"
                       },
                       {
-                        "meta": { "name": "CompanyCodeWarning" },
+                        "meta": {
+                          "name": "CompanyCodeWarning"
+                        },
                         "props": {
-                          "style": { "color": "var(--pf-status-warn-fg)", "fontSize": "11px", "fontWeight": "600" },
+                          "style": {
+                            "color": "var(--pf-status-warn-fg)",
+                            "fontSize": "11px",
+                            "fontWeight": "600"
+                          },
                           "text": "01 is test. Production runs on 99 -- never point the MES at it."
                         },
                         "type": "ia.display.label"
                       }
                     ],
-                    "meta": { "name": "CompanyCodeField" },
-                    "position": { "basis": "220px", "shrink": 0 },
-                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "meta": {
+                      "name": "CompanyCodeField"
+                    },
+                    "position": {
+                      "basis": "220px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px"
+                      }
+                    },
                     "type": "ia.container.flex"
                   },
                   {
                     "children": [
                       {
-                        "meta": { "name": "L" },
-                        "props": { "style": { "classes": "pf-field-label" }, "text": "AIM path token" },
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "AIM path token"
+                        },
                         "type": "ia.display.label"
                       },
                       {
-                        "meta": { "name": "AimPathTokenInput" },
+                        "meta": {
+                          "name": "AimPathTokenInput"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "config": { "bidirectional": true, "path": "view.custom.editDraft.aimPathToken" },
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.state.editDraft.AimPathToken"
+                              },
                               "type": "property"
                             }
                           }
                         },
-                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "props": {
+                          "placeholder": "leave blank to keep current",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
                         "type": "ia.input.text-field"
                       }
                     ],
-                    "meta": { "name": "PathTokenField" },
-                    "position": { "basis": "220px", "shrink": 0 },
-                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "meta": {
+                      "name": "PathTokenField"
+                    },
+                    "position": {
+                      "basis": "220px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px"
+                      }
+                    },
                     "type": "ia.container.flex"
                   },
                   {
                     "children": [
                       {
-                        "meta": { "name": "L" },
-                        "props": { "style": { "classes": "pf-field-label" }, "text": "Post warning age (min)" },
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Post warning age (min)"
+                        },
                         "type": "ia.display.label"
                       },
                       {
-                        "meta": { "name": "PostWarningAgeInput" },
+                        "meta": {
+                          "name": "PostWarningAgeInput"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "config": { "bidirectional": true, "path": "view.custom.editDraft.postWarningAgeMinutes" },
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.state.editDraft.PostWarningAgeMinutes"
+                              },
                               "type": "property"
                             }
                           }
                         },
-                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "props": {
+                          "placeholder": "leave blank to keep current",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
                         "type": "ia.input.text-field"
                       }
                     ],
-                    "meta": { "name": "PostWarningAgeField" },
-                    "position": { "basis": "180px", "shrink": 0 },
-                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "meta": {
+                      "name": "PostWarningAgeField"
+                    },
+                    "position": {
+                      "basis": "180px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px"
+                      }
+                    },
                     "type": "ia.container.flex"
                   },
                   {
                     "children": [
                       {
-                        "meta": { "name": "L" },
-                        "props": { "style": { "classes": "pf-field-label" }, "text": "Post critical age (min)" },
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Post critical age (min)"
+                        },
                         "type": "ia.display.label"
                       },
                       {
-                        "meta": { "name": "PostCriticalAgeInput" },
+                        "meta": {
+                          "name": "PostCriticalAgeInput"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "config": { "bidirectional": true, "path": "view.custom.editDraft.postCriticalAgeMinutes" },
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.state.editDraft.PostCriticalAgeMinutes"
+                              },
                               "type": "property"
                             }
                           }
                         },
-                        "props": { "placeholder": "leave blank to keep current", "style": { "classes": "pf-field-input" } },
+                        "props": {
+                          "placeholder": "leave blank to keep current",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
                         "type": "ia.input.text-field"
                       }
                     ],
-                    "meta": { "name": "PostCriticalAgeField" },
-                    "position": { "basis": "180px", "shrink": 0 },
-                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "meta": {
+                      "name": "PostCriticalAgeField"
+                    },
+                    "position": {
+                      "basis": "180px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px"
+                      }
+                    },
                     "type": "ia.container.flex"
                   }
                 ],
-                "meta": { "name": "ConnFieldRow" },
-                "position": { "shrink": 0 },
-                "props": { "alignItems": "flex-end", "style": { "gap": "12px" }, "wrap": "wrap" },
+                "meta": {
+                  "name": "ConnFieldRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "flex-end",
+                  "style": {
+                    "gap": "12px"
+                  },
+                  "wrap": "wrap"
+                },
                 "type": "ia.container.flex"
               },
               {
@@ -853,27 +1100,41 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\td = self.view.custom.editDraft\n\trows = BlueRidge.Lots.AimPoolConfig.get() or []\n\tcur = rows[0] if rows else {}\n\tbaseUrl = d.get(\"aimBaseUrl\") or None\n\tcompanyCode = d.get(\"aimCompanyCode\") or None\n\tpathToken = d.get(\"aimPathToken\") or None\n\twarnAge = BlueRidge.Common.Util.toIntOrNone(d.get(\"postWarningAgeMinutes\"))\n\tcritAge = BlueRidge.Common.Util.toIntOrNone(d.get(\"postCriticalAgeMinutes\"))\n\ttarget = cur.get(\"TargetBufferDepth\") or 0\n\ttopup = cur.get(\"TopupThreshold\") or 0\n\twarn = cur.get(\"AlarmWarningDepth\") or 0\n\tcritical = cur.get(\"AlarmCriticalDepth\") or 0\n\tresult = BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical, baseUrl, companyCode, pathToken, warnAge, critAge)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Connection settings saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.editDraft = {\"aimBaseUrl\": \"\", \"aimCompanyCode\": \"\", \"aimPathToken\": \"\", \"postWarningAgeMinutes\": \"\", \"postCriticalAgeMinutes\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\td = self.view.custom.state.editDraft\n\tcur = self.view.custom.state.selected\n\tbaseUrl = d.get(\"AimBaseUrl\") or None\n\tcompanyCode = d.get(\"AimCompanyCode\") or None\n\tpathToken = d.get(\"AimPathToken\") or None\n\twarnAge = BlueRidge.Common.Util.toIntOrNone(d.get(\"PostWarningAgeMinutes\"))\n\tcritAge = BlueRidge.Common.Util.toIntOrNone(d.get(\"PostCriticalAgeMinutes\"))\n\t# thresholds come from the pristine copy so an unsaved threshold edit is not committed here\n\ttarget = BlueRidge.Common.Util.toIntOrNone(cur.get(\"TargetBufferDepth\")) or 0\n\ttopup = BlueRidge.Common.Util.toIntOrNone(cur.get(\"TopupThreshold\")) or 0\n\twarn = BlueRidge.Common.Util.toIntOrNone(cur.get(\"AlarmWarningDepth\")) or 0\n\tcritical = BlueRidge.Common.Util.toIntOrNone(cur.get(\"AlarmCriticalDepth\")) or 0\n\tresult = BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical, baseUrl, companyCode, pathToken, warnAge, critAge)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Connection settings saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.rootContainer.load()"
                       },
                       "scope": "G",
                       "type": "script"
                     }
                   }
                 },
-                "meta": { "name": "SaveConnButton" },
-                "position": { "shrink": 0 },
+                "meta": {
+                  "name": "SaveConnButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
                 "props": {
-                  "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" },
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary pf-btn-large"
+                  },
                   "text": "Save connection settings"
                 },
                 "type": "ia.input.button"
               }
             ],
-            "meta": { "name": "ConnectionsPanel" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "ConnectionsPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
             "props": {
               "direction": "column",
-              "style": { "classes": "pf-panel", "gap": "16px", "padding": "16px" }
+              "style": {
+                "classes": "pf-panel",
+                "gap": "16px",
+                "padding": "16px"
+              }
             },
             "type": "ia.container.flex"
           },
@@ -882,18 +1143,34 @@
               {
                 "children": [
                   {
-                    "meta": { "name": "UnpostedTitle" },
-                    "position": { "shrink": 0 },
-                    "props": { "style": { "fontSize": "18px", "fontWeight": "700" }, "text": "AIM post backlog" },
+                    "meta": {
+                      "name": "UnpostedTitle"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "18px",
+                        "fontWeight": "700"
+                      },
+                      "text": "AIM post backlog"
+                    },
                     "type": "ia.display.label"
                   },
                   {
-                    "meta": { "name": "UnpostedCountBadge" },
-                    "position": { "shrink": 0 },
+                    "meta": {
+                      "name": "UnpostedCountBadge"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
                     "propConfig": {
                       "props.text": {
                         "binding": {
-                          "config": { "expression": "toStr(len({view.custom.unposted})) + \" owed\"" },
+                          "config": {
+                            "expression": "toStr(len({view.custom.unposted})) + \" owed\""
+                          },
                           "type": "expr"
                         }
                       }
@@ -911,35 +1188,69 @@
                     "type": "ia.display.label"
                   }
                 ],
-                "meta": { "name": "UnpostedHeaderRow" },
-                "position": { "shrink": 0 },
-                "props": { "alignItems": "center", "style": { "gap": "10px" }, "wrap": "wrap" },
+                "meta": {
+                  "name": "UnpostedHeaderRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "10px"
+                  },
+                  "wrap": "wrap"
+                },
                 "type": "ia.container.flex"
               },
               {
-                "meta": { "name": "UnpostedEmptyState" },
-                "position": { "shrink": 0 },
+                "meta": {
+                  "name": "UnpostedEmptyState"
+                },
+                "position": {
+                  "shrink": 0
+                },
                 "propConfig": {
                   "position.display": {
-                    "binding": { "config": { "expression": "len({view.custom.unposted}) = 0" }, "type": "expr" }
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.unposted}) = 0"
+                      },
+                      "type": "expr"
+                    }
                   }
                 },
                 "props": {
                   "text": "Nothing owed to AIM.",
-                  "style": { "color": "var(--mpp-text-secondary)", "fontSize": "14px", "padding": "12px 0" }
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "14px",
+                    "padding": "12px 0"
+                  }
                 },
                 "type": "ia.display.label"
               },
               {
-                "meta": { "name": "UnpostedList" },
-                "position": { "shrink": 0 },
+                "meta": {
+                  "name": "UnpostedList"
+                },
+                "position": {
+                  "shrink": 0
+                },
                 "propConfig": {
                   "position.display": {
-                    "binding": { "config": { "expression": "len({view.custom.unposted}) > 0" }, "type": "expr" }
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.unposted}) > 0"
+                      },
+                      "type": "expr"
+                    }
                   },
                   "props.instances": {
                     "binding": {
-                      "config": { "path": "view.custom.unposted" },
+                      "config": {
+                        "path": "view.custom.unposted"
+                      },
                       "transforms": [
                         {
                           "code": "\treturn [BlueRidge.Common.Util.extractQualifiedValues(r) or {} for r in (value or [])]",
@@ -952,20 +1263,35 @@
                 },
                 "props": {
                   "direction": "column",
-                  "elementPosition": { "basis": "64px", "shrink": 0 },
+                  "elementPosition": {
+                    "basis": "64px",
+                    "shrink": 0
+                  },
                   "path": "BlueRidge/Components/PlantFloor/AimUnpostedRow",
-                  "style": { "gap": "6px", "maxHeight": "420px", "overflowY": "auto" },
+                  "style": {
+                    "gap": "6px",
+                    "maxHeight": "420px",
+                    "overflowY": "auto"
+                  },
                   "useDefaultViewHeight": true,
                   "useDefaultViewWidth": false
                 },
                 "type": "ia.display.flex-repeater"
               }
             ],
-            "meta": { "name": "UnpostedSection" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "UnpostedSection"
+            },
+            "position": {
+              "shrink": 0
+            },
             "props": {
               "direction": "column",
-              "style": { "classes": "pf-panel", "gap": "12px", "padding": "16px" }
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "16px"
+              }
             },
             "type": "ia.container.flex"
           }
@@ -1004,13 +1330,18 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tself.loadUnposted()"
+            "script": "\tself.load()\n\tself.loadUnposted()"
           }
         }
       }
     },
     "scripts": {
       "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\trows = BlueRidge.Lots.AimPoolConfig.get() or []\n\tr = rows[0] if rows else {}\n\tdef _s(val):\n\t\treturn \"\" if val is None else (val if isinstance(val, basestring) else unicode(val))\n\tloaded = {\n\t\t\"Id\":                     r.get(\"Id\"),\n\t\t\"TargetBufferDepth\":      _s(r.get(\"TargetBufferDepth\")),\n\t\t\"TopupThreshold\":         _s(r.get(\"TopupThreshold\")),\n\t\t\"AlarmWarningDepth\":      _s(r.get(\"AlarmWarningDepth\")),\n\t\t\"AlarmCriticalDepth\":     _s(r.get(\"AlarmCriticalDepth\")),\n\t\t\"AimBaseUrl\":             _s(r.get(\"AimBaseUrl\")),\n\t\t\"AimCompanyCode\":         _s(r.get(\"AimCompanyCode\")),\n\t\t\"AimPathToken\":           _s(r.get(\"AimPathToken\")),\n\t\t\"PostWarningAgeMinutes\":  _s(r.get(\"PostWarningAgeMinutes\")),\n\t\t\"PostCriticalAgeMinutes\": _s(r.get(\"PostCriticalAgeMinutes\")),\n\t\t\"AimPostingEnabled\":      bool(r.get(\"AimPostingEnabled\")),\n\t}\n\tself.view.custom.state = {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
+        },
         {
           "name": "loadUnposted",
           "params": [],
