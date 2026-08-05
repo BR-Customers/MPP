@@ -41,6 +41,15 @@ DECLARE @HasAudit NVARCHAR(1) = CASE WHEN @Desc LIKE N'Session Policy %Updated%'
 EXEC test.Assert_IsEqual @TestName=N'[SessionPolicy] Update audited', @Expected=N'1', @Actual=@HasAudit;
 GO
 
+-- Update with NO changes must still succeed (STUFF-on-empty -> NULL Description guard)
+DECLARE @Snc BIT;
+CREATE TABLE #UNC (Status BIT, Message NVARCHAR(500));
+INSERT INTO #UNC EXEC Location.SessionPolicy_Update @OperatorPresenceTimeoutSeconds=120, @ElevationTimeoutSeconds=240, @AppUserId=1;
+SELECT @Snc=Status FROM #UNC; DROP TABLE #UNC;
+DECLARE @Sncs NVARCHAR(1)=CAST(@Snc AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'[SessionPolicy] Update with no changes succeeds', @Expected=N'1', @Actual=@Sncs;
+GO
+
 -- restore defaults for downstream tests
 DECLARE @R BIT; CREATE TABLE #R (Status BIT, Message NVARCHAR(500));
 INSERT INTO #R EXEC Location.SessionPolicy_Update @OperatorPresenceTimeoutSeconds=180, @ElevationTimeoutSeconds=300, @AppUserId=1;

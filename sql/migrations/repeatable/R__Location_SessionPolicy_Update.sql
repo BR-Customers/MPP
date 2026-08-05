@@ -38,7 +38,7 @@ BEGIN
             CASE WHEN @OldOp <> @OperatorPresenceTimeoutSeconds THEN N', Operator presence ' + CAST(@OldOp AS NVARCHAR(10)) + N's ' + @Arrow + N' ' + CAST(@OperatorPresenceTimeoutSeconds AS NVARCHAR(10)) + N's' ELSE N'' END,
             CASE WHEN @OldElev <> @ElevationTimeoutSeconds THEN N', Elevation ' + CAST(@OldElev AS NVARCHAR(10)) + N's ' + @Arrow + N' ' + CAST(@ElevationTimeoutSeconds AS NVARCHAR(10)) + N's' ELSE N'' END),
             1, 2, N'');
-        IF @Fields = N'' SET @Fields = N'no changes';
+        IF @Fields IS NULL OR @Fields = N'' SET @Fields = N'no changes';
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(N'Session Policy ' + Audit.ufn_MidDot() + N' Updated ' + @Fields);
         DECLARE @OldJson NVARCHAR(MAX) = (SELECT @OldOp AS OperatorPresenceTimeoutSeconds, @OldElev AS ElevationTimeoutSeconds FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
         DECLARE @NewJson NVARCHAR(MAX) = (SELECT @OperatorPresenceTimeoutSeconds AS OperatorPresenceTimeoutSeconds, @ElevationTimeoutSeconds AS ElevationTimeoutSeconds FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
