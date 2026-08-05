@@ -1,4 +1,5 @@
 EXEC Oee.DowntimeReasonCode_List
-    @AreaLocationId       = :areaLocationId,
+    @OperationCategoryId  = :operationCategoryId,
+    @OperationTypeCode    = :operationTypeCode,
     @DowntimeReasonTypeId = :downtimeReasonTypeId,
     @IncludeDeprecated    = :includeDeprecated

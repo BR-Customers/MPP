@@ -1,7 +1,7 @@
 EXEC Oee.DowntimeReasonCode_Update
     @Id                   = :id,
     @Description          = :description,
-    @AreaLocationId       = :areaLocationId,
+    @OperationCategoryId  = :operationCategoryId,
     @DowntimeReasonTypeId = :downtimeReasonTypeId,
     @IsExcused            = :isExcused,
     @AppUserId            = :appUserId
