@@ -42,11 +42,18 @@ BEGIN
         t.UpdatedAt,
         t.CreatedByUserId,
         t.UpdatedByUserId,
-        t.DeprecatedAt
+        t.DeprecatedAt,
+        t.ShotCount,
+        t.ShotLimit,
+        ss.ShotsRemaining,
+        ss.PercentOfLimit,
+        ss.IsNearLimit,
+        ss.IsOverLimit
     FROM Tools.Tool t
     INNER JOIN Tools.ToolType       tt ON tt.Id = t.ToolTypeId
     INNER JOIN Tools.ToolStatusCode sc ON sc.Id = t.StatusCodeId
     LEFT  JOIN Tools.DieRank        dr ON dr.Id = t.DieRankId
+    CROSS APPLY Tools.ufn_ShotStatus(t.ShotCount, t.ShotLimit) ss
     WHERE t.Id = @Id;
 END;
 GO

@@ -59,6 +59,11 @@
         "type": "Parameter",
         "identifier": "terminalLocationId",
         "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "grossShots",
+        "sqlType": 3
       }
     ]
   }

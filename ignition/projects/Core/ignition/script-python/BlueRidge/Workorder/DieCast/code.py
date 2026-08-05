@@ -62,6 +62,7 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None):
         "shotLossJson":       BlueRidge.Common.Util.convertWrapperObjectToJson(shotLoss) if shotLoss else None,
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
+        "grossShots":         d.get("grossShots"),
     }
     return BlueRidge.Common.Db.execMutation("workorder/DieCastShiftOutput_Record", params)
 

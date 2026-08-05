@@ -4,4 +4,5 @@ EXEC Workorder.DieCastShiftOutput_Record
     @LinesJson          = :linesJson,
     @ShotLossJson       = :shotLossJson,
     @AppUserId          = :appUserId,
-    @TerminalLocationId = :terminalLocationId
+    @TerminalLocationId = :terminalLocationId,
+    @GrossShots         = :grossShots
