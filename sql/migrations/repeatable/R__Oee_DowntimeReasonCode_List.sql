@@ -1,43 +1,36 @@
 -- =============================================
 -- Procedure:   Oee.DowntimeReasonCode_List
--- Author:      Blue Ridge Automation
--- Created:     2026-04-15
--- Version:     1.0
---
--- Description:
---   Returns downtime reason codes with joined Area name,
---   reason-type name, and source-code name. Optional filters for
---   Area and reason type. Deprecated rows excluded by default.
---
--- Parameters (input):
---   @AreaLocationId       BIGINT NULL - Filter by Area.
---   @DowntimeReasonTypeId BIGINT NULL - Filter by reason type.
---   @IncludeDeprecated    BIT         - If 0 (default), excludes deprecated.
---
--- Returns (result set):
---   All matching downtime reason codes ordered by AreaName, Code.
---
--- Dependencies:
---   Tables: Oee.DowntimeReasonCode, Location.Location,
---           Oee.DowntimeReasonType, Oee.DowntimeSourceCode
---
+-- Version:     2.0
 -- Change Log:
---   2026-04-15 - 1.0 - Initial version
+--   2026-08-05 - 2.0 - Scope by OperationCategory. @OperationCategoryId (config
+--                       tool) OR @OperationTypeCode (plant floor, resolved to
+--                       category in SQL). A requested category always ALSO returns
+--                       plant-wide (NULL) codes. Keeps @DowntimeReasonTypeId filter.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.DowntimeReasonCode_List
-    @AreaLocationId       BIGINT = NULL,
-    @DowntimeReasonTypeId BIGINT = NULL,
-    @IncludeDeprecated    BIT    = 0
+    @OperationCategoryId  BIGINT       = NULL,
+    @OperationTypeCode    NVARCHAR(20) = NULL,
+    @DowntimeReasonTypeId BIGINT       = NULL,
+    @IncludeDeprecated    BIT          = 0
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    DECLARE @FilterRequested BIT =
+        CASE WHEN @OperationCategoryId IS NOT NULL OR @OperationTypeCode IS NOT NULL THEN 1 ELSE 0 END;
+
+    DECLARE @EffCatId BIGINT = @OperationCategoryId;
+    IF @EffCatId IS NULL AND @OperationTypeCode IS NOT NULL
+        SELECT @EffCatId = ot.OperationCategoryId
+        FROM Parts.OperationType ot
+        WHERE ot.Code = @OperationTypeCode;
 
     SELECT
         drc.Id,
         drc.Code,
         drc.Description,
-        drc.AreaLocationId,
-        loc.Name            AS AreaName,
+        drc.OperationCategoryId,
+        oc.Name             AS CategoryName,
         drc.DowntimeReasonTypeId,
         drt.Name            AS ReasonTypeName,
         drc.DowntimeSourceCodeId,
@@ -46,12 +39,14 @@ BEGIN
         drc.CreatedAt,
         drc.DeprecatedAt
     FROM Oee.DowntimeReasonCode drc
-    LEFT JOIN Location.Location      loc ON drc.AreaLocationId       = loc.Id
-    LEFT JOIN Oee.DowntimeReasonType drt ON drc.DowntimeReasonTypeId = drt.Id
-    LEFT JOIN Oee.DowntimeSourceCode dsc ON drc.DowntimeSourceCodeId = dsc.Id
+    LEFT JOIN Parts.OperationCategory oc  ON drc.OperationCategoryId  = oc.Id
+    LEFT JOIN Oee.DowntimeReasonType  drt ON drc.DowntimeReasonTypeId = drt.Id
+    LEFT JOIN Oee.DowntimeSourceCode  dsc ON drc.DowntimeSourceCodeId = dsc.Id
     WHERE (@IncludeDeprecated = 1 OR drc.DeprecatedAt IS NULL)
-      AND (@AreaLocationId       IS NULL OR drc.AreaLocationId       = @AreaLocationId)
       AND (@DowntimeReasonTypeId IS NULL OR drc.DowntimeReasonTypeId = @DowntimeReasonTypeId)
-    ORDER BY loc.Name, drc.Code;
+      AND (@FilterRequested = 0
+           OR drc.OperationCategoryId = @EffCatId        -- matches requested category
+           OR drc.OperationCategoryId IS NULL)           -- plant-wide always included
+    ORDER BY CASE WHEN drc.OperationCategoryId IS NULL THEN 1 ELSE 0 END, oc.Name, drc.Code;
 END
 GO
