@@ -262,6 +262,10 @@ def update(data):
     appUserId = BlueRidge.Common.Util._currentAppUserId()
     description = (data.get("Description") or "").strip() or None
 
+    shotLimit = data.get("ShotLimit")
+    if shotLimit == "" or shotLimit == u"":
+        shotLimit = None
+
     updateResult = BlueRidge.Common.Db.execMutation(
         "parts/Tool_Update",
         {
@@ -269,6 +273,7 @@ def update(data):
             "name":        data.get("Name"),
             "description": description,
             "dieRankId":   dieRankId,
+            "shotLimit":   shotLimit,
             "appUserId":   appUserId,
         },
     )
@@ -910,6 +915,34 @@ def getCellMountContextOrEmpty(cellLocationId):
     for k in ("ToolCode", "ToolName", "ToolTypeCode", "AssignedBy"):
         if row.get(k) is None:
             row[k] = ""
+    return row
+
+
+def getShotStatusForCell(cellLocationId):
+    """Shot status (count / limit / remaining / percent / near / over) of the die
+    currently mounted on a Cell, for the die-cast station badge. Returns a dict,
+    or None when nothing is mounted. Wraps Tools.Tool_GetShotStatusForCell."""
+    cellLocationId = _u(cellLocationId)
+    BlueRidge.Common.Util.log("getShotStatusForCell cellLocationId=%s" % cellLocationId)
+    if cellLocationId is None:
+        return None
+    try:
+        return BlueRidge.Common.Db.execOne(
+            "parts/Tool_GetShotStatusForCell", {"cellLocationId": cellLocationId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getShotStatusForCell failed: %s" % str(e))
+        return None
+
+
+def getShotStatusForCellOrEmpty(cellLocationId, _refreshToken=None):
+    """Binding-safe variant: a fully-shaped dict (never None) so the badge's
+    nested-path bindings never Component-Error (pre-declare-bound-props rule).
+    _refreshToken lets a runScript binding force a re-read (runScript caches on args)."""
+    row = getShotStatusForCell(cellLocationId)
+    if row is None:
+        return {"ToolId": None, "ToolCode": "", "ToolName": "",
+                "ShotCount": 0, "ShotLimit": None, "ShotsRemaining": None,
+                "PercentOfLimit": None, "IsNearLimit": False, "IsOverLimit": False}
     return row
 
 
