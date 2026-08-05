@@ -483,6 +483,11 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Fg AND DeprecatedAt IS NULL)
     INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Fg, 2, 1, 0, N'ByCount', @Now);
+-- FG item eligible at the cell -- Assembly_CompleteTray mirrors Lot_Create's eligibility cascade
+-- and rejects "Finished-good Item is not eligible at this cell." without a Parts.ItemLocation row
+-- (same setup the sibling test sql/tests/0028_PlantFloor_Assembly/092_Assembly_CompleteTray.sql uses).
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @Fg AND LocationId = @Cell AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt) VALUES (@Fg, @Cell, 0, @Now);
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId)
     VALUES (N'STG-100', @Child, 1, 1, 100000, @Cell, 0, 100000, 1);
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
