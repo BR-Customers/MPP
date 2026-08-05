@@ -30,7 +30,33 @@ lost work:
 
 ---
 
-## Handoff A — Terminal / Printer / IP cluster (#13, #14, #15, #16)
+## Handoff A — Terminal / Printer / IP cluster (#13, #14, #15, #16) — ✅ DONE (2026-08-05)
+
+**Outcome (commits `aac8137c` #16/#15, `7d225ac1` #13/#14):**
+- **#16 (bug):** root cause = `Terminal_GetByIpAddress` did a raw exact-string compare of the
+  admin-typed `IpAddress` vs `session.props.address`, but the gateway observes loopback as the
+  bracketed IPv6 form `[0:0:0:0:0:0:0:1]` (proven via a live onStartup diagnostic) — so a correct
+  config silently fell to the Facility fallback. Fix: new `Location.ufn_NormalizeIpAddress` (strip
+  brackets/zone-index, collapse loopback synonyms → `127.0.0.1`, strip IPv4-mapped `::ffff:` prefix);
+  proc normalizes both sides. TDD `011_Terminal_GetByIpAddress_normalization.sql` (15 asserts), sibling
+  010 green (26/26). Deployed to live `MPP_MES_Dev`.
+- **#15 (verify):** confirmed end-to-end — with the fix live, the exact gateway-observed string
+  `[0:0:0:0:0:0:0:1]` resolves to the test terminal (IsFallback=0). (Live browser-session render could
+  not be exercised: the in-app browser pane is non-compositing here.)
+- **#13 (feat):** enumerated-attribute dropdown in `LocationAttributeValueRow`; `DefaultScreen` offers
+  the 12 curated operator-station routes (`BlueRidge.Location.AttributeOptions.forAttr`),
+  `allowCustomOptions=true` so existing/dedicated values persist.
+- **#14 (feat):** `ConnectionKind` (Networked/Hardwired) attr added to Printer DefId 16 (gen script +
+  seed 011 + live Dev); "Validate endpoint" button in Plant Hierarchy (Printers only) →
+  `BlueRidge.Location.Printer.validateEndpoint` (Networked TCP-probes IP:port default 9100/2s;
+  Hardwired = "cannot validate here", never failed). Gateway-verified (options 12/2/0; hw=info,
+  open=success, closed=error).
+- **Recommended follow-up:** 30-sec visual smoke of the config app (select a Terminal → DefaultScreen
+  dropdown; select a Printer → ConnectionKind dropdown + Validate button) — wiring is script- and
+  JSON-verified but not visually rendered in this environment.
+
+Cohesive: terminal-config UX + IP resolution. Contains one bug (#16), verification (#15), and two
+features (#13, #14). Do as one agent, sequentially within the brief.
 
 Cohesive: terminal-config UX + IP resolution. Contains one bug (#16), verification (#15), and two
 features (#13, #14). Do as one agent, sequentially within the brief.
@@ -67,7 +93,26 @@ root cause of #16, the IP-resolution verification result, and the files touched.
 
 ---
 
-## Handoff B — Die-cast entry fixes + shot-loss UX (#19, #24, #23)
+## Handoff B — Die-cast entry fixes + shot-loss UX (#19, #24, #23) — ✅ CODE DONE, awaiting live smoke (2026-08-05)
+
+> **Done (uncommitted on `jacques/working`):**
+> - **#24** — root cause: the DieCastOverflow Apply `props.enabled` binding passed the `overflow`
+>   *list* through a `runScript()` expr arg → arrives as `QualifiedValue[]` (which `extractQualifiedValues`
+>   does NOT unwrap) → `.get()` on a QV → the thrown error; button fail-open-enabled hid it (the gate
+>   never gated). Fixed: compute `view.custom.applyEnabled` in the popup's `overflowDecisionChanged`
+>   handler (proper scope) and bind `props.enabled` to that scalar. View-only.
+> - **#19** — `DieCastShiftOutput_Record` logged `DieCastPieceContributed` with `@LocationId=NULL`.
+>   Added `@CellLocationId` (proc v1.3) → audit `@LocationId`; threaded view→entity→NQ→proc (submit +
+>   all 3 overflow-resolve record calls). Test `0045/030` +1 assert; **69/69** on a throwaway DB;
+>   proc applied to `MPP_MES_Dev`. **C-collision (proc shared with #20): resolved by editing line 129
+>   only (audit call); #20's RejectEvent-insert lines untouched — rebase-safe.**
+> - **#23** — `CavityLotRow` Good now auto-decrements on scrap entry (editable, incremental delta from
+>   current Good, hand-adjustable) via new `applyScrap` method; "Register shot loss" row moved to the
+>   TOP of the Record Shift Output tab (divider flipped top→bottom). Views-only.
+> - **Drive-by fix:** `0045/030` referenced the dropped `Quality.DefectCode.AreaLocationId` (removed by
+>   migration `0048`, FAT #1) → whole batch failed to COMPILE → 030 had been fully dead since 0048.
+>   Switched to `OperationCategoryId` (NULL = plant-wide). **The FAT #1 work missed this test.**
+> - **Owed:** Jacques live smoke of the 3 view changes (no automated UI test); commit.
 
 The die-cast shift-output/entry surface. #19 + #24 are bugs; #23 is a UX rework. All touch
 `Views/ShopFloor/DieCastBody` and the shift-output path, so keep them in ONE agent (serial) to avoid
@@ -100,6 +145,17 @@ Report root causes for #19/#24 and the #23 UX change.
 
 ## Handoff C — Scrap ProductionEvent link + shot-count reconciliation (#20, #27)
 
+> **Status: DONE** (2026-08-05). Investigation confirmed die-cast shift output creates **no
+> `ProductionEvent`** (migration 0045 removed it), so #20's "thread the shift-output
+> ProductionEventId" premise no longer holds. **Decision (Jacques): #20 = NULL-by-design**
+> (no proc change; die-cast additive scrap has no event to tie to — the column is meaningful only
+> for the subtractive downstream reject path). Pinned by regression guard
+> `sql/tests/0045_DieCast_Lifecycle/070_ShiftOutput_RejectEvent_NullProductionEventId.sql`
+> (6/6 pass). **#27 = deferred** (obsoleted by 0050's live in-txn `ShotCount` increment; no
+> independent source to reconcile against). Rationale:
+> `notes/2026-08-05_diecast-rejectevent-productioneventid-null-by-design.md`. No edit to
+> `R__Workorder_DieCastShiftOutput_Record.sql` (left to Handoff B to avoid a same-file race).
+
 Small backend items, disjoint from the view work above. One agent.
 
 ```
@@ -125,7 +181,16 @@ Apply the shared-environment rules from docs/handoffs/2026-08-05-fat-remaining-h
 
 ---
 
-## Handoff D & E — Brainstorm-first (NOT solo-implementable): #17, #21
+## Handoff D & E — Brainstorm-first (NOT solo-implementable): #17, #21 — 🟡 IN PROGRESS (started 2026-08-05)
+
+> **#21 (E) — DONE 2026-08-05** (spec → plan → implemented → reviewed → tested; not yet pushed).
+> Spec `docs/superpowers/specs/2026-08-05-finished-goods-close-inventory-lifecycle-design.md`,
+> plan `docs/superpowers/plans/2026-08-05-finished-goods-close-inventory-lifecycle.md`.
+> Decisions: close FG LOT Good→Closed **inline in `Lots.Container_Complete`** (via new silent helper
+> `Lots.Lot_CloseInline`), close-the-loop in `Quality.Hold_Release` for held trays; status-only
+> inventory exclusion; no reversal path; no timer. Commits b046baa8, a50b473d, 3b2c0c2c, abf6a34d.
+> Tests: `sql/tests/0029_.../085,090,100` — full 0029 suite 59/59. Final review (opus): ready to merge.
+> **#17 (D) — still pending brainstorm** (not started).
 
 These are UX/architecture designs, not mechanical builds — they need a brainstorm with Jacques before
 any implementation (per the brainstorming skill). Do NOT hand these to a solo implementation agent.
