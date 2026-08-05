@@ -32,6 +32,14 @@
         "type": "expr"
       }
     },
+    "custom.shotStatus": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getShotStatusForCellOrEmpty\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
     "custom.cavityOptions": {
       "binding": {
         "config": {
@@ -1486,6 +1494,85 @@
                       "style": {
                         "classes": "pf-kpi-value"
                       }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "DieShotsLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      },
+                      "text": "Die total shots"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "DieShotsValue"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr({view.custom.shotStatus.ShotCount}) + if(isNull({view.custom.shotStatus.ShotLimit}), '', ' / ' + toStr({view.custom.shotStatus.ShotLimit}))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "DieShotOver"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!isNull({view.custom.shotStatus.ShotLimit}) && {view.custom.shotStatus.ShotCount} >= {view.custom.shotStatus.ShotLimit}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-danger, #b91c1c)",
+                        "fontWeight": "700"
+                      },
+                      "text": "OVER SHOT LIMIT"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "DieShotNear"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!isNull({view.custom.shotStatus.ShotLimit}) && {view.custom.shotStatus.ShotCount} >= 0.9 * {view.custom.shotStatus.ShotLimit} && {view.custom.shotStatus.ShotCount} < {view.custom.shotStatus.ShotLimit}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-warning, #b45309)",
+                        "fontWeight": "700"
+                      },
+                      "text": "Approaching shot limit"
                     },
                     "type": "ia.display.label"
                   }

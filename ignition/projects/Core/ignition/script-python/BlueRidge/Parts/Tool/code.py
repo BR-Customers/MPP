@@ -262,9 +262,8 @@ def update(data):
     appUserId = BlueRidge.Common.Util._currentAppUserId()
     description = (data.get("Description") or "").strip() or None
 
-    shotLimit = data.get("ShotLimit")
-    if shotLimit == "" or shotLimit == u"":
-        shotLimit = None
+    # ShotLimit arrives from a text field (string) or empty; coerce to int/None.
+    shotLimit = BlueRidge.Common.Util.toIntOrNone(data.get("ShotLimit"))
 
     updateResult = BlueRidge.Common.Db.execMutation(
         "parts/Tool_Update",
