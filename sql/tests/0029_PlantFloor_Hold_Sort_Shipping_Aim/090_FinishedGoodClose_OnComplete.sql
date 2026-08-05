@@ -94,9 +94,10 @@ INSERT INTO @InvAfter EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 DECLARE @InvA NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @InvAfter WHERE LotId IN (@Fg1, @Fg2));
 EXEC test.Assert_IsEqual @TestName = N'[FGClose] closed FG LOTs gone from line inventory', @Expected = N'0', @Actual = @InvA;
 
--- Assert: genealogy still queryable (closure self-row + ancestors survive the close).
-DECLARE @Gen NVARCHAR(10) = (SELECT CASE WHEN COUNT(*) >= 1 THEN N'1' ELSE N'0' END FROM Lots.LotGenealogyClosure WHERE DescendantLotId = @Fg1);
-EXEC test.Assert_IsEqual @TestName = N'[FGClose] FG LOT 1 genealogy intact after close', @Expected = N'1', @Actual = @Gen;
+-- Assert: FG LOT provenance still queryable after close -- the consumption edges into
+-- the FG LOT (written by Assembly_CompleteTray) survive the status change to Closed.
+DECLARE @Gen NVARCHAR(10) = (SELECT CASE WHEN COUNT(*) >= 1 THEN N'1' ELSE N'0' END FROM Workorder.ConsumptionEvent WHERE ProducedLotId = @Fg1);
+EXEC test.Assert_IsEqual @TestName = N'[FGClose] FG LOT 1 consumption genealogy queryable after close', @Expected = N'1', @Actual = @Gen;
 GO
 
 -- ---- NULL-FinishedGoodLotId tray must not break completion (ContainerTray_Close flow) ----

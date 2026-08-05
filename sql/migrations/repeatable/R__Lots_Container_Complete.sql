@@ -45,7 +45,7 @@ BEGIN
             @MustConfirm BIT, @RequiresConfirm NVARCHAR(50),
             @ClaimedPoolId BIGINT, @LabelTypeId BIGINT, @Activity NVARCHAR(500), @NewValue NVARCHAR(MAX);
     DECLARE @claimed TABLE (Id BIGINT, AimShipperId NVARCHAR(50));
-    DECLARE @FgLotId BIGINT, @FgLotName NVARCHAR(50);
+    DECLARE @FgLotId BIGINT;
 
     BEGIN TRY
         -- ---- Tier 1 ----
@@ -166,14 +166,14 @@ BEGIN
         -- no LOT and are skipped by the join; Hold/Scrap FG LOTs are skipped by the
         -- helper's Good-only guard.
         DECLARE fg_cur CURSOR LOCAL FAST_FORWARD FOR
-            SELECT l.Id, l.LotName
+            SELECT l.Id
             FROM Lots.ContainerTray t
             INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
             WHERE t.ContainerId = @ContainerId
               AND t.FinishedGoodLotId IS NOT NULL
               AND l.LotStatusId = 1;   -- Good
         OPEN fg_cur;
-        FETCH NEXT FROM fg_cur INTO @FgLotId, @FgLotName;
+        FETCH NEXT FROM fg_cur INTO @FgLotId;
         WHILE @@FETCH_STATUS = 0
         BEGIN
             EXEC Lots.Lot_CloseInline
@@ -181,7 +181,7 @@ BEGIN
                 @Reason = N'Closed on container completion (finished-goods packed & shipping-ready).',
                 @AppUserId = @AppUserId,
                 @TerminalLocationId = @TerminalLocationId;
-            FETCH NEXT FROM fg_cur INTO @FgLotId, @FgLotName;
+            FETCH NEXT FROM fg_cur INTO @FgLotId;
         END
         CLOSE fg_cur; DEALLOCATE fg_cur;
 
