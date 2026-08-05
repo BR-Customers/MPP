@@ -12,7 +12,18 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-07-31 — **⛔→✅ THE AIM INTEGRATION IS UNBLOCKED. Both Honda-EDI endpoints are now proven against MPP's live AIM server.** The 2026-07-16 "BLOCKED pending customer input" call is **superseded**: the interface contract was found in the repo (`AIM_docs/customer_AIM_http`), and the real wire format was reverse-engineered from AIM's own `acsMobileLog` after the written agreement turned out to be **wrong about how the payload is transmitted**.
+**Last updated:** 2026-08-05 — **THE AIM INTEGRATION IS BUILT END-TO-END AND PUSHED (`5744bbc5`).** Both Honda-EDI endpoints are proven against MPP's live AIM server; the SQL foundation and the Ignition layer are complete, reviewed and merged into `hunter/explore`. **The integration is INERT BY DEFAULT** — `Lots.AimPoolConfig.AimPostingEnabled` defaults to `0` and both AIM timers ship disabled, so a Gateway running this code sends nothing to AIM until someone deliberately turns it on. Full SQL suite **2322/2322, 0 FAIL**, failure set identical to the pre-work baseline.
+
+> **What exists now.** `BlueRidge.Lots.AimHttp` (the one place an AIM call leaves the Gateway) · `BlueRidge.Lots.AimPost.postOne/retryTick` (one definition of "post a serial", used by both the synchronous completion path and a 60s sweep) · a real `topupTick` · backlog-age escalation in `alarmTick` · `AimPostTimer` (disabled) · container completion posts back · `/shop-floor/aim-pool-config` with connection settings, the owed-to-AIM backlog and a human-confirmed `MarkPosted` · `AimPoolTile`. Migrations **`0049`–`0051`**.
+> **The wire format — the thing that cost the most to learn.** The written agreement is WRONG about how the payload is transmitted. It rides in the **query string** with an **EMPTY body**, and the delimiters are **literal backslash escape text** (`%5C` is a backslash, so `%5Cr%5Cn` is the text `
+`, not CRLF). Success = the reply **equals** the serial sent; a ~91-byte **echo of the request** is the listener's unrecognized-request fallback. **Never use `system.net.httpClient()`** — it builds a `java.net.URI` that re-encodes `%5C` to `%255C` and reproduces the exact two-day dead end. `java.net.URL` does not re-encode (verified against Ignition's own Jython jar and the live server).
+> **The AIM part number is DERIVED, not stored (2026-08-04).** `Parts.ufn_AimCustomerPartNumber(Item.PartNumber)` strips dashes and preserves embedded spaces: `11200-6FB -A000` → `112006FB A000`, byte-identical to the value that posted successfully — and exactly what legacy Base2 did (`partName.Replace("-","")`). Migration `0051` dropped the short-lived `Parts.Item.AimCustomerPartNumber`. **This closes the customer-part data dependency: MPP no longer owes us a cross-reference export before anything can post.**
+> **⚠️ Company `01` ONLY.** Production runs on company `99` from the legacy MES box (`172.17.10.8`), counter ~13.84M. Never point MES traffic at it.
+> **⚠️ Owed before this reaches a line:** the Designer/Gateway smoke pass (`/aim-pool-config`, container completion, and the three Script Console scripts under `tools/script-console-demos/aim_*.py`), then flipping `AimPostingEnabled` and enabling the two timers. **Two known defects are NOT fixed:** the backlog alarm cannot reach a human (`sendMessage(scope="session")` from a gateway timer, and nothing handles `aim-pool-alarm`), and `AimPostTimer` runs on the **shared** timer thread where an AIM outage could stall the 5s PLC watchers. Full list in `.superpowers/sdd/progress.md`.
+> **Still unresolved with MPP:** holds have **no interface** in the AIM agreement at all (Appendix L implies QA does them by hand in AIM's UI, so FDS-07-011 may be specced against something never scoped); `previousSerial` has no HTTP equivalent, so FDS-07-012 Sort-Cage re-pack traceability has no transport; OI-33 empty-pool policy; the production company code and its counter position.
+> Contract + full diagnostic history: **`notes/2026-07-28_aim-interface-contract.md`**. Design: `docs/superpowers/specs/2026-07-31-aim-integration-ignition-design.md`. Plans: `…/plans/2026-07-31-aim-integration-plan1-sql-foundation.md` + `…-plan2-ignition-layer.md`.
+
+**Prior header (2026-07-31):** **⛔→✅ THE AIM INTEGRATION IS UNBLOCKED. Both Honda-EDI endpoints are now proven against MPP's live AIM server.** The 2026-07-16 "BLOCKED pending customer input" call is **superseded**: the interface contract was found in the repo (`AIM_docs/customer_AIM_http`), and the real wire format was reverse-engineered from AIM's own `acsMobileLog` after the written agreement turned out to be **wrong about how the payload is transmitted**.
 
 > **The contract.** `nextserial.csv` issues a 9-digit, zero-padded, per-company-code serial. `postserial.csv` binds content to it. **The payload goes in the QUERY STRING with an EMPTY body** (`Content-Length: 0`) — not in the POST body as the agreement describes — and the delimiters are **literal backslash escapes** (`%5Cr%5Cn` = the text `\r\n`, `%5Ct` = the text `\t`), not control characters:
 > `POST /mes/floor/{Company}/636652666553236784/postserial.csv?\r\n{serial}\t{part}\t{qty}\t{lot}\r\n`
@@ -59,6 +70,66 @@
 **Prior header note (hunter/explore, 2026-07-07):** **Smoke-findings fix pass on `hunter/explore`: all 14 items from `notes/2026-07-07_smoke_findings.md` addressed (full suite 1945/1945, only the pre-existing `010_Parts_codes_crud` thrower). Per-item ✅/⚠️ annotations live in the findings file. Re-smoke owed — see the section directly below.** Prior header note (2026-07-06 second session): **Jacques 2026-07-06 meeting task list worked on `hunter/explore`: 21 of 24 items fixed, tested, committed (full suite 1934/1934, only the pre-existing `010_Parts_codes_crud` thrower). 3 items open pending live repro / Jacques's call.** Prior header note (earlier 2026-07-06):
 
 ---
+
+## 🔖 2026-08-05 — AIM (Honda EDI) integration built end-to-end, reviewed, pushed
+
+Three days: contract discovery → design → two implementation plans → execution. Pushed as `5744bbc5`.
+
+### How the contract was found
+`AIM_docs/customer_AIM_http` (already in the working tree, uncommitted) turned out to be the MPP ↔ AIM
+Computer Solutions scope agreement — the interface detail the 2026-07-16 BLOCKED note said we lacked.
+It answered 3 of that note's 5 blockers. **But the agreement is wrong about how the payload is
+transmitted**, which is why the first day of live testing failed with `Blanket not found`. The real
+format was reverse-engineered from AIM's own `acsMobileLog` by comparing our rejected requests against
+the legacy MES's working ones: the payload rides in the **query string** with an **empty body**, and
+the delimiters are **literal backslash escape text**, not control characters.
+
+### What is built
+- **SQL (Plan 1, migrations `0049`–`0051`)** — `AimShipperIdPool` genericized (AIM's `nextserial.csv`
+  takes no part parameter, so FDS-07-010's per-part topup was unimplementable); post-back payload +
+  status columns; `AimPoolConfig` connection + escalation settings + `AimPostingEnabled`;
+  `Parts.ufn_AimCustomerPartNumber`. 6 procs modified, 7 new.
+- **Ignition (Plan 2)** — `AimHttp` (the one place an AIM call leaves the Gateway), `AimPost.postOne/
+  retryTick`, real `topupTick`, backlog escalation in `alarmTick`, `AimPostTimer` (disabled),
+  container post-back, `/shop-floor/aim-pool-config` with the owed-to-AIM backlog and `MarkPosted`,
+  `AimPoolTile`.
+
+### Verified live against company `01`
+Serials `000000029`–`000000031` consumed proving the transport; `000000024` produced a real AIM label
+(`112006FB A000`, qty 15, destination `GNSE 25 - Honda`) confirmed on the Unshipped Labels report.
+Behavioural tests: **duplicates are rejected** (so retry is safe), **out-of-order posting works** (so a
+retry queue needs no ordering), **quantity is unconstrained**.
+
+### What the reviews caught that the tests did not
+Every task passed its own tests; the cross-cutting reviews found the serious defects:
+- **The gate did not exist.** "Ships disabled" covered only the retry sweep — the *first* post ran
+  synchronously on the live plant-floor path. Deploying would have started posting immediately.
+  Fixed by gating inside `AimHttp`, where no caller can bypass it.
+- **`AimPoolTopupTimer` shipped enabled** while `topupTick` changed from a no-op stub into a loop
+  burning serials 25-at-a-time. A fetched-but-unpooled serial is gone forever.
+- **A NULL lot posted the literal string `"None"`** onto a Honda label.
+- **The encoder whitelisted two characters**, so a `#` in a lot name truncated the request — and lot
+  names are caller-supplied (pre-printed LTT).
+- **`getErrorStream` was never read**, so AIM's own diagnostic (`"Not logged in - AIM Mobility must be
+  restarted."`) was replaced by a generic Java message.
+
+### Two things worth carrying forward
+- **Ignition ships its own Jython jar** (`lib/core/common/jython-ia-2.7.3.5.jar`). With the local JDK
+  it runs committed module source against stubs — so Jython IS testable offline, contrary to Plan 2's
+  assumption. That is how the transport was proven before any production code was written.
+- **The fixed-shape `INSERT-EXEC` hazard bit three times.** Each time a proc gained a column, a test's
+  table-variable capture broke with `Msg 213` — and **every filtered run still passed**. Only the
+  full-suite baseline diff caught it. Keep that step in any plan touching proc shapes.
+
+### Owed
+Designer/Gateway smoke (`/aim-pool-config`, container completion, the three `tools/script-console-demos/
+aim_*.py` scripts), then flip `AimPostingEnabled` and enable the timers. **Not fixed:** the backlog
+alarm cannot reach a human (gateway-scope `sendMessage`, and no handler exists), and `AimPostTimer`
+shares the timer thread with 5s PLC watchers. **Needs MPP:** holds have no interface in the agreement
+at all; `previousSerial` has no HTTP equivalent; OI-33; the production company code.
+
+---
+
 
 ## 🔖 2026-07-31 — Shift Boundary Reconcile-to-Now
 
@@ -180,9 +251,9 @@ Worked a live shop-floor smoke list end-to-end on `jacques/working`; reconciled 
 **Dev DB (`MPP_MES_Dev`) applied this session — all data-safe, NO reset (live test data preserved):** versioned `0037`/`0038`/`0039` (were unapplied — quality-capture + PLC foundation incl. `Item.PlcId`) + all 349 repeatables re-run, then the route-aware `MachiningIn_RecordPick`, `Lot_Create` warehouse deposit, and `Assembly_CompleteTray` message.
 ---
 
-## 🔖 2026-07-16 — AIM integration researched end-to-end; ⛔ BLOCKED — **✅ SUPERSEDED 2026-07-31**
+## 🔖 2026-07-16 — AIM integration researched end-to-end; ⛔ BLOCKED — **✅ RESOLVED; INTEGRATION SHIPPED 2026-08-05**
 
-> **⚠️ THIS SECTION IS HISTORICAL.** The blocker was resolved on 2026-07-31 — both endpoints are
+> **⚠️ THIS SECTION IS HISTORICAL.** The blocker was resolved on 2026-07-31 and the whole integration was built, reviewed and pushed on 2026-08-05 (see that section above) — both endpoints are
 > proven against the live AIM server. Blockers 1 (transport/authority) and 3 (message contract) are
 > **answered**; blocker 2 (per-part vs generic pool) is **decided by the contract** — it must be
 > generic, because `nextserial.csv` accepts no part parameter. Blocker 4 (OI-33) and the hold
