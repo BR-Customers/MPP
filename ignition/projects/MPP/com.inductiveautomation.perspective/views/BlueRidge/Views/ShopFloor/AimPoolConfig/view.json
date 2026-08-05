@@ -821,6 +821,13 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tif payload and payload.get(\"action\") == \"save\":\n\t\tself.load()"
+        },
+        {
+          "messageType": "mpp-toast",
+          "pageScope": false,
+          "sessionScope": true,
+          "viewScope": false,
+          "script": "\tBlueRidge.Common.Notify._handle(self, payload)"
         }
       ]
     }
