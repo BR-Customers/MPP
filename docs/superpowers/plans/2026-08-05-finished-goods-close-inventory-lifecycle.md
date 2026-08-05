@@ -225,6 +225,7 @@ DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM P
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD'));
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL', N'P21-FGC-CHILD')) OR LotName = N'STG-090');
 DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL', N'P21-FGC-CHILD')) OR LotName = N'STG-090');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL', N'P21-FGC-CHILD')) OR LotName = N'STG-090');
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'));
@@ -282,7 +283,9 @@ EXEC test.Assert_IsEqual @TestName = N'[FGClose] FG LOT 2 -> Closed (4)', @Expec
 -- Assert: each FG LOT got a Good->Closed history row + LotStatusChanged audit.
 DECLARE @H1 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotStatusHistory WHERE LotId = @Fg1 AND OldStatusId = 1 AND NewStatusId = 4);
 EXEC test.Assert_IsEqual @TestName = N'[FGClose] FG LOT 1 Good->Closed history row', @Expected = N'1', @Actual = @H1;
-DECLARE @A1 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Audit.OperationLog ol INNER JOIN Audit.LogEventType et ON et.Id = ol.LogEventTypeId WHERE et.Code = N'LotStatusChanged' AND ol.EntityId = @Fg1);
+-- NOTE: 'Lot'-entity audit events with non-NULL EntityId route to Lots.LotEventLog
+-- (B7 routing in Audit.Audit_LogOperation), NOT Audit.OperationLog. Assert there.
+DECLARE @A1 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotEventLog el INNER JOIN Audit.LogEventType et ON et.Id = el.LogEventTypeId WHERE et.Code = N'LotStatusChanged' AND el.LotId = @Fg1);
 EXEC test.Assert_IsEqual @TestName = N'[FGClose] FG LOT 1 LotStatusChanged audit present', @Expected = N'1', @Actual = @A1;
 
 -- Assert: closed FG LOTs are excluded from line inventory.
@@ -332,6 +335,7 @@ DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM P
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD'));
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL', N'P21-FGC-CHILD')) OR LotName = N'STG-090');
 DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL', N'P21-FGC-CHILD')) OR LotName = N'STG-090');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL', N'P21-FGC-CHILD')) OR LotName = N'STG-090');
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'));
@@ -459,6 +463,7 @@ DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM P
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG')) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG'));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG')) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-CHILD'));
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P21-FGR-FG';
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGR-FG', N'P21-FGR-CHILD')) OR LotName = N'STG-100');
 DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGR-FG', N'P21-FGR-CHILD')) OR LotName = N'STG-100');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGR-FG', N'P21-FGR-CHILD')) OR LotName = N'STG-100');
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG');
@@ -544,6 +549,7 @@ DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM P
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG')) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG'));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG')) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-CHILD'));
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P21-FGR-FG';
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGR-FG', N'P21-FGR-CHILD')) OR LotName = N'STG-100');
 DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGR-FG', N'P21-FGR-CHILD')) OR LotName = N'STG-100');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGR-FG', N'P21-FGR-CHILD')) OR LotName = N'STG-100');
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG');
