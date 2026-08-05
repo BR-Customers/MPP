@@ -14,7 +14,7 @@
 --     - Migrations 0001-0009 applied
 --     - AppUser Id=1 exists (bootstrap admin)
 --     - MPP plant seed (011): at least one active ProductionArea (DefId 3),
---       resolved dynamically per batch (@Area) rather than by seed Id/Code
+--       resolved dynamically per batch (@Cat) rather than by seed Id/Code
 --
 --   NOTE: Code is immutable on Update by design — there is no @Code
 --         parameter on Oee.DowntimeReasonCode_Update. To change a code
@@ -30,13 +30,12 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R1 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-001',
     @Description          = N'Test downtime reason 001',
-    @AreaLocationId       = @Area,         -- Die Cast
+    @OperationCategoryId       = @Cat,         -- Die Cast
     @DowntimeReasonTypeId = 1,         -- Equipment
     @IsExcused            = 0,
     @AppUserId            = 1;
@@ -67,13 +66,12 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R2 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-002',
     @Description          = N'Test downtime reason with NULL type',
-    @AreaLocationId       = @Area,
+    @OperationCategoryId       = @Cat,
     @DowntimeReasonTypeId = NULL,
     @IsExcused            = 0,
     @AppUserId            = 1;
@@ -93,13 +91,12 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R3 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-001',  -- duplicate of first test
     @Description          = N'Duplicate code attempt',
-    @AreaLocationId       = @Area,
+    @OperationCategoryId       = @Cat,
     @DowntimeReasonTypeId = 1,
     @AppUserId            = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #R3;
@@ -123,13 +120,12 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #R4 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R4 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-NULL-DESC',
     @Description          = NULL,
-    @AreaLocationId       = @Area,
+    @OperationCategoryId       = @Cat,
     @AppUserId            = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #R4;
 DROP TABLE #R4;
@@ -142,7 +138,7 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
--- Test: Create with invalid AreaLocationId — Status=0, message mentions Area
+-- Test: Create with invalid OperationCategoryId — Status=0, message mentions Area
 -- =============================================
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
@@ -151,7 +147,7 @@ CREATE TABLE #R5 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R5 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-BAD-AREA',
     @Description          = N'Invalid area test',
-    @AreaLocationId       = 999999,
+    @OperationCategoryId       = 999999,
     @AppUserId            = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #R5;
 DROP TABLE #R5;
@@ -163,9 +159,9 @@ EXEC test.Assert_IsEqual
     @Actual   = @SStr;
 
 EXEC test.Assert_Contains
-    @TestName    = N'DRC_Create[BadArea]: message mentions AreaLocationId',
+    @TestName    = N'DRC_Create[BadArea]: message mentions OperationCategoryId',
     @HaystackStr = @M,
-    @NeedleStr   = N'AreaLocationId';
+    @NeedleStr   = N'OperationCategoryId';
 GO
 
 -- =============================================
@@ -174,13 +170,12 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #R6 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R6 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-BAD-TYPE',
     @Description          = N'Invalid type test',
-    @AreaLocationId       = @Area,
+    @OperationCategoryId       = @Cat,
     @DowntimeReasonTypeId = 99,
     @AppUserId            = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #R6;
@@ -199,7 +194,7 @@ EXEC test.Assert_Contains
 GO
 
 -- =============================================
--- Test: Get returns 1 row with right Code/Description/AreaLocationId
+-- Test: Get returns 1 row with right Code/Description/OperationCategoryId
 -- =============================================
 DECLARE @TargetId BIGINT;
 SELECT @TargetId = Id FROM Oee.DowntimeReasonCode WHERE Code = N'TEST-DRC-001';
@@ -207,7 +202,7 @@ SELECT @TargetId = Id FROM Oee.DowntimeReasonCode WHERE Code = N'TEST-DRC-001';
 DECLARE @Count INT;
 CREATE TABLE #G (
     Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
-    AreaLocationId BIGINT, AreaName NVARCHAR(200),
+    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
     DowntimeReasonTypeId BIGINT, ReasonTypeName NVARCHAR(100),
     DowntimeSourceCodeId BIGINT, SourceCodeName NVARCHAR(100),
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
@@ -217,11 +212,10 @@ SELECT @Count = COUNT(*) FROM #G;
 
 DECLARE @GotCode  NVARCHAR(20)  = (SELECT TOP 1 Code FROM #G);
 DECLARE @GotDesc  NVARCHAR(500) = (SELECT TOP 1 Description FROM #G);
-DECLARE @GotArea  BIGINT        = (SELECT TOP 1 AreaLocationId FROM #G);
+DECLARE @GotArea  BIGINT        = (SELECT TOP 1 OperationCategoryId FROM #G);
 DECLARE @GotAreaStr NVARCHAR(20) = CAST(@GotArea AS NVARCHAR(20));
-DECLARE @Area    BIGINT      = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
-DECLARE @AreaStr NVARCHAR(20) = CAST(@Area AS NVARCHAR(20));
+DECLARE @Cat    BIGINT      = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
+DECLARE @CatStr NVARCHAR(20) = CAST(@Cat AS NVARCHAR(20));
 DROP TABLE #G;
 
 EXEC test.Assert_RowCount
@@ -240,8 +234,8 @@ EXEC test.Assert_IsEqual
     @Actual   = @GotDesc;
 
 EXEC test.Assert_IsEqual
-    @TestName = N'DRC_Get[HappyPath]: AreaLocationId matches the created area',
-    @Expected = @AreaStr,
+    @TestName = N'DRC_Get[HappyPath]: OperationCategoryId matches the created area',
+    @Expected = @CatStr,
     @Actual   = @GotAreaStr;
 GO
 
@@ -251,7 +245,7 @@ GO
 DECLARE @Count INT;
 CREATE TABLE #G (
     Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
-    AreaLocationId BIGINT, AreaName NVARCHAR(200),
+    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
     DowntimeReasonTypeId BIGINT, ReasonTypeName NVARCHAR(100),
     DowntimeSourceCodeId BIGINT, SourceCodeName NVARCHAR(100),
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
@@ -267,26 +261,25 @@ EXEC test.Assert_RowCount
 GO
 
 -- =============================================
--- Test: List filter by AreaLocationId — at least 1 row, all with matching Area
+-- Test: List filter by OperationCategoryId — at least 1 row, all with matching Area
 -- =============================================
 DECLARE @TargetId BIGINT;
 SELECT @TargetId = Id FROM Oee.DowntimeReasonCode WHERE Code = N'TEST-DRC-001';
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #L (
     Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
-    AreaLocationId BIGINT, AreaName NVARCHAR(200),
+    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
     DowntimeReasonTypeId BIGINT, ReasonTypeName NVARCHAR(100),
     DowntimeSourceCodeId BIGINT, SourceCodeName NVARCHAR(100),
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #L EXEC Oee.DowntimeReasonCode_List
-    @AreaLocationId    = @Area,
+    @OperationCategoryId    = @Cat,
     @IncludeDeprecated = 0;
 
 DECLARE @TotalCount INT       = (SELECT COUNT(*) FROM #L);
-DECLARE @MatchCount INT       = (SELECT COUNT(*) FROM #L WHERE AreaLocationId = @Area);
+DECLARE @MatchCount INT       = (SELECT COUNT(*) FROM #L WHERE OperationCategoryId = @Cat OR OperationCategoryId IS NULL);
 DECLARE @ContainsTarget INT   = (SELECT COUNT(*) FROM #L WHERE Id = @TargetId);
 DROP TABLE #L;
 
@@ -310,7 +303,7 @@ GO
 -- =============================================
 CREATE TABLE #L2 (
     Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
-    AreaLocationId BIGINT, AreaName NVARCHAR(200),
+    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
     DowntimeReasonTypeId BIGINT, ReasonTypeName NVARCHAR(100),
     DowntimeSourceCodeId BIGINT, SourceCodeName NVARCHAR(100),
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
@@ -340,13 +333,12 @@ DECLARE @TargetId BIGINT;
 
 SELECT @TargetId = Id FROM Oee.DowntimeReasonCode WHERE Code = N'TEST-DRC-001';
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #R7 (Status BIT, Message NVARCHAR(500));
 INSERT INTO #R7 EXEC Oee.DowntimeReasonCode_Update
     @Id                   = @TargetId,
     @Description          = N'Test downtime reason 001 (updated)',
-    @AreaLocationId       = @Area,
+    @OperationCategoryId       = @Cat,
     @DowntimeReasonTypeId = 2,         -- changed Equipment -> Miscellaneous
     @IsExcused            = 1,
     @AppUserId            = 1;
@@ -392,13 +384,12 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @SStr NVARCHAR(1);
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #R8 (Status BIT, Message NVARCHAR(500));
 INSERT INTO #R8 EXEC Oee.DowntimeReasonCode_Update
     @Id                   = 999999,
     @Description          = N'Should fail',
-    @AreaLocationId       = @Area,
+    @OperationCategoryId       = @Cat,
     @IsExcused            = 0,
     @AppUserId            = 1;
 SELECT @S = Status, @M = Message FROM #R8;
@@ -472,18 +463,17 @@ GO
 
 -- =============================================
 -- Slice 8 (audit-readability): Create Description carries
---   "Downtime Code <Code> — <Name> (<AreaName>, Excused) · Created"
+--   "Downtime Code <Code> — <Name> (<CategoryName>, Excused) · Created"
 --   and NewValue JSON carries a resolved Area sub-object.
 -- =============================================
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #RS8a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #RS8a EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TST-DT-S8',
     @Description          = N'Mechanical',
-    @AreaLocationId       = @Area,         -- Die Cast
+    @OperationCategoryId       = @Cat,         -- Die Cast
     @DowntimeReasonTypeId = 1,
     @IsExcused            = 1,
     @AppUserId            = 1;
@@ -508,7 +498,7 @@ DECLARE @NewVal NVARCHAR(MAX) = (SELECT TOP 1 NewValue FROM Audit.ConfigLog
                                  WHERE EntityId = @NewId AND LogEntityTypeId = @EntTypeId
                                  ORDER BY Id DESC);
 DECLARE @CreateJson NVARCHAR(1) =
-    CASE WHEN JSON_VALUE(@NewVal, '$.Area.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+    CASE WHEN JSON_VALUE(@NewVal, '$.Category.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
     @TestName = N'DRC_Create[S8Json]: NewValue has resolved Area.Name',
     @Expected = N'1',
@@ -522,13 +512,12 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @TargetId BIGINT = (SELECT Id FROM Oee.DowntimeReasonCode WHERE Code = N'TST-DT-S8');
 
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @Cat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
 CREATE TABLE #RS8b (Status BIT, Message NVARCHAR(500));
 INSERT INTO #RS8b EXEC Oee.DowntimeReasonCode_Update
     @Id                   = @TargetId,
     @Description          = N'Mechanical Failure',
-    @AreaLocationId       = @Area,
+    @OperationCategoryId       = @Cat,
     @DowntimeReasonTypeId = 1,
     @IsExcused            = 0,         -- flip true -> false
     @AppUserId            = 1;
@@ -553,7 +542,7 @@ DECLARE @OldVal NVARCHAR(MAX) = (SELECT TOP 1 OldValue FROM Audit.ConfigLog
                                  WHERE EntityId = @TargetId AND LogEntityTypeId = @EntTypeId
                                  ORDER BY Id DESC);
 DECLARE @UpdJson NVARCHAR(1) =
-    CASE WHEN JSON_VALUE(@OldVal, '$.Area.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+    CASE WHEN JSON_VALUE(@OldVal, '$.Category.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
     @TestName = N'DRC_Update[S8Json]: OldValue has resolved Area.Name',
     @Expected = N'1',
@@ -587,7 +576,7 @@ DECLARE @OldVal NVARCHAR(MAX) = (SELECT TOP 1 OldValue FROM Audit.ConfigLog
                                  WHERE EntityId = @TargetId AND LogEntityTypeId = @EntTypeId
                                  ORDER BY Id DESC);
 DECLARE @DepJson NVARCHAR(1) =
-    CASE WHEN JSON_VALUE(@OldVal, '$.Area.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+    CASE WHEN JSON_VALUE(@OldVal, '$.Category.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
     @TestName = N'DRC_Deprecate[S8Json]: OldValue has resolved Area.Name',
     @Expected = N'1',
@@ -595,10 +584,62 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
+-- Plant-wide create (NULL category) succeeds
+-- =============================================
+DECLARE @Spw BIT;
+CREATE TABLE #PW (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #PW EXEC Oee.DowntimeReasonCode_Create
+    @Code = N'TEST-DRC-PW', @Description = N'Plant-wide downtime', @OperationCategoryId = NULL, @IsExcused = 0, @AppUserId = 1;
+SELECT @Spw = Status FROM #PW; DROP TABLE #PW;
+DECLARE @PWStr NVARCHAR(1) = CAST(@Spw AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName = N'DRC_Create[PlantWide]: status is 1', @Expected = N'1', @Actual = @PWStr;
+GO
+
+-- =============================================
+-- List by OperationTypeCode 'DieCast' returns die-cast + plant-wide, excludes Trim
+-- =============================================
+DECLARE @TrimCat BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'Trim');
+CREATE TABLE #CT (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #CT EXEC Oee.DowntimeReasonCode_Create
+    @Code = N'TEST-DRC-TRIM', @Description = N'Trim only downtime', @OperationCategoryId = @TrimCat, @IsExcused = 0, @AppUserId = 1;
+DROP TABLE #CT;
+
+CREATE TABLE #LT (
+    Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
+    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
+    DowntimeReasonTypeId BIGINT, ReasonTypeName NVARCHAR(100),
+    DowntimeSourceCodeId BIGINT, SourceCodeName NVARCHAR(100),
+    IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
+);
+INSERT INTO #LT EXEC Oee.DowntimeReasonCode_List @OperationTypeCode = N'DieCast', @IncludeDeprecated = 0;
+DECLARE @HasDC   NVARCHAR(1) = CASE WHEN EXISTS(SELECT 1 FROM #LT WHERE Code = N'TEST-DRC-001')  THEN N'1' ELSE N'0' END;
+DECLARE @HasPW   NVARCHAR(1) = CASE WHEN EXISTS(SELECT 1 FROM #LT WHERE Code = N'TEST-DRC-PW')   THEN N'1' ELSE N'0' END;
+DECLARE @HasTrim NVARCHAR(1) = CASE WHEN EXISTS(SELECT 1 FROM #LT WHERE Code = N'TEST-DRC-TRIM') THEN N'1' ELSE N'0' END;
+DROP TABLE #LT;
+EXEC test.Assert_IsEqual @TestName = N'DRC_List[ByType]: die-cast code present',  @Expected = N'1', @Actual = @HasDC;
+EXEC test.Assert_IsEqual @TestName = N'DRC_List[ByType]: plant-wide code present', @Expected = N'1', @Actual = @HasPW;
+EXEC test.Assert_IsEqual @TestName = N'DRC_List[ByType]: trim code excluded',      @Expected = N'0', @Actual = @HasTrim;
+GO
+
+-- =============================================
+-- Update with no changes succeeds (STUFF-on-empty NULL Description guard)
+-- =============================================
+DECLARE @Tid BIGINT = (SELECT Id FROM Oee.DowntimeReasonCode WHERE Code = N'TEST-DRC-001');
+DECLARE @DieCatId BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
+DECLARE @Snc BIT;
+CREATE TABLE #UNC (Status BIT, Message NVARCHAR(500));
+INSERT INTO #UNC EXEC Oee.DowntimeReasonCode_Update
+    @Id = @Tid, @Description = N'Test downtime reason 001 (updated)', @OperationCategoryId = @DieCatId, @DowntimeReasonTypeId = 2, @IsExcused = 1, @AppUserId = 1;
+SELECT @Snc = Status FROM #UNC; DROP TABLE #UNC;
+DECLARE @Sncs NVARCHAR(1) = CAST(@Snc AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName = N'DRC_Update[NoChange]: status is 1', @Expected = N'1', @Actual = @Sncs;
+GO
+
+-- =============================================
 -- Cleanup: remove test rows so the suite is re-runnable
 -- =============================================
 DELETE FROM Oee.DowntimeReasonCode
-WHERE Code IN (N'TEST-DRC-001', N'TEST-DRC-002', N'TST-DT-S8');
+WHERE Code IN (N'TEST-DRC-001', N'TEST-DRC-002', N'TST-DT-S8', N'TEST-DRC-PW', N'TEST-DRC-TRIM');
 GO
 
 EXEC test.EndTestFile;
