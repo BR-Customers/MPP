@@ -21,7 +21,7 @@ AS RETURN
         CASE WHEN @ShotLimit IS NULL THEN NULL
              ELSE @ShotLimit - @ShotCount END AS ShotsRemaining,
         CASE WHEN @ShotLimit IS NULL OR @ShotLimit = 0 THEN NULL
-             ELSE CAST(CAST(@ShotCount AS DECIMAL(18,4)) * 100.0 / @ShotLimit AS DECIMAL(9,2)) END AS PercentOfLimit,
+             ELSE CAST(CAST(@ShotCount AS DECIMAL(18,4)) * 100.0 / @ShotLimit AS DECIMAL(11,2)) END AS PercentOfLimit,
         CAST(CASE WHEN @ShotLimit IS NOT NULL AND @ShotLimit > 0
                    AND @ShotCount >= 0.9 * @ShotLimit AND @ShotCount < @ShotLimit
                   THEN 1 ELSE 0 END AS BIT) AS IsNearLimit,

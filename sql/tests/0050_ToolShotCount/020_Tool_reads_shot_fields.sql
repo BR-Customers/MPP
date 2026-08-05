@@ -19,7 +19,7 @@ DECLARE @G TABLE (
     StatusCodeId BIGINT, StatusCode NVARCHAR(30), StatusName NVARCHAR(100),
     CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), CreatedByUserId BIGINT,
     UpdatedByUserId BIGINT, DeprecatedAt DATETIME2(3),
-    ShotCount INT, ShotLimit INT, ShotsRemaining INT, PercentOfLimit DECIMAL(9,2),
+    ShotCount INT, ShotLimit INT, ShotsRemaining INT, PercentOfLimit DECIMAL(11,2),
     IsNearLimit BIT, IsOverLimit BIT);
 INSERT INTO @G EXEC Tools.Tool_Get @Id = @Tool;
 
@@ -40,7 +40,7 @@ DECLARE @L TABLE (
     StatusCodeId BIGINT, StatusCode NVARCHAR(30), StatusName NVARCHAR(100),
     CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), CreatedByUserId BIGINT,
     UpdatedByUserId BIGINT, DeprecatedAt DATETIME2(3),
-    ShotCount INT, ShotLimit INT, ShotsRemaining INT, PercentOfLimit DECIMAL(9,2),
+    ShotCount INT, ShotLimit INT, ShotsRemaining INT, PercentOfLimit DECIMAL(11,2),
     IsNearLimit BIT, IsOverLimit BIT);
 INSERT INTO @L EXEC Tools.Tool_List @ToolTypeId = NULL, @StatusCode = NULL, @IncludeDeprecated = 1;
 DECLARE @lNear NVARCHAR(5) = (SELECT CAST(IsNearLimit AS NVARCHAR(5)) FROM @L WHERE Code = N'TEST-SHOT-RD');

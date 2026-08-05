@@ -23,7 +23,7 @@ INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedBy
 VALUES (@Tool, @Cell, SYSUTCDATETIME(), 1);
 
 DECLARE @S TABLE (ToolId BIGINT, ToolCode NVARCHAR(50), ToolName NVARCHAR(100),
-    ShotCount INT, ShotLimit INT, ShotsRemaining INT, PercentOfLimit DECIMAL(9,2),
+    ShotCount INT, ShotLimit INT, ShotsRemaining INT, PercentOfLimit DECIMAL(11,2),
     IsNearLimit BIT, IsOverLimit BIT);
 INSERT INTO @S EXEC Tools.Tool_GetShotStatusForCell @CellLocationId=@Cell;
 

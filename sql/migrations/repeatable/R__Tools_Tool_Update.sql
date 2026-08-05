@@ -86,6 +86,18 @@ BEGIN
             RETURN;
         END
 
+        IF @ShotLimit IS NOT NULL AND @ShotLimit <= 0
+        BEGIN
+            SET @Message = N'ShotLimit must be a positive number of shots.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Tool',
+                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
         IF @ShotLimit IS NOT NULL AND @ToolTypeCode <> N'Die'
         BEGIN
             SET @Message = N'ShotLimit is only valid for Die-type Tools.';

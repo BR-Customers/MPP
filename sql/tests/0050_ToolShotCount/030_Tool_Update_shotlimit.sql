@@ -30,6 +30,20 @@ INSERT INTO @U EXEC Tools.Tool_Update @Id=@Die, @Name=N'Shot update test die', @
 DECLARE @slCleared NVARCHAR(20) = (SELECT ISNULL(CAST(ShotLimit AS NVARCHAR(20)), N'NULL') FROM Tools.Tool WHERE Id=@Die);
 EXEC test.Assert_IsEqual @TestName=N'[Update] die ShotLimit cleared to NULL', @Expected=N'NULL', @Actual=@slCleared;
 
+-- zero / negative ShotLimit rejected (must be a positive shot count)
+DELETE FROM @U;
+INSERT INTO @U EXEC Tools.Tool_Update @Id=@Die, @Name=N'Shot update test die', @Description=NULL,
+    @DieRankId=NULL, @ShotLimit=0, @AppUserId=1;
+DECLARE @zs NVARCHAR(5) = (SELECT CAST(Status AS NVARCHAR(5)) FROM @U);
+EXEC test.Assert_IsEqual @TestName=N'[Update] ShotLimit 0 -> Status 0', @Expected=N'0', @Actual=@zs;
+DELETE FROM @U;
+INSERT INTO @U EXEC Tools.Tool_Update @Id=@Die, @Name=N'Shot update test die', @Description=NULL,
+    @DieRankId=NULL, @ShotLimit=-5, @AppUserId=1;
+DECLARE @ns NVARCHAR(5) = (SELECT CAST(Status AS NVARCHAR(5)) FROM @U);
+EXEC test.Assert_IsEqual @TestName=N'[Update] negative ShotLimit -> Status 0', @Expected=N'0', @Actual=@ns;
+DECLARE @dieSlUntouched NVARCHAR(20) = (SELECT ISNULL(CAST(ShotLimit AS NVARCHAR(20)), N'NULL') FROM Tools.Tool WHERE Id=@Die);
+EXEC test.Assert_IsEqual @TestName=N'[Update] die ShotLimit still NULL after rejected 0/-5', @Expected=N'NULL', @Actual=@dieSlUntouched;
+
 -- non-die rejection
 DELETE FROM @U;
 INSERT INTO @U EXEC Tools.Tool_Update @Id=@Cut, @Name=N'Shot update test cutter', @Description=NULL,
