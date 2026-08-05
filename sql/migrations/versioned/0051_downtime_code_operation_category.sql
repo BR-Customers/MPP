@@ -46,7 +46,10 @@ DECLARE @fk SYSNAME = (
     WHERE fk.parent_object_id = OBJECT_ID(N'Oee.DowntimeReasonCode') AND c.name = N'AreaLocationId');
 IF @fk IS NOT NULL EXEC(N'ALTER TABLE Oee.DowntimeReasonCode DROP CONSTRAINT ' + @fk);
 GO
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DowntimeReasonCode_AreaLocationId')
+-- Drop the AreaLocationId index (actual name is IX_DowntimeReasonCode_Area, not ..._AreaLocationId).
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DowntimeReasonCode_Area' AND object_id = OBJECT_ID(N'Oee.DowntimeReasonCode'))
+    DROP INDEX IX_DowntimeReasonCode_Area ON Oee.DowntimeReasonCode;
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DowntimeReasonCode_AreaLocationId' AND object_id = OBJECT_ID(N'Oee.DowntimeReasonCode'))
     DROP INDEX IX_DowntimeReasonCode_AreaLocationId ON Oee.DowntimeReasonCode;
 GO
 IF COL_LENGTH(N'Oee.DowntimeReasonCode', N'AreaLocationId') IS NOT NULL
