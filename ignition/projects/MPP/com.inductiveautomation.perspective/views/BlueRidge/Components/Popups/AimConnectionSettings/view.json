@@ -476,7 +476,8 @@
       "style": {
         "classes": "surface-card",
         "gap": "16px",
-        "padding": "24px"
+        "padding": "24px",
+        "overflow": "hidden"
       }
     },
     "scripts": {
@@ -492,7 +493,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 600,
+      "height": 620,
       "width": 560
     }
   }
