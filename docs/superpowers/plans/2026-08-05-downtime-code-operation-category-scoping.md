@@ -193,10 +193,10 @@ GO
 
 **Files (Designer, existing view.json):** `DowntimeCodeEditor`, `DowntimeCodeRow`, `Views/Oee/DowntimeCodes` (MPP_Config); `Components/Popups/DowntimeManager` (+ `Views/ShopFloor/DowntimeEntry`) (MPP)
 
-- [ ] **DowntimeCodeEditor:** Area dropdown → "Applies to" (categories + "Plant-wide (all areas)" via `getCategoryOptions`); value bidi `editDraft.meta.OperationCategoryId`; load reads `OperationCategoryId`/`CategoryName`; drop the Area-required save guard. **Keep** the Reason-Type / Source-Code fields.
-- [ ] **DowntimeCodeRow / DowntimeCodes list:** Area column/filter → Category (+ "All areas"); `filter.areaLocationId` → `operationCategoryId`; options via `getCategoryOptions("All areas")`.
-- [ ] **DowntimeManager / DowntimeEntry (plant floor):** the reason-code list binding passes the terminal's operation-type code to `getForDropdown` (mirror the die-cast RejectPanel's `"DieCast"`), so a terminal sees its category's codes + plant-wide. Confirm the operation-type code per surface (die-cast downtime → `"DieCast"`, etc.).
-- [ ] `.\scan.ps1`; browser-verify each screen; commit `feat(oee): downtime-code UI scoped by OperationCategory (editor/row/list + entry filter)`.
+- [x] **DowntimeCodeEditor:** Area dropdown → "Applies to" (categories + "Plant-wide (all areas)" via `getCategoryOptions`); value bidi `editDraft.meta.OperationCategoryId`; load reads `OperationCategoryId`/`CategoryName`; drop the Area-required save guard. **Keep** the Reason-Type / Source-Code fields.
+- [x] **DowntimeCodeRow / DowntimeCodes list:** Area column/filter → Category (+ "All areas"); `filter.areaLocationId` → `operationCategoryId`; options via `getCategoryOptions("All areas")`.
+- [x] **DowntimeManager / DowntimeEntry (plant floor):** the reason-code list binding passes the terminal's operation-type code to `getForDropdown` (mirror the die-cast RejectPanel's `"DieCast"`), so a terminal sees its category's codes + plant-wide. Confirm the operation-type code per surface (die-cast downtime → `"DieCast"`, etc.).
+- [x] `.\scan.ps1`; browser-verify each screen; commit `feat(oee): downtime-code UI scoped by OperationCategory (editor/row/list + entry filter)`.
 
 ---
 
