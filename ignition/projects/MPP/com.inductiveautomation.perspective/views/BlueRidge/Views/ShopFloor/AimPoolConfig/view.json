@@ -28,6 +28,7 @@
         "AimPostingEnabled": false
       }
     },
+    "showAdvanced": false,
     "unposted": []
   },
   "params": {},
@@ -138,21 +139,6 @@
                     "fontWeight": "700"
                   },
                   "text": "Set thresholds"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "EditLabel"
-                },
-                "position": {
-                  "shrink": 0
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  },
-                  "text": "All four threshold values are required to save."
                 },
                 "type": "ia.display.label"
               },
@@ -425,7 +411,7 @@
                         "fontSize": "11px",
                         "fontWeight": "600"
                       },
-                      "text": "When off, the MES records what is owed to AIM but sends nothing. Turning this on begins consuming real AIM serials, which cannot be returned."
+                      "text": "On consumes real AIM serials, which cannot be returned."
                     },
                     "type": "ia.display.label"
                   }
@@ -491,20 +477,74 @@
           {
             "children": [
               {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ConnTitle"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "18px",
+                        "fontWeight": "700"
+                      },
+                      "text": "AIM connection settings"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ConnToggle"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "if({view.custom.showAdvanced}, \"Hide\", \"Show\")"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.custom.showAdvanced = not self.view.custom.showAdvanced"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
                 "meta": {
-                  "name": "ConnTitle"
+                  "name": "ConnHeaderRow"
                 },
                 "position": {
                   "shrink": 0
                 },
                 "props": {
+                  "alignItems": "center",
+                  "justify": "space-between",
                   "style": {
-                    "fontSize": "18px",
-                    "fontWeight": "700"
-                  },
-                  "text": "AIM connection settings"
+                    "gap": "10px",
+                    "overflow": "hidden"
+                  }
                 },
-                "type": "ia.display.label"
+                "type": "ia.container.flex"
               },
               {
                 "meta": {
@@ -517,9 +557,19 @@
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "Fields show the current settings. Clearing a field leaves its stored value unchanged."
+                  "text": "Clearing a field keeps its stored value."
                 },
-                "type": "ia.display.label"
+                "type": "ia.display.label",
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.showAdvanced}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                }
               },
               {
                 "children": [
@@ -624,7 +674,7 @@
                             "fontSize": "11px",
                             "fontWeight": "600"
                           },
-                          "text": "01 is test. Production runs on 99 -- never point the MES at it."
+                          "text": "01 is test. Never point at 99 (live production)."
                         },
                         "type": "ia.display.label"
                       }
@@ -821,7 +871,17 @@
                   },
                   "wrap": "wrap"
                 },
-                "type": "ia.container.flex"
+                "type": "ia.container.flex",
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.showAdvanced}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                }
               },
               {
                 "events": {
@@ -847,7 +907,17 @@
                   },
                   "text": "Save connection settings"
                 },
-                "type": "ia.input.button"
+                "type": "ia.input.button",
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.showAdvanced}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                }
               }
             ],
             "meta": {
