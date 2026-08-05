@@ -1,6 +1,7 @@
 {
   "custom": {
     "good": "",
+    "scrapApplied": 0,
     "overHeadroom": false,
     "defectOptions": [],
     "scrap1Defect": null,
@@ -52,7 +53,7 @@
       "paramDirection": "input",
       "onChange": {
         "enabled": true,
-        "script": "\tval = self.view.params.proposedGood\n\tself.view.custom.good = str(val) if val is not None else \"\"\n\tself.view.custom.scrap1Defect = None\n\tself.view.custom.scrap2Defect = None\n\tself.view.custom.scrap3Defect = None\n\tself.view.custom.scrap4Defect = None\n\tself.view.custom.scrap5Defect = None\n\tself.view.custom.scrap6Defect = None\n\tself.view.custom.scrap1Qty = \"\"\n\tself.view.custom.scrap2Qty = \"\"\n\tself.view.custom.scrap3Qty = \"\"\n\tself.view.custom.scrap4Qty = \"\"\n\tself.view.custom.scrap5Qty = \"\"\n\tself.view.custom.scrap6Qty = \"\"\n\tself.view.custom.overHeadroom = False"
+        "script": "\tval = self.view.params.proposedGood\n\tself.view.custom.good = str(val) if val is not None else \"\"\n\tself.view.custom.scrap1Defect = None\n\tself.view.custom.scrap2Defect = None\n\tself.view.custom.scrap3Defect = None\n\tself.view.custom.scrap4Defect = None\n\tself.view.custom.scrap5Defect = None\n\tself.view.custom.scrap6Defect = None\n\tself.view.custom.scrap1Qty = \"\"\n\tself.view.custom.scrap2Qty = \"\"\n\tself.view.custom.scrap3Qty = \"\"\n\tself.view.custom.scrap4Qty = \"\"\n\tself.view.custom.scrap5Qty = \"\"\n\tself.view.custom.scrap6Qty = \"\"\n\tself.view.custom.scrapApplied = 0\n\tself.view.custom.overHeadroom = False"
       }
     },
     "custom.defectOptions": {
@@ -381,7 +382,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -420,7 +421,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -489,7 +490,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -528,7 +529,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -607,7 +608,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -646,7 +647,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -725,7 +726,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -764,7 +765,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -843,7 +844,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -882,7 +883,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -961,7 +962,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -1000,7 +1001,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.emitRowChanged()"
+                            "script": "\tself.view.rootContainer.applyScrap()"
                           }
                         }
                       }
@@ -1060,6 +1061,11 @@
           "name": "emitRowChanged",
           "params": [],
           "script": "\tc = self.view.custom\n\tlines = []\n\tfor d, q in ((c.scrap1Defect, c.scrap1Qty), (c.scrap2Defect, c.scrap2Qty), (c.scrap3Defect, c.scrap3Qty), (c.scrap4Defect, c.scrap4Qty), (c.scrap5Defect, c.scrap5Qty), (c.scrap6Defect, c.scrap6Qty)):\n\t\tif d is not None and q not in (None, ''):\n\t\t\tlines.append({'defectCodeId': d, 'quantity': q})\n\tsystem.perspective.sendMessage('dieCastRowChanged', payload={\n\t\t'lotId': self.view.params.lotId,\n\t\t'good': c.good,\n\t\t'scrapLines': lines,\n\t}, scope='page')"
+        },
+        {
+          "name": "applyScrap",
+          "params": [],
+          "script": "\t# FAT #23: scrap auto-decrements Good. Sum the submittable scrap (reason +\n\t# qty both present, matching emitRowChanged's line filter), subtract only the\n\t# DELTA vs what was already applied from the CURRENT Good -- so operator hand-\n\t# edits to Good survive and reducing/clearing a scrap adds the pieces back.\n\tc = self.view.custom\n\ttotal = 0\n\tfor d, q in ((c.scrap1Defect, c.scrap1Qty), (c.scrap2Defect, c.scrap2Qty), (c.scrap3Defect, c.scrap3Qty), (c.scrap4Defect, c.scrap4Qty), (c.scrap5Defect, c.scrap5Qty), (c.scrap6Defect, c.scrap6Qty)):\n\t\tif d is not None:\n\t\t\tqi = BlueRidge.Common.Util.toIntOrNone(q)\n\t\t\tif qi:\n\t\t\t\ttotal += qi\n\tapplied = BlueRidge.Common.Util.toIntOrNone(c.scrapApplied) or 0\n\tg = BlueRidge.Common.Util.toIntOrNone(c.good) or 0\n\tg = g - (total - applied)\n\tif g < 0:\n\t\tg = 0\n\tself.view.custom.good = str(g)\n\tself.view.custom.scrapApplied = total\n\tself.applyGood()"
         }
       ]
     }

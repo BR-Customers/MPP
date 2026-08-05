@@ -1,5 +1,5 @@
 {
-  "custom": { "decisions": {} },
+  "custom": { "decisions": {}, "applyEnabled": false },
   "params": { "overflow": [], "replyMessage": "dieCastOverflowResult", "popupId": "mpp-diecast-overflow" },
   "propConfig": {
     "params.overflow":     { "paramDirection": "input" },
@@ -35,7 +35,7 @@
               "script": "\tself.view.getChild(\"root\").reply(\"cancel\")" } } } } },
           { "type": "ia.input.button", "meta": { "name": "ApplyButton" },
             "propConfig": { "props.enabled": { "binding": { "type": "expr", "config": {
-              "expression": "runScript(\"BlueRidge.Common.Util.overflowDecisionsComplete\", 0, {view.custom.decisions}, {view.params.overflow})" } } } },
+              "expression": "{view.custom.applyEnabled}" } } } },
             "props": { "text": "Apply", "style": { "classes": "pf-btn pf-btn-primary" } },
             "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G", "config": {
               "script": "\tself.view.getChild(\"root\").reply(\"apply\")" } } } } }
@@ -46,7 +46,7 @@
       { "name": "reply", "params": [ "action" ], "script": "\tpayload = {\"action\": action}\n\tif action == \"apply\":\n\t\tpayload[\"decisions\"] = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.decisions) or {}\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload=payload, scope=\"page\")\n\tsystem.perspective.closePopup(self.view.params.popupId)" }
     ], "messageHandlers": [
       { "messageType": "overflowDecisionChanged", "pageScope": true, "sessionScope": false, "viewScope": false,
-        "script": "\tm = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.decisions) or {}\n\tm = dict(m)\n\tm[\"%s\" % payload.get(\"lotId\")] = {\"mode\": payload.get(\"mode\") or \"fill\", \"ltt\": (payload.get(\"ltt\") or \"\").strip()}\n\tself.view.custom.decisions = m" }
+        "script": "\tm = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.decisions) or {}\n\tm = dict(m)\n\tm[\"%s\" % payload.get(\"lotId\")] = {\"mode\": payload.get(\"mode\") or \"fill\", \"ltt\": (payload.get(\"ltt\") or \"\").strip()}\n\tself.view.custom.decisions = m\n\tself.view.custom.applyEnabled = BlueRidge.Common.Util.overflowDecisionsComplete(m, self.view.params.overflow)" }
     ] }
   }
 }

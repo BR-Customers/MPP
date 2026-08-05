@@ -1,8 +1,16 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-04
--- Version:     1.2
+-- Modified:    2026-08-05
+-- Version:     1.3
+-- Change:      v1.3 -- FAT #19: new @CellLocationId BIGINT param (the die-cast
+--              MACHINE/cell location selected in the entry header). Threaded
+--              into the 'DieCastPieceContributed' audit op as @LocationId
+--              (was hard-coded NULL) so the event log captures WHICH machine
+--              the parts were added at, not just the terminal. Default NULL =
+--              backward-compatible; the standalone shot-loss path (no
+--              per-cavity lines) emits no DieCastPieceContributed op so is
+--              unaffected.
 -- Change:      v1.2 -- FAT #26/#27: new @GrossShots INT param; when > 0,
 --              increments Tools.Tool.ShotCount for @ToolId in the same txn
 --              (materialized die shot counter). Negative gross rejected
@@ -65,7 +73,8 @@
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftOutput_Record
     @ShiftId BIGINT, @ToolId BIGINT, @LinesJson NVARCHAR(MAX),
     @ShotLossJson NVARCHAR(MAX) = NULL, @AppUserId BIGINT, @TerminalLocationId BIGINT = NULL,
-    @GrossShots INT = NULL
+    @GrossShots INT = NULL,
+    @CellLocationId BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
@@ -126,7 +135,7 @@ BEGIN
                 DECLARE @LotName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id=@LotId);
                 DECLARE @Act NVARCHAR(500) = Audit.ufn_TruncateActivity(@LotName + N' ' + Audit.ufn_MidDot()
                     + N' Die Cast ' + Audit.ufn_MidDot() + N' Added ' + CAST(@Delta AS NVARCHAR(10)) + N' pc');
-                EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=NULL,
+                EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=@CellLocationId,
                     @LogEntityTypeCode=N'Lot', @EntityId=@LotId, @LogEventTypeCode=N'DieCastPieceContributed',
                     @LogSeverityCode=N'Info', @Description=@Act, @OldValue=NULL, @NewValue=NULL;
             END

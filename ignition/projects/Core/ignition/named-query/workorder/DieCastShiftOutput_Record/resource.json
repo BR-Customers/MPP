@@ -64,6 +64,11 @@
         "type": "Parameter",
         "identifier": "grossShots",
         "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "cellLocationId",
+        "sqlType": 3
       }
     ]
   }
