@@ -1189,7 +1189,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if(isNull({view.custom.editDraft.meta.ShotCount}), '0', toStr({view.custom.editDraft.meta.ShotCount})) + if(isNull({view.custom.editDraft.meta.ShotLimit}), '', ' / ' + toStr({view.custom.editDraft.meta.ShotLimit}) + ' limit')"
+                                    "expression": "if(isNull({view.custom.editDraft.meta.ShotCount}), '0', toStr({view.custom.editDraft.meta.ShotCount}))"
                                   },
                                   "type": "expr"
                                 }

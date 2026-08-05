@@ -183,6 +183,10 @@ def getOne(toolId):
     # empty string back to NULL on save, so the DB keeps its NULL semantics.
     if row.get("Description") is None:
         row["Description"] = ""
+    # Same for the nullable ShotLimit (Die shot-limit input); "" renders empty
+    # and update() coerces it back to NULL on save.
+    if row.get("ShotLimit") is None:
+        row["ShotLimit"] = ""
     return row
 
 
