@@ -34,7 +34,22 @@
     }
   },
   "params": {},
-  "propConfig": {},
+  "propConfig": {
+    "custom.poolDepth": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.AimPool.getDepth\", 5000)"
+        },
+        "transforms": [
+          {
+            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Depth\": r.get(\"Depth\") or 0}",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    }
+  },
   "props": {
     "defaultSize": {
       "width": 1280
@@ -784,7 +799,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\trows = BlueRidge.Lots.AimPoolConfig.get() or []\n\tr = rows[0] if rows else {}\n\tdef _s(val):\n\t\treturn \"\" if val is None else (val if isinstance(val, basestring) else unicode(val))\n\tloaded = {\n\t\t\"Id\":                     r.get(\"Id\"),\n\t\t\"TargetBufferDepth\":      _s(r.get(\"TargetBufferDepth\")),\n\t\t\"TopupThreshold\":         _s(r.get(\"TopupThreshold\")),\n\t\t\"AlarmWarningDepth\":      _s(r.get(\"AlarmWarningDepth\")),\n\t\t\"AlarmCriticalDepth\":     _s(r.get(\"AlarmCriticalDepth\")),\n\t\t\"AimBaseUrl\":             _s(r.get(\"AimBaseUrl\")),\n\t\t\"AimCompanyCode\":         _s(r.get(\"AimCompanyCode\")),\n\t\t\"AimPathToken\":           _s(r.get(\"AimPathToken\")),\n\t\t\"PostWarningAgeMinutes\":  _s(r.get(\"PostWarningAgeMinutes\")),\n\t\t\"PostCriticalAgeMinutes\": _s(r.get(\"PostCriticalAgeMinutes\")),\n\t\t\"AimPostingEnabled\":      bool(r.get(\"AimPostingEnabled\")),\n\t}\n\tself.view.custom.state = {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}\n\tdepth = BlueRidge.Lots.AimPool.getDepth() or []\n\tself.view.custom.poolDepth = {\"Depth\": (depth[0].get(\"Depth\") if depth else 0) or 0}"
+          "script": "\trows = BlueRidge.Lots.AimPoolConfig.get() or []\n\tr = rows[0] if rows else {}\n\tdef _s(val):\n\t\treturn \"\" if val is None else (val if isinstance(val, basestring) else unicode(val))\n\tloaded = {\n\t\t\"Id\":                     r.get(\"Id\"),\n\t\t\"TargetBufferDepth\":      _s(r.get(\"TargetBufferDepth\")),\n\t\t\"TopupThreshold\":         _s(r.get(\"TopupThreshold\")),\n\t\t\"AlarmWarningDepth\":      _s(r.get(\"AlarmWarningDepth\")),\n\t\t\"AlarmCriticalDepth\":     _s(r.get(\"AlarmCriticalDepth\")),\n\t\t\"AimBaseUrl\":             _s(r.get(\"AimBaseUrl\")),\n\t\t\"AimCompanyCode\":         _s(r.get(\"AimCompanyCode\")),\n\t\t\"AimPathToken\":           _s(r.get(\"AimPathToken\")),\n\t\t\"PostWarningAgeMinutes\":  _s(r.get(\"PostWarningAgeMinutes\")),\n\t\t\"PostCriticalAgeMinutes\": _s(r.get(\"PostCriticalAgeMinutes\")),\n\t\t\"AimPostingEnabled\":      bool(r.get(\"AimPostingEnabled\")),\n\t}\n\tself.view.custom.state = {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
         },
         {
           "name": "loadUnposted",
