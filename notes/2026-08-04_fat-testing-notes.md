@@ -23,6 +23,31 @@ Raw punch-list from today's FAT, grouped and triaged. Legend:
   transaction that records shots (like the B5 Lot quantity pattern), NOT recomputed from all LOTs.
   Add `ShotLimit` (nullable) + warn near/over limit; optional nightly reconciliation job. Details below.
 
+## Status at 2026-08-05 (end of implementation session) — 13 done / 14 remaining
+
+**DONE + verified (committed on `jacques/working`):**
+- **#1** defect codes scoped by OperationCategory (migration `0048`, procs/NQs/seed/entity script +
+  editor/row/list/reject views). **#4** Trim OUT attribution. **#6** cell-change presence re-confirm.
+- Session/elevation feature (spec `2026-08-04-plant-floor-session-elevation-design.md`, plan same
+  date): **#8** global timeout panel (User Management), **#9/#12** Tool Config gated, **#10** nav
+  menu gated + MoveOverride windowed, **#11** elevation core (Supervisor Access / Reset Terminal /
+  rolling 5-min idle watcher / `elevationResult`), **#12** OperatorEditor AD Account + Ignition Role
+  fields. Backend: `Location.SessionPolicy` (migration `0049`) + procs + `Common.Session` helpers.
+- **#18** lot-detail consumed part, **#22** Trim OUT re-entry guard, **#25** bigger toasts,
+  **#26** tool shot count (migration `0050`). **#5** now testable (panel or `SessionPolicy_Update`).
+- Bug found+fixed mid-build: `SessionPolicy_Update` NULL Description on no-change (`STUFF`-on-empty).
+
+**REMAINING (14):**
+- **In progress this session:** #2 (Trim OUT multi-select scrap, Trim-scoped) + #3 (downtime codes
+  by OperationCategory — mirror of #1).
+- **Handoff-doc cluster:** #13 default-screen dropdown, #14 printer endpoint validation +
+  networked/hardwired attr, #15 verify terminal-by-IP, #16 onStartup IP validation bug,
+  #19 event-log die-cast machine LocationId, #23 shot-loss cavity UX + auto-decrement, #24 shift-
+  output overflow Apply error.
+- **Own brainstorm:** #17 Hold management UX, #21 finished-goods close/inventory lifecycle.
+- **Decisions made, build pending:** #7 config-app AD gate (Jacques driving), #20 thread
+  ProductionEventId into shift-output scrap, #27 optional nightly shot-count reconciliation.
+
 ---
 
 ## A. Defect / scrap reason scoping  → same theme as today's OperationCategory plan
