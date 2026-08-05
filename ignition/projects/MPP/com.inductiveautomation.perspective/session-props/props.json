@@ -10,11 +10,11 @@
     "closureMethod": "",
     "elevatedUntil": null,
     "pendingElevatedAction": null,
-    "policy": {
-      "operatorPresenceTimeoutSeconds": 180,
-      "elevationTimeoutSeconds": 300
-    },
     "plcDevices": [],
+    "policy": {
+      "elevationTimeoutSeconds": 300,
+      "operatorPresenceTimeoutSeconds": 180
+    },
     "presence": {
       "policy": "confirm"
     },

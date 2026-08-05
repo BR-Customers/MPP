@@ -1,0 +1,9 @@
+TestID,FDS,Workflow,Precondition,Step,Expected Result,Result,Witness,Date,Notes
+FAT-ITM-010,FDS-03-001,Item master CRUD,Config Tool open at Item Master,Create a new part and edit an existing part,Part is created and saved; edits persist; changes are audited (config log),,,,
+FAT-ITM-020,FDS-03-001,Item master fields,An item open in Item Master,Review the item's data fields,"Part number, description, units of measure, and related master-data fields are present and editable",,,,
+FAT-ITM-030,FDS-03-001,Sub-lot quantity attribute,An item open in Item Master,Set the default sub-lot quantity,Default Sub-Lot Quantity is stored on the part,,,,
+FAT-ITM-040,FDS-03-001,Macola part number,An item open in Item Master,Enter the associated Macola part number,Macola part number attribute is stored and displayed,,,,
+FAT-ITM-050,FDS-03-001,Max LOT size reasonability,A part with Max LOT Size set,"On the shop floor, attempt to set a piece count above Max LOT Size",Entry is flagged/blocked as unreasonable per the part's Max LOT Size,,,,enforcement is shop-floor
+FAT-ITM-060,FDS-03-002,Item types,Config Tool open at Item Master,Assign an item type to a part,Item type is stored and constrains downstream routing/area eligibility,,,,
+FAT-ITM-070,FDS-03-003,Item deprecation,An item with no live LOTs,Deprecate a part,"Part is soft-deleted (DeprecatedAt); owned config cascades; blocked if a live LOT exists",,,,
+FAT-ITM-080,NONE,PLC part mapping,An item that maps to a PLC part identifier,Set the item's PlcId in Item Master,PlcId is saved on the item and used by vision/PLC part verification,,,,

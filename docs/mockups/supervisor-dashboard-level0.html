@@ -1,0 +1,512 @@
+<title>Supervisor Dashboard — Level 0 (Mockup)</title>
+<style>
+  :root {
+    /* cool-steel neutrals, picked (slight blue bias) */
+    --ground:#EEF1F4; --surface:#FFFFFF; --surface-2:#F6F8FA; --surface-3:#EEF2F6;
+    --ink:#1A2027; --ink-2:#586472; --ink-3:#8B97A3;
+    --border:#DEE4EA; --border-strong:#C7D0D8;
+    --accent:#2F6DB0; --accent-ink:#FFFFFF; --accent-soft:#E7F0F9;
+    /* semantic state — reserved, never the accent */
+    --live:#1F9D6B; --live-soft:#E4F3EC;
+    --stale:#B9820A; --stale-soft:#F8EFD8;
+    --idle:#93A0AC; --idle-soft:#EDF1F4;
+    --hold:#C24A3B; --hold-soft:#FAE9E6;
+    /* per-panel identity (small chips only, not fills) */
+    --id-diecast:#A85832; --id-trim:#3E5C99; --id-lines:#1F8A76; --id-holds:#C24A3B;
+    --shadow:0 1px 2px rgba(16,24,33,.05), 0 2px 8px rgba(16,24,33,.04);
+    --mono:"Cascadia Mono","Segoe UI Mono",Consolas,ui-monospace,monospace;
+    --ui:system-ui,"Segoe UI",Roboto,-apple-system,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ground:#0F1419; --surface:#171D24; --surface-2:#1C242C; --surface-3:#222C35;
+      --ink:#E7ECF1; --ink-2:#9BA8B4; --ink-3:#6A7681;
+      --border:#28323C; --border-strong:#37434E;
+      --accent:#4C8FD6; --accent-ink:#0F1419; --accent-soft:#17293A;
+      --live:#37B584; --live-soft:#12271F;
+      --stale:#DDA53E; --stale-soft:#2C2411;
+      --idle:#5E6A74; --idle-soft:#1E262E;
+      --hold:#E06A56; --hold-soft:#2E1815;
+      --id-diecast:#CB794C; --id-trim:#6C8AD0; --id-lines:#33B39A; --id-holds:#E06A56;
+      --shadow:0 1px 2px rgba(0,0,0,.35), 0 2px 10px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#EEF1F4; --surface:#FFFFFF; --surface-2:#F6F8FA; --surface-3:#EEF2F6;
+    --ink:#1A2027; --ink-2:#586472; --ink-3:#8B97A3;
+    --border:#DEE4EA; --border-strong:#C7D0D8;
+    --accent:#2F6DB0; --accent-ink:#FFFFFF; --accent-soft:#E7F0F9;
+    --live:#1F9D6B; --live-soft:#E4F3EC; --stale:#B9820A; --stale-soft:#F8EFD8;
+    --idle:#93A0AC; --idle-soft:#EDF1F4; --hold:#C24A3B; --hold-soft:#FAE9E6;
+    --id-diecast:#A85832; --id-trim:#3E5C99; --id-lines:#1F8A76; --id-holds:#C24A3B;
+    --shadow:0 1px 2px rgba(16,24,33,.05), 0 2px 8px rgba(16,24,33,.04);
+  }
+  :root[data-theme="dark"]{
+    --ground:#0F1419; --surface:#171D24; --surface-2:#1C242C; --surface-3:#222C35;
+    --ink:#E7ECF1; --ink-2:#9BA8B4; --ink-3:#6A7681;
+    --border:#28323C; --border-strong:#37434E;
+    --accent:#4C8FD6; --accent-ink:#0F1419; --accent-soft:#17293A;
+    --live:#37B584; --live-soft:#12271F; --stale:#DDA53E; --stale-soft:#2C2411;
+    --idle:#5E6A74; --idle-soft:#1E262E; --hold:#E06A56; --hold-soft:#2E1815;
+    --id-diecast:#CB794C; --id-trim:#6C8AD0; --id-lines:#33B39A; --id-holds:#E06A56;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 2px 10px rgba(0,0,0,.25);
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--ground); color:var(--ink); font-family:var(--ui);
+    font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1360px; margin:0 auto; padding:20px 22px 56px;}
+
+  /* ---------- top bar ---------- */
+  .topbar{display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+    flex-wrap:wrap; padding-bottom:16px; border-bottom:1px solid var(--border); margin-bottom:20px;}
+  .title-block h1{margin:0; font-size:21px; font-weight:700; letter-spacing:-.01em;}
+  .ctx{display:flex; gap:14px; align-items:center; margin-top:6px; color:var(--ink-2); font-size:12.5px;}
+  .ctx .dot{width:4px; height:4px; border-radius:50%; background:var(--ink-3);}
+  .ctx b{color:var(--ink); font-weight:600;}
+  .ctx .mono{font-family:var(--mono);}
+  .controls{display:flex; align-items:center; gap:12px;}
+  .tabs{display:inline-flex; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:9px; padding:3px;}
+  .tabs button{border:0; background:transparent; color:var(--ink-2); font:inherit; font-size:12.5px;
+    font-weight:600; padding:6px 13px; border-radius:6px; cursor:pointer; letter-spacing:.01em;}
+  .tabs button[aria-selected="true"]{background:var(--surface); color:var(--ink); box-shadow:var(--shadow);}
+  .icon-btn{width:34px; height:34px; border:1px solid var(--border); background:var(--surface);
+    border-radius:8px; cursor:pointer; color:var(--ink-2); font-size:15px; display:grid; place-items:center;}
+  .icon-btn:hover{color:var(--ink); border-color:var(--border-strong);}
+  .refresh{color:var(--ink-3); font-size:11.5px; font-family:var(--mono); white-space:nowrap;}
+
+  /* ---------- KPI strip ---------- */
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;}
+  .kpi{background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:15px 16px 13px; box-shadow:var(--shadow); position:relative; overflow:hidden;}
+  .kpi-head{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+  .chip{width:22px; height:22px; border-radius:6px; display:grid; place-items:center; flex:0 0 auto;
+    color:#fff; font-size:13px; line-height:1;}
+  .kpi-label{font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-2);}
+  .kpi-body{display:flex; align-items:flex-end; justify-content:space-between; gap:10px;}
+  .kpi-num{font-family:var(--mono); font-size:30px; font-weight:600; letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums; line-height:1;}
+  .kpi-unit{font-size:12px; color:var(--ink-3); font-weight:500; margin-left:2px;}
+  .kpi-sub{margin-top:9px; font-size:12px; color:var(--ink-2); display:flex; align-items:center; gap:6px;}
+  .spark{width:96px; height:34px; flex:0 0 auto;}
+  .delta{font-family:var(--mono); font-weight:600;}
+  .delta.up{color:var(--live);} .delta.flat{color:var(--ink-3);}
+
+  /* ---------- panels grid ---------- */
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;}
+  .panel{background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    box-shadow:var(--shadow); overflow:hidden;}
+  .panel-head{display:flex; align-items:center; gap:11px; padding:14px 16px;
+    border-bottom:1px solid var(--border);}
+  .panel-title{display:flex; align-items:center; gap:9px; min-width:0;}
+  .panel-title h2{margin:0; font-size:14.5px; font-weight:700; letter-spacing:.005em;}
+  .panel-rollup{margin-left:auto; display:flex; align-items:center; gap:12px;}
+  .rollup-num{font-family:var(--mono); font-size:19px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .rollup-unit{font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em; margin-left:3px;}
+  .badges{display:flex; gap:6px;}
+  .badge{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600;
+    font-family:var(--mono); padding:2px 7px; border-radius:20px; line-height:1.5;}
+  .badge.stale{background:var(--stale-soft); color:var(--stale);}
+  .badge.idle{background:var(--idle-soft); color:var(--ink-2);}
+  .badge.hold{background:var(--hold-soft); color:var(--hold);}
+
+  /* group */
+  .group{border-bottom:1px solid var(--border);}
+  .group:last-child{border-bottom:0;}
+  .group-head{display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    background:var(--surface-2); border:0; cursor:pointer; padding:9px 16px; font:inherit; color:var(--ink);}
+  .group-head:hover{background:var(--surface-3);}
+  .caret{width:14px; height:14px; flex:0 0 auto; color:var(--ink-3); transition:transform .15s ease;}
+  .group[data-open="true"] .caret{transform:rotate(90deg);}
+  .group-name{font-size:12.5px; font-weight:700; letter-spacing:.02em;}
+  .group-code{font-family:var(--mono); font-size:11px; color:var(--ink-3);}
+  .group-meta{margin-left:auto; display:flex; align-items:center; gap:10px;}
+  .group-sum{font-family:var(--mono); font-size:13px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .group-body{display:none;}
+  .group[data-open="true"] .group-body{display:block;}
+
+  /* resource row */
+  .row{display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:12px;
+    padding:8px 16px 8px 40px; border-top:1px solid var(--border);}
+  .row:first-child{border-top:0;}
+  .row .rname{display:flex; align-items:center; gap:8px; min-width:0;}
+  .rname .code{font-family:var(--mono); font-size:11px; color:var(--ink-3);}
+  .rname .desc{font-size:12.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .rcount{font-family:var(--mono); font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; text-align:right;}
+  .row.is-idle .rcount, .row.is-idle .desc{color:var(--ink-3);}
+  .state{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-family:var(--mono);
+    color:var(--ink-2); white-space:nowrap; min-width:112px; justify-content:flex-end;}
+  .sdot{width:7px; height:7px; border-radius:50%; flex:0 0 auto;}
+  .sdot.live{background:var(--live); box-shadow:0 0 0 3px var(--live-soft);}
+  .sdot.stale{background:var(--stale); box-shadow:0 0 0 3px var(--stale-soft);}
+  .sdot.idle{background:var(--idle);}
+  .state.stale{color:var(--stale); font-weight:600;}
+  .state.idle{color:var(--ink-3);}
+
+  /* holds panel */
+  .holds-lead{padding:16px; display:flex; align-items:center; gap:16px; border-bottom:1px solid var(--border);}
+  .holds-num{font-family:var(--mono); font-size:38px; font-weight:600; color:var(--hold); line-height:1; font-variant-numeric:tabular-nums;}
+  .holds-cap{font-size:12.5px; color:var(--ink-2);}
+  .holds-cap b{color:var(--ink);}
+  .hold-item{display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center;
+    padding:10px 16px; border-top:1px solid var(--border);}
+  .hold-ltt{font-family:var(--mono); font-size:12px; font-weight:600; color:var(--ink);}
+  .hold-mid .part{font-size:12.5px; color:var(--ink);}
+  .hold-mid .meta{font-size:11.5px; color:var(--ink-3); font-family:var(--mono); margin-top:1px;}
+  .hold-reason{font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px;
+    background:var(--hold-soft); color:var(--hold); white-space:nowrap;}
+  .hold-reason.hcage{background:var(--surface-2); color:var(--ink-2);}
+  .hold-age{font-family:var(--mono); font-size:11.5px; color:var(--ink-3); text-align:right; white-space:nowrap;}
+
+  .foot-note{margin-top:22px; padding:13px 16px; background:var(--surface-2);
+    border:1px dashed var(--border-strong); border-radius:10px; color:var(--ink-2); font-size:12px;}
+  .foot-note b{color:var(--ink);}
+  .foot-note .l2{color:var(--accent); font-weight:600;}
+
+  @media (max-width:960px){ .kpis{grid-template-columns:repeat(2,1fr);} .grid{grid-template-columns:1fr;} }
+  @media (max-width:560px){ .kpis{grid-template-columns:1fr;} .state{min-width:0;} }
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="title-block">
+      <h1>Supervisor Dashboard</h1>
+      <div class="ctx">
+        <span>Madison Precision Products</span><span class="dot"></span>
+        <span><b>2nd Shift</b></span><span class="dot"></span>
+        <span class="mono" id="ctx-window">shift-to-date · 5h 12m elapsed</span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="tabs" role="tablist" aria-label="Reporting window">
+        <button role="tab" aria-selected="true" data-win="shift">This Shift</button>
+        <button role="tab" aria-selected="false" data-win="today">Today</button>
+        <button role="tab" aria-selected="false" data-win="week">This Week</button>
+      </div>
+      <span class="refresh">updated 14:47:03</span>
+      <button class="icon-btn" id="themeBtn" title="Toggle light / dark" aria-label="Toggle theme">◐</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="foot-note">
+    <b>Level 0 — event-derived actuals only.</b> Counts and recency come entirely from LOT movement, die-cast
+    contributions, and hold events — no PLC signal and no production target. A row flips to
+    <b>stale</b> when its last event exceeds the area's threshold, and reads <b>idle</b> when the window has no
+    events. The empty space to the right of each count is deliberate: it is where a
+    <span class="l2">Level 2</span> plan-vs-actual pace bar drops in.
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- staleness thresholds (minutes) per area ----
+  var TH = { diecast:15, trim:30, lines:20 };
+
+  // ---- plant model: real names, representative numbers ----
+  // each resource: code, desc, shots/lots/containers per window, lastMin (recency, shift only)
+  var PLANT = {
+    diecast: {
+      title:"Die Cast", code:"DC", unit:"shots", id:"var(--id-diecast)", icon:"❖", th:TH.diecast,
+      groups:[
+        { name:"Die Cast 1", code:"DC1", rows:[
+          r("M01","5GO Rocker Shaft",       2800,7900,41200, 4),
+          r("M02","RPY Comp. Brkt.",        1120,3050,19800, 22),
+          r("M03","AP4 CH Ex 1-2",          2410,6600,34100, 6),
+          r("M04","AP4 CH In 2-5",          1352,3700,21500, 9),
+          r("M05","6FB CH-1",               1495,4100,24800, 3),
+          r("M06","AP4T 5BA R/S #5",         635,1740,10200, 12),
+          r("M07","AP4 R/S #1",              660,1810, 9600, 41),
+          r("M08","5MH Oil Pan",               0,   0,  4200, null),
+          r("M09","RNA Water Body",         1032,2830,16400, 8),
+          r("M10","P8A Oil Pan",             297, 815, 4900, 27) ]},
+        { name:"Die Cast 2", code:"DC2", rows:[
+          r("M01","RPY EX 1-4",             8928,3980,52100, 5),
+          r("M02","RPY IN 1-4",             8928,4010,51800, 7),
+          r("M03","Housing Half Shaft",     1397,3820,22600, 11) ]},
+        { name:"Die Cast 3", code:"DC3", rows:[
+          r("M01","CIVIC PI Cam In 1-4",    2159,5900,36400, 6),
+          r("M02","CIVIC PI Cam Ex 1-4",    2160,5910,36500, 8),
+          r("M03","CIVIC PI RS 1",          1542,4210,25900, 19),
+          r("M04","AP3 CH In/Ex 2-4",       3184,8700,53200, 4),
+          r("M05","AP3 CH In/Ex 1-5",          0,   0, 48900, null) ]},
+        { name:"Die Cast 4", code:"DC4", rows:[
+          r("M01","SZAX Base Support",      1182,3240,19100, 33),
+          r("M02","Heat Sink",             1043,2860,17200, 9),
+          r("M03","6AT Cap A L Side",       1046,2870,17300, 14) ]}
+      ]},
+
+    trim: {
+      title:"Trim", code:"TRIM", unit:"lots moved", id:"var(--id-trim)", icon:"⌗", th:TH.trim,
+      groups:[
+        { name:"Trim Shop 1", code:"TRIM1", rows:[
+          rL("P01","Press 01", 14,38,196, 11),
+          rL("P02","Press 02",  9,26,141, 34),
+          rL("P03","Press 03", 12,31,168, 7) ]},
+        { name:"Trim Shop 2", code:"TRIM2", rows:[
+          rL("P01","Press 01", 10,29,152, 16),
+          rL("P02","Press 02",  0, 0, 88,  null),
+          rL("P03","Press 03",  8,22,119, 48) ]}
+      ]},
+
+    lines: {
+      title:"Production Lines", code:"MA", unit:"containers", id:"var(--id-lines)", icon:"▤", th:TH.lines,
+      groups:[
+        { name:"Machining & Assembly 1", code:"MA1", rows:[
+          rL("COMPBR","RPY Comp bracket",     18,49,252, 9),
+          rL("6MD","6MD Manifold Plate",      12,33,171, 14),
+          rL("FPRPY","Fuel Pump (RPY 66v)",   26,71,368, 6),
+          rL("FP6NA","Fuel Pump (6NA 6VJ)",   22,60,310, 8),
+          rL("5GOR","5GO Rear",               15,41,214, 24),
+          rL("5GOF","5GO Front",              14,39,201, 12),
+          rL("66B-TC","66B Thermal Case",      0, 0, 96,  null) ]},
+        { name:"Machining & Assembly 2", code:"MA2", rows:[
+          rL("6MAOP","6MA Oil Pan",           31,84,437, 5),
+          rL("V6OP","V6 Oil Pan",             19,52,268, 10),
+          rL("RPY6B2","RPY 6b2 Line 2",       17,46,239, 27),
+          rL("RPYCAM1","RPY Cam Holders L1",  24,65,338, 7),
+          rL("RPYCAM2","RPY Cam Holders L2",  23,63,325, 9),
+          rL("5PA","5PA Fuel Pump",           16,44,228, 33),
+          rL("COS","Case Oil Seal",           11,30,157, 15),
+          rL("6F9TC","6F9-TC",                13,36,187, 6),
+          rL("59B","59b Cam Holder",          20,55,285, 11),
+          rL("6FBCHOP","6FB Small Parts",      9,25,131, 41),
+          rL("64AOP","64A Oil Pan",           28,76,395, 4),
+          rL("6MACH","6MA Cam Holder L1",     21,57,296, 8),
+          rL("6ma-CH-L2","6MA Cam Holder L2",  0, 0,112, null) ]}
+      ]}
+  };
+
+  // hold events (attention list)
+  var HOLDS = [
+    { ltt:"LTT-0049213", part:"5GO Rocker Shaft",  loc:"INSP-SORT-T1", reason:"Quality", age:"1h 24m", isNew:true },
+    { ltt:"LTT-0049180", part:"RPY Comp. Brkt.",   loc:"DC1 · Machine 02", reason:"Quality", age:"2h 06m", isNew:true },
+    { ltt:"LTT-0049004", part:"Fuel Pump (RPY 66v)",loc:"MA1-FPRPY-MOUT", reason:"Engineering", age:"4h 51m", isNew:true },
+    { ltt:"LTT-0048871", part:"64A Oil Pan",       loc:"TRIM2 · Press 01", reason:"Quality", age:"8h 12m", isNew:false },
+    { ltt:"LTT-0048666", part:"6MA Oil Pan",       loc:"WHSE-A", reason:"Logistics", age:"1d 03h", isNew:false }
+  ];
+
+  function r(code,desc,shift,today,week,lastMin){
+    return {code:code, desc:desc, v:{shift:shift,today:today,week:week}, lastMin:lastMin};
+  }
+  // hoisted alias so it's defined when the PLANT literal above is evaluated
+  function rL(code,desc,shift,today,week,lastMin){ return r(code,desc,shift,today,week,lastMin); }
+
+  // ---------- helpers ----------
+  var WIN = "shift";
+  function fmt(n){ return n.toLocaleString("en-US"); }
+  function stateOf(row, th){
+    var v = row.v[WIN];
+    if (WIN !== "shift"){ return v>0 ? {k:"total"} : {k:"idle"}; }
+    if (row.lastMin === null || v===0) return {k:"idle"};
+    return row.lastMin > th ? {k:"stale", min:row.lastMin} : {k:"live", min:row.lastMin};
+  }
+  function agoLabel(m){ return m>=60 ? "last "+Math.floor(m/60)+"h "+(m%60)+"m" : "last "+m+"m"; }
+  function svgEl(t){ return document.createElementNS("http://www.w3.org/2000/svg", t); }
+
+  function sparkline(vals, stroke){
+    var w=96,h=34,pad=3, max=Math.max.apply(null,vals), min=Math.min.apply(null,vals);
+    var rng=(max-min)||1, n=vals.length;
+    var x=function(i){ return pad + i*(w-2*pad)/(n-1); };
+    var y=function(v){ return h-pad-(v-min)/rng*(h-2*pad); };
+    var d="", a="M"+x(0)+","+(h-pad);
+    for(var i=0;i<n;i++){ d += (i?" L":"M")+x(i).toFixed(1)+","+y(vals[i]).toFixed(1); }
+    a += " L"+x(0)+","+y(vals[0]);
+    for(var j=0;j<n;j++){ a+=" L"+x(j).toFixed(1)+","+y(vals[j]).toFixed(1); }
+    a += " L"+x(n-1)+","+(h-pad)+" Z";
+    var svg=svgEl("svg"); svg.setAttribute("class","spark"); svg.setAttribute("viewBox","0 0 "+w+" "+h);
+    var gid="g"+Math.random().toString(36).slice(2,7);
+    var defs=svgEl("defs"), lg=svgEl("linearGradient");
+    lg.setAttribute("id",gid); lg.setAttribute("x1","0");lg.setAttribute("y1","0");lg.setAttribute("x2","0");lg.setAttribute("y2","1");
+    var s1=svgEl("stop");s1.setAttribute("offset","0");s1.setAttribute("stop-color",stroke);s1.setAttribute("stop-opacity",".22");
+    var s2=svgEl("stop");s2.setAttribute("offset","1");s2.setAttribute("stop-color",stroke);s2.setAttribute("stop-opacity","0");
+    lg.appendChild(s1);lg.appendChild(s2);defs.appendChild(lg);svg.appendChild(defs);
+    var area=svgEl("path");area.setAttribute("d",a);area.setAttribute("fill","url(#"+gid+")");svg.appendChild(area);
+    var line=svgEl("path");line.setAttribute("d",d);line.setAttribute("fill","none");
+    line.setAttribute("stroke",stroke);line.setAttribute("stroke-width","2");
+    line.setAttribute("stroke-linejoin","round");line.setAttribute("stroke-linecap","round");svg.appendChild(line);
+    var dot=svgEl("circle");dot.setAttribute("cx",x(n-1));dot.setAttribute("cy",y(vals[n-1]));
+    dot.setAttribute("r","2.6");dot.setAttribute("fill",stroke);svg.appendChild(dot);
+    return svg;
+  }
+
+  // ---------- render KPI strip ----------
+  var KPI_META = [
+    { key:"diecast", label:"Total Shots", unit:"shots", icon:"❖", id:"var(--id-diecast)",
+      spark:[3.1,3.4,3.0,3.6,3.9,4.2,4.0,4.3], stroke:"var(--id-diecast)" },
+    { key:"trim", label:"Lots Trimmed", unit:"lots", icon:"⌗", id:"var(--id-trim)",
+      spark:[6,9,7,8,11,9,12,10], stroke:"var(--id-trim)" },
+    { key:"lines", label:"Containers Built", unit:"cntrs", icon:"▤", id:"var(--id-lines)",
+      spark:[22,28,25,31,27,33,30,34], stroke:"var(--id-lines)" }
+  ];
+  function areaTotal(key){
+    var t=0; PLANT[key].groups.forEach(function(g){ g.rows.forEach(function(rw){ t+=rw.v[WIN]; }); }); return t;
+  }
+  function areaExceptions(key){
+    var stale=0, idle=0, th=PLANT[key].th;
+    PLANT[key].groups.forEach(function(g){ g.rows.forEach(function(rw){
+      var s=stateOf(rw,th); if(s.k==="stale") stale++; else if(s.k==="idle") idle++; }); });
+    return {stale:stale, idle:idle};
+  }
+
+  function renderKPIs(){
+    var host=document.getElementById("kpis"); host.innerHTML="";
+    KPI_META.forEach(function(m){
+      var total=areaTotal(m.key), ex=areaExceptions(m.key);
+      var el=document.createElement("div"); el.className="kpi";
+      var head=document.createElement("div"); head.className="kpi-head";
+      head.innerHTML='<span class="chip" style="background:'+m.id+'">'+m.icon+'</span>'+
+        '<span class="kpi-label">'+m.label+'</span>';
+      var body=document.createElement("div"); body.className="kpi-body";
+      var numwrap=document.createElement("div");
+      numwrap.innerHTML='<span class="kpi-num">'+fmt(total)+'</span><span class="kpi-unit">'+m.unit+'</span>';
+      body.appendChild(numwrap);
+      body.appendChild(sparkline(m.spark, m.stroke));
+      var sub=document.createElement("div"); sub.className="kpi-sub";
+      if (WIN==="shift"){
+        sub.innerHTML = ex.stale
+          ? '<span style="color:var(--stale);font-weight:600;font-family:var(--mono)">⚠ '+ex.stale+' stale</span> · '+ex.idle+' idle'
+          : '<span class="delta up">● all live</span> · '+ex.idle+' idle';
+      } else {
+        sub.innerHTML = '<span class="delta up">▲</span> vs prior '+(WIN==="today"?"day":"week");
+      }
+      el.appendChild(head); el.appendChild(body); el.appendChild(sub);
+      host.appendChild(el);
+    });
+    // Holds KPI (exception)
+    var hEl=document.createElement("div"); hEl.className="kpi";
+    var newCount=HOLDS.filter(function(h){return h.isNew;}).length;
+    hEl.innerHTML='<div class="kpi-head"><span class="chip" style="background:var(--id-holds)">⚑</span>'+
+      '<span class="kpi-label">LOTs on Hold</span></div>'+
+      '<div class="kpi-body"><div><span class="kpi-num" style="color:var(--hold)">'+HOLDS.length+'</span>'+
+      '<span class="kpi-unit">lots</span></div></div>'+
+      '<div class="kpi-sub"><span style="color:var(--hold);font-weight:600;font-family:var(--mono)">'+newCount+' new</span> this shift · oldest 1d 03h</div>';
+    host.appendChild(hEl);
+  }
+
+  // ---------- render panels ----------
+  function renderPanels(){
+    var grid=document.getElementById("grid"); grid.innerHTML="";
+    ["diecast","trim","lines"].forEach(function(key){ grid.appendChild(panelEl(key)); });
+    grid.appendChild(holdsPanelEl());
+  }
+
+  function panelEl(key){
+    var P=PLANT[key], total=areaTotal(key), ex=areaExceptions(key);
+    var panel=document.createElement("section"); panel.className="panel";
+    // header
+    var head=document.createElement("div"); head.className="panel-head";
+    var badges="";
+    if (WIN==="shift"){
+      if (ex.stale) badges+='<span class="badge stale">⚠ '+ex.stale+' stale</span>';
+      if (ex.idle)  badges+='<span class="badge idle">'+ex.idle+' idle</span>';
+    }
+    head.innerHTML =
+      '<div class="panel-title"><span class="chip" style="background:'+P.id+'">'+P.icon+'</span>'+
+        '<h2>'+P.title+'</h2></div>'+
+      '<div class="panel-rollup"><div class="badges">'+badges+'</div>'+
+        '<div><span class="rollup-num">'+fmt(total)+'</span><span class="rollup-unit">'+P.unit+'</span></div></div>';
+    panel.appendChild(head);
+    // groups
+    P.groups.forEach(function(g){ panel.appendChild(groupEl(P,g)); });
+    return panel;
+  }
+
+  function groupEl(P,g){
+    var gsum=0, gstale=0, gidle=0;
+    g.rows.forEach(function(rw){ gsum+=rw.v[WIN]; var s=stateOf(rw,P.th);
+      if(s.k==="stale")gstale++; else if(s.k==="idle")gidle++; });
+    var group=document.createElement("div"); group.className="group"; group.setAttribute("data-open","false");
+    var gh=document.createElement("button"); gh.className="group-head"; gh.setAttribute("aria-expanded","false");
+    var gmeta='';
+    if (WIN==="shift" && gstale) gmeta+='<span class="badge stale">⚠ '+gstale+'</span>';
+    if (WIN==="shift" && gidle)  gmeta+='<span class="badge idle">'+gidle+' idle</span>';
+    gh.innerHTML =
+      '<svg class="caret" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '<span class="group-name">'+g.name+'</span><span class="group-code">'+g.code+'</span>'+
+      '<span class="group-meta">'+gmeta+'<span class="group-sum">'+fmt(gsum)+'</span></span>';
+    gh.addEventListener("click", function(){
+      var open = group.getAttribute("data-open")==="true";
+      group.setAttribute("data-open", open?"false":"true");
+      gh.setAttribute("aria-expanded", open?"false":"true");
+    });
+    group.appendChild(gh);
+    var body=document.createElement("div"); body.className="group-body";
+    g.rows.forEach(function(rw){ body.appendChild(rowEl(P,g,rw)); });
+    group.appendChild(body);
+    return group;
+  }
+
+  function rowEl(P,g,rw){
+    var v=rw.v[WIN], s=stateOf(rw,P.th);
+    var row=document.createElement("div"); row.className="row"+(s.k==="idle"?" is-idle":"");
+    var stateHtml;
+    if (WIN!=="shift"){ stateHtml='<span class="state">'+(v>0?"":"—")+'</span>'; }
+    else if (s.k==="live") stateHtml='<span class="state"><span class="sdot live"></span>'+agoLabel(s.min)+'</span>';
+    else if (s.k==="stale") stateHtml='<span class="state stale"><span class="sdot stale"></span>'+agoLabel(s.min)+' · stale</span>';
+    else stateHtml='<span class="state idle"><span class="sdot idle"></span>idle</span>';
+    row.innerHTML =
+      '<span class="rname"><span class="code">'+g.code+'-'+rw.code+'</span>'+
+        '<span class="desc">'+rw.desc+'</span></span>'+
+      '<span class="rcount">'+fmt(v)+'</span>'+ stateHtml;
+    return row;
+  }
+
+  function holdsPanelEl(){
+    var panel=document.createElement("section"); panel.className="panel";
+    var head=document.createElement("div"); head.className="panel-head";
+    head.innerHTML =
+      '<div class="panel-title"><span class="chip" style="background:var(--id-holds)">⚑</span>'+
+        '<h2>Inspection &amp; Holds</h2></div>'+
+      '<div class="panel-rollup"><span class="badge hold">⚑ '+HOLDS.length+' active</span></div>';
+    panel.appendChild(head);
+    var lead=document.createElement("div"); lead.className="holds-lead";
+    var newCount=HOLDS.filter(function(h){return h.isNew;}).length;
+    lead.innerHTML='<span class="holds-num">'+HOLDS.length+'</span>'+
+      '<span class="holds-cap"><b>LOTs on hold</b> across the plant.<br>'+newCount+
+      ' placed this shift · oldest held <b>1d 03h</b>. These are pulled from production until released.</span>';
+    panel.appendChild(lead);
+    HOLDS.forEach(function(h){
+      var it=document.createElement("div"); it.className="hold-item";
+      it.innerHTML =
+        '<span class="hold-ltt">'+h.ltt+'</span>'+
+        '<span class="hold-mid"><div class="part">'+h.part+'</div>'+
+          '<div class="meta">'+h.loc+'</div></span>'+
+        '<span style="display:flex;align-items:center;gap:10px">'+
+          '<span class="hold-reason">'+h.reason+'</span>'+
+          '<span class="hold-age">'+h.age+'</span></span>';
+      panel.appendChild(it);
+    });
+    return panel;
+  }
+
+  // ---------- window tabs ----------
+  var CTX={ shift:"shift-to-date · 5h 12m elapsed", today:"calendar day · since 00:00",
+            week:"week to date · Mon–Sun" };
+  document.querySelectorAll('.tabs button').forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll('.tabs button').forEach(function(x){ x.setAttribute("aria-selected","false"); });
+      b.setAttribute("aria-selected","true");
+      WIN=b.getAttribute("data-win");
+      document.getElementById("ctx-window").textContent=CTX[WIN];
+      renderKPIs(); renderPanels();
+    });
+  });
+
+  // ---------- theme toggle ----------
+  document.getElementById("themeBtn").addEventListener("click", function(){
+    var root=document.documentElement;
+    var cur=root.getAttribute("data-theme");
+    if(!cur){ cur = matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light"; }
+    root.setAttribute("data-theme", cur==="dark"?"light":"dark");
+  });
+
+  renderKPIs(); renderPanels();
+})();
+</script>
