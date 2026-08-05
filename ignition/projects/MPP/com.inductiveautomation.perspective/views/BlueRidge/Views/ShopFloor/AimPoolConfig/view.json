@@ -1,6 +1,7 @@
 {
   "custom": {
     "draft": {
+      "aimPostingEnabled": false,
       "alarmCriticalDepth": "",
       "alarmWarningDepth": "",
       "targetBufferDepth": "",
@@ -25,11 +26,15 @@
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\") or 1, \"TargetBufferDepth\": r.get(\"TargetBufferDepth\") or 0, \"TopupThreshold\": r.get(\"TopupThreshold\") or 0, \"AlarmWarningDepth\": r.get(\"AlarmWarningDepth\") or 0, \"AlarmCriticalDepth\": r.get(\"AlarmCriticalDepth\") or 0, \"AimBaseUrl\": r.get(\"AimBaseUrl\") or \"\", \"AimCompanyCode\": r.get(\"AimCompanyCode\") or \"\", \"AimPathToken\": r.get(\"AimPathToken\") or \"\", \"PostWarningAgeMinutes\": r.get(\"PostWarningAgeMinutes\") or 0, \"PostCriticalAgeMinutes\": r.get(\"PostCriticalAgeMinutes\") or 0}",
+            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\") or 1, \"TargetBufferDepth\": r.get(\"TargetBufferDepth\") or 0, \"TopupThreshold\": r.get(\"TopupThreshold\") or 0, \"AlarmWarningDepth\": r.get(\"AlarmWarningDepth\") or 0, \"AlarmCriticalDepth\": r.get(\"AlarmCriticalDepth\") or 0, \"AimBaseUrl\": r.get(\"AimBaseUrl\") or \"\", \"AimCompanyCode\": r.get(\"AimCompanyCode\") or \"\", \"AimPathToken\": r.get(\"AimPathToken\") or \"\", \"PostWarningAgeMinutes\": r.get(\"PostWarningAgeMinutes\") or 0, \"PostCriticalAgeMinutes\": r.get(\"PostCriticalAgeMinutes\") or 0, \"AimPostingEnabled\": r.get(\"AimPostingEnabled\") or False}",
             "type": "script"
           }
         ],
         "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tc = value or {}\n\tself.view.custom.draft = {\"aimPostingEnabled\": bool(c.get(\"AimPostingEnabled\")), \"alarmCriticalDepth\": str(c.get(\"AlarmCriticalDepth\") or 0), \"alarmWarningDepth\": str(c.get(\"AlarmWarningDepth\") or 0), \"targetBufferDepth\": str(c.get(\"TargetBufferDepth\") or 0), \"topupThreshold\": str(c.get(\"TopupThreshold\") or 0)}"
       }
     }
   },
@@ -475,11 +480,66 @@
                 "type": "ia.container.flex"
               },
               {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "AimPostingEnabledInput"
+                    },
+                    "propConfig": {
+                      "props.selected": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.draft.aimPostingEnabled"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "AIM posting enabled"
+                    },
+                    "type": "ia.input.checkbox"
+                  },
+                  {
+                    "meta": {
+                      "name": "AimPostingEnabledHelp"
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--pf-status-warn-fg)",
+                        "fontSize": "11px",
+                        "fontWeight": "600"
+                      },
+                      "text": "When off, the MES records what is owed to AIM but sends nothing. Turning this on begins consuming real AIM serials, which cannot be returned."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "PostingToggleRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "gap": "4px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
                 "events": {
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\td \u003d self.view.custom.draft\n\ttarget \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"targetBufferDepth\"))\n\ttopup \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"topupThreshold\"))\n\twarn \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmWarningDepth\"))\n\tcritical \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmCriticalDepth\"))\n\tif target is None or topup is None or warn is None or critical is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter all four threshold values.\"}, \"AIM Pool Config\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Thresholds saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\td \u003d self.view.custom.draft\n\ttarget \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"targetBufferDepth\"))\n\ttopup \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"topupThreshold\"))\n\twarn \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmWarningDepth\"))\n\tcritical \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmCriticalDepth\"))\n\tposting \u003d bool(d.get(\"aimPostingEnabled\"))\n\tif target is None or topup is None or warn is None or critical is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter all four threshold values.\"}, \"AIM Pool Config\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical, aimPostingEnabled\u003dposting)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Thresholds saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                       },
                       "scope": "G",
                       "type": "script"
