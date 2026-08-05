@@ -191,7 +191,7 @@ def resolveForPresence(initials):
 # AT DEPLOYMENT (FDS-04-007): repoint _DEV_USER_SOURCE at the real AD auth
 # profile (or restore the dedicated AD IdP challenge) and drop this banner.
 # =============================================================================
-_DEV_USER_SOURCE = "default"  # INTERIM: authProfile / user source to challenge --
+_DEV_USER_SOURCE = "MPP"  # INTERIM: authProfile / user source to challenge --
                               # MUST match a user source configured on the gateway
                               # (Config > Security > Users, Roles). "" = project default.
 
