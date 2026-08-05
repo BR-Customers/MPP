@@ -69,6 +69,14 @@
         },
         "meta": { "name": "MenuButton", "tooltip": { "text": "Menu" } },
         "position": { "shrink": 0 },
+        "propConfig": {
+          "props.enabled": {
+            "binding": { "config": { "expression": "!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000)" }, "type": "expr" }
+          },
+          "meta.tooltip.text": {
+            "binding": { "config": { "expression": "if(!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000), \"Menu\", \"Supervisor access required\")" }, "type": "expr" }
+          }
+        },
         "props": { "style": { "classes": "pf-btn pf-btn-secondary", "fontSize": "18px", "minWidth": "44px" }, "text": "≡" },
         "type": "ia.input.button"
       },

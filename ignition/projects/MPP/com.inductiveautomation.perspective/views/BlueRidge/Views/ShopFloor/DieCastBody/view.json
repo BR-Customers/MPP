@@ -630,7 +630,13 @@
                                   }
                                 },
                                 "meta": {
-                                  "name": "ToolConfigButton"
+                                  "name": "ToolConfigButton",
+                                  "tooltip": { "text": "Supervisor access required" }
+                                },
+                                "propConfig": {
+                                  "props.enabled": {
+                                    "binding": { "config": { "expression": "!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000)" }, "type": "expr" }
+                                  }
                                 },
                                 "props": {
                                   "style": {
