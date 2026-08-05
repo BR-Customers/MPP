@@ -181,6 +181,28 @@ def getClosureContext(terminalLocationId):
         return {}
 
 
+def operationCategoryForScreen(defaultScreen):
+    """Classify a terminal's DefaultScreen route to its OperationCategory code
+       (DieCast / Trim / MachiningAssembly), or '' for a non-process screen
+       (receiving / shipping / inspection / sort-cage) or an unresolved /
+       fallback terminal.
+
+       This is UI routing metadata -- a terminal shows one operator screen and
+       that screen fixes the process area -- NOT a domain rule: the actual
+       category -> reason-code resolution lives in SQL (Oee.DowntimeReasonCode_List).
+       Stamped onto session.custom.terminal.operationCategoryCode by applyToSession
+       so the plant-floor downtime dropdown can scope reason codes to the terminal's
+       process without a per-open lookup. '' -> the dropdown shows all active codes."""
+    s = (BlueRidge.Common.Util.extractQualifiedValues(defaultScreen) or "").lower()
+    if "die-cast" in s:
+        return "DieCast"
+    if "trim" in s:
+        return "Trim"
+    if "machining" in s or "assembly" in s:
+        return "MachiningAssembly"
+    return ""
+
+
 def applyToSession(session, terminal):
     """Single source of truth for binding a terminal's FULL context onto a
        Perspective session. `terminal` is the 7-key session-terminal dict
@@ -211,6 +233,10 @@ def applyToSession(session, terminal):
         "defaultScreen":      t.get("defaultScreen") or "",
         "isFallback":         bool(t.get("isFallback")),
         "visionAppUrl":       "",
+        # Process category this terminal's screen fixes (DieCast/Trim/
+        # MachiningAssembly), '' for non-process/fallback. Scopes the plant-floor
+        # downtime reason-code dropdown; see operationCategoryForScreen.
+        "operationCategoryCode": operationCategoryForScreen(t.get("defaultScreen")),
     }
     # Always drop any prior cell selection when the terminal changes.
     session.custom.cell = {"locationId": None, "code": "", "name": ""}

@@ -20,10 +20,11 @@ def search(filters=None):
     BlueRidge.Common.Util.log("filters=%s" % filters)
     f = _u(filters) or {}
     params = {
-        "operationCategoryId":  f.get("operationCategoryId"),
-        "operationTypeCode":    f.get("operationTypeCode"),
-        "downtimeReasonTypeId": f.get("downtimeReasonTypeId"),
-        "includeDeprecated":    bool(f.get("includeDeprecated", False)),
+        "operationCategoryId":   f.get("operationCategoryId"),
+        "operationTypeCode":     f.get("operationTypeCode"),
+        "operationCategoryCode": f.get("operationCategoryCode"),
+        "downtimeReasonTypeId":  f.get("downtimeReasonTypeId"),
+        "includeDeprecated":     bool(f.get("includeDeprecated", False)),
     }
     try:
         rows = BlueRidge.Common.Db.execList("oee/DowntimeReasonCode_List", params)
@@ -102,14 +103,20 @@ def deprecate(id):
     return BlueRidge.Common.Db.execMutation("oee/DowntimeReasonCode_Deprecate", params)
 
 
-def getForDropdown(operationTypeCode=None):
+def getForDropdown(operationCategoryCode=None, operationTypeCode=None):
     """Active downtime reason codes as [{label, value}] for the plant-floor downtime
-    entry, scoped to the terminal's operation category (+ plant-wide) when a type
-    code is given. label = 'CODE - Description', value = DowntimeReasonCode.Id."""
+    entry, scoped to the terminal's operation category (+ plant-wide). The plant
+    floor passes session.custom.terminal.operationCategoryCode (DieCast / Trim /
+    MachiningAssembly); an empty string means an unscoped terminal (fallback) and
+    yields ALL active codes. label = 'CODE - Description', value = DowntimeReasonCode.Id."""
+    catCode = _u(operationCategoryCode) or None
+    if isinstance(catCode, basestring) and not catCode.strip():
+        catCode = None
     try:
         rows = BlueRidge.Common.Db.execList(
             "oee/DowntimeReasonCode_List",
             {"operationCategoryId": None, "operationTypeCode": operationTypeCode,
+             "operationCategoryCode": catCode,
              "downtimeReasonTypeId": None, "includeDeprecated": 0},
         ) or []
     except Exception as e:

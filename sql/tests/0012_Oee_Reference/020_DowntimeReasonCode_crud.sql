@@ -622,6 +622,27 @@ EXEC test.Assert_IsEqual @TestName = N'DRC_List[ByType]: trim code excluded',   
 GO
 
 -- =============================================
+-- List by OperationCategoryCode 'DieCast' (plant-floor terminal scoping path):
+-- same category+plant-wide inclusion, trim excluded, via the category CODE.
+-- =============================================
+CREATE TABLE #LC (
+    Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
+    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
+    DowntimeReasonTypeId BIGINT, ReasonTypeName NVARCHAR(100),
+    DowntimeSourceCodeId BIGINT, SourceCodeName NVARCHAR(100),
+    IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
+);
+INSERT INTO #LC EXEC Oee.DowntimeReasonCode_List @OperationCategoryCode = N'DieCast', @IncludeDeprecated = 0;
+DECLARE @CcDC   NVARCHAR(1) = CASE WHEN EXISTS(SELECT 1 FROM #LC WHERE Code = N'TEST-DRC-001')  THEN N'1' ELSE N'0' END;
+DECLARE @CcPW   NVARCHAR(1) = CASE WHEN EXISTS(SELECT 1 FROM #LC WHERE Code = N'TEST-DRC-PW')   THEN N'1' ELSE N'0' END;
+DECLARE @CcTrim NVARCHAR(1) = CASE WHEN EXISTS(SELECT 1 FROM #LC WHERE Code = N'TEST-DRC-TRIM') THEN N'1' ELSE N'0' END;
+DROP TABLE #LC;
+EXEC test.Assert_IsEqual @TestName = N'DRC_List[ByCatCode]: die-cast code present',  @Expected = N'1', @Actual = @CcDC;
+EXEC test.Assert_IsEqual @TestName = N'DRC_List[ByCatCode]: plant-wide code present', @Expected = N'1', @Actual = @CcPW;
+EXEC test.Assert_IsEqual @TestName = N'DRC_List[ByCatCode]: trim code excluded',      @Expected = N'0', @Actual = @CcTrim;
+GO
+
+-- =============================================
 -- Update with no changes succeeds (STUFF-on-empty NULL Description guard)
 -- =============================================
 DECLARE @Tid BIGINT = (SELECT Id FROM Oee.DowntimeReasonCode WHERE Code = N'TEST-DRC-001');

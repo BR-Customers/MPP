@@ -30,13 +30,7 @@
     "params.remarks": { "paramDirection": "input", "persistent": true },
     "custom.reasonOptions": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 0, {view.custom.reasonFilter})" },
-        "transforms": [
-          {
-            "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Description\") or \"\")} for r in (value or [])]",
-            "type": "script"
-          }
-        ],
+        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.getForDropdown\", 0, {session.custom.terminal.operationCategoryCode})" },
         "type": "expr"
       }
     }

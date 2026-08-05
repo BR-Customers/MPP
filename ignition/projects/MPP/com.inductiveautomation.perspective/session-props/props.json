@@ -27,6 +27,7 @@
     "terminal": {
       "defaultScreen": "/shop-floor/die-cast",
       "isFallback": false,
+      "operationCategoryCode": "",
       "terminalCode": "DC1-T1",
       "terminalLocationId": 15,
       "terminalName": "Terminal",

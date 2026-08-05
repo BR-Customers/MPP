@@ -42,6 +42,11 @@
       },
       {
         "type": "Parameter",
+        "identifier": "operationCategoryCode",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
         "identifier": "downtimeReasonTypeId",
         "sqlType": 3
       },
