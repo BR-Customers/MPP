@@ -125,6 +125,23 @@ def getForDropdown(operationTypeCode=None):
     return out
 
 
+def getCategoryOptions(nullLabel=None):
+    """OperationCategory dropdown options for the defect-code editor + list filter:
+    [{label, value}] of the 3 process categories (value = OperationCategory.Id).
+    When nullLabel is given, a leading {label: nullLabel, value: None} option is
+    prepended -- 'Plant-wide (all areas)' in the editor, 'All areas' in the filter."""
+    try:
+        cats = BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown() or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getCategoryOptions failed: %s" % str(e))
+        cats = []
+    out = []
+    if nullLabel is not None:
+        out.append({"label": nullLabel, "value": None})
+    out.extend(cats)
+    return out
+
+
 def getOne(defectCodeId):
     """Single-row lookup. Returns dict or None."""
     defectCodeId = _u(defectCodeId)
