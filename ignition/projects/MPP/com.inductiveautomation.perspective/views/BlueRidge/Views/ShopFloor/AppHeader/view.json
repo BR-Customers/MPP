@@ -2,6 +2,7 @@
   "custom": {
     "scopeLocationId": null,
     "openCount": 0,
+    "idleTick": 0,
     "shift": {
       "ScheduleName": ""
     }
@@ -36,6 +37,16 @@
           }
         ],
         "type": "expr"
+      }
+    },
+    "custom.idleTick": {
+      "binding": {
+        "config": { "expression": "now(10000)" },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\ttry:\n\t\tidleMs = system.date.toMillis(system.date.now()) - self.session.props.lastActivity\n\t\tsecs = BlueRidge.Common.Session.activeTimeoutSeconds(self.session)\n\t\tif idleMs > secs * 1000:\n\t\t\tif BlueRidge.Common.Session.isElevated(self.session):\n\t\t\t\tBlueRidge.Common.Session.resetTerminal(self.session)\n\t\t\telse:\n\t\t\t\tu = self.session.custom.user\n\t\t\t\tif u and u.get(\"appUserId\"):\n\t\t\t\t\tsystem.perspective.openPopup(\"mpp-idle-reconfirm\", \"BlueRidge/Components/PlantFloor/IdleReconfirmModal\", params={\"initials\": u.get(\"initials\"), \"displayName\": u.get(\"displayName\"), \"popupId\": \"mpp-idle-reconfirm\", \"replyMessage\": \"idleReconfirmResult\"}, modal=True, showCloseIcon=False)\n\texcept:\n\t\tpass"
       }
     }
   },
@@ -182,18 +193,52 @@
             "type": "ia.input.button"
           },
           {
+            "meta": { "name": "ElevatedPill" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "position.display": {
+                "binding": { "config": { "expression": "!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000)" }, "type": "expr" }
+              },
+              "props.text": {
+                "binding": { "config": { "expression": "\"Elevated: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", \"supervisor\", {session.custom.user.displayName})" }, "type": "expr" }
+              }
+            },
+            "props": { "style": { "classes": "dt-open-badge" } },
+            "type": "ia.display.label"
+          },
+          {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "config": { "script": "\tsystem.perspective.login()" },
+                  "config": { "script": "\tsystem.perspective.openPopup(id=\"mpp-elevation-modal\", view=\"BlueRidge/Components/PlantFloor/ElevationModal\", modal=True, showCloseIcon=True, overlayDismiss=True, params={\"actionCode\": \"SupervisorAccess\", \"actionLabel\": \"Supervisor access\", \"popupId\": \"mpp-elevation-modal\", \"replyMessage\": \"elevationResult\"})" },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
-            "meta": { "name": "ElevatedLoginButton" },
+            "meta": { "name": "SupervisorAccessButton" },
             "position": { "shrink": 0 },
-            "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Elevated Login" },
+            "propConfig": {
+              "position.display": {
+                "binding": { "config": { "expression": "isNull({session.custom.elevatedUntil}) || {session.custom.elevatedUntil} <= now(5000)" }, "type": "expr" }
+              }
+            },
+            "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Supervisor Access" },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": { "script": "\tBlueRidge.Common.Session.resetTerminal(self.session)" },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": { "name": "ResetTerminalButton", "tooltip": { "text": "Sign out and return to the default screen" } },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Reset Terminal" },
             "type": "ia.input.button"
           }
         ],
@@ -205,6 +250,19 @@
     ],
     "meta": { "name": "root" },
     "props": { "alignItems": "center", "style": { "classes": "pf-header", "height": "100%" } },
+    "scripts": {
+      "customMethods": null,
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "elevationResult",
+          "pageScope": true,
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tif p.get(\"success\"):\n\t\tBlueRidge.Common.Session.beginElevatedWindow(self.session, p)\n\t\tpend = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.pendingElevatedAction)\n\t\tif pend:\n\t\t\tBlueRidge.Common.Session.dispatchElevatedAction(self.session, pend.get(\"code\"), pend.get(\"params\"))\n\tself.session.custom.pendingElevatedAction = None",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
     "type": "ia.container.flex"
   }
 }
