@@ -167,7 +167,7 @@ DECLARE @Lines NVARCHAR(MAX) = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20))
     + N',"pieceDelta":95,"scrapLines":[{"defectCodeId":' + CAST(@DefectCode AS NVARCHAR(20)) + N',"quantity":5}]}]';
 DECLARE @W TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO @W EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@Lines,
-    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @CellLocationId=@Cell;
 DECLARE @ws NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @W);
 EXEC test.Assert_IsEqual @TestName=N'[Record] Status 1', @Expected=N'1', @Actual=@ws;
 -- basket got the NET good (95), not decremented by the additive scrap
@@ -182,6 +182,16 @@ DECLARE @rej NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorde
 EXEC test.Assert_IsEqual @TestName=N'[Record] additive scrap RejectEvent present', @Expected=N'1', @Actual=@rej;
 DECLARE @stillOpen NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@Lot);
 EXEC test.Assert_IsEqual @TestName=N'[Record] basket still Open (additive scrap never closes)', @Expected=N'Open', @Actual=@stillOpen;
+
+-- FAT #19: the DieCastPieceContributed audit op must capture the selected
+-- die-cast MACHINE (cell) LocationId (was hard-coded NULL). 'Lot' entity ops
+-- with a non-NULL EntityId route to Lots.LotEventLog (Audit_LogOperation B7);
+-- @CellLocationId=@Cell was passed on the record call above.
+DECLARE @evtLoc NVARCHAR(20) = (SELECT CAST(le.LocationId AS NVARCHAR(20))
+    FROM Lots.LotEventLog le INNER JOIN Audit.LogEventType et ON et.Id = le.LogEventTypeId
+    WHERE le.LotId=@Lot AND et.Code=N'DieCastPieceContributed');
+DECLARE @cellExpected NVARCHAR(20) = CAST(@Cell AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName=N'[Record #19] DieCastPieceContributed LocationId = selected machine (cell)', @Expected=@cellExpected, @Actual=@evtLoc;
 
 -- ---------------------------------------------------------------
 -- Defect-code validation (robustness fix): a scrap/shot-loss defectCodeId
@@ -202,14 +212,12 @@ DECLARE @wBadMsg NVARCHAR(500) = (SELECT Message FROM @WBad);
 DECLARE @wBadGraceful NVARCHAR(10) = CASE WHEN @wBadMsg LIKE N'Unexpected error%' THEN N'0' ELSE N'1' END;
 EXEC test.Assert_IsEqual @TestName=N'[DefectCode] rejection message is graceful (not an unexpected-error)', @Expected=N'1', @Actual=@wBadGraceful;
 
--- deprecated defect code also rejected (parity with RejectEvent_Record)
-DECLARE @DepDefectAreaId BIGINT = (
-    SELECT TOP 1 l.Id FROM Location.Location l
-    INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
-    INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
-    WHERE l.DeprecatedAt IS NULL AND lt.Code = N'Area' ORDER BY l.Id);
-INSERT INTO Quality.DefectCode (Code, Description, AreaLocationId, IsExcused, CreatedAt)
-VALUES (N'TEST-DCB-DEP', N'0045/030 deprecated defect code test', @DepDefectAreaId, 0, SYSUTCDATETIME());
+-- deprecated defect code also rejected (parity with RejectEvent_Record).
+-- Migration 0048 (FAT #1) replaced Quality.DefectCode.AreaLocationId with the
+-- nullable OperationCategoryId (NULL = plant-wide); this test only needs a
+-- valid-then-deprecated code, so a plant-wide (NULL category) row suffices.
+INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused, CreatedAt)
+VALUES (N'TEST-DCB-DEP', N'0045/030 deprecated defect code test', NULL, 0, SYSUTCDATETIME());
 DECLARE @DepDefectCode BIGINT = SCOPE_IDENTITY();
 UPDATE Quality.DefectCode SET DeprecatedAt = SYSUTCDATETIME() WHERE Id = @DepDefectCode;
 

@@ -2,7 +2,7 @@
 -- Procedure:   Location.Terminal_GetByIpAddress
 -- Author:      Blue Ridge Automation
 -- Created:     2026-06-09
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   Resolves the shop-floor Terminal Location for a connecting IP address
@@ -40,6 +40,11 @@
 -- Change Log:
 --   2026-06-09 - 1.0 - Initial version (Phase 1 Task C).
 --   2026-06-10 - 1.1 - Drop derived TerminalMode (view-policy model).
+--   2026-08-05 - 1.2 - Normalize IpAddress on both sides via
+--                       Location.ufn_NormalizeIpAddress so equivalent host
+--                       representations (bracketed/expanded IPv6 loopback,
+--                       IPv4-mapped IPv6) resolve to the admin-typed value.
+--                       Fixes FAT #16 (IP resolution fell to fallback on startup).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Terminal_GetByIpAddress
     @IpAddress NVARCHAR(45)
@@ -67,7 +72,13 @@ BEGIN
            AND l.LocationTypeDefinitionId = 7
            AND l.DeprecatedAt IS NULL
         WHERE @IpAddress IS NOT NULL
-          AND la.AttributeValue = @IpAddress
+          -- Normalize BOTH sides so equivalent representations of the same host
+          -- match: the admin types '127.0.0.1' but Perspective reports loopback
+          -- as '[0:0:0:0:0:0:0:1]', and a real IPv4 client may arrive IPv4-mapped
+          -- ('::ffff:a.b.c.d'). Raw string compare here was the FAT #16 defect
+          -- (every session silently fell to the Facility-wide fallback).
+          AND Location.ufn_NormalizeIpAddress(la.AttributeValue)
+                = Location.ufn_NormalizeIpAddress(@IpAddress)
         ORDER BY la.LocationId
     );
 

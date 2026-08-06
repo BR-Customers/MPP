@@ -492,6 +492,64 @@
                   }
                 },
                 "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label_ByCount_Serialized",
+                      "tooltip": {
+                        "enabled": true,
+                        "text": "Serialized pack-out: each part carries a unique serial (per-part scan at assembly) for this closure method."
+                      }
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-label"
+                      },
+                      "text": "Serialized"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Input_ByCount_Serialized"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "propConfig": {
+                      "props.selected": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.state.editDraft.ByCount.IsSerialized"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {},
+                    "type": "ia.input.checkbox"
+                  }
+                ],
+                "meta": {
+                  "name": "Field_ByCount_Serialized"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "field",
+                    "gap": "2px"
+                  }
+                },
+                "type": "ia.container.flex"
               }
             ],
             "meta": {
@@ -931,6 +989,64 @@
                   }
                 },
                 "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label_ByWeight_Serialized",
+                      "tooltip": {
+                        "enabled": true,
+                        "text": "Serialized pack-out: each part carries a unique serial (per-part scan at assembly) for this closure method."
+                      }
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-label"
+                      },
+                      "text": "Serialized"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Input_ByWeight_Serialized"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "propConfig": {
+                      "props.selected": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.state.editDraft.ByWeight.IsSerialized"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {},
+                    "type": "ia.input.checkbox"
+                  }
+                ],
+                "meta": {
+                  "name": "Field_ByWeight_Serialized"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "field",
+                    "gap": "2px"
+                  }
+                },
+                "type": "ia.container.flex"
               }
             ],
             "meta": {
@@ -1295,6 +1411,64 @@
                 ],
                 "meta": {
                   "name": "Field_ByVision_DunnageCode"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "field",
+                    "gap": "2px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label_ByVision_Serialized",
+                      "tooltip": {
+                        "enabled": true,
+                        "text": "Serialized pack-out: each part carries a unique serial (per-part scan at assembly) for this closure method."
+                      }
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-label"
+                      },
+                      "text": "Serialized"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Input_ByVision_Serialized"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "propConfig": {
+                      "props.selected": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.state.editDraft.ByVision.IsSerialized"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {},
+                    "type": "ia.input.checkbox"
+                  }
+                ],
+                "meta": {
+                  "name": "Field_ByVision_Serialized"
                 },
                 "position": {
                   "basis": "auto"

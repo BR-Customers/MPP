@@ -8,7 +8,13 @@
     },
     "closureCapabilities": [],
     "closureMethod": "",
+    "elevatedUntil": null,
+    "pendingElevatedAction": null,
     "plcDevices": [],
+    "policy": {
+      "elevationTimeoutSeconds": 300,
+      "operatorPresenceTimeoutSeconds": 180
+    },
     "presence": {
       "policy": "confirm"
     },
@@ -21,6 +27,7 @@
     "terminal": {
       "defaultScreen": "/shop-floor/die-cast",
       "isFallback": false,
+      "operationCategoryCode": "",
       "terminalCode": "DC1-T1",
       "terminalLocationId": 15,
       "terminalName": "Terminal",

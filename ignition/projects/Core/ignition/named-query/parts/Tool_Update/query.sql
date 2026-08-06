@@ -3,4 +3,5 @@ EXEC Tools.Tool_Update
     @Description = :description,
     @Name        = :name,
     @Id          = :id,
+    @ShotLimit   = :shotLimit,
     @AppUserId   = :appUserId

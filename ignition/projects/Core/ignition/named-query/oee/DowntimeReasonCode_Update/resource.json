@@ -42,7 +42,7 @@
       },
       {
         "type": "Parameter",
-        "identifier": "areaLocationId",
+        "identifier": "operationCategoryId",
         "sqlType": 3
       },
       {

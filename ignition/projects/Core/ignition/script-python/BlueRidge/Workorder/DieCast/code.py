@@ -37,22 +37,27 @@ def getShiftOutputBreakdown(toolId, shiftId, grossShots):
     )
 
 
-def recordShiftOutput(data, appUserId=None, terminalLocationId=None):
+def recordShiftOutput(data, appUserId=None, terminalLocationId=None, cellLocationId=None):
     """Record the operator-confirmed shift output (Workorder.DieCastShiftOutput_Record):
        fans the per-cavity-lot lines (and any tool-wide shot-loss) into the open
        accumulator baskets. data carries shiftId, toolId, lines ([{lotId,
        pieceDelta, scrapLines: [{defectCodeId, quantity}, ...]}, ...], JSON-
        encoded here for the proc's required @LinesJson), shotLoss ([{defectCodeId,
-       quantity}, ...], JSON-encoded for the optional @ShotLossJson). Returns
-       {Status, Message, NewId} (NewId is always None -- this proc fans out to
-       N lots, there is no single 'the' new id)."""
+       quantity}, ...], JSON-encoded for the optional @ShotLossJson), and the
+       optional cellLocationId (FAT #19: the die-cast MACHINE/cell location the
+       parts were added at -- stamped on the DieCastPieceContributed audit op's
+       @LocationId; the explicit kwarg wins, else data['cellLocationId']).
+       Returns {Status, Message, NewId} (NewId is always None -- this proc fans
+       out to N lots, there is no single 'the' new id)."""
     BlueRidge.Common.Util.log(
-        "recordShiftOutput data=%s appUserId=%s terminalLocationId=%s"
-        % (data, appUserId, terminalLocationId)
+        "recordShiftOutput data=%s appUserId=%s terminalLocationId=%s cellLocationId=%s"
+        % (data, appUserId, terminalLocationId, cellLocationId)
     )
     d = _u(data) or {}
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
+    if cellLocationId is None:
+        cellLocationId = d.get("cellLocationId")
     lines = _u(d.get("lines")) or []
     shotLoss = _u(d.get("shotLoss")) or []
     params = {
@@ -62,6 +67,8 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None):
         "shotLossJson":       BlueRidge.Common.Util.convertWrapperObjectToJson(shotLoss) if shotLoss else None,
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
+        "grossShots":         d.get("grossShots"),
+        "cellLocationId":     cellLocationId,
     }
     return BlueRidge.Common.Db.execMutation("workorder/DieCastShiftOutput_Record", params)
 

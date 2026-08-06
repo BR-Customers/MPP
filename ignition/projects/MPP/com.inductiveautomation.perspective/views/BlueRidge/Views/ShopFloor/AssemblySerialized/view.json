@@ -975,18 +975,6 @@
                       "text": "WorkOrder Completion Gate"
                     },
                     "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "Hsub"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-sub"
-                      },
-                      "text": "RequiresCompletionConfirm = 1 - large-button gesture required"
-                    },
-                    "type": "ia.display.label"
                   }
                 ],
                 "meta": {
@@ -1003,92 +991,6 @@
               },
               {
                 "children": [
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "GateIntro"
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "'When the container reaches ' + toStr({view.custom.container.TargetParts}) + ' pcs and the PLC asserts CompletionConfirmed=1:'"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
-                        "props": {
-                          "style": {
-                            "color": "var(--mpp-text-primary)"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "B1"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-kpi-sub"
-                          },
-                          "text": "- AIM Shipper ID claimed from local pool (sync FIFO, sub-millisecond)"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "B2"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-kpi-sub"
-                          },
-                          "text": "- ShippingLabel row inserted with PrintedAt = NULL"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "B3"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-kpi-sub"
-                          },
-                          "text": "- Async print message dispatched to Zebra at this terminal"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "B4"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-kpi-sub"
-                          },
-                          "text": "- Container status flips to Complete - WO auto-finishes"
-                        },
-                        "type": "ia.display.label"
-                      }
-                    ],
-                    "meta": {
-                      "name": "GateText"
-                    },
-                    "position": {
-                      "grow": 1
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "6px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
                   {
                     "events": {
                       "component": {
@@ -1114,7 +1016,7 @@
                         "minHeight": "80px",
                         "minWidth": "200px"
                       },
-                      "text": "Confirm Completion"
+                      "text": "Complete"
                     },
                     "type": "ia.input.button"
                   }

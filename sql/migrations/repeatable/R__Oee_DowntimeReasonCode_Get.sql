@@ -31,8 +31,8 @@ BEGIN
         drc.Id,
         drc.Code,
         drc.Description,
-        drc.AreaLocationId,
-        loc.Name            AS AreaName,
+        drc.OperationCategoryId,
+        oc.Name             AS CategoryName,
         drc.DowntimeReasonTypeId,
         drt.Name            AS ReasonTypeName,
         drc.DowntimeSourceCodeId,
@@ -41,9 +41,9 @@ BEGIN
         drc.CreatedAt,
         drc.DeprecatedAt
     FROM Oee.DowntimeReasonCode drc
-    LEFT JOIN Location.Location      loc ON drc.AreaLocationId       = loc.Id
-    LEFT JOIN Oee.DowntimeReasonType drt ON drc.DowntimeReasonTypeId = drt.Id
-    LEFT JOIN Oee.DowntimeSourceCode dsc ON drc.DowntimeSourceCodeId = dsc.Id
+    LEFT JOIN Parts.OperationCategory oc  ON drc.OperationCategoryId  = oc.Id
+    LEFT JOIN Oee.DowntimeReasonType  drt ON drc.DowntimeReasonTypeId = drt.Id
+    LEFT JOIN Oee.DowntimeSourceCode  dsc ON drc.DowntimeSourceCodeId = dsc.Id
     WHERE drc.Id = @Id;
 END
 GO
