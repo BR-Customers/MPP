@@ -1440,6 +1440,14 @@
                 "position": {
                   "grow": 1
                 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": { "expression": "!{view.custom.usePrinterCards}" }
+                    }
+                  }
+                },
                 "props": {
                   "direction": "column",
                   "gap": "12px"
