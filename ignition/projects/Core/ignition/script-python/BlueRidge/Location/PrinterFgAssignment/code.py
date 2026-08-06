@@ -22,7 +22,7 @@ def childPrinterCount(stationTerminalLocationId):
     return len(listForStation(stationTerminalLocationId) or [])
 
 
-def listCardsForStation(stationTerminalLocationId, cellLocationId):
+def listCardsForStation(stationTerminalLocationId, cellLocationId, _refreshToken=None):
     """Card rows for the panel: listForStation enriched with each assigned FG's
        OPEN-container fill at the cell (Container.getOpenByCell, matched on ItemId).
        Each row gets OpenContainerId / FillAccum / FillTarget / IsFull (0 when the
