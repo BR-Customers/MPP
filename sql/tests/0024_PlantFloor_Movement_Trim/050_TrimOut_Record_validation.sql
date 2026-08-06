@@ -326,6 +326,51 @@ EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] non-positive scrap quantit
 EXEC test.Assert_Contains @TestName = N'[TrimOutScrap] positive-quantity message', @HaystackStr = @M11, @NeedleStr = N'quantity must be positive';
 GO
 
+-- =============================================
+-- Test 12: malformed @ScrapLinesJson -> reject (Status 0, no decrement)
+-- =============================================
+DECLARE @Area12 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
+DECLARE @Press12 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Rcv12 BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @Ot12 BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+DECLARE @L12 BIGINT;
+CREATE TABLE #C12 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C12 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv12, @CurrentLocationId = @Press12, @PieceCount = 20, @AppUserId = 1;
+SELECT @L12 = NewId FROM #C12; DROP TABLE #C12;
+DECLARE @S12 BIT, @M12 NVARCHAR(500);
+CREATE TABLE #T12 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T12 EXEC Workorder.TrimOut_Record @ParentLotId = @L12, @OperationTemplateId = @Ot12, @ShotCount = 20, @ScrapLinesJson = N'not valid json', @SourceLocationId = @Area12, @AppUserId = 1;
+SELECT @S12 = Status, @M12 = Message FROM #T12; DROP TABLE #T12;
+DECLARE @S12Str NVARCHAR(10) = CAST(@S12 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] malformed ScrapLinesJson rejected', @Expected = N'0', @Actual = @S12Str;
+EXEC test.Assert_Contains @TestName = N'[TrimOutScrap] malformed-json message', @HaystackStr = @M12, @NeedleStr = N'not valid JSON';
+DECLARE @PC12 INT = (SELECT PieceCount FROM Lots.Lot WHERE Id = @L12);
+DECLARE @PC12Str NVARCHAR(10) = CAST(@PC12 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] malformed json leaves PieceCount unchanged', @Expected = N'20', @Actual = @PC12Str;
+GO
+
+-- =============================================
+-- Test 13: negative quantity in a line -> reject (Status 0)
+-- =============================================
+DECLARE @Area13 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
+DECLARE @Press13 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Rcv13 BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @Ot13 BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+DECLARE @D13 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @L13 BIGINT;
+CREATE TABLE #C13 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C13 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv13, @CurrentLocationId = @Press13, @PieceCount = 20, @AppUserId = 1;
+SELECT @L13 = NewId FROM #C13; DROP TABLE #C13;
+DECLARE @NegJson13 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D13 AS NVARCHAR(20)) + N',"quantity":-1}]';
+DECLARE @S13 BIT, @M13 NVARCHAR(500);
+CREATE TABLE #T13 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T13 EXEC Workorder.TrimOut_Record @ParentLotId = @L13, @OperationTemplateId = @Ot13, @ShotCount = 20, @ScrapLinesJson = @NegJson13, @SourceLocationId = @Area13, @AppUserId = 1;
+SELECT @S13 = Status, @M13 = Message FROM #T13; DROP TABLE #T13;
+DECLARE @S13Str NVARCHAR(10) = CAST(@S13 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] negative quantity rejected', @Expected = N'0', @Actual = @S13Str;
+EXEC test.Assert_Contains @TestName = N'[TrimOutScrap] negative-qty message', @HaystackStr = @M13, @NeedleStr = N'quantity must be positive';
+GO
+
 -- ---- cleanup ----
 DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');

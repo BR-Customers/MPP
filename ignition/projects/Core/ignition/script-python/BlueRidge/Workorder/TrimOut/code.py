@@ -26,7 +26,7 @@ def record(data, appUserId=None, terminalLocationId=None):
         "parentLotId":               d.get("parentLotId"),
         "operationTemplateId":       d.get("operationTemplateId"),
         "shotCount":                 d.get("shotCount"),
-        "scrapLinesJson":            system.util.jsonEncode(_u(d.get("scrapLines")) or []),
+        "scrapLinesJson":            BlueRidge.Common.Util.convertWrapperObjectToJson(d.get("scrapLines") or []),
         "destinationCellLocationId": d.get("destinationCellLocationId"),
         "sourceLocationId":          d.get("sourceLocationId"),
         "appUserId":                 appUserId,

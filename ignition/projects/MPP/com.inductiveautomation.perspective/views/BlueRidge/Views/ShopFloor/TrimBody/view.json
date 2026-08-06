@@ -1148,7 +1148,7 @@
         {
           "name": "addScrapLine",
           "params": [],
-          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = list(rows)\n\trows.append({\"defectCodeId\": None, \"quantity\": \"\"})\n\tself.view.custom.scrapLines = rows"
+          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = list(rows)\n\trows.append({\"defectCodeId\": None, \"quantity\": \"\"})\n\tself.view.custom.scrapLines = rows\n\tself.recomputeGood()"
         },
         {
           "name": "recomputeGood",
