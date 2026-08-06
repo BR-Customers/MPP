@@ -1,7 +1,9 @@
 # Assembly-OUT multi-printer FG routing ("printer cards") — Design
 
 **Date:** 2026-08-06
-**Status:** Draft (design approved in brainstorm; pending written-spec review)
+**Status:** Draft, rev 2 (design approved; revised after tracing the real close/label path —
+label = container shipping label dispatched async via `ShippingDispatcher`, not a synchronous
+`LotLabel` print; pending written-spec review)
 **Origin:** FAT follow-up. Authoritative `MPP_MES_Site` model carries a placeholder Printer
 child "add 10 printers" under `MA2-59B-AOUT1` ("METTs Assembly Out", Location Id 158) — the
 signal that some assembly-out stations run **many** finished goods through one station and need
@@ -11,8 +13,9 @@ a clean way to route each FG's label to its own printer.
 
 Today the printer model is **one printer per terminal**: `Location.Terminal_GetPrinter` returns
 `TOP 1` of a terminal's child Printers, `onStartup` pins that single printer into
-`session.custom.printer`, and every FG label from the terminal dispatches ZPL to that one
-endpoint (`BlueRidge.Lots.LotLabel.printLabel` → `_dispatchAfterRender`).
+`session.custom.printer`, and **both** label-dispatch paths resolve their endpoint from that one
+session printer — LTT labels via `BlueRidge.Lots.LotLabel` and **container shipping labels via
+`BlueRidge.Lots.ShippingDispatcher.dispatch`** (the label that prints when an FG box is completed).
 
 Some assembly-out stations (e.g. METTs) box **~10 distinct finished goods** at one station,
 each into its own container, **closed By-Count**, each needing its label on a **different
@@ -97,24 +100,43 @@ convention. NQs live in Core (`named-query/location/…`).
    zone/cell that FG eligibility is scoped to, resolved from the session terminal — the same
    location the current By-Count dropdown already passes.)
 
-4. **Close + mint:** unchanged — `Workorder.Assembly_CompleteTray(@FinishedGoodItemId, @PieceCount,
+4. **Tray mint (unchanged):** `Workorder.Assembly_CompleteTray(@FinishedGoodItemId, @PieceCount,
    @CellLocationId, @ClosureMethod='ByCount', @AppUserId, @TerminalLocationId)` via
-   `BlueRidge.Workorder.Assembly.completeTray(...)`. The card supplies `@FinishedGoodItemId`
-   (its bound FG) and the entered `@PieceCount`.
+   `BlueRidge.Workorder.Assembly.completeTray(...)` mints each tray LOT for the card's FG into that
+   FG's open container. **No label prints on a tray mint** — that was never a print point.
 
-## Label routing — override, don't replace
+5. **`Location.Printer_GetById(@PrinterLocationId)`** — read. Returns `{LocationId, Code, Endpoint,
+   Model, ConnectionKind}` for one Printer so a dispatch can resolve a target endpoint from a
+   printer id. (`Location.Terminal_GetPrinter` resolves a Terminal's `TOP 1` child printer — it
+   cannot resolve a *specific* printer by id.)
 
-`BlueRidge.Lots.LotLabel.printLabel(...)` / `_dispatchAfterRender(...)` gain an **optional explicit
-printer override** (`printerLocationId`). When provided, the endpoint/model resolve from that
-printer (via `Location.Terminal_GetPrinter`-style lookup by the printer's own Id, or a small
-`Printer_GetById` read) instead of `session.custom.printer`. When omitted — every existing call
-site (single-printer terminals, Machining, Trim, reprint) — behavior is **byte-for-byte
-unchanged**: the session printer is used.
+## Label routing — the box shipping label, derived at dispatch
 
-- Card-close passes the card's `PrinterLocationId`.
-- Networked printer → ZPL over TCP (as today). Hardwired / no endpoint → the existing fail-soft
-  path returns `{Status:0, "no endpoint"}` and toasts; **the FG LOT + LotLabel row still exist**,
-  so it is a reprint, never a lost traceability record.
+**Correction to the naive assumption.** The label that physically prints for a boxed FG is the
+**container shipping label**, not a per-mint LTT label. `Lots.Container_Complete` (a proc, no TCP)
+*generates* the `ShippingLabel` + AIM shipper; the ZPL is dispatched separately by
+`BlueRidge.Lots.ShippingDispatcher.dispatch(aimShipperId, terminalLocationId)`, which resolves the
+printer from `session.custom.printer`. (A `PrintFailureGateway` sweep re-fires stranded labels but
+is a deferred skeleton.)
+
+**Change:** `ShippingDispatcher.dispatch` gains an optional **`printerLocationId` override**. When
+provided, the endpoint is **derived at dispatch** from `Location.Printer_GetById(printerLocationId)`
+rather than the session printer; when omitted, behavior is **unchanged** (session printer) for every
+other caller (Shipping dock, PLC path, sweep). The by-count card's **Complete (box)** action passes
+the card's `PrinterLocationId`.
+
+This also **closes a current gap**: the operator container-Complete path does not dispatch
+synchronously today (the view's Complete handler only calls `Container.complete`). The card path
+will call `Container.complete`, then — on success — `ShippingDispatcher.dispatch(aimShipperId,
+terminalLocationId, printerLocationId=card.PrinterLocationId)`.
+
+- Networked printer → ZPL over TCP (as today). Hardwired / no endpoint → the existing fail path
+  leaves `ShippingLabel.PrintedAt` NULL (a stranded label) and toasts — the container +
+  shipping-label rows still exist, so it is re-dispatchable, never a lost traceability record.
+- **Async sweep (future, out of scope):** when `PrintFailureGateway` is commissioned it will derive
+  the same target from the stranded label's **container FG → `PrinterFgAssignment` at the station**.
+  No sweep code or resolver proc is built here; the `printerLocationId` override is the seam it will
+  use.
 
 ## UI — the printer-card panel (setup **and** run, one screen)
 
@@ -123,8 +145,10 @@ station terminal has >1 child Printer, the existing single FG dropdown is replac
 panel; otherwise the current dropdown flow is untouched.
 
 - **One card per child Printer**, ordered by `SortOrder`. Each card shows: printer Code/Name; the
-  **assigned FG** (PartNumber + Description) or an "Unassigned" state; Endpoint + the FAT #14
-  **Validate endpoint** action; a piece-count field; a **Close** button.
+  **assigned FG** (PartNumber + Description) or an "Unassigned" state; the FG's **open-container
+  fill** (accumulated / target trays, from `Container_GetOpenByCell`); Endpoint + the FAT #14
+  **Validate endpoint** action; a tray piece-count field with **Complete Tray**; and a **Complete
+  (box)** action shown when that FG's container is full.
 - **Setup gestures:**
   - **Reorder** cards with up/down arrow buttons (no drag, per project convention) — writes
     `SortOrder` only.
@@ -134,10 +158,14 @@ panel; otherwise the current dropdown flow is untouched.
   - **Auto-load seed:** first open with no saved rows pre-seeds each card with an eligible FG as a
     *suggestion the operator confirms/adjusts* — never a silent routing rule. A saved layout is
     restored on subsequent opens.
-- **Run gesture (close-from-card):** operator boxes an FG → taps its card → enters the count →
-  **Close** → `completeTray(FinishedGoodItemId=card.ItemId, pieceCount, …, closureMethod="ByCount")`
-  → on success the FG label prints to **that card's printer** (routing override). Tapping the card
-  *is* the FG selection, so the 10-FG ambiguity never arises.
+- **Run gesture (close-from-card):** the operator works entirely within an FG's card. Per boxed
+  tray: enter the piece count → **Complete Tray** → `completeTray(FinishedGoodItemId=card.ItemId,
+  pieceCount, …, closureMethod="ByCount")` mints the tray LOT into that FG's open container (no
+  print). When the container fills: **Complete (box)** → `Container.complete(container.Id, …)` then
+  `ShippingDispatcher.dispatch(aimShipperId, terminalLocationId, printerLocationId=card.PrinterLocationId)`
+  prints the box's shipping label to **that card's printer**. Acting on the card *is* the FG
+  selection, so the 10-FG ambiguity never arises. (Each FG keeps its own open container at the cell —
+  `Container_GetOpenByCell` already returns a list.)
 
 ## Edge cases
 
@@ -157,10 +185,15 @@ panel; otherwise the current dropdown flow is untouched.
 - **SQL:** `PrinterFgAssignment_ListForStation` (unassigned printers appear; FG join) and
   `_SaveAll` (assign, swap keeps 1:1, reorder rewrites only SortOrder, reject non-child printer /
   non-eligible FG / duplicate FG). TDD red→green on a throwaway DB.
-- **Label routing:** a test/assertion that `_dispatchAfterRender` with an override targets the
-  **override** endpoint, and that omitting it still uses `session.custom.printer` (no regression).
-- **Close-from-card + panel:** manual smoke in the app (render cards, assign/swap/reorder+save,
-  close a card → LOT minted + label to the correct printer; single-printer station unchanged).
+- **`Printer_GetById`:** returns the right endpoint/model for a printer id; empty set for an unknown
+  id.
+- **Label routing:** `ShippingDispatcher.dispatch` with a `printerLocationId` targets that printer's
+  endpoint (via `Printer_GetById`), and omitting it still resolves `session.custom.printer` (no
+  regression to Shipping-dock / PLC callers). Verified gateway-side (the socket path can't be
+  asserted in a pure SQL test — assert endpoint *resolution*, smoke the actual dispatch).
+- **Close-from-card + panel:** manual smoke in the app (render cards, assign/swap/reorder+save;
+  Complete Tray mints into the FG's container; Complete box → shipping label to the correct printer;
+  single-printer station unchanged).
 
 ## Out of scope / non-goals
 
@@ -173,8 +206,9 @@ panel; otherwise the current dropdown flow is untouched.
 
 - New versioned migration for `Location.PrinterFgAssignment` (next free number — confirm ≥ `0052`
   at implementation; other in-flight FAT work reserves `0051`).
-- New repeatable procs (`PrinterFgAssignment_ListForStation`, `_SaveAll`) + Core NQs.
-- `LotLabel` override is additive (default-None param) — no call-site churn.
+- New repeatable procs (`PrinterFgAssignment_ListForStation`, `_SaveAll`, `Printer_GetById`) + Core NQs.
+- `ShippingDispatcher.dispatch` gains a `printerLocationId=None` default param — additive, no
+  churn to Shipping-dock / PLC callers.
 - Applies to live `MPP_MES_Dev` idempotently; the "add 10 printers" placeholder at METTs is a
   **data** task for MPP (add the real child printers via the config app, now that #14 supports
   multiple printers per location).
