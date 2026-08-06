@@ -2,15 +2,15 @@
   "custom": {
     "appUserId": null,
     "cell": {
-      "code": "Die Cast 1",
-      "locationId": 3,
-      "name": "Die Cast 1"
+      "code": "",
+      "locationId": null,
+      "name": ""
     },
     "closureCapabilities": [],
     "closureMethod": "",
     "plcDevices": [],
     "presence": {
-      "policy": "confirm"
+      "policy": "strict"
     },
     "printer": {
       "code": "",
