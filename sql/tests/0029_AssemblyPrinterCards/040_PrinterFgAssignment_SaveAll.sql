@@ -50,6 +50,25 @@ INSERT INTO #R EXEC Location.PrinterFgAssignment_SaveAll @StationTerminalLocatio
 DELETE FROM #R;
 DECLARE @Rows2 INT = (SELECT COUNT(*) FROM Location.PrinterFgAssignment WHERE PrinterLocationId IN (@P1,@P2));
 EXEC test.Assert_RowCount @TestName=N'[SaveAll] unassign one -> one row', @ExpectedCount=1, @ActualCount=@Rows2;
+
+-- Test 5 (Validation 1): PrinterLocationId that is NOT a child printer of the
+-- station (some other location entirely) -> Status 0 (rejected).
+DECLARE @NotAChildPrinter BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE Id NOT IN (@P1, @P2) AND DeprecatedAt IS NULL ORDER BY Id);
+SET @Json = N'[{"PrinterLocationId":' + CAST(@NotAChildPrinter AS NVARCHAR(20)) + N',"ItemId":' + CAST(@Fg1 AS NVARCHAR(20)) + N',"SortOrder":1}]';
+INSERT INTO #R EXEC Location.PrinterFgAssignment_SaveAll @StationTerminalLocationId=@T, @AppUserId=@U, @AssignmentsJson=@Json;
+SELECT @St = Status FROM #R; DELETE FROM #R;
+DECLARE @StStr5 NVARCHAR(1) = CAST(@St AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'[SaveAll] printer not a child of station -> Status 0', @Expected=N'0', @Actual=@StStr5;
+
+-- Test 6 (Validation 2): valid child printer, but ItemId that is NOT an active
+-- FinishedGood (a non-existent Id) -> Status 0 (rejected).
+DECLARE @BogusItemId BIGINT = -999;
+SET @Json = N'[{"PrinterLocationId":' + CAST(@P1 AS NVARCHAR(20)) + N',"ItemId":' + CAST(@BogusItemId AS NVARCHAR(20)) + N',"SortOrder":1}]';
+INSERT INTO #R EXEC Location.PrinterFgAssignment_SaveAll @StationTerminalLocationId=@T, @AppUserId=@U, @AssignmentsJson=@Json;
+SELECT @St = Status FROM #R; DELETE FROM #R;
+DECLARE @StStr6 NVARCHAR(1) = CAST(@St AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'[SaveAll] item not an active finished good -> Status 0', @Expected=N'0', @Actual=@StStr6;
+
 DROP TABLE #R;
 GO
 DELETE pfa FROM Location.PrinterFgAssignment pfa INNER JOIN Location.Location l ON l.Id = pfa.PrinterLocationId WHERE l.Code IN (N'TEST-SA-P1', N'TEST-SA-P2');
