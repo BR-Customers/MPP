@@ -1135,7 +1135,7 @@
                           "name": "ComputeButton"
                         },
                         "position": {
-                          "basis": "205px"
+                          "basis": "260px"
                         },
                         "props": {
                           "style": {

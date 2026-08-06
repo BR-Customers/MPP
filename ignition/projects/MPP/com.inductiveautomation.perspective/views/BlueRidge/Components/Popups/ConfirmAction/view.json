@@ -35,7 +35,10 @@
     }
   },
   "props": {
-    "defaultSize": { "height": 300, "width": 560 }
+    "defaultSize": {
+      "height": 300,
+      "width": 560
+    }
   },
   "root": {
     "children": [
@@ -103,7 +106,7 @@
               "name": "CancelButton"
             },
             "position": {
-              "basis": "110px"
+              "basis": "129px"
             },
             "props": {
               "style": {
@@ -138,7 +141,7 @@
               "name": "ConfirmButton"
             },
             "position": {
-              "basis": "121px"
+              "basis": "145px"
             },
             "propConfig": {
               "props.style.classes": {

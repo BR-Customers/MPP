@@ -2,9 +2,9 @@
   "custom": {
     "appUserId": null,
     "cell": {
-      "code": "",
-      "locationId": null,
-      "name": ""
+      "code": "Die Cast 1",
+      "locationId": 3,
+      "name": "Die Cast 1"
     },
     "closureCapabilities": [],
     "closureMethod": "",
@@ -16,7 +16,7 @@
       "operatorPresenceTimeoutSeconds": 180
     },
     "presence": {
-      "policy": "strict"
+      "policy": "confirm"
     },
     "printer": {
       "code": "",

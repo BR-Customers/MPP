@@ -196,7 +196,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -418,7 +419,8 @@
             },
             "props": {
               "style": {
-                "gap": "12px"
+                "gap": "12px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -469,7 +471,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -559,7 +562,7 @@
           "name": "FooterBar"
         },
         "position": {
-          "basis": "56px",
+          "basis": "70px",
           "shrink": 0
         },
         "props": {

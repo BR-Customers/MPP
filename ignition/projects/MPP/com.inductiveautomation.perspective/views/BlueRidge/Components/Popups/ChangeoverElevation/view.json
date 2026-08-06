@@ -303,7 +303,7 @@
               "name": "CancelButton"
             },
             "position": {
-              "basis": "87px",
+              "basis": "107px",
               "shrink": 0
             },
             "props": {
@@ -330,7 +330,7 @@
               "name": "ConfirmButton"
             },
             "position": {
-              "basis": "181px",
+              "basis": "241px",
               "shrink": 0
             },
             "props": {
