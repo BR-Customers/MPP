@@ -35,11 +35,21 @@ BEGIN
     DECLARE @NewValue NVARCHAR(MAX);
 
     DECLARE @Incoming TABLE (PrinterLocationId BIGINT, ItemId BIGINT NULL, SortOrder INT);
+    -- TRY_CAST all three: a malformed value must NOT throw before BEGIN TRY (that
+    -- would bypass the Status=0 contract). A non-numeric PrinterLocationId -> NULL,
+    -- which Validation 1 then rejects (never matches a child printer -> Status 0).
     INSERT INTO @Incoming (PrinterLocationId, ItemId, SortOrder)
-    SELECT JSON_VALUE(value, '$.PrinterLocationId'),
-           JSON_VALUE(value, '$.ItemId'),
+    SELECT TRY_CAST(JSON_VALUE(value, '$.PrinterLocationId') AS BIGINT),
+           TRY_CAST(JSON_VALUE(value, '$.ItemId') AS BIGINT),
            ISNULL(TRY_CAST(JSON_VALUE(value, '$.SortOrder') AS INT), 1)
     FROM OPENJSON(ISNULL(@AssignmentsJson, N'[]'));
+
+    -- A NULL PrinterLocationId (malformed / missing) can never be a child printer.
+    IF EXISTS (SELECT 1 FROM @Incoming WHERE PrinterLocationId IS NULL)
+    BEGIN
+        SET @Message = N'A malformed or missing PrinterLocationId was supplied.';
+        SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
+    END
 
     -- Validation 1: every PrinterLocationId is an active child Printer of the station.
     IF EXISTS (

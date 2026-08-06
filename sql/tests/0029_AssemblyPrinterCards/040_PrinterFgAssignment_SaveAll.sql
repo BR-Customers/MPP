@@ -69,6 +69,51 @@ SELECT @St = Status FROM #R; DELETE FROM #R;
 DECLARE @StStr6 NVARCHAR(1) = CAST(@St AS NVARCHAR(1));
 EXEC test.Assert_IsEqual @TestName=N'[SaveAll] item not an active finished good -> Status 0', @Expected=N'0', @Actual=@StStr6;
 
+-- Test 7 (audit): a successful save writes RESOLVED-NAME JSON to Audit.ConfigLog
+-- (regression guard for the resolved-name audit fix -- bare-ID JSON must not return).
+DECLARE @Fg1Part NVARCHAR(50) = (SELECT PartNumber FROM Parts.Item WHERE Id = @Fg1);
+SET @Json = N'[{"PrinterLocationId":' + CAST(@P1 AS NVARCHAR(20)) + N',"ItemId":' + CAST(@Fg1 AS NVARCHAR(20)) + N',"SortOrder":1}]';
+INSERT INTO #R EXEC Location.PrinterFgAssignment_SaveAll @StationTerminalLocationId=@T, @AppUserId=@U, @AssignmentsJson=@Json; DELETE FROM #R;
+DECLARE @NewVal NVARCHAR(MAX);
+SELECT TOP 1 @NewVal = cl.NewValue FROM Audit.ConfigLog cl
+    JOIN Audit.LogEntityType et ON et.Id = cl.LogEntityTypeId
+    WHERE et.Code = N'PrinterFgAssignment' AND cl.EntityId = @T
+    ORDER BY cl.Id DESC;
+EXEC test.Assert_Contains @TestName=N'[SaveAll] audit NewValue carries resolved PartNumber (not bare IDs)', @HaystackStr=@NewVal, @NeedleStr=@Fg1Part;
+
+-- Test 8 (ordering): ListForStation returns rows in SortOrder; a reorder changes
+-- ONLY order, not the FG<->printer binding.
+SET @Json = N'[{"PrinterLocationId":' + CAST(@P1 AS NVARCHAR(20)) + N',"ItemId":' + CAST(@Fg1 AS NVARCHAR(20)) + N',"SortOrder":1},{"PrinterLocationId":' + CAST(@P2 AS NVARCHAR(20)) + N',"ItemId":' + CAST(@Fg2 AS NVARCHAR(20)) + N',"SortOrder":2}]';
+INSERT INTO #R EXEC Location.PrinterFgAssignment_SaveAll @StationTerminalLocationId=@T, @AppUserId=@U, @AssignmentsJson=@Json; DELETE FROM #R;
+CREATE TABLE #L (PrinterLocationId BIGINT, PrinterCode NVARCHAR(50), PrinterName NVARCHAR(200), Endpoint NVARCHAR(200), ConnectionKind NVARCHAR(50), AssignedItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), SortOrder INT);
+INSERT INTO #L EXEC Location.PrinterFgAssignment_ListForStation @StationTerminalLocationId=@T;
+DECLARE @First BIGINT;
+SELECT TOP 1 @First = PrinterLocationId FROM #L ORDER BY SortOrder, PrinterLocationId;
+DELETE FROM #L;
+DECLARE @P1Str  NVARCHAR(20) = CAST(@P1  AS NVARCHAR(20));
+DECLARE @P2Str  NVARCHAR(20) = CAST(@P2  AS NVARCHAR(20));
+DECLARE @Fg1Str NVARCHAR(20) = CAST(@Fg1 AS NVARCHAR(20));
+DECLARE @FirstStr NVARCHAR(20) = CAST(@First AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName=N'[SaveAll] ListForStation orders by SortOrder (P1 first)', @Expected=@P1Str, @Actual=@FirstStr;
+SET @Json = N'[{"PrinterLocationId":' + @P1Str + N',"ItemId":' + @Fg1Str + N',"SortOrder":2},{"PrinterLocationId":' + @P2Str + N',"ItemId":' + CAST(@Fg2 AS NVARCHAR(20)) + N',"SortOrder":1}]';
+INSERT INTO #R EXEC Location.PrinterFgAssignment_SaveAll @StationTerminalLocationId=@T, @AppUserId=@U, @AssignmentsJson=@Json; DELETE FROM #R;
+INSERT INTO #L EXEC Location.PrinterFgAssignment_ListForStation @StationTerminalLocationId=@T;
+DECLARE @First2 BIGINT;
+SELECT TOP 1 @First2 = PrinterLocationId FROM #L ORDER BY SortOrder, PrinterLocationId;
+DECLARE @P1Fg BIGINT = (SELECT AssignedItemId FROM #L WHERE PrinterLocationId=@P1);
+DROP TABLE #L;
+DECLARE @First2Str NVARCHAR(20) = CAST(@First2 AS NVARCHAR(20));
+DECLARE @P1FgStr   NVARCHAR(20) = CAST(@P1Fg   AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName=N'[SaveAll] reorder puts P2 first', @Expected=@P2Str, @Actual=@First2Str;
+EXEC test.Assert_IsEqual @TestName=N'[SaveAll] reorder keeps P1->FG1 binding', @Expected=@Fg1Str, @Actual=@P1FgStr;
+
+-- Test 9 (malformed): non-numeric PrinterLocationId -> TRY_CAST NULL -> Status 0 (no throw).
+SET @Json = N'[{"PrinterLocationId":"not-a-number","ItemId":' + CAST(@Fg1 AS NVARCHAR(20)) + N',"SortOrder":1}]';
+INSERT INTO #R EXEC Location.PrinterFgAssignment_SaveAll @StationTerminalLocationId=@T, @AppUserId=@U, @AssignmentsJson=@Json;
+SELECT @St = Status FROM #R; DELETE FROM #R;
+DECLARE @StStr9 NVARCHAR(1) = CAST(@St AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'[SaveAll] malformed PrinterLocationId -> Status 0 (no throw)', @Expected=N'0', @Actual=@StStr9;
+
 DROP TABLE #R;
 GO
 DELETE pfa FROM Location.PrinterFgAssignment pfa INNER JOIN Location.Location l ON l.Id = pfa.PrinterLocationId WHERE l.Code IN (N'TEST-SA-P1', N'TEST-SA-P2');
