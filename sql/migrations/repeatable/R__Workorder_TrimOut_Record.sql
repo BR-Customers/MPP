@@ -375,7 +375,7 @@ BEGIN
             + N' (Shots=' + ISNULL(CAST(@ShotCount AS NVARCHAR(20)), N'-')
             + N', Scrap=' + CAST(@ScrapTotal AS NVARCHAR(20))
             + N' (' + CAST((SELECT COUNT(*) FROM @Scrap) AS NVARCHAR(10)) + N' reason'
-            + CASE WHEN (SELECT COUNT(*) FROM @Scrap) = 1 THEN N'' ELSE N's' END + N')';
+            + CASE WHEN (SELECT COUNT(*) FROM @Scrap) = 1 THEN N'' ELSE N's' END + N'))';
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         DECLARE @NewValue NVARCHAR(MAX) = (

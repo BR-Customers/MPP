@@ -200,10 +200,10 @@ INSERT INTO #C7 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv7, @Cur
 SELECT @L7 = NewId FROM #C7; DROP TABLE #C7;
 DECLARE @RejBefore7 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L7);
 DECLARE @Json7 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D1 AS NVARCHAR(20)) + N',"quantity":3},{"defectCodeId":' + CAST(@D2 AS NVARCHAR(20)) + N',"quantity":2}]';
-DECLARE @S7 BIT;
+DECLARE @S7 BIT, @Pe7 BIGINT;
 CREATE TABLE #T7 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #T7 EXEC Workorder.TrimOut_Record @ParentLotId = @L7, @OperationTemplateId = @Ot7, @ShotCount = 15, @ScrapLinesJson = @Json7, @SourceLocationId = @Area7, @AppUserId = 1;
-SELECT @S7 = Status FROM #T7; DROP TABLE #T7;
+SELECT @S7 = Status, @Pe7 = NewId FROM #T7; DROP TABLE #T7;
 DECLARE @S7Str NVARCHAR(10) = CAST(@S7 AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] multi-line scrap succeeds', @Expected = N'1', @Actual = @S7Str;
 DECLARE @RejNew7 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L7) - @RejBefore7;
@@ -215,6 +215,14 @@ EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] PieceCount decremented by 
 DECLARE @PENull7 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L7 AND ProductionEventId IS NOT NULL);
 DECLARE @PENull7Str NVARCHAR(10) = CAST(@PENull7 AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] reject rows have NULL ProductionEventId (by design)', @Expected = N'0', @Actual = @PENull7Str;
+-- regression: audit description parens must be balanced (both "(Shots=..." and "(N reasons" groups closed)
+DECLARE @Desc7 NVARCHAR(1000) = (
+    SELECT TOP 1 ol.Description
+    FROM Audit.OperationLog ol
+    INNER JOIN Audit.LogEventType et ON et.Id = ol.LogEventTypeId
+    WHERE et.Code = N'TrimOutRecorded' AND ol.EntityId = @Pe7
+    ORDER BY ol.Id DESC);
+EXEC test.Assert_Contains @TestName = N'[TrimOutScrap] audit description parens balanced', @HaystackStr = @Desc7, @NeedleStr = N'(Shots=15, Scrap=5 (2 reasons))';
 GO
 
 -- =============================================
