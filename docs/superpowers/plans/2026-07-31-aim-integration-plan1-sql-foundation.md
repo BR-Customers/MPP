@@ -4,7 +4,7 @@
 
 **Goal:** Make the database able to hand out part-agnostic AIM shipper IDs and to record, for every completed container, exactly what must be reported to AIM and whether it has been.
 
-**Architecture:** One versioned migration (`0049`) genericizes `Lots.AimShipperIdPool`, adds post-back payload + status columns to it, extends `Lots.AimPoolConfig` with connection and escalation settings, and adds `Parts.Item.AimCustomerPartNumber`. Existing pool procs lose their `@PartNumber` parameter; `Container_Complete` writes the post-back payload inside its existing claim transaction; four new procs serve the post/retry loop and two new accessors serve the Item Master field.
+**Architecture:** One versioned migration (`0052`) genericizes `Lots.AimShipperIdPool`, adds post-back payload + status columns to it, extends `Lots.AimPoolConfig` with connection and escalation settings, and adds `Parts.Item.AimCustomerPartNumber`. Existing pool procs lose their `@PartNumber` parameter; `Container_Complete` writes the post-back payload inside its existing claim transaction; four new procs serve the post/retry loop and two new accessors serve the Item Master field.
 
 **Tech Stack:** SQL Server 2022, `sqlcmd`, the repo's own SQL test harness (`sql/tests/Run-Tests.ps1`).
 
@@ -106,10 +106,10 @@ Expected: 7 `ERROR running` lines, 0 `FAIL:` lines. If you see a different set, 
 
 ---
 
-### Task 1: Migration 0049 — schema
+### Task 1: Migration 0052 — schema
 
 **Files:**
-- Create: `sql/migrations/versioned/0049_aim_pool_generic_and_postback.sql`
+- Create: `sql/migrations/versioned/0052_aim_pool_generic_and_postback.sql`
 - Create: `sql/tests/0049_AimIntegration/010_schema.sql`
 
 **Interfaces:**
@@ -122,7 +122,7 @@ Create `sql/tests/0049_AimIntegration/010_schema.sql`:
 ```sql
 -- =============================================
 -- File: 0049_AimIntegration/010_schema.sql
--- Desc: Migration 0049 - pool genericized, post-back columns, config columns,
+-- Desc: Migration 0052 - pool genericized, post-back columns, config columns,
 --       Parts.Item.AimCustomerPartNumber.
 -- =============================================
 EXEC test.BeginTestFile @FileName = N'0049_AimIntegration/010_schema.sql';
@@ -192,11 +192,11 @@ Expected: FAIL on every assertion (the columns do not exist yet).
 
 - [ ] **Step 3: Write the migration**
 
-Create `sql/migrations/versioned/0049_aim_pool_generic_and_postback.sql`:
+Create `sql/migrations/versioned/0052_aim_pool_generic_and_postback.sql`:
 
 ```sql
 -- =============================================
--- Migration:   0049_aim_pool_generic_and_postback.sql
+-- Migration:   0052_aim_pool_generic_and_postback.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-31
 -- Description: Makes the AIM shipper-ID pool part-agnostic and gives it a post-back
@@ -276,9 +276,9 @@ IF COL_LENGTH(N'Parts.Item', N'AimCustomerPartNumber') IS NULL
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion
-               WHERE MigrationId = N'0049_aim_pool_generic_and_postback')
+               WHERE MigrationId = N'0052_aim_pool_generic_and_postback')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0049_aim_pool_generic_and_postback',
+    VALUES (N'0052_aim_pool_generic_and_postback',
         N'AIM pool genericized (PartNumber dropped); post-back payload/status columns; AimPoolConfig connection + escalation settings; Parts.Item.AimCustomerPartNumber.');
 GO
 ```
@@ -295,8 +295,8 @@ Expected: PASS, 7 assertions.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/versioned/0049_aim_pool_generic_and_postback.sql sql/tests/0049_AimIntegration/010_schema.sql
-git commit -m "feat(sql): migration 0049 - generic AIM pool, post-back ledger, Item.AimCustomerPartNumber"
+git add sql/migrations/versioned/0052_aim_pool_generic_and_postback.sql sql/tests/0049_AimIntegration/010_schema.sql
+git commit -m "feat(sql): migration 0052 - generic AIM pool, post-back ledger, Item.AimCustomerPartNumber"
 ```
 
 ---
@@ -1175,7 +1175,7 @@ GO
 sqlcmd -S localhost -d MPP_MES_Test -Q "SELECT Id, Code FROM Audit.LogEntityType WHERE Code = 'AimShipperIdPool'"
 ```
 
-If it returns no row, add a seed block to migration `0049` (before the `SchemaVersion` insert) using the **next free Id** — verify the maximum first, exactly as migration `0044` documents:
+If it returns no row, add a seed block to migration `0052` (before the `SchemaVersion` insert) using the **next free Id** — verify the maximum first, exactly as migration `0044` documents:
 
 ```sql
 DECLARE @NextEntityId INT = (SELECT MAX(Id) + 1 FROM Audit.LogEntityType);
@@ -1200,7 +1200,7 @@ Expected: PASS, 25 assertions.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_AimShipperIdPool_MarkPosted.sql sql/tests/0049_AimIntegration/040_MarkPosted.sql sql/migrations/versioned/0049_aim_pool_generic_and_postback.sql
+git add sql/migrations/repeatable/R__Lots_AimShipperIdPool_MarkPosted.sql sql/tests/0049_AimIntegration/040_MarkPosted.sql sql/migrations/versioned/0052_aim_pool_generic_and_postback.sql
 git commit -m "feat(sql): AimShipperIdPool_MarkPosted - audited human-confirmed resolution"
 ```
 
@@ -1211,7 +1211,7 @@ git commit -m "feat(sql): AimShipperIdPool_MarkPosted - audited human-confirmed 
 > **⚠️ SUPERSEDED 2026-08-04.** Live testing against MPP's AIM server proved the customer part is
 > derivable from `Item.PartNumber` (strip dashes, preserve embedded spaces) — the "not derivable,
 > must be stored" premise below was wrong for MPP's own part numbers. Migration
-> `0051_drop_item_aim_customer_part.sql` drops `Parts.Item.AimCustomerPartNumber` and the two
+> `0054_drop_item_aim_customer_part.sql` drops `Parts.Item.AimCustomerPartNumber` and the two
 > procs this task built, and replaces them with a single pure function,
 > `Parts.ufn_AimCustomerPartNumber(@PartNumber)`. `sql/tests/0049_AimIntegration/050_Item_accessors.sql`
 > (created below) was deleted; its coverage was replaced by ufn assertions in
@@ -1640,7 +1640,7 @@ Record the number in the commit message so the next session has a comparable fig
 ```bash
 git commit --allow-empty -m "test(sql): AIM Plan 1 complete - full suite green against baseline
 
-Migration 0049 + 6 modified procs + 6 new procs + 5 test files.
+Migration 0052 + 6 modified procs + 6 new procs + 5 test files.
 Pre-existing failures unchanged (7 ERROR running, see PROJECT_STATUS 2026-07-28).
 Plan 2 (Ignition layer) consumes the proc signatures produced here."
 ```

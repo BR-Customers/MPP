@@ -6,7 +6,7 @@
 --              BlueRidge.Lots.AimPost.postOne. Re-read on EVERY attempt (not
 --              cached by the caller). Read proc: empty rowset = not found, no
 --              invented 404. No OUTPUT params.
---              v1.2 (2026-08-04, Migration 0051): CustomerPartNumber is
+--              v1.2 (2026-08-04, Migration 0054): CustomerPartNumber is
 --              COALESCE(p.CustomerPartNumber, Parts.ufn_AimCustomerPartNumber(
 --              i.PartNumber)) via a LEFT JOIN to Lots.Container and Parts.Item.
 --              The snapshot Container_Complete writes at completion is frozen

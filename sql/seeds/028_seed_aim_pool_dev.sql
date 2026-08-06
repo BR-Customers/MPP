@@ -3,7 +3,7 @@
 -- The real pool is filled by the Honda AIM HTTP GetNextNumber topup loop
 -- (FDS-07-010), which is NOT available in dev. This seeds a batch of un-consumed
 -- dummy shipper IDs so Lots.Container_Complete can claim during dev/smoke.
--- Migration 0049: the pool is part-agnostic (AIM's nextserial.csv accepts no part
+-- Migration 0052: the pool is part-agnostic (AIM's nextserial.csv accepts no part
 -- parameter), so this is a flat global batch, not one set per part.
 --
 -- HONEST NOTE: these are LOCAL PLACEHOLDERS ONLY. AIM's postserial.csv requires a
@@ -14,7 +14,7 @@
 -- DO NOT simply clear this pool and expect topupTick to fetch real IDs. Real AIM
 -- traffic is gated TWICE, deliberately, because a fetched or posted AIM serial can
 -- never be handed back:
---   1. Lots.AimPoolConfig.AimPostingEnabled (Migration 0050) -- read by
+--   1. Lots.AimPoolConfig.AimPostingEnabled (Migration 0053) -- read by
 --      BlueRidge.Lots.AimHttp._config() before EVERY nextSerial()/postSerial() call.
 --      Defaults to 0 (off); this seed does NOT set it.
 --   2. The AimPoolTopupTimer and AimPostTimer gateway timers -- both ship with
@@ -50,7 +50,7 @@ WHERE NOT EXISTS (
         SELECT 1 FROM Lots.AimShipperIdPool p
         WHERE p.AimShipperId = RIGHT(N'000000000' + CAST(999000000 + n.rn AS NVARCHAR(9)), 9));
 
--- Dev AIM connection settings (Migration 0049). Company 01 is MPP's TEST company.
+-- Dev AIM connection settings (Migration 0052). Company 01 is MPP's TEST company.
 -- Production runs on company 99 from the legacy MES box - MES traffic must never
 -- target 99.
 UPDATE Lots.AimPoolConfig

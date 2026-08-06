@@ -6,7 +6,7 @@
 --              AD-elevated). Upserts the Id=1 row. Attribution via UpdatedAt /
 --              UpdatedByUserId. No OUTPUT params; single terminal SELECT @Status,@Message.
 --              (Full ConfigLog before/after diff is a noted refinement.)
---              v1.1 (Migration 0049): adds AIM connection settings (AimBaseUrl,
+--              v1.1 (Migration 0052): adds AIM connection settings (AimBaseUrl,
 --              AimCompanyCode, AimPathToken) and post-backlog escalation ages
 --              (PostWarningAgeMinutes, PostCriticalAgeMinutes). New params carry
 --              defaults so existing callers passing only the original four still
@@ -20,7 +20,7 @@
 --              NULL/NULL/NULL) that unconditionally overwrote the columns, every
 --              threshold-only save was silently NULLing the AIM connection settings
 --              and resetting the escalation ages. See sql/tests/0029.../040_AimPoolConfig.sql.
---              v1.3 (Migration 0050): adds @AimPostingEnabled, same preserve-on-omit
+--              v1.3 (Migration 0053): adds @AimPostingEnabled, same preserve-on-omit
 --              pattern (NULL = leave unchanged) as the v1.2 columns. This is the
 --              transport-layer gate AimHttp._config() reads before any AIM network
 --              call -- a four-arg threshold-only save must never silently flip it.

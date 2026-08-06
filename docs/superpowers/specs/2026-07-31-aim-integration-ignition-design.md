@@ -8,7 +8,7 @@
 > DERIVABLE from `Item.PartNumber` (strip dashes, preserve spaces) — it is not an independent
 > fact that must be sourced from AIM and hand-maintained per item, as workstream D below
 > assumed. `Parts.Item.AimCustomerPartNumber` and its two accessor procs were removed
-> (migration `0051`); `Parts.ufn_AimCustomerPartNumber(@PartNumber)` replaces them everywhere
+> (migration `0054`); `Parts.ufn_AimCustomerPartNumber(@PartNumber)` replaces them everywhere
 > the column was read. See `notes/2026-07-28_aim-interface-contract.md` for the evidence and
 > `docs/superpowers/plans/2026-07-31-aim-integration-plan1-sql-foundation.md` Task 6 /
 > `docs/superpowers/plans/2026-08-03-aim-integration-plan2-ignition-layer.md` Task 7 for the
@@ -75,7 +75,7 @@ POST /mes/floor/{Company}/{Token}/postserial.csv?\r\n{serial}\t{part}\t{qty}\t{l
 
 ## 4. Schema
 
-### 4.1 Migration `0049_aim_pool_generic_and_postback.sql`
+### 4.1 Migration `0052_aim_pool_generic_and_postback.sql`
 
 **Genericize.** Drop `IX_AimShipperIdPool_AvailableByPart`, drop column
 `AimShipperIdPool.PartNumber`, create:
@@ -122,7 +122,7 @@ The path token is configuration rather than a constant because we do not know wh
 environment. The existing depth thresholds mean something different (pool supply, not post backlog),
 hence separate age columns.
 
-**Customer part number on `Parts.Item` — REMOVED 2026-08-04 (migration `0051`).** This
+**Customer part number on `Parts.Item` — REMOVED 2026-08-04 (migration `0054`).** This
 subsection originally added a stored `AimCustomerPartNumber NVARCHAR(50) NULL` column, reasoning
 (below, struck through by events) that the value could not be derived from `Item.PartNumber`.
 Live testing against MPP's AIM server proved otherwise for MPP's own part numbers — see the
@@ -165,11 +165,11 @@ stored per item and sourced from AIM.
 | `Lots.AimShipperIdPool_RecordPostResult @Id, @Success, @Error` | stamp `PostedAt` or increment attempts + record error |
 | `Lots.AimShipperIdPool_ListUnposted @Top` | sweep + supervisor list read (ET timestamps) |
 | `Lots.AimShipperIdPool_MarkPosted @Id, @AppUserId, @Note` | human-confirmed resolution, audited |
-| ~~`Parts.Item_GetAimCustomerPartNumber @ItemId`~~ | **REMOVED 2026-08-04** (migration `0051`) — read the customer part for one item |
-| ~~`Parts.Item_SetAimCustomerPartNumber @ItemId, @Value, @AppUserId`~~ | **REMOVED 2026-08-04** (migration `0051`) — set it, audited |
+| ~~`Parts.Item_GetAimCustomerPartNumber @ItemId`~~ | **REMOVED 2026-08-04** (migration `0054`) — read the customer part for one item |
+| ~~`Parts.Item_SetAimCustomerPartNumber @ItemId, @Value, @AppUserId`~~ | **REMOVED 2026-08-04** (migration `0054`) — set it, audited |
 
 **2026-08-04 addendum:** both accessors above are gone. `Parts.ufn_AimCustomerPartNumber
-(@PartNumber)` (new, migration `0051`) replaces them — a pure scalar function, not a
+(@PartNumber)` (new, migration `0054`) replaces them — a pure scalar function, not a
 stored/audited value, so there is nothing left to "get" or "set" per item. `Item_Get` /
 `Item_Update` remain deliberately untouched, as below.
 
@@ -262,7 +262,7 @@ Operator feedback branches on the outcome:
 > label printed, but Honda's system was not updated. A supervisor must set this in Item Master.~~
 >
 > **REMOVED 2026-08-04.** The `AimNoCustomerPart` popup and this modal copy are deleted along with
-> the outcome that triggered them (migration `0051`). Kept here for historical record only.
+> the outcome that triggered them (migration `0054`). Kept here for historical record only.
 
 ~~The config gap is an actionable configuration error, not a transient outage, so it gets a modal the
 operator must dismiss rather than a passive toast. The row is still recorded and still retried in the
@@ -334,7 +334,7 @@ counter at ~13.84M. MES traffic must never target `99`.
 
 | Layer | Items |
 |---|---|
-| SQL migration | `0049_aim_pool_generic_and_postback.sql` (pool + config + `Parts.Item.AimCustomerPartNumber`); **`0051_drop_item_aim_customer_part.sql` (2026-08-04) drops that column + its two accessors, adds `Parts.ufn_AimCustomerPartNumber`** |
+| SQL migration | `0052_aim_pool_generic_and_postback.sql` (pool + config + `Parts.Item.AimCustomerPartNumber`); **`0054_drop_item_aim_customer_part.sql` (2026-08-04) drops that column + its two accessors, adds `Parts.ufn_AimCustomerPartNumber`** |
 | SQL procs | 6 modified, 6 new (§4.2); **2026-08-04: `Item_GetAimCustomerPartNumber` / `Item_SetAimCustomerPartNumber` dropped, `Parts.ufn_AimCustomerPartNumber` added, `Container_Complete` / `AimShipperIdPool_GetForPost` / `AimShipperIdPool_ListUnposted` re-pointed at it** |
 | SQL seed | `028_seed_aim_pool_dev.sql` — drop part column |
 | SQL tests | 2 suites rewritten, 2 new suites (post-back; item accessors — **the item-accessor suite file is deleted 2026-08-04, its coverage replaced by ufn assertions in `010_schema.sql`**) |

@@ -6,7 +6,7 @@
 --              Validates the container is Open + full (accumulated tray parts >= target
 --              TraysPerContainer*PartsPerTray), enforces the RequiresCompletionConfirm
 --              terminal gate (OI-16), then INLINES the AIM-ID claim (FIFO from the
---              part-agnostic pool -- Migration 0049, AIM's nextserial.csv takes no part
+--              part-agnostic pool -- Migration 0052, AIM's nextserial.csv takes no part
 --              parameter) + inserts the ShippingLabel + flips status to
 --              Complete -- one transaction. On completion it also closes the container's
 --              Good finished-good LOTs (tray = LOT) via Lots.Lot_CloseInline (FAT #21).
@@ -152,7 +152,7 @@ BEGIN
                                           WHERE t.ContainerId = @ContainerId
                                           ORDER BY t.TrayPosition);
         -- 2026-08-04: AIM customer part is derived from Item.PartNumber (dash-strip),
-        -- not a stored per-item column (Migration 0051; Parts.ufn_AimCustomerPartNumber
+        -- not a stored per-item column (Migration 0054; Parts.ufn_AimCustomerPartNumber
         -- header has the evidence). PartNumber is NOT NULL, so this can never be NULL
         -- for a real item.
         DECLARE @PostPart NVARCHAR(50) = (SELECT Parts.ufn_AimCustomerPartNumber(i.PartNumber)

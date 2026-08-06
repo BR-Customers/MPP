@@ -3,7 +3,7 @@
 -- Author:      Blue Ridge Automation
 -- Version:     1.0 (2026-08-04)
 -- Description: Derives the AIM Customer Part from Parts.Item.PartNumber by
---              stripping dashes. Migration 0051 removed the stored
+--              stripping dashes. Migration 0054 removed the stored
 --              Parts.Item.AimCustomerPartNumber column -- live testing against
 --              MPP's AIM server this week proved the value is derivable, not an
 --              independent fact that must be sourced from AIM:

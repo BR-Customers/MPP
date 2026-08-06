@@ -1,5 +1,5 @@
 -- =============================================
--- Migration:   0049_aim_pool_generic_and_postback.sql
+-- Migration:   0052_aim_pool_generic_and_postback.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-31
 -- Description: Makes the AIM shipper-ID pool part-agnostic and gives it a post-back
@@ -79,8 +79,8 @@ IF COL_LENGTH(N'Parts.Item', N'AimCustomerPartNumber') IS NULL
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion
-               WHERE MigrationId = N'0049_aim_pool_generic_and_postback')
+               WHERE MigrationId = N'0052_aim_pool_generic_and_postback')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0049_aim_pool_generic_and_postback',
+    VALUES (N'0052_aim_pool_generic_and_postback',
         N'AIM pool genericized (PartNumber dropped); post-back payload/status columns; AimPoolConfig connection + escalation settings; Parts.Item.AimCustomerPartNumber.');
 GO

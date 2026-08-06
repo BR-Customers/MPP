@@ -8,7 +8,7 @@
 
 **Tech Stack:** Ignition 8.3 Perspective (file-based project), Jython 2.7, SQL Server 2022.
 
-**Depends on:** Plan 1 (`docs/superpowers/plans/2026-07-31-aim-integration-plan1-sql-foundation.md`) — **complete**, migration `0049`. Its closing signature table is the contract this plan consumes.
+**Depends on:** Plan 1 (`docs/superpowers/plans/2026-07-31-aim-integration-plan1-sql-foundation.md`) — **complete**, migration `0052`. Its closing signature table is the contract this plan consumes.
 **Spec:** `docs/superpowers/specs/2026-07-31-aim-integration-ignition-design.md`
 **Verified AIM contract:** `notes/2026-07-28_aim-interface-contract.md` — read §1 and §5.6 before Task 1.
 
@@ -891,7 +891,7 @@ Complete a container in Dev on an item **with** an AIM customer part (expect sil
 > **⚠️ SUPERSEDED 2026-08-04.** Live testing against MPP's AIM server proved the customer part is
 > derivable from `Item.PartNumber` (strip dashes, preserve embedded spaces) — the "NOT derivable
 > from PartNumber; sourced from AIM's cross-reference" premise below was wrong for MPP's own part
-> numbers. Migration `0051_drop_item_aim_customer_part.sql` drops the column and procs this task's
+> numbers. Migration `0054_drop_item_aim_customer_part.sql` drops the column and procs this task's
 > accessors depended on; the `getAimCustomerPartNumber` / `setAimCustomerPartNumber` entity methods
 > and the Identity field this task adds are both **removed**, replaced by nothing — there is no
 > longer a per-item value to view or edit. See `notes/2026-07-28_aim-interface-contract.md` for the
@@ -1042,4 +1042,4 @@ None of these can be done by an agent. Collect them into one Designer/Gateway se
 - **OI-33 empty-pool policy** — hard-fail retained; still a business decision.
 - **Customer-part data** — the column and editor exist; MPP must supply the mapping.
 - **Production company code** — `01` is test; the production code and its counter position must be confirmed before cutover.
-- **`MPP_MES_DATA_MODEL.md`** — not yet updated for migration `0049`'s columns.
+- **`MPP_MES_DATA_MODEL.md`** — not yet updated for migration `0052`'s columns.

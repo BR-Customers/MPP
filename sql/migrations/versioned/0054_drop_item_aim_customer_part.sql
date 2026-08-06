@@ -1,12 +1,12 @@
 -- =============================================
--- Migration:   0051_drop_item_aim_customer_part.sql
+-- Migration:   0054_drop_item_aim_customer_part.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-08-04
 -- Description: Removes Parts.Item.AimCustomerPartNumber and its two accessor
 --              procs. Live testing against MPP's AIM server this week proved the
 --              AIM Customer Part is DERIVABLE from Parts.Item.PartNumber -- it is
 --              not an independent fact that must be sourced from AIM and
---              maintained by a human, as migration 0049 assumed:
+--              maintained by a human, as migration 0052 assumed:
 --
 --                Value sent to AIM         Result
 --                11200-6FB-A00              Blanket not found
@@ -53,7 +53,7 @@ IF OBJECT_ID(N'Parts.Item_SetAimCustomerPartNumber') IS NOT NULL
 GO
 
 -- Drop any default constraint on the column before dropping the column itself
--- (migration 0049 added it with no DEFAULT, so this is normally a no-op, but a
+-- (migration 0052 added it with no DEFAULT, so this is normally a no-op, but a
 -- column cannot be dropped while a default constraint still references it).
 DECLARE @df SYSNAME = (
     SELECT dc.name FROM sys.default_constraints dc
@@ -66,11 +66,11 @@ IF COL_LENGTH(N'Parts.Item', N'AimCustomerPartNumber') IS NOT NULL
     ALTER TABLE Parts.Item DROP COLUMN AimCustomerPartNumber;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0051_drop_item_aim_customer_part')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0054_drop_item_aim_customer_part')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0051_drop_item_aim_customer_part',
+    VALUES (N'0054_drop_item_aim_customer_part',
         N'Drop Parts.Item.AimCustomerPartNumber + its Get/Set accessor procs -- the AIM customer part is now derived from Item.PartNumber via Parts.ufn_AimCustomerPartNumber (dash-strip), proven against live AIM testing 2026-08-04.');
 GO
 
-PRINT 'Migration 0051 (drop_item_aim_customer_part) applied.';
+PRINT 'Migration 0054 (drop_item_aim_customer_part) applied.';
 GO

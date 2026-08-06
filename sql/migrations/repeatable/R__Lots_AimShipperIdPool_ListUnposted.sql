@@ -8,7 +8,7 @@
 --              NOT a requirement - AIM accepts serials in any order (verified
 --              2026-07-31). Timestamps returned in ET for display. Read proc:
 --              empty rowset when nothing is owed.
---              v1.2 (2026-08-04, Migration 0051): CustomerPartNumber is
+--              v1.2 (2026-08-04, Migration 0054): CustomerPartNumber is
 --              COALESCE(p.CustomerPartNumber, Parts.ufn_AimCustomerPartNumber(
 --              i.PartNumber)) via the same LEFT JOIN self-heal as _GetForPost --
 --              the supervisor /aim-pool list always shows a derived customer part

@@ -1,5 +1,5 @@
 -- =============================================
--- Migration:   0050_aim_posting_enabled.sql
+-- Migration:   0053_aim_posting_enabled.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-08-03
 -- Description: Adds the actual off-switch for AIM traffic. The plan document claimed
@@ -36,8 +36,8 @@ IF COL_LENGTH(N'Lots.AimPoolConfig', N'AimPostingEnabled') IS NULL
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion
-               WHERE MigrationId = N'0050_aim_posting_enabled')
+               WHERE MigrationId = N'0053_aim_posting_enabled')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0050_aim_posting_enabled',
+    VALUES (N'0053_aim_posting_enabled',
         N'Lots.AimPoolConfig.AimPostingEnabled (default 0) -- the transport-layer gate that makes AIM posting inert until deliberately enabled per environment.');
 GO

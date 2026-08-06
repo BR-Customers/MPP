@@ -3,7 +3,7 @@
 -- Author:      Blue Ridge Automation
 -- Version:     1.0
 -- Description: Atomically claims the oldest un-consumed AIM shipper ID (FIFO by
---              FetchedAt; Arc 2 Phase 6 / UJ-04). Migration 0049: the pool is
+--              FetchedAt; Arc 2 Phase 6 / UJ-04). Migration 0052: the pool is
 --              part-agnostic (AIM's nextserial.csv accepts no part parameter), so the
 --              claim draws from the whole pool, not a per-part slice. OI-33 default:
 --              HARD-FAIL on an empty pool (Status 0) -- Container_Complete rolls back

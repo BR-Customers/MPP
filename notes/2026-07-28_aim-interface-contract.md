@@ -139,10 +139,10 @@ form or the AIM form before implementing — and note the legacy export is itsel
 #### ✅ IMPLEMENTED 2026-08-04 — dash-stripping supersedes "not derivable, must be stored" for OUR part numbers
 
 The design that followed this note (`docs/superpowers/specs/2026-07-31-aim-integration-ignition-design.md`
-§4.1, migration `0049`) concluded the AIM customer part **"is not derivable from `Item.PartNumber`"**
+§4.1, migration `0052`) concluded the AIM customer part **"is not derivable from `Item.PartNumber`"**
 and stored it in a new `Parts.Item.AimCustomerPartNumber` column that a human had to fill in per
 item. **That conclusion is now superseded for MPP's own part numbers.** This week's live testing
-against MPP's AIM server (table below, first captured at the top of migration `0051`'s header)
+against MPP's AIM server (table below, first captured at the top of migration `0054`'s header)
 confirmed the transform is exactly "strip dashes, preserve embedded spaces" applied to
 `Parts.Item.PartNumber`:
 
@@ -158,7 +158,7 @@ that worked. This is precisely the legacy Base2 `partName.Replace("-", "")` step
 lineage" discussion above, applied at the correct point (the customer part, not the item number).
 
 **Consequence:** `Parts.Item.AimCustomerPartNumber` and its two accessor procs are removed
-(migration `0051_drop_item_aim_customer_part.sql`); `Parts.ufn_AimCustomerPartNumber(@PartNumber)`
+(migration `0054_drop_item_aim_customer_part.sql`); `Parts.ufn_AimCustomerPartNumber(@PartNumber)`
 derives the value on every read instead. There is no longer a per-item value for MPP to maintain,
 no config-gap state, and nothing for the Item Master AIM field to edit — that field is deleted.
 
