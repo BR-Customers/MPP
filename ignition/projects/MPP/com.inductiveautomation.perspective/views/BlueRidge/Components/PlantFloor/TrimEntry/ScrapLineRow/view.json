@@ -55,8 +55,8 @@
           "props.text": { "binding": { "type": "property", "config": { "path": "view.params.quantity" } } }
         },
         "events": {
-          "component": {
-            "onActionPerformed": {
+          "dom": {
+            "onBlur": {
               "type": "script",
               "scope": "G",
               "config": {
