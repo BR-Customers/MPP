@@ -142,7 +142,7 @@
               }
             },
             "position": {
-              "basis": "94px",
+              "basis": "116px",
               "shrink": 0
             },
             "props": {
@@ -172,7 +172,7 @@
               }
             },
             "position": {
-              "basis": "108px",
+              "basis": "137px",
               "shrink": 0
             },
             "props": {
@@ -199,7 +199,7 @@
               "name": "CloseButton"
             },
             "position": {
-              "basis": "79px"
+              "basis": "94px"
             },
             "props": {
               "style": {

@@ -1,26 +1,27 @@
 {
   "custom": {
-    "reasonFilter": { "includeDeprecated": false },
-    "reasonOptions": []
+    "reasonFilter": {
+      "includeDeprecated": false
+    }
   },
   "params": {
     "downtimeEventId": null,
-    "reasonCodeId": null,
-    "timeRange": "",
     "durationMinutes": null,
-    "reasonLabel": "",
-    "sourceCode": "",
     "initials": "",
+    "isApproximate": false,
     "isOpen": false,
     "isVoided": false,
-    "isApproximate": false
+    "reasonCodeId": null,
+    "reasonLabel": "",
+    "sourceCode": "",
+    "timeRange": ""
   },
   "propConfig": {
-    "params.downtimeEventId": { "paramDirection": "input" },
-    "params.reasonCodeId": { "paramDirection": "input" },
     "custom.reasonOptions": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 600, {view.custom.reasonFilter})" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 600, {view.custom.reasonFilter})"
+        },
         "transforms": [
           {
             "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Description\") or \"\")} for r in (value or [])]",
@@ -30,88 +31,230 @@
         "type": "expr"
       }
     },
-    "params.timeRange": { "paramDirection": "input" },
-    "params.durationMinutes": { "paramDirection": "input" },
-    "params.reasonLabel": { "paramDirection": "input" },
-    "params.sourceCode": { "paramDirection": "input" },
-    "params.initials": { "paramDirection": "input" },
-    "params.isOpen": { "paramDirection": "input" },
-    "params.isVoided": { "paramDirection": "input" },
-    "params.isApproximate": { "paramDirection": "input" }
+    "params.downtimeEventId": {
+      "paramDirection": "input"
+    },
+    "params.durationMinutes": {
+      "paramDirection": "input"
+    },
+    "params.initials": {
+      "paramDirection": "input"
+    },
+    "params.isApproximate": {
+      "paramDirection": "input"
+    },
+    "params.isOpen": {
+      "paramDirection": "input"
+    },
+    "params.isVoided": {
+      "paramDirection": "input"
+    },
+    "params.reasonCodeId": {
+      "paramDirection": "input"
+    },
+    "params.reasonLabel": {
+      "paramDirection": "input"
+    },
+    "params.sourceCode": {
+      "paramDirection": "input"
+    },
+    "params.timeRange": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "height": 58 }
+    "defaultSize": {
+      "height": 58
+    }
   },
   "root": {
     "children": [
       {
-        "meta": { "name": "TimeRange" },
-        "position": { "basis": "180px", "shrink": 0 },
-        "propConfig": {
-          "props.text": { "binding": { "config": { "path": "view.params.timeRange" }, "type": "property" } }
+        "meta": {
+          "name": "TimeRange"
         },
-        "props": { "style": { "fontWeight": "600", "whiteSpace": "nowrap" } },
-        "type": "ia.display.label"
-      },
-      {
-        "meta": { "name": "Duration" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "position": {
+          "basis": "180px",
+          "shrink": 0
+        },
         "propConfig": {
           "props.text": {
-            "binding": { "config": { "expression": "if(isNull({view.params.durationMinutes}), \"—\", if({view.params.isApproximate}, \"~\", \"\") + toStr({view.params.durationMinutes}) + \"m\")" }, "type": "expr" }
+            "binding": {
+              "config": {
+                "path": "view.params.timeRange"
+              },
+              "type": "property"
+            }
           }
         },
-        "props": { "style": { "color": "var(--mpp-text-secondary)" } },
+        "props": {
+          "style": {
+            "fontWeight": "600",
+            "whiteSpace": "nowrap"
+          }
+        },
         "type": "ia.display.label"
       },
       {
-        "meta": { "name": "Reason" },
-        "position": { "basis": "0", "grow": 1 },
+        "meta": {
+          "name": "Duration"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if(isNull({view.params.durationMinutes}), \"—\", if({view.params.isApproximate}, \"~\", \"\") + toStr({view.params.durationMinutes}) + \"m\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": { "script": "\tif self.props.value != self.view.params.reasonCodeId:\n\t\tsystem.perspective.sendMessage(\"dtReasonSelected\", payload={\"downtimeEventId\": self.view.params.downtimeEventId, \"reasonCodeId\": self.props.value}, scope=\"page\")" },
+              "config": {
+                "script": "\tif self.props.value !\u003d self.view.params.reasonCodeId:\n\t\tsystem.perspective.sendMessage(\"dtReasonSelected\", payload\u003d{\"downtimeEventId\": self.view.params.downtimeEventId, \"reasonCodeId\": self.props.value}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "propConfig": {
-          "props.options": { "binding": { "config": { "path": "view.custom.reasonOptions" }, "type": "property" } },
-          "props.value": { "binding": { "config": { "path": "view.params.reasonCodeId" }, "type": "property" } },
-          "props.enabled": { "binding": { "config": { "expression": "!{view.params.isVoided}" }, "type": "expr" } }
+        "meta": {
+          "name": "Reason"
         },
-        "props": { "placeholder": "(no reason)", "search": true, "style": { "boxSizing": "border-box", "width": "100%" } },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.isVoided}"
+              },
+              "type": "expr"
+            }
+          },
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.custom.reasonOptions"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.reasonCodeId"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "placeholder": "(no reason)",
+          "search": true,
+          "style": {
+            "boxSizing": "border-box",
+            "width": "100%"
+          }
+        },
         "type": "ia.input.dropdown"
       },
       {
-        "meta": { "name": "Source" },
-        "position": { "basis": "68px", "shrink": 0 },
-        "propConfig": {
-          "props.text": { "binding": { "config": { "path": "view.params.sourceCode" }, "type": "property" } }
+        "meta": {
+          "name": "Source"
         },
-        "props": { "style": { "color": "var(--mpp-text-secondary)", "fontSize": "12px" } },
-        "type": "ia.display.label"
-      },
-      {
-        "meta": { "name": "Initials" },
-        "position": { "basis": "44px", "shrink": 0 },
-        "propConfig": {
-          "props.text": { "binding": { "config": { "path": "view.params.initials" }, "type": "property" } }
+        "position": {
+          "basis": "68px",
+          "shrink": 0
         },
-        "props": { "style": { "color": "var(--mpp-text-secondary)", "fontSize": "12px" } },
-        "type": "ia.display.label"
-      },
-      {
-        "meta": { "name": "StatusChip" },
-        "position": { "basis": "76px", "shrink": 0 },
         "propConfig": {
           "props.text": {
-            "binding": { "config": { "expression": "if({view.params.isVoided}, \"VOIDED\", if({view.params.isOpen}, \"OPEN\", \"CLOSED\"))" }, "type": "expr" }
-          },
-          "props.style.classes": {
-            "binding": { "config": { "expression": "if({view.params.isVoided}, \"badge badge-deprecated\", if({view.params.isOpen}, \"badge badge-warning\", \"badge badge-muted\"))" }, "type": "expr" }
+            "binding": {
+              "config": {
+                "path": "view.params.sourceCode"
+              },
+              "type": "property"
+            }
           }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Initials"
+        },
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.initials"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "StatusChip"
+        },
+        "position": {
+          "basis": "76px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.style.classes": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.isVoided}, \"badge badge-deprecated\", if({view.params.isOpen}, \"badge badge-warning\", \"badge badge-muted\"))"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.isVoided}, \"VOIDED\", if({view.params.isOpen}, \"OPEN\", \"CLOSED\"))"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {}
         },
         "type": "ia.display.label"
       },
@@ -119,71 +262,137 @@
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"dtEndRequested\", payload={\"downtimeEventId\": self.view.params.downtimeEventId}, scope=\"page\")" },
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"dtEndRequested\", payload\u003d{\"downtimeEventId\": self.view.params.downtimeEventId}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "meta": { "name": "EndButton" },
-        "position": { "basis": "66px", "shrink": 0 },
-        "propConfig": {
-          "meta.visible": { "binding": { "config": { "expression": "{view.params.isOpen} && !{view.params.isVoided}" }, "type": "expr" } }
+        "meta": {
+          "name": "EndButton"
         },
-        "props": { "style": { "classes": "pf-btn pf-btn-primary" }, "text": "End" },
+        "position": {
+          "basis": "66px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.isOpen} \u0026\u0026 !{view.params.isVoided}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-primary"
+          },
+          "text": "End"
+        },
         "type": "ia.input.button"
       },
       {
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"dtEditRequested\", payload={\"downtimeEventId\": self.view.params.downtimeEventId}, scope=\"page\")" },
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"dtEditRequested\", payload\u003d{\"downtimeEventId\": self.view.params.downtimeEventId}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "meta": { "name": "EditButton" },
-        "position": { "basis": "66px", "shrink": 0 },
-        "propConfig": {
-          "meta.visible": { "binding": { "config": { "expression": "!{view.params.isVoided}" }, "type": "expr" } }
+        "meta": {
+          "name": "EditButton"
         },
-        "props": { "style": { "classes": "pf-btn pf-btn-secondary", "marginLeft": "10px" }, "text": "Edit" },
+        "position": {
+          "basis": "66px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.isVoided}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "marginLeft": "10px"
+          },
+          "text": "Edit"
+        },
         "type": "ia.input.button"
       },
       {
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"dtVoidRequested\", payload={\"downtimeEventId\": self.view.params.downtimeEventId}, scope=\"page\")" },
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"dtVoidRequested\", payload\u003d{\"downtimeEventId\": self.view.params.downtimeEventId}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "meta": { "name": "VoidButton" },
-        "position": { "basis": "66px", "shrink": 0 },
-        "propConfig": {
-          "meta.visible": { "binding": { "config": { "expression": "!{view.params.isVoided}" }, "type": "expr" } }
+        "meta": {
+          "name": "VoidButton"
         },
-        "props": { "style": { "classes": "pf-btn pf-btn-danger", "marginLeft": "10px" }, "text": "Void" },
+        "position": {
+          "basis": "66px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.isVoided}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-danger",
+            "marginLeft": "10px"
+          },
+          "text": "Void"
+        },
         "type": "ia.input.button"
       }
     ],
-    "meta": { "name": "root" },
+    "meta": {
+      "name": "root"
+    },
     "propConfig": {
       "props.style.opacity": {
-        "binding": { "config": { "expression": "if({view.params.isVoided}, 0.5, 1)" }, "type": "expr" }
+        "binding": {
+          "config": {
+            "expression": "if({view.params.isVoided}, 0.5, 1)"
+          },
+          "type": "expr"
+        }
       }
     },
     "props": {
       "alignItems": "center",
       "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
         "classes": "surface-card",
         "gap": "12px",
-        "padding": "0 12px",
         "height": "58px",
-        "borderBottom": "1px solid var(--mpp-border-subtle)"
+        "padding": "0 12px"
       }
     },
     "type": "ia.container.flex"

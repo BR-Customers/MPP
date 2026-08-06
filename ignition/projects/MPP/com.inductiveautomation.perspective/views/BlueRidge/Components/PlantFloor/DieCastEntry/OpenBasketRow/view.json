@@ -1,30 +1,48 @@
 {
   "custom": {},
   "params": {
+    "belowStandard": false,
     "cavityNumber": "",
     "contributorCount": 0,
     "lotId": null,
     "lotName": "",
-    "pieceCount": 0,
     "maxPieceCount": null,
-    "belowStandard": false,
-    "contributorCount": 0,
     "openedAtDisplay": "",
     "pieceCount": 0,
     "toolCavityId": null,
     "voidEligible": false
   },
   "propConfig": {
-    "params.toolCavityId": { "paramDirection": "input" },
-    "params.cavityNumber": { "paramDirection": "input" },
-    "params.lotId": { "paramDirection": "input" },
-    "params.lotName": { "paramDirection": "input" },
-    "params.pieceCount": { "paramDirection": "input" },
-    "params.maxPieceCount": { "paramDirection": "input" },
-    "params.belowStandard": { "paramDirection": "input" },
-    "params.contributorCount": { "paramDirection": "input" },
-    "params.openedAtDisplay": { "paramDirection": "input" },
-    "params.voidEligible": { "paramDirection": "input" }
+    "params.belowStandard": {
+      "paramDirection": "input"
+    },
+    "params.cavityNumber": {
+      "paramDirection": "input"
+    },
+    "params.contributorCount": {
+      "paramDirection": "input"
+    },
+    "params.lotId": {
+      "paramDirection": "input"
+    },
+    "params.lotName": {
+      "paramDirection": "input"
+    },
+    "params.maxPieceCount": {
+      "paramDirection": "input"
+    },
+    "params.openedAtDisplay": {
+      "paramDirection": "input"
+    },
+    "params.pieceCount": {
+      "paramDirection": "input"
+    },
+    "params.toolCavityId": {
+      "paramDirection": "input"
+    },
+    "params.voidEligible": {
+      "paramDirection": "input"
+    }
   },
   "props": {
     "defaultSize": {
@@ -102,20 +120,28 @@
           "component": {
             "onActionPerformed": {
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"requestReleaseBasket\", payload={\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName, \"pieceCount\": self.view.params.pieceCount, \"maxPieceCount\": self.view.params.maxPieceCount, \"belowStandard\": self.view.params.belowStandard}, scope=\"page\")"
-              }
+                "script": "\tsystem.perspective.sendMessage(\"requestReleaseBasket\", payload\u003d{\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName, \"pieceCount\": self.view.params.pieceCount, \"maxPieceCount\": self.view.params.maxPieceCount, \"belowStandard\": self.view.params.belowStandard}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
             }
           }
-        }
+        },
+        "meta": {
+          "name": "ReleaseButton"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-primary"
+          },
+          "text": "Release"
+        },
+        "type": "ia.input.button"
       },
       {
-        "type": "ia.input.button",
-        "meta": { "name": "VoidButton" },
-        "position": { "basis": "auto", "shrink": 0 },
-        "propConfig": {
-          "position.display": { "binding": { "type": "property", "config": { "path": "view.params.voidEligible" } } }
-        },
-        "props": { "text": "Void", "style": { "classes": "pf-btn pf-btn-danger" } },
         "events": {
           "component": {
             "onActionPerformed": {
@@ -131,7 +157,6 @@
           "name": "VoidButton"
         },
         "position": {
-          "basis": "72px",
           "shrink": 0
         },
         "propConfig": {
