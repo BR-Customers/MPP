@@ -62,7 +62,7 @@ BEGIN
         -- ====================
         DECLARE @Code         NVARCHAR(20);
         DECLARE @OldDesc      NVARCHAR(500);
-        DECLARE @OldAreaId    BIGINT;
+        DECLARE @OldCatId    BIGINT;
         DECLARE @OldTypeId    BIGINT;
         DECLARE @OldSourceId  BIGINT;
         DECLARE @OldIsExcused BIT;
@@ -71,7 +71,7 @@ BEGIN
 
         SELECT @Code         = Code,
                @OldDesc      = Description,
-               @OldAreaId    = AreaLocationId,
+               @OldCatId    = OperationCategoryId,
                @OldTypeId    = DowntimeReasonTypeId,
                @OldSourceId  = DowntimeSourceCodeId,
                @OldIsExcused = IsExcused,
@@ -145,9 +145,9 @@ BEGIN
             (SELECT
                  @Code AS Code,
                  @OldDesc AS Description,
-                 JSON_QUERY((SELECT l.Id, l.Code, l.Name
-                             FROM Location.Location l WHERE l.Id = @OldAreaId
-                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Area,
+                 JSON_QUERY((SELECT oc.Id, oc.Code, oc.Name
+                             FROM Parts.OperationCategory oc WHERE oc.Id = @OldCatId
+                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Category,
                  JSON_QUERY((SELECT drt.Id, drt.Code, drt.Name
                              FROM Oee.DowntimeReasonType drt WHERE drt.Id = @OldTypeId
                              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS ReasonType,

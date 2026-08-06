@@ -1,42 +1,15 @@
 -- =============================================
 -- Procedure:   Oee.DowntimeReasonCode_Update
--- Author:      Blue Ridge Automation
--- Created:     2026-04-15
--- Version:     1.1
---
--- Description:
---   Updates an existing downtime reason code. Code is immutable
---   (deprecate + create new to change it). Updates Description,
---   AreaLocationId, DowntimeReasonTypeId, DowntimeSourceCodeId,
---   and IsExcused. Rejects if target row is deprecated.
---
--- Parameters (input):
---   @Id                   BIGINT        - Required.
---   @Description          NVARCHAR(500) - Required.
---   @AreaLocationId       BIGINT        - Required. Active Location.
---   @DowntimeReasonTypeId BIGINT NULL   - Optional.
---   @DowntimeSourceCodeId BIGINT NULL   - Optional.
---   @IsExcused            BIT           - Required.
---   @AppUserId            BIGINT        - Required for audit.
---
--- Result set:
---   Single row with Status (BIT), Message (NVARCHAR).
---
--- Dependencies:
---   Tables: Oee.DowntimeReasonCode, Location.Location,
---           Oee.DowntimeReasonType, Oee.DowntimeSourceCode
---   Procs:  Audit.Audit_LogConfigChange, Audit.Audit_LogFailure
---
+-- Version:     2.0
 -- Change Log:
---   2026-04-15 - 1.0 - Initial version
---   2026-05-29 - 1.1 - Audit-readability convention (Slice 8 Downtime+Defect
---                       codes): SUBJECT . ACTION field-diff Description +
---                       resolved-FK OldValue/NewValue JSON.
+--   2026-08-05 - 2.0 - Scope by Parts.OperationCategory (nullable = plant-wide).
+--                       Field-diff + resolved JSON use Category, not Area.
+--                       ReasonType/SourceCode dimensions unchanged.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.DowntimeReasonCode_Update
     @Id                   BIGINT,
     @Description          NVARCHAR(500),
-    @AreaLocationId       BIGINT,
+    @OperationCategoryId  BIGINT = NULL,
     @DowntimeReasonTypeId BIGINT = NULL,
     @DowntimeSourceCodeId BIGINT = NULL,
     @IsExcused            BIT,
@@ -52,18 +25,15 @@ BEGIN
     DECLARE @ProcName NVARCHAR(200) = N'Oee.DowntimeReasonCode_Update';
     DECLARE @Params   NVARCHAR(MAX) =
         (SELECT @Id AS Id, @Description AS Description,
-                @AreaLocationId AS AreaLocationId,
+                @OperationCategoryId AS OperationCategoryId,
                 @DowntimeReasonTypeId AS DowntimeReasonTypeId,
                 @DowntimeSourceCodeId AS DowntimeSourceCodeId,
                 @IsExcused AS IsExcused
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
-        -- ====================
-        -- Parameter validation
-        -- ====================
         IF @Id IS NULL OR @Description IS NULL OR LTRIM(RTRIM(@Description)) = N''
-           OR @AreaLocationId IS NULL OR @IsExcused IS NULL OR @AppUserId IS NULL
+           OR @IsExcused IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing.';
             EXEC Audit.Audit_LogFailure
@@ -75,12 +45,9 @@ BEGIN
             RETURN;
         END
 
-        -- ====================
-        -- Existence checks
-        -- ====================
         DECLARE @Code            NVARCHAR(20);
         DECLARE @OldDesc         NVARCHAR(500);
-        DECLARE @OldAreaId       BIGINT;
+        DECLARE @OldCatId        BIGINT;
         DECLARE @OldTypeId       BIGINT;
         DECLARE @OldSourceId     BIGINT;
         DECLARE @OldIsExcused    BIT;
@@ -89,7 +56,7 @@ BEGIN
 
         SELECT @Code         = Code,
                @OldDesc      = Description,
-               @OldAreaId    = AreaLocationId,
+               @OldCatId     = OperationCategoryId,
                @OldTypeId    = DowntimeReasonTypeId,
                @OldSourceId  = DowntimeSourceCodeId,
                @OldIsExcused = IsExcused,
@@ -121,12 +88,10 @@ BEGIN
             RETURN;
         END
 
-        -- ====================
-        -- FK existence checks
-        -- ====================
-        IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Id = @AreaLocationId AND DeprecatedAt IS NULL)
+        IF @OperationCategoryId IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM Parts.OperationCategory WHERE Id = @OperationCategoryId AND DeprecatedAt IS NULL)
         BEGIN
-            SET @Message = N'Invalid or deprecated AreaLocationId.';
+            SET @Message = N'Invalid or deprecated OperationCategoryId.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'DowntimeReasonCode',
                 @EntityId = @Id, @LogEventTypeCode = N'Updated',
@@ -162,31 +127,21 @@ BEGIN
             RETURN;
         END
 
-        -- ====================
-        -- Audit narrative + resolved JSON (built from PRE-mutation state)
-        -- ====================
         DECLARE @NewDesc NVARCHAR(500) = LTRIM(RTRIM(@Description));
 
-        -- Resolve old/new Area + ReasonType names for the field-diff prose
-        DECLARE @OldAreaName NVARCHAR(200) =
-            (SELECT Name FROM Location.Location WHERE Id = @OldAreaId);
-        DECLARE @NewAreaName NVARCHAR(200) =
-            (SELECT Name FROM Location.Location WHERE Id = @AreaLocationId);
-        DECLARE @OldTypeName NVARCHAR(100) =
-            (SELECT Name FROM Oee.DowntimeReasonType WHERE Id = @OldTypeId);
-        DECLARE @NewTypeName NVARCHAR(100) =
-            (SELECT Name FROM Oee.DowntimeReasonType WHERE Id = @DowntimeReasonTypeId);
+        DECLARE @OldCatName NVARCHAR(100) = ISNULL((SELECT Name FROM Parts.OperationCategory WHERE Id = @OldCatId), N'Plant-wide');
+        DECLARE @NewCatName NVARCHAR(100) = ISNULL((SELECT Name FROM Parts.OperationCategory WHERE Id = @OperationCategoryId), N'Plant-wide');
+        DECLARE @OldTypeName NVARCHAR(100) = (SELECT Name FROM Oee.DowntimeReasonType WHERE Id = @OldTypeId);
+        DECLARE @NewTypeName NVARCHAR(100) = (SELECT Name FROM Oee.DowntimeReasonType WHERE Id = @DowntimeReasonTypeId);
 
-        -- Compose field-diff list: "Field old->new" (strings quoted, NULL=null,
-        -- booleans as words). STUFF strips the leading ", ".
         DECLARE @Arrow  NCHAR(1) = NCHAR(8594);
         DECLARE @Fields NVARCHAR(MAX) = STUFF(
             CONCAT(
                 CASE WHEN @OldDesc <> @NewDesc
                      THEN N', Name "' + @OldDesc + N'" ' + @Arrow + N' "' + @NewDesc + N'"'
                      ELSE N'' END,
-                CASE WHEN ISNULL(@OldAreaId, -1) <> ISNULL(@AreaLocationId, -1)
-                     THEN N', Area "' + ISNULL(@OldAreaName, N'null') + N'" ' + @Arrow + N' "' + ISNULL(@NewAreaName, N'null') + N'"'
+                CASE WHEN ISNULL(@OldCatId, -1) <> ISNULL(@OperationCategoryId, -1)
+                     THEN N', Category "' + @OldCatName + N'" ' + @Arrow + N' "' + @NewCatName + N'"'
                      ELSE N'' END,
                 CASE WHEN ISNULL(@OldTypeId, -1) <> ISNULL(@DowntimeReasonTypeId, -1)
                      THEN N', ReasonType "' + ISNULL(@OldTypeName, N'null') + N'" ' + @Arrow + N' "' + ISNULL(@NewTypeName, N'null') + N'"'
@@ -205,13 +160,12 @@ BEGIN
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
             N'Downtime Code ' + @Code + N' ' + Audit.ufn_MidDot() + N' Updated ' + @Fields);
 
-        -- OldValue: pre-mutation snapshot with resolved FK sub-objects
         DECLARE @OldValueResolved NVARCHAR(MAX) =
             (SELECT
                  @OldDesc AS Description,
-                 JSON_QUERY((SELECT l.Id, l.Code, l.Name
-                             FROM Location.Location l WHERE l.Id = @OldAreaId
-                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Area,
+                 JSON_QUERY((SELECT oc.Id, oc.Code, oc.Name
+                             FROM Parts.OperationCategory oc WHERE oc.Id = @OldCatId
+                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Category,
                  JSON_QUERY((SELECT drt.Id, drt.Code, drt.Name
                              FROM Oee.DowntimeReasonType drt WHERE drt.Id = @OldTypeId
                              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS ReasonType,
@@ -219,14 +173,11 @@ BEGIN
                  @OldIsExcused AS IsExcused
              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
-        -- ====================
-        -- Mutation (atomic)
-        -- ====================
         BEGIN TRANSACTION;
 
         UPDATE Oee.DowntimeReasonCode SET
             Description          = @NewDesc,
-            AreaLocationId       = @AreaLocationId,
+            OperationCategoryId  = @OperationCategoryId,
             DowntimeReasonTypeId = @DowntimeReasonTypeId,
             DowntimeSourceCodeId = @DowntimeSourceCodeId,
             IsExcused            = @IsExcused,
@@ -234,13 +185,12 @@ BEGIN
             UpdatedByUserId      = @AppUserId
         WHERE Id = @Id;
 
-        -- NewValue: post-mutation snapshot with resolved FK sub-objects
         DECLARE @NewValueResolved NVARCHAR(MAX) =
             (SELECT
                  @NewDesc AS Description,
-                 JSON_QUERY((SELECT l.Id, l.Code, l.Name
-                             FROM Location.Location l WHERE l.Id = @AreaLocationId
-                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Area,
+                 JSON_QUERY((SELECT oc.Id, oc.Code, oc.Name
+                             FROM Parts.OperationCategory oc WHERE oc.Id = @OperationCategoryId
+                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Category,
                  JSON_QUERY((SELECT drt.Id, drt.Code, drt.Name
                              FROM Oee.DowntimeReasonType drt WHERE drt.Id = @DowntimeReasonTypeId
                              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS ReasonType,

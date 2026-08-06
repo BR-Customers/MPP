@@ -175,9 +175,9 @@ BEGIN
 
         INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
             Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber, MinSerialNumber, MaxSerialNumber,
-            CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt)
+            CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId)
         VALUES (@MintedName, @ProducedItemId, @ManufacturedOriginId, @GoodStatusId, @PieceCount, (SELECT MaxLotSize FROM Parts.Item WHERE Id=@ProducedItemId),
-            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, @SrcLoc, 0, @PieceCount, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, @SrcLoc, 0, @PieceCount, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId);
         SET @NewId = SCOPE_IDENTITY();
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
         VALUES (@NewId, NULL, @GoodStatusId, N'SubAssembly LOT minted at Machining OUT (FIFO).', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());

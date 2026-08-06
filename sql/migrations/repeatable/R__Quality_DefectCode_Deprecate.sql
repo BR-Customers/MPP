@@ -28,6 +28,9 @@
 --   2026-05-29 - 2.1 - Audit-readability convention (Slice 8 Downtime+Defect
 --                       codes): SUBJECT . ACTION narrative Description +
 --                       resolved-FK OldValue/NewValue JSON.
+--   2026-08-04 - 3.0 - Scope by Parts.OperationCategory (nullable = plant-wide)
+--                       instead of AreaLocationId. OldValue JSON carries a
+--                       Category sub-object; column swap tracks migration 0047.
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.DefectCode_Deprecate
     @Id        BIGINT,
@@ -65,14 +68,14 @@ BEGIN
         -- ====================
         DECLARE @Code         NVARCHAR(20);
         DECLARE @OldDesc      NVARCHAR(500);
-        DECLARE @OldAreaId    BIGINT;
+        DECLARE @OldCatId     BIGINT;
         DECLARE @OldIsExcused BIT;
         DECLARE @DeprecatedAt DATETIME2(3);
         DECLARE @RowExists    BIT = 0;
 
         SELECT @Code         = Code,
                @OldDesc      = Description,
-               @OldAreaId    = AreaLocationId,
+               @OldCatId     = OperationCategoryId,
                @OldIsExcused = IsExcused,
                @DeprecatedAt = DeprecatedAt,
                @RowExists    = 1
@@ -108,15 +111,15 @@ BEGIN
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
             N'Defect Code ' + @Code + N' ' + Audit.ufn_MidDot() + N' Deprecated');
 
-        -- OldValue: pre-mutation snapshot with resolved Area sub-object;
+        -- OldValue: pre-mutation snapshot with resolved Category sub-object;
         -- NewValue is NULL for a Deprecate.
         DECLARE @OldValueResolved NVARCHAR(MAX) =
             (SELECT
                  @Code AS Code,
                  @OldDesc AS Description,
-                 JSON_QUERY((SELECT l.Id, l.Code, l.Name
-                             FROM Location.Location l WHERE l.Id = @OldAreaId
-                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Area,
+                 JSON_QUERY((SELECT oc.Id, oc.Code, oc.Name
+                             FROM Parts.OperationCategory oc WHERE oc.Id = @OldCatId
+                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Category,
                  @OldIsExcused AS IsExcused
              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 

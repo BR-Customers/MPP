@@ -37,7 +37,7 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0)"
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0, \"DieCast\")"
         }
       }
     },

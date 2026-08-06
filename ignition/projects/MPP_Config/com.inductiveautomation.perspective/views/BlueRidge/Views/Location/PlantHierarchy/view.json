@@ -4054,6 +4054,39 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
+                                "script": "\tres = BlueRidge.Location.Printer.validateFromAttributes(self.view.custom.editDraft.attributes)\n\tBlueRidge.Common.Notify.toast(res[\"title\"], res[\"message\"], res[\"level\"])"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "ValidateEndpointButton"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.selected.definitionId} = 16"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-sm"
+                          },
+                          "text": "Validate endpoint"
+                        },
+                        "type": "ia.input.button"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
                                 "script": "\tif self.view.custom.mode \u003d\u003d \"create\":\n\t\t# Discard the draft entirely; rebuild tree from DB\n\t\tself.view.custom.tree \u003d BlueRidge.Location.Tree.buildTree(1, 2, \"mpp/factory\")\n\t\tself.view.custom.selected \u003d None\n\t\tself.view.custom.selectedPath \u003d \"0\"\n\t\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.dirty \u003d False\n\telse:\n\t\t# Revert editDraft from selected\n\t\tsel \u003d self.view.custom.selected\n\t\tif sel and sel.get(\"id\") is not None:\n\t\t\tmeta \u003d BlueRidge.Location.Location.metaFromLocation(BlueRidge.Location.Location.getOne(sel.get(\"id\")))\n\t\t\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\t\t\tself.view.custom.editDraft \u003d {\"meta\": meta, \"attributes\": attrs}\n\t\tself.view.custom.dirty \u003d False"
                               },
                               "scope": "G",

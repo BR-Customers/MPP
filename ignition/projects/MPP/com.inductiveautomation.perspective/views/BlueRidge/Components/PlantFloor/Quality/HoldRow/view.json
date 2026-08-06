@@ -217,18 +217,8 @@
         "position": {
           "shrink": 0
         },
-        "propConfig": {
-          "props.enabled": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.params.lotStatusCode} = 'Good'"
-              }
-            }
-          }
-        },
         "props": {
-          "text": "Use",
+          "text": "Select",
           "style": {
             "classes": "pf-btn pf-btn-secondary"
           }

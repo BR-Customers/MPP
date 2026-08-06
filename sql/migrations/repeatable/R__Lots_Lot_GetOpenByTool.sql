@@ -13,8 +13,14 @@
 --              (Workorder.DieCastContribution, not shift-scoped).
 --
 --              Columns: ToolCavityId, CavityNumber, LotId, LotName, PieceCount,
---              OpenedAt (ET, from Lot.CreatedAt), ContributorCount (DISTINCT
---              AppUserId across all DieCastContribution rows for the LOT).
+--              MaxPieceCount (basket size, from Lot.MaxPieceCount; NULL = uncapped),
+--              BelowStandardRelease (BIT -- 1 when this basket holds < 95% of its
+--              basket size, i.e. releasing it now is under the standard fill;
+--              the 5% release tolerance is a UI-advisory policy and lives ONLY
+--              here, integer-safe as PieceCount*100 < MaxPieceCount*95; NULL/0
+--              max never trips it), OpenedAt (ET, from Lot.CreatedAt),
+--              ContributorCount (DISTINCT AppUserId across all
+--              DieCastContribution rows for the LOT).
 --
 --              Read proc: single result set, no status row, no OUTPUT params
 --              (FDS-11-011). Empty result set = no open baskets for this tool.
@@ -32,6 +38,9 @@ BEGIN
         l.Id                                            AS LotId,
         l.LotName                                       AS LotName,
         l.PieceCount                                    AS PieceCount,
+        l.MaxPieceCount                                 AS MaxPieceCount,
+        CAST(CASE WHEN l.MaxPieceCount IS NOT NULL AND l.PieceCount * 100 < l.MaxPieceCount * 95
+                  THEN 1 ELSE 0 END AS BIT)             AS BelowStandardRelease,
         CAST(l.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS OpenedAt,
         (SELECT COUNT(DISTINCT c.AppUserId) FROM Workorder.DieCastContribution c WHERE c.LotId = l.Id) AS ContributorCount
     FROM Lots.Lot l

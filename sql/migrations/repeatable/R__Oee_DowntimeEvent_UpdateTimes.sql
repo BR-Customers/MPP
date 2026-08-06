@@ -96,9 +96,11 @@ BEGIN
 
         BEGIN TRANSACTION;
         UPDATE Oee.DowntimeEvent
-        SET StartedAt = @StartUtc,
-            EndedAt   = @EndUtc,
-            Remarks   = COALESCE(@Remarks, Remarks)
+        SET StartedAt       = @StartUtc,
+            EndedAt         = @EndUtc,
+            DurationMinutes = CASE WHEN @EndUtc IS NULL THEN NULL ELSE DATEDIFF(MINUTE, @StartUtc, @EndUtc) END,
+            IsApproximate   = 0,
+            Remarks         = COALESCE(@Remarks, Remarks)
         WHERE Id = @DowntimeEventId;
         EXEC Audit.Audit_LogOperation
             @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=@LocationId,

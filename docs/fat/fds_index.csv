@@ -1,0 +1,243 @@
+FDS,Title,Section,Area,Scope,InScope,FRS,Verify
+FDS-01-001,Ignition Gateway,1.2 System Topology,environment,MVP,Y,,VERIFY
+FDS-01-002,Database Server,1.2 System Topology,environment,MVP,Y,,VERIFY
+FDS-01-003,Redundancy,1.2 System Topology,environment,MVP,Y,,VERIFY
+FDS-01-004,Development/Test Environment,1.2 System Topology,environment,MVP,Y,,VERIFY
+FDS-01-005,Event Immutability,1.4 Data Flow Architecture,environment,MVP,Y,"3.5.4, 3.9.6",VERIFY
+FDS-01-006,External Interface Dispatch Pattern,1.4 Data Flow Architecture,environment,MVP,Y,"3.17.4, 5.5.1",VERIFY
+FDS-01-007,Tag Historian Separation,1.4 Data Flow Architecture,environment,MVP,Y,"3.4.10, 5.5.1",VERIFY
+FDS-01-013,BOM Source System at Cutover,1.4 Data Flow Architecture,environment,MVP,Y,,VERIFY
+FDS-01-008,OPC Server Connections,1.5 OPC Connection Architecture,environment,MVP,Y,,VERIFY
+FDS-01-009,OPC Tag Namespace,1.5 OPC Connection Architecture,environment,MVP,Y,,VERIFY
+FDS-01-010,Authentication,1.6 Security Architecture,environment,MVP,Y,5.3,VERIFY
+FDS-01-011,Authorization,1.6 Security Architecture,environment,MVP,Y,,VERIFY
+FDS-01-012,Audit Attribution,1.6 Security Architecture,environment,MVP,Y,,VERIFY
+FDS-01-014,External Integration Pattern (Gateway-script-async),1.6 Security Architecture,environment,MVP,Y,,VERIFY
+FDS-02-001,ISA-95 Location Types,2.2 Location Type Hierarchy,plant-hierarchy,MVP,Y,,VERIFY
+FDS-02-002,Hierarchy Enforcement,2.2 Location Type Hierarchy,plant-hierarchy,MVP,Y,,VERIFY
+FDS-02-003,Areas as Instances,2.2 Location Type Hierarchy,plant-hierarchy,MVP,Y,"3.3.2, 3.7.1",VERIFY
+FDS-02-004,Location Type Definitions (Kinds),2.3 Polymorphic Kinds and Configurable Attributes,plant-hierarchy,MVP,Y,,VERIFY
+FDS-02-005,Attribute Schemas per Definition,2.3 Polymorphic Kinds and Configurable Attributes,plant-hierarchy,MVP,Y,,VERIFY
+FDS-02-006,Attribute Value Integrity,2.3 Polymorphic Kinds and Configurable Attributes,plant-hierarchy,MVP,Y,,VERIFY
+FDS-02-007,Machine Seed Data,2.4 Seed Data,plant-hierarchy,MVP,Y,,VERIFY
+FDS-02-008,Terminal as Cell Kind,2.5 Terminals,terminal-login,MVP,Y,,VERIFY
+FDS-02-009,Cell Context Selection,2.5 Terminals,terminal-login,MVP,Y,,VERIFY
+FDS-02-010,Terminal Behavior Determined by Assigned View,2.5 Terminals,terminal-login,MVP,Y,,VERIFY
+FDS-02-011,Cell Context Change Rules,2.5 Terminals,terminal-login,MVP,Y,,VERIFY
+FDS-02-012,Part ↔ Cell Eligibility,2.5 Terminals,terminal-login,MVP,Y,,VERIFY
+FDS-02-013,Mobile-Friendly Design Input,2.5 Terminals,terminal-login,MVP,Y,,VERIFY
+FDS-02-014,Honda RFID Forward-Compatibility,2.5 Terminals,terminal-login,FUTURE,Out-of-scope,,VERIFY
+FDS-03-001,Item Records,3.1 Item Master,item-master,MVP,Y,,VERIFY
+FDS-03-002,Item Types,3.1 Item Master,item-master,MVP,Y,,VERIFY
+FDS-03-003,Item Deprecation,3.1 Item Master,item-master,MVP,Y,,VERIFY
+FDS-03-004,BOM Structure,3.2 Bills of Material,routes-boms,MVP,Y,3.4.2,VERIFY
+FDS-03-005,BOM Versioning,3.2 Bills of Material,routes-boms,MVP,Y,,VERIFY
+FDS-03-006,Single-Level BOMs,3.2 Bills of Material,routes-boms,MVP,Y,,VERIFY
+FDS-03-007,Route Structure,3.3 Route Templates,routes-boms,MVP,Y,3.11.1–3.11.4,VERIFY
+FDS-03-008,Route Steps,3.3 Route Templates,routes-boms,MVP,Y,,VERIFY
+FDS-03-009,Route Steps Do Not Prescribe Machines,3.3 Route Templates,routes-boms,MVP,Y,,VERIFY
+FDS-03-010,Route Versioning,3.3 Route Templates,routes-boms,MVP,Y,,VERIFY
+FDS-03-011,Operation Sequence Flexibility,3.3 Route Templates,routes-boms,MVP,Y,3.11.10,VERIFY
+FDS-03-012,Operation Template Design,3.4 Operation Templates,op-quality,MVP,Y,,VERIFY
+FDS-03-013,Operation Templates Drive Screen Behavior,3.4 Operation Templates,op-quality,MVP,Y,3.11.6,VERIFY
+FDS-03-014,Eligibility Map with Hierarchy Cascade,3.5 Part-to-Location Eligibility,plant-hierarchy,MVP,Y,3.4.7,VERIFY
+FDS-03-015,Eligibility Management,3.5 Part-to-Location Eligibility,plant-hierarchy,MVP,Y,,VERIFY
+FDS-03-018,Consumption Metadata on Item-Location Eligibility,3.5 Part-to-Location Eligibility,plant-hierarchy,MVP,Y,,VERIFY
+FDS-03-016,Container Config,3.6 Container Configuration,container-configs,MVP,Y,3.9.7,VERIFY
+FDS-03-017,Container Closure Logic,3.6 Container Configuration,container-configs,MVP,Y,,VERIFY
+FDS-03-019,Per-Item Per-Location Piece Cap,3.6 Container Configuration,container-configs,MVP,Y,,VERIFY
+FDS-03-020,Lineside Inventory Cap,3.6 Container Configuration,container-configs,MVP,Y,,VERIFY
+FDS-03-021,Tray-Divisibility Validation on Work Order,3.6 Container Configuration,container-configs,MVP,Y,,VERIFY
+FDS-04-001,Two Identity Classes,4.1 Identity Model,users,MVP,Y,,VERIFY
+FDS-04-002,Operator Initials Capture,4.1 Identity Model,users,MVP,Y,,VERIFY
+FDS-04-003,Presence Policy: Dedicated vs Shared Views,4.1 Identity Model,users,MVP,Y,,VERIFY
+FDS-04-004,Interactive User Authentication,4.1 Identity Model,users,MVP,Y,,VERIFY
+FDS-04-005,Pre-Populated Initials Field,4.2 Event Attribution on Mutations,users,MVP,Y,,VERIFY
+FDS-04-006,30-Minute Presence Re-Confirmation,4.2 Event Attribution on Mutations,users,MVP,Y,,VERIFY
+FDS-04-007,Elevated Actions Require Active Directory Authentication,4.3 Elevation Model,users,MVP,Y,,VERIFY
+FDS-04-008,Ignition Role Mapping,4.3 Elevation Model,users,MVP,Y,,VERIFY
+FDS-04-009,Screen-Level Security,4.3 Elevation Model,users,MVP,Y,,VERIFY
+FDS-04-010,Operator AppUser Lifecycle,4.3 Elevation Model,users,MVP,Y,,VERIFY
+FDS-05-001,LOT Uniqueness,5.1 LOT Identity,traceability,MVP,Y,3.9.6,VERIFY
+FDS-05-002,LTT Pre-Printing,5.1 LOT Identity,traceability,MVP,Y,2.2.1,VERIFY
+FDS-05-003,LOT Attributes,5.1 LOT Identity,traceability,MVP,Y,"3.9.6, 2.2.2",VERIFY
+FDS-05-034,Die-Cast-Origin Tool + Cavity Required on Lot Create,5.1 LOT Identity,die-cast,MVP,Y,,VERIFY
+FDS-05-035,"Tools System of Record — On Lot, Not On ProductionEvent",5.1 LOT Identity,die-cast,MVP,Y,,VERIFY
+FDS-05-031,"LOT Computed Quantities (TotalInProcess, InventoryAvailable)",5.1 LOT Identity,traceability,MVP,Y,,VERIFY
+FDS-05-004,Manufactured LOT Creation (Die Cast) — Per-Cavity Open Basket,5.2 LOT Creation Workflows,die-cast,MVP,Y,,VERIFY
+FDS-05-039,Die Cast Basket Lifecycle: Open → Accumulate → Release / Void,5.2 LOT Creation Workflows,die-cast,MVP,Y,,VERIFY
+FDS-05-040,Shift-Output Recording (the Accumulate action),5.2 LOT Creation Workflows,die-cast,MVP,Y,,VERIFY
+FDS-05-041,Basket Release (Open → Good),5.2 LOT Creation Workflows,die-cast,MVP,Y,,VERIFY
+FDS-05-042,Basket Void (Open → Scrap),5.2 LOT Creation Workflows,die-cast,MVP,Y,,VERIFY
+FDS-05-005,Received LOT Creation (Pass-Through Parts),5.2 LOT Creation Workflows,inspection,MVP,Y,"2.1.1, 2.1.12",VERIFY
+FDS-05-006,Off-Site Received LOT Creation,5.2 LOT Creation Workflows,inspection,MVP,Y,,VERIFY
+FDS-05-007,Movement Tracking,5.3 LOT Movement,movements,MVP,Y,3.9.8,VERIFY
+FDS-05-008,Movement Workflow,5.3 LOT Movement,movements,MVP,Y,,VERIFY
+FDS-05-036,"Lazy, Operator-Driven LOT Creation",5.3 LOT Movement,traceability,MVP,Y,,VERIFY
+FDS-05-037,LOT Close Semantics,5.3 LOT Movement,movements,MVP,Y,,VERIFY
+FDS-05-032,Partial Start and Partial Complete,5.3 LOT Movement,movements,MVP,Y,,VERIFY
+FDS-05-038,Pausable LOT at Workstation,5.3 LOT Movement,movements,MVP,Y,,VERIFY
+FDS-05-022,Sublot Pattern (Machining),5.4 Sub-LOT Splitting,machining,MVP,Y,,VERIFY
+FDS-05-024,Sublot Labels,5.4 Sub-LOT Splitting,labels,MVP,Y,,VERIFY
+FDS-05-009,Machining OUT Sub-LOT Extraction Workflow (Extract-One / Partial-Remainder),5.4 Sub-LOT Splitting,machining,MVP,Y,"2.1.4, 2.2.5, 3.9.12",VERIFY
+FDS-05-010,Partial-Remainder Handling,5.4 Sub-LOT Splitting,machining,MVP,Y,,VERIFY
+FDS-05-011,Split Genealogy Permanence,5.4 Sub-LOT Splitting,machining,MVP,Y,,VERIFY
+FDS-05-012,Merge Capability,5.5 LOT Merging,traceability,MVP,Y,3.9.13,VERIFY
+FDS-05-025,Post-Sort Requirement,5.5 LOT Merging,traceability,MVP,Y,3.13.1,VERIFY
+FDS-05-026,Part Number Match,5.5 LOT Merging,traceability,MVP,Y,3.9.13,VERIFY
+FDS-05-027,Die Rank Compatibility,5.5 LOT Merging,traceability,MVP,Y,,VERIFY
+FDS-05-028,Quality Status Gating,5.5 LOT Merging,traceability,MVP,Y,,VERIFY
+FDS-05-029,Machining Is Not a Merge — FIFO-by-Cavity,5.5 LOT Merging,traceability,MVP,Y,3.13.1,VERIFY
+FDS-05-030,Post-Merge LOT Has NULL Tool / Cavity,5.5 LOT Merging,traceability,MVP,Y,,VERIFY
+FDS-05-013,Status Codes,5.6 LOT Status Transitions,quality-holds,MVP,Y,3.16.3,VERIFY
+FDS-05-014,Status Transition Rules,5.6 LOT Status Transitions,quality-holds,MVP,Y,,VERIFY
+FDS-05-015,Status History,5.6 LOT Status Transitions,quality-holds,MVP,Y,3.16.4,VERIFY
+FDS-05-016,Genealogy Graph,5.7 Genealogy,traceability,MVP,Y,,VERIFY
+FDS-05-017,Bidirectional Query,5.7 Genealogy,traceability,MVP,Y,3.13.2,VERIFY
+FDS-05-018,Genealogy Report,5.7 Genealogy,traceability,MVP,Y,,VERIFY
+FDS-05-019,Label Print Tracking,5.8 LOT Label Management,labels,MVP,Y,,VERIFY
+FDS-05-020,Print Reasons,5.8 LOT Label Management,labels,MVP,Y,"3.13.1, 2.2.1",VERIFY
+FDS-05-021,Attribute Change Log,5.9 LOT Attribute Auditing,traceability,MVP,Y,3.9.6,VERIFY
+FDS-05-033,Trim → Machining Rename via 1-Line BOM,5.10 Part Identity Change,machining,MVP,Y,,VERIFY
+FDS-06-001,Die Cast Production Screen — Open Panel + Shift-Output Entry (amended 2026-07-29),6.2 Die Cast Workflow,die-cast,MVP-EXPANDED,Y,,VERIFY
+FDS-06-002,Die Cast Validation (amended 2026-07-29),6.2 Die Cast Workflow,die-cast,MVP-EXPANDED,Y,,VERIFY
+FDS-06-003,Die Cast Shift-Output Recording (amended 2026-07-29),6.2 Die Cast Workflow,die-cast,MVP-EXPANDED,Y,,VERIFY
+FDS-06-004,Trim IN,6.3 Trim Shop Workflow,trim,MVP-EXPANDED,Y,2.2.3,VERIFY
+FDS-06-005,Weight-Based Piece Count Estimation,6.3 Trim Shop Workflow,trim,MVP-EXPANDED,Y,,VERIFY
+FDS-06-006,Trim OUT (ProductionEvent + Whole-LOT Move to Machining),6.3 Trim Shop Workflow,trim,MVP-EXPANDED,Y,,VERIFY
+FDS-06-007,Machining IN (FIFO Pick + Trim → Machining Rename),6.4 Machining Workflow,machining,MVP-EXPANDED,Y,2.2.4,VERIFY
+FDS-06-008,"Machining OUT (Sub-LOT Split on Sublotting Lines, else Auto-Move to Coupled Assembly Cell)",6.4 Machining Workflow,machining,MVP-EXPANDED,Y,2.2.5,VERIFY
+FDS-06-009,Machining Production Event,6.4 Machining Workflow,machining,MVP-EXPANDED,Y,,VERIFY
+FDS-06-010,Serialized Assembly (PLC-Integrated),6.5 Assembly Workflow,assembly,MVP-EXPANDED,Y,,VERIFY
+FDS-06-011,Serialized Assembly Material Identification,6.5 Assembly Workflow,assembly,MVP-EXPANDED,Y,3.10.6,VERIFY
+FDS-06-012,Hardware Interlock Bypass,6.5 Assembly Workflow,assembly,MVP-EXPANDED,Y,,VERIFY
+FDS-06-013,Non-Serialized Assembly (Mint Finished-Good LOT; Tray = LOT),6.6 Assembly Workflow,assembly,MVP-EXPANDED,Y,,VERIFY
+FDS-06-014,Tray Validation + Container Accumulation,6.6 Assembly Workflow,assembly,MVP-EXPANDED,Y,,VERIFY
+FDS-06-015,Production Event Immutability,6.7 Production Events,die-cast,MVP-EXPANDED,Y,3.5.4,VERIFY
+FDS-06-016,Production Event Fields,6.7 Production Events,die-cast,MVP-EXPANDED,Y,,VERIFY
+FDS-06-017,Reject Recording,6.8 Reject Events and Scrap Handling,die-cast,MVP-EXPANDED,Y,,VERIFY
+FDS-06-018,Reject Event Fields,6.8 Reject Events and Scrap Handling,die-cast,MVP-EXPANDED,Y,,VERIFY
+FDS-06-019,Reject Data Classification and Scrap Handling Patterns,6.8 Reject Events and Scrap Handling,die-cast,MVP-EXPANDED,Y,,VERIFY
+FDS-06-020,Consumption Tracking,6.9 Consumption Events,assembly,MVP-EXPANDED,Y,,VERIFY
+FDS-06-021,Consumption Genealogy,6.9 Consumption Events,assembly,MVP-EXPANDED,Y,3.13.2,VERIFY
+FDS-06-022,Work Order Auto-Generation (Production Type),6.10 Work Orders,machining,MVP-LITE,Conditional,3.1.5,VERIFY
+FDS-06-023,Work Order Structure,6.10 Work Orders,machining,MVP-LITE,Conditional,,VERIFY
+FDS-06-024,Work Order Independence from Evidence,6.10 Work Orders,machining,MVP-LITE,Conditional,,VERIFY
+FDS-06-025,WorkOrderType Code Table,6.10 Work Orders,machining,MVP-LITE,Conditional,,VERIFY
+FDS-06-026,Future Maintenance-Engine Schema Hooks,6.10 Work Orders,machining,FUTURE,Out-of-scope,,VERIFY
+FDS-06-028,Auto-Finish on Target (Camera / Scale),6.10 Work Orders,assembly,MVP,Y,,VERIFY
+FDS-06-029,Tray-Divisibility Validation on WO Close,6.10 Work Orders,assembly,MVP,Y,,VERIFY
+FDS-06-030,WorkOrder BIT-Flag Enumeration,6.10 Work Orders,machining,MVP,Y,,VERIFY
+FDS-07-001,Container Creation,7.2 Container Lifecycle,assembly,MVP,Y,,VERIFY
+FDS-07-002,Container Status Codes,7.2 Container Lifecycle,assembly,MVP,Y,,VERIFY
+FDS-07-003,Container Filling — Serialized Lines,7.2 Container Lifecycle,assembly,MVP,Y,,VERIFY
+FDS-07-004,Container Filling — Non-Serialized Lines,7.2 Container Lifecycle,assembly,MVP,Y,,VERIFY
+FDS-07-005,Container Closure,7.2 Container Lifecycle,assembly,MVP,Y,,VERIFY
+FDS-07-006,Shipping Label Generation,7.3 Shipping Labels,labels,MVP,Y,,VERIFY
+FDS-07-007,Shipping Label Tracking,7.3 Shipping Labels,labels,MVP,Y,,VERIFY
+FDS-07-008,Shipping Label Void,7.3 Shipping Labels,labels,MVP,Y,,VERIFY
+FDS-07-009,Shipping Label Reprint,7.3 Shipping Labels,labels,MVP,Y,3.13.1,VERIFY
+FDS-07-010,AIM Shipper ID Local Pool,7.4 AIM Integration,labels,MVP,Y,,VERIFY
+FDS-07-011,AIM Hold Notification,7.4 AIM Integration,labels,MVP,Y,2.3.1,VERIFY
+FDS-07-012,AIM Update for Re-Sort,7.4 AIM Integration,labels,MVP,Y,2.1.10,VERIFY
+FDS-07-013,Shipping Validation,7.5 Shipping Dock Workflow,movements,MVP,Y,,VERIFY
+FDS-07-014,Ship Confirmation,7.5 Shipping Dock Workflow,movements,MVP,Y,,VERIFY
+FDS-07-015,Container Hold,7.6 Container Holds,quality-holds,MVP,Y,,VERIFY
+FDS-07-016,Container Hold Release,7.6 Container Holds,quality-holds,MVP,Y,,VERIFY
+FDS-07-017,Sort Cage Workflow,7.7 Sort Cage,movements,MVP-EXPANDED,Y,"2.1.10, 2.2.7",VERIFY
+FDS-07-018,Sort Cage Scope Boundary,7.7 Sort Cage,movements,MVP-EXPANDED,Y,,VERIFY
+FDS-07-019,Sort Cage Is Not a LOT Merge Event,7.7 Sort Cage,movements,MVP-EXPANDED,Y,,VERIFY
+FDS-08-001,Hold Placement,8.2 Hold Management,quality-holds,MVP-EXPANDED,Y,3.16.10,VERIFY
+FDS-08-002,Hold Effect,8.2 Hold Management,quality-holds,MVP-EXPANDED,Y,3.16.10,VERIFY
+FDS-08-003,Hold Release,8.2 Hold Management,quality-holds,MVP-EXPANDED,Y,3.16.11,VERIFY
+FDS-08-004,Hold Without NCM,8.2 Hold Management,quality-holds,MVP-EXPANDED,Y,2.1.8,VERIFY
+FDS-08-005,Partial Disposition via Split,8.2 Hold Management,quality-holds,MVP-EXPANDED,Y,,VERIFY
+FDS-08-006,Bulk Hold,8.2 Hold Management,quality-holds,MVP-EXPANDED,Y,3.16.10,VERIFY
+FDS-08-007,Container Hold Integration,8.2 Hold Management,quality-holds,MVP-EXPANDED,Y,,VERIFY
+FDS-08-008,Quality Spec Management,8.3 Inspections,op-quality,MVP,Y,3.16.1,VERIFY
+FDS-08-009,Quality Spec Versioning,8.3 Inspections,op-quality,MVP,Y,3.16.2,VERIFY
+FDS-08-010,Quality Spec Attributes,8.3 Inspections,op-quality,MVP,Y,,VERIFY
+FDS-08-011,Inspection Recording,8.3 Inspections,quality-holds,MVP,Y,,VERIFY
+FDS-08-012,Failed Inspection Handling,8.3 Inspections,quality-holds,MVP,Y,,VERIFY
+FDS-08-013,Quality Attachments,8.3 Inspections,quality-holds,MVP,Y,,VERIFY
+FDS-08-014,Sample Triggers,8.4 Sampling Workflows,quality-holds,CONDITIONAL,Conditional,,VERIFY
+FDS-08-015,Sample Results as Representative,8.4 Sampling Workflows,quality-holds,CONDITIONAL,Conditional,2.1.9,VERIFY
+FDS-08-016,Defect Code Management,8.5 Defect Codes,code-tables,MVP,Y,,VERIFY
+FDS-08-017,Area Filtering,8.5 Defect Codes,code-tables,MVP,Y,,VERIFY
+FDS-08-018,NCM Scope Boundary,8.6 Non-Conformance Management,quality-holds,FUTURE,Out-of-scope,,VERIFY
+FDS-09-001,Manual Downtime Entry,9.2 Downtime Events,shift-downtime,MVP,Y,3.15.1,VERIFY
+FDS-09-002,PLC-Triggered Downtime,9.2 Downtime Events,shift-downtime,MVP,Y,3.15.2,VERIFY
+FDS-09-003,Open Downtime Events,9.2 Downtime Events,shift-downtime,MVP,Y,,VERIFY
+FDS-09-004,Downtime Event Immutability,9.2 Downtime Events,shift-downtime,MVP,Y,,VERIFY
+FDS-09-005,Downtime Reason Code Filtering,9.2 Downtime Events,shift-downtime,MVP,Y,,VERIFY
+FDS-09-006,Reason Code Seed Data,9.3 Downtime Reason Codes,code-tables,MVP,Y,,VERIFY
+FDS-09-007,Reason Types,9.3 Downtime Reason Codes,code-tables,MVP,Y,,VERIFY
+FDS-09-008,Shift Schedules,9.4 Shift Management,shift-schedules,MVP,Y,,VERIFY
+FDS-09-009,"Shift Instances, Event-Derived Runtime",9.4 Shift Management,shift-downtime,MVP,Y,,VERIFY
+FDS-09-010,Shift-Downtime Association,9.4 Shift Management,shift-downtime,MVP,Y,,VERIFY
+FDS-09-012,Shift Schedule Import,9.4 Shift Management,shift-schedules,MVP,Y,,VERIFY
+FDS-09-013,End-of-Shift Time Entry,9.4 Shift Management,shift-downtime,MVP,Y,3.15.2,VERIFY
+FDS-09-014,Early-Start Behaviour,9.4 Shift Management,shift-downtime,MVP,Y,,VERIFY
+FDS-09-015,Shift-End Summary Screen,9.4 Shift Management,shift-downtime,MVP,Y,,VERIFY
+FDS-09-011,OEE Scope Boundary,9.5 OEE,shift-downtime,FUTURE,Out-of-scope,,VERIFY
+FDS-10-001,MIP Touch Points,10.2 MIP Handshake Protocol,plc-mapping,MVP,Y,,VERIFY
+FDS-10-002,MIP Transaction Flow,10.2 MIP Handshake Protocol,plc-mapping,MVP,Y,,VERIFY
+FDS-10-003,MES Alarms,10.2 MIP Handshake Protocol,plc-mapping,MVP,Y,,VERIFY
+FDS-10-004,Disposition-Based Lines,10.3 Non-Serialized Line Integration,plc-mapping,MVP,Y,,VERIFY
+FDS-10-005,Vision / Operator Conflict — Line-Stop Semantics,10.3 Non-Serialized Line Integration,plc-mapping,MVP,Y,,VERIFY
+FDS-10-009,10-Consecutive-Fail Escalation,10.3 Non-Serialized Line Integration,plc-mapping,MVP,Y,,VERIFY
+FDS-10-010,Failure-Type Branching,10.3 Non-Serialized Line Integration,plc-mapping,MVP,Y,,VERIFY
+FDS-10-011,Hold Release Path,10.3 Non-Serialized Line Integration,plc-mapping,MVP,Y,3.16.10,VERIFY
+FDS-10-012,Controlled Run Tag (CRT) Workflow,10.3 Non-Serialized Line Integration,plc-mapping,MVP,Y,,VERIFY
+FDS-10-006,OmniServer Scale Reads,10.4 Scale Integration,plc-mapping,MVP,Y,,VERIFY
+FDS-10-007,Barcode Scanners,10.5 Barcode Integration,plc-mapping,MVP,Y,,VERIFY
+FDS-10-008,Zebra Printer Integration,10.5 Barcode Integration,labels,MVP,Y,,VERIFY
+FDS-10-013,Confirmation Method LocationAttribute,10.5 Barcode Integration,plc-mapping,MVP,Y,,VERIFY
+FDS-11-001,Operation Log,11.2 Log Types,audit,MVP,Y,,VERIFY
+FDS-11-002,Configuration Log,11.2 Log Types,audit,MVP,Y,,VERIFY
+FDS-11-003,Interface Log,11.2 Log Types,audit,MVP,Y,,VERIFY
+FDS-11-004,Failure Log,11.2 Log Types,audit,MVP,Y,,VERIFY
+FDS-11-005,High-Fidelity Interface Logging,11.2 Log Types,audit,MVP,Y,,VERIFY
+FDS-11-006,Event Type Vocabulary,11.3 Normalized Vocabularies,audit,MVP,Y,,VERIFY
+FDS-11-007,Entity Type Vocabulary,11.3 Normalized Vocabularies,audit,MVP,Y,,VERIFY
+FDS-11-008,Code-String Signatures for Shared Audit Procs,11.3 Normalized Vocabularies,audit,MVP,Y,,VERIFY
+FDS-11-011,Ignition JDBC Single-Result-Set Convention,11.3 Normalized Vocabularies,audit,MVP,Y,,VERIFY
+FDS-11-009,Retention Policy,11.4 Data Retention,audit,MVP,Y,,VERIFY
+FDS-11-010,BIGINT Primary Keys,11.4 Data Retention,audit,MVP,Y,,VERIFY
+FDS-12-001,LOT Genealogy Report,12.2 Traceability Reports,traceability,MVP,Y,3.13.2,VERIFY
+FDS-12-002,Serialized Item Search,12.2 Traceability Reports,traceability,MVP,Y,3.13.2,VERIFY
+FDS-12-003,Container Search,12.2 Traceability Reports,traceability,MVP,Y,,VERIFY
+FDS-12-004,LOT Search,12.2 Traceability Reports,traceability,MVP,Y,,VERIFY
+FDS-12-005,Die Shot Report,12.3 Production Reports (Replacing Productivity DB),shift-downtime,MVP,Y,5.6.6,VERIFY
+FDS-12-006,Rejects Report,12.3 Production Reports (Replacing Productivity DB),shift-downtime,MVP,Y,3.5.4,VERIFY
+FDS-12-007,Downtime Report,12.3 Production Reports (Replacing Productivity DB),shift-downtime,MVP,Y,3.15.0,VERIFY
+FDS-12-008,Production Report,12.3 Production Reports (Replacing Productivity DB),shift-downtime,MVP,Y,3.5.4,VERIFY
+FDS-12-009,In-Process LOT Tracking,12.4 Operational Reports,traceability,MVP,Y,,VERIFY
+FDS-12-010,Hold Status Report,12.4 Operational Reports,traceability,MVP,Y,,VERIFY
+FDS-12-011,Shipping History,12.4 Operational Reports,traceability,MVP,Y,,VERIFY
+FDS-12-012,Home-Tile Trace Access,12.5 Global Trace Tool,traceability,MVP,Y,,VERIFY
+FDS-12-013,Trace Input,12.5 Global Trace Tool,traceability,MVP,Y,,VERIFY
+FDS-12-014,Trace Output,12.5 Global Trace Tool,traceability,MVP,Y,,VERIFY
+FDS-12-015,Banners-Only In-MVP,12.6 Notifications Posture,traceability,MVP,Y,,VERIFY
+FDS-13-001,AIM Interface Methods,13.1 AIM (Honda EDI),labels,MVP,Y,,VERIFY
+FDS-13-002,AIM Error Handling,13.1 AIM (Honda EDI),labels,MVP,Y,,VERIFY
+FDS-13-003,AIM Availability,13.1 AIM (Honda EDI),labels,MVP,Y,,VERIFY
+FDS-13-004,Macola Scope Boundary,13.2 Macola ERP,environment,FUTURE,Out-of-scope,,VERIFY
+FDS-13-005,Intelex Scope Boundary,13.3 Intelex (Quality Management),environment,FUTURE,Out-of-scope,,VERIFY
+FDS-13-006,SCADA Scope Boundary,13.4 SCADA / Process Dashboards,environment,FUTURE,Out-of-scope,,VERIFY
+FDS-14-001,Seed Data (MVP — Not Conditional),14.1 Overview,environment,MVP,Y,,VERIFY
+FDS-14-002,Legacy MES Migration (Conditional),14.1 Overview,,CONDITIONAL,Conditional,,VERIFY
+FDS-14-003,Productivity DB Migration (Conditional),14.1 Overview,,CONDITIONAL,Conditional,,VERIFY
+FDS-14-004,Migration Validation,14.1 Overview,,CONDITIONAL,Conditional,,VERIFY
+FDS-14-005,Flexware BOM Import,14.1 Overview,routes-boms,MVP,Y,,VERIFY
+FDS-15-001,Phased Rollout,15.1 Deployment Approach,environment,MVP,Y,,VERIFY
+FDS-15-002,Shadow Commissioning,15.1 Deployment Approach,environment,MVP,Y,6.1.4,VERIFY
+FDS-15-003,Factory Acceptance Testing (FAT),15.1 Deployment Approach,environment,MVP,Y,,VERIFY
+FDS-15-004,Site Acceptance Testing (SAT),15.1 Deployment Approach,environment,MVP,Y,,VERIFY
+FDS-15-005,Go-Live Support,15.1 Deployment Approach,environment,MVP,Y,,VERIFY
+FDS-15-006,Rollback Plan,15.1 Deployment Approach,environment,MVP,Y,,VERIFY
+FDS-15-007,Process Change: Real-Time Data Entry,15.2 Change Management,environment,MVP,Y,5.6.6,VERIFY
+FDS-15-008,Operator Training,15.2 Change Management,environment,MVP,Y,,VERIFY
+FDS-16-001,IdentifierSequence Table,,traceability,MVP,Y,,VERIFY
+FDS-16-002,IdentifierSequence_Next Proc,,traceability,MVP,Y,,VERIFY
+FDS-16-003,Cutover-Day Seeding,,traceability,MVP,Y,,VERIFY

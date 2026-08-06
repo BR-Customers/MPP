@@ -1,8 +1,20 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-29
--- Version:     1.1
+-- Modified:    2026-08-05
+-- Version:     1.3
+-- Change:      v1.3 -- FAT #19: new @CellLocationId BIGINT param (the die-cast
+--              MACHINE/cell location selected in the entry header). Threaded
+--              into the 'DieCastPieceContributed' audit op as @LocationId
+--              (was hard-coded NULL) so the event log captures WHICH machine
+--              the parts were added at, not just the terminal. Default NULL =
+--              backward-compatible; the standalone shot-loss path (no
+--              per-cavity lines) emits no DieCastPieceContributed op so is
+--              unaffected.
+-- Change:      v1.2 -- FAT #26/#27: new @GrossShots INT param; when > 0,
+--              increments Tools.Tool.ShotCount for @ToolId in the same txn
+--              (materialized die shot counter). Negative gross rejected
+--              pre-transaction. NULL/0 = no-op (the shot-loss path never bumps).
 -- Change:      v1.1 -- pre-transaction defect-code validation: every
 --              scrapLines[].defectCodeId (across all lines) and every
 --              shotLoss[].defectCodeId must exist and be active in
@@ -60,7 +72,9 @@
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftOutput_Record
     @ShiftId BIGINT, @ToolId BIGINT, @LinesJson NVARCHAR(MAX),
-    @ShotLossJson NVARCHAR(MAX) = NULL, @AppUserId BIGINT, @TerminalLocationId BIGINT = NULL
+    @ShotLossJson NVARCHAR(MAX) = NULL, @AppUserId BIGINT, @TerminalLocationId BIGINT = NULL,
+    @GrossShots INT = NULL,
+    @CellLocationId BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
@@ -74,6 +88,7 @@ BEGIN
         IF ISJSON(@LinesJson) <> 1 OR (@ShotLossJson IS NOT NULL AND ISJSON(@ShotLossJson) <> 1)
         BEGIN SET @Message=N'LinesJson/ShotLossJson not valid JSON.'; GOTO Fail; END
         IF NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id=@AppUserId) BEGIN SET @Message=N'AppUser not found.'; GOTO Fail; END
+        IF @GrossShots IS NOT NULL AND @GrossShots < 0 BEGIN SET @Message=N'GrossShots cannot be negative.'; GOTO Fail; END
 
         DECLARE @Lines TABLE (LotId BIGINT, PieceDelta INT, ScrapLines NVARCHAR(MAX));
         INSERT INTO @Lines (LotId, PieceDelta, ScrapLines)
@@ -120,7 +135,7 @@ BEGIN
                 DECLARE @LotName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id=@LotId);
                 DECLARE @Act NVARCHAR(500) = Audit.ufn_TruncateActivity(@LotName + N' ' + Audit.ufn_MidDot()
                     + N' Die Cast ' + Audit.ufn_MidDot() + N' Added ' + CAST(@Delta AS NVARCHAR(10)) + N' pc');
-                EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=NULL,
+                EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=@CellLocationId,
                     @LogEntityTypeCode=N'Lot', @EntityId=@LotId, @LogEventTypeCode=N'DieCastPieceContributed',
                     @LogSeverityCode=N'Info', @Description=@Act, @OldValue=NULL, @NewValue=NULL;
             END
@@ -140,6 +155,16 @@ BEGIN
             FROM OPENJSON(@ShotLossJson) WITH (defectCodeId BIGINT N'$.defectCodeId', quantity INT N'$.quantity') sl
             CROSS JOIN Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId
             WHERE l.ToolId=@ToolId AND sc.Code=N'Open';
+
+        -- FAT #26/#27: materialized die shot counter. The operator's gross shot
+        -- count for this die/shift is the authoritative cycle count; bump it in
+        -- the same txn (B5 materialized-quantity pattern, row-locked). NULL/0 =
+        -- no-op, so the standalone shot-loss path never double-counts.
+        IF @GrossShots > 0
+            UPDATE Tools.Tool WITH (UPDLOCK, HOLDLOCK)
+            SET ShotCount = ShotCount + @GrossShots,
+                UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
+            WHERE Id = @ToolId;
 
         COMMIT TRANSACTION;
         SET @Status=1; SET @Message=N'Shift output recorded.';

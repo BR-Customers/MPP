@@ -272,13 +272,13 @@ BEGIN
             Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
-            CreatedByUserId, CreatedAtTerminalId, CreatedAt)
+            CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId)
         VALUES (
             @MintedName, @FinishedGoodItemId, @ManufacturedOriginId, @GoodStatusId, @PieceCount, @MaxLotSize,
             NULL, NULL, NULL, NULL, NULL, NULL,
             NULL, NULL, @CellLocationId,
             0, @PieceCount,
-            @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId);
         SET @FinishedGoodLotId = SCOPE_IDENTITY();
 
         -- side effects mirror Lot_Create: status-history / closure self-row / first placement

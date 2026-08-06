@@ -326,7 +326,7 @@
                           "style": {
                             "classes": "pf-kpi-sub"
                           },
-                          "text": "open-holds list read pending"
+                          "text": "Release restores the LOT / container to its prior status."
                         },
                         "type": "ia.display.label"
                       }
@@ -441,7 +441,7 @@
                           "style": {
                             "classes": "pf-kpi-sub"
                           },
-                          "text": "open-holds list read pending"
+                          "text": "Release restores the LOT / container to its prior status."
                         },
                         "type": "ia.display.label"
                       }

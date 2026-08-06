@@ -17,7 +17,7 @@
     "params.popupId": { "paramDirection": "input", "persistent": true }
   },
   "props": {
-    "defaultSize": { "height": 210, "width": 500 }
+    "defaultSize": { "height": 300, "width": 560 }
   },
   "root": {
     "type": "ia.container.flex",

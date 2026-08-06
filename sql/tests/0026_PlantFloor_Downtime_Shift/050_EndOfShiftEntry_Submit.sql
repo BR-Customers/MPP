@@ -38,8 +38,8 @@ DECLARE @SiteId BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
     INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
     WHERE lt.HierarchyLevel = 1 AND l.DeprecatedAt IS NULL ORDER BY l.Id);
 DECLARE @BreakTypeId BIGINT = (SELECT Id FROM Oee.DowntimeReasonType WHERE Code = N'Break');
-INSERT INTO Oee.DowntimeReasonCode (Code, Description, AreaLocationId, DowntimeReasonTypeId, IsExcused, StandardDurationMinutes, CreatedByUserId)
-SELECT v.Code, v.Descr, @SiteId, @BreakTypeId, 1, v.Mins, 1
+INSERT INTO Oee.DowntimeReasonCode (Code, Description, OperationCategoryId, DowntimeReasonTypeId, IsExcused, StandardDurationMinutes, CreatedByUserId)
+SELECT v.Code, v.Descr, NULL, @BreakTypeId, 1, v.Mins, 1  -- Break codes are plant-wide (NULL category)
 FROM (VALUES (N'LUNCH', N'Scheduled lunch', 30), (N'BREAK1', N'Scheduled break 1', 15), (N'BREAK2', N'Scheduled break 2', 15)) v(Code, Descr, Mins)
 WHERE NOT EXISTS (SELECT 1 FROM Oee.DowntimeReasonCode rc WHERE rc.Code = v.Code);
 DECLARE @Lunch  BIGINT = (SELECT Id FROM Oee.DowntimeReasonCode WHERE Code = N'LUNCH');
