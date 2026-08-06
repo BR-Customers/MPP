@@ -20,6 +20,7 @@ EXEC test.BeginTestFile @FileName = N'0024_PlantFloor_Movement_Trim/050_TrimOut_
 GO
 
 -- ---- fixture cleanup ----
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
@@ -128,13 +129,16 @@ GO
 DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+-- @ScrapCount param retired v1.3 (FAT #2); equivalent single scrap line, same total qty=2
+DECLARE @D5 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Json5 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D5 AS NVARCHAR(20)) + N',"quantity":2}]';
 DECLARE @L5 BIGINT;
 CREATE TABLE #C5 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C5 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Src, @PieceCount = 20, @AppUserId = 1;
 SELECT @L5 = NewId FROM #C5; DROP TABLE #C5;
 DECLARE @S5 BIT, @M5 NVARCHAR(500);
 CREATE TABLE #T5 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #T5 EXEC Workorder.TrimOut_Record @ParentLotId = @L5, @OperationTemplateId = @OtId, @ShotCount = 19, @ScrapCount = 2, @SourceLocationId = @Src, @AppUserId = 1;  -- 21 > 20
+INSERT INTO #T5 EXEC Workorder.TrimOut_Record @ParentLotId = @L5, @OperationTemplateId = @OtId, @ShotCount = 19, @ScrapLinesJson = @Json5, @SourceLocationId = @Src, @AppUserId = 1;  -- 21 > 20
 SELECT @S5 = Status, @M5 = Message FROM #T5; DROP TABLE #T5;
 DECLARE @S5Str NVARCHAR(10) = CAST(@S5 AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] combined shot + scrap above LOT piece count rejected', @Expected = N'0', @Actual = @S5Str;
@@ -142,7 +146,7 @@ EXEC test.Assert_Contains @TestName = N'[TrimOutVal] combined cap rejected for t
 -- boundary: 18 + 2 = 20 passes
 DECLARE @S5b BIT;
 CREATE TABLE #T5b (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #T5b EXEC Workorder.TrimOut_Record @ParentLotId = @L5, @OperationTemplateId = @OtId, @ShotCount = 18, @ScrapCount = 2, @SourceLocationId = @Src, @AppUserId = 1;
+INSERT INTO #T5b EXEC Workorder.TrimOut_Record @ParentLotId = @L5, @OperationTemplateId = @OtId, @ShotCount = 18, @ScrapLinesJson = @Json5, @SourceLocationId = @Src, @AppUserId = 1;
 SELECT @S5b = Status FROM #T5b; DROP TABLE #T5b;
 DECLARE @S5bStr NVARCHAR(10) = CAST(@S5b AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] combined sum equal to piece count passes (boundary)', @Expected = N'1', @Actual = @S5bStr;
@@ -180,7 +184,142 @@ EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] area-source re-entry rejecte
 EXEC test.Assert_Contains @TestName = N'[TrimOutVal] re-entry rejected for already-trimmed reason', @HaystackStr = @M6b, @NeedleStr = N'already completed Trim OUT';
 GO
 
+-- =============================================
+-- Test 7: multi-line scrap -> N RejectEvent rows + PieceCount decremented by Sigma-qty (once)
+-- =============================================
+DECLARE @Area7 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
+DECLARE @Press7 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Rcv7 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @Ot7 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+-- two DISTINCT active defect codes; resolved dynamically (proc validates active-ness, not category)
+DECLARE @D1 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @D2 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL AND Id <> @D1 ORDER BY Id);
+DECLARE @L7 BIGINT;
+CREATE TABLE #C7 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C7 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv7, @CurrentLocationId = @Press7, @PieceCount = 20, @AppUserId = 1;
+SELECT @L7 = NewId FROM #C7; DROP TABLE #C7;
+DECLARE @RejBefore7 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L7);
+DECLARE @Json7 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D1 AS NVARCHAR(20)) + N',"quantity":3},{"defectCodeId":' + CAST(@D2 AS NVARCHAR(20)) + N',"quantity":2}]';
+DECLARE @S7 BIT;
+CREATE TABLE #T7 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T7 EXEC Workorder.TrimOut_Record @ParentLotId = @L7, @OperationTemplateId = @Ot7, @ShotCount = 15, @ScrapLinesJson = @Json7, @SourceLocationId = @Area7, @AppUserId = 1;
+SELECT @S7 = Status FROM #T7; DROP TABLE #T7;
+DECLARE @S7Str NVARCHAR(10) = CAST(@S7 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] multi-line scrap succeeds', @Expected = N'1', @Actual = @S7Str;
+DECLARE @RejNew7 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L7) - @RejBefore7;
+DECLARE @RejNew7Str NVARCHAR(10) = CAST(@RejNew7 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] two RejectEvent rows written', @Expected = N'2', @Actual = @RejNew7Str;
+DECLARE @PC7 INT = (SELECT PieceCount FROM Lots.Lot WHERE Id = @L7);
+DECLARE @PC7Str NVARCHAR(10) = CAST(@PC7 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] PieceCount decremented by Sigma-qty once (20-5=15)', @Expected = N'15', @Actual = @PC7Str;
+DECLARE @PENull7 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L7 AND ProductionEventId IS NOT NULL);
+DECLARE @PENull7Str NVARCHAR(10) = CAST(@PENull7 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] reject rows have NULL ProductionEventId (by design)', @Expected = N'0', @Actual = @PENull7Str;
+GO
+
+-- =============================================
+-- Test 8: invalid/deprecated defectCodeId in a line -> Status 0, nothing written
+-- =============================================
+DECLARE @Area8 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
+DECLARE @Press8 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Rcv8 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @Ot8 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+DECLARE @L8 BIGINT;
+CREATE TABLE #C8 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C8 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv8, @CurrentLocationId = @Press8, @PieceCount = 20, @AppUserId = 1;
+SELECT @L8 = NewId FROM #C8; DROP TABLE #C8;
+DECLARE @BadJson8 NVARCHAR(MAX) = N'[{"defectCodeId":99999999,"quantity":2}]';
+DECLARE @S8 BIT, @M8 NVARCHAR(500);
+CREATE TABLE #T8 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T8 EXEC Workorder.TrimOut_Record @ParentLotId = @L8, @OperationTemplateId = @Ot8, @ShotCount = 18, @ScrapLinesJson = @BadJson8, @SourceLocationId = @Area8, @AppUserId = 1;
+SELECT @S8 = Status, @M8 = Message FROM #T8; DROP TABLE #T8;
+DECLARE @S8Str NVARCHAR(10) = CAST(@S8 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] invalid defect code rejected (Status 0)', @Expected = N'0', @Actual = @S8Str;
+EXEC test.Assert_Contains @TestName = N'[TrimOutScrap] invalid-defect message', @HaystackStr = @M8, @NeedleStr = N'invalid or deprecated';
+DECLARE @PC8 INT = (SELECT PieceCount FROM Lots.Lot WHERE Id = @L8);
+DECLARE @PC8Str NVARCHAR(10) = CAST(@PC8 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] no decrement on rejected scrap', @Expected = N'20', @Actual = @PC8Str;
+GO
+
+-- =============================================
+-- Test 9: shots + Sigma-scrap > PieceCount -> reject; boundary (= PieceCount) passes
+-- =============================================
+DECLARE @Area9 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
+DECLARE @Press9 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Rcv9 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @Ot9 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+DECLARE @D9 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @L9 BIGINT;
+CREATE TABLE #C9 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C9 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv9, @CurrentLocationId = @Press9, @PieceCount = 20, @AppUserId = 1;
+SELECT @L9 = NewId FROM #C9; DROP TABLE #C9;
+-- shots 19 + scrap 2 = 21 > 20 -> reject
+DECLARE @OverJson9 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D9 AS NVARCHAR(20)) + N',"quantity":2}]';
+DECLARE @S9a BIT;
+CREATE TABLE #T9a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T9a EXEC Workorder.TrimOut_Record @ParentLotId = @L9, @OperationTemplateId = @Ot9, @ShotCount = 19, @ScrapLinesJson = @OverJson9, @SourceLocationId = @Area9, @AppUserId = 1;
+SELECT @S9a = Status FROM #T9a; DROP TABLE #T9a;
+DECLARE @S9aStr NVARCHAR(10) = CAST(@S9a AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] shots+scrap over piece count rejected', @Expected = N'0', @Actual = @S9aStr;
+-- boundary: shots 18 + scrap 2 = 20 = PieceCount -> passes
+DECLARE @S9b BIT;
+CREATE TABLE #T9b (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T9b EXEC Workorder.TrimOut_Record @ParentLotId = @L9, @OperationTemplateId = @Ot9, @ShotCount = 18, @ScrapLinesJson = @OverJson9, @SourceLocationId = @Area9, @AppUserId = 1;
+SELECT @S9b = Status FROM #T9b; DROP TABLE #T9b;
+DECLARE @S9bStr NVARCHAR(10) = CAST(@S9b AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] shots+scrap = piece count boundary passes', @Expected = N'1', @Actual = @S9bStr;
+GO
+
+-- =============================================
+-- Test 10: empty/absent @ScrapLinesJson -> success, 0 rejects, no decrement (scrap-free Trim OUT)
+-- =============================================
+DECLARE @Area10 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
+DECLARE @Press10 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Rcv10 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @Ot10 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+DECLARE @L10 BIGINT;
+CREATE TABLE #C10 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C10 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv10, @CurrentLocationId = @Press10, @PieceCount = 20, @AppUserId = 1;
+SELECT @L10 = NewId FROM #C10; DROP TABLE #C10;
+DECLARE @RejBefore10 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L10);
+DECLARE @S10 BIT;
+CREATE TABLE #T10 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T10 EXEC Workorder.TrimOut_Record @ParentLotId = @L10, @OperationTemplateId = @Ot10, @ShotCount = 20, @ScrapLinesJson = NULL, @SourceLocationId = @Area10, @AppUserId = 1;
+SELECT @S10 = Status FROM #T10; DROP TABLE #T10;
+DECLARE @S10Str NVARCHAR(10) = CAST(@S10 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] scrap-free Trim OUT succeeds', @Expected = N'1', @Actual = @S10Str;
+DECLARE @RejNew10 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L10) - @RejBefore10;
+DECLARE @RejNew10Str NVARCHAR(10) = CAST(@RejNew10 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] scrap-free writes zero rejects', @Expected = N'0', @Actual = @RejNew10Str;
+DECLARE @PC10 INT = (SELECT PieceCount FROM Lots.Lot WHERE Id = @L10);
+DECLARE @PC10Str NVARCHAR(10) = CAST(@PC10 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] scrap-free leaves PieceCount unchanged', @Expected = N'20', @Actual = @PC10Str;
+GO
+
+-- =============================================
+-- Test 11: non-positive quantity in a line -> reject
+-- =============================================
+DECLARE @Area11 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
+DECLARE @Press11 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Rcv11 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @Ot11 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+DECLARE @D11 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @L11 BIGINT;
+CREATE TABLE #C11 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C11 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv11, @CurrentLocationId = @Press11, @PieceCount = 20, @AppUserId = 1;
+SELECT @L11 = NewId FROM #C11; DROP TABLE #C11;
+DECLARE @ZeroJson11 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D11 AS NVARCHAR(20)) + N',"quantity":0}]';
+DECLARE @S11 BIT, @M11 NVARCHAR(500);
+CREATE TABLE #T11 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T11 EXEC Workorder.TrimOut_Record @ParentLotId = @L11, @OperationTemplateId = @Ot11, @ShotCount = 20, @ScrapLinesJson = @ZeroJson11, @SourceLocationId = @Area11, @AppUserId = 1;
+SELECT @S11 = Status, @M11 = Message FROM #T11; DROP TABLE #T11;
+DECLARE @S11Str NVARCHAR(10) = CAST(@S11 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutScrap] non-positive scrap quantity rejected', @Expected = N'0', @Actual = @S11Str;
+EXEC test.Assert_Contains @TestName = N'[TrimOutScrap] positive-quantity message', @HaystackStr = @M11, @NeedleStr = N'quantity must be positive';
+GO
+
 -- ---- cleanup ----
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');

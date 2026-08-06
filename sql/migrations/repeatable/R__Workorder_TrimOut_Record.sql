@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_TrimOut_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-07
--- Version:     1.2
+-- Modified:    2026-08-06
+-- Version:     1.3
 -- Description: Arc 2 Phase 4 (spec sec 4.3). The Trim OUT 1:1 WHOLE-LOT move
 --              (FDS-06-006): writes a closing Workorder.ProductionEvent checkpoint
 --              for the LOT, then moves the WHOLE LOT to @DestinationCellLocationId,
@@ -45,12 +45,18 @@
 --              No OUTPUT params; @ProductionEventId returned in the NewId slot.
 --              RAISERROR (not THROW). Audit 'TrimOutRecorded' (ProductionEvent
 --              entity -> Audit.OperationLog).
+--
+--              v1.3 (2026-08-06, FAT #2): @ScrapCount -> @ScrapLinesJson. Scrap is
+--                  now defect-coded: one Workorder.RejectEvent row per line
+--                  (ProductionEventId NULL), LOT decremented once by Sigma-quantity.
+--                  Pre-txn: valid JSON, every quantity > 0, every DefectCodeId
+--                  active. ScrapCount monotonic guard dropped (per-event model).
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.TrimOut_Record
     @ParentLotId               BIGINT,
     @OperationTemplateId       BIGINT,
     @ShotCount                 INT    = NULL,
-    @ScrapCount                INT    = NULL,
+    @ScrapLinesJson            NVARCHAR(MAX) = NULL,   -- [{"defectCodeId":<bigint>,"quantity":<int>}, ...]
     @DestinationCellLocationId BIGINT = NULL,   -- v2 (2026-07-23): IGNORED. Destination is Trim Storage, resolved internally.
     @SourceLocationId          BIGINT,
     @AppUserId                 BIGINT,
@@ -67,7 +73,7 @@ BEGIN
     DECLARE @ProcName NVARCHAR(200) = N'Workorder.TrimOut_Record';
     DECLARE @Params   NVARCHAR(MAX) = (
         SELECT @ParentLotId AS ParentLotId, @OperationTemplateId AS OperationTemplateId,
-               @ShotCount AS ShotCount, @ScrapCount AS ScrapCount,
+               @ShotCount AS ShotCount, LEFT(@ScrapLinesJson, 2000) AS ScrapLinesJson,
                @DestinationCellLocationId AS DestinationCellLocationId,
                @SourceLocationId AS SourceLocationId,
                @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId
@@ -93,6 +99,59 @@ BEGIN
                     @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
                     @FailureReason = @Message, @ProcedureName = @ProcName,
                     @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ---- 1b. Parse scrap lines + derive total (pre-txn) ----
+        IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) <> 1
+        BEGIN
+            SET @Message = N'ScrapLinesJson is not valid JSON.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
+                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        DECLARE @Scrap TABLE (DefectCodeId BIGINT, Quantity INT);
+        IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) = 1
+            INSERT INTO @Scrap (DefectCodeId, Quantity)
+            SELECT j.defectCodeId, j.quantity
+            FROM OPENJSON(@ScrapLinesJson)
+                 WITH (defectCodeId BIGINT N'$.defectCodeId', quantity INT N'$.quantity') j;
+
+        DECLARE @ScrapTotal INT = ISNULL((SELECT SUM(Quantity) FROM @Scrap), 0);
+
+        -- every scrap line quantity must be positive
+        IF EXISTS (SELECT 1 FROM @Scrap WHERE Quantity IS NULL OR Quantity <= 0)
+        BEGIN
+            SET @Message = N'Each scrap line quantity must be positive.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
+                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- every scrap defect code must exist and be active (reject cleanly here
+        -- rather than hit the RejectEvent FK mid-transaction; mirrors
+        -- DieCastShiftOutput_Record's pre-txn DefectCode check)
+        IF EXISTS (
+            SELECT 1 FROM @Scrap s
+            WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc
+                              WHERE dc.Id = s.DefectCodeId AND dc.DeprecatedAt IS NULL))
+        BEGIN
+            SET @Message = N'One or more scrap defect codes are invalid or deprecated.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
+                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
@@ -212,11 +271,10 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 6. Counter sanity (non-negative when supplied) ----
+        -- ---- 6. Counter sanity (ShotCount non-negative when supplied) ----
         IF (@ShotCount IS NOT NULL AND @ShotCount < 0)
-           OR (@ScrapCount IS NOT NULL AND @ScrapCount < 0)
         BEGIN
-            SET @Message = N'ShotCount / ScrapCount cannot be negative.';
+            SET @Message = N'ShotCount cannot be negative.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
                 @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
@@ -231,10 +289,10 @@ BEGIN
         -- is capped by Lot.PieceCount (not each counter independently). This
         -- also guarantees the scrap decrement below can never go negative.
         IF @LotPieceCount IS NOT NULL
-           AND (ISNULL(@ShotCount, 0) + ISNULL(@ScrapCount, 0)) > @LotPieceCount
+           AND (ISNULL(@ShotCount, 0) + @ScrapTotal) > @LotPieceCount
         BEGIN
             SET @Message = N'ShotCount ' + ISNULL(CAST(@ShotCount AS NVARCHAR(20)), N'0')
-                         + N' + ScrapCount ' + ISNULL(CAST(@ScrapCount AS NVARCHAR(20)), N'0')
+                         + N' + Scrap ' + CAST(@ScrapTotal AS NVARCHAR(20))
                          + N' exceeds the LOT piece count ' + CAST(@LotPieceCount AS NVARCHAR(20)) + N'.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
@@ -246,8 +304,8 @@ BEGIN
         END
 
         -- ---- 7. D1 cumulative-monotonic guard (mirror of ProductionEvent_Record) ----
-        DECLARE @PrevShot INT, @PrevScrap INT;
-        SELECT TOP 1 @PrevShot = pe.ShotCount, @PrevScrap = pe.ScrapCount
+        DECLARE @PrevShot INT;
+        SELECT TOP 1 @PrevShot = pe.ShotCount
         FROM Workorder.ProductionEvent pe
         WHERE pe.LotId = @ParentLotId
         ORDER BY pe.EventAt DESC, pe.Id DESC;
@@ -257,20 +315,6 @@ BEGIN
             SET @Message = N'ShotCount ' + CAST(@ShotCount AS NVARCHAR(20))
                          + N' is less than the prior cumulative ShotCount '
                          + CAST(@PrevShot AS NVARCHAR(20)) + N' (cumulative counter cannot decrease).';
-            EXEC Audit.Audit_LogFailure
-                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
-                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
-                @FailureReason = @Message, @ProcedureName = @ProcName,
-                @AttemptedParameters = @Params;
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
-            RETURN;
-        END
-
-        IF @PrevScrap IS NOT NULL AND @ScrapCount IS NOT NULL AND @ScrapCount < @PrevScrap
-        BEGIN
-            SET @Message = N'ScrapCount ' + CAST(@ScrapCount AS NVARCHAR(20))
-                         + N' is less than the prior cumulative ScrapCount '
-                         + CAST(@PrevScrap AS NVARCHAR(20)) + N' (cumulative counter cannot decrease).';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
                 @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
@@ -294,19 +338,29 @@ BEGIN
         )
         VALUES (
             @ParentLotId, @OperationTemplateId, NULL, SYSUTCDATETIME(),
-            @ShotCount, @ScrapCount, NULL,
+            @ShotCount, @ScrapTotal, NULL,
             NULL, NULL, @AppUserId, @TerminalLocationId, NULL
         );
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
+
+        -- Inline defect-coded scrap rows (mirror DieCastShiftOutput_Record). One
+        -- RejectEvent per line; ProductionEventId NULL by design (attribution is
+        -- by LotId + Trim OUT context). The aggregate LOT decrement is in the
+        -- move UPDATE below (NOT per-line -- avoids double-decrement).
+        IF EXISTS (SELECT 1 FROM @Scrap)
+            INSERT INTO Workorder.RejectEvent
+                (ProductionEventId, LotId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, RecordedAt)
+            SELECT NULL, @ParentLotId, s.DefectCodeId, s.Quantity, NULL, N'Trim OUT scrap', @AppUserId, SYSUTCDATETIME()
+            FROM @Scrap s;
 
         -- (b) INLINED whole-LOT move (mirror of Lots.Lot_MoveTo). No split, no children.
         --     v1.2: scrap comes out of the LOT here -- the LOT arrives at Machining
         --     with its real remaining quantity. Never negative (guard 6b).
         UPDATE Lots.Lot
         SET CurrentLocationId = @TrimStoreId,
-            PieceCount         = PieceCount - ISNULL(@ScrapCount, 0),
-            InventoryAvailable = InventoryAvailable - ISNULL(@ScrapCount, 0),
+            PieceCount         = PieceCount - @ScrapTotal,
+            InventoryAvailable = InventoryAvailable - @ScrapTotal,
             UpdatedAt          = SYSUTCDATETIME(),
             UpdatedByUserId    = @AppUserId
         WHERE Id = @ParentLotId;
@@ -319,7 +373,9 @@ BEGIN
             @LotName + N' ' + Audit.ufn_MidDot() + N' Trim ' + Audit.ufn_MidDot()
             + N' OUT to ' + @ToName
             + N' (Shots=' + ISNULL(CAST(@ShotCount AS NVARCHAR(20)), N'-')
-            + N', Scrap=' + ISNULL(CAST(@ScrapCount AS NVARCHAR(20)), N'-') + N')';
+            + N', Scrap=' + CAST(@ScrapTotal AS NVARCHAR(20))
+            + N' (' + CAST((SELECT COUNT(*) FROM @Scrap) AS NVARCHAR(10)) + N' reason'
+            + CASE WHEN (SELECT COUNT(*) FROM @Scrap) = 1 THEN N'' ELSE N's' END + N')';
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         DECLARE @NewValue NVARCHAR(MAX) = (
