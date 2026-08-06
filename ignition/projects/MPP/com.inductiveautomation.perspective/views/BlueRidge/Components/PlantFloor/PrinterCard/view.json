@@ -1,0 +1,233 @@
+{
+  "custom": {
+    "partsCount": ""
+  },
+  "params": {
+    "assignedItemId": null,
+    "cellLocationId": null,
+    "connectionKind": "",
+    "description": "",
+    "endpoint": "",
+    "fillAccum": 0,
+    "fillTarget": 0,
+    "index": 0,
+    "isFull": 0,
+    "openContainerId": null,
+    "partNumber": "",
+    "printerCode": "",
+    "printerLocationId": null,
+    "printerName": "",
+    "sortOrder": 0,
+    "terminalLocationId": null,
+    "totalRows": 1
+  },
+  "propConfig": {
+    "params.assignedItemId": { "paramDirection": "input" },
+    "params.cellLocationId": { "paramDirection": "input" },
+    "params.connectionKind": { "paramDirection": "input" },
+    "params.description": { "paramDirection": "input" },
+    "params.endpoint": { "paramDirection": "input" },
+    "params.fillAccum": { "paramDirection": "input" },
+    "params.fillTarget": { "paramDirection": "input" },
+    "params.index": { "paramDirection": "input" },
+    "params.isFull": { "paramDirection": "input" },
+    "params.openContainerId": { "paramDirection": "input" },
+    "params.partNumber": { "paramDirection": "input" },
+    "params.printerCode": { "paramDirection": "input" },
+    "params.printerLocationId": { "paramDirection": "input" },
+    "params.printerName": { "paramDirection": "input" },
+    "params.sortOrder": { "paramDirection": "input" },
+    "params.terminalLocationId": { "paramDirection": "input" },
+    "params.totalRows": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 320, "height": 300 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "pf-card", "gap": "8px", "padding": "12px", "minWidth": "300px" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderRow" },
+        "props": { "alignItems": "center", "style": { "gap": "8px" } },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "PrinterName" },
+            "position": { "grow": 1 },
+            "propConfig": {
+              "props.text": {
+                "binding": { "type": "expr", "config": { "expression": "{view.params.printerCode} + '  ' + {view.params.printerName}" } }
+              }
+            },
+            "props": { "style": { "fontSize": "15px", "fontWeight": "600" } }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "UpButton" },
+            "position": { "shrink": 0 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tsystem.perspective.sendMessage(\"printerCardReorder\", payload={\"printerLocationId\": self.view.params.printerLocationId, \"dir\": \"up\"}, scope=\"page\")" }
+                }
+              }
+            },
+            "propConfig": {
+              "props.enabled": { "binding": { "type": "expr", "config": { "expression": "{view.params.index} > 0" } } }
+            },
+            "props": { "text": "Up", "style": { "classes": "pf-btn pf-btn-sm" } }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "DownButton" },
+            "position": { "shrink": 0 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tsystem.perspective.sendMessage(\"printerCardReorder\", payload={\"printerLocationId\": self.view.params.printerLocationId, \"dir\": \"down\"}, scope=\"page\")" }
+                }
+              }
+            },
+            "propConfig": {
+              "props.enabled": { "binding": { "type": "expr", "config": { "expression": "{view.params.index} < {view.params.totalRows} - 1" } } }
+            },
+            "props": { "text": "Down", "style": { "classes": "pf-btn pf-btn-sm" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "AssignedFg" },
+        "propConfig": {
+          "props.text": {
+            "binding": { "type": "expr", "config": { "expression": "if(isNull({view.params.assignedItemId}), 'Unassigned', {view.params.partNumber} + ' - ' + {view.params.description})" } }
+          },
+          "props.style.color": {
+            "binding": { "type": "expr", "config": { "expression": "if(isNull({view.params.assignedItemId}), 'var(--mpp-text-tertiary)', 'var(--mpp-text-primary)')" } }
+          }
+        },
+        "props": { "style": { "fontSize": "13px" } }
+      },
+      {
+        "type": "ia.input.dropdown",
+        "meta": { "name": "AssignDropdown" },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script", "scope": "G",
+              "config": { "script": "\tsystem.perspective.sendMessage(\"printerCardAssign\", payload={\"printerLocationId\": self.view.params.printerLocationId, \"itemId\": self.props.value}, scope=\"page\")" }
+            }
+          }
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": { "type": "expr", "config": { "expression": "runScript(\"BlueRidge.Workorder.Assembly.getEligibleFinishedGoodsForDropdown\", 0, {view.params.cellLocationId})" } }
+          },
+          "props.value": {
+            "binding": { "type": "property", "config": { "path": "view.params.assignedItemId" } }
+          }
+        },
+        "props": {
+          "placeholder": { "text": "Assign a finished good..." },
+          "style": { "height": "30px" }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "FillRow" },
+        "props": { "alignItems": "center", "style": { "gap": "8px" } },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "FillLabel" },
+            "position": { "grow": 1 },
+            "propConfig": {
+              "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.params.openContainerId})" } } },
+              "props.text": {
+                "binding": { "type": "expr", "config": { "expression": "'Box: ' + toStr({view.params.fillAccum}) + ' / ' + toStr({view.params.fillTarget})" } }
+              }
+            },
+            "props": { "style": { "fontSize": "12px", "color": "var(--mpp-text-secondary)" } }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "ValidateButton" },
+            "position": { "shrink": 0 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tres = BlueRidge.Location.Printer.validateEndpoint(self.view.params.endpoint, self.view.params.connectionKind)\n\tBlueRidge.Common.Notify.toast(res[\"title\"], res[\"message\"], res[\"level\"])" }
+                }
+              }
+            },
+            "props": { "text": "Validate", "style": { "classes": "pf-btn pf-btn-sm" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "CloseRow" },
+        "props": { "alignItems": "center", "style": { "gap": "8px" } },
+        "children": [
+          {
+            "type": "ia.input.text-field",
+            "meta": { "name": "CountInput" },
+            "position": { "basis": "90px", "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.partsCount" } }
+              }
+            },
+            "props": {
+              "deferUpdates": false,
+              "placeholder": "Count",
+              "style": { "classes": "pf-field-input", "height": "30px" }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CompleteTrayButton" },
+            "position": { "grow": 1 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tresult = BlueRidge.Workorder.Assembly.completeTray(self.view.params.assignedItemId, BlueRidge.Common.Util.toIntOrNone(self.view.custom.partsCount), self.view.params.cellLocationId, closureMethod=\"ByCount\", terminalLocationId=self.view.params.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tsystem.perspective.sendMessage(\"printerCardsRefresh\", scope=\"page\")" }
+                }
+              }
+            },
+            "propConfig": {
+              "props.enabled": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.params.assignedItemId})" } } }
+            },
+            "props": { "text": "Complete Tray", "style": { "classes": "pf-btn pf-btn-primary" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "CompleteBoxButton" },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script", "scope": "G",
+              "config": { "script": "\tresult = BlueRidge.Workorder.Assembly.completeBoxToPrinter(self.view.params.openContainerId, self.view.params.terminalLocationId, self.view.params.printerLocationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Box completed\")\n\tsystem.perspective.sendMessage(\"printerCardsRefresh\", scope=\"page\")" }
+            }
+          }
+        },
+        "propConfig": {
+          "position.display": { "binding": { "type": "expr", "config": { "expression": "{view.params.isFull} = 1" } } }
+        },
+        "props": { "text": "Complete Box (ship to this printer)", "style": { "classes": "pf-btn pf-btn-large" } }
+      }
+    ]
+  }
+}
