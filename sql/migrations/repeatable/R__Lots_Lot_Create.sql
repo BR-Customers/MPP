@@ -345,6 +345,42 @@ BEGIN
             END
         END
 
+        -- ---- 6. MaxParts per-location cap (RECEIVED origin only) ----
+        -- Loose-receive scans place inventory at a location; cap the per-location
+        -- non-Closed total of this Item to Parts.Item.MaxParts (NULL = uncapped),
+        -- mirroring the Lots.Lot_MoveToValidated placement check. Gated to the
+        -- 'Received' origin: production births (die-cast / machining / assembly
+        -- mints) are deliberately NOT capped here -- halting the line because a
+        -- location is "full" is a downstream logistics problem, not a birth-time
+        -- reject. Operator placement via the move path is capped in
+        -- Lots.Lot_MoveToValidated; this closes the equivalent gap on receiving.
+        DECLARE @ReceivedOriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+        DECLARE @MaxParts INT = (SELECT MaxParts FROM Parts.Item WHERE Id = @ItemId);
+        IF @LotOriginTypeId = @ReceivedOriginId AND @MaxParts IS NOT NULL
+        BEGIN
+            DECLARE @ExistingParts INT = (
+                SELECT ISNULL(SUM(l2.PieceCount), 0)
+                FROM Lots.Lot l2
+                INNER JOIN Lots.LotStatusCode s2 ON s2.Id = l2.LotStatusId
+                WHERE l2.CurrentLocationId = @CurrentLocationId
+                  AND l2.ItemId = @ItemId
+                  AND s2.Code <> N'Closed');
+            IF @ExistingParts + @PieceCount > @MaxParts
+            BEGIN
+                SET @Message = N'Receiving ' + CAST(@PieceCount AS NVARCHAR(20))
+                    + N' would exceed the max parts allowed at this location ('
+                    + CAST(@ExistingParts AS NVARCHAR(20)) + N' present, cap '
+                    + CAST(@MaxParts AS NVARCHAR(20)) + N').';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                    @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                RETURN;
+            END
+        END
+
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
 

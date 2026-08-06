@@ -88,9 +88,9 @@ BEGIN
 
         BEGIN TRANSACTION;
         INSERT INTO Oee.DowntimeEvent
-            (LocationId, DowntimeReasonCodeId, ShiftId, StartedAt, EndedAt, DowntimeSourceCodeId, AppUserId, Remarks)
+            (LocationId, DowntimeReasonCodeId, ShiftId, StartedAt, EndedAt, DowntimeSourceCodeId, AppUserId, Remarks, DurationMinutes)
         VALUES
-            (@ScopeLocationId, @DowntimeReasonCodeId, @ShiftId, @StartUtc, @EndUtc, @SourceId, @AppUserId, @Remarks);
+            (@ScopeLocationId, @DowntimeReasonCodeId, @ShiftId, @StartUtc, @EndUtc, @SourceId, @AppUserId, @Remarks, DATEDIFF(MINUTE, @StartUtc, @EndUtc));
         SET @NewId = SCOPE_IDENTITY();
         EXEC Audit.Audit_LogOperation
             @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=@ScopeLocationId,

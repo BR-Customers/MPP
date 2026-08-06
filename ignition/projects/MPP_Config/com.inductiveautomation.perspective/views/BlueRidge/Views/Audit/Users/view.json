@@ -1,5 +1,9 @@
 {
   "custom": {
+    "policy": {
+      "operatorPresenceTimeoutSeconds": 180,
+      "elevationTimeoutSeconds": 300
+    },
     "filter": {
       "includeDeprecated": false,
       "searchText": ""
@@ -198,6 +202,61 @@
           }
         },
         "type": "ia.container.flex"
+      },
+      {
+        "meta": { "name": "SessionPolicyPanel" },
+        "position": { "shrink": 0 },
+        "props": {
+          "alignItems": "flex-end",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "16px",
+            "padding": "10px 16px"
+          }
+        },
+        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": { "name": "PolicyEyebrow" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "label-eyebrow", "paddingBottom": "6px" }, "text": "Session timeouts (global, seconds)" },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              { "meta": { "name": "OpLabel" }, "props": { "style": { "classes": "label-eyebrow" }, "text": "Operator presence" }, "type": "ia.display.label" },
+              { "meta": { "name": "OpInput" },
+                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.policy.operatorPresenceTimeoutSeconds" }, "type": "property" } } },
+                "props": { "style": { "classes": "search-input", "width": "110px" } },
+                "type": "ia.input.text-field" }
+            ],
+            "meta": { "name": "OpField" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              { "meta": { "name": "ElevLabel" }, "props": { "style": { "classes": "label-eyebrow" }, "text": "Elevation" }, "type": "ia.display.label" },
+              { "meta": { "name": "ElevInput" },
+                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.policy.elevationTimeoutSeconds" }, "type": "property" } } },
+                "props": { "style": { "classes": "search-input", "width": "110px" } },
+                "type": "ia.input.text-field" }
+            ],
+            "meta": { "name": "ElevField" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": { "component": { "onActionPerformed": { "config": { "script": "\tself.view.rootContainer.handleSavePolicy()" }, "scope": "G", "type": "script" } } },
+            "meta": { "name": "SavePolicyButton" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "btn btn-primary" }, "text": "Save timeouts" },
+            "type": "ia.input.button"
+          }
+        ]
       },
       {
         "children": [
@@ -499,8 +558,25 @@
         "classes": "screen-active"
       }
     },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tp = BlueRidge.Location.SessionPolicy.getPolicy() or {}\n\tself.view.custom.policy = {\"operatorPresenceTimeoutSeconds\": p.get(\"OperatorPresenceTimeoutSeconds\") or 180, \"elevationTimeoutSeconds\": p.get(\"ElevationTimeoutSeconds\") or 300}"
+          }
+        }
+      }
+    },
     "scripts": {
-      "customMethods": [],
+      "customMethods": [
+        {
+          "name": "handleSavePolicy",
+          "params": [],
+          "script": "\tres = BlueRidge.Location.SessionPolicy.updatePolicy(self.view.custom.policy)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session timeouts saved\")"
+        }
+      ],
       "extensionFunctions": null,
       "messageHandlers": [
         {

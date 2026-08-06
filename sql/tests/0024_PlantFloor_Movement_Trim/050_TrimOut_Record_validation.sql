@@ -148,6 +148,38 @@ DECLARE @S5bStr NVARCHAR(10) = CAST(@S5b AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] combined sum equal to piece count passes (boundary)', @Expected = N'1', @Actual = @S5bStr;
 GO
 
+-- =============================================
+-- Test 6: same-shop re-entry via AREA-level source (FAT #22, 2026-08-04).
+--   The real Trim terminal records with @SourceLocationId = the trim AREA (its
+--   zoneLocationId), NOT a press. Trim Storage (TRIM1-STORE) is a CHILD of that
+--   area, so the source-ancestor guard (3b) still passes after the first OUT --
+--   the LOT sits in the store, whose ancestor set includes TRIM1 = the source.
+--   The explicit already-in-Trim-Storage guard must reject the 2nd OUT.
+-- =============================================
+DECLARE @Area BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
+DECLARE @Press BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+DECLARE @L6 BIGINT;
+CREATE TABLE #C6 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C6 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Press, @PieceCount = 20, @AppUserId = 1;
+SELECT @L6 = NewId FROM #C6; DROP TABLE #C6;
+DECLARE @S6a BIT, @S6b BIT, @M6b NVARCHAR(500);
+-- First OUT via AREA-level source succeeds (LOT is at a press under TRIM1).
+CREATE TABLE #T6a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T6a EXEC Workorder.TrimOut_Record @ParentLotId = @L6, @OperationTemplateId = @OtId, @ShotCount = 20, @SourceLocationId = @Area, @AppUserId = 1;
+SELECT @S6a = Status FROM #T6a; DROP TABLE #T6a;
+DECLARE @S6aStr NVARCHAR(10) = CAST(@S6a AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] first OUT via area source succeeds (control)', @Expected = N'1', @Actual = @S6aStr;
+-- Second OUT via the same AREA-level source must reject (LOT now in Trim Storage).
+CREATE TABLE #T6b (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T6b EXEC Workorder.TrimOut_Record @ParentLotId = @L6, @OperationTemplateId = @OtId, @ShotCount = 20, @SourceLocationId = @Area, @AppUserId = 1;
+SELECT @S6b = Status, @M6b = Message FROM #T6b; DROP TABLE #T6b;
+DECLARE @S6bStr NVARCHAR(10) = CAST(@S6b AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] area-source re-entry rejected (FAT #22)', @Expected = N'0', @Actual = @S6bStr;
+EXEC test.Assert_Contains @TestName = N'[TrimOutVal] re-entry rejected for already-trimmed reason', @HaystackStr = @M6b, @NeedleStr = N'already completed Trim OUT';
+GO
+
 -- ---- cleanup ----
 DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');

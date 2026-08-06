@@ -40,6 +40,22 @@
     "params.toolId": {
       "paramDirection": "input",
       "persistent": true
+    },
+    "custom.defectOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0, \"DieCast\")"
+        }
+      }
+    },
+    "custom.targetLot": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getLatestForToolCavityOrEmpty\", 0, {view.params.toolId}, {view.params.toolCavityId}, {view.params.refreshToken})"
+        }
+      }
     }
   },
   "props": {

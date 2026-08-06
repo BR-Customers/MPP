@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Quality_Hold_Release.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0
+-- Version:     1.1
 -- Description: Releases a single open hold (Arc 2 Phase 7). Validates the HoldEvent is
 --              open; sets ReleasedByUserId/ReleasedAt/ReleaseRemarks; restores the
 --              entity status -- a LOT goes back to the prior status recorded on the
@@ -9,6 +9,9 @@
 --              Container returns to Complete (2). Audits 'HoldReleased'. AIM
 --              ReleaseFromHold for shipped containers is a Gateway-async step (A6).
 --              No OUTPUT params (FDS-11-011); single terminal SELECT @Status,@Message.
+--              FAT #21: releasing a hold on a finished-good tray LOT whose container is
+--              already Complete/Shipped re-closes it (Good -> Closed) via the silent
+--              Lots.Lot_CloseInline helper.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Quality.Hold_Release
@@ -75,6 +78,28 @@ BEGIN
             UPDATE Lots.Lot SET LotStatusId = @PriorStatus WHERE Id = @LotId;
             INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
             VALUES (@LotId, 2, @PriorStatus, @ReleaseRemarks, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+
+            -- FAT #21: if this released LOT is a finished-good tray LOT whose container
+            -- has already completed/shipped, close it now (Good -> Closed). The
+            -- completion-time close (Lots.Container_Complete) skips held LOTs, so a hold
+            -- placed before completion leaves the FG LOT open until release. Delegates to
+            -- the silent Lots.Lot_CloseInline helper (this proc is INSERT-EXEC-captured,
+            -- so it cannot EXEC the status-row Lot_UpdateStatus). The helper's Good-only
+            -- guard makes this a no-op unless the restore returned the LOT to Good, so
+            -- the recall case (Closed -> Hold -> release restores to Closed) is skipped.
+            IF EXISTS (
+                SELECT 1
+                FROM Lots.ContainerTray t
+                INNER JOIN Lots.Container c ON c.Id = t.ContainerId
+                WHERE t.FinishedGoodLotId = @LotId
+                  AND c.ContainerStatusCodeId IN (2, 3))   -- Complete, Shipped
+            BEGIN
+                EXEC Lots.Lot_CloseInline
+                    @LotId = @LotId,
+                    @Reason = N'Closed on hold-release (container already complete).',
+                    @AppUserId = @AppUserId,
+                    @TerminalLocationId = @TerminalLocationId;
+            END
         END
         ELSE
         BEGIN

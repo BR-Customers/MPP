@@ -30,6 +30,7 @@ CREATE OR ALTER PROCEDURE Tools.Tool_Update
     @Name        NVARCHAR(100),
     @Description NVARCHAR(500) = NULL,
     @DieRankId   BIGINT        = NULL,
+    @ShotLimit   INT           = NULL,
     @AppUserId   BIGINT
 AS
 BEGIN
@@ -44,7 +45,8 @@ BEGIN
         (SELECT @Id          AS Id,
                 @Name        AS Name,
                 @Description AS Description,
-                @DieRankId   AS DieRankId
+                @DieRankId   AS DieRankId,
+                @ShotLimit   AS ShotLimit
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
@@ -61,12 +63,13 @@ BEGIN
         END
 
         DECLARE @ToolTypeCode NVARCHAR(50), @OldName NVARCHAR(100),
-                @OldDescription NVARCHAR(500), @OldDieRankId BIGINT;
+                @OldDescription NVARCHAR(500), @OldDieRankId BIGINT, @OldShotLimit INT;
 
         SELECT @ToolTypeCode   = tt.Code,
                @OldName        = t.Name,
                @OldDescription = t.Description,
-               @OldDieRankId   = t.DieRankId
+               @OldDieRankId   = t.DieRankId,
+               @OldShotLimit   = t.ShotLimit
         FROM Tools.Tool t
         INNER JOIN Tools.ToolType tt ON tt.Id = t.ToolTypeId
         WHERE t.Id = @Id AND t.DeprecatedAt IS NULL;
@@ -74,6 +77,30 @@ BEGIN
         IF @ToolTypeCode IS NULL
         BEGIN
             SET @Message = N'Tool not found or deprecated.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Tool',
+                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        IF @ShotLimit IS NOT NULL AND @ShotLimit <= 0
+        BEGIN
+            SET @Message = N'ShotLimit must be a positive number of shots.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Tool',
+                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        IF @ShotLimit IS NOT NULL AND @ToolTypeCode <> N'Die'
+        BEGIN
+            SET @Message = N'ShotLimit is only valid for Die-type Tools.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Tool',
                 @EntityId = @Id, @LogEventTypeCode = N'Updated',
@@ -113,7 +140,7 @@ BEGIN
 
         DECLARE @OldValue NVARCHAR(MAX) =
             (SELECT @OldName AS Name, @OldDescription AS Description,
-                    @OldDieRankId AS DieRankId
+                    @OldDieRankId AS DieRankId, @OldShotLimit AS ShotLimit
              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
         BEGIN TRANSACTION;
@@ -122,6 +149,7 @@ BEGIN
         SET Name            = @Name,
             Description     = @Description,
             DieRankId       = @DieRankId,
+            ShotLimit       = @ShotLimit,
             UpdatedAt       = SYSUTCDATETIME(),
             UpdatedByUserId = @AppUserId
         WHERE Id = @Id;

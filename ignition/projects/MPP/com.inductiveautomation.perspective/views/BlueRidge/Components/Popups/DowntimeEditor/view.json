@@ -4,8 +4,10 @@
       "reasonCodeId": null,
       "startVal": null,
       "endVal": null,
+      "durationMinutes": null,
       "remarks": ""
     },
+    "durationOnly": false,
     "reasonFilter": { "includeDeprecated": false },
     "reasonOptions": []
   },
@@ -28,19 +30,13 @@
     "params.remarks": { "paramDirection": "input", "persistent": true },
     "custom.reasonOptions": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 0, {view.custom.reasonFilter})" },
-        "transforms": [
-          {
-            "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Description\") or \"\")} for r in (value or [])]",
-            "type": "script"
-          }
-        ],
+        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.getForDropdown\", 0, {session.custom.terminal.operationCategoryCode})" },
         "type": "expr"
       }
     }
   },
   "props": {
-    "defaultSize": { "height": 460, "width": 520 }
+    "defaultSize": { "height": 520, "width": 560 }
   },
   "root": {
     "children": [
@@ -87,6 +83,32 @@
             "type": "ia.container.flex"
           },
           {
+            "meta": { "name": "DurationOnlyToggle" },
+            "propConfig": {
+              "position.display": { "binding": { "config": { "expression": "{view.params.mode} = \"create\"" }, "type": "expr" } },
+              "props.selected": { "binding": { "config": { "bidirectional": true, "path": "view.custom.durationOnly" }, "type": "property" } }
+            },
+            "props": { "text": "Duration only (I know how long, not the exact time)" },
+            "type": "ia.input.checkbox"
+          },
+          {
+            "children": [
+              { "meta": { "name": "Label" }, "props": { "text": "Duration (minutes)", "style": { "classes": "field-label" } }, "type": "ia.display.label" },
+              {
+                "meta": { "name": "Input" },
+                "propConfig": { "props.value": { "binding": { "config": { "bidirectional": true, "path": "view.custom.editDraft.durationMinutes" }, "type": "property" } } },
+                "props": { "style": { "boxSizing": "border-box", "width": "100%" } },
+                "type": "ia.input.numeric-entry-field"
+              }
+            ],
+            "meta": { "name": "DurationField" },
+            "propConfig": {
+              "position.display": { "binding": { "config": { "expression": "{view.custom.durationOnly}" }, "type": "expr" } }
+            },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
                 "children": [
@@ -94,7 +116,7 @@
                   {
                     "meta": { "name": "Input" },
                     "propConfig": { "props.value": { "binding": { "config": { "bidirectional": true, "path": "view.custom.editDraft.startVal" }, "type": "property" } } },
-                    "props": { "format": "YYYY-MM-DD HH:mm", "pickerType": "datetime", "style": { "boxSizing": "border-box", "width": "100%" } },
+                    "props": { "dismissOnSelect": false, "format": "YYYY-MM-DD HH:mm", "pickerType": "datetime", "style": { "boxSizing": "border-box", "width": "100%" } },
                     "type": "ia.input.date-time-input"
                   }
                 ],
@@ -105,11 +127,11 @@
               },
               {
                 "children": [
-                  { "meta": { "name": "Label" }, "props": { "text": "End (ET) — blank = still open", "style": { "classes": "field-label" } }, "type": "ia.display.label" },
+                  { "meta": { "name": "Label", "tooltip": { "text": "Leave blank to keep the event open", "enabled": true } }, "props": { "text": "End (ET)", "style": { "classes": "field-label" } }, "type": "ia.display.label" },
                   {
                     "meta": { "name": "Input" },
                     "propConfig": { "props.value": { "binding": { "config": { "bidirectional": true, "path": "view.custom.editDraft.endVal" }, "type": "property" } } },
-                    "props": { "format": "YYYY-MM-DD HH:mm", "pickerType": "datetime", "style": { "boxSizing": "border-box", "width": "100%" } },
+                    "props": { "dismissOnSelect": false, "format": "YYYY-MM-DD HH:mm", "pickerType": "datetime", "style": { "boxSizing": "border-box", "width": "100%" } },
                     "type": "ia.input.date-time-input"
                   }
                 ],
@@ -120,6 +142,9 @@
               }
             ],
             "meta": { "name": "TimeRow" },
+            "propConfig": {
+              "position.display": { "binding": { "config": { "expression": "!{view.custom.durationOnly}" }, "type": "expr" } }
+            },
             "props": { "style": { "gap": "12px" } },
             "type": "ia.container.flex"
           },
@@ -163,7 +188,7 @@
         ],
         "meta": { "name": "FooterBar" },
         "position": { "basis": "56px", "shrink": 0 },
-        "props": { "alignItems": "center", "style": { "background": "var(--mpp-surface-raised)", "borderTop": "1px solid var(--mpp-border-subtle)", "gap": "8px", "padding": "0 16px" } },
+        "props": { "alignItems": "center", "style": { "background": "var(--mpp-surface-raised)", "borderTop": "1px solid var(--mpp-border-subtle)", "gap": "16px", "padding": "0 16px" } },
         "type": "ia.container.flex"
       }
     ],
@@ -174,7 +199,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tif self.view.params.mode == \"update\":\n\t\tst = self.view.params.startedAtEtStr\n\t\ten = self.view.params.endedAtEtStr\n\t\tself.view.custom.editDraft = {\n\t\t\t\"reasonCodeId\": self.view.params.reasonCodeId,\n\t\t\t\"startVal\": system.date.parse(st, \"yyyy-MM-dd HH:mm:ss\") if st else None,\n\t\t\t\"endVal\": system.date.parse(en, \"yyyy-MM-dd HH:mm:ss\") if en else None,\n\t\t\t\"remarks\": self.view.params.remarks or \"\"\n\t\t}\n\telse:\n\t\tself.view.custom.editDraft = {\"reasonCodeId\": None, \"startVal\": None, \"endVal\": None, \"remarks\": \"\"}"
+            "script": "\tself.view.custom.durationOnly = False\n\tif self.view.params.mode == \"update\":\n\t\tst = self.view.params.startedAtEtStr\n\t\ten = self.view.params.endedAtEtStr\n\t\tself.view.custom.editDraft = {\n\t\t\t\"reasonCodeId\": self.view.params.reasonCodeId,\n\t\t\t\"startVal\": system.date.parse(st, \"yyyy-MM-dd HH:mm:ss\") if st else None,\n\t\t\t\"endVal\": system.date.parse(en, \"yyyy-MM-dd HH:mm:ss\") if en else None,\n\t\t\t\"durationMinutes\": None,\n\t\t\t\"remarks\": self.view.params.remarks or \"\"\n\t\t}\n\telse:\n\t\tself.view.custom.editDraft = {\"reasonCodeId\": None, \"startVal\": None, \"endVal\": None, \"durationMinutes\": None, \"remarks\": \"\"}"
           }
         }
       }
@@ -185,7 +210,7 @@
         {
           "name": "doSave",
           "params": [],
-          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\timport BlueRidge.Common.Util as U\n\td = U.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tsv = d.get(\"startVal\"); ev = d.get(\"endVal\")\n\tif sv is None:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"Start time is required.\"}, \"\")\n\t\treturn\n\tif ev is not None and ev <= sv:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"End must be after start.\"}, \"\")\n\t\treturn\n\tstartStr = system.date.format(sv, \"yyyy-MM-dd HH:mm:ss\")\n\tendStr = system.date.format(ev, \"yyyy-MM-dd HH:mm:ss\") if ev is not None else None\n\treason = d.get(\"reasonCodeId\")\n\tremarks = d.get(\"remarks\")\n\tmode = self.view.params.mode\n\tif mode == \"create\":\n\t\tif ev is None:\n\t\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"End time is required for a past event.\"}, \"\")\n\t\t\treturn\n\t\tres = D.recordHistorical(self.view.params.scopeLocationId, startStr, endStr, reason, remarks)\n\t\tUi.notifyResult(res, \"Past downtime recorded\")\n\telse:\n\t\teid = self.view.params.editId\n\t\tD.updateReason(eid, reason)\n\t\tres = D.updateTimes(eid, startStr, endStr, remarks)\n\t\tUi.notifyResult(res, \"Downtime updated\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"downtimeManagerRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-downtime-editor\")"
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\timport BlueRidge.Common.Util as U\n\td = U.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tif self.view.params.mode == \"create\" and bool(U.extractQualifiedValues(self.view.custom.durationOnly)):\n\t\tdur = d.get(\"durationMinutes\")\n\t\tif dur is None or int(dur) <= 0:\n\t\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"Duration (minutes) is required.\"}, \"\")\n\t\t\treturn\n\t\tres = D.recordApproximate(self.view.params.scopeLocationId, int(dur), None, d.get(\"reasonCodeId\"), d.get(\"remarks\"))\n\t\tUi.notifyResult(res, \"Approximate downtime recorded\")\n\t\tif res and res.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"downtimeManagerRefresh\", scope=\"page\")\n\t\t\tsystem.perspective.closePopup(id=\"mpp-downtime-editor\")\n\t\treturn\n\tsv = d.get(\"startVal\"); ev = d.get(\"endVal\")\n\tif sv is None:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"Start time is required.\"}, \"\")\n\t\treturn\n\tif ev is not None and ev <= sv:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"End must be after start.\"}, \"\")\n\t\treturn\n\tstartStr = system.date.format(sv, \"yyyy-MM-dd HH:mm:ss\")\n\tendStr = system.date.format(ev, \"yyyy-MM-dd HH:mm:ss\") if ev is not None else None\n\treason = d.get(\"reasonCodeId\")\n\tremarks = d.get(\"remarks\")\n\tmode = self.view.params.mode\n\tif mode == \"create\":\n\t\tif ev is None:\n\t\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"End time is required for a past event.\"}, \"\")\n\t\t\treturn\n\t\tres = D.recordHistorical(self.view.params.scopeLocationId, startStr, endStr, reason, remarks)\n\t\tUi.notifyResult(res, \"Past downtime recorded\")\n\telse:\n\t\teid = self.view.params.editId\n\t\tD.updateReason(eid, reason)\n\t\tres = D.updateTimes(eid, startStr, endStr, remarks)\n\t\tUi.notifyResult(res, \"Downtime updated\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"downtimeManagerRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-downtime-editor\")"
         }
       ],
       "extensionFunctions": null,

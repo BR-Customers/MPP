@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablet Selection — MPP MES | Blue Ridge Automation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10202e;
+    --slate:#4a5c6a;
+    --mute:#7c8b96;
+    --paper:#eff2f4;
+    --card:#ffffff;
+    --line:#d5dde2;
+    --teal:#0d7d8c;
+    --teal-soft:#e2f0f2;
+    --amber:#b57500;
+    --heat:#bf3f1a;
+    --heat-soft:#fbe9e3;
+
+    --display:'Archivo',system-ui,sans-serif;
+    --body:'IBM Plex Sans',system-ui,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+
+  *{box-sizing:border-box}
+
+  html{-webkit-text-size-adjust:100%}
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .sheet{
+    max-width:1080px;
+    margin:0 auto;
+    background:var(--card);
+    border-left:1px solid var(--line);
+    border-right:1px solid var(--line);
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead{
+    padding:44px 56px 36px;
+    border-bottom:3px solid var(--ink);
+  }
+
+  .rule-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:24px;
+    flex-wrap:wrap;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--mute);
+    padding-bottom:28px;
+  }
+
+  .rule-top strong{color:var(--teal);font-weight:600}
+
+  h1{
+    font-family:var(--display);
+    font-weight:700;
+    font-size:clamp(2rem,4.6vw,3.15rem);
+    line-height:1.03;
+    letter-spacing:-.022em;
+    margin:0 0 20px;
+    max-width:24ch;
+  }
+
+  .standfirst{
+    font-size:1.0625rem;
+    line-height:1.62;
+    color:var(--slate);
+    max-width:66ch;
+    margin:0;
+  }
+
+  /* ---------- generic section ---------- */
+
+  section{
+    padding:44px 56px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--teal);
+    margin:0 0 12px;
+  }
+
+  h2{
+    font-family:var(--display);
+    font-weight:600;
+    font-size:1.5rem;
+    letter-spacing:-.014em;
+    line-height:1.2;
+    margin:0 0 8px;
+  }
+
+  h3{
+    font-family:var(--display);
+    font-weight:600;
+    font-size:1.0625rem;
+    letter-spacing:-.008em;
+    margin:0 0 6px;
+  }
+
+  .lede{
+    color:var(--slate);
+    max-width:70ch;
+    margin:0 0 30px;
+  }
+
+  p{max-width:70ch}
+
+  /* ---------- thermal envelope (signature) ---------- */
+
+  .thermal{
+    background:var(--ink);
+    color:#e8eef1;
+    border-bottom:1px solid var(--ink);
+  }
+  .thermal .eyebrow{color:#5fc7d4}
+  .thermal h2{color:#fff}
+  .thermal .lede{color:#a4b6c1}
+
+  .chart{
+    margin:34px 0 0;
+    position:relative;
+  }
+
+  .band-key{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#c9a56b;
+    margin-bottom:16px;
+  }
+  .band-key i{
+    display:block;
+    width:26px;height:11px;
+    background:repeating-linear-gradient(115deg,rgba(224,148,60,.85) 0 3px,rgba(224,148,60,.28) 3px 7px);
+    border-radius:1px;
+  }
+
+  .track-wrap{position:relative}
+
+  /* the die cast ambient band: 85F -> 120F on a 0-160 scale */
+  .ambient{
+    position:absolute;
+    left:53.125%;
+    width:21.875%;
+    top:0;bottom:34px;
+    background:repeating-linear-gradient(115deg,rgba(224,148,60,.30) 0 4px,rgba(224,148,60,.10) 4px 9px);
+    border-left:1px solid rgba(224,148,60,.75);
+    border-right:1px solid rgba(224,148,60,.75);
+    z-index:0;
+    pointer-events:none;
+  }
+
+  .row{
+    position:relative;
+    z-index:1;
+    display:grid;
+    grid-template-columns:190px 1fr;
+    gap:18px;
+    align-items:center;
+    padding:11px 0;
+  }
+
+  .row-label{
+    font-family:var(--display);
+    font-weight:600;
+    font-size:.9375rem;
+    line-height:1.25;
+  }
+  .row-label span{
+    display:block;
+    font-family:var(--mono);
+    font-weight:400;
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:#7f95a3;
+    margin-top:3px;
+  }
+
+  .track{
+    position:relative;
+    height:30px;
+    background:rgba(255,255,255,.055);
+    border-radius:2px;
+  }
+
+  .bar{
+    position:absolute;
+    top:0;bottom:0;
+    border-radius:2px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    padding-right:9px;
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:500;
+    color:#08161f;
+    white-space:nowrap;
+  }
+
+  .bar.short{justify-content:center;padding-right:0}
+
+  .bar-ipad{
+    left:20%;width:39.375%;
+    background:linear-gradient(90deg,#8fb0bd,#c3d3da);
+  }
+  .bar-et{
+    left:0;width:76.25%;
+    background:linear-gradient(90deg,#0d7d8c,#3fb0bc 62%,#7fd3db);
+  }
+  .bar-zx{
+    left:0;width:90.625%;
+    background:linear-gradient(90deg,#0a5f6b,#2f9aa8 55%,#6fcad4);
+  }
+
+  /* marker for ranges extending below the 0F axis */
+  .bar.extends::before{
+    content:'';
+    position:absolute;
+    left:0;top:50%;
+    width:9px;height:9px;
+    transform:translate(-115%,-50%) rotate(45deg);
+    background:currentColor;
+    opacity:.55;
+  }
+  .bar-et.extends{color:#0d7d8c}
+  .bar-zx.extends{color:#0a5f6b}
+
+  .axis{
+    position:relative;
+    height:34px;
+    margin-left:208px;
+    border-top:1px solid rgba(255,255,255,.22);
+    margin-top:6px;
+  }
+  .tick{
+    position:absolute;
+    top:0;
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:.06em;
+    color:#8ba0ad;
+    transform:translateX(-50%);
+    padding-top:7px;
+  }
+  .tick::before{
+    content:'';
+    position:absolute;
+    top:0;left:50%;
+    width:1px;height:5px;
+    background:rgba(255,255,255,.3);
+  }
+
+  .chart-note{
+    margin-top:22px;
+    padding-top:20px;
+    border-top:1px solid rgba(255,255,255,.14);
+    font-size:.875rem;
+    color:#a4b6c1;
+    max-width:74ch;
+  }
+  .chart-note strong{color:#e8b878;font-weight:600}
+
+  /* ---------- verdict strip ---------- */
+
+  .verdicts{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1px;
+    background:var(--line);
+    margin-top:34px;
+  }
+  .verdict{
+    background:var(--card);
+    padding:22px 22px 24px;
+  }
+  .verdict .tag{
+    font-family:var(--mono);
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+    display:inline-block;
+    padding:4px 9px;
+    border-radius:2px;
+    margin-bottom:13px;
+  }
+  .tag.no{background:var(--heat-soft);color:var(--heat)}
+  .tag.yes{background:var(--teal-soft);color:var(--teal)}
+  .tag.max{background:#eaf1f4;color:#2e5c6b}
+  .verdict p{font-size:.9375rem;color:var(--slate);margin:0;max-width:none}
+
+  /* ---------- comparison table ---------- */
+
+  .tbl-scroll{overflow-x:auto;margin-top:6px}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.9375rem;
+    min-width:660px;
+  }
+
+  caption{
+    text-align:left;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--mute);
+    padding-bottom:12px;
+  }
+
+  th,td{
+    text-align:left;
+    padding:13px 16px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+
+  thead th{
+    font-family:var(--display);
+    font-weight:600;
+    font-size:.9375rem;
+    border-bottom:2px solid var(--ink);
+    background:var(--card);
+    position:sticky;
+    top:0;
+  }
+  thead th span{
+    display:block;
+    font-family:var(--mono);
+    font-weight:400;
+    font-size:10.5px;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:var(--mute);
+    margin-top:3px;
+  }
+
+  tbody th{
+    font-family:var(--body);
+    font-weight:500;
+    color:var(--ink);
+    width:22%;
+    background:#f8fafb;
+  }
+
+  td{color:var(--slate);font-variant-numeric:tabular-nums}
+  td.num{font-family:var(--mono);font-size:.875rem;color:var(--ink)}
+  td.flag-no{color:var(--heat);font-weight:500}
+  td.flag-ok{color:var(--teal);font-weight:500}
+
+  tbody tr:hover td,tbody tr:hover th{background:#f4f8f9}
+
+  /* ---------- notes / considerations ---------- */
+
+  .notes{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:26px 40px;
+    margin-top:4px;
+  }
+  .note p{font-size:.9375rem;color:var(--slate);margin:0;max-width:none}
+
+  /* ---------- configuration options ---------- */
+
+  .configs{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    margin:30px 0 0;
+  }
+  .config{background:var(--card);padding:24px 22px 26px}
+  .config.pick{background:var(--teal-soft)}
+  .config .letter{
+    display:block;
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--teal);
+    margin-bottom:9px;
+  }
+  .config p{font-size:.9rem;color:var(--slate);margin:0;max-width:none}
+  .config dl{margin:14px 0 0;font-size:.875rem}
+  .config dt{
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.11em;
+    text-transform:uppercase;
+    color:var(--mute);
+    margin-top:12px;
+  }
+  .config dd{margin:2px 0 0;color:var(--slate)}
+  .config .cost{
+    font-family:var(--mono);
+    font-size:1rem;
+    font-weight:600;
+    color:var(--ink);
+    margin-top:18px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .config .cost em{
+    display:block;
+    font-family:var(--body);
+    font-style:normal;
+    font-size:.75rem;
+    font-weight:400;
+    color:var(--mute);
+    letter-spacing:0;
+    margin-top:3px;
+  }
+
+  /* ---------- callout ---------- */
+
+  .callout{
+    border-left:3px solid var(--amber);
+    background:#fdf6e8;
+    padding:22px 26px;
+    margin:0;
+  }
+  .callout h3{color:#7a5000}
+  .callout p{font-size:.9375rem;color:#5f4405;margin:0}
+
+  /* ---------- recommendation ---------- */
+
+  .rec{background:#f6f9fa}
+
+  .rec-list{
+    list-style:none;
+    padding:0;
+    margin:26px 0 0;
+    counter-reset:step;
+  }
+  .rec-list li{
+    counter-increment:step;
+    display:grid;
+    grid-template-columns:34px 1fr;
+    gap:16px;
+    padding:15px 0;
+    border-top:1px solid var(--line);
+  }
+  .rec-list li::before{
+    content:counter(step,decimal-leading-zero);
+    font-family:var(--mono);
+    font-size:12px;
+    font-weight:600;
+    color:var(--teal);
+    padding-top:2px;
+  }
+  .rec-list strong{font-weight:600}
+  .rec-list p{margin:3px 0 0;font-size:.9375rem;color:var(--slate);max-width:none}
+
+  /* ---------- footer ---------- */
+
+  footer{
+    padding:30px 56px 40px;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--mute);
+    line-height:1.9;
+  }
+  footer p{max-width:78ch;margin:0}
+
+  a{color:var(--teal)}
+
+  /* ---------- responsive ---------- */
+
+  @media (max-width:820px){
+    .masthead,section,footer{padding-left:26px;padding-right:26px}
+    .verdicts{grid-template-columns:1fr}
+    .configs{grid-template-columns:1fr}
+    .notes{grid-template-columns:1fr}
+    .row{grid-template-columns:1fr;gap:7px}
+    .ambient{display:none}
+    .axis{margin-left:0}
+    .bar{font-size:10px}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+  }
+
+  :focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+  /* ---------- print ---------- */
+
+  @media print{
+    body{background:#fff;font-size:10.5pt}
+    .sheet{max-width:none;border:0}
+    section{page-break-inside:avoid;padding:22px 0;border-bottom:1px solid #ccc}
+    .masthead{padding:0 0 20px}
+    footer{padding:18px 0 0}
+    .thermal{background:#fff;color:#10202e;border-bottom:1px solid #ccc}
+    .thermal h2,.thermal .lede,.thermal .chart-note{color:#10202e}
+    .thermal .eyebrow{color:#0d7d8c}
+    .track{background:#eef2f4}
+    .bar{color:#08161f}
+    thead th{position:static}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="masthead">
+    <div class="rule-top">
+      <div><strong>Blue Ridge Automation</strong> &nbsp;·&nbsp; Hardware Recommendation</div>
+      <div>MPP MES &nbsp;·&nbsp; Ignition Perspective 8.3</div>
+      <div>Rev A &nbsp;·&nbsp; July 2026</div>
+    </div>
+    <h1>Tablet selection for the die cast cells</h1>
+    <p class="standfirst">
+      Three devices, evaluated for one job: running the MES operator interface at a die cast
+      machine, all shift, every shift. Because the MES runs in the Ignition Perspective app and
+      all processing happens on the gateway, conventional tablet specs — processor, memory,
+      storage — have almost no bearing on this decision. Ambient temperature does. This document
+      lays out the three candidates against that constraint and the handful of others that
+      actually matter.
+    </p>
+  </header>
+
+  <!-- ============ SIGNATURE: THERMAL ENVELOPE ============ -->
+  <section class="thermal">
+    <p class="eyebrow">The deciding constraint</p>
+    <h2>Rated operating range vs. the die cast floor</h2>
+    <p class="lede">
+      Every candidate runs the MES software identically. What separates them is whether the
+      device is rated to operate in the air temperature surrounding a die cast machine in
+      August.
+    </p>
+
+    <div class="chart">
+      <div class="band-key">
+        <i></i> Estimated die cast cell ambient — to be verified by measurement
+      </div>
+
+      <div class="track-wrap">
+        <div class="ambient" aria-hidden="true"></div>
+
+        <div class="row">
+          <div class="row-label">Apple iPad<span>11th gen · consumer</span></div>
+          <div class="track">
+            <div class="bar bar-ipad">32°F – 95°F</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-label">Zebra ET401<span>10 in · enterprise rugged</span></div>
+          <div class="track">
+            <div class="bar bar-et extends">-4°F – 122°F</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-label">Getac ZX10 G2<span>10.1 in · fully rugged</span></div>
+          <div class="track">
+            <div class="bar bar-zx extends">-20°F – 145°F</div>
+          </div>
+        </div>
+
+        <div class="axis" aria-hidden="true">
+          <div class="tick" style="left:0">0°F</div>
+          <div class="tick" style="left:25%">40°F</div>
+          <div class="tick" style="left:50%">80°F</div>
+          <div class="tick" style="left:75%">120°F</div>
+          <div class="tick" style="left:100%">160°F</div>
+        </div>
+      </div>
+
+      <p class="chart-note">
+        <strong>Read the overlap.</strong> The iPad's rated ceiling falls inside the expected
+        ambient band, not above it. Apple specifies iPad for ambient temperatures between 32°F
+        and 95°F and states that use in hot conditions can permanently shorten battery life;
+        above that ceiling the device throttles, then displays a temperature warning, then
+        becomes unusable until it cools. Both rugged candidates clear the band with margin. The
+        shaded band is an estimate based on typical die cast enclosures and has not yet been
+        measured at MPP — confirming it is the first action item in this document.
+      </p>
+    </div>
+
+    <div class="verdicts">
+      <div class="verdict">
+        <span class="tag no">Not recommended for the cell</span>
+        <p>Fine for the August FAT in a conditioned conference room. Not rated for sustained use
+        at the machine, and no gloved-touch support.</p>
+      </div>
+      <div class="verdict">
+        <span class="tag yes">Recommended</span>
+        <p>Clears the expected band, supports gloved input natively, and offers an integrated
+        barcode scanner. The default choice unless measurement says otherwise.</p>
+      </div>
+      <div class="verdict">
+        <span class="tag max">Maximum margin</span>
+        <p>Choose if measured ambient runs above roughly 110°F sustained, or if cells see
+        significant radiant load from the machine. Brighter display and longer warranty included.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARISON ============ -->
+  <section>
+    <p class="eyebrow">Side by side</p>
+    <h2>Specification comparison</h2>
+    <p class="lede">
+      Rows are ordered by how much each one influences the decision. Everything below the
+      dividing point is included for completeness, not because it differentiates the options.
+    </p>
+
+    <div class="tbl-scroll">
+      <table>
+        <caption>Manufacturer published specifications, July 2026 — subject to change</caption>
+        <thead>
+          <tr>
+            <th scope="col">&nbsp;</th>
+            <th scope="col">Apple iPad <span>11th gen, A16</span></th>
+            <th scope="col">Zebra ET401 <span>10 in</span></th>
+            <th scope="col">Getac ZX10 G2 <span>10.1 in</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Operating temperature</th>
+            <td class="num flag-no">32°F to 95°F</td>
+            <td class="num flag-ok">-4°F to 122°F</td>
+            <td class="num flag-ok">-20°F to 145°F</td>
+          </tr>
+          <tr>
+            <th scope="row">Gloved-hand touch</th>
+            <td class="flag-no">No — requires bare finger or touchscreen-rated gloves</td>
+            <td class="flag-ok">Yes — bare finger, gloved finger, or conductive stylus, no mode switching</td>
+            <td class="flag-ok">Yes — selectable touch modes, optional active digitizer</td>
+          </tr>
+          <tr>
+            <th scope="row">Barcode capture</th>
+            <td>Rear camera only</td>
+            <td>Rear camera, or optional SE4100 / SR500 1D-2D scan engine with hardware trigger</td>
+            <td>Rear camera, or optional integrated barcode reader with programmable trigger buttons</td>
+          </tr>
+          <tr>
+            <th scope="row">Sealing</th>
+            <td class="flag-no">None rated</td>
+            <td class="num flag-ok">IP68</td>
+            <td class="num flag-ok">IP66</td>
+          </tr>
+          <tr>
+            <th scope="row">Drop rating</th>
+            <td class="flag-no">None rated</td>
+            <td>4 ft to concrete; 5.1 ft with rugged frame, MIL-STD-810H</td>
+            <td>6 ft, MIL-STD-810H</td>
+          </tr>
+          <tr>
+            <th scope="row">Battery-free operation</th>
+            <td class="flag-no">No — battery is not removable or bypassable</td>
+            <td class="flag-ok">Yes — can run entirely from external power at a fixed station, eliminating battery wear and swelling</td>
+            <td>Single-battery configuration available for fixed and vehicle mounting</td>
+          </tr>
+          <tr>
+            <th scope="row">Supported service life</th>
+            <td>Not published; consumer refresh cycle</td>
+            <td class="flag-ok">Available to purchase 4 years, supported up to 8 years total</td>
+            <td>5+ years security updates, 3+ Android versions</td>
+          </tr>
+          <tr>
+            <th scope="row">Display</th>
+            <td class="num">10.9 in · 2360 × 1640 · 500 nits</td>
+            <td class="num">10.1 in · 1920 × 1200 · 600 nits · Gorilla Glass 5</td>
+            <td class="num">10.1 in · 1920 &times; 1200 · 1,000 nits · LumiBond, sunlight-readable</td>
+          </tr>
+          <tr>
+            <th scope="row">Operating system</th>
+            <td>iPadOS — Perspective app requires iOS 16.6 or later</td>
+            <td>Android 15 — Perspective app requires Android 8 or later</td>
+            <td>Android 13 on current shipping stock, Android 15 on the current platform; Android Enterprise Recommended with 3+ OS upgrades committed</td>
+          </tr>
+          <tr>
+            <th scope="row">Weight</th>
+            <td class="num">481 g</td>
+            <td class="num">680 g</td>
+            <td class="num">~1,040 g <span style="font-family:var(--body);font-size:.8125rem;color:var(--mute)">— varies by configuration</span></td>
+          </tr>
+          <tr>
+            <th scope="row">Tablet only, street price</th>
+            <td class="num">$349</td>
+            <td class="num">$926 <span style="font-family:var(--body);font-size:.8125rem;color:var(--mute)">— includes SE4100 scanner, 6&nbsp;GB / 64&nbsp;GB, TAA compliant</span></td>
+            <td class="num">$1,480 – $1,616 base <span style="font-family:var(--body);font-size:.8125rem;color:var(--mute)">— P/N Z8B1GXW15ABX, 8&nbsp;GB / 128&nbsp;GB, TAA compliant, no scanner. Add roughly $200 for the integrated barcode reader. Includes 65&nbsp;W USB-C adapter, US power cord, dual batteries, and 3-year warranty.</span></td>
+          </tr>
+          <tr>
+            <th scope="row">Warranty and support</th>
+            <td>1 year limited; AppleCare optional</td>
+            <td class="flag-no">1 year limited. Zebra OneCare contract must be purchased separately to receive OS updates and security patches</td>
+            <td class="flag-ok">3 years Bumper-to-Bumper standard, including accidental damage</td>
+          </tr>
+          <tr>
+            <th scope="row">Fixed-mount ecosystem</th>
+            <td>Third-party only</td>
+            <td>Presentation stand and charge cradles; oriented toward retail counters</td>
+            <td class="flag-ok">Havis and Gamber-Johnson industrial docks with VESA 75&nbsp;mm mounting</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout" style="margin-top:30px">
+      <h3>Specify the G2 generation, and compare what is in the box</h3>
+      <p>Getac ZX10 units listed on general industrial-supply sites are frequently the prior
+      generation, identifiable by a Qualcomm Snapdragon 660 processor and 4&nbsp;GB of RAM. The
+      current generation is the <strong>ZX10 G2</strong> — Qualcomm QCS6490, 8&nbsp;GB RAM, with
+      substantially more remaining security-update life. Purchase orders should name the G2
+      explicitly.</p>
+      <p style="margin-top:12px">The headline price gap is also narrower than it first appears.
+      The Zebra figure is the bare tablet: its power supply and the OneCare contract required for
+      OS and security updates are separate line items, bringing a deployed unit to roughly
+      $1,250. The Getac figure already includes the AC adapter, power cord, two batteries, and a
+      three-year Bumper-to-Bumper warranty covering accidental damage. Compared on equal terms
+      the difference is closer to $400 per unit than $700, and the Getac arrives with damage
+      coverage the Zebra does not have at any price.</p>
+    </div>
+  </section>
+
+  <!-- ============ WHAT DOESN'T MATTER ============ -->
+  <section>
+    <p class="eyebrow">Scope clarification</p>
+    <h2>What does not drive this decision</h2>
+    <p class="lede">
+      MPP's original inquiry asked for minimum processor, memory, and storage specifications.
+      For this application there aren't any worth stating, and here is why.
+    </p>
+    <div class="notes">
+      <div class="note">
+        <h3>The tablet is a display, not a computer</h3>
+        <p>Ignition Perspective renders in the Perspective app while all logic, database access,
+        and historical queries execute on the Ignition gateway. The tablet receives screen
+        updates over a network connection. Any current tablet performs identically.</p>
+      </div>
+      <div class="note">
+        <h3>No MES data is stored on the device</h3>
+        <p>Production records, lot data, and downtime events are written to the gateway and its
+        database. Storage capacity on the tablet is irrelevant, and a lost or damaged tablet
+        results in no data loss.</p>
+      </div>
+      <div class="note">
+        <h3>Screen size matters, resolution largely does not</h3>
+        <p>The die cast operator screen is being designed against a 10-inch landscape viewport.
+        All three candidates are in that class. Blue Ridge asks that the selected model be fixed
+        before FAT so the interface is validated at its production dimensions.</p>
+      </div>
+      <div class="note">
+        <h3>Network reliability matters more than any spec</h3>
+        <p>The Perspective app holds a continuous connection to the gateway. Wireless coverage
+        at each intended tablet position will affect the operator experience more than any
+        hardware difference in this table.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MOUNTING DECISION ============ -->
+  <section>
+    <p class="eyebrow">Decision required</p>
+    <h2>How the tablet lives at the machine</h2>
+    <p class="lede">
+      This choice drives the accessory list, the per-station cost, and how operators scan. It
+      needs to be settled before hardware is ordered. Blue Ridge's recommendation is noted, but
+      the right answer depends on how far an operator must travel from the machine to complete a
+      scan.
+    </p>
+
+    <div class="configs">
+      <div class="config">
+        <span class="letter">Option A</span>
+        <h3>Handheld with charging cradle</h3>
+        <p>Operator picks the tablet up, carries it to the die, rack, or staging area, and
+        returns it to a cradle at the station.</p>
+        <dl>
+          <dt>Best when</dt>
+          <dd>Scanning happens away from the machine control station.</dd>
+          <dt>Trade-off</dt>
+          <dd>Highest breakage exposure and the only option where battery wear and dead-tablet-
+          at-shift-change are real concerns. In a hot cell, battery life degrades fastest here.</dd>
+        </dl>
+        <div class="cost">~$1,450 per station<em>Zebra ET401 basis, tablet and accessories</em></div>
+      </div>
+
+      <div class="config pick">
+        <span class="letter">Option B · Recommended</span>
+        <h3>Fixed mount, continuously powered</h3>
+        <p>Tablet is mounted on an articulating arm at the machine and permanently powered. It is
+        never carried, never charged, and never lost.</p>
+        <dl>
+          <dt>Best when</dt>
+          <dd>Scanning happens at or near the control station, with a tethered or cordless
+          scanner reaching the work.</dd>
+          <dt>Trade-off</dt>
+          <dd>Items must come to the tablet. Rules out camera scanning as the primary method.
+          The Zebra battery-free configuration eliminates battery maintenance entirely.</dd>
+        </dl>
+        <div class="cost">~$1,200 per station<em>Zebra ET401 basis, tablet and accessories</em></div>
+      </div>
+
+      <div class="config">
+        <span class="letter">Option C</span>
+        <h3>Quick-release hybrid</h3>
+        <p>Mounted and powered at the station by default, but releasable from the dock with one
+        hand when an operator needs to walk a scan.</p>
+        <dl>
+          <dt>Best when</dt>
+          <dd>Most work is at the station but some scanning genuinely requires walking.</dd>
+          <dt>Trade-off</dt>
+          <dd>Highest cost, and the dock hardware is the piece most likely to need a custom
+          bracket for the machine.</dd>
+        </dl>
+        <div class="cost">~$1,650 per station<em>Zebra ET401 basis, tablet and accessories</em></div>
+      </div>
+    </div>
+
+    <p style="margin:26px 0 0;font-size:.9375rem;color:var(--slate)">
+      Multiply the selected option by the number of die cast cells in scope, then add one spare
+      unit per cell area. The spare matters more than it appears: without one, a damaged tablet
+      means a machine running without MES coverage until a replacement arrives.
+    </p>
+  </section>
+
+  <!-- ============ ACCESSORY BOM ============ -->
+  <section>
+    <p class="eyebrow">Bill of materials</p>
+    <h2>Accessories, by configuration</h2>
+    <p class="lede">
+      Priced on the Zebra ET401 because it is the recommended device. Getac equivalents exist for
+      every line, though several are unnecessary because the ZX10&nbsp;G2 ships with its power
+      adapter, cord, and dual batteries included and carries a three-year warranty as standard.
+      The one place Getac is clearly stronger is the industrial mount, where its Havis and
+      Gamber-Johnson docks with VESA&nbsp;75&nbsp;mm patterns beat anything in the Zebra line.
+      Prices are indicative street pricing gathered July 2026 and require a formal quote.
+    </p>
+
+    <div class="tbl-scroll">
+      <table>
+        <caption>Zebra ET401 10-inch — per-station accessory list</caption>
+        <thead>
+          <tr>
+            <th scope="col">Item</th>
+            <th scope="col">Part number</th>
+            <th scope="col">Indicative</th>
+            <th scope="col">A · Handheld</th>
+            <th scope="col">B · Fixed</th>
+            <th scope="col">C · Hybrid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Tablet with SE4100 scanner</th>
+            <td class="num">ET4010B-001C1B0P-FT</td>
+            <td class="num">$926</td>
+            <td class="flag-ok">Required</td>
+            <td class="flag-ok">Required</td>
+            <td class="flag-ok">Required</td>
+          </tr>
+          <tr>
+            <th scope="row">USB-C power supply and cable</th>
+            <td class="num">PWR-WUA5V45W1US</td>
+            <td class="num">~$70</td>
+            <td>Yes</td>
+            <td>Yes</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <th scope="row">Exoskeleton rugged boot, 10 in, scanner version</th>
+            <td class="num">SG-ET401-10EXO-01</td>
+            <td class="num">~$150</td>
+            <td>Yes — raises drop rating to 5.1 ft</td>
+            <td>Optional</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <th scope="row">D-clips for hand or shoulder strap</th>
+            <td class="num">SG-ET4X-DCLIPS-01</td>
+            <td class="num">$32</td>
+            <td>Yes</td>
+            <td>—</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <th scope="row">Shoulder strap</th>
+            <td class="num">58-40000-007R</td>
+            <td class="num">$19</td>
+            <td>Yes</td>
+            <td>—</td>
+            <td>Optional</td>
+          </tr>
+          <tr>
+            <th scope="row">Single-slot charge cradle</th>
+            <td class="num">CRD-ET4X-1SCG1-01</td>
+            <td class="num">~$249</td>
+            <td>Yes</td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <th scope="row">Cradle power supply</th>
+            <td class="num">PWR-BGA12V50W0WW</td>
+            <td class="num">~$55</td>
+            <td>Yes — cradle ships without it</td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <th scope="row">Cradle DC line cord</th>
+            <td class="num">CBL-DC-388A1-01</td>
+            <td class="num">~$30</td>
+            <td>Yes — cradle ships without it</td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <th scope="row">AC line cord, US</th>
+            <td class="num">23844-00-00R</td>
+            <td class="num">~$20</td>
+            <td>Yes — cradle ships without it</td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <th scope="row">VESA articulating mount arm</th>
+            <td class="num">Third-party, to be selected</td>
+            <td class="num">~$120</td>
+            <td>—</td>
+            <td>Yes</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <th scope="row">Quick-release dock</th>
+            <td class="num">To be selected per machine</td>
+            <td class="num">~$300</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <th scope="row">Tempered glass screen protector</th>
+            <td class="num">Third-party</td>
+            <td class="num">~$35</td>
+            <td>Yes</td>
+            <td>Yes</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <th scope="row">Spare battery</th>
+            <td class="num">10-inch removable, ET401</td>
+            <td class="num">~$138</td>
+            <td>Recommended</td>
+            <td>Not needed if battery-free</td>
+            <td>Optional</td>
+          </tr>
+          <tr>
+            <th scope="row">Zebra OneCare, 3-year Essential with comprehensive coverage</th>
+            <td class="num">Quote per unit</td>
+            <td class="num">~$250</td>
+            <td class="flag-ok">Required for OS and security updates</td>
+            <td class="flag-ok">Required for OS and security updates</td>
+            <td class="flag-ok">Required for OS and security updates</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout" style="margin-top:30px">
+      <h3>Two cost items that are easy to miss</h3>
+      <p>The Zebra charge cradle ships as a bare cradle — the power supply, DC line cord, and AC
+      line cord are three separate part numbers that must be ordered with it, or the cradle
+      arrives unusable. And OneCare is not an optional extended warranty: without an active
+      contract, Zebra does not provide operating system updates or security patches. Both should
+      be on the purchase order from the start rather than discovered later.</p>
+    </div>
+  </section>
+
+  <!-- ============ CONSIDERATIONS ============ -->
+  <section>
+    <p class="eyebrow">Beyond the device</p>
+    <h2>Additional considerations</h2>
+    <p class="lede">
+      Items MPP should decide on alongside the hardware. Several affect the interface design and
+      are needed before FAT.
+    </p>
+    <div class="notes">
+      <div class="note">
+        <h3>Barcode scanning method</h3>
+        <p>Camera scanning needs no extra hardware but opens a full-screen camera for each scan
+        and depends on clean labels and good lighting. An integrated scan engine gives operators
+        a physical trigger button and reads reliably through soot and release-agent film. Blue
+        Ridge recommends the integrated scanner if scanning happens more than a few times per
+        shift. This choice affects how the screens are built, so it should be settled before
+        FAT.</p>
+      </div>
+      <div class="note">
+        <h3>Gloves</h3>
+        <p>MPP should confirm which gloves die cast operators wear. Standard capacitive
+        touchscreens, including the iPad's, do not respond through most work gloves. Both rugged
+        candidates accept gloved input directly.</p>
+      </div>
+      <div class="note">
+        <h3>Mounting and power</h3>
+        <p>Blue Ridge recommends a charging dock at each machine rather than a central charging
+        station, so tablets have a known home position and are always charged. If tablets stay
+        docked and powered, the Zebra battery-free configuration removes battery replacement
+        from the maintenance picture entirely.</p>
+      </div>
+      <div class="note">
+        <h3>Device management</h3>
+        <p>A mobile device management platform lets MPP IT push the gateway address and MES
+        project to every tablet at enrollment, enforce passcodes, remotely wipe a lost unit, and
+        lock each tablet to the MES app so operators cannot exit to a browser or app store.
+        Recommended for production; not required for a conference-room FAT. This is an MPP IT
+        decision, and Blue Ridge asks that IT be included from this point forward.</p>
+      </div>
+      <div class="note">
+        <h3>Wireless coverage and network path</h3>
+        <p>Before FAT, confirm that the conference room network can reach the Ignition gateway.
+        Guest wireless and segmented VLANs frequently cannot, and this is the most common cause
+        of a delayed FAT start. For production, confirm coverage at each machine position.</p>
+      </div>
+      <div class="note">
+        <h3>Case and camera interference</h3>
+        <p>If camera scanning is selected, whatever case or boot is fitted must leave the rear
+        camera fully exposed and unrecessed. Rugged cases frequently shroud the camera enough to
+        prevent the barcode from focusing, which is a difficult problem to diagnose after
+        deployment. The accessory list in the previous section notes which items apply to each
+        mounting configuration.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAT VS PRODUCTION ============ -->
+  <section>
+    <p class="eyebrow">Important distinction</p>
+    <h2>FAT hardware should be production hardware</h2>
+    <p style="margin:0 0 22px">
+      August FAT is being held in a conference room. In that environment all three candidates
+      will perform flawlessly, which means FAT will validate the MES workflows but will prove
+      nothing about temperature, gloves, scanning through dirty labels, or wireless coverage at
+      the machine.
+    </p>
+    <div class="callout">
+      <h3>The risk of testing on different hardware</h3>
+      <p>If FAT is conducted on consumer tablets and production deploys a different device,
+      every layout, scanning, and ergonomic issue is discovered during commissioning instead of
+      during acceptance. Blue Ridge strongly recommends that FAT units be the same models
+      destined for the floor, so that acceptance testing carries forward.</p>
+    </div>
+  </section>
+
+  <!-- ============ RECOMMENDATION ============ -->
+  <section class="rec">
+    <p class="eyebrow">Blue Ridge recommendation</p>
+    <h2>Proposed path forward</h2>
+    <p class="lede">
+      In order. Steps 1 and 2 should begin now to keep the August FAT date.
+    </p>
+    <ol class="rec-list">
+      <li>
+        <div>
+          <strong>Measure the actual ambient temperature at a die cast cell.</strong>
+          <p>Place a temperature data logger at the intended tablet position on one cell for one
+          week. This converts the central question of this document from an estimate into a
+          number, and it is inexpensive. Below roughly 110°F sustained, the Zebra ET401 is
+          sufficient. Consistently above that, specify the Getac ZX10&nbsp;G2.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Decide the barcode scanning method.</strong>
+          <p>Camera or integrated scan engine. Blue Ridge needs this to finalize the die cast
+          operator screen. Please also confirm what will be scanned and roughly how often per
+          shift.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Choose the mounting configuration.</strong>
+          <p>Handheld, fixed mount, or quick-release hybrid. Blue Ridge recommends the fixed
+          mount where the workflow allows, because it removes charging, battery wear, and drops
+          from the picture at the lowest per-station cost. This decision and the scanning decision
+          are linked, and together they determine the accessory purchase order.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Order three units of the selected model for FAT.</strong>
+          <p>Two allow concurrent multi-station testing, which is required to validate that two
+          operators working different machines do not conflict. The third is for the Blue Ridge
+          team to drive the session. These should be production-intent units, not loaners.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Bring MPP IT into the discussion.</strong>
+          <p>For device management, wireless coverage at the cells, and the network path from
+          the FAT conference room to the Ignition gateway. Confirm and test that path at least
+          one week before FAT.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Plan an on-machine validation at commissioning.</strong>
+          <p>Regardless of device selected, scanning performance, glove usability, screen
+          legibility under plant lighting, and thermal behavior should be verified at an actual
+          cell before go-live. Blue Ridge will include this in the commissioning plan.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============ IF IPAD ============ -->
+  <section>
+    <p class="eyebrow">If MPP elects to proceed with iPads</p>
+    <h2>Accepted-risk conditions</h2>
+    <p style="margin:0 0 18px">
+      The iPad is a capable device and will run the MES correctly. If MPP prefers it for cost,
+      familiarity, or fleet-standardization reasons, Blue Ridge asks that the following be
+      acknowledged so that expectations are aligned:
+    </p>
+    <div class="notes">
+      <div class="note">
+        <h3>Thermal behavior is expected, not a defect</h3>
+        <p>Temperature warnings and shutdowns at the cell during warm months are consistent with
+        the manufacturer's published specification and are not an MES fault.</p>
+      </div>
+      <div class="note">
+        <h3>The price gap is smaller than it appears</h3>
+        <p>The headline difference is $349 against $926. But a deployed station needs a mount or
+        cradle, power, a protective case, and a screen protector regardless of which tablet is
+        chosen, and those costs are similar across all three. The gap narrows further once the
+        iPad's shorter service life is counted: sustained operation above the rated ceiling
+        permanently reduces battery capacity, so MPP should budget a materially shorter refresh
+        interval than the 8-year supported life of the rugged alternatives.</p>
+      </div>
+      <div class="note">
+        <h3>Gloves must be addressed separately</h3>
+        <p>Either touchscreen-compatible gloves are issued, or operators de-glove to use the
+        tablet. The second option tends not to hold up in practice.</p>
+      </div>
+      <div class="note">
+        <h3>Procure through Apple Business Manager</h3>
+        <p>Units bought through an authorized reseller enrolled in Apple Business Manager can be
+        automatically enrolled and supervised by MPP IT. Units bought at retail generally cannot,
+        and correcting that later means wiping and reconfiguring every device by hand.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Prepared by Blue Ridge Automation for Madison Precision Products · MPP MES ·
+      Ignition Perspective 8.3 · Revision A, July 2026. Specifications are taken from
+      manufacturer published documentation as of this date and are subject to change without
+      notice; confirm against current datasheets at time of purchase. Pricing is indicative
+      only — obtain quotes from an authorized reseller. The die cast ambient temperature band
+      shown in this document is an estimate pending measurement at MPP. Direct questions to your
+      Blue Ridge project contact.
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

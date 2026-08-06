@@ -32,8 +32,18 @@
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "areaLocationId",
+        "identifier": "operationCategoryId",
         "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "operationTypeCode",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "operationCategoryCode",
+        "sqlType": 7
       },
       {
         "type": "Parameter",

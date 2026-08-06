@@ -192,6 +192,26 @@ BEGIN
             RETURN;
         END
 
+        -- ---- 5. Already-trimmed guard (2026-08-04, FAT #22). The source-ancestor
+        --      guard (3b) does NOT catch a same-shop re-entry: Trim Storage is a
+        --      CHILD of the trim area, and the real terminal records with
+        --      @SourceLocationId = the trim AREA (its zoneLocationId), which stays an
+        --      ancestor of the store. So after a first OUT the LOT sits in this shop's
+        --      Trim Storage (@FromLocationId = @TrimStoreId) yet 3b still passes.
+        --      Reject explicitly: a LOT already in Trim Storage must be checked in
+        --      again (Machining IN) before it can Trim OUT a second time. ----
+        IF @FromLocationId = @TrimStoreId
+        BEGIN
+            SET @Message = N'LOT has already completed Trim OUT (it is in Trim Storage) and must be checked in again before another Trim OUT.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
+                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
         -- ---- 6. Counter sanity (non-negative when supplied) ----
         IF (@ShotCount IS NOT NULL AND @ShotCount < 0)
            OR (@ScrapCount IS NOT NULL AND @ScrapCount < 0)

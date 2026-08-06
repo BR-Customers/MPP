@@ -12,10 +12,10 @@
     "mode": "create"
   },
   "propConfig": {
-    "custom.areaOptions": {
+    "custom.categoryOptions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0)"
+          "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.getCategoryOptions\", 0, \"Plant-wide (all areas)\")"
         },
         "type": "expr"
       }
@@ -31,7 +31,7 @@
     "params.editId": {
       "onChange": {
         "enabled": true,
-        "script": "\tnewId \u003d currentValue.value\n\tif newId is None:\n\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Oee.DowntimeReasonCode.emptyMeta()}\n\telse:\n\t\trow \u003d BlueRidge.Oee.DowntimeReasonCode.getOne(newId)\n\t\tif row:\n\t\t\tmeta \u003d {\n\t\t\t\t\"id\":                   row.get(\"Id\"),\n\t\t\t\t\"code\":                 row.get(\"Code\"),\n\t\t\t\t\"description\":          row.get(\"Description\"),\n\t\t\t\t\"areaLocationId\":       row.get(\"AreaLocationId\"),\n\t\t\t\t\"downtimeReasonTypeId\": row.get(\"DowntimeReasonTypeId\"),\n\t\t\t\t\"isExcused\":            bool(row.get(\"IsExcused\"))\n\t\t\t}\n\t\t\tself.view.custom.selected \u003d {\"meta\": meta}\n\t\telse:\n\t\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Oee.DowntimeReasonCode.emptyMeta()}\n\tself.view.custom.editDraft \u003d {\"meta\": dict(self.view.custom.selected[\"meta\"])}"
+        "script": "\tnewId \u003d currentValue.value\n\tif newId is None:\n\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Oee.DowntimeReasonCode.emptyMeta()}\n\telse:\n\t\trow \u003d BlueRidge.Oee.DowntimeReasonCode.getOne(newId)\n\t\tif row:\n\t\t\tmeta \u003d {\n\t\t\t\t\"id\":                   row.get(\"Id\"),\n\t\t\t\t\"code\":                 row.get(\"Code\"),\n\t\t\t\t\"description\":          row.get(\"Description\"),\n\t\t\t\t\"operationCategoryId\":  row.get(\"OperationCategoryId\"),\n\t\t\t\t\"downtimeReasonTypeId\": row.get(\"DowntimeReasonTypeId\"),\n\t\t\t\t\"isExcused\":            bool(row.get(\"IsExcused\"))\n\t\t\t}\n\t\t\tself.view.custom.selected \u003d {\"meta\": meta}\n\t\telse:\n\t\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Oee.DowntimeReasonCode.emptyMeta()}\n\tself.view.custom.editDraft \u003d {\"meta\": dict(self.view.custom.selected[\"meta\"])}"
       },
       "paramDirection": "input",
       "persistent": true
@@ -279,7 +279,7 @@
                   "style": {
                     "classes": "field-label"
                   },
-                  "text": "AREA"
+                  "text": "Applies to"
                 },
                 "type": "ia.display.label"
               },
@@ -291,7 +291,7 @@
                   "props.options": {
                     "binding": {
                       "config": {
-                        "path": "view.custom.areaOptions"
+                        "path": "view.custom.categoryOptions"
                       },
                       "type": "property"
                     }
@@ -300,7 +300,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.meta.areaLocationId"
+                        "path": "view.custom.editDraft.meta.operationCategoryId"
                       },
                       "type": "property"
                     }

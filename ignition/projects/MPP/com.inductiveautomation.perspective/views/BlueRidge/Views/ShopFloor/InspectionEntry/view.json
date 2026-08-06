@@ -25,8 +25,9 @@
     "refreshToken": 1,
     "triggerCodeId": null
   },
-  "params": {},
+  "params": { "lotName": null },
   "propConfig": {
+    "params.lotName": { "paramDirection": "input" },
     "custom.samples": {
       "binding": {
         "config": {
@@ -925,7 +926,7 @@
       "system": {
         "onStartup": {
           "config": {
-            "script": "\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+            "script": "\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)\n\tif self.view.params.lotName:\n\t\tself.resolveLot(self.view.params.lotName)"
           },
           "scope": "G",
           "type": "script"

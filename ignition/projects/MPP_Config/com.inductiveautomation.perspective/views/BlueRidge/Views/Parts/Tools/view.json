@@ -27,6 +27,8 @@
         "DieRankId": null,
         "DieRankName": null,
         "HasCavities": true,
+        "ShotCount": 0,
+        "ShotLimit": null,
         "Id": 2,
         "Name": "hbjnjhbhj",
         "StatusCode": "Retired",
@@ -82,6 +84,8 @@
         "DieRankId": null,
         "DieRankName": null,
         "HasCavities": true,
+        "ShotCount": 0,
+        "ShotLimit": null,
         "Id": 2,
         "Name": "hbjnjhbhj",
         "StatusCode": "Retired",
@@ -1106,6 +1110,145 @@
                     ],
                     "meta": {
                       "name": "FieldRowDescription"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-row",
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelShotLimit"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Shot Limit (shots)"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "InputShotLimit"
+                            },
+                            "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.ShotLimit"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "100%"
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldShotLimit"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelShotCount"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Total Shots"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "ValueShotCount"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if(isNull({view.custom.editDraft.meta.ShotCount}), '0', toStr({view.custom.editDraft.meta.ShotCount}))"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "padding": "7px 2px",
+                                "fontWeight": "600"
+                              }
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldShotCount"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FieldRowShotLimit"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.editDraft.meta.ToolTypeCode} = 'Die'"
+                          },
+                          "type": "expr"
+                        }
+                      }
                     },
                     "props": {
                       "style": {

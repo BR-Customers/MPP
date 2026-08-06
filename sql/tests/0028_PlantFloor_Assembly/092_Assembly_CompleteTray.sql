@@ -153,6 +153,21 @@ DECLARE @Full1 NVARCHAR(10) = (SELECT CAST(ContainerFull AS NVARCHAR(10)) FROM @
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] container NOT full after tray 1', @Expected = N'0', @Actual = @Full1;
 DECLARE @CStat1 NVARCHAR(10) = (SELECT CAST(ContainerStatusCodeId AS NVARCHAR(10)) FROM Lots.Container WHERE Id = @Cid);
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] container still Open (1) after tray 1', @Expected = N'1', @Actual = @CStat1;
+
+-- 0047: as-built BOM stamped on the minted FG LOT + linked-container read proc
+DECLARE @ExpBomId NVARCHAR(20) = (SELECT CAST(Id AS NVARCHAR(20)) FROM Parts.Bom WHERE ParentItemId = @Out AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL ORDER BY VersionNumber DESC OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY);
+DECLARE @FgBomId NVARCHAR(20) = (SELECT CAST(BomId AS NVARCHAR(20)) FROM Lots.Lot WHERE Id = @Fg1);
+EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] FG LOT stamped with active BomId (0047)', @Expected = @ExpBomId, @Actual = @FgBomId;
+DECLARE @FgBomVer NVARCHAR(10) = (SELECT CAST(b.VersionNumber AS NVARCHAR(10)) FROM Lots.Lot l INNER JOIN Parts.Bom b ON b.Id = l.BomId WHERE l.Id = @Fg1);
+EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] FG LOT BomId resolves to version 1', @Expected = N'1', @Actual = @FgBomVer;
+
+DECLARE @LC TABLE (ContainerId BIGINT, ContainerTrayId BIGINT, TrayPosition INT, ClosureMethod NVARCHAR(20), TrayClosedAt DATETIME2(3), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ContainerStatusCode NVARCHAR(20), ContainerStatusName NVARCHAR(50), CurrentLocationId BIGINT, CurrentLocationName NVARCHAR(100), OpenedAt DATETIME2(3), CompletedAt DATETIME2(3), AimShipperId NVARCHAR(50));
+INSERT INTO @LC EXEC Lots.Lot_GetLinkedContainer @LotId = @Fg1;
+DECLARE @LcRows NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @LC);
+EXEC test.Assert_IsEqual @TestName = N'[LinkedContainer] returns exactly 1 row for the FG LOT', @Expected = N'1', @Actual = @LcRows;
+DECLARE @LcCid NVARCHAR(20) = (SELECT CAST(ContainerId AS NVARCHAR(20)) FROM @LC);
+DECLARE @CidStr NVARCHAR(20) = CAST(@Cid AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[LinkedContainer] resolved container = the tray container', @Expected = @CidStr, @Actual = @LcCid;
 GO
 
 -- =============================================

@@ -1,5 +1,6 @@
 {
   "custom": {
+    "closureMethodTracker": "",
     "draft": {
       "partsCount": "",
       "trayPosition": ""
@@ -9,6 +10,18 @@
   },
   "params": {},
   "propConfig": {
+    "custom.closureMethodTracker": {
+      "binding": {
+        "config": {
+          "path": "session.custom.closureMethod"
+        },
+        "type": "property"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Closure method changed via the Change Closure Mode changeover: RESET the\n\t# parts-in-tray field to the newly-selected config default PartsPerTray\n\t# (overwrites any prior/stale value; fgConfig.onChange only prefills empty).\n\tmethod = self.session.custom.closureMethod\n\tif not method:\n\t\treturn\n\tcontainer = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.container) or {}\n\titemId = container.get(\"ItemId\") or self.view.custom.selectedFinishedGoodItemId\n\tif not itemId:\n\t\treturn\n\tcfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty(itemId, method) or {}\n\tppt = cfg.get(\"PartsPerTray\")\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tself.view.custom.draft = {\"partsCount\": ppt if ppt else \"\", \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
+      }
+    },
     "custom.closureRaw": {
       "binding": {
         "config": {
@@ -57,7 +70,21 @@
         "script": "\t# Auto-populate from the part\u0027s container config: prefill the parts-in-tray\n\t# field with PartsPerTray (only into an EMPTY field - never overwrite input).\n\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif ppt and d.get(\"partsCount\") in (None, \"\"):\n\t\tself.view.custom.draft \u003d {\"partsCount\": ppt, \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
       }
     },
-    "custom.queueByPartVertical": {
+    "custom.componentProjection": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.container": {
       "binding": {
         "config": {
           "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
@@ -1314,18 +1341,6 @@
                               "text": "Container Completion Gate"
                             },
                             "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "Hsub"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-sub"
-                              },
-                              "text": "Same atomic close as Serialized - claims AIM ID, dispatches print async"
-                            },
-                            "type": "ia.display.label"
                           }
                         ],
                         "meta": {
@@ -1342,83 +1357,6 @@
                       },
                       {
                         "children": [
-                          {
-                            "children": [
-                              {
-                                "meta": {
-                                  "name": "GateIntro"
-                                },
-                                "props": {
-                                  "style": {
-                                    "color": "var(--mpp-text-primary)"
-                                  },
-                                  "text": "When accumulated tray closes reach the configured Container capacity:"
-                                },
-                                "type": "ia.display.label"
-                              },
-                              {
-                                "meta": {
-                                  "name": "B1"
-                                },
-                                "props": {
-                                  "style": {
-                                    "classes": "pf-kpi-sub"
-                                  },
-                                  "text": "- AIM Shipper ID claimed from local pool (per-Part-Number FIFO, sub-millisecond)"
-                                },
-                                "type": "ia.display.label"
-                              },
-                              {
-                                "meta": {
-                                  "name": "B2"
-                                },
-                                "props": {
-                                  "style": {
-                                    "classes": "pf-kpi-sub"
-                                  },
-                                  "text": "- ShippingLabel row inserted with PrintedAt \u003d NULL"
-                                },
-                                "type": "ia.display.label"
-                              },
-                              {
-                                "meta": {
-                                  "name": "B3"
-                                },
-                                "props": {
-                                  "style": {
-                                    "classes": "pf-kpi-sub"
-                                  },
-                                  "text": "- Async print dispatched to Zebra at this terminal"
-                                },
-                                "type": "ia.display.label"
-                              },
-                              {
-                                "meta": {
-                                  "name": "B4"
-                                },
-                                "props": {
-                                  "style": {
-                                    "classes": "pf-kpi-sub"
-                                  },
-                                  "text": "- Container status flips to Complete"
-                                },
-                                "type": "ia.display.label"
-                              }
-                            ],
-                            "meta": {
-                              "name": "GateText"
-                            },
-                            "position": {
-                              "grow": 1
-                            },
-                            "props": {
-                              "direction": "column",
-                              "style": {
-                                "gap": "6px"
-                              }
-                            },
-                            "type": "ia.container.flex"
-                          },
                           {
                             "events": {
                               "component": {
@@ -1444,7 +1382,7 @@
                                 "minHeight": "80px",
                                 "minWidth": "200px"
                               },
-                              "text": "Mark Container Complete"
+                              "text": "Complete"
                             },
                             "type": "ia.input.button"
                           }

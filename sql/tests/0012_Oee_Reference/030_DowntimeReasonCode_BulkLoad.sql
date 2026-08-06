@@ -50,9 +50,9 @@ DECLARE @TestJson NVARCHAR(MAX) = N'[
 DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @SStr NVARCHAR(1);
 -- Three distinct production Areas resolved dynamically for the DC/MS/TS depts.
-DECLARE @DcArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY);
-DECLARE @MsArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
-DECLARE @TsArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 2 ROWS FETCH NEXT 1 ROWS ONLY);
+DECLARE @DcArea BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
+DECLARE @MsArea BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'MachiningAssembly');
+DECLARE @TsArea BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'Trim');
 DECLARE @InsertedCount INT, @SkippedCount INT, @RejectedCount INT;
 DECLARE @RejectedRowsJson NVARCHAR(MAX);
 
@@ -63,9 +63,9 @@ CREATE TABLE #B1 (
 );
 INSERT INTO #B1 EXEC Oee.DowntimeReasonCode_BulkLoadFromSeed
     @RowsJson         = @TestJson,
-    @DcAreaLocationId = @DcArea,
-    @MsAreaLocationId = @MsArea,
-    @TsAreaLocationId = @TsArea,
+    @DcOperationCategoryId = @DcArea,
+    @MsOperationCategoryId = @MsArea,
+    @TsOperationCategoryId = @TsArea,
     @AppUserId        = 1;
 
 SELECT @S = Status, @M = Message,
@@ -171,9 +171,9 @@ DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @InsertedCount INT, @SkippedCount INT, @RejectedCount INT;
 DECLARE @RejectedRowsJson NVARCHAR(MAX);
 -- Three distinct production Areas resolved dynamically for the DC/MS/TS depts.
-DECLARE @DcArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY);
-DECLARE @MsArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
-DECLARE @TsArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 2 ROWS FETCH NEXT 1 ROWS ONLY);
+DECLARE @DcArea BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
+DECLARE @MsArea BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'MachiningAssembly');
+DECLARE @TsArea BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'Trim');
 
 CREATE TABLE #B2 (
     Status BIT, Message NVARCHAR(500),
@@ -182,9 +182,9 @@ CREATE TABLE #B2 (
 );
 INSERT INTO #B2 EXEC Oee.DowntimeReasonCode_BulkLoadFromSeed
     @RowsJson         = @TestJson,
-    @DcAreaLocationId = @DcArea,
-    @MsAreaLocationId = @MsArea,
-    @TsAreaLocationId = @TsArea,
+    @DcOperationCategoryId = @DcArea,
+    @MsOperationCategoryId = @MsArea,
+    @TsOperationCategoryId = @TsArea,
     @AppUserId        = 1;
 
 SELECT @S = Status, @M = Message,

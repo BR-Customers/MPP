@@ -31,7 +31,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 360,
+      "height": 540,
       "width": 480
     }
   },
@@ -157,6 +157,7 @@
               "name": "AccountField"
             },
             "position": {
+              "basis": "30%",
               "shrink": 0
             },
             "props": {
@@ -190,7 +191,7 @@
                   "name": "PasswordInput"
                 },
                 "position": {
-                  "basis": "46px",
+                  "basis": "45px",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -217,13 +218,13 @@
               "name": "PasswordField"
             },
             "position": {
+              "basis": "30%",
               "shrink": 0
             },
             "props": {
               "direction": "column",
               "style": {
-                "classes": "pf-field",
-                "overflow": "visible"
+                "classes": "pf-field"
               }
             },
             "type": "ia.container.flex"

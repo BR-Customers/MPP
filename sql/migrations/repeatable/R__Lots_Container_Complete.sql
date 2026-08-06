@@ -1,13 +1,14 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Container_Complete.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0
+-- Version:     1.1
 -- Description: Atomic container close (Arc 2 Phase 6; FDS-06-014/06-028/07-010a).
 --              Validates the container is Open + full (accumulated tray parts >= target
 --              TraysPerContainer*PartsPerTray), enforces the RequiresCompletionConfirm
 --              terminal gate (OI-16), then INLINES the AIM-ID claim (FIFO by the
 --              container's part number) + inserts the ShippingLabel + flips status to
---              Complete -- one transaction.
+--              Complete -- one transaction. On completion it also closes the container's
+--              Good finished-good LOTs (tray = LOT) via Lots.Lot_CloseInline (FAT #21).
 --
 --              ORCHESTRATING proc: it is captured via INSERT-EXEC, so it does NOT EXEC
 --              AimShipperIdPool_Claim (the inline claim mirrors that proc) and every
@@ -44,6 +45,7 @@ BEGIN
             @MustConfirm BIT, @RequiresConfirm NVARCHAR(50),
             @ClaimedPoolId BIGINT, @LabelTypeId BIGINT, @Activity NVARCHAR(500), @NewValue NVARCHAR(MAX);
     DECLARE @claimed TABLE (Id BIGINT, AimShipperId NVARCHAR(50));
+    DECLARE @FgLotId BIGINT;
 
     BEGIN TRY
         -- ---- Tier 1 ----
@@ -155,6 +157,33 @@ BEGIN
         SET @ShippingLabelId = SCOPE_IDENTITY();
 
         UPDATE Lots.Container SET ContainerStatusCodeId = 2, CompletedAt = SYSUTCDATETIME() WHERE Id = @ContainerId;
+
+        -- FG close (FAT #21): close every linked finished-good LOT (tray = LOT) that is
+        -- still Good, now that the container is Complete. Delegates the Good->Closed
+        -- transition to the silent Lots.Lot_CloseInline helper (this proc is
+        -- INSERT-EXEC-captured, so it cannot EXEC the status-row Lot_UpdateStatus).
+        -- Trays with NULL FinishedGoodLotId (pre-0034 / ContainerTray_Close flows) have
+        -- no LOT and are skipped by the join; Hold/Scrap FG LOTs are skipped by the
+        -- helper's Good-only guard.
+        DECLARE fg_cur CURSOR LOCAL FAST_FORWARD FOR
+            SELECT l.Id
+            FROM Lots.ContainerTray t
+            INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
+            WHERE t.ContainerId = @ContainerId
+              AND t.FinishedGoodLotId IS NOT NULL
+              AND l.LotStatusId = 1;   -- Good
+        OPEN fg_cur;
+        FETCH NEXT FROM fg_cur INTO @FgLotId;
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            EXEC Lots.Lot_CloseInline
+                @LotId = @FgLotId,
+                @Reason = N'Closed on container completion (finished-goods packed & shipping-ready).',
+                @AppUserId = @AppUserId,
+                @TerminalLocationId = @TerminalLocationId;
+            FETCH NEXT FROM fg_cur INTO @FgLotId;
+        END
+        CLOSE fg_cur; DEALLOCATE fg_cur;
 
         SET @Activity = Audit.ufn_TruncateActivity(N'Container #' + CAST(@ContainerId AS NVARCHAR(20)) + N' ' + Audit.ufn_MidDot()
             + N' AIM ' + @AimShipperId + N' ' + Audit.ufn_MidDot() + N' Completed');

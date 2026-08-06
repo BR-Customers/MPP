@@ -1,22 +1,22 @@
 {
   "custom": {
     "filter": {
-      "areaLocationId": null,
+      "operationCategoryId": null,
       "includeDeprecated": false,
       "searchText": ""
     }
   },
   "params": {},
   "propConfig": {
-    "custom.areaOptions": {
+    "custom.categoryOptions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0, true)"
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getCategoryOptions\", 0, \"All areas\")"
         },
         "type": "expr"
       }
     },
-    "custom.filter.areaLocationId": {
+    "custom.filter.operationCategoryId": {
       "persistent": true
     },
     "custom.filter.includeDeprecated": {
@@ -195,7 +195,7 @@
                           "style": {
                             "classes": "label-eyebrow"
                           },
-                          "text": "Area"
+                          "text": "Applies to"
                         },
                         "type": "ia.display.label"
                       },
@@ -207,7 +207,7 @@
                           "props.options": {
                             "binding": {
                               "config": {
-                                "path": "view.custom.areaOptions"
+                                "path": "view.custom.categoryOptions"
                               },
                               "type": "property"
                             }
@@ -216,7 +216,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.filter.areaLocationId"
+                                "path": "view.custom.filter.operationCategoryId"
                               },
                               "type": "property"
                             }
@@ -402,7 +402,7 @@
                           "shrink": 0
                         },
                         "props": {
-                          "text": "Area"
+                          "text": "Applies to"
                         },
                         "type": "ia.display.label"
                       },

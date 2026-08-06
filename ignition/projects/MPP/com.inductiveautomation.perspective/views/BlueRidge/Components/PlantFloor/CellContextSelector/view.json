@@ -27,6 +27,46 @@
     }
   },
   "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-field-row",
+        "gap": "10px",
+        "padding": "8px 12px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applyCell",
+          "params": [
+            "cellId"
+          ],
+          "script": "\tcellId = BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow = BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.view.custom.selectedCellId = row.get(\"value\")\n\tself.session.custom.cell = {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}, scope=\"page\")\n\t# FAT #6: re-confirm operator presence on cell/context change (not while elevated).\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tu = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.user) or {}\n\t\tif u.get(\"appUserId\"):\n\t\t\tsystem.perspective.openPopup(\"mpp-idle-reconfirm\", \"BlueRidge/Components/PlantFloor/IdleReconfirmModal\", params={\"initials\": u.get(\"initials\"), \"displayName\": u.get(\"displayName\"), \"popupId\": \"mpp-idle-reconfirm\", \"replyMessage\": \"idleReconfirmResult\"}, modal=True, showCloseIcon=False)"
+        },
+        {
+          "name": "applyByScan",
+          "params": [],
+          "script": "\tmatch = BlueRidge.Location.Location.findCellByCode(self.view.custom.cells, self.view.custom.scanCode)\n\tif match is None:\n\t\treturn\n\tself.view.custom.scanCode = \"\"\n\tself.applyCell(match.get(\"value\"))"
+        }
+      ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tc = self.session.custom.cell\n\tif c and c.get(\"locationId\"):\n\t\tself.view.custom.selectedCellId = c.get(\"locationId\")"
+          }
+        }
+      }
+    },
     "children": [
       {
         "meta": {

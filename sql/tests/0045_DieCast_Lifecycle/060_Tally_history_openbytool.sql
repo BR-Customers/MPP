@@ -126,7 +126,7 @@ EXEC test.Assert_IsEqual @TestName=N'[Fixture] shift output recorded, Status 1',
 -- Test 1: Lots.Lot_GetOpenByTool returns the open basket with running
 -- PieceCount 40 + ContributorCount 1
 -- =============================================
-DECLARE @OB TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50), PieceCount INT, OpenedAt DATETIME2(3), ContributorCount INT);
+DECLARE @OB TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50), PieceCount INT, MaxPieceCount INT, BelowStandardRelease BIT, OpenedAt DATETIME2(3), ContributorCount INT);
 INSERT INTO @OB EXEC Lots.Lot_GetOpenByTool @ToolId=@Tool;
 DECLARE @obpc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM @OB WHERE LotId=@Lot);
 EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] running PieceCount 40', @Expected=N'40', @Actual=@obpc;
@@ -135,6 +135,32 @@ EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] ContributorCount 1', @Expected
 DECLARE @obcav NVARCHAR(20) = (SELECT CAST(ToolCavityId AS NVARCHAR(20)) FROM @OB WHERE LotId=@Lot);
 DECLARE @cavExp NVARCHAR(20) = CAST(@Cavity AS NVARCHAR(20));
 EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] ToolCavityId matches', @Expected=@cavExp, @Actual=@obcav;
+
+-- =============================================
+-- Test 1b: MaxPieceCount + BelowStandardRelease (5% release tolerance).
+-- Deterministic: drive Lot.MaxPieceCount to known values (PieceCount stays 40)
+-- and re-read the proc. 40/100 = 40% -> below standard (1); 40/42 = 95.2% ->
+-- within the 5% tolerance (0); NULL max = uncapped basket, never below (0).
+-- =============================================
+UPDATE Lots.Lot SET MaxPieceCount = 100 WHERE Id = @Lot;
+DELETE FROM @OB;
+INSERT INTO @OB EXEC Lots.Lot_GetOpenByTool @ToolId=@Tool;
+DECLARE @obmax NVARCHAR(10) = (SELECT CAST(MaxPieceCount AS NVARCHAR(10)) FROM @OB WHERE LotId=@Lot);
+EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] MaxPieceCount surfaced (100)', @Expected=N'100', @Actual=@obmax;
+DECLARE @obbelow NVARCHAR(10) = (SELECT CAST(BelowStandardRelease AS NVARCHAR(10)) FROM @OB WHERE LotId=@Lot);
+EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] 40 of 100 -> BelowStandardRelease 1', @Expected=N'1', @Actual=@obbelow;
+
+UPDATE Lots.Lot SET MaxPieceCount = 42 WHERE Id = @Lot;
+DELETE FROM @OB;
+INSERT INTO @OB EXEC Lots.Lot_GetOpenByTool @ToolId=@Tool;
+SET @obbelow = (SELECT CAST(BelowStandardRelease AS NVARCHAR(10)) FROM @OB WHERE LotId=@Lot);
+EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] 40 of 42 (95.2%) within 5% tolerance -> 0', @Expected=N'0', @Actual=@obbelow;
+
+UPDATE Lots.Lot SET MaxPieceCount = NULL WHERE Id = @Lot;
+DELETE FROM @OB;
+INSERT INTO @OB EXEC Lots.Lot_GetOpenByTool @ToolId=@Tool;
+SET @obbelow = (SELECT CAST(BelowStandardRelease AS NVARCHAR(10)) FROM @OB WHERE LotId=@Lot);
+EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] uncapped (NULL max) -> 0', @Expected=N'0', @Actual=@obbelow;
 
 -- =============================================
 -- Test 2: Lots.Lot_GetShiftCavityTally counts good WITHOUT double-counting

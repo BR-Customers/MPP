@@ -1,7 +1,7 @@
 {
   "custom": {},
   "params": {
-    "area": "",
+    "category": "",
     "code": "",
     "deprecated": false,
     "description": "",
@@ -11,7 +11,7 @@
     "type": ""
   },
   "propConfig": {
-    "params.area": {
+    "params.category": {
       "paramDirection": "input"
     },
     "params.code": {
@@ -85,7 +85,7 @@
       },
       {
         "meta": {
-          "name": "Area"
+          "name": "Category"
         },
         "position": {
           "basis": "130px",
@@ -95,7 +95,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "path": "view.params.area"
+                "path": "view.params.category"
               },
               "type": "property"
             }
