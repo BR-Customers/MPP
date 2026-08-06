@@ -1,0 +1,23 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "files": ["query.sql"],
+  "attributes": {
+    "type": "Query",
+    "enabled": true,
+    "database": "",
+    "useMaxReturnSize": false,
+    "maxReturnSize": 100,
+    "autoBatchEnabled": false,
+    "cacheEnabled": false,
+    "cacheAmount": 1,
+    "cacheUnit": "SEC",
+    "fallbackEnabled": false,
+    "fallbackValue": "",
+    "permissions": [{ "zone": "", "role": "" }],
+    "lastModification": { "actor": "claude", "timestamp": "2026-08-06T12:00:00Z" },
+    "parameters": [
+      { "type": "Parameter", "identifier": "printerLocationId", "sqlType": 3 }
+    ]
+  }
+}
