@@ -641,6 +641,89 @@
             }
           }
         ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "OnHandPanel"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1,
+          "display": false
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.embedded"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "8px",
+            "padding": "12px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "OnHandHeader"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "On hand at this station (FIFO by arrival)",
+              "style": {
+                "classes": "pf-panel-header"
+              }
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "OnHandRepeater"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryCards\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "useDefaultViewWidth": false,
+              "elementPosition": {
+                "basis": "92px",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/Trim/InventoryRow",
+              "style": {
+                "gap": "8px",
+                "overflowY": "auto"
+              }
+            }
+          }
+        ]
       }
     ]
   }
