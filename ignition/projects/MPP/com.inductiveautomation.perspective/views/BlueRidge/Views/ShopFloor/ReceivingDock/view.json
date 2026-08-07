@@ -10,9 +10,12 @@
     },
     "lastLabelLotId": null,
     "printFailed": false,
-    "receivedOriginId": null
+    "receivedOriginId": null,
+    "refreshToken": 0
   },
-  "params": {},
+  "params": {
+    "embedded": false
+  },
   "propConfig": {
     "custom.partOptions": {
       "binding": {
@@ -29,6 +32,9 @@
           "expression": "runScript(\"BlueRidge.Lots.Lot.getOriginTypeIdByCode\", 0, \"Received\")"
         }
       }
+    },
+    "params.embedded": {
+      "paramDirection": "input"
     }
   },
   "props": {
@@ -55,7 +61,7 @@
         {
           "name": "createLot",
           "params": [],
-          "script": "\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tpartValue = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.partItemId)\n\n\t# Resolve part: a numeric option value is a real Item.Id; a typed (custom)\n\t# value from allowCustomOptions arrives as a raw part-number string ->\n\t# resolve to an itemId via Item.getByPartNumber.\n\titemId = None\n\tif partValue is not None and partValue != \"\":\n\t\ttry:\n\t\t\titemId = int(partValue)\n\t\texcept (ValueError, TypeError):\n\t\t\trow = BlueRidge.Parts.Item.getByPartNumber(partValue)\n\t\t\tif row is None:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Unknown part\", \"No active item matches '%s'.\" % partValue, \"error\")\n\t\t\t\treturn\n\t\t\titemId = row.get(\"Id\")\n\tif itemId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Part required\", \"Scan or pick a part number.\", \"warning\")\n\t\treturn\n\n\t# Piece count: text-field + proc coercion (proc takes an int).\n\tpieceCount = None\n\tpc = draft.get(\"pieceCount\")\n\tif pc is not None and (\"%s\" % pc).strip() != \"\":\n\t\ttry:\n\t\t\tpieceCount = int((\"%s\" % pc).strip())\n\t\texcept (ValueError, TypeError):\n\t\t\tBlueRidge.Common.Notify.toast(\"Invalid piece count\", \"Enter a whole number.\", \"warning\")\n\t\t\treturn\n\n\t# Optional serial range -> int or None.\n\tdef _toIntOrNone(v):\n\t\tif v is None:\n\t\t\treturn None\n\t\ts = (\"%s\" % v).strip()\n\t\tif s == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(s)\n\t\texcept (ValueError, TypeError):\n\t\t\treturn None\n\tminSerial = _toIntOrNone(draft.get(\"minSerialNumber\"))\n\tmaxSerial = _toIntOrNone(draft.get(\"maxSerialNumber\"))\n\n\tvendorLot = draft.get(\"vendorLotNumber\") or None\n\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\n\tdata = {\n\t\t\"itemId\": itemId,\n\t\t\"lotOriginTypeId\": self.view.custom.receivedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": pieceCount,\n\t\t\"vendorLotNumber\": vendorLot,\n\t\t\"minSerialNumber\": minSerial,\n\t\t\"maxSerialNumber\": maxSerial,\n\t}\n\tres = BlueRidge.Lots.Lot.create(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(res, successTitle=\"LOT created\")\n\tif not (res and res.get(\"Status\")):\n\t\treturn\n\tnewId = res.get(\"NewId\")\n\n\t# Print the LTT. TODO(phase4): no resolver exists yet for the Primary label\n\t# type id or the Initial print-reason id (LotLabel has no getByCode helper and\n\t# the view must not call system.db / invent SQL). Passing None best-effort; the\n\t# proc/print may reject -> the UI holds on printFailed and offers Reprint.\n\tpr = BlueRidge.Lots.LotLabel.printLabel({\"lotId\": newId, \"labelTypeCodeId\": None, \"printReasonCodeId\": None}, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(pr, successTitle=\"LTT printed\")\n\tif not (pr and pr.get(\"Status\")):\n\t\tself.view.custom.printFailed = True\n\t\tself.view.custom.lastLabelLotId = newId\n\telse:\n\t\tself.view.custom.printFailed = False\n\t\tself.view.custom.lastLabelLotId = newId\n\t\tself.resetForm()\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(newId))"
+          "script": "\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tpartValue = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.partItemId)\n\n\t# Resolve part: a numeric option value is a real Item.Id; a typed (custom)\n\t# value from allowCustomOptions arrives as a raw part-number string ->\n\t# resolve to an itemId via Item.getByPartNumber.\n\titemId = None\n\tif partValue is not None and partValue != \"\":\n\t\ttry:\n\t\t\titemId = int(partValue)\n\t\texcept (ValueError, TypeError):\n\t\t\trow = BlueRidge.Parts.Item.getByPartNumber(partValue)\n\t\t\tif row is None:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Unknown part\", \"No active item matches '%s'.\" % partValue, \"error\")\n\t\t\t\treturn\n\t\t\titemId = row.get(\"Id\")\n\tif itemId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Part required\", \"Scan or pick a part number.\", \"warning\")\n\t\treturn\n\n\t# Piece count: text-field + proc coercion (proc takes an int).\n\tpieceCount = None\n\tpc = draft.get(\"pieceCount\")\n\tif pc is not None and (\"%s\" % pc).strip() != \"\":\n\t\ttry:\n\t\t\tpieceCount = int((\"%s\" % pc).strip())\n\t\texcept (ValueError, TypeError):\n\t\t\tBlueRidge.Common.Notify.toast(\"Invalid piece count\", \"Enter a whole number.\", \"warning\")\n\t\t\treturn\n\n\t# Optional serial range -> int or None.\n\tdef _toIntOrNone(v):\n\t\tif v is None:\n\t\t\treturn None\n\t\ts = (\"%s\" % v).strip()\n\t\tif s == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(s)\n\t\texcept (ValueError, TypeError):\n\t\t\treturn None\n\tminSerial = _toIntOrNone(draft.get(\"minSerialNumber\"))\n\tmaxSerial = _toIntOrNone(draft.get(\"maxSerialNumber\"))\n\n\tvendorLot = draft.get(\"vendorLotNumber\") or None\n\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\n\tdata = {\n\t\t\"itemId\": itemId,\n\t\t\"lotOriginTypeId\": self.view.custom.receivedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": pieceCount,\n\t\t\"vendorLotNumber\": vendorLot,\n\t\t\"minSerialNumber\": minSerial,\n\t\t\"maxSerialNumber\": maxSerial,\n\t}\n\tres = BlueRidge.Lots.Lot.create(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(res, successTitle=\"LOT created\")\n\tif not (res and res.get(\"Status\")):\n\t\treturn\n\tnewId = res.get(\"NewId\")\n\tembedded = bool(self.view.params.embedded)\n\n\t# Embedded (pass-through station tab): refresh our own on-hand panel and tell\n\t# the sibling Assembly tab that line inventory changed. Sent BEFORE the print\n\t# so a print failure still refreshes the sibling. Page-scoped; the handler\n\t# compares cellLocationId against its own cell.\n\tif embedded:\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tsystem.perspective.sendMessage(\"inventoryChanged\", payload={\"cellLocationId\": cell.get(\"locationId\")}, scope=\"page\")\n\n\t# Print the LTT. labelTypeCodeId / printReasonCodeId are left None on purpose:\n\t# LotLabel.printLabel default-resolves them to Primary / Initial.\n\tpr = BlueRidge.Lots.LotLabel.printLabel({\"lotId\": newId, \"labelTypeCodeId\": None, \"printReasonCodeId\": None}, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(pr, successTitle=\"LTT printed\")\n\tif not (pr and pr.get(\"Status\")):\n\t\tself.view.custom.printFailed = True\n\t\tself.view.custom.lastLabelLotId = newId\n\telse:\n\t\tself.view.custom.printFailed = False\n\t\tself.view.custom.lastLabelLotId = newId\n\t\tself.resetForm()\n\t\t# Standalone Receiving Dock keeps its navigate-to-LOT-Detail tail; inside a\n\t\t# tab shell that would eject the operator from the screen.\n\t\tif not embedded:\n\t\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(newId))"
         },
         {
           "name": "reprintLast",
@@ -188,6 +194,19 @@
                   "scope": "G",
                   "config": {
                     "script": "\tsystem.perspective.navigate(\"/\")"
+                  }
+                }
+              }
+            },
+            "position": {
+              "display": true
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.embedded} = false"
                   }
                 }
               }
