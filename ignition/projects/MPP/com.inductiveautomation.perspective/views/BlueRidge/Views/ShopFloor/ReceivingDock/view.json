@@ -683,7 +683,7 @@
               "shrink": 0
             },
             "props": {
-              "text": "On hand at this station (FIFO by arrival)",
+              "text": "On hand at this station",
               "style": {
                 "classes": "pf-panel-header"
               }

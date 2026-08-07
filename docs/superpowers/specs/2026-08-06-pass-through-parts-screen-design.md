@@ -272,8 +272,14 @@ short component(s); the consume walk excludes `sc.BlocksProduction = 1` (Hold/Sc
 ### 6.3 Failure modes carried over unchanged
 
 - **Fallback / unregistered terminal.** `zoneLocationId` resolves to the whole Madison Facility, so the mint, the
-  on-hand read, and the consume all happen at the Facility node — plant-wide reads and false eligibility. The subtitle
-  reading "Madison Facility" is the tell. Affects both tabs identically; neither improved nor worsened here.
+  on-hand read, and the consume all happen at the Facility node. `Parts.v_EffectiveItemLocation` anchors both its
+  Direct and BomDerived legs to `ItemLocation.LocationId`, and `Location.ufn_AncestorLocationIds` only walks
+  *upward* — so the Facility's ancestor set contains no configured cell. `Lot_Create` and `Assembly_CompleteTray`
+  both **fail closed** with an operator-visible message (`Item is not eligible at the specified location.` /
+  `Finished-good Item is not eligible at this cell.`), not open eligibility. The only silent surface is the on-hand
+  panel, which returns an empty list — the `ReceivingDock` subtitle already renders "No cell selected" in that
+  state. The subtitle reading "Madison Facility" is the tell. Affects both tabs identically; neither improved nor
+  worsened here.
 - **Print failure.** `printFailed = True` + `lastLabelLotId` → `PrintFailureBanner` + Reprint. Because the broadcast
   fires before the print, the Assembly tab refreshes even when the label fails.
 - **Duplicate initials popup.** Both embeds call `openPopup("mpp-initials", …)` with the same popup id. This is
