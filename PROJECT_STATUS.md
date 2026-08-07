@@ -12,7 +12,9 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-08-05 — **THE AIM POST-BACK IS PROVEN AGAINST LIVE AIM, AND `main` IS MERGED IN (`41502179`).** Container 2 posted serial `000000034` / part `112006FB A000` / qty 6 / lot `MESL3000024` to test company `01` and came back accepted — `PostedAt` set, `LastPostError` empty, first attempt. Container 1 is the control: identical code path, an unverified part (`122706NA 0001`), rejected with the ~91-byte request echo and left owed. The whole chain now has live evidence end to end — topup → claim on close → payload write → post → `PostedAt`. All 88 commits from main's PR #3 are merged in; the branch is 0 behind / 81 ahead and pushed.
+**Last updated:** 2026-08-06 — **The pass-through parts screen is BUILT and code-reviewed on `hunter/explore`, but NOT smoked.** `ThirdPartyInspection` (`/shop-floor/third-party-inspection`, route unchanged) drops its Inspect tab and becomes **Inventory + Assembly**: the Inventory tab embeds `ReceivingDock` in a new `embedded` mode (no navigate-away, broadcasts `inventoryChanged`, Close hidden, on-hand panel), the Assembly tab embeds `AssemblyNonSerialized` untouched. Four commits, seven files, zero seed churn. Full `MPP_MES_Test` suite **2370/0**. **⛔ The operator smoke has NOT been run — see "Owed" in the section below, and read the AIM warning there BEFORE running it.**
+
+**Prior header (2026-08-05):** **THE AIM POST-BACK IS PROVEN AGAINST LIVE AIM, AND `main` IS MERGED IN (`41502179`).** Container 2 posted serial `000000034` / part `112006FB A000` / qty 6 / lot `MESL3000024` to test company `01` and came back accepted — `PostedAt` set, `LastPostError` empty, first attempt. Container 1 is the control: identical code path, an unverified part (`122706NA 0001`), rejected with the ~91-byte request echo and left owed. The whole chain now has live evidence end to end — topup → claim on close → payload write → post → `PostedAt`. All 88 commits from main's PR #3 are merged in; the branch is 0 behind / 81 ahead and pushed.
 
 > **What exists now.** `BlueRidge.Lots.AimHttp` (the one place an AIM call leaves the Gateway) · `BlueRidge.Lots.AimPost.postOne/retryTick` (one definition of "post a serial", used by both the synchronous completion path and a 60s sweep) · a real `topupTick` · backlog-age escalation in `alarmTick` · `AimPostTimer` (disabled) · container completion posts back · `/shop-floor/aim-pool-config` with connection settings, the owed-to-AIM backlog and a human-confirmed `MarkPosted` · `AimPoolTile`. Migrations **`0052`–`0054`**.
 > **The wire format — the thing that cost the most to learn.** The written agreement is WRONG about how the payload is transmitted. It rides in the **query string** with an **EMPTY body**, and the delimiters are **literal backslash escape text** (`%5C` is a backslash, so `%5Cr%5Cn` is the text `
@@ -70,6 +72,126 @@
 > **See the `## 🔖 2026-07-14 — PLC Integration` section directly below for the full PLC writeup.**
 
 **Prior header note (hunter/explore, 2026-07-07):** **Smoke-findings fix pass on `hunter/explore`: all 14 items from `notes/2026-07-07_smoke_findings.md` addressed (full suite 1945/1945, only the pre-existing `010_Parts_codes_crud` thrower). Per-item ✅/⚠️ annotations live in the findings file. Re-smoke owed — see the section directly below.** Prior header note (2026-07-06 second session): **Jacques 2026-07-06 meeting task list worked on `hunter/explore`: 21 of 24 items fixed, tested, committed (full suite 1934/1934, only the pre-existing `010_Parts_codes_crud` thrower). 3 items open pending live repro / Jacques's call.** Prior header note (earlier 2026-07-06):
+
+---
+
+## 🔖 2026-08-06 — Pass-through parts screen (Inventory + Assembly tabs)
+
+Built subagent-driven across 4 tasks with a per-task review after each. Spec
+`docs/superpowers/specs/2026-08-06-pass-through-parts-screen-design.md`; plan
+`docs/superpowers/plans/2026-08-06-pass-through-parts-screen.md`; per-task ledger in
+`.superpowers/sdd/progress.md`.
+
+### What it is
+
+A pass-through part is a vendor-supplied part MPP does not manufacture, only assembles
+(`Parts.ItemType` Id 5, FDS-05-005). The station now does the whole job on one screen: **receive
+the vendor box as a `Received`-origin LOT with a printed LTT, then consume it into a finished good** —
+without leaving the screen.
+
+`ThirdPartyInspection` was a three-tab shell (Check In / Inspect / Check Out). It is now two tabs,
+**Inventory** and **Assembly**. The Inspect tab was dropped as not earning its place; `InspectionEntry`
+stays routed at `/shop-floor/inspection` and deep-linked from LOT Detail (`params={lotName}`), so no
+capability was lost.
+
+**The route and view path are unchanged** (`/shop-floor/third-party-inspection`,
+`BlueRidge/Views/ShopFloor/ThirdPartyInspection`) — they are seeded as `DefaultScreen` for
+`INSP-SORT-T1` and `66B - Ins` in `sql/seeds/011_seed_locations_mpp_plant.sql`,
+`sql/scripts/reconcile_location_dev.sql`, **and** `sql/seeds/gen_locations_mpp.js`. Only the
+page-config *title* changed ("Third-Party Inspection" → "Pass-Through Parts"). No seed file was
+touched.
+
+### Why it needed almost no new code
+
+Every server-side primitive already existed. The load-bearing fact: **`ReceivingDock` mints at
+`session.custom.cell.locationId` and `Assembly_CompleteTray` consumes from `@CellLocationId`, and both
+resolve to the terminal's `zoneLocationId`** — the same id. `Assembly_CompleteTray`'s FIFO walk filters
+`l.CurrentLocationId = @CellLocationId` with **no descendant cascade**, so that equality is what makes
+"receive it, then assemble with it" work with no movement step. It is also the single thing most likely
+to break if a station is ever configured with a zone above its assembly cell.
+
+Eligibility is automatic: a pass-through item is eligible at the station because it is a child line on
+a **published** BOM of an item with Direct `ItemLocation` eligibility there (`v_EffectiveItemLocation`'s
+BomDerived path, FDS-02-012 — which exists precisely to avoid enumerating every pass-through component
+per cell). `Assembly_CompleteTray`'s consume walk has no `ItemType` filter, so a PassThrough BOM child
+consumes exactly like any component.
+
+### Changes
+
+- **`ReceivingDock` `embedded` mode** (`ce2ecc74`) — new `params.embedded` (default `false`, with the
+  required `paramDirection: "input"`). When embedded: `createLot()` suppresses the
+  navigate-to-LOT-Detail tail, bumps `refreshToken`, and sends the page-scoped `inventoryChanged`
+  message **before** the print call (so a print failure still refreshes the sibling tab); the Close
+  button is hidden via `position.display`. `AssemblyNonSerialized` already had the matching
+  page-scoped handler — **it was not modified**. Also dropped a stale `TODO(phase4)`:
+  `LotLabel.printLabel` default-resolves `Primary` / `Initial` when passed `None`.
+- **On-hand panel** (`aaaa2552`) — `getLineInventoryCards` over `Trim/InventoryRow` at 92px basis,
+  `refreshToken` passed **as a runScript argument** (runScript caches on args). Gated on `embedded`,
+  so standalone `/shop-floor/receiving` is unchanged.
+- **Two-tab shell + title** (`abc5d8e2`).
+- **`LotStatusCode` on the on-hand read** (`9f4a3326`, `ff745dc8`) — `getLineInventoryCards`
+  hardcoded `"Good"`, so a Hold/Scrap LOT rendered a green **Good** pill while
+  `Assembly_CompleteTray` refused to consume it (`sc.BlocksProduction = 0`). `Lot_GetLineInventoryByPart`
+  now returns `sc.Code AS LotStatusCode` (projection-only; `sc` was already joined). Three fixed-shape
+  `INSERT-EXEC` captures widened + a Hold fixture and two status assertions added.
+
+### What the reviews caught that the implementers did not
+
+- The AIM pool teardown in `0029/090` was written as a bespoke `ConsumedByContainerId` join-DELETE with
+  a NOTE explaining a root cause that is **false for full-suite runs** — seven earlier-sorting files
+  already blanket-clear the pool. Replaced with the documented convention
+  (`DELETE FROM Lots.AimShipperIdPool;` on entry and exit, per `0049/010_schema.sql`), which eight
+  sibling files already follow.
+- The decoy-location repoint in `0027/100` was correct but its justification was wrong: `MA1-6MD-MIN`
+  is not missing from a stale seed, it carries `Deprecated=1` in `sql/seeds/_site_locations.tsv` and is
+  **intentionally skipped** by `gen_locations_mpp.js`'s `skip()`. The wrong explanation would have been
+  baked into the file permanently.
+
+### ⚠️ The ambient test suite is not clean — 15 files abort, unrelated to this work
+
+Discovered while establishing a baseline. **15 test files abort with `sqlcmd` exit 1** across suites
+`0014`, `0016`, `0022`, `0023`, `0024`, `0026`, `0027`, `0028`, `0029`, `0044` — pre-existing, mostly
+AIM-merge fallout plus the same class of stale fixed-shape `INSERT-EXEC` capture this work fixed
+elsewhere (`010_Tool_crud.sql` throws `Msg 213` on `Tools.Tool_Get`). Two of the 17 at baseline were
+this work's own files and are now fixed (17 → 15). **These abort silently as runner exit-1, not as
+`FAIL:` lines** — assertion totals look clean while whole files never run. Sibling
+`0029/100_FinishedGoodClose_HeldTrayReclose.sql` carries the identical stale-`@PartNumber` bug that
+`090` had. Assertion totals: baseline 2353/0 → 2370/0.
+
+### Owed — the operator smoke, NOT yet run
+
+**⚠️ READ FIRST: `Lots.AimPoolConfig.AimPostingEnabled = 1` in `MPP_MES_Dev` right now, with 73
+unconsumed real Honda serials pooled and `AimBaseUrl = http://172.17.10.86:8080`, company `01`.**
+The smoke's "Close Tray → Complete" step makes `Container_Complete` claim a serial FIFO and fires a
+**live POST at MPP's actual AIM server**. A consumed serial is gone forever. Flip `AimPostingEnabled`
+off first and stop at Close Tray, or knowingly spend one.
+
+The gateway is also in **trial mode**, and Ignition's "Session Status" overlay keeps
+`pointer-events: auto` across the full viewport even when dismissed — it blocks clicks app-wide until
+the trial is reset. There is also a persistent `icons/mpp.svg` 404 on every page load.
+
+Smoke checklist (plan Task 5, steps 1-8): real terminal (subtitle must NOT read "Madison Facility" —
+that means an unregistered IP and a whole-site zone); initials popup appears **once**, not twice
+(both embeds call `openPopup("mpp-initials")` at load — pre-existing, unproven); receive an eligible
+part; **switch to Assembly without pressing Refresh and confirm the projection already updated** (this
+is the one step that proves the cross-tab broadcast); consume it and check genealogy; the three
+rejection paths (ineligible / over `MaxLotSize` / over `MaxParts`); place a hold and confirm the pill
+reads **Hold** and the tray close short-lists that part; and regression-check standalone
+`/shop-floor/receiving` still shows Close, shows no on-hand panel, and still navigates.
+
+### Also owed / open
+
+- **Scope confirmation with MPP.** Scope Matrix row 20 ("Pass-through Parts Tracking") is MVP with a
+  *"Future"* note, which `MPP_MES_USER_JOURNEYS.md:361` reads as deferring *dedicated operational
+  screens* — and this is one. Defensible as MVP (every proc it calls is already built and MVP-scoped;
+  the change is a tab shell plus an embed flag) but worth confirming rather than assuming.
+- **Inspection discoverability.** If operators at `INSP-SORT-T1` / `66B - Ins` found inspection only
+  through the dropped tab, that regresses for them even though the route and deep link remain.
+- **The status pill is binary.** `Trim/InventoryRow` renders
+  `if({view.params.lotStatusCode} = 'Good', 'Good', 'Hold')`. With a real status now flowing through,
+  a `Scrap` LOT renders "Hold", and an `Open` die-cast LOT (migration `0045`, `BlocksProduction = 0`)
+  renders "Hold" with hold styling despite being non-blocking. The goal was a truthful pill; it is
+  truthful only for Good vs not-Good. Fixing it touches every screen embedding `InventoryRow`.
 
 ---
 
