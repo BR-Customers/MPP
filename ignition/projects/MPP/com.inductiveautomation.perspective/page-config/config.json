@@ -113,7 +113,7 @@
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
     },
     "/shop-floor/third-party-inspection": {
-      "title": "Third-Party Inspection",
+      "title": "Pass-Through Parts",
       "viewPath": "BlueRidge/Views/ShopFloor/ThirdPartyInspection"
     },
     "/shop-floor/trace": {
