@@ -1,11 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_RejectEvent_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-16
--- Version:     1.1
+-- Modified:    2026-08-07
+-- Version:     1.2
 -- Change Log:  2026-06-16 - 1.1 - TOCTOU guard: re-check the decremented PieceCount
 --                                 under UPDLOCK; RAISERROR on negative (concurrent
 --                                 over-reject) routes to CATCH = clean Status 0.
+--              2026-08-07 - 1.2 - FAT-QH-150: add @AllowHeldLot BIT=0. When 1, the
+--                                 held-LOT guard permits a scrap against a Hold(2)
+--                                 LOT ONLY (Scrap(3)/Closed(4) still reject); the
+--                                 LOT is decremented in place with no split and no
+--                                 hold release. Close-at-zero stays gated on Good,
+--                                 so a fully-scrapped held LOT remains HELD.
 -- Description: Arc 2 Phase 3 (§4.2 + D3). Records ONE reject/scrap event against
 --              a LOT (Workorder.RejectEvent) and, per D3, decrements the LOT's
 --              materialized B5 quantities (Lot.PieceCount + Lot.InventoryAvailable)
@@ -47,7 +53,8 @@ CREATE OR ALTER PROCEDURE Workorder.RejectEvent_Record
     @Remarks             NVARCHAR(500)  = NULL,
     @AppUserId           BIGINT,
     @TerminalLocationId  BIGINT         = NULL,  -- audit-only; no column on RejectEvent
-    @OperationTypeCode   NVARCHAR(20)   = NULL   -- reject's operation context; drives additive-vs-subtractive (0042)
+    @OperationTypeCode   NVARCHAR(20)   = NULL,  -- reject's operation context; drives additive-vs-subtractive (0042)
+    @AllowHeldLot        BIT            = 0       -- FAT-QH-150: permit scrap against a HELD (2) LOT only
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -62,7 +69,7 @@ BEGIN
         SELECT @LotId AS LotId, @DefectCodeId AS DefectCodeId, @Quantity AS Quantity,
                @ProductionEventId AS ProductionEventId, @ChargeToArea AS ChargeToArea,
                @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId,
-               @OperationTypeCode AS OperationTypeCode
+               @OperationTypeCode AS OperationTypeCode, @AllowHeldLot AS AllowHeldLot
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @StatusCode NVARCHAR(20);
@@ -167,7 +174,14 @@ BEGIN
         END
 
         -- Blocked: Hold/Scrap (BlocksProduction) or terminal Closed cannot reject.
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        -- FAT-QH-150 (Jacques direction, overrides FRS/FDS): a held LOT may be
+        -- SCRAPPED in place (no split, no hold release) when @AllowHeldLot=1. The
+        -- exception is scoped to Hold(2) ONLY -- a Scrap(3) LOT (already scrapped)
+        -- and a Closed(4) LOT still reject. The close-at-zero block below is gated
+        -- on @CurrentStatusId = Good, so a fully-scrapped held LOT stays HELD; the
+        -- hold lifecycle (release/disposition) owns the terminal transition.
+        IF (@Blocks = 1 AND NOT (@AllowHeldLot = 1 AND @StatusCode = N'Hold'))
+           OR @StatusCode = N'Closed'
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode + N') and cannot record a reject.';
             EXEC Audit.Audit_LogFailure

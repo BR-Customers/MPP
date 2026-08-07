@@ -71,6 +71,16 @@ def listOpen(filterText=None, filterTypeId=None, _refreshToken=None):
     return BlueRidge.Common.Db.execList("quality/Hold_ListOpen", params)
 
 
+def listAssociatedContainers(lotId):
+    """FAT-QH-170 advisory: containers associated with a LOT (via a finished-good
+       tray or a serialized part it produced), so the Hold Management view can warn
+       that related containers may also need a hold. Read-only; returns list[dict]
+       (empty = none). Distinct by container."""
+    BlueRidge.Common.Util.log("listAssociatedContainers lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execList(
+        "quality/Hold_ListAssociatedContainers", {"lotId": lotId})
+
+
 def placeBulk(lotIds, holdTypeCodeId, reason=None, appUserId=None, terminalLocationId=None):
     """Place a hold on each LOT id in lotIds in one operator action (FDS-08-006).
        Loops place() per LOT (each its own status-row call -- no nested INSERT-EXEC).
