@@ -65,12 +65,13 @@ INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
 DECLARE @A1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-A1');
 DECLARE @A2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-A2');
 DECLARE @B1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-B1');
--- NOTE: was 'MA1-6MD-MIN' -- that code is in the source-of-truth
--- sql/seeds/_site_locations.tsv but missing from the committed generated
--- sql/seeds/011_seed_locations_mpp_plant.sql (pre-existing drift, unrelated to
--- this task; not fixed here per the "do not touch sql/seeds/" constraint).
--- Repointed to 'MA1-5GOF-MIN', a different, currently-seeded terminal -- the
--- DECOY only needs to be a real location distinct from @Cell.
+-- NOTE: was 'MA1-6MD-MIN' -- that row carries Deprecated=1 (column 7) in
+-- sql/seeds/_site_locations.tsv, so sql/seeds/gen_locations_mpp.js's skip()
+-- correctly and intentionally omits it (and 14 other deprecated rows) from
+-- the committed generated sql/seeds/011_seed_locations_mpp_plant.sql -- the
+-- generator is working as designed, there is no seed bug. Repointed to
+-- 'MA1-5GOF-MIN', a different, live, currently-seeded terminal -- the DECOY
+-- only needs to be a real location distinct from @Cell.
 DECLARE @Other BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
 
 -- inbound movements INTO the cell (set ArrivedAt); A3 gets none (fallback path).
