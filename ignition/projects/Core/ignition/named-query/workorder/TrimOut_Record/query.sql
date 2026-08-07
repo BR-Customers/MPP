@@ -2,7 +2,7 @@ EXEC Workorder.TrimOut_Record
     @ParentLotId               = :parentLotId,
     @OperationTemplateId       = :operationTemplateId,
     @ShotCount                 = :shotCount,
-    @ScrapCount                = :scrapCount,
+    @ScrapLinesJson            = :scrapLinesJson,
     @DestinationCellLocationId = :destinationCellLocationId,
     @SourceLocationId          = :sourceLocationId,
     @AppUserId                 = :appUserId,

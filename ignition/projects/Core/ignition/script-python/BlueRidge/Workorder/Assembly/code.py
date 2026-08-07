@@ -230,3 +230,25 @@ def getComponentProjection(cellLocationId, finishedGoodItemId, closureMethod=Non
         "workorder/Assembly_GetComponentProjection",
         {"locationId": cellLocationId, "finishedGoodItemId": finishedGoodItemId,
          "closureMethod": closureMethod})
+
+
+def completeBoxToPrinter(containerId, terminalLocationId, printerLocationId, appUserId=None):
+    """Card 'Complete (box)': complete the container, then print its shipping label
+       to the card's printer. Container.complete claims the AIM shipper + generates
+       the ShippingLabel; the dispatch (routed to printerLocationId) does the ZPL.
+       Returns {Status, Message}. On a completed-but-unprinted box the ShippingLabel
+       row persists (re-dispatchable), so a print miss is never a lost record."""
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    cid = BlueRidge.Common.Util.extractQualifiedValues(containerId)
+    res = BlueRidge.Lots.Container.complete(cid, operatorConfirmed=True,
+                                            appUserId=appUserId, terminalLocationId=terminalLocationId)
+    if not res or not res.get("Status"):
+        return res or {"Status": 0, "Message": "Container complete failed."}
+    aim = res.get("AimShipperId")
+    disp = BlueRidge.Lots.ShippingDispatcher.dispatch(
+        aim, terminalLocationId=terminalLocationId, printerLocationId=printerLocationId)
+    if disp and disp.get("Status"):
+        return {"Status": 1, "Message": "Box completed and shipping label printed."}
+    # Box IS complete; only the print missed -> surface the print message, not a hard failure.
+    return {"Status": 1, "Message": "Box completed. " + ((disp or {}).get("Message") or "Label not printed - use Reprint.")}
