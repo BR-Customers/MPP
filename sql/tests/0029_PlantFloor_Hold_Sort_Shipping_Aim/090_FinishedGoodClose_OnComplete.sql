@@ -13,9 +13,18 @@ EXEC test.BeginTestFile @FileName = N'0029_PlantFloor_Hold_Sort_Shipping_Aim/090
 GO
 
 -- ---- teardown (FK-safe order) ----
+-- NOTE: AimShipperIdPool.PartNumber was DROPPED by migration 0052 (AIM pool
+-- genericized from per-part to per-company-code; pre-existing drift, unrelated
+-- to this task) -- teardown now targets the fixture's own AimShipperId values,
+-- PLUS (below) any pool row actually consumed by one of this fixture's own
+-- containers -- the dev seed pool (sql/seeds/028_seed_aim_pool_dev.sql, 500
+-- older rows) now wins FIFO claim over a freshly-topped-up row, since claim is
+-- no longer part-scoped, so the row Container_Complete actually consumed is
+-- not reliably the one named by AimShipperId.
 DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'));
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
+DELETE p FROM Lots.AimShipperIdPool p INNER JOIN Lots.Container c ON c.Id = p.ConsumedByContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
+DELETE FROM Lots.AimShipperIdPool WHERE AimShipperId IN (N'AIM-FGC-1', N'AIM-NUL-1');
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')) OR ConsumedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD');
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD'));
@@ -51,9 +60,11 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @Fg AND LocationI
 -- staged component stock at the cell (plenty).
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId)
     VALUES (N'STG-090', @Child, 1, 1, 100000, @Cell, 0, 100000, 1);
--- AIM pool for the FG part (Container_Complete claims one).
+-- AIM pool (Container_Complete claims one). NOTE: AimShipperIdPool_Topup lost its
+-- @PartNumber param in migration 0052 (pool genericized to per-company-code, not
+-- per-part) -- pre-existing drift, unrelated to this task; call updated to match.
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P21-FGC-FG', @AimShipperId = N'AIM-FGC-1';
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-FGC-1';
 
 -- ---- Act: mint two FG-LOT-linked trays into one container ----
 DECLARE @AT TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
@@ -63,7 +74,7 @@ INSERT INTO @AT EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Fg, 
 DECLARE @Fg2 BIGINT = (SELECT FinishedGoodLotId FROM @AT); DECLARE @Full BIT = (SELECT ContainerFull FROM @AT); DELETE FROM @AT;
 
 -- Sanity: both FG LOTs are Good and appear in line inventory BEFORE completion.
-DECLARE @InvBefore TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3));
+DECLARE @InvBefore TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3), LotStatusCode NVARCHAR(20));
 INSERT INTO @InvBefore EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 DECLARE @InvB NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @InvBefore WHERE LotId IN (@Fg1, @Fg2));
 EXEC test.Assert_IsEqual @TestName = N'[FGClose] both FG LOTs on-hand before complete', @Expected = N'2', @Actual = @InvB;
@@ -89,7 +100,7 @@ DECLARE @A1 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotE
 EXEC test.Assert_IsEqual @TestName = N'[FGClose] FG LOT 1 LotStatusChanged audit present', @Expected = N'1', @Actual = @A1;
 
 -- Assert: closed FG LOTs are excluded from line inventory.
-DECLARE @InvAfter TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3));
+DECLARE @InvAfter TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3), LotStatusCode NVARCHAR(20));
 INSERT INTO @InvAfter EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 DECLARE @InvA NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @InvAfter WHERE LotId IN (@Fg1, @Fg2));
 EXEC test.Assert_IsEqual @TestName = N'[FGClose] closed FG LOTs gone from line inventory', @Expected = N'0', @Actual = @InvA;
@@ -117,7 +128,7 @@ END
 -- section's staged component LOT above, so this second staged LOT uses a distinct name.
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId) VALUES (N'STG-090B', @NChild, 1, 1, 100000, @Cell2, 0, 100000, 1);
 DECLARE @TP2 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO @TP2 EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P21-FGC-NUL', @AimShipperId = N'AIM-NUL-1';
+INSERT INTO @TP2 EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-NUL-1';
 
 DECLARE @O TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @TC TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, ContainerAccumulatedParts INT);
@@ -136,7 +147,8 @@ GO
 -- ---- teardown (FK-safe order) ----
 DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'));
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
+DELETE p FROM Lots.AimShipperIdPool p INNER JOIN Lots.Container c ON c.Id = p.ConsumedByContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
+DELETE FROM Lots.AimShipperIdPool WHERE AimShipperId IN (N'AIM-FGC-1', N'AIM-NUL-1');
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')) OR ConsumedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD');
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD'));

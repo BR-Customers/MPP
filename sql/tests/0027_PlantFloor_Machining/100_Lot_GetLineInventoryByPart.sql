@@ -7,6 +7,8 @@
 --               at MA1-COMPBR-MIN, each with several LOTs:
 --                 - open LOTs (Good, InventoryAvailable > 0) are returned;
 --                 - a Closed LOT and a zero-inventory LOT are EXCLUDED;
+--                 - a Hold LOT IS returned, and LotStatusCode carries its real
+--                   status (the on-hand card used to hardcode 'Good');
 --                 - rows are ordered PartNumber ASC, then arrival (latest
 --                   LotMovement into the cell, falling back to CreatedAt) ASC,
 --                   then LotId -- proven by inserting LOTs whose identity order is
@@ -54,13 +56,22 @@ INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'I1T-A1', @A, 1, 1, 30, 30, @Cell, 1, DATEADD(SECOND, -5, @Now));
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'I1T-ACLOSED', @A, 1, 4, 15, 15, @Cell, 1, @Now);
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'I1T-AZERO', @A, 1, 1, 12, 0,  @Cell, 1, @Now);
+-- Hold LOT: NOT Closed, so it IS returned -- proves LotStatusCode carries the real
+-- status (the card used to hardcode 'Good'). Sorts last within part A (@Now + 30s).
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'I1T-AHOLD', @A, 1, 2, 8,  8,  @Cell, 1, DATEADD(SECOND, 30, @Now));
 -- one LOT for part B (arrives @Now + 5s) -- proves part grouping (A before B)
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'I1T-B1', @B, 1, 1, 40, 40, @Cell, 1, @Now);
 
 DECLARE @A1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-A1');
 DECLARE @A2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-A2');
 DECLARE @B1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-B1');
-DECLARE @Other BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-6MD-MIN');
+-- NOTE: was 'MA1-6MD-MIN' -- that code is in the source-of-truth
+-- sql/seeds/_site_locations.tsv but missing from the committed generated
+-- sql/seeds/011_seed_locations_mpp_plant.sql (pre-existing drift, unrelated to
+-- this task; not fixed here per the "do not touch sql/seeds/" constraint).
+-- Repointed to 'MA1-5GOF-MIN', a different, currently-seeded terminal -- the
+-- DECOY only needs to be a real location distinct from @Cell.
+DECLARE @Other BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
 
 -- inbound movements INTO the cell (set ArrivedAt); A3 gets none (fallback path).
 INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, MovedAt) VALUES (@A1, NULL, @Cell, 1, @Now);
@@ -77,13 +88,14 @@ GO
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
 
 CREATE TABLE #inv (Seq INT IDENTITY(1,1), ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500),
-                   LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3));
-INSERT INTO #inv (ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt)
+                   LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3),
+                   LotStatusCode NVARCHAR(20));
+INSERT INTO #inv (ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt, LotStatusCode)
     EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 
--- only the 4 open, non-zero LOTs of my two parts (Closed + zero-inv excluded)
+-- the 4 open Good LOTs + the Hold LOT (Closed + zero-inv still excluded)
 DECLARE @MineCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #inv WHERE PartNumber IN (N'P-I1-A', N'P-I1-B'));
-EXEC test.Assert_IsEqual @TestName = N'[LineInv] four open on-hand LOTs across the two parts', @Expected = N'4', @Actual = @MineCnt;
+EXEC test.Assert_IsEqual @TestName = N'[LineInv] five on-hand LOTs (4 Good + 1 Hold) across the two parts', @Expected = N'5', @Actual = @MineCnt;
 
 -- Closed LOT excluded
 DECLARE @ClosedCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #inv WHERE LotName = N'I1T-ACLOSED');
@@ -109,6 +121,13 @@ DECLARE @MaxSeqA INT = (SELECT MAX(Seq) FROM #inv WHERE PartNumber = N'P-I1-A');
 DECLARE @SeqB1 INT = (SELECT Seq FROM #inv WHERE LotName = N'I1T-B1');
 DECLARE @GroupOk BIT = CASE WHEN @MaxSeqA < @SeqB1 THEN 1 ELSE 0 END;
 EXEC test.Assert_IsTrue @TestName = N'[LineInv] parts grouped: all P-I1-A rows precede P-I1-B', @Condition = @GroupOk;
+
+-- LotStatusCode carries the real status, not a hardcoded 'Good'
+DECLARE @HoldStatus NVARCHAR(20) = (SELECT LotStatusCode FROM #inv WHERE LotName = N'I1T-AHOLD');
+EXEC test.Assert_IsEqual @TestName = N'[LineInv] Hold LOT reports LotStatusCode = Hold', @Expected = N'Hold', @Actual = @HoldStatus;
+
+DECLARE @GoodStatus NVARCHAR(20) = (SELECT LotStatusCode FROM #inv WHERE LotName = N'I1T-A1');
+EXEC test.Assert_IsEqual @TestName = N'[LineInv] Good LOT reports LotStatusCode = Good', @Expected = N'Good', @Actual = @GoodStatus;
 
 DROP TABLE #inv;
 GO

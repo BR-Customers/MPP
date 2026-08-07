@@ -493,7 +493,7 @@ def getLineInventoryCards(locationId, _refreshToken=None):
             "pieceCount":    r.get("InventoryAvailable") or 0,
             "arrival":       arrival,
             "position":      pos,
-            "lotStatusCode": "Good",
+            "lotStatusCode": r.get("LotStatusCode") or "",
             "isSelected":    False,
             "selectable":    False,
         })
