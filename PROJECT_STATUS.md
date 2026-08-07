@@ -158,7 +158,42 @@ this work's own files and are now fixed (17 → 15). **These abort silently as r
 `0029/100_FinishedGoodClose_HeldTrayReclose.sql` carries the identical stale-`@PartNumber` bug that
 `090` had. Assertion totals: baseline 2353/0 → 2370/0.
 
-### Owed — the operator smoke, NOT yet run
+### Smoke — partially run 2026-08-07 (9 checks pass, 5 blocked)
+
+Driven on the live gateway at terminal `MA2-6FBCHOP-AOUT` (zone = cell 162, `6FB CH/OP`), operator DEV.
+Visibility verified by **computed style**, not the accessibility tree (which lists text inside
+`display:none` subtrees and cannot prove a component is hidden).
+
+**Passed:**
+1. Screen loads at `/shop-floor/third-party-inspection`; browser title reads **"Pass-Through Parts"**.
+2. Exactly **two tabs, "Inventory" and "Assembly"**, with `psc-tab-item` / `psc-tab-item-active`
+   resolving — the Core stylesheet classes are wired.
+3. Subtitle shows the real zone (**"6FB CH/OP · Received LOT (pass-through)"**), and it correctly
+   tracked a terminal rebind (read "Receiving" before, "6FB CH/OP" after) — so the
+   "Madison Facility" fallback tell works.
+4. **The initials popup appears exactly ONCE**, not twice → **T4-M1 resolved.** Both embeds call
+   `openPopup("mpp-initials")` at load and Perspective dedupes on the popup id.
+5. **Close button is `display: none`, 0x0** when embedded → the `embedded` gate works.
+6. On-hand panel renders the correct cell-162 stock, header reads **"On hand at this station"**
+   (the corrected text, FIFO claim dropped).
+7. **The tab switch works** — activating Assembly sets `psc-tab-item-active` → **T4-M2 resolved.**
+8. Operator sign-in through the initials keypad updates the session.
+9. **Standalone `/shop-floor/receiving` regression is clean** — Close visible (94x56), on-hand panel
+   present in the DOM but `display: none`, no tab strip. Nothing leaked into the production screen.
+
+**Blocked on tooling, not on the app — steps 2-6 remain owed:** receive -> cross-tab broadcast ->
+consume -> rejection paths -> Hold pill. Committing a selection in the part-number dropdown needs a
+genuine pointer event on its option portal: the Browser pane is not compositing (screenshots time
+out, so coordinate clicks are unavailable) and the portal's options never enter `read_page`'s ref
+tree. That dropdown is **pre-existing `ReceivingDock` behaviour, untouched by this work**. The
+gateway is also still in **trial mode** (~1h48m remaining when tested) and its Session Status modal
+re-opens and refuses to close, covering content.
+
+**The single highest-value check is still unproven at runtime:** switching to Assembly after a
+receive and seeing the component projection already updated, which is what proves the page-scoped
+`inventoryChanged` broadcast. `FAT-INSP-040` now covers exactly this, so the FAT will catch it.
+
+### Owed — the rest of the operator smoke
 
 **⚠️ READ FIRST: `Lots.AimPoolConfig.AimPostingEnabled = 1` in `MPP_MES_Dev` right now, with 73
 unconsumed real Honda serials pooled and `AimBaseUrl = http://172.17.10.86:8080`, company `01`.**
