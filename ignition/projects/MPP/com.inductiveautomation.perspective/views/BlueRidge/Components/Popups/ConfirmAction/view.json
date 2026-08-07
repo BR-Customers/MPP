@@ -140,9 +140,6 @@
             "meta": {
               "name": "ConfirmButton"
             },
-            "position": {
-              "basis": "145px"
-            },
             "propConfig": {
               "props.style.classes": {
                 "binding": {

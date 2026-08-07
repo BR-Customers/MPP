@@ -22,22 +22,22 @@
           "$": [
             "ts",
             192,
-            1785872993752
+            1786045949873
           ],
-          "$ts": 1785863052066
+          "$ts": 1786034911410
         },
-        "CurrentLocationId": 65,
-        "CurrentLocationName": "5G0 Front",
+        "CurrentLocationId": 154,
+        "CurrentLocationName": "Trim Storage",
         "Id": 1,
         "ItemId": 1,
         "ItemPartNumber": "5G0-c",
         "LastOperationName": "Trim Out",
-        "LotName": "123123123",
+        "LotName": "000000005",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
-        "LotStatusCode": "Open",
-        "LotStatusId": 5,
-        "PieceCount": 0,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 12,
         "TotalCount": 1,
         "VendorLotNumber": null
       }
@@ -1319,23 +1319,6 @@
                   "width": 160
                 }
               ],
-              "selection": {
-                "data": [
-                  {
-                    "CreatedAt": "Tue Aug 04 2026 13:04:12 GMT-0400 (Eastern Daylight Time)",
-                    "CurrentLocationName": "5G0 Front",
-                    "Id": 1,
-                    "ItemPartNumber": "5G0-c",
-                    "LotName": "123123123",
-                    "LotOriginTypeCode": "Manufactured",
-                    "LotStatusCode": "Open",
-                    "PieceCount": 0,
-                    "VendorLotNumber": null
-                  }
-                ],
-                "selectedColumn": "VendorLotNumber",
-                "selectedRow": 0
-              },
               "style": {
                 "width": "100%"
               }

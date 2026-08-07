@@ -320,14 +320,6 @@
                       "basis": "80px"
                     },
                     "propConfig": {
-                      "props.inputBounds.maximum": {
-                        "binding": {
-                          "config": {
-                            "expression": "{view.params.maxHeadroom}"
-                          },
-                          "type": "expr"
-                        }
-                      },
                       "props.value": {
                         "binding": {
                           "config": {
@@ -431,14 +423,6 @@
                       "basis": "80px"
                     },
                     "propConfig": {
-                      "props.inputBounds.maximum": {
-                        "binding": {
-                          "config": {
-                            "expression": "{view.params.maxHeadroom}"
-                          },
-                          "type": "expr"
-                        }
-                      },
                       "props.value": {
                         "binding": {
                           "config": {
@@ -552,14 +536,6 @@
                       "basis": "80px"
                     },
                     "propConfig": {
-                      "props.inputBounds.maximum": {
-                        "binding": {
-                          "config": {
-                            "expression": "{view.params.maxHeadroom}"
-                          },
-                          "type": "expr"
-                        }
-                      },
                       "props.value": {
                         "binding": {
                           "config": {
@@ -673,14 +649,6 @@
                       "basis": "80px"
                     },
                     "propConfig": {
-                      "props.inputBounds.maximum": {
-                        "binding": {
-                          "config": {
-                            "expression": "{view.params.maxHeadroom}"
-                          },
-                          "type": "expr"
-                        }
-                      },
                       "props.value": {
                         "binding": {
                           "config": {
@@ -794,14 +762,6 @@
                       "basis": "80px"
                     },
                     "propConfig": {
-                      "props.inputBounds.maximum": {
-                        "binding": {
-                          "config": {
-                            "expression": "{view.params.maxHeadroom}"
-                          },
-                          "type": "expr"
-                        }
-                      },
                       "props.value": {
                         "binding": {
                           "config": {
@@ -915,14 +875,6 @@
                       "basis": "80px"
                     },
                     "propConfig": {
-                      "props.inputBounds.maximum": {
-                        "binding": {
-                          "config": {
-                            "expression": "{view.params.maxHeadroom}"
-                          },
-                          "type": "expr"
-                        }
-                      },
                       "props.value": {
                         "binding": {
                           "config": {
