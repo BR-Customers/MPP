@@ -345,8 +345,10 @@ BEGIN
         SET @Status  = 1;
         SET @Message = CASE WHEN @Additive = 1
                             THEN N'Reject recorded (additive); LOT unchanged at ' + CAST(@NewPieceCount AS NVARCHAR(20)) + N' pieces.'
-                            WHEN @NewPieceCount = 0
+                            WHEN @NewPieceCount = 0 AND @CurrentStatusId = @GoodStatusId
                             THEN N'Reject recorded; LOT closed (zero pieces remaining).'
+                            WHEN @NewPieceCount = 0
+                            THEN N'Reject recorded; 0 pieces remaining; LOT remains on hold.'
                             ELSE N'Reject recorded; ' + CAST(@NewPieceCount AS NVARCHAR(20)) + N' pieces remaining.' END;
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
     END TRY

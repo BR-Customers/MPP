@@ -73,9 +73,11 @@ INSERT INTO @R2 EXEC Workorder.RejectEvent_Record @LotId = @Lot, @DefectCodeId =
 DECLARE @S2 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R2);
 DECLARE @PC2 NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @Lot);
 DECLARE @ST2 NVARCHAR(10) = (SELECT CAST(LotStatusId AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @Lot);
+DECLARE @M2 NVARCHAR(500) = (SELECT Message FROM @R2);
 EXEC test.Assert_IsEqual @TestName = N'[QH150] scrap-all AllowHeldLot=1 (Status 1)', @Expected = N'1', @Actual = @S2;
 EXEC test.Assert_IsEqual @TestName = N'[QH150] PieceCount driven to 0', @Expected = N'0', @Actual = @PC2;
 EXEC test.Assert_IsEqual @TestName = N'[QH150] fully-scrapped held LOT stays HELD, NOT Closed (status 2)', @Expected = N'2', @Actual = @ST2;
+EXEC test.Assert_IsEqual @TestName = N'[QH150] held-to-zero message says remains on hold, NOT closed', @Expected = N'Reject recorded; 0 pieces remaining; LOT remains on hold.', @Actual = @M2;
 
 -- ============================================================
 -- Case 4: AllowHeldLot=1 does NOT let a Scrap(3) LOT be rejected (Hold-only exception)
