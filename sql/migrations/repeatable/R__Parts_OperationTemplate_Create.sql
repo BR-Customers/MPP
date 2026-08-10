@@ -14,6 +14,11 @@
 --   instead -- it copies the parent row and its OperationTemplateField
 --   junction rows into a new version atomically.
 --
+--   LIFECYCLE (FAT-OQ-030): the INSERT omits PublishedAt, so a brand-new
+--   template is born a DRAFT (PublishedAt IS NULL) and does NOT resolve into
+--   execution until Parts.OperationTemplate_Publish is called. Same as
+--   RouteTemplate/Bom Create-as-Draft.
+--
 -- Parameters (input):
 --   @Code NVARCHAR(20)             - Code for this operation family. Required.
 --   @Name NVARCHAR(100)            - Required.
@@ -29,6 +34,8 @@
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
 --   2026-07-02 - 3.0 - AreaLocationId -> OperationTypeId (operation-type restructure)
+--   2026-08-07 - 3.1 - Draft/Published lifecycle (FAT-OQ-030): new template born a
+--                       Draft (INSERT omits PublishedAt); no signature change.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.OperationTemplate_Create
     @Code            NVARCHAR(20),

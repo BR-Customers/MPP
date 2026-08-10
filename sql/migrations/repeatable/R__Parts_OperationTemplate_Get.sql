@@ -22,6 +22,7 @@
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-14 - 2.0 - Removed OUTPUT params for Named Query compatibility
 --   2026-07-02 - 3.0 - AreaLocationId/AreaName -> OperationType + Category
+--   2026-08-07 - 3.1 - Surface PublishedAt (Draft/Published lifecycle, FAT-OQ-030)
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.OperationTemplate_Get
     @Id BIGINT
@@ -42,6 +43,7 @@ BEGIN
         cat.Name             AS OperationCategoryName,
         ot.Description,
         ot.CreatedAt,
+        ot.PublishedAt,
         ot.DeprecatedAt
     FROM Parts.OperationTemplate ot
     INNER JOIN Parts.OperationType     typ ON typ.Id = ot.OperationTypeId

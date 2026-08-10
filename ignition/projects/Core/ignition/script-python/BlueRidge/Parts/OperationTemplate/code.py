@@ -9,10 +9,13 @@
 #   Read + mutation surface for the Operation Templates Config Tool screen.
 #   Routes every DB call through BlueRidge.Common.Db.* helpers.
 #
-#   Lifecycle reminder: OperationTemplate has NO Draft/Published state.
-#   Each (Code, VersionNumber) row is "live" the moment it's inserted.
-#   CreateNewVersion clones an existing row into VersionNumber+1; the
-#   parent stays active until Deprecate is called.
+#   Lifecycle reminder (FAT-OQ-030): OperationTemplate has a Draft/Published/
+#   Deprecated lifecycle mirroring RouteTemplate/Bom. PublishedAt IS NULL = Draft
+#   (editable, never resolves into execution); PublishedAt set = Published;
+#   DeprecatedAt set = retired. Create and CreateNewVersion both produce a DRAFT;
+#   the Draft goes live only via publish(), which auto-deprecates the prior
+#   published version of the same Code (single-Published invariant). The
+#   route-role resolver gates on PublishedAt IS NOT NULL.
 #
 # Public surface:
 #   search(filter)                       -> list[dict]  (grouped instances)
@@ -25,6 +28,8 @@
 #   update(data)                         -> {Status, Message}
 #   deprecate(id)                        -> {Status, Message}
 #   createNewVersion(parentId)           -> {Status, Message, NewId}
+#   publish(id)                          -> {Status, Message}
+#   discardDraft(id)                     -> {Status, Message}
 #   addField(templateId, dcfId, isRequired) -> {Status, Message, NewId}
 #   removeField(junctionId)              -> {Status, Message}
 #
@@ -183,12 +188,14 @@ def getOne(operationTemplateId):
 
 def getVersionsForCode(code, includeDeprecated=True):
     """Returns all versions of a Code as a flat list, newest version first:
-        [{Id, VersionNumber, Name, CreatedAt, Deprecated, IsActive}, ...]
-    where Deprecated is true if DeprecatedAt is set, and IsActive is true
-    for the highest-version non-deprecated row (the rail-visible one).
+        [{Id, VersionNumber, Name, CreatedAt, Deprecated, Published, IsActive}, ...]
+    where Deprecated is true if DeprecatedAt is set, Published is true if
+    PublishedAt is set, and IsActive is true for the highest-version row that is
+    BOTH published AND not deprecated (the one that resolves into execution --
+    FAT-OQ-030 Draft/Published gate). A Draft (Published false) is never IsActive.
 
     Consumed by the Version Dropdown via a script-transform that formats
-    labels like 'v3 -- Die Cast 5G0 (Active)'."""
+    labels like 'v3 -- Die Cast 5G0 (Active)' / '(Draft)' / '(Deprecated)'."""
     code = _u(code)
     BlueRidge.Common.Util.log("code=%s" % code)
     if not code:
@@ -204,11 +211,12 @@ def getVersionsForCode(code, includeDeprecated=True):
         return []
 
     matches = [r for r in rows if r.get("Code") == code]
-    # Identify the rail-visible "active" row: highest version, not deprecated.
+    # Identify the "active" (resolving) row: highest version that is BOTH
+    # Published (PublishedAt set) AND not deprecated. A Draft never qualifies.
     activeId = None
     activeVer = -1
     for r in matches:
-        if r.get("DeprecatedAt") is None:
+        if r.get("DeprecatedAt") is None and r.get("PublishedAt") is not None:
             ver = r.get("VersionNumber") or 0
             if ver > activeVer:
                 activeId = r.get("Id")
@@ -227,6 +235,7 @@ def getVersionsForCode(code, includeDeprecated=True):
             "Name":          r.get("Name"),
             "CreatedAt":     r.get("CreatedAt"),
             "Deprecated":    r.get("DeprecatedAt") is not None,
+            "Published":     r.get("PublishedAt") is not None,
             "IsActive":      r.get("Id") == activeId,
         })
     return out
@@ -246,7 +255,12 @@ def formatVersionDropdownOptions(versions, showDeprecated=False):
             continue
         vnum = v.get("VersionNumber") or 0
         name = v.get("Name") or ""
-        state = "Deprecated" if v.get("Deprecated") else "Active"
+        if v.get("Deprecated"):
+            state = "Deprecated"
+        elif not v.get("Published"):
+            state = "Draft"
+        else:
+            state = "Active"
         label = "v%d -- %s (%s)" % (vnum, name, state)
         out.append({"label": label, "value": v.get("Id")})
     return out
@@ -567,6 +581,40 @@ def createNewVersion(parentOperationTemplateId):
         {
             "parentOperationTemplateId": parentOperationTemplateId,
             "appUserId":                 BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def publish(operationTemplateId):
+    """Flip a Draft OperationTemplate to Published (FAT-OQ-030). Auto-deprecates
+    the prior published version of the same Code (single-Published invariant,
+    enforced in the proc). Returns {Status, Message}."""
+    operationTemplateId = _u(operationTemplateId)
+    BlueRidge.Common.Util.log("id=%s" % operationTemplateId)
+    if operationTemplateId is None:
+        return {"Status": 0, "Message": "id is required"}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/OperationTemplate_Publish",
+        {
+            "id":        operationTemplateId,
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def discardDraft(operationTemplateId):
+    """Hard-delete an unpublished Draft OperationTemplate + its field rows
+    (FAT-OQ-030). Rejects a Published or Deprecated row (proc-enforced).
+    Returns {Status, Message}."""
+    operationTemplateId = _u(operationTemplateId)
+    BlueRidge.Common.Util.log("id=%s" % operationTemplateId)
+    if operationTemplateId is None:
+        return {"Status": 0, "Message": "id is required"}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/OperationTemplate_DiscardDraft",
+        {
+            "id":        operationTemplateId,
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
         },
     )
 

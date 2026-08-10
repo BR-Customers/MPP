@@ -238,7 +238,7 @@ CREATE TABLE #Get1 (
     Id BIGINT, Code NVARCHAR(50), VersionNumber INT, Name NVARCHAR(200),
     OperationTypeId BIGINT, OperationTypeCode NVARCHAR(50), OperationTypeName NVARCHAR(100),
     OperationCategoryId BIGINT, OperationCategoryCode NVARCHAR(50), OperationCategoryName NVARCHAR(100),
-    Description NVARCHAR(500), CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
+    Description NVARCHAR(500), CreatedAt DATETIME2(3), PublishedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #Get1 EXEC Parts.OperationTemplate_Get @Id = @OtId;
 SELECT @GetCount = COUNT(*), @GotTypeName = MAX(OperationTypeName) FROM #Get1;
@@ -263,7 +263,7 @@ CREATE TABLE #ListAll (
     Id BIGINT, Code NVARCHAR(50), VersionNumber INT, Name NVARCHAR(200),
     OperationTypeId BIGINT, OperationTypeCode NVARCHAR(50), OperationTypeName NVARCHAR(100),
     OperationCategoryId BIGINT, OperationCategoryCode NVARCHAR(50), OperationCategoryName NVARCHAR(100),
-    Description NVARCHAR(500), CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
+    Description NVARCHAR(500), CreatedAt DATETIME2(3), PublishedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #ListAll EXEC Parts.OperationTemplate_List;
 DECLARE @ListAllCount INT = (SELECT COUNT(*) FROM #ListAll);
@@ -315,7 +315,7 @@ CREATE TABLE #ListByType (
     Id BIGINT, Code NVARCHAR(50), VersionNumber INT, Name NVARCHAR(200),
     OperationTypeId BIGINT, OperationTypeCode NVARCHAR(50), OperationTypeName NVARCHAR(100),
     OperationCategoryId BIGINT, OperationCategoryCode NVARCHAR(50), OperationCategoryName NVARCHAR(100),
-    Description NVARCHAR(500), CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
+    Description NVARCHAR(500), CreatedAt DATETIME2(3), PublishedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #ListByType EXEC Parts.OperationTemplate_List @OperationTypeId = @OpType2;
 DECLARE @ProcMatchCount INT = (SELECT COUNT(*) FROM #ListByType WHERE OperationTypeId = @OpType2);
@@ -988,6 +988,326 @@ DROP TABLE #Ru26;
 SET @SStr = CAST(@S AS NVARCHAR(1));
 EXEC test.Assert_IsEqual
     @TestName = N'[OtfRemoveTwice] Second call: Status is 0',
+    @Expected = N'0',
+    @Actual   = @SStr;
+GO
+
+-- =============================================
+-- Test 24: Create is born a Draft (FAT-OQ-030)
+--   A freshly Create'd template has PublishedAt IS NULL.
+-- =============================================
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1), @OtId BIGINT;
+
+CREATE TABLE #Rc24 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc24
+EXEC Parts.OperationTemplate_Create
+    @Code           = N'TEST-OP-DRAFT',
+    @Name           = N'Draft Base',
+    @OperationTypeId = @OpType,
+    @AppUserId      = 1;
+SELECT @S = Status, @M = Message, @OtId = NewId FROM #Rc24;
+DROP TABLE #Rc24;
+
+DECLARE @PubAt DATETIME2(3);
+SELECT @PubAt = PublishedAt FROM Parts.OperationTemplate WHERE Id = @OtId;
+DECLARE @IsDraftStr NVARCHAR(1) = CASE WHEN @PubAt IS NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[CreateDraft] New template born a Draft (PublishedAt NULL)',
+    @Expected = N'1',
+    @Actual   = @IsDraftStr;
+GO
+
+-- =============================================
+-- Test 25: OperationTemplate_Publish happy path
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1), @OtId BIGINT;
+SELECT @OtId = Id FROM Parts.OperationTemplate WHERE Code = N'TEST-OP-DRAFT' AND VersionNumber = 1;
+
+CREATE TABLE #Rp25 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rp25
+EXEC Parts.OperationTemplate_Publish @Id = @OtId, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rp25;
+DROP TABLE #Rp25;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[PublishHappy] Status is 1',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+DECLARE @PubAt2 DATETIME2(3);
+SELECT @PubAt2 = PublishedAt FROM Parts.OperationTemplate WHERE Id = @OtId;
+DECLARE @NowPublishedStr NVARCHAR(1) = CASE WHEN @PubAt2 IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[PublishHappy] PublishedAt is now set',
+    @Expected = N'1',
+    @Actual   = @NowPublishedStr;
+GO
+
+-- =============================================
+-- Test 26: Publish an already-Published template rejected
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1), @OtId BIGINT;
+SELECT @OtId = Id FROM Parts.OperationTemplate WHERE Code = N'TEST-OP-DRAFT' AND VersionNumber = 1;
+
+CREATE TABLE #Rp26 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rp26
+EXEC Parts.OperationTemplate_Publish @Id = @OtId, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rp26;
+DROP TABLE #Rp26;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[PublishTwice] Second publish: Status is 0',
+    @Expected = N'0',
+    @Actual   = @SStr;
+
+DECLARE @AlreadyStr NVARCHAR(1) = CASE WHEN @M LIKE N'%already published%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[PublishTwice] Message says already published',
+    @Expected = N'1',
+    @Actual   = @AlreadyStr;
+GO
+
+-- =============================================
+-- Test 27: Publish a deprecated template rejected
+-- =============================================
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1), @OtId BIGINT;
+
+CREATE TABLE #Rc27 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc27
+EXEC Parts.OperationTemplate_Create
+    @Code = N'TEST-OP-PUBDEP', @Name = N'Pub Dep', @OperationTypeId = @OpType, @AppUserId = 1;
+SELECT @OtId = NewId FROM #Rc27;
+DROP TABLE #Rc27;
+
+CREATE TABLE #Rd27 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rd27 EXEC Parts.OperationTemplate_Deprecate @Id = @OtId, @AppUserId = 1;
+DROP TABLE #Rd27;
+
+CREATE TABLE #Rp27 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rp27 EXEC Parts.OperationTemplate_Publish @Id = @OtId, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rp27;
+DROP TABLE #Rp27;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[PublishDep] Status is 0',
+    @Expected = N'0',
+    @Actual   = @SStr;
+GO
+
+-- =============================================
+-- Test 28: New version is a Draft; prior published version retained & active
+--   Publish v1, CreateNewVersion -> v2 Draft. v1 stays published-not-deprecated.
+-- =============================================
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1),
+        @V1Id BIGINT, @V2Id BIGINT;
+
+CREATE TABLE #Rc28 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc28
+EXEC Parts.OperationTemplate_Create
+    @Code = N'TEST-OP-PUBVER', @Name = N'Pub Ver Base', @OperationTypeId = @OpType, @AppUserId = 1;
+SELECT @V1Id = NewId FROM #Rc28;
+DROP TABLE #Rc28;
+
+-- Publish v1
+CREATE TABLE #Rp28 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rp28 EXEC Parts.OperationTemplate_Publish @Id = @V1Id, @AppUserId = 1;
+DROP TABLE #Rp28;
+
+-- New version (Draft)
+CREATE TABLE #Rv28 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rv28 EXEC Parts.OperationTemplate_CreateNewVersion @ParentOperationTemplateId = @V1Id, @AppUserId = 1;
+SELECT @V2Id = NewId FROM #Rv28;
+DROP TABLE #Rv28;
+
+-- v2 is a Draft
+DECLARE @V2Pub DATETIME2(3);
+SELECT @V2Pub = PublishedAt FROM Parts.OperationTemplate WHERE Id = @V2Id;
+DECLARE @V2DraftStr NVARCHAR(1) = CASE WHEN @V2Pub IS NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[NewVerDraft] v2 is a Draft (PublishedAt NULL)',
+    @Expected = N'1',
+    @Actual   = @V2DraftStr;
+
+-- v1 remains published-and-not-deprecated (retained + still resolving)
+DECLARE @V1Pub DATETIME2(3), @V1Dep DATETIME2(3);
+SELECT @V1Pub = PublishedAt, @V1Dep = DeprecatedAt FROM Parts.OperationTemplate WHERE Id = @V1Id;
+DECLARE @V1ActiveStr NVARCHAR(1) = CASE WHEN @V1Pub IS NOT NULL AND @V1Dep IS NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[NewVerDraft] v1 retained: still published & not deprecated',
+    @Expected = N'1',
+    @Actual   = @V1ActiveStr;
+GO
+
+-- =============================================
+-- Test 29: Single-Published invariant on publish
+--   Publish v2 of TEST-OP-PUBVER -> v1 auto-deprecated; exactly one
+--   published-and-not-deprecated row remains for the Code.
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1), @V1Id BIGINT, @V2Id BIGINT;
+SELECT @V1Id = Id FROM Parts.OperationTemplate WHERE Code = N'TEST-OP-PUBVER' AND VersionNumber = 1;
+SELECT @V2Id = Id FROM Parts.OperationTemplate WHERE Code = N'TEST-OP-PUBVER' AND VersionNumber = 2;
+
+CREATE TABLE #Rp29 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rp29 EXEC Parts.OperationTemplate_Publish @Id = @V2Id, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rp29;
+DROP TABLE #Rp29;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[SinglePub] Publish v2: Status is 1',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+-- v1 now deprecated
+DECLARE @V1Dep2 DATETIME2(3);
+SELECT @V1Dep2 = DeprecatedAt FROM Parts.OperationTemplate WHERE Id = @V1Id;
+DECLARE @V1DepStr NVARCHAR(1) = CASE WHEN @V1Dep2 IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[SinglePub] v1 auto-deprecated on v2 publish',
+    @Expected = N'1',
+    @Actual   = @V1DepStr;
+
+-- Exactly one published-and-not-deprecated row for the Code
+DECLARE @ActivePubCount INT = (
+    SELECT COUNT(*) FROM Parts.OperationTemplate
+    WHERE Code = N'TEST-OP-PUBVER' AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL
+);
+DECLARE @ActivePubStr NVARCHAR(20) = CAST(@ActivePubCount AS NVARCHAR(20));
+EXEC test.Assert_IsEqual
+    @TestName = N'[SinglePub] Exactly one published-not-deprecated version',
+    @Expected = N'1',
+    @Actual   = @ActivePubStr;
+GO
+
+-- =============================================
+-- Test 30: Route-role resolver ignores a Draft, resolves the Published version
+--   Inlines the OperationTemplate_GetForRouteRole NQ query (an NQ can't be
+--   EXEC'd from T-SQL) to assert the PublishedAt gate.
+-- =============================================
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
+DECLARE @S BIT, @M NVARCHAR(500),
+        @OtId BIGINT, @ItemId BIGINT, @RtId BIGINT, @StepId BIGINT;
+
+-- OT born a Draft
+CREATE TABLE #Rc30 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc30
+EXEC Parts.OperationTemplate_Create
+    @Code = N'TEST-OP-RESOLVE', @Name = N'Resolve OP', @OperationTypeId = @OpType, @AppUserId = 1;
+SELECT @OtId = NewId FROM #Rc30;
+DROP TABLE #Rc30;
+
+-- Item + Route + RouteStep pointing at the OT
+CREATE TABLE #Ri30 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Ri30
+EXEC Parts.Item_Create
+    @ItemTypeId = 4, @PartNumber = N'TEST-OP-RT-ITEM-RESOLVE',
+    @Description = N'Resolver gate test item', @UomId = 1, @AppUserId = 1;
+SELECT @ItemId = NewId FROM #Ri30;
+DROP TABLE #Ri30;
+
+CREATE TABLE #Rt30 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rt30
+EXEC Parts.RouteTemplate_Create @ItemId = @ItemId, @Name = N'TEST-RT-RESOLVE', @AppUserId = 1;
+SELECT @RtId = NewId FROM #Rt30;
+DROP TABLE #Rt30;
+
+CREATE TABLE #Rs30 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rs30
+EXEC Parts.RouteStep_Add @RouteTemplateId = @RtId, @OperationTemplateId = @OtId, @IsRequired = 1, @AppUserId = 1;
+SELECT @StepId = NewId FROM #Rs30;
+DROP TABLE #Rs30;
+
+-- Resolver (inlined) while OT is a Draft -> 0 rows
+DECLARE @ResolveDraftCount INT = (
+    SELECT COUNT(*)
+    FROM Parts.RouteTemplate rt
+    INNER JOIN Parts.RouteStep rs         ON rs.RouteTemplateId = rt.Id
+    INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+    INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
+    WHERE rt.ItemId = @ItemId
+      AND rt.DeprecatedAt IS NULL
+      AND ot.DeprecatedAt IS NULL
+      AND ot.PublishedAt IS NOT NULL
+      AND oty.Code = N'DieCast'
+);
+DECLARE @ResolveDraftStr NVARCHAR(20) = CAST(@ResolveDraftCount AS NVARCHAR(20));
+EXEC test.Assert_IsEqual
+    @TestName = N'[ResolveGate] Draft OT does NOT resolve (0 rows)',
+    @Expected = N'0',
+    @Actual   = @ResolveDraftStr;
+
+-- Publish the OT, resolve again -> 1 row
+CREATE TABLE #Rp30 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rp30 EXEC Parts.OperationTemplate_Publish @Id = @OtId, @AppUserId = 1;
+DROP TABLE #Rp30;
+
+DECLARE @ResolvePubCount INT = (
+    SELECT COUNT(*)
+    FROM Parts.RouteTemplate rt
+    INNER JOIN Parts.RouteStep rs         ON rs.RouteTemplateId = rt.Id
+    INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+    INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
+    WHERE rt.ItemId = @ItemId
+      AND rt.DeprecatedAt IS NULL
+      AND ot.DeprecatedAt IS NULL
+      AND ot.PublishedAt IS NOT NULL
+      AND oty.Code = N'DieCast'
+);
+DECLARE @ResolvePubStr NVARCHAR(20) = CAST(@ResolvePubCount AS NVARCHAR(20));
+EXEC test.Assert_IsEqual
+    @TestName = N'[ResolveGate] Published OT resolves (1 row)',
+    @Expected = N'1',
+    @Actual   = @ResolvePubStr;
+GO
+
+-- =============================================
+-- Test 31: DiscardDraft happy path + Published rejection
+-- =============================================
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1), @DraftId BIGINT;
+
+-- A fresh Draft to discard
+CREATE TABLE #Rc31 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc31
+EXEC Parts.OperationTemplate_Create
+    @Code = N'TEST-OP-DISCARD', @Name = N'Discard Me', @OperationTypeId = @OpType, @AppUserId = 1;
+SELECT @DraftId = NewId FROM #Rc31;
+DROP TABLE #Rc31;
+
+CREATE TABLE #Rdd31 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rdd31 EXEC Parts.OperationTemplate_DiscardDraft @Id = @DraftId, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rdd31;
+DROP TABLE #Rdd31;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardHappy] Status is 1',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+DECLARE @GoneCount INT = (SELECT COUNT(*) FROM Parts.OperationTemplate WHERE Id = @DraftId);
+DECLARE @GoneStr NVARCHAR(20) = CAST(@GoneCount AS NVARCHAR(20));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardHappy] Draft row is gone',
+    @Expected = N'0',
+    @Actual   = @GoneStr;
+
+-- Published rejection: TEST-OP-DRAFT v1 was published in Test 25
+DECLARE @PubId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TEST-OP-DRAFT' AND VersionNumber = 1);
+CREATE TABLE #Rdd31b (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rdd31b EXEC Parts.OperationTemplate_DiscardDraft @Id = @PubId, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rdd31b;
+DROP TABLE #Rdd31b;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardPub] Discard a Published template: Status is 0',
     @Expected = N'0',
     @Actual   = @SStr;
 GO
