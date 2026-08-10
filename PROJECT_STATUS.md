@@ -195,11 +195,14 @@ receive and seeing the component projection already updated, which is what prove
 
 ### Owed — the rest of the operator smoke
 
-**⚠️ READ FIRST: `Lots.AimPoolConfig.AimPostingEnabled = 1` in `MPP_MES_Dev` right now, with 73
-unconsumed real Honda serials pooled and `AimBaseUrl = http://172.17.10.86:8080`, company `01`.**
-The smoke's "Close Tray → Complete" step makes `Container_Complete` claim a serial FIFO and fires a
-**live POST at MPP's actual AIM server**. A consumed serial is gone forever. Flip `AimPostingEnabled`
-off first and stop at Close Tray, or knowingly spend one.
+**`AimPostingEnabled` was flipped to `0` on 2026-08-07** — no post can leave the Gateway (the gate
+lives inside `AimHttp`, so no caller bypasses it). 73 unconsumed real Honda serials remain pooled and
+`AimBaseUrl` still points at `http://172.17.10.86:8080`, company `01`.
+
+**⚠️ Still true even with posting disabled:** the flag gates the HTTP post, **not** the pool claim.
+`Container_Complete` will still consume a serial FIFO, and a consumed serial is gone forever. So the
+smoke should **stop at Close Tray** — Complete exercises the container/AIM path, which is not part of
+the pass-through feature.
 
 The gateway is also in **trial mode**, and Ignition's "Session Status" overlay keeps
 `pointer-events: auto` across the full viewport even when dismissed — it blocks clicks app-wide until
@@ -303,7 +306,7 @@ All 88 commits from PR #3. Six conflicts: `Container_Complete` merged (body auto
 Item **23** `11200-6FB -A000` → posts as `112006FB A000` (built backwards through `REPLACE(PartNumber,'-','')`), with two pack-out configs (`ByCount` + `ByVision`, since the proc resolves by `(ItemId, ClosureMethod)` with no fallback), published BOM v1, and `Parts.ItemLocation` eligibility at cell 162 — that last one is a gate: both `Lot_Create` and `Assembly_CompleteTray` reject with “not eligible at this cell” without it.
 
 ### Owed
-Flip `AimPostingEnabled` back **off** when not actively testing — it is currently ON with real serials pooled, so any container close burns one. **Not fixed:** the backlog alarm cannot reach a human (gateway-scope `sendMessage`, no handler), and `AimPostTimer` shares the timer thread with 5s PLC watchers. **Needs MPP:** which customer parts have blankets in `01` (only `112006FB A000` is confirmed); holds have no interface in the agreement at all; `previousSerial` has no HTTP equivalent; OI-33; the production company code.
+Flip `AimPostingEnabled` back **off** when not actively testing. (**Set to `0` on 2026-08-07**; note the flag gates the HTTP post only — a container close still *claims* a pooled serial.) **Not fixed:** the backlog alarm cannot reach a human (gateway-scope `sendMessage`, no handler), and `AimPostTimer` shares the timer thread with 5s PLC watchers. **Needs MPP:** which customer parts have blankets in `01` (only `112006FB A000` is confirmed); holds have no interface in the agreement at all; `previousSerial` has no HTTP equivalent; OI-33; the production company code.
 
 ---
 
