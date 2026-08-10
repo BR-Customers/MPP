@@ -78,6 +78,41 @@ IF @AttrScan IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Location.LocationAttribut
     INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
     VALUES (@Term, @AttrScan, N'true', SYSUTCDATETIME());
 
+-- ---- 2b. Printer (a Printer is a CHILD Location of the terminal, not an attribute) ----
+-- Location.Terminal_GetPrinter resolves `WHERE p.ParentLocationId = @TerminalLocationId
+-- AND def.Name = 'Printer'`, so the printer must be a child location, def 16.
+--
+-- Endpoint grammar (BlueRidge.Lots.LabelTransport, design 2026-07-28):
+--   'host:port'        -> raw TCP, port MANDATORY
+--   '\\HOST\Queue' or a bare name -> Windows print queue via javax.print
+-- A bare name is used here so the LTT goes to the real Zebra over USB. The other
+-- Dev printers use 127.0.0.1:9100, which only works if something is listening.
+--
+-- LabelTypes = 'Primary' is the LTT label type (LotLabel.printLabel default-resolves
+-- to Primary/Initial). With a single printer the proc's SortOrder fallback would cover
+-- it anyway, but setting it explicitly is what the v2.0 routing design intends.
+DECLARE @Printer BIGINT;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'INSP-SORT-T1-P1')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, @Term, N'Inspection LTT Printer', N'INSP-SORT-T1-P1', N'INSP-SORT-T1-P1', 1;
+SET @Printer = (SELECT Id FROM Location.Location WHERE Code = N'INSP-SORT-T1-P1');
+
+DECLARE @AttrEndpoint BIGINT = (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'Endpoint'   AND LocationTypeDefinitionId = 16 ORDER BY Id);
+DECLARE @AttrModel    BIGINT = (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'Model'      AND LocationTypeDefinitionId = 16 ORDER BY Id);
+DECLARE @AttrLabels   BIGINT = (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'LabelTypes' AND LocationTypeDefinitionId = 16 ORDER BY Id);
+
+IF @AttrEndpoint IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Location.LocationAttribute WHERE LocationId = @Printer AND LocationAttributeDefinitionId = @AttrEndpoint)
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    VALUES (@Printer, @AttrEndpoint, N'Zebra GX420d (RAW)', SYSUTCDATETIME());
+
+IF @AttrModel IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Location.LocationAttribute WHERE LocationId = @Printer AND LocationAttributeDefinitionId = @AttrModel)
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    VALUES (@Printer, @AttrModel, N'GX420d', SYSUTCDATETIME());
+
+IF @AttrLabels IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Location.LocationAttribute WHERE LocationId = @Printer AND LocationAttributeDefinitionId = @AttrLabels)
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    VALUES (@Printer, @AttrLabels, N'Primary', SYSUTCDATETIME());
+
 -- ---- 3. Part eligibility AT THE PASS-THROUGH CELL ----
 -- Direct eligibility for the finished good only. Its BOM children reach the same
 -- cell through v_EffectiveItemLocation's BomDerived leg -- enumerating them here
@@ -111,4 +146,7 @@ WHERE v.LocationId = @Cell ORDER BY i.PartNumber, v.Source;
 PRINT '=== container configs for the finished good (needs a ByCount row) ===';
 SELECT ClosureMethod, PartsPerTray, TraysPerContainer, IsSerialized
 FROM Parts.ContainerConfig WHERE ItemId = @Fg AND DeprecatedAt IS NULL;
+
+PRINT '=== printer as the dispatch path actually resolves it ===';
+EXEC Location.Terminal_GetPrinter @TerminalLocationId = @Term, @LabelTypeCode = N'Primary';
 GO

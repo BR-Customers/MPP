@@ -20,13 +20,15 @@ is its own terminal, **not** part of any production line.
 | **BOM children** | `92900-06014-1B` (1 per) · `94301-08100` (2 per) — both **BomDerived** eligible automatically |
 | **Closure method** | `ByCount` · 3 parts/tray, 2 trays/container |
 | **Stock at 197** | **none** — that's the point; you receive it |
-| **Printer** | **none on this terminal** (`HasPrinter 0`) — every LTT print will fail |
+| **Printer** | `INSP-SORT-T1-P1` → **`Zebra GX420d (RAW)`** (Windows queue, USB001), `LabelTypes = Primary` |
 
 Picking the terminal auto-navigates to `/shop-floor/third-party-inspection` (its `DefaultScreen`).
 
-> **The missing printer is expected, not a failure.** The LOT is still created and is still
-> consumable; you get an error toast plus a "Reprint LTT" button. That *is* smoke step 6. If you'd
-> rather test the happy print path, assign a printer to the terminal first.
+> **⚠️ This prints real labels.** The endpoint is the physical Zebra on USB001 — a bare name routes
+> through the Windows print-queue path (verified offline against `LabelTransport`'s actual grammar
+> regex: no colon → queue). Every successful receive burns a label. To make it a dry run instead,
+> point the `Endpoint` attribute of `INSP-SORT-T1-P1` at `127.0.0.1:9100` (what the other Dev
+> printers use, and nothing is listening — so it fails cleanly).
 
 > **⚠️ STOP AT "CLOSE TRAY". Do not press "Complete".**
 > `AimPostingEnabled` is now `0`, so nothing posts to Honda's AIM server. But that flag gates the
@@ -56,11 +58,11 @@ flow, and step 3 needs them.
 - [ ] `94301-08100`, Piece Count **10**, Vendor LOT e.g. `VND-SMOKE-1` → **Create LOT**
 - [ ] `92900-06014-1B`, Piece Count **5** → **Create LOT**
 
-**Expect:** "LOT created" toast → LTT print attempt → **form clears** → **screen does NOT navigate away** → new LOT appears in the on-hand panel with a **GOOD** pill.
+**Expect:** "LOT created" toast → **"LTT printed"** toast and a label out of the Zebra → **form clears** → **screen does NOT navigate away** → new LOT appears in the on-hand panel with a **GOOD** pill.
 
 **Fails if:** the screen jumps to LOT Detail (the `embedded` param isn't reaching the embed).
 
-*If the printer isn't reachable you'll get a print-failure toast plus a "Reprint LTT" button — that's expected and does not fail this step; the LOT still exists. See step 6.*
+*This is also the first real exercise of the Windows print-queue transport — the 2026-07-28 dual-transport work was never certified against a physical print. A label coming out is that certification.*
 
 ## 2. ⭐ The cross-tab broadcast — the one thing nothing else has proven
 
@@ -118,7 +120,7 @@ flow, and step 3 needs them.
 
 ## 6. Print-failure path
 
-- [ ] Point the terminal at an unreachable printer (or stop it) and receive another LOT
+- [ ] Break the printer deliberately — either power off the Zebra, or set `INSP-SORT-T1-P1`'s `Endpoint` to `127.0.0.1:9100` (nothing listens) — then receive another LOT
 
 **Expect:** "LOT created" succeeds, print toast reports the failure, the **"Last LTT did not print…"** hint and **Reprint LTT** button appear — **and the Assembly tab still refreshed**, because the broadcast fires before the print call.
 
