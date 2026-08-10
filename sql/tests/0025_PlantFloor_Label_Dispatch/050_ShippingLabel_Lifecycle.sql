@@ -99,6 +99,79 @@ EXEC test.Assert_IsEqual @TestName = N'[Complete] persisted ZPL carries part num
 
 DECLARE @HasLevel NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%LFC-A%' THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName = N'[Complete] persisted ZPL carries die-rank (DC part level)', @Expected = N'1', @Actual = @HasLevel;
+
+-- ==========================================================================
+-- Part 2 -- ShippingLabel_Reprint re-renders ZplContent (Task 5 / LBL-060)
+-- ==========================================================================
+DECLARE @ReprintId BIGINT;
+CREATE TABLE #RP (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RP EXEC Lots.ShippingLabel_Reprint @ShippingLabelId = @SLId, @PrintReasonCode = N'Damaged', @AppUserId = 1;
+SELECT @ReprintId = NewId FROM #RP; DROP TABLE #RP;
+
+DECLARE @RZpl NVARCHAR(MAX) = (SELECT ZplContent FROM Lots.ShippingLabel WHERE Id = @ReprintId);
+DECLARE @ROk NVARCHAR(10) = CASE WHEN @RZpl IS NOT NULL AND LEN(@RZpl) > 0 AND @RZpl LIKE N'%PN-COMPLETE%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Reprint] re-rendered ZplContent persisted', @Expected = N'1', @Actual = @ROk;
+
+-- ==========================================================================
+-- Part 3 -- ShippingLabel_MarkDispatch lifecycle (Task 6 / ENV-170 / LBL-150)
+-- ==========================================================================
+-- success on the primary label -> PrintedAt set, PrintAttempts bumped
+CREATE TABLE #M1 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #M1 EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = @SLId, @Success = 1;
+DROP TABLE #M1;
+DECLARE @Pr NVARCHAR(10) = (SELECT CASE WHEN PrintedAt IS NOT NULL AND PrintAttempts >= 1 THEN N'1' ELSE N'0' END FROM Lots.ShippingLabel WHERE Id = @SLId);
+EXEC test.Assert_IsEqual @TestName = N'[Mark] success sets PrintedAt + bumps PrintAttempts', @Expected = N'1', @Actual = @Pr;
+
+-- failure x2 on the reprint row with MaxAttempts 2 -> PrintFailedAt + LastPrintError
+CREATE TABLE #M2 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #M2 EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = @ReprintId, @Success = 0, @ErrorText = N'conn refused', @MaxAttempts = 2;
+INSERT INTO #M2 EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = @ReprintId, @Success = 0, @ErrorText = N'conn refused', @MaxAttempts = 2;
+DROP TABLE #M2;
+DECLARE @Fail NVARCHAR(10) = (SELECT CASE WHEN PrintFailedAt IS NOT NULL AND LastPrintError = N'conn refused' AND PrintAttempts >= 2 THEN N'1' ELSE N'0' END FROM Lots.ShippingLabel WHERE Id = @ReprintId);
+EXEC test.Assert_IsEqual @TestName = N'[Mark] attempts exhausted -> PrintFailedAt + LastPrintError', @Expected = N'1', @Actual = @Fail;
+
+-- bad id -> Status 0
+DECLARE @MBad BIT;
+CREATE TABLE #M3 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #M3 EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = 999999999, @Success = 1;
+SELECT @MBad = Status FROM #M3; DROP TABLE #M3;
+DECLARE @MBadStr NVARCHAR(10) = CAST(@MBad AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Mark] bad ShippingLabelId rejected', @Expected = N'0', @Actual = @MBadStr;
+
+-- ==========================================================================
+-- Part 4 -- GetStranded / GetForBanner / AckBanner reads (Task 7)
+-- ==========================================================================
+-- a stranded label: unprinted, unfailed, older than 60s
+DECLARE @StrandId BIGINT;
+INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId, Initial, PrintedByUserId, ZplContent, CreatedAt)
+VALUES (@Cont, N'AIMSTRAND01', (SELECT Id FROM Lots.LabelTypeCode WHERE Code = N'Container'), 1, 1, N'^XA^XZ', DATEADD(MINUTE, -5, SYSUTCDATETIME()));
+SET @StrandId = SCOPE_IDENTITY();
+
+CREATE TABLE #S (Id BIGINT, ContainerId BIGINT, AimShipperId NVARCHAR(50), TerminalLocationId BIGINT, ZplContent NVARCHAR(MAX), PrintAttempts INT);
+INSERT INTO #S EXEC Lots.ShippingLabel_GetStranded;
+DECLARE @StrandHit NVARCHAR(10) = CASE WHEN EXISTS (SELECT 1 FROM #S WHERE Id = @StrandId) THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Stranded] old unprinted row returned', @Expected = N'1', @Actual = @StrandHit;
+-- the primary label was marked printed -> excluded
+DECLARE @PrintedMiss NVARCHAR(10) = CASE WHEN EXISTS (SELECT 1 FROM #S WHERE Id = @SLId) THEN N'0' ELSE N'1' END;
+EXEC test.Assert_IsEqual @TestName = N'[Stranded] printed row excluded', @Expected = N'1', @Actual = @PrintedMiss;
+DROP TABLE #S;
+
+-- the reprint row is failed (PrintFailedAt) + unacked -> banner
+CREATE TABLE #B (Id BIGINT, ContainerId BIGINT, TerminalLocationId BIGINT, AimShipperId NVARCHAR(50), LastPrintError NVARCHAR(500));
+INSERT INTO #B EXEC Lots.ShippingLabel_GetForBanner;
+DECLARE @BannerHit NVARCHAR(10) = CASE WHEN EXISTS (SELECT 1 FROM #B WHERE Id = @ReprintId) THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Banner] failed-unacked row returned', @Expected = N'1', @Actual = @BannerHit;
+DROP TABLE #B;
+
+-- ack it -> no longer in the banner set
+CREATE TABLE #A (Status BIT, Message NVARCHAR(500));
+INSERT INTO #A EXEC Lots.ShippingLabel_AckBanner @ShippingLabelId = @ReprintId;
+DROP TABLE #A;
+CREATE TABLE #B2 (Id BIGINT, ContainerId BIGINT, TerminalLocationId BIGINT, AimShipperId NVARCHAR(50), LastPrintError NVARCHAR(500));
+INSERT INTO #B2 EXEC Lots.ShippingLabel_GetForBanner;
+DECLARE @AckedMiss NVARCHAR(10) = CASE WHEN EXISTS (SELECT 1 FROM #B2 WHERE Id = @ReprintId) THEN N'0' ELSE N'1' END;
+EXEC test.Assert_IsEqual @TestName = N'[Banner] acknowledged row cleared', @Expected = N'1', @Actual = @AckedMiss;
+DROP TABLE #B2;
 GO
 EXEC test.EndTestFile;
 GO

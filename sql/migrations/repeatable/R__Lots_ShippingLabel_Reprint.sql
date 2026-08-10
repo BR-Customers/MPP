@@ -42,9 +42,13 @@ BEGIN
 
         SET @Activity = Audit.ufn_TruncateActivity(N'Shipping label ' + Audit.ufn_MidDot() + N' container #' + CAST(@ContainerId AS NVARCHAR(20)) + N' ' + Audit.ufn_MidDot() + N' Reprinted');
 
+        -- Brief D (LBL-060): re-render the ZPL from the active Container LabelTemplate + tokens
+        -- so the reprint row carries its own rendered payload (dispatcher reads it directly).
+        DECLARE @ShipZpl NVARCHAR(MAX) = Lots.ufn_ShippingLabelZpl(@ContainerId, @AimShipperId);
+
         BEGIN TRANSACTION;
-        INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId, Initial, PrintReasonCode, PrintedByUserId, TerminalLocationId)
-        VALUES (@ContainerId, @AimShipperId, @LabelTypeCodeId, 0, @PrintReasonCode, @AppUserId, @TerminalLocationId);
+        INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId, Initial, PrintReasonCode, PrintedByUserId, TerminalLocationId, ZplContent)
+        VALUES (@ContainerId, @AimShipperId, @LabelTypeCodeId, 0, @PrintReasonCode, @AppUserId, @TerminalLocationId, @ShipZpl);
         SET @NewId = SCOPE_IDENTITY();
         EXEC Audit.Audit_LogOperation
             @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = NULL,
