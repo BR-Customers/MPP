@@ -38,10 +38,10 @@ spec brings the shipping label onto that **same pattern** and adds the failure l
 4. `Audit.InterfaceLog` records every dispatch attempt (already true — preserved).
 
 **Non-goals / explicitly deferred**
-- The **FN3 2D DataMatrix composite** (Honda one-shot dock-scan barcode). Neither Blue Ridge
-  nor MPP has the Honda field-concatenation spec. The template **keeps the field in the
-  layout but resolves its token to blank**, flagged TODO — request the Honda 2D spec from MPP.
-  Do **not** fabricate a scan-critical barcode.
+- The **FN3 2D DataMatrix** field. The legacy template defines an `^BXR`/`^FN3` DataMatrix
+  slot, but MPP confirms **no real MPP container label ever populates it** — the merge value
+  was always blank. So it is treated exactly like the C extension: **layout retained, token
+  resolves to blank, blank by design.** Not an MPP escalation. Do not fabricate a barcode.
 - Real networked-Zebra print certification (hardware-gated; no printer in dev). The dispatch
   transport stays SIM-guarded; the **lifecycle** (persist ZPL, mark state, sweep, banner) is
   fully built and tested.
@@ -57,7 +57,7 @@ rotations, `^B3`/`^BXR` barcodes) and swap Flexware `<<…:{0}>>` merge fields f
 | FN | Label field (legacy caption) | `{Placeholder}` | Source | Status |
 |----|------------------------------|-----------------|--------|--------|
 | FN1, FN2 | PART NO. (P) — text ×2 | `{PartNumber}` | `Parts.Item.PartNumber` (container's Item) | confirmed |
-| FN3 | 2D DataMatrix (composite) | `{DataMatrix}` | **blank** (TODO: Honda 2D spec from MPP) | deferred-blank |
+| FN3 | 2D DataMatrix | `{DataMatrix}` | **blank** — never populated on MPP labels (per MPP); layout retained | blank-by-design |
 | FN4, FN5 | PART NO. EXT (C) — text + barcode | `{PartNumberExt}` | **blank** — empty on every observed MPP label; layout + caption retained, value perpetually blank (per MPP) | blank-by-design |
 | FN6 | DESCRIPTION | `{Description}` | `Parts.Item.Description` | confirmed |
 | FN7 | MFG LOT NUMBER | `{MfgLotNumber}` | AIM minted serial = `ShippingLabel.AimShipperId` | confirmed |
@@ -264,13 +264,13 @@ Python transport (socket) stays SIM/hardware-gated — verify the lifecycle via 
 (memory `feedback_ignition_browser_input_commit`: don't rely on the in-app browser to fire the
 real print).
 
-## 8. Open items to escalate (tracked, non-blocking)
+## 8. Open items (tracked, non-blocking)
 
-- **Honda 2D DataMatrix composite (FN3)** — request the field-concatenation spec from MPP
-  (add to the MPP questions list alongside the existing Honda-trace-export email note). Until
-  then `{DataMatrix}` renders blank; the field/layout is retained.
 - **AUDIT (FN9)** and **C.O.O. (FN16)** defaults (`operator initials` / `USA`) — confirm with
-  MPP at label-verification time; both DB-editable.
+  MPP at label-verification time; both DB-editable, so no code change to adjust.
+
+(FN3 2D DataMatrix and PART NO. EXT (C) are **blank by design** — confirmed with MPP that real
+labels never populate them — not escalations.)
 
 ## 9. Files
 
