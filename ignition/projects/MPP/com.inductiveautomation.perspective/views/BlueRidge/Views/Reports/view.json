@@ -371,7 +371,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tself.view.rootContainer.selectReport(\"line_perf\", \"Production Line Performance\", \"Output, scrap and downtime by line, per shift/week.\", \"\", False)"
+                    "script": "\tself.view.rootContainer.selectReport(\"line_perf\", \"Production Line Performance\", \"Weekly output, scrap and downtime by process line.\", \"Production Line Performance\", True)"
                   },
                   "scope": "G",
                   "type": "script"
