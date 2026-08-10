@@ -997,7 +997,7 @@ GO
 --   A freshly Create'd template has PublishedAt IS NULL.
 -- =============================================
 DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
-DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1), @OtId BIGINT;
+DECLARE @S BIT, @M NVARCHAR(500), @OtId BIGINT;
 
 CREATE TABLE #Rc24 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc24
@@ -1310,6 +1310,169 @@ EXEC test.Assert_IsEqual
     @TestName = N'[DiscardPub] Discard a Published template: Status is 0',
     @Expected = N'0',
     @Actual   = @SStr;
+GO
+
+-- =============================================
+-- Test 32: Publish a non-existent Id rejected
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1);
+CREATE TABLE #Rp32 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rp32 EXEC Parts.OperationTemplate_Publish @Id = 999999, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rp32;
+DROP TABLE #Rp32;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[PublishMissing] Status is 0',
+    @Expected = N'0',
+    @Actual   = @SStr;
+
+DECLARE @NotFoundStr NVARCHAR(1) = CASE WHEN @M LIKE N'%not found%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[PublishMissing] Message says not found',
+    @Expected = N'1',
+    @Actual   = @NotFoundStr;
+GO
+
+-- =============================================
+-- Test 33: DiscardDraft of a deprecated row rejected
+-- =============================================
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1), @OtId BIGINT;
+
+CREATE TABLE #Rc33 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc33
+EXEC Parts.OperationTemplate_Create
+    @Code = N'TEST-OP-DISCDEP', @Name = N'Disc Dep', @OperationTypeId = @OpType, @AppUserId = 1;
+SELECT @OtId = NewId FROM #Rc33;
+DROP TABLE #Rc33;
+
+CREATE TABLE #Rd33 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rd33 EXEC Parts.OperationTemplate_Deprecate @Id = @OtId, @AppUserId = 1;
+DROP TABLE #Rd33;
+
+CREATE TABLE #Rdd33 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rdd33 EXEC Parts.OperationTemplate_DiscardDraft @Id = @OtId, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rdd33;
+DROP TABLE #Rdd33;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardDep] Status is 0',
+    @Expected = N'0',
+    @Actual   = @SStr;
+
+-- Row still present (discard rejected, not applied)
+DECLARE @StillThere INT = (SELECT COUNT(*) FROM Parts.OperationTemplate WHERE Id = @OtId);
+DECLARE @StillThereStr NVARCHAR(20) = CAST(@StillThere AS NVARCHAR(20));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardDep] Row NOT deleted',
+    @Expected = N'1',
+    @Actual   = @StillThereStr;
+GO
+
+-- =============================================
+-- Test 34: DiscardDraft of a route-referenced Draft rejected (in-use guard)
+-- =============================================
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1),
+        @OtId BIGINT, @ItemId BIGINT, @RtId BIGINT;
+
+CREATE TABLE #Rc34 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc34
+EXEC Parts.OperationTemplate_Create
+    @Code = N'TEST-OP-DISCUSE', @Name = N'Disc In Use', @OperationTypeId = @OpType, @AppUserId = 1;
+SELECT @OtId = NewId FROM #Rc34;
+DROP TABLE #Rc34;
+
+CREATE TABLE #Ri34 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Ri34
+EXEC Parts.Item_Create
+    @ItemTypeId = 4, @PartNumber = N'TEST-OP-RT-ITEM-DISCUSE',
+    @Description = N'Discard in-use test item', @UomId = 1, @AppUserId = 1;
+SELECT @ItemId = NewId FROM #Ri34;
+DROP TABLE #Ri34;
+
+CREATE TABLE #Rt34 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rt34
+EXEC Parts.RouteTemplate_Create @ItemId = @ItemId, @Name = N'TEST-RT-DISCUSE', @AppUserId = 1;
+SELECT @RtId = NewId FROM #Rt34;
+DROP TABLE #Rt34;
+
+CREATE TABLE #Rs34 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rs34
+EXEC Parts.RouteStep_Add @RouteTemplateId = @RtId, @OperationTemplateId = @OtId, @IsRequired = 1, @AppUserId = 1;
+DROP TABLE #Rs34;
+
+CREATE TABLE #Rdd34 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rdd34 EXEC Parts.OperationTemplate_DiscardDraft @Id = @OtId, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rdd34;
+DROP TABLE #Rdd34;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardInUse] Status is 0',
+    @Expected = N'0',
+    @Actual   = @SStr;
+
+DECLARE @RefMsgStr NVARCHAR(1) = CASE WHEN @M LIKE N'%RouteStep%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardInUse] Message mentions RouteStep',
+    @Expected = N'1',
+    @Actual   = @RefMsgStr;
+
+-- OT still present (discard rejected)
+DECLARE @UseStillThere INT = (SELECT COUNT(*) FROM Parts.OperationTemplate WHERE Id = @OtId);
+DECLARE @UseStillThereStr NVARCHAR(20) = CAST(@UseStillThere AS NVARCHAR(20));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardInUse] OT NOT deleted',
+    @Expected = N'1',
+    @Actual   = @UseStillThereStr;
+GO
+
+-- =============================================
+-- Test 35: DiscardDraft cascades to OperationTemplateField children
+-- =============================================
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
+DECLARE @S BIT, @M NVARCHAR(500), @SStr NVARCHAR(1), @OtId BIGINT;
+
+CREATE TABLE #Rc35 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc35
+EXEC Parts.OperationTemplate_Create
+    @Code = N'TEST-OP-DISCCASC', @Name = N'Disc Cascade', @OperationTypeId = @OpType, @AppUserId = 1;
+SELECT @OtId = NewId FROM #Rc35;
+DROP TABLE #Rc35;
+
+CREATE TABLE #Rf35 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rf35
+EXEC Parts.OperationTemplateField_Add
+    @OperationTemplateId = @OtId, @DataCollectionFieldId = 1, @IsRequired = 1, @AppUserId = 1;
+DROP TABLE #Rf35;
+
+DECLARE @FieldsBefore INT = (SELECT COUNT(*) FROM Parts.OperationTemplateField WHERE OperationTemplateId = @OtId);
+DECLARE @FieldsBeforeStr NVARCHAR(20) = CAST(@FieldsBefore AS NVARCHAR(20));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardCascade] Field present before discard',
+    @Expected = N'1',
+    @Actual   = @FieldsBeforeStr;
+
+CREATE TABLE #Rdd35 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #Rdd35 EXEC Parts.OperationTemplate_DiscardDraft @Id = @OtId, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #Rdd35;
+DROP TABLE #Rdd35;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardCascade] Discard Status is 1',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+DECLARE @FieldsAfter INT = (SELECT COUNT(*) FROM Parts.OperationTemplateField WHERE OperationTemplateId = @OtId);
+DECLARE @FieldsAfterStr NVARCHAR(20) = CAST(@FieldsAfter AS NVARCHAR(20));
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardCascade] Child fields removed with the Draft',
+    @Expected = N'0',
+    @Actual   = @FieldsAfterStr;
 GO
 
 -- =============================================

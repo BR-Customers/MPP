@@ -29,6 +29,8 @@
 -- Change Log:
 --   2026-08-07 - 1.0 - Initial version (FAT-OQ-030). Mirrors
 --                       R__Parts_RouteTemplate_DiscardDraft.sql.
+--   2026-08-07 - 1.1 - Add in-use RouteStep guard (clean rejection instead of a
+--                       FK Msg 547 in the CATCH) -- code review.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.OperationTemplate_DiscardDraft
     @Id        BIGINT,
@@ -99,6 +101,21 @@ BEGIN
         IF @ExistingDeprecatedAt IS NOT NULL
         BEGIN
             SET @Message = N'OperationTemplate is already deprecated.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'OperationTemplate',
+                @EntityId = @Id, @LogEventTypeCode = N'Deleted',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- In-use guard: reject cleanly rather than let the child DELETE hit a FK
+        -- Msg 547 in the CATCH (a route can pin a Draft OT via RouteStep before it
+        -- is published). Mirrors OperationTemplate_Deprecate's active-RouteStep guard.
+        IF EXISTS (SELECT 1 FROM Parts.RouteStep WHERE OperationTemplateId = @Id)
+        BEGIN
+            SET @Message = N'Cannot discard: active RouteStep(s) reference this template.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'OperationTemplate',
                 @EntityId = @Id, @LogEventTypeCode = N'Deleted',
