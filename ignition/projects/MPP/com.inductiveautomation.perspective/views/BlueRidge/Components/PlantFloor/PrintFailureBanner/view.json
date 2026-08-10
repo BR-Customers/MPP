@@ -2,7 +2,8 @@
   "custom": {
     "alert": {
       "text": "",
-      "visible": false
+      "visible": false,
+      "shippingLabelId": null
     }
   },
   "params": {},
@@ -46,7 +47,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.alert \u003d {\"visible\": False, \"text\": \"\"}"
+                    "script": "\tsid = self.view.custom.alert.shippingLabelId\n\tif sid is not None:\n\t\tBlueRidge.Lots.Shipping.ackBanner(sid)\n\tself.view.custom.alert = {\"visible\": False, \"text\": \"\", \"shippingLabelId\": None}"
                   },
                   "scope": "G",
                   "type": "script"
@@ -103,7 +104,7 @@
         {
           "messageType": "print-failure-alert",
           "pageScope": false,
-          "script": "\tmsg \u003d (payload.get(\"message\") if payload else None) or \"A shipping label failed to print.\"\n\tself.view.custom.alert \u003d {\"visible\": True, \"text\": msg}",
+          "script": "\tif payload and payload.get(\"terminalLocationId\") is not None:\n\t\tterm = self.session.custom.terminal or {}\n\t\tif term.get(\"terminalLocationId\") is not None and term.get(\"terminalLocationId\") != payload.get(\"terminalLocationId\"):\n\t\t\treturn\n\tmsg = (payload.get(\"message\") if payload else None) or \"A shipping label failed to print.\"\n\tsid = payload.get(\"shippingLabelId\") if payload else None\n\tself.view.custom.alert = {\"visible\": True, \"text\": msg, \"shippingLabelId\": sid}",
           "sessionScope": true,
           "viewScope": false
         }
