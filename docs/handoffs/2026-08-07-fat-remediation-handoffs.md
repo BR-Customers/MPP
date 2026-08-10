@@ -111,7 +111,13 @@ test `010_OperationTemplate_crud.sql`.
 
 ## Brief C — Machining defect/reject capture (FAT-MACH-140)
 
-> **STATUS: 🟡 IN PROGRESS** (claimed 2026-08-07, session 4c520a18). Do not double-assign.
+> **STATUS: ✅ DONE** (2026-08-07, session 4c520a18). Backend + NQ + entity + view shipped;
+> tests `080_MachiningOut_Mint_scrap.sql` green (41 asserts incl. 3 code-review edge cases);
+> full SQL suite 2427/0; `.\scan.ps1` run; code-review passed. Fixture note: uses
+> `12270-6NA`/`MA1-FP6NA-MOUT` — the `5G0-c`/`MA1-5GOF-MOUT` fixture is orphaned (that line
+> was dropped from the location seed), which independently leaves `070_MachiningOut_Mint.sql`
+> and `100_Lot_GetLineInventoryByPart.sql` red — **pre-existing, not this change**. FAT row
+> ready for operator re-test (workbook not edited — it has concurrent uncommitted changes).
 
 **Mission:** port the shipped Trim OUT multi-reason scrap feature onto Machining OUT so entering
 defect codes + reject quantities writes one `Workorder.RejectEvent` per code. Closes FAT-MACH-140.
