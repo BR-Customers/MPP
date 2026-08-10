@@ -193,6 +193,44 @@ re-opens and refuses to close, covering content.
 receive and seeing the component projection already updated, which is what proves the page-scoped
 `inventoryChanged` broadcast. `FAT-INSP-040` now covers exactly this, so the FAT will catch it.
 
+### 🐞 Root-caused 2026-08-10 — tab containers need `position.tabIndex` on EVERY child
+
+Driving the screen found the **Assembly tab rendering completely blank**. Root cause is not the
+embedded view: **every child of an `ia.container.tab` must carry an explicit `position.tabIndex`.**
+Order in the `children` array does not assign the slot. Without it all children claim slot 0, only
+ONE ever mounts, and every other tab is blank — **no error, no console message, no 404**, a correctly
+sized empty pane, and the embedded view renders fine standalone. That combination sends you to debug
+the wrong file.
+
+Isolated by moving `AssemblyNonSerialized` to index 0: it rendered correctly there and `Inventory`
+went blank instead — proving the child was fine and the slot was the variable. An audit of every tab
+container in both projects found exactly two offenders (the others only omit it on the *first* child,
+which legitimately defaults to 0):
+
+- **`ThirdPartyInspection`** — the Assembly tab (ours).
+- **`MachiningStation`** — the **Machining OUT** tab, blank since it was built on **2026-07-24**, and
+  it is the `DefaultScreen` for the `-MIO-` terminals. A live production screen with half of it dead.
+
+Both fixed and verified live in `2177d5e1` — each renders on load and switches correctly in both
+directions. Working references that already had it right: `LotDetail`, `ItemMaster`.
+
+### ⚠️ Topology correction — pass-through stations are their OWN terminals
+
+Confirmed by Hunter 2026-08-10: a pass-through station is **not** part of a production line. It is a
+standalone terminal with its own location — which is exactly what the seed models
+(`INSP-SORT-T1` under `INSP-SORT` under the `INSP` area; plus `66B - Ins`), and none of those exist
+in the current Dev location map.
+
+**Design consequence, and it is not automatic:** `Assembly_CompleteTray` consumes from
+`@CellLocationId` = the terminal's own zone. So for the Assembly tab to work at a pass-through
+station, the finished good's **published BOM**, its **`Parts.ItemLocation` Direct eligibility**, and
+its **`ContainerConfig`** must all be configured **at the pass-through location itself** — not at a
+machining/assembly cell. Engineering has to set that up per pass-through station.
+
+The 2026-08-07/10 smoke ran at `MA2-6FBCHOP-AOUT`, an assembly-line terminal, because that is where
+Dev happened to have the config. That validates the mechanics but **not the real topology**. A Dev
+`INSP`-style location + terminal + part config is needed to smoke it as it will actually be deployed.
+
 ### Owed — the rest of the operator smoke
 
 **`AimPostingEnabled` was flipped to `0` on 2026-08-07** — no post can leave the Gateway (the gate
