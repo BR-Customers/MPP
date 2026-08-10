@@ -207,7 +207,7 @@ IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c1 cast failed
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rMove) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c1 move-trim failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
-DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @ScrapCount = 0, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
+DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rTrim) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c1 trim failed: ' + ISNULL((SELECT Message FROM @rTrim), N'?'); THROW 51000, @ErrMsg, 1; END
 DELETE FROM @rMin; INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @cast, @LineLocationId = @L_6NA, @AppUserId = @U, @TerminalLocationId = @L_6NA_MIN;
 IF (SELECT Status FROM @rMin) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c1 mach-in failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
@@ -224,7 +224,7 @@ IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c2 cast failed
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rMove) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c2 move-trim failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
-DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @ScrapCount = 0, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
+DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rTrim) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c2 trim failed: ' + ISNULL((SELECT Message FROM @rTrim), N'?'); THROW 51000, @ErrMsg, 1; END
 DELETE FROM @rMin; INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @cast, @LineLocationId = @L_6NA, @AppUserId = @U, @TerminalLocationId = @L_6NA_MIN;
 IF (SELECT Status FROM @rMin) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c2 mach-in failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
@@ -284,7 +284,7 @@ SET @cast = (SELECT NewId FROM @rLot);
 DECLARE @W_MinCast NVARCHAR(50) = (SELECT MintedLotName FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rMove) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP MIN move failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
-DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @ScrapCount = 0, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
+DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rTrim) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP MIN trim failed: ' + ISNULL((SELECT Message FROM @rTrim), N'?'); THROW 51000, @ErrMsg, 1; END
 
 -- machining-OUT WIP (a fresh machined LOT parked at MOUT) -- carries pause + reject
@@ -294,7 +294,7 @@ IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP MOUT cast faile
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rMove) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP MOUT move failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
-DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @ScrapCount = 0, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
+DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rTrim) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP MOUT trim failed: ' + ISNULL((SELECT Message FROM @rTrim), N'?'); THROW 51000, @ErrMsg, 1; END
 DELETE FROM @rMin; INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @cast, @LineLocationId = @L_6NA, @AppUserId = @U, @TerminalLocationId = @L_6NA_MIN;
 IF (SELECT Status FROM @rMin) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP MOUT mach-in failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
@@ -310,7 +310,7 @@ IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP AFIN cast faile
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rMove) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP AFIN move failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
-DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @ScrapCount = 0, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
+DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 12, @DestinationCellLocationId = @L_6NA_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rTrim) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP AFIN trim failed: ' + ISNULL((SELECT Message FROM @rTrim), N'?'); THROW 51000, @ErrMsg, 1; END
 DELETE FROM @rMin; INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @cast, @LineLocationId = @L_6NA, @AppUserId = @U, @TerminalLocationId = @L_6NA_MIN;
 IF (SELECT Status FROM @rMin) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP AFIN mach-in failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
@@ -333,7 +333,7 @@ IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'5G0 cast failed: ' + IS
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rMove) <> 1 BEGIN SET @ErrMsg = N'5G0 move-trim failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
-DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 24, @ScrapCount = 0, @DestinationCellLocationId = @L_5GOF_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
+DELETE FROM @rTrim; INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 24, @DestinationCellLocationId = @L_5GOF_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rTrim) <> 1 BEGIN SET @ErrMsg = N'5G0 trim failed: ' + ISNULL((SELECT Message FROM @rTrim), N'?'); THROW 51000, @ErrMsg, 1; END
 DELETE FROM @rMin; INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @cast, @LineLocationId = @L_5GOF, @AppUserId = @U, @TerminalLocationId = @L_5GOF_MIN;
 IF (SELECT Status FROM @rMin) <> 1 BEGIN SET @ErrMsg = N'5G0 mach-in failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END

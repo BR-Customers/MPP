@@ -5,10 +5,28 @@
       "trayPosition": ""
     },
     "refreshToken": 0,
-    "selectedFinishedGoodItemId": null
+    "selectedFinishedGoodItemId": null,
+    "printerCards": [],
+    "usePrinterCards": false
   },
   "params": {},
   "propConfig": {
+    "custom.printerCards": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.PrinterFgAssignment.listCardsForStation\", 0, {session.custom.terminal.terminalLocationId}, {session.custom.cell.locationId}, {view.custom.refreshToken}), [])"
+        }
+      }
+    },
+    "custom.usePrinterCards": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "len({view.custom.printerCards}) > 1"
+        }
+      }
+    },
     "custom.closureMethodTracker": {
       "binding": {
         "config": {
@@ -1403,6 +1421,14 @@
                 "position": {
                   "grow": 1
                 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": { "expression": "!{view.custom.usePrinterCards}" }
+                    }
+                  }
+                },
                 "props": {
                   "direction": "column",
                   "gap": "12px"
@@ -1523,6 +1549,37 @@
               "gap": "12px"
             },
             "type": "ia.container.flex"
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "PrinterCardPanel" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "position.display": {
+                "binding": { "type": "expr", "config": { "expression": "{view.custom.usePrinterCards}" } }
+              },
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.printerCards" },
+                  "transforms": [
+                    {
+                      "type": "script",
+                      "code": "\trows = value or []\n\tn = len(rows)\n\tterm = None\n\tcell = None\n\ttry:\n\t\tterm = self.session.custom.terminal.terminalLocationId\n\t\tcell = self.session.custom.cell.locationId\n\texcept:\n\t\tpass\n\treturn [\n\t\t{\n\t\t\t\"index\": i, \"totalRows\": n,\n\t\t\t\"printerLocationId\": r.get(\"PrinterLocationId\"),\n\t\t\t\"printerCode\": r.get(\"PrinterCode\") or \"\",\n\t\t\t\"printerName\": r.get(\"PrinterName\") or \"\",\n\t\t\t\"endpoint\": r.get(\"Endpoint\") or \"\",\n\t\t\t\"connectionKind\": r.get(\"ConnectionKind\") or \"\",\n\t\t\t\"assignedItemId\": r.get(\"AssignedItemId\"),\n\t\t\t\"partNumber\": r.get(\"PartNumber\") or \"\",\n\t\t\t\"description\": r.get(\"Description\") or \"\",\n\t\t\t\"sortOrder\": r.get(\"SortOrder\") or 0,\n\t\t\t\"openContainerId\": r.get(\"OpenContainerId\"),\n\t\t\t\"fillAccum\": r.get(\"FillAccum\") or 0,\n\t\t\t\"fillTarget\": r.get(\"FillTarget\") or 0,\n\t\t\t\"isFull\": r.get(\"IsFull\") or 0,\n\t\t\t\"cellLocationId\": cell,\n\t\t\t\"terminalLocationId\": term\n\t\t}\n\t\tfor i, r in enumerate(rows)\n\t]"
+                    }
+                  ]
+                }
+              }
+            },
+            "props": {
+              "direction": "row",
+              "wrap": "wrap",
+              "elementPosition": { "basis": "320px", "grow": 0, "shrink": 0 },
+              "path": "BlueRidge/Components/PlantFloor/PrinterCard",
+              "useDefaultViewHeight": true,
+              "useDefaultViewWidth": true,
+              "style": { "gap": "12px" }
+            }
           }
         ],
         "meta": {
@@ -1564,9 +1621,46 @@
       }
     },
     "scripts": {
-      "customMethods": [],
+      "customMethods": [
+        {
+          "name": "refreshCards",
+          "params": [],
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        },
+        {
+          "name": "handleAssign",
+          "params": ["printerLocationId", "itemId"],
+          "script": "\tcards = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.printerCards) or []\n\trows = []\n\tfor c in cards:\n\t\tc = c or {}\n\t\tpid = c.get(\"PrinterLocationId\")\n\t\tiid = c.get(\"AssignedItemId\")\n\t\tif pid == printerLocationId:\n\t\t\tiid = itemId\n\t\telif iid == itemId:\n\t\t\tiid = None\n\t\trows.append({\"PrinterLocationId\": pid, \"ItemId\": iid, \"SortOrder\": c.get(\"SortOrder\") or 0})\n\tresult = BlueRidge.Location.PrinterFgAssignment.saveAll(self.session.custom.terminal.terminalLocationId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Printer assignment saved\")\n\tself.refreshCards()"
+        },
+        {
+          "name": "handleReorder",
+          "params": ["printerLocationId", "direction"],
+          "script": "\tcards = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.printerCards) or []\n\tidx = -1\n\tfor i, c in enumerate(cards):\n\t\tif (c or {}).get(\"PrinterLocationId\") == printerLocationId:\n\t\t\tidx = i\n\t\t\tbreak\n\tif idx < 0:\n\t\treturn\n\tj = idx - 1 if direction == \"up\" else idx + 1\n\tif j < 0 or j >= len(cards):\n\t\treturn\n\tcards[idx], cards[j] = cards[j], cards[idx]\n\trows = []\n\tfor i, c in enumerate(cards):\n\t\tc = c or {}\n\t\trows.append({\"PrinterLocationId\": c.get(\"PrinterLocationId\"), \"ItemId\": c.get(\"AssignedItemId\"), \"SortOrder\": i + 1})\n\tresult = BlueRidge.Location.PrinterFgAssignment.saveAll(self.session.custom.terminal.terminalLocationId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Reordered\")\n\tself.refreshCards()"
+        }
+      ],
       "extensionFunctions": null,
       "messageHandlers": [
+        {
+          "messageType": "printerCardsRefresh",
+          "pageScope": true,
+          "script": "\tself.refreshCards()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "printerCardAssign",
+          "pageScope": true,
+          "script": "\tp = payload or {}\n\tself.handleAssign(p.get(\"printerLocationId\"), p.get(\"itemId\"))",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "printerCardReorder",
+          "pageScope": true,
+          "script": "\tp = payload or {}\n\tself.handleReorder(p.get(\"printerLocationId\"), p.get(\"dir\"))",
+          "sessionScope": false,
+          "viewScope": false
+        },
         {
           "messageType": "inventoryChanged",
           "pageScope": true,

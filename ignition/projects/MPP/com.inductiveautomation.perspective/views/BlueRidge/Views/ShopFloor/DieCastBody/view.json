@@ -87,7 +87,7 @@
     "custom.shotLossDefectOptions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0)"
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0, \"DieCast\")"
         },
         "type": "expr"
       }
@@ -255,8 +255,7 @@
             "props": {
               "alignItems": "center",
               "style": {
-                "gap": "8px",
-                "overflow": "visible"
+                "gap": "8px"
               }
             },
             "type": "ia.container.flex"
@@ -1670,7 +1669,9 @@
                         "basis": "auto"
                       },
                       "path": "BlueRidge/Components/PlantFloor/DieCastEntry/PeerTallyRow",
-                      "useDefaultViewHeight": false,
+                      "style": {
+                        "overflow": "scroll"
+                      },
                       "useDefaultViewWidth": false
                     },
                     "type": "ia.display.flex-repeater"
@@ -1792,7 +1793,7 @@
             "maxPieceCount",
             "belowStandard"
           ],
-          "script": "\tself.view.custom.pendingReleaseLotId \u003d lotId\n\tself.view.custom.pendingReleaseLotName \u003d lotName or \"\"\n\tnm \u003d lotName or \"\"\n\tpc \u003d BlueRidge.Common.Util.toIntOrNone(pieceCount) or 0\n\tmx \u003d BlueRidge.Common.Util.toIntOrNone(maxPieceCount)\n\tif belowStandard and mx:\n\t\tpct \u003d int(round(100.0 * pc / mx))\n\t\ttitle \u003d \"Release under-filled basket\"\n\t\tconfirmText \u003d \"Release anyway\"\n\t\tdanger \u003d True\n\t\tmessage \u003d \"Basket \" + nm + \" holds only \" + str(pc) + \" of \" + str(mx) + \" pc (\" + str(pct) + \"% of standard basket size). Release under-filled? This closes accumulation and moves it onto its route (Trim IN).\"\n\telse:\n\t\ttitle \u003d \"Release basket\"\n\t\tconfirmText \u003d \"Release\"\n\t\tdanger \u003d False\n\t\tmessage \u003d \"Release basket \" + nm + \" to storage? This closes accumulation and moves it onto its route (Trim IN).\"\n\tsystem.perspective.openPopup(\"mpp-confirm-release\",\n\t\t\"BlueRidge/Components/Popups/ConfirmAction\",\n\t\tparams\u003d{\"replyMessage\": \"releaseConfirmResult\", \"popupId\": \"mpp-confirm-release\",\n\t\t\t\"title\": title, \"confirmText\": confirmText, \"danger\": danger,\n\t\t\t\"message\": message},\n\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)"
+          "script": "\tself.view.custom.pendingReleaseLotId \u003d lotId\n\tself.view.custom.pendingReleaseLotName \u003d lotName or \"\"\n\tnm \u003d lotName or \"\"\n\tpc \u003d BlueRidge.Common.Util.toIntOrNone(pieceCount) or 0\n\tmx \u003d BlueRidge.Common.Util.toIntOrNone(maxPieceCount)\n\tif belowStandard and mx:\n\t\tpct \u003d int(round(100.0 * pc / mx))\n\t\ttitle \u003d \"Release under-filled basket\"\n\t\tconfirmText \u003d \"Release anyway\"\n\t\tdanger \u003d True\n\t\tmessage \u003d \"Basket \" + nm + \" holds only \" + str(pc) + \" of \" + str(mx) + \" pc (\" + str(pct) + \"% of standard basket size). Release under-filled?\"\n\telse:\n\t\ttitle \u003d \"Release basket\"\n\t\tconfirmText \u003d \"Release\"\n\t\tdanger \u003d False\n\t\tmessage \u003d \"Release basket \" + nm + \" to storage?\"\n\tsystem.perspective.openPopup(\"mpp-confirm-release\",\n\t\t\"BlueRidge/Components/Popups/ConfirmAction\",\n\t\tparams\u003d{\"replyMessage\": \"releaseConfirmResult\", \"popupId\": \"mpp-confirm-release\",\n\t\t\t\"title\": title, \"confirmText\": confirmText, \"danger\": danger,\n\t\t\t\"message\": message},\n\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)"
         },
         {
           "name": "releaseBasket",

@@ -21,6 +21,7 @@ EXEC test.BeginTestFile @FileName = N'0024_PlantFloor_Movement_Trim/040_TrimOut_
 GO
 
 -- ---- fixture cleanup ----
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
@@ -40,6 +41,10 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = 1 AND LocationId 
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt)
     VALUES (1, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), 0, SYSUTCDATETIME());
 
+-- @ScrapCount param retired v1.3 (FAT #2); equivalent single scrap line, same total qty=2
+DECLARE @Dxx BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Json NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@Dxx AS NVARCHAR(20)) + N',"quantity":2}]';
+
 DECLARE @L BIGINT;
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Src, @PieceCount = 20, @AppUserId = 1;
@@ -49,7 +54,7 @@ DECLARE @S BIT, @PeId BIGINT;
 CREATE TABLE #T (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #T EXEC Workorder.TrimOut_Record
     @ParentLotId = @L, @OperationTemplateId = @OtId,
-    @ShotCount = 18, @ScrapCount = 2,
+    @ShotCount = 18, @ScrapLinesJson = @Json,
     @SourceLocationId = @Src, @AppUserId = 1;
 SELECT @S = Status, @PeId = NewId FROM #T; DROP TABLE #T;
 
@@ -98,6 +103,7 @@ EXEC test.Assert_IsEqual @TestName = N'[TrimOut] TrimOutRecorded audit in Operat
 GO
 
 -- ---- cleanup ----
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');

@@ -186,6 +186,7 @@
                   }
                 },
                 "props": {
+                  "deferUpdates": false,
                   "placeholder": "domain\\username",
                   "style": {
                     "classes": "pf-field-input"
@@ -246,6 +247,7 @@
                   }
                 },
                 "props": {
+                  "deferUpdates": false,
                   "placeholder": "Password",
                   "style": {
                     "classes": "pf-field-input"

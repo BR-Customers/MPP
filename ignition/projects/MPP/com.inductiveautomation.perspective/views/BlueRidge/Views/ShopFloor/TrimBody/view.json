@@ -7,7 +7,8 @@
     "lotPieceCount": null,
     "outScan": "",
     "refreshToken": 0,
-    "scrapCount": null,
+    "scrapLines": [],
+    "defectOptions": [],
     "shotCount": null,
     "trimState": "in"
   },
@@ -44,6 +45,12 @@
           "expression": "if(isNull({session.custom.terminal.zoneLocationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, false, {view.custom.refreshToken}))"
         },
         "type": "expr"
+      }
+    },
+    "custom.defectOptions": {
+      "binding": {
+        "type": "expr",
+        "config": { "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0, \"TrimOut\")" }
       }
     },
     "params.cellPickerEnabled": {
@@ -877,42 +884,79 @@
                         "children": [
                           {
                             "meta": {
-                              "name": "ScrapLabel"
+                              "name": "ScrapLinesHeader"
                             },
                             "props": {
                               "style": {
                                 "classes": "pf-field-label"
                               },
-                              "text": "Scrap count"
+                              "text": "Scrap reasons"
                             },
                             "type": "ia.display.label"
                           },
                           {
                             "meta": {
-                              "name": "ScrapCountInput"
+                              "name": "ScrapRepeater"
+                            },
+                            "position": {
+                              "basis": "auto",
+                              "shrink": 0
                             },
                             "propConfig": {
-                              "props.value": {
+                              "props.instances": {
                                 "binding": {
                                   "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.scrapCount"
+                                    "path": "view.custom.scrapLines"
                                   },
+                                  "transforms": [
+                                    {
+                                      "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.defectOptions) or []\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = r or {}\n\t\tout.append({\"index\": i, \"defectCodeId\": r.get(\"defectCodeId\"), \"quantity\": r.get(\"quantity\") or \"\", \"defectOptions\": opts})\n\treturn out",
+                                      "type": "script"
+                                    }
+                                  ],
                                   "type": "property"
                                 }
                               }
                             },
                             "props": {
+                              "direction": "column",
+                              "path": "BlueRidge/Components/PlantFloor/TrimEntry/ScrapLineRow",
                               "style": {
-                                "classes": "pf-field-input",
-                                "minHeight": "44px"
+                                "gap": "6px"
                               }
                             },
-                            "type": "ia.input.numeric-entry-field"
+                            "type": "ia.display.flex-repeater"
+                          },
+                          {
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "config": {
+                                    "script": "\tself.view.rootContainer.addScrapLine()"
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            },
+                            "meta": {
+                              "name": "AddScrapButton"
+                            },
+                            "position": {
+                              "basis": "auto",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-btn pf-btn-secondary"
+                              },
+                              "text": "+ Add scrap reason"
+                            },
+                            "type": "ia.input.button"
                           }
                         ],
                         "meta": {
-                          "name": "ScrapField"
+                          "name": "ScrapLinesField"
                         },
                         "position": {
                           "grow": 1
@@ -953,7 +997,7 @@
                       "style": {
                         "classes": "pf-field-help"
                       },
-                      "text": "Lot count + scrap together cannot exceed the LOT\u0027s pieces; scrap is deducted from the LOT."
+                      "text": "Scrap cannot exceed the LOT's pieces; scrap is deducted from the LOT."
                     },
                     "type": "ia.display.label"
                   },
@@ -1107,12 +1151,36 @@
         {
           "name": "resolveOutScan",
           "params": [],
-          "script": "\tcode \u003d self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr \u003d BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId \u003d r.get(\"Id\")\n\t\tself.view.custom.activeLotName \u003d r.get(\"LotName\")\n\t\tself.view.custom.shotCount \u003d r.get(\"PieceCount\")\n\t\tself.view.custom.lotPieceCount \u003d r.get(\"PieceCount\")\n\t\tself.view.custom.scrapCount \u003d None\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches \u0027%s\u0027.\" % code, \"warning\")"
+          "script": "\tcode = self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId = r.get(\"Id\")\n\t\tself.view.custom.activeLotName = r.get(\"LotName\")\n\t\tself.view.custom.shotCount = r.get(\"PieceCount\")\n\t\tself.view.custom.lotPieceCount = r.get(\"PieceCount\")\n\t\tself.view.custom.scrapLines = []\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
+        },
+        {
+          "name": "addScrapLine",
+          "params": [],
+          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = list(rows)\n\trows.append({\"defectCodeId\": None, \"quantity\": \"\"})\n\tself.view.custom.scrapLines = rows\n\tself.recomputeGood()"
+        },
+        {
+          "name": "recomputeGood",
+          "params": [],
+          "script": "\tlp = self.view.custom.lotPieceCount\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\ttotal = 0\n\tfor r in rows:\n\t\ttry:\n\t\t\ttotal += int((r or {}).get(\"quantity\") or 0)\n\t\texcept (ValueError, TypeError):\n\t\t\tpass\n\tif lp is None:\n\t\tself.view.custom.shotCount = None\n\telse:\n\t\tself.view.custom.shotCount = max(0, int(lp) - total)"
+        },
+        {
+          "name": "onTrimScrapLineChanged",
+          "params": [
+            "payload"
+          ],
+          "script": "\tidx = payload.get(\"index\")\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = list(rows)\n\tif idx is None or idx < 0 or idx >= len(rows):\n\t\treturn\n\trows[idx] = {\"defectCodeId\": payload.get(\"defectCodeId\"), \"quantity\": payload.get(\"quantity\") or \"\"}\n\tself.view.custom.scrapLines = rows\n\tself.recomputeGood()"
+        },
+        {
+          "name": "onTrimScrapLineRemoved",
+          "params": [
+            "payload"
+          ],
+          "script": "\tidx = payload.get(\"index\")\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = list(rows)\n\tif idx is None or idx < 0 or idx >= len(rows):\n\t\treturn\n\tdel rows[idx]\n\tself.view.custom.scrapLines = rows\n\tself.recomputeGood()"
         },
         {
           "name": "submitTrimOut",
           "params": [],
-          "script": "\tlotId \u003d self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForLot(lotId, \"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active \u0027TrimOut\u0027 operation template is published.\", \"error\")\n\t\treturn\n\tdata \u003d {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": None,\n\t\t\"sourceLocationId\": self.session.custom.terminal.zoneLocationId,\n\t}\n\tres \u003d BlueRidge.Workorder.TrimOut.record(data, self.session.custom.appUserId, (self.session.custom.terminal.terminalLocationId if self.session.custom.terminal else None))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\t# Stay on the Trim OUT screen (2026-07-06 Jacques): clear the form for the next LOT.\n\t\tself.view.custom.activeLotId \u003d None\n\t\tself.view.custom.activeLotName \u003d None\n\t\tself.view.custom.outScan \u003d \"\"\n\t\tself.view.custom.shotCount \u003d None\n\t\tself.view.custom.lotPieceCount \u003d None\n\t\tself.view.custom.scrapCount \u003d None\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tlotId = self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForLot(lotId, \"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active 'TrimOut' operation template is published.\", \"error\")\n\t\treturn\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\tscrapLines = []\n\ttotal = 0\n\tfor r in rows:\n\t\tr = r or {}\n\t\td = r.get(\"defectCodeId\")\n\t\tq = BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif d is None and not q:\n\t\t\tcontinue  # skip a blank row\n\t\tif not q or q <= 0 or d is None:\n\t\t\tBlueRidge.Common.Notify.toast(\"Incomplete scrap line\", \"Each scrap line needs a reason and a positive quantity.\", \"warning\")\n\t\t\treturn\n\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\t\ttotal += q\n\tlp = BlueRidge.Common.Util.toIntOrNone(self.view.custom.lotPieceCount) or 0\n\tif total > lp:\n\t\tBlueRidge.Common.Notify.toast(\"Too much scrap\", \"Scrap (%d) exceeds the LOT's pieces (%d).\" % (total, lp), \"warning\")\n\t\treturn\n\tgood = max(0, lp - total)\n\tdata = {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": good,\n\t\t\"scrapLines\": scrapLines,\n\t\t\"destinationCellLocationId\": None,\n\t\t\"sourceLocationId\": self.session.custom.terminal.zoneLocationId,\n\t}\n\tres = BlueRidge.Workorder.TrimOut.record(data, self.session.custom.appUserId, (self.session.custom.terminal.terminalLocationId if self.session.custom.terminal else None))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tself.view.custom.activeLotId = None\n\t\tself.view.custom.activeLotName = None\n\t\tself.view.custom.outScan = \"\"\n\t\tself.view.custom.shotCount = None\n\t\tself.view.custom.lotPieceCount = None\n\t\tself.view.custom.scrapLines = []\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "name": "startup",
@@ -1125,14 +1193,28 @@
         {
           "messageType": "trimLotSelected",
           "pageScope": true,
-          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.activeLotName \u003d payload.get(\"lotName\")\n\tsel \u003d BlueRidge.Lots.Lot.get(lotId\u003dpayload.get(\"lotId\"))\n\tself.view.custom.shotCount \u003d sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.lotPieceCount \u003d sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.scrapCount \u003d None\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tself.view.custom.activeLotId = payload.get(\"lotId\")\n\tself.view.custom.activeLotName = payload.get(\"lotName\")\n\tsel = BlueRidge.Lots.Lot.get(lotId=payload.get(\"lotId\"))\n\tself.view.custom.shotCount = sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.lotPieceCount = sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.scrapLines = []\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "trimInMoved",
           "pageScope": true,
-          "script": "\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\t# TrimIn checkpoint (route Advance step; Phase-4 TODO closed 2026-07-08): without it the\n\t# route-driven queues hold the LOT pending at TrimIn and it never reaches Machining IN.\n\tBlueRidge.Workorder.ProductionEvent.recordTrimInCheckpoint(payload.get(\"lotId\"), self.session.custom.appUserId, termId)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "script": "\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\t# TrimIn checkpoint (route Advance step; Phase-4 TODO closed 2026-07-08): without it the\n\t# route-driven queues hold the LOT pending at TrimIn and it never reaches Machining IN.\n\tBlueRidge.Workorder.ProductionEvent.recordTrimInCheckpoint(payload.get(\"lotId\"), self.session.custom.appUserId, termId)\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "trimScrapLineChanged",
+          "pageScope": true,
+          "script": "\tself.view.rootContainer.onTrimScrapLineChanged(payload)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "trimScrapLineRemoved",
+          "pageScope": true,
+          "script": "\tself.view.rootContainer.onTrimScrapLineRemoved(payload)",
           "sessionScope": false,
           "viewScope": false
         }

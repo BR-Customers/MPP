@@ -81,20 +81,26 @@ def _logDispatch(endpoint, zpl, outcome):
         BlueRidge.Common.Util.log("_logDispatch failed: %s" % str(e), level="debug")
 
 
-def dispatch(aimShipperId, terminalLocationId=None):
+def dispatch(aimShipperId, terminalLocationId=None, printerLocationId=None):
     """Render + synchronously dispatch a container shipping label for a claimed AIM
-       Shipper ID. Returns {Status, Message}. Fails-fast (no container rollback) when no
-       printer is configured for the terminal."""
-    BlueRidge.Common.Util.log("dispatch aimShipperId=%s" % aimShipperId)
-    printer = _sessionPrinter()
-    endpoint = (printer.get("endpoint") or "").strip()
-    if not endpoint and terminalLocationId is not None:
-        printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId) or {}
+       Shipper ID. When printerLocationId is given, the endpoint is resolved from
+       that specific printer (printer-cards routing); otherwise from the session /
+       terminal printer as before. Returns {Status, Message}."""
+    BlueRidge.Common.Util.log("dispatch aimShipperId=%s printerLocationId=%s" % (aimShipperId, printerLocationId))
+    pid = BlueRidge.Common.Util.extractQualifiedValues(printerLocationId)
+    if pid is not None:
+        printer = BlueRidge.Location.Printer.getById(pid) or {}
+        endpoint = (printer.get("endpoint") or printer.get("Endpoint") or "").strip()
+    else:
+        printer = _sessionPrinter()
         endpoint = (printer.get("endpoint") or "").strip()
+        if not endpoint and terminalLocationId is not None:
+            printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId) or {}
+            endpoint = (printer.get("endpoint") or "").strip()
 
     zpl = _renderZpl(aimShipperId)
     if not endpoint:
-        return {"Status": 0, "Message": "This terminal has no printer configured."}
+        return {"Status": 0, "Message": "No printer endpoint resolved for this label."}
 
     outcome = _dispatchZpl(endpoint, zpl)
     _logDispatch(endpoint, zpl, outcome)

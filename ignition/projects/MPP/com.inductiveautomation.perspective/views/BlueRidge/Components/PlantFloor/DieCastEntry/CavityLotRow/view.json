@@ -56,12 +56,16 @@
     "params.proposedGood": {
       "onChange": {
         "enabled": true,
-        "script": "\tval \u003d self.view.params.proposedGood\n\tself.view.custom.good \u003d str(val) if val is not None else \"\"\n\tself.view.custom.scrap1Defect \u003d None\n\tself.view.custom.scrap2Defect \u003d None\n\tself.view.custom.scrap3Defect \u003d None\n\tself.view.custom.scrap4Defect \u003d None\n\tself.view.custom.scrap5Defect \u003d None\n\tself.view.custom.scrap6Defect \u003d None\n\tself.view.custom.scrap1Qty \u003d \"\"\n\tself.view.custom.scrap2Qty \u003d \"\"\n\tself.view.custom.scrap3Qty \u003d \"\"\n\tself.view.custom.scrap4Qty \u003d \"\"\n\tself.view.custom.scrap5Qty \u003d \"\"\n\tself.view.custom.scrap6Qty \u003d \"\"\n\tself.view.custom.scrapApplied \u003d 0\n\tself.view.custom.overHeadroom \u003d False"
-      },
-      "paramDirection": "input"
+        "script": "\tval = self.view.params.proposedGood\n\tself.view.custom.good = str(val) if val is not None else \"\"\n\tself.view.custom.scrap1Defect = None\n\tself.view.custom.scrap2Defect = None\n\tself.view.custom.scrap3Defect = None\n\tself.view.custom.scrap4Defect = None\n\tself.view.custom.scrap5Defect = None\n\tself.view.custom.scrap6Defect = None\n\tself.view.custom.scrap1Qty = \"\"\n\tself.view.custom.scrap2Qty = \"\"\n\tself.view.custom.scrap3Qty = \"\"\n\tself.view.custom.scrap4Qty = \"\"\n\tself.view.custom.scrap5Qty = \"\"\n\tself.view.custom.scrap6Qty = \"\"\n\tself.view.custom.scrapApplied = 0\n\tself.view.custom.overHeadroom = False"
+      }
     },
-    "params.toolCavityId": {
-      "paramDirection": "input"
+    "custom.defectOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0, \"DieCast\")"
+        }
+      }
     }
   },
   "props": {

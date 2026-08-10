@@ -9,8 +9,9 @@ def _u(value):
 
 def record(data, appUserId=None, terminalLocationId=None):
     """Trim OUT: closing checkpoint + whole-LOT move into a Machining FIFO queue.
-       data carries parentLotId, operationTemplateId, shotCount, scrapCount,
-       destinationCellLocationId, sourceLocationId (the Trim zone the terminal
+       data carries parentLotId, operationTemplateId, shotCount, scrapLines
+       (list of {defectCodeId, quantity}), destinationCellLocationId,
+       sourceLocationId (the Trim zone the terminal
        records from; the proc rejects when the LOT is not at/under it - the
        double-checkout guard). Returns {Status, Message, NewId} (NewId =
        ProductionEventId)."""
@@ -25,7 +26,7 @@ def record(data, appUserId=None, terminalLocationId=None):
         "parentLotId":               d.get("parentLotId"),
         "operationTemplateId":       d.get("operationTemplateId"),
         "shotCount":                 d.get("shotCount"),
-        "scrapCount":                d.get("scrapCount"),
+        "scrapLinesJson":            BlueRidge.Common.Util.convertWrapperObjectToJson(d.get("scrapLines") or []),
         "destinationCellLocationId": d.get("destinationCellLocationId"),
         "sourceLocationId":          d.get("sourceLocationId"),
         "appUserId":                 appUserId,

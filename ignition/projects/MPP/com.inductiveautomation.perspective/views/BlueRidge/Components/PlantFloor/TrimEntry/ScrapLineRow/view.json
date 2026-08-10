@@ -1,0 +1,92 @@
+{
+  "custom": {},
+  "params": {
+    "index": 0,
+    "defectCodeId": null,
+    "quantity": "",
+    "defectOptions": []
+  },
+  "propConfig": {
+    "params.index": { "paramDirection": "input" },
+    "params.defectCodeId": { "paramDirection": "input" },
+    "params.quantity": { "paramDirection": "input" },
+    "params.defectOptions": { "paramDirection": "input" }
+  },
+  "props": { "defaultSize": { "height": 44, "width": 600 } },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": { "alignItems": "center", "style": { "gap": "8px" } },
+    "children": [
+      {
+        "type": "ia.input.dropdown",
+        "meta": { "name": "ReasonDropdown" },
+        "position": { "basis": "0", "grow": 1, "shrink": 1 },
+        "props": {
+          "placeholder": { "text": "Scrap reason" },
+          "style": { "classes": "pf-field-input", "minWidth": "160px" }
+        },
+        "propConfig": {
+          "props.options": { "binding": { "type": "property", "config": { "path": "view.params.defectOptions" } } },
+          "props.value": { "binding": { "type": "property", "config": { "path": "view.params.defectCodeId" } } }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapLineChanged\", payload={\"index\": self.view.params.index, \"defectCodeId\": self.props.value, \"quantity\": self.getSibling(\"QtyInput\").props.text}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.text-field",
+        "meta": { "name": "QtyInput" },
+        "position": { "basis": "90px", "shrink": 0 },
+        "props": {
+          "deferUpdates": false,
+          "placeholder": "qty",
+          "style": { "classes": "pf-field-input" }
+        },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.quantity" } } }
+        },
+        "events": {
+          "dom": {
+            "onBlur": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapLineChanged\", payload={\"index\": self.view.params.index, \"defectCodeId\": self.getSibling(\"ReasonDropdown\").props.value, \"quantity\": self.props.text}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "RemoveButton" },
+        "position": { "basis": "44px", "shrink": 0 },
+        "props": {
+          "text": "",
+          "image": { "icon": { "path": "mpp/cancel", "color": "var(--mpp-state-bad-fg)" } },
+          "style": { "classes": "pf-btn pf-btn-secondary" }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapLineRemoved\", payload={\"index\": self.view.params.index}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
