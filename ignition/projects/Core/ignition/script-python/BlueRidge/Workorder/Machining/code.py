@@ -23,7 +23,7 @@ def recordPick(lotId, lineLocationId, appUserId=None, terminalLocationId=None):
 
 
 def mint(sourceLotId, operationTemplateId, pieceCount, producedItemId=None,
-         appUserId=None, terminalLocationId=None, allowPartial=False):
+         appUserId=None, terminalLocationId=None, allowPartial=False, scrapLines=None):
     """Machining OUT (consume-mint, terminal-mint model). Mints a SubAssembly LOT by
        consuming castings across the FIFO queue (strict oldest-first) of the same part
        at sourceLotId's cell -- one machined LOT may draw from several castings, never
@@ -32,17 +32,21 @@ def mint(sourceLotId, operationTemplateId, pieceCount, producedItemId=None,
        direct-eligible at the line; pass producedItemId to override when a line builds
        more than one. Flexible qty. Line-resident: the minted LOT is born at the
        source's location (no destination). On shortfall: allowPartial=False rejects
-       with Available=max producible; allowPartial=True mints all available. Returns
+       with Available=max producible; allowPartial=True mints all available.
+       scrapLines (FAT-MACH-140): optional list of {defectCodeId, quantity}; the proc
+       writes one Workorder.RejectEvent per line against sourceLotId and decrements the
+       scanned casting by the scrap total (in addition to the FIFO consumption). Returns
        {Status, Message, NewId (the minted SubAssembly LotId), Available}."""
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     BlueRidge.Common.Util.log(
-        "mint sourceLotId=%s operationTemplateId=%s pieceCount=%s producedItemId=%s appUserId=%s allowPartial=%s"
-        % (sourceLotId, operationTemplateId, pieceCount, producedItemId, appUserId, allowPartial))
+        "mint sourceLotId=%s operationTemplateId=%s pieceCount=%s producedItemId=%s appUserId=%s allowPartial=%s scrapLines=%s"
+        % (sourceLotId, operationTemplateId, pieceCount, producedItemId, appUserId, allowPartial, scrapLines))
     params = {"sourceLotId": sourceLotId, "operationTemplateId": operationTemplateId,
               "pieceCount": pieceCount, "producedItemId": producedItemId,
               "appUserId": appUserId, "terminalLocationId": terminalLocationId,
-              "allowPartial": bool(allowPartial)}
+              "allowPartial": bool(allowPartial),
+              "scrapLinesJson": BlueRidge.Common.Util.convertWrapperObjectToJson(scrapLines or [])}
     result = BlueRidge.Common.Db.execMutation("workorder/MachiningOut_Mint", params)
     # Auto-print the new sublot's LTT label so the basket is scannable downstream.
     # printLabel does NOT raise on a print failure -- it RETURNS {Status:0,...} for the
