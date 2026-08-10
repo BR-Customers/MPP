@@ -171,7 +171,7 @@ scrap surface.
 
 ## Brief D — Label/print reliability & Honda shipping-label content (ENV-170, LBL-050/060/150)
 
-> **STATUS: 🟡 IN PROGRESS** (claimed 2026-08-07, session b11af470). Do not double-assign.
+> **STATUS: 🟢 DONE** (session b11af470, 2026-08-07). Spec `docs/superpowers/specs/2026-08-07-label-print-subsystem-design.md`, plan `docs/superpowers/plans/2026-08-07-label-print-subsystem.md`. Migration 0054 + render/die-rank UDFs + lifecycle procs/NQs + async dispatcher + PrintFailureGateway + banner. Full SQL suite 2618/2618 green; scan clean; code-review passed (2 fixes applied: gateway sendMessage session/page enumeration; worker marks PrintFailedAt after its 3 transport attempts). **FAT workbook rows ENV-170/LBL-050/060/150 NOT yet marked Pass** — the `.xlsx` had another agent's uncommitted edits, so a coordinated single-writer must set them (evidence: the 0025 lifecycle/render/die-rank tests + persisted-ZPL). **Not live-verified:** the gateway→banner push (needs a live plant-floor session + a triggered print failure; applied the documented session/page-enumeration pattern).
 
 **Mission (one subsystem, one spec):** make the shipping label template-driven + Honda-complete,
 persist rendered ZPL, and move print dispatch to Gateway-async with a real failure lifecycle.
