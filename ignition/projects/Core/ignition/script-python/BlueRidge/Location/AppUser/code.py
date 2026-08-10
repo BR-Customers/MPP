@@ -100,10 +100,30 @@ def emptyMeta():
 
 
 def getByInitials(initials):
-    """Resolve an AppUser by shop-floor initials. Returns a dict or None."""
+    """Resolve an AppUser by shop-floor initials, INCLUDING deprecated rows.
+
+       Initials are unique across the full lifecycle, so this is the history/
+       attribution lookup (a retired operator's initials still resolve). For
+       PRESENCE sign-in use getActiveByInitials instead -- a deprecated
+       operator must never resolve into a new production stamp (FAT-USR-090).
+       Returns a dict or None."""
     BlueRidge.Common.Util.log("initials=%s" % initials)
     return BlueRidge.Common.Db.execOne(
         "location/AppUser_GetByInitials",
+        {"initials": initials},
+    )
+
+
+def getActiveByInitials(initials):
+    """Resolve an ACTIVE (non-deprecated) AppUser by shop-floor initials.
+
+       The presence-eligibility gate (FAT-USR-090): unknown AND deprecated
+       initials both return None, so neither can sign in nor stamp a mutation.
+       The DeprecatedAt filter is enforced in SQL (Location.AppUser_
+       GetActiveByInitials), not here. Returns a dict or None."""
+    BlueRidge.Common.Util.log("initials=%s" % initials)
+    return BlueRidge.Common.Db.execOne(
+        "location/AppUser_GetActiveByInitials",
         {"initials": initials},
     )
 
@@ -158,15 +178,18 @@ def resolveForPresence(initials):
 
          {appUserId, initials, displayName, valid, checked}
 
-       valid=False / displayName="" when the initials are blank or unrecognised.
-       checked is always True (the resolve ran), so the view can distinguish
-       'not yet typed' (its initial default checked=False) from 'typed but bad'."""
+       valid=False / displayName="" when the initials are blank, unrecognised,
+       OR deprecated -- resolution goes through the active-only presence gate
+       (getActiveByInitials) so a retired operator is blocked exactly like an
+       unknown one (FAT-USR-090). checked is always True (the resolve ran), so
+       the view can distinguish 'not yet typed' (its initial default
+       checked=False) from 'typed but bad'."""
     BlueRidge.Common.Util.log("initials=%s" % initials)
     text = (initials or "").strip()
     if not text:
         return {"appUserId": None, "initials": "", "displayName": "",
                 "valid": False, "checked": True}
-    row = getByInitials(text)
+    row = getActiveByInitials(text)
     if not row:
         return {"appUserId": None, "initials": text, "displayName": "",
                 "valid": False, "checked": True}
