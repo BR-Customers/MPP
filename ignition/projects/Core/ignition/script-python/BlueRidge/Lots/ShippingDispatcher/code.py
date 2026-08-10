@@ -121,8 +121,13 @@ def _resolveEndpoint(terminalLocationId, printerLocationId):
 
 
 def _dispatchWorker(shippingLabelId, endpoint, zpl):
-    """GATEWAY-ASYNC: 3 attempts w/ ~2s backoff, log each, then record the outcome on the
-       ShippingLabel row. Never throws (runs detached on a gateway thread)."""
+    """GATEWAY-ASYNC: the FULL retry policy for one dispatch = _MAX_ATTEMPTS socket writes
+       w/ ~2s backoff (the FAT '3 attempts / 2s gap'), log each, then record the outcome.
+       A worker cycle that exhausts all transport attempts IS terminal, so MarkDispatch is
+       called with maxAttempts=1 -> a failed cycle stamps PrintFailedAt immediately (the
+       operator sees the banner now, not after N stranded-sweep passes). The sweep only
+       re-fires rows that never ran a cycle (a Gateway restart -- PrintFailedAt still NULL).
+       Never throws (runs detached on a gateway thread)."""
     outcome = {"ok": False, "error": "not attempted"}
     try:
         for attempt in range(_MAX_ATTEMPTS):
@@ -136,7 +141,7 @@ def _dispatchWorker(shippingLabelId, endpoint, zpl):
             "shippingLabelId": shippingLabelId,
             "success":         1 if outcome.get("ok") else 0,
             "errorText":       None if outcome.get("ok") else (outcome.get("error") or "unknown"),
-            "maxAttempts":     _MAX_ATTEMPTS,
+            "maxAttempts":     1,
         })
     except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("_dispatchWorker failed for label %s: %s" % (shippingLabelId, str(e)), level="debug")

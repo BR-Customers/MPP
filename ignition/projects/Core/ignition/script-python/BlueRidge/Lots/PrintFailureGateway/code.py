@@ -20,6 +20,28 @@ import java.lang
 _STRAND_ALARM_THRESHOLD = 5
 
 
+def _pushToAllSessions(payload):
+    """Deliver a 'print-failure-alert' to every open session/page.
+
+       system.perspective.sendMessage from GATEWAY scope has NO broadcast form -- a bare
+       scope='session'/'page' call with no sessionId/pageId delivers to nothing (project
+       rule: feedback_ignition_gateway_sendmessage_needs_session_page). So enumerate every
+       session + page and target each explicitly; the PrintFailureBanner's session-scoped
+       handler filters by terminalLocationId. Never throws."""
+    try:
+        for s in (system.perspective.getSessionInfo() or []):
+            sid = s["id"] if "id" in s else s.get("id")
+            for pid in (s.get("pageIds") or []):
+                try:
+                    system.perspective.sendMessage(
+                        "print-failure-alert", payload=payload,
+                        scope="page", sessionId=sid, pageId=pid)
+                except (Exception, java.lang.Exception):
+                    pass
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("_pushToAllSessions failed: %s" % str(e), level="debug")
+
+
 def sweepTick():
     """Re-dispatch stranded shipping labels; flip un-startable ones to failed; alarm on a pile-up."""
     try:
@@ -42,33 +64,23 @@ def sweepTick():
         if len(stranded) > _STRAND_ALARM_THRESHOLD:
             msg = "print sweep: %d stranded shipping labels (supervisor/IT)" % len(stranded)
             BlueRidge.Common.Util.log(msg, level="warn")
-            try:
-                system.perspective.sendMessage(
-                    "print-failure-alert",
-                    payload={"level": "critical", "strandedCount": len(stranded), "message": msg},
-                    scope="session")
-            except (Exception, java.lang.Exception):
-                pass
+            _pushToAllSessions({"level": "critical", "strandedCount": len(stranded), "message": msg})
     except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("sweepTick failed: %s" % str(e), level="debug")
 
 
 def broadcastTick():
-    """Broadcast a 'print-failure-alert' per failed-unacknowledged label; the terminal banner filters."""
+    """Push a 'print-failure-alert' per failed-unacknowledged label; the terminal banner filters."""
     try:
         failed = BlueRidge.Common.Db.execList("lots/ShippingLabel_GetForBanner") or []
         for row in failed:
-            payload = {
+            _pushToAllSessions({
                 "shippingLabelId":    row.get("Id"),
                 "containerId":        row.get("ContainerId"),
                 "terminalLocationId": row.get("TerminalLocationId"),
                 "aimShipperId":       row.get("AimShipperId"),
                 "error":              row.get("LastPrintError"),
                 "level":              "error",
-            }
-            try:
-                system.perspective.sendMessage("print-failure-alert", payload=payload, scope="session")
-            except (Exception, java.lang.Exception):
-                pass
+            })
     except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("broadcastTick failed: %s" % str(e), level="debug")
