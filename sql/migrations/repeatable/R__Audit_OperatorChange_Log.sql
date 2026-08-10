@@ -48,9 +48,15 @@ BEGIN
         IF @NewInit IS NULL
         BEGIN
             SET @Message = N'New operator (AppUser ' + CAST(@NewAppUserId AS NVARCHAR(20)) + N') not found.';
-            EXEC Audit.Audit_LogFailure @AppUserId = @NewAppUserId, @LogEntityTypeCode = N'AppUser',
-                @EntityId = @NewAppUserId, @LogEventTypeCode = N'OperatorChanged', @FailureReason = @Message,
-                @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+            -- Attribute this reject to the CALLER (@AppUserId), never the unresolved
+            -- @NewAppUserId -- Audit.FailureLog.AppUserId is a NOT NULL FK -> AppUser, so
+            -- logging against a non-existent operator FK-violates (and under INSERT-EXEC the
+            -- resulting CATCH ROLLBACK throws Msg 3915). Skip the failure log when no valid
+            -- attribution user exists (nothing to attribute to).
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
+                EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'AppUser',
+                    @EntityId = @NewAppUserId, @LogEventTypeCode = N'OperatorChanged', @FailureReason = @Message,
+                    @ProcedureName = @ProcName, @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message; RETURN;
         END
 
