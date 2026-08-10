@@ -262,12 +262,15 @@ active initial → valid, and (if applicable) history reads still resolve deprec
 
 ## Brief F — Scrap against a held LOT + container-hold alert (FAT-QH-150, FAT-QH-170)
 
-> **STATUS: 🟢 CODE COMPLETE** (session ab13b4e8, 2026-08-07). Backend + view + tests landed on
-> `jacques/working` (commits `32f6a826` spec, `8adfb4a0` backend, `1a04b580` view, `0f0a5f10`
-> review-fixes); SQL suite green (2377/0, +37 new Brief-F asserts); code-review passed. **FAT rows
-> not yet marked Pass:** live operator click-through of the HoldManagement Scrap panel + advisory is
-> blocked by an **expired Perspective trial** on the shared dev gateway (reset needs gateway-admin
-> login). View deserializes with no gateway errors; retest once the trial is reset.
+> **STATUS: ✅ DONE** (impl session ab13b4e8; verification session 31dc0442, 2026-08-07). Backend +
+> view + tests landed on `jacques/working` (commits `32f6a826` spec, `8adfb4a0` backend, `1a04b580`
+> view, `0f0a5f10` review-fixes); SQL suite green (Brief-F suite 83/83, incl. QH-150 scrap-in-place
+> + QH-170 associated-containers); code-review passed. **Verified 2026-08-07 after the Perspective
+> trial was reset:** HoldManagement renders both new panels (Scrap Held LOT + Associated-containers
+> advisory) with no view errors; procs deployed to `MPP_MES_Dev`. FAT-QH-150 + FAT-QH-170 marked
+> Pass in the practice workbook (uncommitted shared binary). Caveat: the operator-*typed* UI submit
+> is backed by the automated proc-path tests, not a live keystroke witness — the browser tool can't
+> commit Perspective form inputs; a ~60s human spot-check is recommended.
 
 **Mission:** let an operator register a **scrap event directly against a held LOT** (no split, no
 hold release), and surface an **associated-container advisory** when a LOT is held. Closes
