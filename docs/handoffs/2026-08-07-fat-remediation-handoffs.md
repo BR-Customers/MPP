@@ -53,7 +53,10 @@ scan). E has no view work. Recommended order if serializing end-to-end: **E → 
 
 ## Brief A — Operation Template Draft/Published lifecycle (FAT-OQ-030)
 
-> **STATUS: 🟡 IN PROGRESS** (claimed 2026-08-07, session 31dc0442). Do not double-assign.
+> **STATUS: ✅ DONE** (2026-08-07, session 31dc0442). Migration 0053 + Publish/DiscardDraft
+> procs + resolver gate + editor Publish button/badges; 91/91 tests green; deployed to
+> MPP_MES_Dev; FAT-OQ-030 marked Pass. Commits 088e5064 (spec), f9849a8f (backend),
+> 2be9cc18 (view), + code-review fixes.
 
 **Mission:** give `Parts.OperationTemplate` the same three-state Draft/Published/Deprecated
 lifecycle `RouteTemplate` and `Bom` already have, so "New Version" produces an editable Draft that
@@ -219,7 +222,10 @@ shipping/print views (`ShippingDock` etc.) for the banner; tests.
 
 ## Brief E — Deprecated initials blocked at presence sign-in (FAT-USR-090)
 
-> **STATUS: 🟡 IN PROGRESS** (claimed 2026-08-07, session 0170f14a). Do not double-assign.
+> **STATUS: ✅ DONE** (2026-08-07, session 0170f14a). Impl commit `6c04952`; spec
+> `docs/superpowers/specs/2026-08-07-deprecated-initials-presence-design.md`; tests green (045);
+> code-review clean. FAT-USR-090 marked Pass in the practice workbook (uncommitted — shared binary,
+> left for Jacques to commit alongside other agents' FAT updates).
 
 **Mission:** reject **deprecated** operator initials at presence sign-in (unknown ones already are).
 Closes FAT-USR-090. Small but genealogy-critical (Honda attribution).
@@ -250,7 +256,12 @@ active initial → valid, and (if applicable) history reads still resolve deprec
 
 ## Brief F — Scrap against a held LOT + container-hold alert (FAT-QH-150, FAT-QH-170)
 
-> **STATUS: 🟡 IN PROGRESS** (claimed 2026-08-07, session ab13b4e8). Do not double-assign.
+> **STATUS: 🟢 CODE COMPLETE** (session ab13b4e8, 2026-08-07). Backend + view + tests landed on
+> `jacques/working` (commits `32f6a826` spec, `8adfb4a0` backend, `1a04b580` view, `0f0a5f10`
+> review-fixes); SQL suite green (2377/0, +37 new Brief-F asserts); code-review passed. **FAT rows
+> not yet marked Pass:** live operator click-through of the HoldManagement Scrap panel + advisory is
+> blocked by an **expired Perspective trial** on the shared dev gateway (reset needs gateway-admin
+> login). View deserializes with no gateway errors; retest once the trial is reset.
 
 **Mission:** let an operator register a **scrap event directly against a held LOT** (no split, no
 hold release), and surface an **associated-container advisory** when a LOT is held. Closes
