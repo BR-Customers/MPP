@@ -38,7 +38,8 @@ def registry():
          "params": [{"id": "StartDate", "label": "Start", "kind": "dateRange"},
                     {"id": "EndDate", "label": "End", "kind": "dateRange"}]},
         {"key": "lot_detail", "title": "Lot Detail",
-         "desc": "Full traceability sheet for a scanned LOT.", "available": False,
+         "desc": "Full traceability sheet for a scanned LOT.", "available": True,
+         "project": "MPP", "reportPath": "Lot Detail",
          "params": [{"id": "LotId", "label": "LOT", "kind": "lot", "required": True}]},
         {"key": "shot_count", "title": "Die Cast Shot Count",
          "desc": "Shots per die vs. shot-limit.", "available": True,
@@ -83,7 +84,21 @@ def shiftOptions():
         return []
 
 
-def composeParams(selectedKey, shiftId, startDate, endDate):
+def lotOptions():
+    """Dropdown options for the LOT picker (label + LotId value), newest first.
+    Wraps the Core NQ reports/Lot_ListForPicker. Safe [] on any DB/JDBC error."""
+    try:
+        ds = system.db.runNamedQuery("reports/Lot_ListForPicker", {})
+        out = []
+        for r in range(ds.getRowCount()):
+            out.append({"label": ds.getValueAt(r, "label"), "value": ds.getValueAt(r, "value")})
+        return out
+    except (Exception, _JavaThrowable) as e:
+        logger.warn("lotOptions failed: %s" % str(e))
+        return []
+
+
+def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None):
     """Build the report-parameter dict for the Report Viewer from the landing page's
     inputs, keyed by which report is selected. Bound (runScript) to view.custom.reportParams.
     NEVER returns an empty dict (the Report Viewer rejects a report given empty params)."""
@@ -94,6 +109,8 @@ def composeParams(selectedKey, shiftId, startDate, endDate):
             return {"MinPieces": 0}
         if selectedKey == "shot_count":
             return {"MinShots": 0}
+        if selectedKey == "lot_detail":
+            return {"LotId": lotId}
         return {"ShiftId": shiftId if shiftId is not None else ""}
     except (Exception, _JavaThrowable) as e:
         logger.warn("composeParams failed for '%s': %s" % (selectedKey, str(e)))

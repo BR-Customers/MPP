@@ -6,14 +6,16 @@
     "selectedDesc": "Loss analysis for one shift, by machine and reason.",
     "selectedKey": "downtime_shift",
     "selectedShift": null,
-    "selectedTitle": "Downtime by Shift"
+    "selectedTitle": "Downtime by Shift",
+    "selectedLot": null,
+    "lotOpts": []
   },
   "params": {},
   "propConfig": {
     "custom.reportParams": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Reports.composeParams\", 0, {view.custom.selectedKey}, {view.custom.selectedShift}, {view.custom.rangeStart}, {view.custom.rangeEnd})"
+          "expression": "runScript(\"BlueRidge.Reports.composeParams\", 0, {view.custom.selectedKey}, {view.custom.selectedShift}, {view.custom.rangeStart}, {view.custom.rangeEnd}, {view.custom.selectedLot})"
         },
         "type": "expr"
       }
@@ -24,6 +26,14 @@
           "expression": "runScript(\"BlueRidge.Reports.shiftOptions\")"
         },
         "type": "expr"
+      }
+    },
+    "custom.lotOpts": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Reports.lotOptions\")"
+        }
       }
     }
   },
@@ -225,7 +235,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tself.view.rootContainer.selectReport(\"lot_detail\", \"Lot Detail\", \"Full traceability sheet for a scanned LOT.\", \"\", False)"
+                    "script": "\tself.view.rootContainer.selectReport(\"lot_detail\", \"Lot Detail\", \"Full traceability sheet for a scanned LOT.\", \"Lot Detail\", True)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -656,6 +666,49 @@
                   }
                 },
                 "type": "ia.input.date-time-input"
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": {
+                  "name": "LotDropdown"
+                },
+                "position": {
+                  "basis": "320px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "meta.visible": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.selectedKey} = \"lot_detail\""
+                      }
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.lotOpts"
+                      }
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selectedLot"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select LOT",
+                  "style": {
+                    "classes": "pf-field-select"
+                  }
+                }
               },
               {
                 "events": {
