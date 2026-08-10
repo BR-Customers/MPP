@@ -293,7 +293,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tself.view.rootContainer.selectReport(\"shot_count\", \"Die Cast Shot Count\", \"Shots per die vs. shot-limit, over a period.\", \"\", False)"
+                    "script": "\tself.view.rootContainer.selectReport(\"shot_count\", \"Die Cast Shot Count\", \"Shots per die vs. shot-limit.\", \"Die Cast Shot Count\", True)"
                   },
                   "scope": "G",
                   "type": "script"

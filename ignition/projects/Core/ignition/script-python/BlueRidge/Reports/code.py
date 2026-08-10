@@ -41,8 +41,8 @@ def registry():
          "desc": "Full traceability sheet for a scanned LOT.", "available": False,
          "params": [{"id": "LotId", "label": "LOT", "kind": "lot", "required": True}]},
         {"key": "shot_count", "title": "Die Cast Shot Count",
-         "desc": "Shots per die vs. shot-limit, over a period.", "available": False,
-         "params": [{"id": "StartDate", "label": "Period", "kind": "dateRange"}]},
+         "desc": "Shots per die vs. shot-limit.", "available": True,
+         "project": "MPP", "reportPath": "Die Cast Shot Count", "params": []},
         {"key": "line_perf", "title": "Production Line Performance",
          "desc": "Output, scrap and downtime by line, per shift/week.", "available": False,
          "params": [{"id": "Period", "label": "Period", "kind": "period"}]},
@@ -92,6 +92,8 @@ def composeParams(selectedKey, shiftId, startDate, endDate):
             return {"StartDate": startDate, "EndDate": endDate}
         if selectedKey == "inventory":
             return {"MinPieces": 0}
+        if selectedKey == "shot_count":
+            return {"MinShots": 0}
         return {"ShiftId": shiftId if shiftId is not None else ""}
     except (Exception, _JavaThrowable) as e:
         logger.warn("composeParams failed for '%s': %s" % (selectedKey, str(e)))
