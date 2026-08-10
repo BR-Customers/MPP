@@ -238,6 +238,158 @@ DECLARE @cast5Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lo
 EXEC test.Assert_IsEqual @TestName = N'[MoScrap] over-scrap leaves casting unchanged (5)', @Expected = N'5', @Actual = @cast5Pc;
 GO
 
+-- =============================================
+-- Test 6: AllowPartial + scrap, MULTI-casting. Scrap on the scanned casting reduces
+--   the mintable pool (@NetAvail), and the partial reduction mints exactly @NetAvail.
+--   A(scanned,oldest)=10, B(newer)=6 -> TotalAvail 16; scrap 4 on A -> NetAvail 12.
+--   Request 20, AllowPartial=1 -> mint 12 (A drained 10-4scrap-6consume=0 closed,
+--   B 6-6=0 closed). No casting negative.
+-- =============================================
+DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
+DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
+    JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+    JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
+    WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
+UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
+  WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
+DECLARE @A6 BIGINT, @B6 BIGINT;
+CREATE TABLE #A6 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #A6 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=10, @AppUserId=@U;
+SELECT @A6 = NewId FROM #A6; DELETE FROM #A6;
+INSERT INTO #A6 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=6, @AppUserId=@U;
+SELECT @B6 = NewId FROM #A6; DROP TABLE #A6;
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT l.Id, rs.OperationTemplateId, SYSUTCDATETIME(), 10, @U
+FROM (SELECT @A6 AS Id UNION ALL SELECT @B6) l
+CROSS JOIN Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
+DECLARE @D6 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Json6 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D6 AS NVARCHAR(20)) + N',"quantity":4}]';
+DECLARE @m6 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
+INSERT INTO @m6 EXEC Workorder.MachiningOut_Mint @SourceLotId=@A6, @OperationTemplateId=@MoTpl, @PieceCount=20, @ScrapLinesJson=@Json6, @AppUserId=@U, @TerminalLocationId=@Line, @AllowPartial=1;
+DECLARE @m6Status NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @m6);
+DECLARE @m6Avail NVARCHAR(10) = (SELECT CAST(Available AS NVARCHAR(10)) FROM @m6);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] partial+scrap multi-casting succeeds', @Expected = N'1', @Actual = @m6Status;
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] partial Available is net of scrap (16-4=12)', @Expected = N'12', @Actual = @m6Avail;
+DECLARE @m6Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=(SELECT NewId FROM @m6));
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] partial mints exactly NetAvail (12)', @Expected = N'12', @Actual = @m6Pc;
+DECLARE @a6Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@A6);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] scanned casting drained 10-4scrap-6consume=0', @Expected = N'0', @Actual = @a6Pc;
+DECLARE @b6Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@B6);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] second casting drained 6-6=0', @Expected = N'0', @Actual = @b6Pc;
+DECLARE @neg6 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.Lot WHERE Id IN (@A6,@B6) AND PieceCount < 0);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] no casting negative (partial+scrap)', @Expected = N'0', @Actual = @neg6;
+DECLARE @rej6 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent WHERE LotId=@A6);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] one RejectEvent on scanned casting (partial)', @Expected = N'1', @Actual = @rej6;
+GO
+
+-- =============================================
+-- Test 7: scanned casting FULLY scrapped to 0 -> closed BEFORE the FIFO walk, in a
+--   multi-casting context. A(scanned,oldest)=5 fully scrapped; B(newer)=10 eligible.
+--   Mint 8 -> A closed (0, not consumed), B 10-8=2, minted 8 (named off B). A is NOT
+--   a genealogy parent.
+-- =============================================
+DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
+DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
+    JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+    JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
+    WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
+UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
+  WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
+DECLARE @A7 BIGINT, @B7 BIGINT;
+CREATE TABLE #A7 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #A7 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=5, @AppUserId=@U;
+SELECT @A7 = NewId FROM #A7; DELETE FROM #A7;
+INSERT INTO #A7 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=10, @AppUserId=@U;
+SELECT @B7 = NewId FROM #A7; DROP TABLE #A7;
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT l.Id, rs.OperationTemplateId, SYSUTCDATETIME(), 10, @U
+FROM (SELECT @A7 AS Id UNION ALL SELECT @B7) l
+CROSS JOIN Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
+DECLARE @D7 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Json7 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D7 AS NVARCHAR(20)) + N',"quantity":5}]';
+DECLARE @m7 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
+INSERT INTO @m7 EXEC Workorder.MachiningOut_Mint @SourceLotId=@A7, @OperationTemplateId=@MoTpl, @PieceCount=8, @ScrapLinesJson=@Json7, @AppUserId=@U, @TerminalLocationId=@Line;
+DECLARE @m7Status NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @m7);
+DECLARE @m7Lot BIGINT = (SELECT NewId FROM @m7);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] fully-scrapped scanned casting: mint from other casting succeeds', @Expected = N'1', @Actual = @m7Status;
+DECLARE @a7Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@A7);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] fully-scrapped casting drained to 0', @Expected = N'0', @Actual = @a7Pc;
+DECLARE @a7St NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@A7);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] fully-scrapped casting Closed', @Expected = N'Closed', @Actual = @a7St;
+DECLARE @b7Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@B7);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] other casting consumed 10-8=2', @Expected = N'2', @Actual = @b7Pc;
+DECLARE @m7Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@m7Lot);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] minted 8 from the other casting', @Expected = N'8', @Actual = @m7Pc;
+DECLARE @a7Parent NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotGenealogy WHERE ParentLotId=@A7 AND ChildLotId=@m7Lot);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] fully-scrapped casting NOT a genealogy parent', @Expected = N'0', @Actual = @a7Parent;
+DECLARE @rej7 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent WHERE LotId=@A7);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] RejectEvent on the fully-scrapped casting', @Expected = N'1', @Actual = @rej7;
+GO
+
+-- =============================================
+-- Test 8: scanned casting NOT in the FIFO-eligible set (@SrcEligible=0). Scanned A=8
+--   is pre-stamped ONLY through TrimOut (next-pending = MachiningIn, not MachiningOut),
+--   so it never counts toward @TotalAvail; eligible B=10 does. Scrap 3 on A decrements
+--   A but does NOT reduce @NetAvail. Mint 6 consumes from B only; Available reports 10.
+-- =============================================
+DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
+DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
+    JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+    JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
+    WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
+UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
+  WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
+DECLARE @A8 BIGINT, @B8 BIGINT;
+CREATE TABLE #A8 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #A8 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=8, @AppUserId=@U;
+SELECT @A8 = NewId FROM #A8; DELETE FROM #A8;
+INSERT INTO #A8 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=10, @AppUserId=@U;
+SELECT @B8 = NewId FROM #A8; DROP TABLE #A8;
+-- A8: pre-stamp ONLY DieCast/TrimIn/TrimOut -> next-pending = MachiningIn (ineligible)
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT @A8, rs.OperationTemplateId, SYSUTCDATETIME(), 8, @U
+FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
+JOIN Parts.OperationType oty2 ON oty2.Id = ot2.OperationTypeId
+WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+  AND oty2.Code IN (N'DieCast', N'TrimIn', N'TrimOut');
+-- B8: fully eligible (pre-stamped past MachiningIn)
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT @B8, rs.OperationTemplateId, SYSUTCDATETIME(), 10, @U
+FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
+DECLARE @D8 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Json8 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D8 AS NVARCHAR(20)) + N',"quantity":3}]';
+DECLARE @m8 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
+INSERT INTO @m8 EXEC Workorder.MachiningOut_Mint @SourceLotId=@A8, @OperationTemplateId=@MoTpl, @PieceCount=6, @ScrapLinesJson=@Json8, @AppUserId=@U, @TerminalLocationId=@Line;
+DECLARE @m8Status NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @m8);
+DECLARE @m8Lot BIGINT = (SELECT NewId FROM @m8);
+DECLARE @m8Avail NVARCHAR(10) = (SELECT CAST(Available AS NVARCHAR(10)) FROM @m8);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] ineligible-source mint succeeds (consumes eligible queue)', @Expected = N'1', @Actual = @m8Status;
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] Available NOT reduced by scrap on ineligible source (=10)', @Expected = N'10', @Actual = @m8Avail;
+DECLARE @a8Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@A8);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] ineligible scanned casting decremented by scrap only (8-3=5)', @Expected = N'5', @Actual = @a8Pc;
+DECLARE @a8St NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@A8);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] ineligible scanned casting stays Good', @Expected = N'Good', @Actual = @a8St;
+DECLARE @b8Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@B8);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] eligible casting consumed 10-6=4', @Expected = N'4', @Actual = @b8Pc;
+DECLARE @m8Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@m8Lot);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] minted 6 from the eligible casting', @Expected = N'6', @Actual = @m8Pc;
+DECLARE @a8Parent NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotGenealogy WHERE ParentLotId=@A8 AND ChildLotId=@m8Lot);
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] ineligible scanned casting NOT a genealogy parent', @Expected = N'0', @Actual = @a8Parent;
+GO
+
 -- ---- teardown (FK-safe): all LOTs of the fixture items 12270-6NA / 12270-6NA-M ----
 DECLARE @Cast BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
 DECLARE @Mach BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA-M');
