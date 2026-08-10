@@ -7,16 +7,26 @@
 
 ## Setup
 
+**Use the real pass-through station** — built in Dev on 2026-08-10 via
+`sql/scratch/_seed_insp_passthrough_dev.sql`, mirroring the production seed. A pass-through station
+is its own terminal, **not** part of any production line.
+
 | | |
 |---|---|
-| **Terminal** | `MA2-6FBCHOP-AOUT` — zone **6FB CH/OP** = cell **162** |
+| **Terminal** | `INSP-SORT-T1` ("Inspection") — tree: **Inspection → Sort Cage Inspection → Inspection** |
+| **Cell (zone)** | `INSP-SORT` "Sort Cage Inspection" = location **197** |
 | **Operator initials** | `DEV` (or `SYS`) |
-| **Finished good** | item 23 `11200-6FB -A000`, published BOM 8 |
-| **BOM children** | `92900-06014-1B` (1 per) · `94301-08100` (2 per) |
-| **Pack-out** | 3 parts/tray, 2 trays/container — both `ByCount` and `ByVision` configured |
-| **Stock at 162 now** | `11200-6FB -A000` 6 · `92900-06014-1B` 6 · `94301-08100` 12 |
+| **Finished good** | item 23 `11200-6FB -A000`, published BOM 8, Direct eligibility at 197 |
+| **BOM children** | `92900-06014-1B` (1 per) · `94301-08100` (2 per) — both **BomDerived** eligible automatically |
+| **Closure method** | `ByCount` · 3 parts/tray, 2 trays/container |
+| **Stock at 197** | **none** — that's the point; you receive it |
+| **Printer** | **none on this terminal** (`HasPrinter 0`) — every LTT print will fail |
 
-Bind the terminal at `/shop-floor/terminal-selector` (tree: Machining & Assembly 2 → 6FB CH/OP → the AOUT terminal, or scan `MA2-6FBCHOP-AOUT`).
+Picking the terminal auto-navigates to `/shop-floor/third-party-inspection` (its `DefaultScreen`).
+
+> **The missing printer is expected, not a failure.** The LOT is still created and is still
+> consumable; you get an error toast plus a "Reprint LTT" button. That *is* smoke step 6. If you'd
+> rather test the happy print path, assign a printer to the terminal first.
 
 > **⚠️ STOP AT "CLOSE TRAY". Do not press "Complete".**
 > `AimPostingEnabled` is now `0`, so nothing posts to Honda's AIM server. But that flag gates the
@@ -40,10 +50,11 @@ Bind the terminal at `/shop-floor/terminal-selector` (tree: Machining & Assembly
 
 ## 1. Receive a pass-through LOT — Inventory tab
 
-- [ ] Part Number: pick **`94301-08100`**
-- [ ] Piece Count: **10**
-- [ ] Vendor LOT Number: anything, e.g. `VND-SMOKE-1` (optional)
-- [ ] Tap **Create LOT**
+The station starts with **no stock**, so receive both BOM children — that is the real pass-through
+flow, and step 3 needs them.
+
+- [ ] `94301-08100`, Piece Count **10**, Vendor LOT e.g. `VND-SMOKE-1` → **Create LOT**
+- [ ] `92900-06014-1B`, Piece Count **5** → **Create LOT**
 
 **Expect:** "LOT created" toast → LTT print attempt → **form clears** → **screen does NOT navigate away** → new LOT appears in the on-hand panel with a **GOOD** pill.
 
@@ -55,7 +66,7 @@ Bind the terminal at `/shop-floor/terminal-selector` (tree: Machining & Assembly
 
 - [ ] Switch to the **Assembly** tab. **Do not press Refresh.**
 
-**Expect:** the component projection already reflects the receive — `94301-08100` availability is 10 higher than before.
+**Expect:** the component projection already reflects the receives — `94301-08100` at 10 and `92900-06014-1B` at 5, where the station showed nothing before.
 
 **Fails if:** it's stale until you hit Refresh (the page-scoped `inventoryChanged` message isn't landing).
 
@@ -66,7 +77,7 @@ Bind the terminal at `/shop-floor/terminal-selector` (tree: Machining & Assembly
 - [ ] On the Assembly tab, finished good = `11200-6FB -A000`, parts count = **3**
 - [ ] Tap **Close Tray** — **then stop. Do not press Complete.**
 
-**Expect:** FG LOT minted. It consumes 3 × `92900-06014-1B` and 6 × `94301-08100` from cell 162.
+**Expect:** FG LOT minted, consuming 3 × `92900-06014-1B` and 6 × `94301-08100` from cell 197 — i.e. entirely from the pass-through LOTs you just received, leaving 2 and 4 on hand.
 
 - [ ] Open the new FG LOT in **LOT Detail → genealogy**
 
@@ -78,19 +89,19 @@ Bind the terminal at `/shop-floor/terminal-selector` (tree: Machining & Assembly
 
 **Expect:** error toast `Item is not eligible at the specified location.` and **no LOT created**.
 
-*These three are the only active parts not eligible at cell 162 — verified against `v_EffectiveItemLocation`.*
+*Verified against `v_EffectiveItemLocation`: only `11200-6FB -A000` (Direct) plus the two BOM children (BomDerived) are eligible at cell 197, so anything else is a valid negative.*
 
 > **Two rejection tests from the plan are NOT runnable as configured, so they're dropped:**
 > - **Over `MaxLotSize`** — `MaxLotSize` is NULL on both parts eligible here. To test it, set a
 >   `MaxLotSize` on item 21 or 22 in Config Tool → Item Master first.
-> - **Over `MaxParts`** — cell 162 has no `MaxParts` attribute configured. Set one on the location first.
+> - **Over `MaxParts`** — cell 197 has no `MaxParts` attribute configured. Set one on the location first.
 >
 > Both are pre-existing gates with SQL test coverage (`041_Lot_Create_maxparts`); skipping them here
 > only leaves them unproven *through this screen*.
 
 ## 5. ⭐ The status pill tells the truth
 
-- [ ] Place a hold on one of the on-hand LOTs at cell 162 — AppMenu → **Hold Management**, or LOT Detail
+- [ ] Place a hold on one of the pass-through LOTs you received at cell 197 — AppMenu → **Hold Management**, or LOT Detail
 - [ ] Return to the **Inventory** tab
 
 **Expect:** that row's pill reads **HOLD**, not GOOD.
