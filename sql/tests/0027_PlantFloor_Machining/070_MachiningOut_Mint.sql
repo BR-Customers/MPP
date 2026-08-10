@@ -4,9 +4,16 @@
 --               SubAssembly LOT by consuming the casting; Consumption genealogy
 --               (RelationshipTypeId=3), NOT Split; flexible qty; casting stays open
 --               on a partial mint, closes when fully consumed; over-mint rejected.
---               Fixture: casting 5G0-c, SubAssembly 5G0-SA, seed BOM 5G0-SA<-5G0-c
---               (020_seed_items), at line cell MA1-5GOF-MOUT (both eligible via the
---               5G0 line). Casting basket cap = 24, so the fixture places 24 pcs.
+--               Fixture: casting 12270-6NA, SubAssembly 12270-6NA-M, BOM 12270-6NA-M
+--               <- 12270-6NA x1 (auto-created), at line cell MA1-FP6NA-MOUT (both
+--               eligible via the 6NA line). MaxLotSize = 12, so all fixture castings
+--               stay <= 12 pcs.
+--
+--               Repointed 2026-08-07 off the 5G0-c / MA1-5GOF-MOUT fixture: the
+--               MA1-5GOF-MOUT terminal was DEPRECATED (Deprecated=1 in
+--               _site_locations.tsv; the gen script omits it), so the 5G0 line no
+--               longer has a Machining-OUT terminal and that fixture is orphaned.
+--               MA1-FP6NA-MOUT is an existing, active Machining-OUT terminal.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -14,17 +21,18 @@ EXEC test.BeginTestFile @FileName = N'0027_PlantFloor_Machining/070_MachiningOut
 GO
 
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
-DECLARE @Uom BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'PCS');
-DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Machined BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Uom BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'EA');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Machined BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA-M');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
     JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
     WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
 
--- Fixture BOM: 6MA-M <- 6MA-C x1 (makes 6MA-C BOM-eligible where 6MA-M is eligible).
+-- Fixture BOM: 12270-6NA-M <- 12270-6NA x1 (makes 12270-6NA BOM-eligible where
+-- 12270-6NA-M is eligible). Auto-created here (no seed BOM for this pair).
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId = @Machined AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
 BEGIN
     DECLARE @bc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -36,26 +44,26 @@ BEGIN
     INSERT INTO @bp EXEC Parts.Bom_Publish @Id = @Bom, @AppUserId = @U;
 END
 
--- Place a 24-pc casting at the line.
+-- Place a 12-pc casting at the line (MaxLotSize = 12).
 DECLARE @CastLot BIGINT;
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Casting, @LotOriginTypeId = @Origin, @CurrentLocationId = @Line, @PieceCount = 24, @AppUserId = @U;
+INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Casting, @LotOriginTypeId = @Origin, @CurrentLocationId = @Line, @PieceCount = 12, @AppUserId = @U;
 SELECT @CastLot = NewId FROM #C; DROP TABLE #C;
 
 -- Pre-stamp DieCast/TrimIn/TrimOut/MachiningIn checkpoints (every route step before
 -- MachiningOut) so the casting's next-PENDING route step is MachiningOut -- required
 -- eligibility since v2.1 tightened the FIFO candidate set to mirror Lot_GetWipQueueByLocation.
 INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
-SELECT @CastLot, rs.OperationTemplateId, SYSUTCDATETIME(), 24, @U
+SELECT @CastLot, rs.OperationTemplateId, SYSUTCDATETIME(), 12, @U
 FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
 WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
 
 DECLARE @castCreated NVARCHAR(10) = CASE WHEN @CastLot IS NULL THEN N'0' ELSE N'1' END;
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] casting fixture placed', @Expected = N'1', @Actual = @castCreated;
 
--- Mint 10 (partial): casting -> 14 remaining; 10-pc machined LOT born at the line.
+-- Mint 5 (partial): casting -> 7 remaining; 5-pc machined LOT born at the line.
 DECLARE @m TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
-INSERT INTO @m EXEC Workorder.MachiningOut_Mint @SourceLotId = @CastLot, @OperationTemplateId = @MoTpl, @PieceCount = 10, @AppUserId = @U, @TerminalLocationId = @Line;
+INSERT INTO @m EXEC Workorder.MachiningOut_Mint @SourceLotId = @CastLot, @OperationTemplateId = @MoTpl, @PieceCount = 5, @AppUserId = @U, @TerminalLocationId = @Line;
 DECLARE @mStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @m);
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] mint succeeds', @Expected = N'1', @Actual = @mStatus;
 DECLARE @MachLot BIGINT = (SELECT NewId FROM @m);
@@ -72,14 +80,14 @@ DECLARE @machExp NVARCHAR(20) = CAST(@Machined AS NVARCHAR(20));
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] minted LOT is the SubAssembly item', @Expected = @machExp, @Actual = @machItem;
 
 DECLARE @machPc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @MachLot);
-EXEC test.Assert_IsEqual @TestName = N'[MoMint] minted LOT is 10 pcs', @Expected = N'10', @Actual = @machPc;
+EXEC test.Assert_IsEqual @TestName = N'[MoMint] minted LOT is 5 pcs', @Expected = N'5', @Actual = @machPc;
 
 DECLARE @machLoc NVARCHAR(20) = (SELECT CAST(CurrentLocationId AS NVARCHAR(20)) FROM Lots.Lot WHERE Id = @MachLot);
 DECLARE @lineExp NVARCHAR(20) = CAST(@Line AS NVARCHAR(20));
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] minted LOT is line-resident', @Expected = @lineExp, @Actual = @machLoc;
 
 DECLARE @castRemain NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @CastLot);
-EXEC test.Assert_IsEqual @TestName = N'[MoMint] casting decrements to 14', @Expected = N'14', @Actual = @castRemain;
+EXEC test.Assert_IsEqual @TestName = N'[MoMint] casting decrements to 7', @Expected = N'7', @Actual = @castRemain;
 
 DECLARE @castOpen NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @CastLot);
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] casting stays open on partial mint', @Expected = N'Good', @Actual = @castOpen;
@@ -90,11 +98,11 @@ EXEC test.Assert_IsEqual @TestName = N'[MoMint] Consumption edge casting->machin
 DECLARE @splitEdge NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotGenealogy WHERE ChildLotId = @MachLot AND RelationshipTypeId = 1);
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] no Split edge written', @Expected = N'0', @Actual = @splitEdge;
 
-DECLARE @consEvt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.ConsumptionEvent WHERE SourceLotId = @CastLot AND ProducedLotId = @MachLot AND ConsumedItemId = @Casting AND ProducedItemId = @Machined AND PieceCount = 10);
+DECLARE @consEvt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.ConsumptionEvent WHERE SourceLotId = @CastLot AND ProducedLotId = @MachLot AND ConsumedItemId = @Casting AND ProducedItemId = @Machined AND PieceCount = 5);
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] ConsumptionEvent recorded', @Expected = N'1', @Actual = @consEvt;
 
--- Mint the remaining 14 -> casting closes.
-DELETE FROM @m; INSERT INTO @m EXEC Workorder.MachiningOut_Mint @SourceLotId = @CastLot, @OperationTemplateId = @MoTpl, @PieceCount = 14, @AppUserId = @U, @TerminalLocationId = @Line;
+-- Mint the remaining 7 -> casting closes.
+DELETE FROM @m; INSERT INTO @m EXEC Workorder.MachiningOut_Mint @SourceLotId = @CastLot, @OperationTemplateId = @MoTpl, @PieceCount = 7, @AppUserId = @U, @TerminalLocationId = @Line;
 
 -- Second child of the same casting -> '-02'; counter still not advanced by the mint.
 DECLARE @machLot2 BIGINT = (SELECT NewId FROM @m);
@@ -126,9 +134,9 @@ GO
 -- FIFO multi-source: two castings, mint spans both (oldest-first), 2 parents
 -- =============================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
-DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Machined BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Machined BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA-M');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
@@ -137,34 +145,28 @@ DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
 
 -- clear the leftover open 5-pc casting from the preceding [MoMint] over-mint-rejected
 -- block (that mint was rejected, so the casting it targeted was never consumed/closed)
--- so the FIFO queue total below is exactly @Old + @New, not @Small + @Old + @New.
+-- so the FIFO queue total below is exactly @Old + @New.
 UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
   WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
 
--- Oldest casting: 18 pcs. Newer casting: 24 pcs. (arrival order = creation order here)
--- NOTE: 5G0-c has Item.MaxLotSize=24 (Lot_Create rejects any PieceCount above the cap,
--- confirmed via manual repro during Task 1 TDD) -- the brief's original 30-pc newer
--- casting silently failed Lot_Create (captured Status=0 into an unchecked #FA), leaving
--- @New NULL and collapsing the FIFO queue to one casting. Capped at 24 (the item's max)
--- and the downstream assertion adjusted from 30-6=24 to 24-6=18 accordingly.
+-- Oldest casting: 5 pcs. Newer casting: 8 pcs. (arrival order = creation order here)
 DECLARE @Old BIGINT, @New BIGINT;
 CREATE TABLE #FA (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #FA EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=18, @AppUserId=@U;
+INSERT INTO #FA EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=5, @AppUserId=@U;
 SELECT @Old = NewId FROM #FA; DELETE FROM #FA;
-INSERT INTO #FA EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=24, @AppUserId=@U;
+INSERT INTO #FA EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=8, @AppUserId=@U;
 SELECT @New = NewId FROM #FA; DROP TABLE #FA;
 
 -- pre-stamp both castings past DieCast/TrimIn/TrimOut/MachiningIn so next-pending = MachiningOut
--- (see [MoMint] casting fixture note; required for MachiningOut FIFO-set eligibility)
 INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
-SELECT l.Id, rs.OperationTemplateId, SYSUTCDATETIME(), 24, @U
+SELECT l.Id, rs.OperationTemplateId, SYSUTCDATETIME(), 8, @U
 FROM (SELECT @Old AS Id UNION ALL SELECT @New) l
 CROSS JOIN Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
 WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
 
--- Mint 24: should draw 18 from @Old (closes it) + 6 from @New (stays open at 18).
+-- Mint 10: should draw 5 from @Old (closes it) + 5 from @New (stays open at 3).
 DECLARE @fm TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
-INSERT INTO @fm EXEC Workorder.MachiningOut_Mint @SourceLotId=@Old, @OperationTemplateId=@MoTpl, @PieceCount=24, @AppUserId=@U, @TerminalLocationId=@Line;
+INSERT INTO @fm EXEC Workorder.MachiningOut_Mint @SourceLotId=@Old, @OperationTemplateId=@MoTpl, @PieceCount=10, @AppUserId=@U, @TerminalLocationId=@Line;
 DECLARE @fmStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @fm);
 DECLARE @fmLot BIGINT = (SELECT NewId FROM @fm);
 EXEC test.Assert_IsEqual @TestName = N'[FIFO] mint spanning two castings succeeds', @Expected = N'1', @Actual = @fmStatus;
@@ -174,7 +176,7 @@ EXEC test.Assert_IsEqual @TestName = N'[FIFO] oldest casting drained to 0', @Exp
 DECLARE @oldSt NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@Old);
 EXEC test.Assert_IsEqual @TestName = N'[FIFO] oldest casting Closed', @Expected = N'Closed', @Actual = @oldSt;
 DECLARE @newPc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@New);
-EXEC test.Assert_IsEqual N'[FIFO] next casting 24-6=18', N'18', @newPc;
+EXEC test.Assert_IsEqual N'[FIFO] next casting 8-5=3', N'3', @newPc;
 DECLARE @newSt NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@New);
 EXEC test.Assert_IsEqual N'[FIFO] next casting stays Good', N'Good', @newSt;
 DECLARE @parents NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotGenealogy WHERE ChildLotId=@fmLot AND RelationshipTypeId=3);
@@ -189,43 +191,43 @@ GO
 -- Shortfall: reject (default) then partial (AllowPartial=1)
 -- =============================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
-DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
     WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
--- clear leftover open 5G0-c castings from the prior FIFO test so the queue total is known
+-- clear leftover open 12270-6NA castings from the prior FIFO test so the queue total is known
 UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
   WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
 DECLARE @S1 BIGINT;
 CREATE TABLE #SF (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #SF EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=20, @AppUserId=@U;
+INSERT INTO #SF EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=10, @AppUserId=@U;
 SELECT @S1 = NewId FROM #SF; DROP TABLE #SF;
 -- pre-stamp so @S1 is MachiningOut-eligible (see [MoMint] casting fixture note above)
 INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
-SELECT @S1, rs.OperationTemplateId, SYSUTCDATETIME(), 20, @U
+SELECT @S1, rs.OperationTemplateId, SYSUTCDATETIME(), 10, @U
 FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
 WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
 
--- request 24 with only 20 available, no partial -> reject, Available=20
+-- request 12 with only 10 available, no partial -> reject, Available=10
 DECLARE @sm TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
-INSERT INTO @sm EXEC Workorder.MachiningOut_Mint @SourceLotId=@S1, @OperationTemplateId=@MoTpl, @PieceCount=24, @AppUserId=@U, @TerminalLocationId=@Line;
+INSERT INTO @sm EXEC Workorder.MachiningOut_Mint @SourceLotId=@S1, @OperationTemplateId=@MoTpl, @PieceCount=12, @AppUserId=@U, @TerminalLocationId=@Line;
 DECLARE @smS NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @sm);
 DECLARE @smA NVARCHAR(10) = (SELECT CAST(Available AS NVARCHAR(10)) FROM @sm);
 EXEC test.Assert_IsEqual N'[Shortfall] rejected (no partial)', N'0', @smS;
-EXEC test.Assert_IsEqual N'[Shortfall] Available reported = 20', N'20', @smA;
+EXEC test.Assert_IsEqual N'[Shortfall] Available reported = 10', N'10', @smA;
 DECLARE @s1pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@S1);
-EXEC test.Assert_IsEqual N'[Shortfall] nothing consumed', N'20', @s1pc;
+EXEC test.Assert_IsEqual N'[Shortfall] nothing consumed', N'10', @s1pc;
 
--- request 24 with AllowPartial=1 -> mint 20, drain the queue
+-- request 12 with AllowPartial=1 -> mint 10, drain the queue
 DELETE FROM @sm;
-INSERT INTO @sm EXEC Workorder.MachiningOut_Mint @SourceLotId=@S1, @OperationTemplateId=@MoTpl, @PieceCount=24, @AppUserId=@U, @TerminalLocationId=@Line, @AllowPartial=1;
+INSERT INTO @sm EXEC Workorder.MachiningOut_Mint @SourceLotId=@S1, @OperationTemplateId=@MoTpl, @PieceCount=12, @AppUserId=@U, @TerminalLocationId=@Line, @AllowPartial=1;
 DECLARE @smS2 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @sm);
 DECLARE @pmLot BIGINT = (SELECT NewId FROM @sm);
 EXEC test.Assert_IsEqual N'[Partial] partial mint succeeds', N'1', @smS2;
 DECLARE @pmPc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@pmLot);
-EXEC test.Assert_IsEqual N'[Partial] minted 20 (all available)', N'20', @pmPc;
+EXEC test.Assert_IsEqual N'[Partial] minted 10 (all available)', N'10', @pmPc;
 DECLARE @s1after NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@S1);
 EXEC test.Assert_IsEqual N'[Partial] source drained to 0', N'0', @s1after;
 GO
@@ -241,8 +243,8 @@ GO
 --                  next-pending step is still MachiningIn (Advance, no checkpoint).
 -- =============================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
-DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @HoldStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Hold');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
@@ -250,8 +252,7 @@ DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
     WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
 
--- clear leftover open 5G0-c castings from the prior Shortfall/Partial block (same
--- guard used by the [FIFO]/[Shortfall] blocks above) so counts below are exact.
+-- clear leftover open 12270-6NA castings from the prior Shortfall/Partial block.
 UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
   WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
 
@@ -332,15 +333,15 @@ GO
 -- earlier exact-fit [Eligibility] mint does not.
 -- =============================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
-DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
     JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
     WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
 
--- clear leftover open 5G0-c castings so the eligible queue total is exactly 8.
+-- clear leftover open 12270-6NA castings so the eligible queue total is exactly 8.
 UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
   WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
 
@@ -354,13 +355,13 @@ SELECT @Elig2, rs.OperationTemplateId, SYSUTCDATETIME(), 8, @U
 FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
 WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
 
--- MachiningIn-pending: 20 pcs, NEWER, stamped only through TrimOut (ineligible; next-pending = MachiningIn).
+-- MachiningIn-pending: 10 pcs, NEWER, stamped only through TrimOut (ineligible; next-pending = MachiningIn).
 DECLARE @Pend2 BIGINT;
 CREATE TABLE #P2 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #P2 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=20, @AppUserId=@U;
+INSERT INTO #P2 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=10, @AppUserId=@U;
 SELECT @Pend2 = NewId FROM #P2; DROP TABLE #P2;
 INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
-SELECT @Pend2, rs.OperationTemplateId, SYSUTCDATETIME(), 20, @U
+SELECT @Pend2, rs.OperationTemplateId, SYSUTCDATETIME(), 10, @U
 FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
 JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
 JOIN Parts.OperationType oty2 ON oty2.Id = ot2.OperationTypeId
@@ -372,15 +373,15 @@ WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS
 DECLARE @pm TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
 INSERT INTO @pm EXEC Workorder.MachiningOut_Mint @SourceLotId=@Elig2, @OperationTemplateId=@MoTpl, @PieceCount=15, @AppUserId=@U, @TerminalLocationId=@Line, @AllowPartial=1;
 DECLARE @pmStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @pm);
-DECLARE @pmLot BIGINT = (SELECT NewId FROM @pm);
+DECLARE @pmLot2 BIGINT = (SELECT NewId FROM @pm);
 EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] partial mint against mixed queue succeeds', @Expected = N'1', @Actual = @pmStatus;
-DECLARE @pmPc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@pmLot);
-EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] minted only the eligible supply (8, not 15)', @Expected = N'8', @Actual = @pmPc;
+DECLARE @pmPc2 NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@pmLot2);
+EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] minted only the eligible supply (8, not 15)', @Expected = N'8', @Actual = @pmPc2;
 DECLARE @e2After NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Elig2);
 EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] eligible casting fully consumed', @Expected = N'0', @Actual = @e2After;
 DECLARE @p2After NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Pend2);
-EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] MachiningIn-pending casting NOT reached by walk', @Expected = N'20', @Actual = @p2After;
-DECLARE @p2Parent NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotGenealogy WHERE ParentLotId=@Pend2 AND ChildLotId=@pmLot);
+EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] MachiningIn-pending casting NOT reached by walk', @Expected = N'10', @Actual = @p2After;
+DECLARE @p2Parent NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotGenealogy WHERE ParentLotId=@Pend2 AND ChildLotId=@pmLot2);
 EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] MachiningIn-pending casting NOT a genealogy parent', @Expected = N'0', @Actual = @p2Parent;
 GO
 
@@ -392,49 +393,50 @@ GO
 -- the same MIN, so the casting drains to exactly 0, never below.
 -- =============================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
-DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
     JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
     WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
 
--- clear leftover open 5G0-c castings so the queue is exactly @Div.
+-- clear leftover open 12270-6NA castings so the queue is exactly @Div.
 UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
   WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
 
--- Diverged casting: PieceCount 20, pre-stamped through MachiningIn (eligible),
--- then InventoryAvailable force-inflated to 24 (excess 4) to simulate the Trim bug.
+-- Diverged casting: PieceCount 10, pre-stamped through MachiningIn (eligible),
+-- then InventoryAvailable force-inflated to 12 (excess 2) to simulate the Trim bug.
 DECLARE @Div BIGINT;
 CREATE TABLE #DV (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #DV EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=20, @AppUserId=@U;
+INSERT INTO #DV EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=10, @AppUserId=@U;
 SELECT @Div = NewId FROM #DV; DROP TABLE #DV;
 INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
-SELECT @Div, rs.OperationTemplateId, SYSUTCDATETIME(), 20, @U
+SELECT @Div, rs.OperationTemplateId, SYSUTCDATETIME(), 10, @U
 FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
 WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
-UPDATE Lots.Lot SET InventoryAvailable = 24 WHERE Id = @Div;  -- InvAvail(24) > PieceCount(20)
+UPDATE Lots.Lot SET InventoryAvailable = 12 WHERE Id = @Div;  -- InvAvail(12) > PieceCount(10)
 
--- @Available must be the MIN bound (20), not the inflated 24.
+-- @Available must be the MIN bound (10), not the inflated 12.
 DECLARE @dm TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
-INSERT INTO @dm EXEC Workorder.MachiningOut_Mint @SourceLotId=@Div, @OperationTemplateId=@MoTpl, @PieceCount=24, @AppUserId=@U, @TerminalLocationId=@Line, @AllowPartial=1;
+INSERT INTO @dm EXEC Workorder.MachiningOut_Mint @SourceLotId=@Div, @OperationTemplateId=@MoTpl, @PieceCount=12, @AppUserId=@U, @TerminalLocationId=@Line, @AllowPartial=1;
 DECLARE @dmStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @dm);
 DECLARE @dmLot BIGINT = (SELECT NewId FROM @dm);
 EXEC test.Assert_IsEqual @TestName = N'[NoNeg] partial mint against diverged casting succeeds', @Expected = N'1', @Actual = @dmStatus;
 DECLARE @dmMinted NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@dmLot);
-EXEC test.Assert_IsEqual @TestName = N'[NoNeg] minted MIN(InvAvail,PieceCount)=20, not 24', @Expected = N'20', @Actual = @dmMinted;
+EXEC test.Assert_IsEqual @TestName = N'[NoNeg] minted MIN(InvAvail,PieceCount)=10, not 12', @Expected = N'10', @Actual = @dmMinted;
 DECLARE @divPc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Div);
 EXEC test.Assert_IsEqual @TestName = N'[NoNeg] diverged casting drained to exactly 0 (never negative)', @Expected = N'0', @Actual = @divPc;
 DECLARE @anyNeg NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Div AND PieceCount < 0);
 EXEC test.Assert_IsEqual @TestName = N'[NoNeg] no negative PieceCount', @Expected = N'0', @Actual = @anyNeg;
 GO
 
--- ---- teardown (FK-safe): all LOTs of the fixture items 5G0-c / 5G0-SA ----
-DECLARE @Cast BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Mach BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
+-- ---- teardown (FK-safe): all LOTs of the fixture items 12270-6NA / 12270-6NA-M ----
+DECLARE @Cast BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
+DECLARE @Mach BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA-M');
 DECLARE @Lots TABLE (Id BIGINT);
 INSERT INTO @Lots SELECT Id FROM Lots.Lot WHERE ItemId IN (@Cast, @Mach);
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Workorder.ConsumptionEvent WHERE SourceLotId IN (SELECT Id FROM @Lots) OR ProducedLotId IN (SELECT Id FROM @Lots);
 DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Lots.LotGenealogy WHERE ParentLotId IN (SELECT Id FROM @Lots) OR ChildLotId IN (SELECT Id FROM @Lots);
@@ -443,6 +445,8 @@ DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Lots.Lot WHERE Id IN (SELECT Id FROM @Lots);
--- NOTE: 5G0-SA <- 5G0-c is a SEED BOM (020_seed_items) this test relies on -- do NOT
--- delete it in teardown; it must survive for the seed + later suites.
+-- BOM 12270-6NA-M <- 12270-6NA is auto-created by this test's fixture; leave it in place.
+GO
+
+EXEC test.EndTestFile;
 GO

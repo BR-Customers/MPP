@@ -60,7 +60,10 @@ INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
 DECLARE @A1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-A1');
 DECLARE @A2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-A2');
 DECLARE @B1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-B1');
-DECLARE @Other BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-6MD-MIN');
+-- decoy target: any active location other than @Cell (the proc ignores movements
+-- whose ToLocationId <> @Cell). Was MA1-6MD-MIN, since deprecated (Deprecated=1 in
+-- _site_locations.tsv); repointed to an active cell on a different line.
+DECLARE @Other BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MIN');
 
 -- inbound movements INTO the cell (set ArrivedAt); A3 gets none (fallback path).
 INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, MovedAt) VALUES (@A1, NULL, @Cell, 1, @Now);
