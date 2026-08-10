@@ -1,29 +1,74 @@
-"""BlueRidge.Lots.PrintFailureGateway - shipping-label print-failure lifecycle (Arc 2 Phase 7; FDS-07-006b).
+"""BlueRidge.Lots.PrintFailureGateway - shipping-label print-failure lifecycle (Arc 2 Phase 7; FDS-07-006b; Brief D).
 
-   - sweepTick() (every ~5 min): find stranded ShippingLabel rows (PrintedAt NULL AND
-     PrintFailedAt NULL AND CreatedAt older than ~60s -- a Gateway restart between
-     Container_Complete commit and print dispatch), re-fire ShippingDispatcher; mark
-     PrintFailedAt on a second strand; supervisor + IT alarm when > 5 stranded at once.
+   - sweepTick() (every ~5 min): find stranded ShippingLabel rows (ZplContent persisted but
+     PrintedAt NULL AND PrintFailedAt NULL AND older than ~60s -- a Gateway restart between
+     the Container_Complete commit and the async dispatch), re-fire ShippingDispatcher for
+     each. If dispatch cannot even start (no endpoint / no ZPL), mark the row failed so it
+     surfaces on the banner instead of re-sweeping forever; a successful async dispatch marks
+     the row itself. Supervisor/IT alarm when more than a threshold are stranded at once.
    - broadcastTick() (every ~5 s): find failed prints (PrintFailedAt NOT NULL AND
      BannerAcknowledgedAt NULL) and broadcast 'print-failure-alert' to sessions; the
      PrintFailureBanner component filters by its terminal.
 
-   SIM/SKELETON: the stranded-label read + the PrintedAt/PrintFailedAt mark procs are not
-   yet built (hardware-gated -- no networked Zebra in dev), so both ticks are guarded
-   no-ops here. Building Lots.ShippingLabel_GetStranded + _RecordDispatch and wiring the
-   re-dispatch is the print-failure commissioning step. Fully guarded.
+   Both ticks are fully guarded -- a gateway timer must NEVER throw.
+   SIM/HARDWARE-GATED: no networked Zebra in dev, so dispatch fails fast; the lifecycle
+   (mark failed, sweep, banner) is exercised regardless.
 """
+
+import java.lang
+
+_STRAND_ALARM_THRESHOLD = 5
 
 
 def sweepTick():
-    # SKELETON: requires Lots.ShippingLabel_GetStranded + a mark proc (deferred). When
-    # built: for each stranded label -> ShippingDispatcher.dispatch(aimShipperId, terminal);
-    # second strand -> mark PrintFailedAt; > 5 stranded -> supervisor/IT alarm.
-    return
+    """Re-dispatch stranded shipping labels; flip un-startable ones to failed; alarm on a pile-up."""
+    try:
+        stranded = BlueRidge.Common.Db.execList("lots/ShippingLabel_GetStranded") or []
+        for row in stranded:
+            sid = row.get("Id")
+            disp = BlueRidge.Lots.ShippingDispatcher.dispatch(
+                shippingLabelId=sid,
+                terminalLocationId=row.get("TerminalLocationId"))
+            # dispatch() returns Status 1 once the async worker is launched (it will mark the
+            # row). Status 0 means it could not start (no endpoint / no ZPL) -- flip to failed
+            # so the operator sees it on the banner rather than an endless re-sweep.
+            if not (disp and disp.get("Status")):
+                BlueRidge.Common.Db.execMutation("lots/ShippingLabel_MarkDispatch", {
+                    "shippingLabelId": sid,
+                    "success":         0,
+                    "errorText":       (disp or {}).get("Message") or "Stranded: dispatch could not start.",
+                    "maxAttempts":     1,
+                })
+        if len(stranded) > _STRAND_ALARM_THRESHOLD:
+            msg = "print sweep: %d stranded shipping labels (supervisor/IT)" % len(stranded)
+            BlueRidge.Common.Util.log(msg, level="warn")
+            try:
+                system.perspective.sendMessage(
+                    "print-failure-alert",
+                    payload={"level": "critical", "strandedCount": len(stranded), "message": msg},
+                    scope="session")
+            except (Exception, java.lang.Exception):
+                pass
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("sweepTick failed: %s" % str(e), level="debug")
 
 
 def broadcastTick():
-    # SKELETON: requires a failed-print read (PrintFailedAt NOT NULL AND
-    # BannerAcknowledgedAt NULL). When built: send 'print-failure-alert' per failed label,
-    # scope session; the PrintFailureBanner filters by session.custom.terminal.
-    return
+    """Broadcast a 'print-failure-alert' per failed-unacknowledged label; the terminal banner filters."""
+    try:
+        failed = BlueRidge.Common.Db.execList("lots/ShippingLabel_GetForBanner") or []
+        for row in failed:
+            payload = {
+                "shippingLabelId":    row.get("Id"),
+                "containerId":        row.get("ContainerId"),
+                "terminalLocationId": row.get("TerminalLocationId"),
+                "aimShipperId":       row.get("AimShipperId"),
+                "error":              row.get("LastPrintError"),
+                "level":              "error",
+            }
+            try:
+                system.perspective.sendMessage("print-failure-alert", payload=payload, scope="session")
+            except (Exception, java.lang.Exception):
+                pass
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("broadcastTick failed: %s" % str(e), level="debug")

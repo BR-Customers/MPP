@@ -245,9 +245,11 @@ def completeBoxToPrinter(containerId, terminalLocationId, printerLocationId, app
                                             appUserId=appUserId, terminalLocationId=terminalLocationId)
     if not res or not res.get("Status"):
         return res or {"Status": 0, "Message": "Container complete failed."}
-    aim = res.get("AimShipperId")
+    # Brief D: dispatch the persisted shipping label (rendered + stored by Container_Complete)
+    # by its row id -- the dispatcher reads ShippingLabel.ZplContent and prints async.
+    slId = res.get("ShippingLabelId")
     disp = BlueRidge.Lots.ShippingDispatcher.dispatch(
-        aim, terminalLocationId=terminalLocationId, printerLocationId=printerLocationId)
+        shippingLabelId=slId, terminalLocationId=terminalLocationId, printerLocationId=printerLocationId)
     if disp and disp.get("Status"):
         return {"Status": 1, "Message": "Box completed and shipping label printed."}
     # Box IS complete; only the print missed -> surface the print message, not a hard failure.
