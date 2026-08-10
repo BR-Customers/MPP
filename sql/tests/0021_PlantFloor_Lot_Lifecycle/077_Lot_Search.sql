@@ -18,7 +18,7 @@ GO
 CREATE TABLE #r1 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeId BIGINT, LotStatusId BIGINT,
     PieceCount INT, VendorLotNumber NVARCHAR(100), CurrentLocationId BIGINT, CreatedAt DATETIME2(3),
     ItemPartNumber NVARCHAR(50), LotStatusCode NVARCHAR(30), LotOriginTypeCode NVARCHAR(30),
-    CurrentLocationName NVARCHAR(200), TotalCount INT);
+    CurrentLocationName NVARCHAR(200), LastOperationName NVARCHAR(100), TotalCount INT);
 INSERT INTO #r1 EXEC Lots.Lot_Search @Query=N'VND-SRCH', @LimitRows=50;
 DECLARE @hit INT=(SELECT COUNT(*) FROM #r1 WHERE VendorLotNumber=N'VND-SRCH-001');
 DECLARE @hitStr NVARCHAR(10)=CAST(@hit AS NVARCHAR(10));
@@ -30,7 +30,7 @@ DECLARE @OriginMfg BIGINT=(SELECT Id FROM Lots.LotOriginType WHERE Code=N'Manufa
 CREATE TABLE #r2 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeId BIGINT, LotStatusId BIGINT,
     PieceCount INT, VendorLotNumber NVARCHAR(100), CurrentLocationId BIGINT, CreatedAt DATETIME2(3),
     ItemPartNumber NVARCHAR(50), LotStatusCode NVARCHAR(30), LotOriginTypeCode NVARCHAR(30),
-    CurrentLocationName NVARCHAR(200), TotalCount INT);
+    CurrentLocationName NVARCHAR(200), LastOperationName NVARCHAR(100), TotalCount INT);
 INSERT INTO #r2 EXEC Lots.Lot_Search @Query=N'VND-SRCH', @LotOriginTypeId=@OriginMfg, @LimitRows=50;
 DECLARE @n2 INT=(SELECT COUNT(*) FROM #r2);
 DROP TABLE #r2;
