@@ -1,0 +1,179 @@
+<!--
+  MOCK — Plant-floor "Reports" landing page (tablet, dark). Layout/UX sign-off only.
+  Real build = a new Perspective view in the MPP project (files + scan), themed by the
+  Core plant-floor stylesheet tokens. Left = report registry list; right = selected
+  report's parameters + Preview/Print. Preview pane embeds the Report Viewer component
+  (or executeReport->PDF) at build time.
+-->
+<style>
+  :root{
+    --n10:#0B1220; --n20:#111A2E; --n30:#172238; --n40:#1F2C44; --n50:#2C3A55;
+    --n60:#425270; --n70:#697A98; --n80:#9AA8BF; --n90:#C9D2E0; --n100:#F0F3F8;
+    --acc20:#093240; --acc40:#126680; --acc50:#1888A8; --acc60:#22A8CC; --acc70:#4BC2E0;
+    --good:#4ADE80; --warn:#F4B343; --tint:rgba(34,168,204,0.10);
+    --font:'Inter','Noto Sans',-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  .app{background:var(--n10);color:var(--n100);font-family:var(--font);min-height:760px;padding:0;}
+  /* header bar (plant-floor AppHeader stand-in) */
+  .hdr{height:64px;display:flex;align-items:center;justify-content:space-between;
+       padding:0 24px;background:var(--n20);border-bottom:1px solid var(--n40);}
+  .hdr .l{display:flex;align-items:center;gap:14px;}
+  .hdr .logo{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--acc50),var(--acc40));
+             display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;}
+  .hdr h1{font-size:18px;font-weight:700;margin:0;letter-spacing:-.01em;}
+  .hdr .sub{font-size:12px;color:var(--n70);margin-top:1px;}
+  .hdr .term{font-size:12px;color:var(--n80);display:flex;align-items:center;gap:8px;}
+  .hdr .dot{width:8px;height:8px;border-radius:50%;background:var(--good);}
+  /* body: list rail + detail */
+  .body{display:grid;grid-template-columns:352px 1fr;min-height:696px;}
+  .rail{background:var(--n20);border-right:1px solid var(--n40);padding:18px 14px;}
+  .rail .rt{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--n70);padding:0 8px 10px;}
+  .tile{display:flex;gap:12px;align-items:flex-start;padding:13px 12px;border-radius:8px;cursor:pointer;
+        border:1px solid transparent;margin-bottom:4px;}
+  .tile:hover{background:var(--n30);}
+  .tile.sel{background:var(--acc20);border-color:var(--acc40);}
+  .tile .ic{width:34px;height:34px;border-radius:8px;background:var(--n40);flex:0 0 34px;display:flex;
+            align-items:center;justify-content:center;color:var(--acc70);}
+  .tile.sel .ic{background:var(--acc40);color:#fff;}
+  .tile .nm{font-size:14.5px;font-weight:600;color:var(--n100);}
+  .tile .ds{font-size:11.5px;color:var(--n70);margin-top:2px;line-height:1.35;}
+  .tile.sel .nm{color:var(--acc70);}
+  svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  /* detail */
+  .detail{padding:26px 30px;}
+  .dhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+  .dhead h2{font-size:22px;font-weight:700;margin:0;letter-spacing:-.01em;}
+  .dhead .dsub{font-size:13px;color:var(--n70);margin-top:4px;max-width:520px;line-height:1.4;}
+  .badge{font-size:11px;font-weight:600;color:var(--acc70);background:var(--tint);border:1px solid var(--acc40);
+         padding:5px 11px;border-radius:999px;}
+  /* param panel */
+  .params{background:var(--n20);border:1px solid var(--n40);border-radius:10px;padding:18px 20px;margin-bottom:22px;}
+  .params .pt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--n70);margin-bottom:14px;}
+  .prow{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:12px;font-weight:600;color:var(--n80);}
+  .ctl{height:48px;min-width:230px;background:var(--n30);border:1px solid var(--n50);border-radius:8px;
+       color:var(--n100);font-size:15px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;}
+  .ctl.small{min-width:170px;}
+  .ctl .chev{color:var(--n70);}
+  .spacer{flex:1;}
+  .btns{display:flex;gap:12px;}
+  .btn{height:48px;padding:0 22px;border-radius:8px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px;cursor:pointer;border:1px solid transparent;}
+  .btn.primary{background:var(--acc50);color:#fff;}
+  .btn.primary:hover{background:var(--acc60);}
+  .btn.ghost{background:transparent;color:var(--n90);border-color:var(--n50);}
+  /* preview pane */
+  .pv{background:var(--n20);border:1px solid var(--n40);border-radius:10px;padding:16px;}
+  .pv .pvh{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .pv .pvt{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--n70);}
+  .pv .zoom{font-size:12px;color:var(--n70);display:flex;gap:14px;}
+  .sheet{background:#fff;border-radius:4px;margin:0 auto;width:560px;box-shadow:0 8px 30px rgba(0,0,0,.5);overflow:hidden;color:#0B1220;}
+  .sheet .sb{background:#0B1220;color:#F0F3F8;padding:14px 20px;}
+  .sheet .sb .k{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#4BC2E0;font-weight:700;}
+  .sheet .sb h3{margin:3px 0 0;font-size:17px;font-weight:700;}
+  .sheet .sb .ss{font-size:10px;color:#9AA8BF;margin-top:4px;}
+  .sheet .sacc{height:2px;background:#1888A8;}
+  .sheet .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:14px 16px 8px;}
+  .sheet .kp{border:1px solid #dfe4ea;border-top:2px solid #1888A8;border-radius:3px;padding:7px 8px;}
+  .sheet .kp .kl{font-size:7px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#6b788f;}
+  .sheet .kp .kv{font-size:16px;font-weight:700;color:#1b2430;margin-top:3px;}
+  .sheet .prm{font-size:9.5px;color:#6b788f;padding:2px 16px 14px;}
+  .sheet .plc{height:120px;margin:0 16px 16px;border:1px dashed #c7cfd8;border-radius:4px;display:flex;
+              align-items:center;justify-content:center;color:#9aa8bf;font-size:11px;}
+</style>
+
+<div class="app">
+  <div class="hdr">
+    <div class="l">
+      <div class="logo">M</div>
+      <div><h1>Reports</h1><div class="sub">Ad-hoc report printing</div></div>
+    </div>
+    <div class="term"><span class="dot"></span> Die Cast Terminal DC-2 &middot; BRK</div>
+  </div>
+
+  <div class="body">
+    <!-- report registry -->
+    <div class="rail">
+      <div class="rt">Reports</div>
+
+      <div class="tile sel">
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 4-5"/></svg></div>
+        <div><div class="nm">Downtime by Shift</div><div class="ds">Loss analysis for one shift, by machine &amp; reason</div></div>
+      </div>
+      <div class="tile">
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/></svg></div>
+        <div><div class="nm">Downtime by Date Range</div><div class="ds">Downtime across a start/end period, by area</div></div>
+      </div>
+      <div class="tile">
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="2"/></svg></div>
+        <div><div class="nm">Lot Detail</div><div class="ds">Full traceability sheet for a scanned LOT</div></div>
+      </div>
+      <div class="tile">
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></div>
+        <div><div class="nm">Die Cast Shot Count</div><div class="ds">Shots per die vs. shot-limit, over a period</div></div>
+      </div>
+      <div class="tile">
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></div>
+        <div><div class="nm">Production Line Performance</div><div class="ds">Output, scrap &amp; downtime by line, per shift/week</div></div>
+      </div>
+      <div class="tile">
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg></div>
+        <div><div class="nm">Current Inventory</div><div class="ds">Plantwide WIP snapshot by item &amp; location</div></div>
+      </div>
+    </div>
+
+    <!-- selected report detail -->
+    <div class="detail">
+      <div class="dhead">
+        <div>
+          <h2>Downtime by Shift</h2>
+          <div class="dsub">Total downtime, avg duration and a reason Pareto for a single shift, with a per-machine breakdown. Times shown in ET.</div>
+        </div>
+        <div class="badge">PDF &middot; Letter</div>
+      </div>
+
+      <div class="params">
+        <div class="pt">Parameters</div>
+        <div class="prow">
+          <div class="field">
+            <label>Shift</label>
+            <div class="ctl">First Shift &mdash; Aug 10, 2026 <span class="chev">&#9662;</span></div>
+          </div>
+          <div class="field">
+            <label>Area</label>
+            <div class="ctl small">Die Cast <span class="chev">&#9662;</span></div>
+          </div>
+          <div class="spacer"></div>
+          <div class="btns">
+            <div class="btn ghost">&#8635; Preview</div>
+            <div class="btn primary"><svg class="i" viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/></svg> Print PDF</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pv">
+        <div class="pvh">
+          <div class="pvt">Preview</div>
+          <div class="zoom">Page 1 / 2 &nbsp;&middot;&nbsp; &#8722; 100% &#43; &nbsp;&middot;&nbsp; &#8681; Download</div>
+        </div>
+        <div class="sheet">
+          <div class="sb">
+            <div class="k">Madison Precision Products &middot; MES</div>
+            <h3>Downtime Report &mdash; Shift</h3>
+            <div class="ss">First Shift &middot; Die Cast &middot; loss analysis by machine &amp; reason</div>
+          </div>
+          <div class="sacc"></div>
+          <div class="prm">SHIFT&nbsp; First Shift &middot; 06:00&ndash;14:30 &nbsp;&nbsp; DATE&nbsp; Aug 10, 2026 &nbsp;&nbsp; AREA&nbsp; Die Cast</div>
+          <div class="kpis">
+            <div class="kp"><div class="kl">Total Downtime</div><div class="kv">4.4 hr</div></div>
+            <div class="kp"><div class="kl">Events</div><div class="kv">12</div></div>
+            <div class="kp"><div class="kl">Avg Duration</div><div class="kv">21.8m</div></div>
+            <div class="kp"><div class="kl">Unexcused</div><div class="kv">94%</div></div>
+          </div>
+          <div class="plc">Pareto + machine-grouped detail render here (live Report Viewer)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
