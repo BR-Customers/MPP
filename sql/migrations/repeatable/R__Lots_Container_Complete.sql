@@ -152,11 +152,18 @@ BEGIN
             RETURN;
         END
 
-        INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId, Initial, PrintedByUserId, TerminalLocationId)
-        VALUES (@ContainerId, @AimShipperId, @LabelTypeId, 1, @AppUserId, @TerminalLocationId);
-        SET @ShippingLabelId = SCOPE_IDENTITY();
-
+        -- Mark the container Complete FIRST so the label render resolves CompletedAt ({MfgDate}).
         UPDATE Lots.Container SET ContainerStatusCodeId = 2, CompletedAt = SYSUTCDATETIME() WHERE Id = @ContainerId;
+
+        -- Brief D (LBL-050/060): render the shipping-label ZPL from the active Container
+        -- LabelTemplate + tokens (deterministic; a missing template resolves to '') and
+        -- persist it on the row so the async dispatcher + stranded-sweep re-send the exact
+        -- bytes without re-rendering (survives a Gateway restart between complete and print).
+        DECLARE @ShipZpl NVARCHAR(MAX) = Lots.ufn_ShippingLabelZpl(@ContainerId, @AimShipperId);
+
+        INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId, Initial, PrintedByUserId, TerminalLocationId, ZplContent)
+        VALUES (@ContainerId, @AimShipperId, @LabelTypeId, 1, @AppUserId, @TerminalLocationId, @ShipZpl);
+        SET @ShippingLabelId = SCOPE_IDENTITY();
 
         -- FG close (FAT #21): close every linked finished-good LOT (tray = LOT) that is
         -- still Good, now that the container is Complete. Delegates the Good->Closed
