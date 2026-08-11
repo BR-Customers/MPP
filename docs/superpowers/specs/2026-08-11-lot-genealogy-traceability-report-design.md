@@ -28,16 +28,20 @@ carries a Genealogy band, but it has three gaps:
   - **Made From (Ancestors)** — up to the die-cast casting (raw aluminum is not in
     the system, so ancestors naturally bottom out at the origin-mint casting LOT).
   - **Used In (Descendants)** — down to the finished-good LOTs.
-- Detail the **containers** that make up the subject LOT, surfacing the Honda **AIM
-  shipper ID** carried on each container's shipping label.
+- Detail the **shipped containers** the LOT reached — the subject LOT's own
+  containers if it is a finished good, otherwise the containers of its finished-good
+  **descendants** — surfacing the Honda **AIM shipper ID** on each container's
+  shipping label. This is the recall-traceability view: "which containers/shipments
+  did this LOT reach?"
 - Add a chronological **Lifecycle** band: every event with location, operator, and
   Eastern-time timestamp.
 
 ## 3. Non-Goals
 
 - No schema changes. All required data already exists.
-- No synthetic "shipment" node in the descendant tree. Shipment/AIM identity is
-  surfaced through the Containers band, not as a genealogy edge.
+- No synthetic "shipment" node in the descendant *genealogy tree*. Shipment/AIM
+  identity is surfaced through the Containers band (which reads off the descendant FG
+  LOTs' containers), not as a genealogy edge.
 - No change to how consumption is *recorded* — the fix is read-side only (see the
   verification note in §7).
 - Not a new report. This **extends the existing Lot Detail report**.
@@ -92,13 +96,25 @@ type, location, and `AppUser`, ordered chronologically.
   timestamp / event / location / operator per §6.)
 - **Ordering:** `EventAtEt ASC`.
 
-### 5.3 Containers band data
+### 5.3 `Lots.Lot_GetShippedContainers`
 
-Reuse `Lots.Lot_GetLinkedContainer(@LotId)` as-is (it already returns container id,
-status, location, opened/completed ET times, and `AimShipperId`). If the subject LOT
-can be packed into more than one container, generalize the proc (or add
-`Lots.Lot_GetContainers`) to return all matching rows rather than the current 1:1;
-otherwise reuse directly.
+Returns every finished-good container the LOT reached — the subject LOT's own
+container if it is a finished good, plus the containers of all its finished-good
+descendants. Built on the same descendant edge-walk as §5.1: collect the descendant
+LOT set (plus the subject), then join each to `Lots.ContainerTray.FinishedGoodLotId`
+→ `Lots.Container` → `Lots.ShippingLabel` (the joins already in
+`Lot_GetLinkedContainer`). Each row names the FG LOT it belongs to so the band stays
+legible when containers span several descendants.
+
+- **Params:** `@LotId BIGINT`
+- **Result columns:** `FinishedGoodLotId BIGINT`, `FinishedGoodLotName NVARCHAR(50)`,
+  `FinishedGoodPartNumber NVARCHAR(50)`, `ContainerId BIGINT`,
+  `AimShipperId NVARCHAR(50)`, `Quantity INT`, `ContainerStatusName NVARCHAR(100)`,
+  `CurrentLocationName NVARCHAR(200)`, `CompletedAt DATETIME2(3)` (ET at the boundary).
+- **Ordering:** `FinishedGoodLotName, ContainerId`.
+- Empty result set = the LOT has reached no finished-good container yet (still
+  in-process). `Lot_GetLinkedContainer` remains for the single-LOT container lookup
+  used elsewhere; this proc is the report-specific descendant-aware view.
 
 ## 6. Report Layout (bands, top to bottom)
 
@@ -108,9 +124,10 @@ otherwise reuse directly.
    Part / Relationship / **Consumed** (`PieceCount` + `UomCode`).
 3. **Used In · Descendants** — indented tree keyed on `Depth`. Columns: Related LOT /
    Part / Relationship / **Contributed** (`PieceCount` + `UomCode`).
-4. **Containers** — one row per container of the subject LOT: LTT / container id, AIM
-   shipper id, quantity, status, location. Empty when the subject LOT owns no
-   containers (see §8 assumption).
+4. **Containers** — one row per shipped finished-good container the LOT reached
+   (subject's own if it is an FG, else its FG descendants'): FG LOT / FG Part /
+   container id / AIM shipper id / quantity / status / location. Empty when the LOT
+   has reached no finished-good container yet.
 5. **Lifecycle** — chronological: Timestamp (ET) / Event / Location / Operator.
 
 Visual style follows the existing report chrome (teal section accent bar + heading,
@@ -129,12 +146,13 @@ writes the full lot quantity, the fix extends one layer down into that proc.
 
 ## 8. Assumptions & Open Questions
 
-1. **"Containers of the concerned lot" = the subject LOT's own containers**
-   (`ContainerTray.FinishedGoodLotId = subject`). If the subject is an upstream
-   sub-assembly with no containers of its own, the Containers band is empty and the
-   AIM IDs live on the *descendant* finished-good LOTs' containers. Open question for
-   review: should the Containers band instead follow descendants to the shipped FG
-   containers? Current design says no — keep it the subject LOT's containers.
+1. **Containers band follows descendants to shipped FG containers** (resolved
+   2026-08-11). The band shows every finished-good container the LOT reached — its own
+   if it is an FG, otherwise its FG descendants' — so it answers the Honda recall
+   question ("which containers/shipments did this LOT reach?") regardless of where the
+   subject sits in the genealogy. A subject that is itself an FG degenerates correctly
+   (its descendants-with-containers is just itself). For a widely-used component LOT
+   the container set can be large, but that is the correct recall scope.
 2. **UOM display.** Genealogy quantities render in the related part's preferred UOM
    (`Parts.Item.UomId`), defaulting to `pcs` when absent.
 3. **Depth cap.** Practical genealogy depth is small (die cast → trim → machining →
@@ -149,8 +167,11 @@ writes the full lot quantity, the fix extends one layer down into that proc.
   set), (e) UOM projection.
 - `Lot_GetLifecycle`: fixture LOT with created / moved / inspected / consumed events;
   assert chronological order and ET conversion.
-- Container band: FG LOT with an AIM-labeled container (assert AIM id surfaces);
-  upstream LOT with no container (assert empty band).
+- `Lot_GetShippedContainers`: (a) subject that is an FG with an AIM-labeled container
+  (assert its own container + AIM id surface); (b) upstream sub-assembly whose FG
+  descendants have shipped containers (assert descendants' containers surface, each
+  tagged with its FG LOT); (c) in-process LOT with no FG container anywhere in its
+  descendants (assert empty band).
 - Report render: deploy via `scan.ps1`, render against the running gateway, verify all
   five bands populate and quantities/indentation are correct (per the
   `ignition-reporting` skill's render-verify step).
@@ -160,3 +181,4 @@ writes the full lot quantity, the fix extends one layer down into that proc.
 | Date | Version | Change |
 |---|---|---|
 | 2026-08-11 | 0.1 | Initial draft. |
+| 2026-08-11 | 0.2 | Containers band follows descendants to shipped FG containers (§8.1 resolved); new `Lot_GetShippedContainers` proc; container rows tagged with FG LOT. |
