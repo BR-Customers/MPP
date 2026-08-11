@@ -56,3 +56,19 @@ BEGIN
         REFERENCES Location.Location(Id);
 END
 GO
+
+-- ============================================================
+-- == Record migration ========================================
+-- ============================================================
+-- Guarded so manual re-runs / a Dev already carrying the DDL stay idempotent.
+-- NOTE: this feature is RETIRED by migration 0036_drop_coupled_downstream_cell,
+-- which drops the FK + column. On a full reset 0019 adds the column and records
+-- itself, then 0036 (later, self-recording) drops it -- so the column is absent
+-- in the final schema by design. Both ledger rows are expected post-reset.
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0019_location_coupled_downstream_cell')
+    INSERT INTO dbo.SchemaVersion (MigrationId, Description)
+    VALUES (N'0019_location_coupled_downstream_cell',
+            N'Add Location.Location.CoupledDownstreamCellLocationId (self-FK) for Machining-OUT auto-move pairing. Retired later by 0036 (cell-coupling removed).');
+GO
+PRINT 'Migration 0019 (Location.CoupledDownstreamCellLocationId self-FK) applied.';
+GO
