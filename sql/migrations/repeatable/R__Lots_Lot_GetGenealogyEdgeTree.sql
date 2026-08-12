@@ -11,7 +11,7 @@
 --              READ proc (FDS-11-011): no @Status/@Message, no status row, ONE result
 --              set, empty set = not found, no OUTPUT params.
 --
---              @Direction ∈ Ancestors / Descendants / Both (default), case-insensitive,
+--              @Direction is Ancestors / Descendants / Both (default), case-insensitive,
 --              singular/plural accepted, unrecognized -> Both.
 --
 --              A path-string cycle guard + OPTION(MAXRECURSION 100) bound the walk;
