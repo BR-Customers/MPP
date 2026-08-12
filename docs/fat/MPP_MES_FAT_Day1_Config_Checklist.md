@@ -1,141 +1,130 @@
-# MPP MES — Day-One FAT Configuration Checklist
+# MPP MES — Pre-Commissioning / Day-One FAT Configuration Checklist
 
-Configuration + verification steps to perform **before / at the start of** a FAT or on-site
-commissioning session — the setup that must be right before the FAT test cases
-(`MPP_MES_FAT_practice.xlsx`) can be exercised. Distinct from the test cases themselves:
-this is *"is the plant configured,"* the workbook is *"does each function pass."*
+Everything that must be **configured, connected, and verified** before the FAT test cases
+(`MPP_MES_FAT_practice.xlsx`) or on-site commissioning can run. This is *"is the system set up"*;
+the workbook is *"does each function pass."* Work top-down — later phases depend on earlier ones.
 
-> **Sources folded in:** the PLC commissioning-readiness map + gap brief
-> (`notes/2026-08-11_plc-*.md`), the OPC device↔terminal mapping, and the
-> `reference/MPP_Terminal_Printer_Inventory.xlsx` terminal/printer inventory.
-> Legacy IDs in that doc are **not authoritative** — used for content (IPs, hostnames,
-> printer names) only.
+> **Inputs folded in:** PLC commissioning-readiness map + gap brief (`notes/2026-08-11_plc-*.md`),
+> the OPC device↔terminal mapping, `reference/MPP_Terminal_Printer_Inventory.xlsx`, the location
+> reconciliation pipeline (`sql/seeds/gen_locations_mpp.js`), and `MPP_MES_SEEDING_REGISTRY.md`.
+> Legacy IDs in the inventory doc are **not authoritative** — content only.
 
 **Environment under test** (fill at witnessing):
 
 | | Value |
 |---|---|
-| Ignition Gateway version | |
+| Ignition Gateway version / license | |
+| Modules (Perspective, Reporting, OPC-UA) | |
 | SQL Server / database | |
 | Git commit / build tag | |
-| Location model source | `MPP_MES_Site` (authoritative) → generated `011_seed_locations_mpp_plant.sql` |
-| Date(s) | |
+| Location model source | `MPP_MES_Site` → generated `011_seed_locations_mpp_plant.sql` |
+| Date(s) / witnesses | |
 
-Legend: ☐ to do · ✅ confident (data-derived) · ⚠️ confirm on-site · 🚩 model gap to resolve
-
----
-
-## §1 — Terminal registration & IP mapping
-
-The MES resolves every shop-floor terminal by the **IP address it connects from**
-(`Location.LocationAttribute` `IpAddress`, def 1 → `DefaultScreen`). Each terminal below must
-resolve to the right screen/zone on-site. IPs pre-filled from the inventory doc where the
-match is confident.
-
-**☐ 1.1 — Confirm each terminal resolves by IP** (seed-ready, single clean IP → one terminal):
-
-| Terminal (Location Code) | Role / Screen | Inventory IP | Status |
-|---|---|---|---|
-| `MA2-6MAOP-AOUT` | 6ma Oil Pan — Assembly Out | 172.17.20.115 | ✅ |
-| `MA2-59B-MIN` | 59b Cam Holder — Machining In | 172.17.14.117 | ✅ |
-| `MA2-64AOP-AOUT` | 64A Oil Pan — Assembly Out | 172.17.14.232 | ✅ |
-| `MA2-6MACH-AOUT1` | 6MA Cam Holder — METTS Assembly A | 172.17.20.55 | ✅ |
-| `MA2-6MACH-AOUT2` | 6MA Cam Holder — METTS Assembly B | 172.17.20.57 | ✅ |
-| `MA2-6MACH-MIN` | 6MA Cam Holder — Machining In | 172.17.14.211 | ✅ |
-| `MA2-6FBCHOP-MIN` | 6FB Small Parts — Machining In | 172.17.14.169 | ✅ |
-| `MA2-RPYCAM2-AOUT1` | RPY Line 2 Set — Assembly Out | 172.17.20.162 | ✅ |
-
-**☐ 1.2 — Resolve model gaps the match exposed** (🚩 — the inventory has more physical stations than the model has terminals):
-
-| Inventory rows | Model terminal | Issue |
-|---|---|---|
-| 6FB **CH** AO (172.17.20.43) + 6FB **OP** AO (172.17.20.50) | one `MA2-6FBCHOP-AOUT` | two physical assembly-out stations, one terminal — split into two, or pick one? |
-| RPY L1 CH Set AIN (172.17.20.126 **and** .124) | one `MA2-RPYCAM1-AIN` | two IPs → one terminal — is there a 2nd AIN station? |
-| RPY L2 RS5 AIN (172.17.20.46) + RPY L2 CH/RS AIN (no IP) | one `MA2-RPYCAM2-AIN` | same |
-
-**☐ 1.3 — Assign IPs to matched terminals that the doc left blank** (⚠️ — terminal identified, no IP in doc): `MA1-5GOF-ASER` (5G0 Front), `MA1-5GOR-ASER` (5G0 Rear), `MA1-COMPBR-MIN`, `MA1-COMPBR-AOUT`, plus the 5PA / 6MD / FPRPY / FP6NA machining terminals.
-
-**☐ 1.4 — Unmapped / out-of-scope** (⚠️):
-- **`5J6 OIL PAN`** (172.17.15.17 AO, 172.17.14.119 MIN) — **no 5J6 line exists in the model.** Add the line, or confirm 5J6 runs on an existing oil-pan line.
-- **~14 `PASSTHROUGH` terminals** (`172.31.x` / `192.168.x` — 6MD/6A0/RJ2/64S/etc.) — appear to be non-MES stations. Confirm out-of-scope.
-- **59B METTS** (172.17.15.58) — the 10-part / 10-printer station, see §2.2.
+Legend: ☐ to do · ✅ done/verified · ⚠️ confirm on-site · 🚩 open gap · ▣ this-session data provided
 
 ---
 
-## §2 — Printer configuration
+## Phase 1 — Infrastructure & connectivity
 
-Printers attach to OUT-type terminals (`MOUT`/`AOUT`/`ASER`/`COMBINED`). The generator emits
-one `-P1` child per OUT terminal. Most inventory printers are **network share** targets
-(`\\FLXWAPSRV1\<name>`, port 9100) → `ConnectionKind = Hardwired`; a minority carry a model
-(`GX420D`, `ZD621`) or a direct IP.
-
-**☐ 2.1 — Set printer `Endpoint` / `Model` / `ConnectionKind`** from the inventory Printers tab where present (26 of 76 rows carry a model or IP; the rest are share-path only — record share path as `Endpoint`, `ConnectionKind=Hardwired`).
-
-**☐ 2.2 — Build the 10 METTS 59B printers** 🚩 — Location `MA2-59B-AOUT1` (METTS Assembly Out) currently carries the placeholder **"add 10 printers"**; the inventory confirms **`59BL3 P1…P10` — one printer per part (10 parts)**, model `GX420D`, Ethernet. Extend the generator so this terminal emits `-P1…-P10` instead of a single `-P1`.
-
-**☐ 2.3 — Hold/shipping printers** — the doc lists `Shipping Hold 1`, `Zebra Hold 1/2` (Label type = Container Hold). Confirm placement.
+- **☐ 1.1 Ignition Gateway** — installed, licensed; Perspective + **Reporting** + OPC-UA modules active; gateway reachable at its URL; project(s) `Core` / `MPP` / `MPP_Config` present and healthy.
+- **☐ 1.2 Database connection** — SQL Server 2022 reachable; Ignition datasource configured (prod: a managed `ignition` login with least-privilege — EXECUTE on app schemas, SELECT/INSERT/UPDATE on NQ tables, **no db_owner**; password in gateway config, not repo). Test query succeeds.
+- **☐ 1.3 Active Directory** — gateway joined / AD IdP configured (see Phase 3).
+- **☐ 1.4 OPC servers reachable** — **OmniServer** (scales), **TOPServer.V5** (PLCs: Pro-face LT3300 / MicroLogix1400 / EtherNet-IP), **Cognex** vision controllers. Each OPC connection Green in the gateway; UDT instances repointed from `MPP_Sim` → the real servers (see Phase 5).
+- **☐ 1.5 Printers on the network** — Zebra printers reachable at their `Endpoint` (IP:9100 or share path); test print from each (Phase 4).
+- **☐ 1.6 AIM (Honda EDI) endpoint** — the AIM HTTP interface configured with the **prod** endpoint (not the dev stub); GetNextNumber / UpdateAim / PlaceOnHold / ReleaseFromHold reachable; `InterfaceLog` records calls.
 
 ---
 
-## §3 — PLC device mapping (`TerminalPlcDevice` seed) — **the #1 blocker**
+## Phase 2 — Database schema & deployment
 
-Until `Location.TerminalPlcDevice` rows exist, all 33 wired PLC trigger edges hit
-"no mapping → ignored" and nothing routes (FAT-PLC-020). Seed one row per UDT instance
-(`[MPP]PlcDevices/<name>`), resolving the terminal by Code. Detail + rationale:
-`notes/2026-08-11_plc-commissioning-readiness-map.md` §3.1.
-
-**☐ 3.1 — Seed the resolved device→terminal mappings** (device closure → the line's non-METTS assembly-out terminal; METTS `ByCount` terminals excluded):
-
-| Device | → Terminal | Note |
-|---|---|---|
-| `5G0_A1`, `5G0_Front_Scale` | `MA1-5GOF-ASER` | serialized |
-| `5G0_A2`, `5G0_Rear_Scale` | `MA1-5GOR-ASER` | serialized |
-| `59B_1_FP_1` | `MA2-59B-AOUT2` | METTS `-AOUT1` excluded |
-| `5K8_64A_OilPan` | `MA2-64AOP-AOUT` | |
-| `6C2_6MA_OilPan` | `MA2-6MAOP-AOUT` | |
-| `6FB_CH` | `MA2-6FBCHOP-AOUT` | (see §1.2 split) |
-| `6MA_CH` | `MA2-6MACH-AOUT3` | METTS `-AOUT1/2` excluded |
-| `5PA_1_FP_1` | `MA2-5PA` assembly-out | vision-through-scale (§4) |
-| `RPY_1_FP_1` | `MA1-FPRPY` assembly-out | vision-through-scale (§4) |
-| `6B2_1_FP_1`, `6B2_CH` | `MA2-RPY6B2` assembly-out | |
-| `Sort_OilPan`, `Sort_Totes` | `INSP-SORT-T1` | sort cage (Dev-only) |
-
-**☐ 3.2 — Confirm the RPY L1/L2 pick** ⚠️ — `RPY_1_CB_1`, `RPY_CH` → RPY Cam Line 1 (`MA2-RPYCAM1`) or Line 2 (`MA2-RPYCAM2`)?
-
-**☐ 3.3 — Deprecated-flagged, no model line** 🚩 — `5A2_L1/L2 × CamHolder/FuelPump` (4) and `5J6_OilPan` have no Location line. Seed as deprecated/pending, or add the lines first (see §1.4).
-
-**☐ 3.4 — Record a simulator acceptance pass** for the serialized MIP + vision + scale handshakes (`/dev/sim/plc` against `MPP_Sim`).
+- **☐ 2.1 Migrations applied** — all versioned migrations run; `dbo.SchemaVersion` current (no gaps — the 0017–0019 ledger reconcile is in).
+- **☐ 2.2 Repeatable procs deployed** — all `R__*.sql` objects present (deploy is by re-running repeatables; verify count vs `sql/migrations/repeatable`).
+- **☐ 2.3 Seed scripts loaded** — `sql/seeds/*` applied (locations, items, routes, op templates, defect/downtime codes, AIM pool).
+- **☐ 2.4 Timezone** — server/session confirms UTC-store / Eastern-display behavior on a sample read proc.
 
 ---
 
-## §4 — Vision-through-scale validation ⚠️
+## Phase 3 — Active Directory & user provisioning
 
-Three assembly-out terminals are **camera-wired-through-a-scale** (confirmed in SITE
-`Description`): `5PA - AO` ("Vision through scale, validate tags"), `MA1-FPRPY-AFIN`,
-`MA1-FP6NA-AFIN`. Their closure is `ByVision` but the OPC device is a **ScaleStation** UDT.
-
-- **☐ 4.1** — Confirm the PLC-side UDT actually used at each (ScaleStation serving vision vs a separate TrayInspection).
-- **☐ 4.2** — Validate the tag map (the SITE note literally says "validate tags").
-- **☐ 4.3** — Note: `MA1-FP6NA-AFIN` is flagged vision-through-scale but **no OPC scale device is named 6NA/6VJ** in the catalog — confirm its device.
+- **☐ 3.1 Identity provider** — Ignition project auth wired to AD (this is platform auth, not MES-code — FAT-USR-070/160 close here). Security levels / roles mapped: **Admin / Engineer / Quality / Supervisor / Operator**.
+- **☐ 3.2 Interactive (AD) users** — engineering/quality/supervisor accounts resolve via AD; role mapping verified.
+- **☐ 3.3 Operator AppUsers** — shop-floor operators loaded with **Initials** (AdAccount NULL, no Ignition role); initials resolve at a terminal; **deprecated initials rejected** at presence sign-in (FAT-USR-090).
+- **☐ 3.4 Per-action AD elevation** — supervisor-elevated actions (hold release, nav-lock, die-cast tool config) prompt for AD credentials and gate correctly.
+- **☐ 3.5 `AppUser` ↔ AD-name mapping** — the elevation two-layer (user-source password + AppUser AD-name) is populated for each elevatable user.
 
 ---
 
-## §5 — Closure method & changeover
+## Phase 4 — Location model (terminals · IPs · printers · closure)
 
-- **☐ 5.1** — Verify `CurrentClosureMethod` (`ByCount` / `ByWeight` / `ByVision`) on each assembly-out terminal matches the line's actual mode.
-- **☐ 5.2** — Confirm METTS terminals are `ByCount` (they do **not** take a PLC vision/scale device).
-- **☐ 5.3** — `MPPMACH` "3-bad-trays-in-a-row" threshold: data-table preset reads `30`, symbol says `3` — confirm intended value.
+The MES resolves each terminal by the **IP it connects from** → `DefaultScreen`. Base tree is
+generated (`011_seed_locations_mpp_plant.sql`) from `MPP_MES_Site`.
+
+### 4.1 Terminal IP registration
+- **▣ ✅ Seed-ready IPs** (from inventory doc, applied via `_inventory_attributes.tsv`): `MA2-6MAOP-AOUT`=172.17.20.115 · `MA2-59B-MIN`=172.17.14.117 · `MA2-64AOP-AOUT`=172.17.14.232 · `MA2-6MACH-AOUT1`=172.17.20.55 · `MA2-6MACH-AOUT2`=172.17.20.57 · `MA2-6MACH-MIN`=172.17.14.211 · `MA2-6FBCHOP-MIN`=172.17.14.169 · `MA2-RPYCAM2-AOUT1`=172.17.20.162.
+- **☐ ⚠️ Remaining terminal IPs** — assign IPs to the matched terminals the doc left blank (5G0 Front/Rear, compressor bracket, 5PA/6MD machining) and confirm every station resolves to the right screen on-site.
+- **☐ ⚠️ Pass-through terminals** (`172.31.x` / `192.168.x`, ~14 rows: 6MD/6A0/RJ2/64S…) — confirm out-of-MES-scope.
+
+### 4.2 Model gaps to confirm on the floor 🚩
+- **☐ 6FB — floor walk says "6FB is just the small parts."** The inventory lists **two** assembly-out IPs on the 6FB line — CH/cam `172.17.20.43` and OP/oil-passage `172.17.20.50` — but the model has one `MA2-6FBCHOP-AOUT`. **Confirm:** is 6FB assembly-out a **single small-parts station** (the model is correct; the two IPs are one station / spare), or two distinct stations needing a split? *(Floor input: "just the small parts" → likely single — confirm and retire the extra IP.)*
+- **☐ 5J6 Oil Pan** — no `5J6` line exists in the model (added this session — verify: see 4.4). Confirm 5J6 is its own line vs. runs on an existing oil-pan line.
+- **☐ RPY-cam AIN** — RPY L1 CH-Set Assembly-In shows two IPs (`172.17.20.126` / `.124`) → one terminal. Confirm one vs two stations.
+
+### 4.3 Printers
+- **▣ ✅ 10 METTS printers** — `MA2-59B-AOUT1` emits `P1…P10` (one per part, `59BL3 P1..P10`, GX420D/Ethernet). Built via the generator `MULTI_PRINTER` rule; verified in Dev.
+- **☐ Printer endpoints/models** — set `Endpoint` / `Model` / `ConnectionKind` from the inventory Printers tab (most are `\\FLXWAPSRV1\<name>` share → `Hardwired`; some GX420D/ZD621). Test print each.
+- **☐ Hold/shipping printers** — `Shipping Hold 1`, `Zebra Hold 1/2` placement confirmed.
+
+### 4.4 Closure & structure
+- **☐ `CurrentClosureMethod`** (`ByCount`/`ByWeight`/`ByVision`) correct per assembly-out terminal; METTS = `ByCount` (no PLC vision/scale device).
+- **☐ Terminal fallback** — unregistered-IP behavior returns the Fallback Terminal (subtitle "Madison Facility") — confirm real terminals never fall back.
 
 ---
 
-## §6 — Broader day-one configuration (skeleton — extend as needed)
+## Phase 5 — PLC / OPC device connections
 
-- **☐ 6.1 Users & attribution** — AppUsers loaded; operator initials; AD interactive users; supervisor-elevation roles.
-- **☐ 6.2 Shifts & schedules** — shift instances / schedules seeded for the go-live window.
-- **☐ 6.3 AIM shipper-ID pool** — pool configured + primed (prod endpoint, not dev stub).
-- **☐ 6.4 Label templates** — active `LabelTemplate` per type (LTT + Honda container); ZPL validated on target printers.
-- **☐ 6.5 Reporting** — Reports landing page reachable; the 6 reports render on the gateway.
-- **☐ 6.6 Seed registry** — external seed items (die-rank compatibility, etc.) loaded per `MPP_MES_SEEDING_REGISTRY.md`.
+Until `Location.TerminalPlcDevice` rows exist, all 33 wired PLC edges hit "no mapping → ignored"
+and nothing routes (FAT-PLC-020 — **the #1 integration blocker**). Detail:
+`notes/2026-08-11_plc-commissioning-readiness-map.md`.
+
+- **☐ 5.1 Seed `TerminalPlcDevice`** — one row per `[MPP]PlcDevices/<name>` instance, terminal resolved by Code (device closure → the line's non-METTS assembly-out terminal). ▣ Resolved map in the readiness map §3.1.
+- **☐ ⚠️ 5.2 RPY L1/L2 pick** — `RPY_1_CB_1` / `RPY_CH` → RPY Cam Line 1 (`MA2-RPYCAM1`) or Line 2 (`MA2-RPYCAM2`)?
+- **☐ 🚩 5.3 Unmapped devices** — `5A2 × 4` and `5J6_OilPan` have no model line (deprecated-flag or add the lines).
+- **☐ 5.4 UDT→OPC binding** — repoint each `PlcDevices` UDT instance `Device`/`OpcServer` from `MPP_Sim` to the real OmniServer/TOPServer node; fix the `6FB_CH` driver-name typo (`Micrologix1400` vs `MicroLogix1400`); reproduce the `5G0_A1.5G0_A1.<member>` double-node path exactly.
+- **☐ 5.5 Vision-through-scale validation** ⚠️ — `5PA - AO`, `MA1-FPRPY-AFIN`, `MA1-FP6NA-AFIN` are camera-through-scale (SITE desc "validate tags"). Confirm the PLC-side UDT (ScaleStation vs TrayInspection) and tag map; `FP6NA` has no named OPC scale — confirm its device.
+- **☐ 5.6 Simulator/live acceptance** — record a MIP + vision + scale handshake pass (`/dev/sim/plc` or live).
+- **☐ 5.7 Vision escalation scope** ⚠️ — confirm whether FDS-10-009/010/013 (consecutive-fail escalation, failure-type branching, ConfirmationMethod, dual-source) are **MVP or commissioning-phase** (all MES-side, currently unbuilt — gap brief specs P2–P4).
+
+---
+
+## Phase 6 — Part & process master data
+
+- **☐ 6.1 Item Master** — all parts loaded; `PartNumber` matches the AIM/Honda part; `Description` set (drives the shipping label). Cross-check against `reference/MPP_Parts_Final.xlsx` / `MPP_Part_Data_Collection_COMPLETE.xlsx`.
+- **☐ 6.2 ItemType → Area** — each item's type gates its allowed areas/routes (a FG can't take a die-cast route).
+- **☐ 6.3 Container configs** — `IsSerialized` flag, `MaxParts` (per-location cap), `MaxLotSize` (basket), weight/UOM per item.
+- **☐ 6.4 Routes published** — terminal-mint routes per part (Die Cast → Trim → Machining → Assembly), each ending at a ConsumeMint; **published** (not Draft), prior versions retained.
+- **☐ 6.5 BOMs published** — parent/child BOMs published; as-built version surfaces on the LOT.
+- **☐ 6.6 Operation templates published** — per role (DieCast/Trim/Machining/Assembly IN-OUT); Draft/Published lifecycle; resolver finds the active template by role for every routed part.
+- **☐ 6.7 Quality specs published** — spec attributes + UoM per operation where inspection is required.
+- **☐ 6.8 Eligibility** — line/part move-eligibility loaded so validated moves resolve against the terminal's parent zone; confirm each active part is eligible at its line's terminals (no false "Not eligible").
+- **☐ 6.9 Die-rank compatibility** (Seeding Registry **S-08** — the one seed that blocks) — die-rank genealogy mapping loaded for the shipping-label DC part-level.
+
+---
+
+## Phase 7 — Code tables & external seed data
+
+- **☐ 7.1 Defect codes** — loaded, scoped by `OperationCategory` (die-cast / trim / machining-assembly filters correct).
+- **☐ 7.2 Downtime reason codes** — 353/353 loaded, schema-correct.
+- **☐ 7.3 Shift schedules** — shift instances/schedules seeded for the go-live window.
+- **☐ 7.4 AIM shipper-ID pool** — configured + primed; empty-pool hard-fail posture confirmed (OI-33).
+- **☐ 7.5 Label templates** — active `LabelTemplate` per type (LTT + Honda container, ported ZPL); `{Placeholder}` tokens resolve; ASCII-only; render-tested on the target printer.
+- **☐ 7.6 Seeding Registry sweep** — walk `MPP_MES_SEEDING_REGISTRY.md` (S-01…S-11); every item Received → Loaded(Dev) → Verified(Cutover).
+
+---
+
+## Phase 8 — Reporting & pre-FAT smoke
+
+- **☐ 8.1 Reports** — Reports landing page (`/shop-floor/reports`) reachable; the 6 reports render + Print-PDF on the gateway.
+- **☐ 8.2 End-to-end smoke** — one LOT walked Die Cast → Trim → Machining → Assembly → container → ship, confirming genealogy, attribution (signed-in operator), and label prints — before running the FAT workbook.
 
 ---
 
@@ -144,10 +133,12 @@ Three assembly-out terminals are **camera-wired-through-a-scale** (confirmed in 
 | Role | Name | Signature | Date |
 |---|---|---|---|
 | MPP — Acceptance | | | |
+| MPP — Quality | | | |
 | Blue Ridge — Lead | | | |
 
 **Revision history**
 
 | Rev | Date | Change |
 |---|---|---|
-| 0.1 | 2026-08-12 | Initial — terminal IP match (§1), printer + 10-METTS-printer (§2), PLC device mapping (§3), vision-through-scale (§4), closure (§5) from the PLC/terminal/printer reconciliation. |
+| 0.1 | 2026-08-12 | Initial — terminal IP match, printers, PLC device mapping, vision-through-scale, closure. |
+| 0.2 | 2026-08-12 | Expanded to full pre-commissioning scope: infrastructure/connectivity, DB & schema, Active Directory & users, part & process master data + eligibility, code tables & seed registry, reporting & smoke. Added 6FB "just small parts" floor-walk confirmation item. |
