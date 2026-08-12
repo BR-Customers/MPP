@@ -54,7 +54,7 @@ carries a Genealogy band, but it has three gaps:
 | Genealogy edges | `Lots.LotGenealogy` (ParentLotId → ChildLotId) | Walked recursively. **Not** the closure table — the edge table preserves tree structure and per-edge qty at every depth; the closure flattens both. |
 | Part identity / UOM | `Parts.Item.PartNumber`, `Parts.Item.UomId → Parts.Uom.Code` | UOM column shows the part's preferred UOM; default `pcs`. |
 | Containers + AIM ID | `Lots.ContainerTray.FinishedGoodLotId`, `Lots.Container`, `Lots.ShippingLabel.AimShipperId` | Existing `Lots.Lot_GetLinkedContainer` already joins these (1:1 on `FinishedGoodLotId`). |
-| Lifecycle events | `Audit.LotEventLog` (+ event-type / location / user joins) | Append-only per-LOT event stream; timestamps converted to ET at the read boundary (OI-36 convention). |
+| Lifecycle events | `Lots.LotEventLog` (+ `Audit.LogEventType` / `Location.Location` / `Location.AppUser` joins) | Append-only per-LOT audit event stream; carries `LocationId` **and** `TerminalLocationId` on every row (so a discrete Location column is available per event), plus `UserId`, `LoggedAt`, `Description`. Timestamps converted to ET at the read boundary (OI-36 convention). Distinct from the curated `Lots.Lot_GetAttributeHistory` timeline, which embeds location inside its Detail string rather than a discrete column. |
 
 ## 5. New SQL (read procs — FDS-11-011 read-proc convention: one result set, no
 status row, no OUTPUT params, empty set = not found)
@@ -85,16 +85,21 @@ full ancestor or descendant tree with per-edge consumed quantity and depth.
 
 ### 5.2 `Lots.Lot_GetLifecycle`
 
-Projects the subject LOT's event stream from `Audit.LotEventLog`, joined to event
-type, location, and `AppUser`, ordered chronologically.
+Projects the subject LOT's event stream from `Lots.LotEventLog`, joined to
+`Audit.LogEventType`, `Location.Location`, and `Location.AppUser`, ordered
+chronologically. `LotEventLog` (not the curated `Lot_GetAttributeHistory`) is chosen
+because it carries a discrete `LocationId`/`TerminalLocationId` on every row — the
+report wants a Location *column*, not location baked into a Detail string.
 
 - **Params:** `@LotId BIGINT`
 - **Result columns:** `EventAtEt DATETIME2(3)` (UTC → ET at the boundary),
-  `EventTypeName NVARCHAR(100)`, `LocationName NVARCHAR(200)`,
-  `OperatorInitials NVARCHAR(50)` (or AppUser display name), `Description NVARCHAR(500)`.
+  `EventTypeName NVARCHAR(100)` (`Audit.LogEventType.Name`),
+  `LocationName NVARCHAR(200)` (`COALESCE(LocationId, TerminalLocationId)` → `Location.Name`),
+  `OperatorName NVARCHAR(200)` (`Location.AppUser.DisplayName`),
+  `Description NVARCHAR(1000)`.
   (`Description` is carried for future use even though the report renders only
   timestamp / event / location / operator per §6.)
-- **Ordering:** `EventAtEt ASC`.
+- **Ordering:** `LoggedAt ASC` (order on raw UTC; project the ET cast).
 
 ### 5.3 `Lots.Lot_GetShippedContainers`
 
@@ -139,10 +144,13 @@ Report parameter stays the subject-LOT selector already on Lot Detail.
 The read-side fix assumes the mint procs that create Consumption edges
 (`Workorder.MachiningOut_Mint`, `Workorder.Assembly_CompleteTray`, and
 `Lots.LotGenealogy_RecordConsumption`) persist the **actual consumed count** into
-`Lots.LotGenealogy.PieceCount` — not the whole source-lot quantity. Confirmed for
-`LotGenealogy_RecordConsumption` (it writes `@ConsumedPieceCount`). During
-implementation, verify the two mint procs pass the real consumed amount; if either
-writes the full lot quantity, the fix extends one layer down into that proc.
+`Lots.LotGenealogy.PieceCount` — not the whole source-lot quantity. **Confirmed
+2026-08-11:** `LotGenealogy_RecordConsumption` writes `@ConsumedPieceCount`, and
+`Workorder.MachiningOut_Mint` writes `@take` (the per-casting FIFO draw amount) into
+the edge `PieceCount`. The consumed-qty fix is therefore **report-side only** — the
+report band currently binds to the related LOT's own quantity instead of the edge
+`PieceCount`. (`Workorder.Assembly_CompleteTray` follows the same pattern; a test in
+the plan covers a full mint→consume chain end-to-end.)
 
 ## 8. Assumptions & Open Questions
 
@@ -182,3 +190,4 @@ writes the full lot quantity, the fix extends one layer down into that proc.
 |---|---|---|
 | 2026-08-11 | 0.1 | Initial draft. |
 | 2026-08-11 | 0.2 | Containers band follows descendants to shipped FG containers (§8.1 resolved); new `Lot_GetShippedContainers` proc; container rows tagged with FG LOT. |
+| 2026-08-11 | 0.3 | Corrected lifecycle source to `Lots.LotEventLog` (was `Audit.*`); `Lot_GetLifecycle` result columns finalized against real schema; §7 consumed-qty provenance confirmed report-side-only (mint procs write real `PieceCount`). |
