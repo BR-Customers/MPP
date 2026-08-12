@@ -245,7 +245,7 @@
        tablet. Widths (tree/kpi/modal) left as-is for now -- bump live if text
        reflows. */
     --pf-header-h:    68px;
-    --pf-touch-min:   56px;
+    --pf-touch-min:   40px;
     --pf-tree-w:      320px;
     --pf-tab-h:       56px;
     --pf-banner-h:    68px;

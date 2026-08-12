@@ -133,6 +133,7 @@
               }
             },
             "props": {
+              "deferUpdates": false,
               "placeholder": "Account",
               "style": {
                 "classes": "pf-field-input"
@@ -188,6 +189,7 @@
               }
             },
             "props": {
+              "deferUpdates": false,
               "placeholder": "Password",
               "style": {
                 "classes": "pf-field-input"

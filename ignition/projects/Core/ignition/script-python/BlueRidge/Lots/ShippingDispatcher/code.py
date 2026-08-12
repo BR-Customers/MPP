@@ -65,32 +65,38 @@ def _renderContainerLabel(fields):
     return zpl
 
 
-def dispatch(aimShipperId, terminalLocationId=None):
+def dispatch(aimShipperId, terminalLocationId=None, printerLocationId=None):
     """Render + synchronously dispatch a container shipping label for a claimed AIM
-       Shipper ID. Returns {Status, Message}. Fails-fast (no container rollback) when no
-       printer is configured for the terminal."""
-    BlueRidge.Common.Util.log("dispatch aimShipperId=%s" % aimShipperId)
-    # The Assembly views pass session.custom.cell.locationId, which is the terminal's
-    # parent LINE, and the Shipping Dock passes nothing -- neither resolves a Printer,
-    # whose parent is the TERMINAL. Prefer the session's terminal id so label-type
-    # routing is actually reachable from the operator UI. In Gateway scope (the PLC
-    # auto-complete path) getSessionInfo raises and the passed id IS a real terminal id,
-    # so the fallback is correct there. Bare except: Jython's `except Exception` does
-    # not catch java.lang.Throwable.
-    tid = terminalLocationId
-    try:
-        tid = (system.perspective.getSessionInfo()["custom"]["terminal"]["terminalLocationId"]
-               or terminalLocationId)
-    except:
-        pass
-    printer = BlueRidge.Location.Terminal.getPrinter(tid, "Container") or {}
-    if not (printer.get("endpoint") or "").strip():
-        printer = _sessionPrinter()
-    endpoint = (printer.get("endpoint") or "").strip()
+       Shipper ID. When printerLocationId is given, the endpoint is resolved from
+       that specific printer (printer-cards routing); otherwise from the session /
+       terminal printer. Returns {Status, Message}."""
+    BlueRidge.Common.Util.log("dispatch aimShipperId=%s printerLocationId=%s" % (aimShipperId, printerLocationId))
+    pid = BlueRidge.Common.Util.extractQualifiedValues(printerLocationId)
+    if pid is not None:
+        printer = BlueRidge.Location.Printer.getById(pid) or {}
+        endpoint = (printer.get("endpoint") or printer.get("Endpoint") or "").strip()
+    else:
+        # The Assembly views pass session.custom.cell.locationId, which is the terminal's
+        # parent LINE, and the Shipping Dock passes nothing -- neither resolves a Printer,
+        # whose parent is the TERMINAL. Prefer the session's terminal id so label-type
+        # routing is actually reachable from the operator UI. In Gateway scope (the PLC
+        # auto-complete path) getSessionInfo raises and the passed id IS a real terminal id,
+        # so the fallback is correct there. Bare except: Jython's `except Exception` does
+        # not catch java.lang.Throwable.
+        tid = terminalLocationId
+        try:
+            tid = (system.perspective.getSessionInfo()["custom"]["terminal"]["terminalLocationId"]
+                   or terminalLocationId)
+        except:
+            pass
+        printer = BlueRidge.Location.Terminal.getPrinter(tid, "Container") or {}
+        if not (printer.get("endpoint") or "").strip():
+            printer = _sessionPrinter()
+        endpoint = (printer.get("endpoint") or "").strip()
 
     zpl = _renderZpl(aimShipperId)
     if not endpoint:
-        return {"Status": 0, "Message": "This terminal has no printer configured."}
+        return {"Status": 0, "Message": "No printer endpoint resolved for this label."}
 
     outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
     BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "Shipping label")

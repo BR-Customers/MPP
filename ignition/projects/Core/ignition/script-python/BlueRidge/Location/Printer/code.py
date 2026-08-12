@@ -125,3 +125,12 @@ def validateFromAttributes(attributes):
         elif name == "ConnectionKind":
             kind = r.get("value") or r.get("defaultValue") or ""
     return validateEndpoint(endpoint, kind)
+
+
+def getById(printerLocationId):
+    """Resolve one Printer (by its own LocationId) + Endpoint/Model/ConnectionKind.
+       Returns a dict, or {} when the id is not an active printer."""
+    pid = BlueRidge.Common.Util.extractQualifiedValues(printerLocationId)
+    if pid is None:
+        return {}
+    return BlueRidge.Common.Db.execOne("location/Printer_GetById", {"printerLocationId": pid}) or {}
