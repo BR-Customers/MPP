@@ -86,7 +86,7 @@ Until `Location.TerminalPlcDevice` rows exist, all 33 wired PLC edges hit "no ma
 and nothing routes (FAT-PLC-020 — **the #1 integration blocker**). Detail:
 `notes/2026-08-11_plc-commissioning-readiness-map.md`.
 
-- **☐ 5.1 Seed `TerminalPlcDevice`** — one row per `[MPP]PlcDevices/<name>` instance, terminal resolved by Code (device closure → the line's non-METTS assembly-out terminal). ▣ Resolved map in the readiness map §3.1.
+- **▣ ✅ 5.1 Seed `TerminalPlcDevice`** — **built**: `sql/seeds/012_seed_terminal_plc_device.sql` (17 active + 5 deprecated; idempotent MERGE by instance path; corrects the stale manual 59B row off the METTS terminal). Applied to Dev; `getByInstancePath` resolves. At commissioning: re-run after the UDT→OPC repoint (5.4) and confirm each wired edge routes.
 - **✅ 5.2 RPY device→line resolved** (2026-08-12) — `CB`/`CH`/`FP` are station codes: `RPY_1_FP_1` → `MA1-FPRPY-AOUT` (Fuel Pump, vision-through-scale) · `RPY_1_CB_1` → `MA1-COMPBR-AOUT` (**Comp Bracket** — note: terminal has no `ByWeight` closure, so the scale is a weigh-check not the primary closure) · `RPY_CH` → `MA2-RPYCAM1-AOUT1` (**Line 1** Cam Holders).
 - **☐ 🚩 5.3 Unmapped devices** — `5A2 × 4` and `5J6_OilPan` have no model line (deprecated-flag or add the lines).
 - **☐ 5.4 UDT→OPC binding** — repoint each `PlcDevices` UDT instance `Device`/`OpcServer` from `MPP_Sim` to the real OmniServer/TOPServer node; fix the `6FB_CH` driver-name typo (`Micrologix1400` vs `MicroLogix1400`); reproduce the `5G0_A1.5G0_A1.<member>` double-node path exactly.
