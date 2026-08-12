@@ -15,10 +15,10 @@ The deck is presented by Blue Ridge's team to a prospect. It must look like a po
 
 ### Positioning constraints (hard requirements)
 
-- **Generic "Track & Trace + Genealogy" positioning.** No mention of MPP / Madison Precision, no Honda, no customer-specific requirements, no OEM mandates. The capability is the subject, not any one client's project.
-- **The live process on screen is aluminum die casting** (Die Cast → Trim → Machining → Assembly → Ship). This cannot be changed without rebuilding the app, and it is acceptable: the value message is that the **genealogy / audit / versioning / movement model is process-agnostic** and applies to any regulated discrete manufacturing — including medical-device Device History Record needs. The compliance slide is the explicit bridge.
-- **Seed data uses neutral, generic names** — a generic facility/plant name (no "Madison", no customer identifier) and generic part names/numbers (nothing that reads automotive or names a real OEM).
-- **No Honda/AIM-labeled screens or fields are captured.** The AIM (Honda EDI) shipping-label / shipper-ID surfaces are excluded from the capture list. If any captured screen incidentally shows AIM/Honda terminology, it is re-shot or excluded.
+- **"Track & Trace + Genealogy" capability positioning.** The capability is the subject, not any one client's project. It is fine to present the demo as an **aluminum die casting facility supporting automotive** — that is real and credible. What we do NOT do: name the specific end customer (no MPP / Madison Precision) or the OEM (no Honda), and we do not frame around any one customer's mandates.
+- **The live process on screen is aluminum die casting** (Die Cast → Trim → Machining → Assembly → Ship) — shown plainly, not hidden. The compliance slide adds the bridge that the **genealogy / audit / versioning / movement model is process-agnostic** and applies to any regulated discrete manufacturing, including medical-device Device History Record needs.
+- **Seed data avoids customer/OEM identifiers only.** The facility name is a plausible die-cast company name that is NOT the real customer ("Madison"). Part names/numbers can be realistic automotive aluminum castings (brackets, housings, cases, covers) — they just must not name or imply a specific OEM.
+- **No Honda/AIM-labeled screens or fields are captured.** The AIM (Honda EDI) shipping-label / shipper-ID surfaces are excluded from the capture list. If any captured screen incidentally shows AIM/Honda-specific terminology, it is re-shot or excluded.
 
 ---
 
@@ -68,10 +68,11 @@ The gateway datasource is a shared singleton currently pointing at `MPP_MES_Dev`
 
 Goal: produce **prospect-grade, report-worthy, genealogy-rich** transactional data on top of the standard config. Build on the proven patterns in `sql/scratch/seed_demo.sql` (idempotent wipe of its own transactional footprint in FK-safe order, then rebuild the golden thread via production procs). Extend/adjust for showcase quality.
 
-### 4.1 Genericization (identity scrub)
-- **Facility / site root name** → a neutral plant name (e.g. "Riverside Manufacturing" or similar — no customer identifier, no "Madison"). Applied via a targeted `UPDATE` of the root `Location.Name` (and any customer-identifying area names) after the location seed loads. Codes may stay; only display Names matter for screenshots.
-- **Part names/numbers** → generic discrete-manufacturing parts (e.g. "Housing, Pump Body", "Bracket, Mounting", "Cover, Enclosure") with neutral part numbers. Nothing automotive-specific, no OEM names.
-- Confirm no seeded string contains "Honda", "Madison", "MPP", "AIM", or a real OEM name (byte/text scan before capture).
+### 4.1 Identity scrub (customer/OEM anonymity only)
+Aluminum die casting for automotive may be shown plainly. Only customer/OEM identifiers are scrubbed.
+- **Facility / site root name** → a plausible die-cast company name that is NOT the real customer (e.g. "Riverside Die Casting" or similar — no "Madison", no customer identifier). Applied via a targeted `UPDATE` of the root `Location.Name` (and any customer-identifying area names) after the location seed loads. Codes may stay; only display Names matter for screenshots.
+- **Part names/numbers** → realistic automotive aluminum castings (e.g. "Housing, Oil Pump", "Bracket, Transmission Mount", "Cover, Valve", "Case, Gearbox") with neutral part numbers — just no named/implied OEM.
+- Confirm no seeded string contains "Honda", "Madison", "MPP", or "AIM" (byte/text scan before capture). "Automotive" / "die cast" / "aluminum" are fine.
 
 ### 4.2 Track & Trace / genealogy content
 - **At least one fully-shipped finished good** with a **complete end-to-end genealogy**: Die Cast origin → Trim → Machining (consume-mint SubAssembly) → Assembly (consume-mint FG) → Shipped. Multi-level parent/child lineage with per-edge consumed quantities so `LotDetail`, `GenealogyViewer`/`GlobalTrace`, and the Lot Detail PDF all render a rich tree.
@@ -188,7 +189,7 @@ Follows the `pptx` skill.
 
 ## 9. Risks & Caveats
 
-- **Die-cast process visible in screenshots.** Mitigated by generic naming + the process-agnostic compliance framing. Not hidden.
+- **Die-cast process visible in screenshots.** Intentional and fine — shown plainly as automotive aluminum die casting. Only customer/OEM identifiers are scrubbed; the process-agnostic compliance framing bridges to the medical-device audience.
 - **Gateway swap coordination.** Requires Jacques for the datasource repoint (both directions). Bounded window; all data staged first. Fallback terminal → plant-wide queues (acceptable/beneficial).
 - **Report render fidelity.** Reports render-verified previously; re-verify each renders non-empty against the showcase data before capture (date-spread in the seed is the dependency).
 - **In-app browser cannot commit inputs.** Irrelevant here — all captures are read-only renders of pre-populated views/reports.
