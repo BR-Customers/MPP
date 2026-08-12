@@ -23,7 +23,9 @@
 
 ## File Structure
 
-- **Create** `sql/scratch/seed_showcase_overlay.sql` — the overlay run AFTER a standard reset (which already runs `seed_demo.sql`): name scrub + back-dated downtime/shot-count/weekly history + extra inspections + verification block. Idempotent.
+> **Execution deviation (2026-08-12):** `seed_demo.sql` is stale against the reconciled location model — it references `MA1-FP6NA-AFIN` (renamed to `-AOUT`) and `MA1-5GOF-MOUT` (5GOF line has no machining-out terminal anymore), so the default reset fails. Flagged for Jacques separately (task_70dc76dc). Therefore: build the DB with `-SkipDemoSeed` (config only) and make `seed_showcase.sql` a **self-contained** thread builder (lifting `seed_demo`'s proven 6NA sequence, fixed to `-AOUT`, against current valid locations) rather than an overlay on `seed_demo`.
+
+- **Create** `sql/scratch/seed_showcase.sql` — self-contained: build 6NA genealogy threads (hero shipped FG + WIP spread) via the real production procs against current valid locations + name scrub + back-dated downtime/shot-count/weekly history + a hold + inspections + verification block. Idempotent (own FK-safe wipe, mirroring `seed_demo` Step 1).
 - **Create** `docs/showcase/screenshots/*.png` — captured Perspective screens (C1–C13).
 - **Create** `docs/showcase/reports/*.pdf` + `*.png` — rendered PDF reports + rasters.
 - **Create** `docs/showcase/build_deck.py` — deck assembly driver (or a documented manual `pptx`-skill sequence), producing the deck from the template.
