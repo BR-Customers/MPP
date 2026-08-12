@@ -24,7 +24,7 @@ BEGIN
 
     SELECT
         CAST(el.LoggedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS EventAtEt,
-        et.Name              AS EventTypeName,
+        CAST(et.Name AS NVARCHAR(100)) AS EventTypeName,
         loc.Name             AS LocationName,
         au.DisplayName       AS OperatorName,
         el.Description        AS Description

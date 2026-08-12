@@ -58,6 +58,14 @@ DECLARE @outOfOrder INT = (
 DECLARE @ordered BIT = CASE WHEN @outOfOrder = 0 THEN 1 ELSE 0 END;
 EXEC test.Assert_IsTrue @TestName=N'[Lifecycle] rows ascending by EventAtEt', @Condition=@ordered;
 
+DECLARE @locRows INT = (SELECT COUNT(*) FROM #lc WHERE LocationName IS NOT NULL);
+DECLARE @hasLoc BIT = CASE WHEN @locRows >= 1 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName=N'[Lifecycle] at least one event has a discrete LocationName', @Condition=@hasLoc;
+
+DECLARE @opRows INT = (SELECT COUNT(*) FROM #lc WHERE OperatorName IS NOT NULL);
+DECLARE @hasOp BIT = CASE WHEN @opRows >= 1 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName=N'[Lifecycle] at least one event has a resolved OperatorName', @Condition=@hasOp;
+
 -- Not-found LOT (id 0) -> empty set (no invented 404).
 IF OBJECT_ID(N'tempdb..#lc0') IS NOT NULL DROP TABLE #lc0;
 CREATE TABLE #lc0 (EventAtEt DATETIME2(3), EventTypeName NVARCHAR(100), LocationName NVARCHAR(200),
