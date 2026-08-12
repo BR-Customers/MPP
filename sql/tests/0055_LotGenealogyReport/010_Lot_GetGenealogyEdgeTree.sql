@@ -52,6 +52,44 @@ INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
 DELETE FROM @rc;
 INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
     @SourceLotId=@B, @ConsumedPieceCount=50, @ProducedLotId=@C, @AppUserId=1;
+
+-- Diamond fixture: DA (top) produces into BOTH DB and DC (two middles), which both
+-- produce into DD (bottom convergence). DD is multi-parent; DA is a shared ancestor
+-- reachable via two distinct paths (DA->DB->DD and DA->DC->DD).
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv,
+    @CurrentLocationId=@CellId, @PieceCount=1000, @AppUserId=1;
+INSERT INTO #Fix SELECT N'DA', NewId, MintedLotName FROM @cr;
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv,
+    @CurrentLocationId=@CellId, @PieceCount=200, @AppUserId=1;
+INSERT INTO #Fix SELECT N'DB', NewId, MintedLotName FROM @cr;
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv,
+    @CurrentLocationId=@CellId, @PieceCount=200, @AppUserId=1;
+INSERT INTO #Fix SELECT N'DC', NewId, MintedLotName FROM @cr;
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv,
+    @CurrentLocationId=@CellId, @PieceCount=50, @AppUserId=1;
+INSERT INTO #Fix SELECT N'DD', NewId, MintedLotName FROM @cr;
+
+DECLARE @DA BIGINT=(SELECT LotId FROM #Fix WHERE Tag=N'DA');
+DECLARE @DB BIGINT=(SELECT LotId FROM #Fix WHERE Tag=N'DB');
+DECLARE @DC BIGINT=(SELECT LotId FROM #Fix WHERE Tag=N'DC');
+DECLARE @DD BIGINT=(SELECT LotId FROM #Fix WHERE Tag=N'DD');
+
+DELETE FROM @rc;
+INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
+    @SourceLotId=@DA, @ConsumedPieceCount=10, @ProducedLotId=@DB, @AppUserId=1;
+DELETE FROM @rc;
+INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
+    @SourceLotId=@DA, @ConsumedPieceCount=12, @ProducedLotId=@DC, @AppUserId=1;
+DELETE FROM @rc;
+INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
+    @SourceLotId=@DB, @ConsumedPieceCount=5, @ProducedLotId=@DD, @AppUserId=1;
+DELETE FROM @rc;
+INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
+    @SourceLotId=@DC, @ConsumedPieceCount=7, @ProducedLotId=@DD, @AppUserId=1;
 GO
 
 -- Test 1: Ancestors of C = B (Depth 1, consumed 50) and A (Depth 2, consumed 96).
@@ -77,6 +115,16 @@ EXEC test.Assert_IsEqual @TestName=N'[EdgeTree] B consumed=50', @Expected=N'50',
 
 DECLARE @uomOk BIT = CASE WHEN NOT EXISTS (SELECT 1 FROM #anc WHERE UomCode IS NULL) THEN 1 ELSE 0 END;
 EXEC test.Assert_IsTrue @TestName=N'[EdgeTree] every row has a non-null UomCode', @Condition=@uomOk;
+
+-- Real resolution check (not just non-null): the fixture item's actual preferred UOM
+-- code must be the one surfaced on a known ancestor row. (@ItemId is scoped to the
+-- fixture batch, so resolve it fresh here via the row's own ItemId column.)
+DECLARE @ancItemId BIGINT = (SELECT ItemId FROM #anc WHERE RelatedLotId=@A);
+DECLARE @realUom NVARCHAR(20) = (SELECT u.Code FROM Parts.Uom u
+    INNER JOIN Parts.Item i ON i.UomId=u.Id WHERE i.Id=@ancItemId);
+DECLARE @aUom NVARCHAR(20) = (SELECT UomCode FROM #anc WHERE RelatedLotId=@A);
+EXEC test.Assert_IsEqual @TestName=N'[EdgeTree] UomCode resolves to the item preferred UOM',
+    @Expected=@realUom, @Actual=@aUom;
 
 DECLARE @allAnc BIT = CASE WHEN NOT EXISTS (SELECT 1 FROM #anc WHERE Direction<>N'Ancestor') THEN 1 ELSE 0 END;
 EXEC test.Assert_IsTrue @TestName=N'[EdgeTree] all rows Direction=Ancestor', @Condition=@allAnc;
@@ -124,6 +172,43 @@ INSERT INTO #em EXEC Lots.Lot_GetGenealogyEdgeTree @LotId=@Iso, @Direction=N'Bot
 DECLARE @emN INT = (SELECT COUNT(*) FROM #em);
 EXEC test.Assert_RowCount @TestName=N'[EdgeTree] isolated LOT returns empty set', @ExpectedCount=0, @ActualCount=@emN;
 DROP TABLE #em;
+GO
+
+-- Test 4: diamond / multi-path convergence. DD's ancestors reach DA via two
+-- distinct paths (DA->DB->DD and DA->DC->DD), so DA MUST be emitted twice, not
+-- once -- proving emission is per DISTINCT PATH, not per node.
+DECLARE @DA BIGINT=(SELECT LotId FROM #Fix WHERE Tag=N'DA');
+DECLARE @DB BIGINT=(SELECT LotId FROM #Fix WHERE Tag=N'DB');
+DECLARE @DC BIGINT=(SELECT LotId FROM #Fix WHERE Tag=N'DC');
+DECLARE @DD BIGINT=(SELECT LotId FROM #Fix WHERE Tag=N'DD');
+
+IF OBJECT_ID(N'tempdb..#dd') IS NOT NULL DROP TABLE #dd;
+CREATE TABLE #dd (RelatedLotId BIGINT, RelatedLotName NVARCHAR(50), ItemId BIGINT, PartNumber NVARCHAR(50),
+                  RelationshipName NVARCHAR(100), PieceCount INT, UomCode NVARCHAR(20), Depth INT, Direction NVARCHAR(20));
+INSERT INTO #dd EXEC Lots.Lot_GetGenealogyEdgeTree @LotId=@DD, @Direction=N'Ancestors';
+
+DECLARE @daRows INT = (SELECT COUNT(*) FROM #dd WHERE RelatedLotId=@DA);
+DECLARE @daRowsStr NVARCHAR(20) = CAST(@daRows AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName=N'[EdgeTree] diamond: shared ancestor DA emitted once per path (2)',
+    @Expected=N'2', @Actual=@daRowsStr;
+
+DECLARE @dbRows INT = (SELECT COUNT(*) FROM #dd WHERE RelatedLotId=@DB);
+DECLARE @dbRowsStr NVARCHAR(20) = CAST(@dbRows AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName=N'[EdgeTree] diamond: DB appears once at Depth 1',
+    @Expected=N'1', @Actual=@dbRowsStr;
+DECLARE @dcRows INT = (SELECT COUNT(*) FROM #dd WHERE RelatedLotId=@DC);
+DECLARE @dcRowsStr NVARCHAR(20) = CAST(@dcRows AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName=N'[EdgeTree] diamond: DC appears once at Depth 1',
+    @Expected=N'1', @Actual=@dcRowsStr;
+
+DECLARE @dbDepth NVARCHAR(20) = (SELECT CAST(Depth AS NVARCHAR(20)) FROM #dd WHERE RelatedLotId=@DB);
+EXEC test.Assert_IsEqual @TestName=N'[EdgeTree] diamond: DB at Depth 1', @Expected=N'1', @Actual=@dbDepth;
+DECLARE @dcDepth NVARCHAR(20) = (SELECT CAST(Depth AS NVARCHAR(20)) FROM #dd WHERE RelatedLotId=@DC);
+EXEC test.Assert_IsEqual @TestName=N'[EdgeTree] diamond: DC at Depth 1', @Expected=N'1', @Actual=@dcDepth;
+
+DECLARE @daDepthsOk BIT = CASE WHEN NOT EXISTS (SELECT 1 FROM #dd WHERE RelatedLotId=@DA AND Depth<>2) THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName=N'[EdgeTree] diamond: both DA rows at Depth 2', @Condition=@daDepthsOk;
+DROP TABLE #dd;
 GO
 
 -- ---- cleanup (FK-safe: edges + closure before LOTs; LotEventLog from Create/Consume) ----

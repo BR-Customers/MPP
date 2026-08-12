@@ -5,6 +5,9 @@
 --   * GetShippedContainers(FG)  -> FG's own container (subject is an FG).
 --   * GetShippedContainers(SUB) -> the SAME container, via descendant reach.
 --   * GetShippedContainers(ISO) -> empty (no FG container in its descendants).
+-- Diamond fixture: DSUB --consume--> DM1, DM2 --consume--> DFG (two descendant
+-- paths to one FG); DFG packed into one container.
+--   * GetShippedContainers(DSUB) -> exactly 1 row (DISTINCT dedup on Reach).
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -57,6 +60,58 @@ DECLARE @LblType BIGINT = (SELECT TOP 1 Id FROM Lots.LabelTypeCode ORDER BY Id);
 -- fixture adapted to omit it; CreatedAt/IsVoid supplied explicitly though both have defaults.
 INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId, IsVoid, CreatedAt)
 VALUES (@Cid, N'AIMTEST00013218', @LblType, 0, SYSUTCDATETIME());
+
+-- Diamond fixture: DSUB (upstream) reaches ONE finished-good LOT DFG by TWO distinct
+-- descendant paths (DSUB->DM1->DFG and DSUB->DM2->DFG). DFG is packed into ONE
+-- container. This exercises the proc's INNER JOIN (SELECT DISTINCT LotId FROM Reach)
+-- dedup: without it, the two Reach paths would each join ContainerTray and double
+-- the container row for a single subject.
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv,
+    @CurrentLocationId=@CellId, @PieceCount=300, @AppUserId=1;
+INSERT INTO #ScFix SELECT N'DSUB', NewId FROM @cr;
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv,
+    @CurrentLocationId=@CellId, @PieceCount=150, @AppUserId=1;
+INSERT INTO #ScFix SELECT N'DM1', NewId FROM @cr;
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv,
+    @CurrentLocationId=@CellId, @PieceCount=150, @AppUserId=1;
+INSERT INTO #ScFix SELECT N'DM2', NewId FROM @cr;
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv,
+    @CurrentLocationId=@CellId, @PieceCount=300, @AppUserId=1;
+INSERT INTO #ScFix SELECT N'DFG', NewId FROM @cr;
+
+DECLARE @DSub BIGINT=(SELECT Id FROM #ScFix WHERE Tag=N'DSUB');
+DECLARE @DM1  BIGINT=(SELECT Id FROM #ScFix WHERE Tag=N'DM1');
+DECLARE @DM2  BIGINT=(SELECT Id FROM #ScFix WHERE Tag=N'DM2');
+DECLARE @DFg  BIGINT=(SELECT Id FROM #ScFix WHERE Tag=N'DFG');
+
+DELETE FROM @rc;
+INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
+    @SourceLotId=@DSub, @ConsumedPieceCount=150, @ProducedLotId=@DM1, @AppUserId=1;
+DELETE FROM @rc;
+INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
+    @SourceLotId=@DSub, @ConsumedPieceCount=150, @ProducedLotId=@DM2, @AppUserId=1;
+DELETE FROM @rc;
+INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
+    @SourceLotId=@DM1, @ConsumedPieceCount=150, @ProducedLotId=@DFg, @AppUserId=1;
+DELETE FROM @rc;
+INSERT INTO @rc EXEC Lots.LotGenealogy_RecordConsumption
+    @SourceLotId=@DM2, @ConsumedPieceCount=150, @ProducedLotId=@DFg, @AppUserId=1;
+
+-- Pack DFG into ONE container with an AIM shipping label (same direct-insert shape
+-- as the FG fixture above).
+DECLARE @DFgItem BIGINT = (SELECT ItemId FROM Lots.Lot WHERE Id=@DFg);
+INSERT INTO Lots.Container (ItemId, ContainerConfigId, CurrentLocationId, ContainerStatusCodeId, CompletedAt, CreatedByUserId)
+VALUES (@DFgItem, @Cfg, @CellId, 2, SYSUTCDATETIME(), 1);
+DECLARE @DCid BIGINT = SCOPE_IDENTITY();
+INSERT INTO #ScFix SELECT N'DCID', @DCid;
+INSERT INTO Lots.ContainerTray (ContainerId, TrayPosition, PartsClosedCount, ClosedAt, ClosedByUserId, ClosureMethod, FinishedGoodLotId)
+VALUES (@DCid, 1, 300, SYSUTCDATETIME(), 1, N'Auto', @DFg);
+INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId, IsVoid, CreatedAt)
+VALUES (@DCid, N'AIMTEST00013219', @LblType, 0, SYSUTCDATETIME());
 GO
 
 -- Test 1: FG (subject is itself an FG) -> its own container + AIM id.
@@ -103,13 +158,33 @@ EXEC test.Assert_RowCount @TestName=N'[Shipped] in-process LOT returns empty ban
 DROP TABLE #si;
 GO
 
+-- Test 4: DSUB reaches DFG's container by TWO distinct descendant paths. This must
+-- return EXACTLY 1 row (not 2) -- proving the proc's INNER JOIN (SELECT DISTINCT
+-- LotId FROM Reach) dedup actually fires. Without the DISTINCT, the two Reach paths
+-- would each join Lots.ContainerTray and double the row for this one container.
+DECLARE @DSub BIGINT=(SELECT Id FROM #ScFix WHERE Tag=N'DSUB');
+IF OBJECT_ID(N'tempdb..#sd') IS NOT NULL DROP TABLE #sd;
+CREATE TABLE #sd (FinishedGoodLotId BIGINT, FinishedGoodLotName NVARCHAR(50), FinishedGoodPartNumber NVARCHAR(50),
+                  ContainerId BIGINT, AimShipperId NVARCHAR(50), Quantity INT, ContainerStatusName NVARCHAR(100),
+                  CurrentLocationName NVARCHAR(200), CompletedAt DATETIME2(3));
+INSERT INTO #sd EXEC Lots.Lot_GetShippedContainers @LotId=@DSub;
+DECLARE @sdN INT = (SELECT COUNT(*) FROM #sd);
+EXEC test.Assert_RowCount @TestName=N'[Shipped] diamond: DSUB reaches DFG container exactly once (DISTINCT dedup)',
+    @ExpectedCount=1, @ActualCount=@sdN;
+DROP TABLE #sd;
+GO
+
 -- ---- cleanup (containers/labels before LOTs; edges before LOTs) ----
 DECLARE @Cid BIGINT = (SELECT Id FROM #ScFix WHERE Tag=N'CID');
 DELETE FROM Lots.ShippingLabel WHERE ContainerId=@Cid;
 DELETE FROM Lots.ContainerTray WHERE ContainerId=@Cid;
 DELETE FROM Lots.Container WHERE Id=@Cid;
+DECLARE @DCid BIGINT = (SELECT Id FROM #ScFix WHERE Tag=N'DCID');
+DELETE FROM Lots.ShippingLabel WHERE ContainerId=@DCid;
+DELETE FROM Lots.ContainerTray WHERE ContainerId=@DCid;
+DELETE FROM Lots.Container WHERE Id=@DCid;
 DECLARE @ids TABLE (Id BIGINT);
-INSERT INTO @ids SELECT Id FROM #ScFix WHERE Tag IN (N'SUB',N'FG',N'ISO');
+INSERT INTO @ids SELECT Id FROM #ScFix WHERE Tag IN (N'SUB',N'FG',N'ISO',N'DSUB',N'DM1',N'DM2',N'DFG');
 DELETE FROM Lots.LotGenealogy WHERE ParentLotId IN (SELECT Id FROM @ids) OR ChildLotId IN (SELECT Id FROM @ids);
 DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM @ids) OR DescendantLotId IN (SELECT Id FROM @ids);
 DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM @ids);

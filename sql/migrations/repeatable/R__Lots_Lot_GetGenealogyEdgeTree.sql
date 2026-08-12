@@ -15,9 +15,14 @@
 --              singular/plural accepted, unrecognized -> Both.
 --
 --              A path-string cycle guard + OPTION(MAXRECURSION 100) bound the walk;
---              genealogy is a DAG by construction, the guard is defensive. A node
---              reachable by multiple distinct edges appears once per edge (each is a
---              real, separately-quantified consumption) -- intended.
+--              genealogy is a DAG by construction, the guard is defensive. The guard
+--              makes emission per DISTINCT PATH from the subject, not per node and not
+--              per edge: a node reachable by N distinct paths (a diamond / merge
+--              topology) appears N times, once per path, each carrying the real
+--              per-edge PieceCount for that path's final hop. Consumers MUST treat the
+--              rows as a tree listing (one line per path) and MUST NOT SUM PieceCount
+--              across rows -- summing double-counts shared-upstream edges whenever two
+--              paths reconverge on a common ancestor.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.Lot_GetGenealogyEdgeTree
     @LotId     BIGINT,

@@ -39,9 +39,14 @@ GO
 -- Test: SRC lifecycle has >=2 rows (created + consumed), ascending, typed columns present.
 DECLARE @Src BIGINT=(SELECT LotId FROM #LcFix WHERE Tag=N'SRC');
 IF OBJECT_ID(N'tempdb..#lc') IS NOT NULL DROP TABLE #lc;
-CREATE TABLE #lc (EventAtEt DATETIME2(3), EventTypeName NVARCHAR(100), LocationName NVARCHAR(200),
-                  OperatorName NVARCHAR(200), Description NVARCHAR(1000));
-INSERT INTO #lc EXEC Lots.Lot_GetLifecycle @LotId=@Src;
+CREATE TABLE #lc (RowSeq INT IDENTITY(1,1), EventAtEt DATETIME2(3), EventTypeName NVARCHAR(100),
+                  LocationName NVARCHAR(200), OperatorName NVARCHAR(200), Description NVARCHAR(1000));
+-- RowSeq is IDENTITY, assigned in the order the proc's rows arrive via INSERT-EXEC;
+-- the explicit column list (RowSeq excluded) keeps the proc's own columns from
+-- feeding the IDENTITY. This gives the ordering assertion below a real handle on
+-- insertion order instead of relying on heap physical order.
+INSERT INTO #lc (EventAtEt, EventTypeName, LocationName, OperatorName, Description)
+    EXEC Lots.Lot_GetLifecycle @LotId=@Src;
 
 DECLARE @n INT = (SELECT COUNT(*) FROM #lc);
 DECLARE @atLeast2 BIT = CASE WHEN @n >= 2 THEN 1 ELSE 0 END;
@@ -52,7 +57,7 @@ EXEC test.Assert_IsTrue @TestName=N'[Lifecycle] every row has an EventTypeName',
 
 DECLARE @outOfOrder INT = (
     SELECT COUNT(*) FROM (
-        SELECT EventAtEt, LAG(EventAtEt) OVER (ORDER BY (SELECT 1)) AS PrevAt
+        SELECT EventAtEt, LAG(EventAtEt) OVER (ORDER BY RowSeq) AS PrevAt
         FROM #lc
     ) x WHERE PrevAt IS NOT NULL AND EventAtEt < PrevAt);
 DECLARE @ordered BIT = CASE WHEN @outOfOrder = 0 THEN 1 ELSE 0 END;
@@ -68,9 +73,10 @@ EXEC test.Assert_IsTrue @TestName=N'[Lifecycle] at least one event has a resolve
 
 -- Not-found LOT (id 0) -> empty set (no invented 404).
 IF OBJECT_ID(N'tempdb..#lc0') IS NOT NULL DROP TABLE #lc0;
-CREATE TABLE #lc0 (EventAtEt DATETIME2(3), EventTypeName NVARCHAR(100), LocationName NVARCHAR(200),
-                   OperatorName NVARCHAR(200), Description NVARCHAR(1000));
-INSERT INTO #lc0 EXEC Lots.Lot_GetLifecycle @LotId=0;
+CREATE TABLE #lc0 (RowSeq INT IDENTITY(1,1), EventAtEt DATETIME2(3), EventTypeName NVARCHAR(100),
+                   LocationName NVARCHAR(200), OperatorName NVARCHAR(200), Description NVARCHAR(1000));
+INSERT INTO #lc0 (EventAtEt, EventTypeName, LocationName, OperatorName, Description)
+    EXEC Lots.Lot_GetLifecycle @LotId=0;
 DECLARE @z INT = (SELECT COUNT(*) FROM #lc0);
 EXEC test.Assert_RowCount @TestName=N'[Lifecycle] unknown LOT returns empty set', @ExpectedCount=0, @ActualCount=@z;
 DROP TABLE #lc; DROP TABLE #lc0;
