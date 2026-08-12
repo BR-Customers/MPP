@@ -32,6 +32,10 @@ function tsv(f) {
 }
 const locRows = tsv('_site_locations.tsv');   // [Id, Code, Name, Def, ParentCode, Sort, Deprecated]
 const attrRows = tsv('_site_attributes.tsv');  // [LocCode, Name, Val]
+// Inventory overlay (terminal IPs etc. from reference/MPP_Terminal_Printer_Inventory.xlsx),
+// keyed by FINAL (post-CODEMAP) code. Optional - generator runs without it.
+const invRows = fs.existsSync(path.join(DIR, '_inventory_attributes.tsv'))
+  ? tsv('_inventory_attributes.tsv') : [];      // [FinalCode, AttrName, Val]
 
 // ---- code corrections: old Site code -> corrected code (unchanged codes pass through) ----
 const CODEMAP = {
@@ -92,6 +96,10 @@ function roleOf(name, code) {
   return 'OTHER';
 }
 const printsFor = role => ['MOUT','AOUT','COMBINED','ASER'].includes(role);
+// Terminals that carry MORE than one printer child (final code -> count). The 59B Line 3
+// METTS Assembly Out runs one printer per part (10 parts) - inventory doc 59BL3 P1..P10;
+// SITE carried a "[add 10 printers]" placeholder on this terminal.
+const MULTI_PRINTER = { 'MA2-59B-AOUT1': 10 };
 
 // ---- closure normalization (+ vision-through-scale override by NEW code) ----
 const CLOSURE_NORM = { 'weight':'ByWeight', 'vision':'ByVision', 'bycount':'ByCount' };
@@ -177,8 +185,11 @@ for (const r of locRows) {
     const parentDef = defByCode[parent0] || '';
     terminals.push({ code, code0, role, parentDef });
     if (printsFor(role)) {
-      printerSeq++;
-      loc(DEFID.Printer, code, `P - ${pad3(printerSeq)}`, `${code}-P1`, `Label printer for ${code}`, 99);
+      const nP = MULTI_PRINTER[code] || 1;
+      for (let i = 1; i <= nP; i++) {
+        printerSeq++;
+        loc(DEFID.Printer, code, `P - ${pad3(printerSeq)}`, `${code}-P${i}`, `Label printer for ${code}`, 99);
+      }
     }
   }
 }
@@ -215,6 +226,11 @@ for (const t of terminals) {
   if (a.CurrentClosureMethod != null) attr(t.code, 'CurrentClosureMethod', normClosure(t.code, a.CurrentClosureMethod));
   if (a.HasBarcodeScanner != null)    attr(t.code, 'HasBarcodeScanner', a.HasBarcodeScanner);
   if (a.RequiresCompletionConfirm != null) attr(t.code, 'RequiresCompletionConfirm', a.RequiresCompletionConfirm);
+}
+
+out.push('\n-- === Inventory overlay: terminal IPs (MPP_Terminal_Printer_Inventory.xlsx; keyed by FINAL code) ===');
+for (const [code, name, val] of invRows) {
+  if (code && code.trim() && name && name.trim()) attr(code, name, val);
 }
 
 const sqlPath = path.join(DIR, '011_seed_locations_mpp_plant.sql');
