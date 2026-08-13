@@ -670,6 +670,16 @@ for parent, kids in BOM.items():
         brows.append([parent, ITEMS[parent]['desc'], eff, ITEMS[eff]['desc'], k['qty'], i,
                       'customer' if eff == child else 'retargeted to machined identity',
                       k['note']])
+
+# Every machined identity needs its own one-line BOM naming the casting it is minted
+# from. This is NOT cosmetic: Workorder.MachiningOut_Mint derives the part it should
+# produce by walking BOM child -> parent (casting -> SubAssembly) intersected with
+# line eligibility, so without this row the mint cannot resolve a produced part at
+# all. Mirrors the demo seed's "5G0-SA <- 5G0-c x1" / "12270-6NA-M <- 12270-6NA x1".
+for cast, sub in SUBS.items():
+    brows.append([sub, ITEMS[sub]['desc'], cast, ITEMS[cast]['desc'], 1, 1,
+                  'machining mint (derived)',
+                  'Machining OUT consumes the casting to mint this identity'])
 add('BOMs',
     ['Parent Part Number', 'Parent Description', 'Child Part Number', 'Child Description',
      'Qty Per', 'Sort', 'Origin', 'MPP Note'],
