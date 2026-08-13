@@ -28,6 +28,10 @@ import openpyxl
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = os.path.join(ROOT, 'reference', 'MPP_Seed_Layout_Proposal.xlsx')
 OUT = os.path.join(ROOT, 'sql', 'scratch', 'seed_mpp_parts.sql')
+# Optional input override -- lets the seed regenerate while the canonical workbook is
+# open in Excel (which holds an exclusive lock).
+if len(sys.argv) > 1:
+    SRC = sys.argv[1]
 
 wb = openpyxl.load_workbook(SRC, data_only=True)
 

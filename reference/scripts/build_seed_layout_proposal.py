@@ -40,6 +40,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SRC = os.path.join(ROOT, 'reference', 'MPP_Part_Data_Final.xlsx')
 TSV = os.path.join(ROOT, 'sql', 'seeds', '_site_locations.tsv')
 OUT = os.path.join(ROOT, 'reference', 'MPP_Seed_Layout_Proposal.xlsx')
+# Optional output override -- lets the workbook regenerate while the canonical copy
+# is open in Excel (openpyxl cannot write a file Excel holds a lock on).
+if len(sys.argv) > 1:
+    OUT = sys.argv[1]
 
 # ------------------------------------------------------------------
 # 1. Location model - mirror gen_locations_mpp.js
@@ -175,8 +179,25 @@ for bad, good in ALIAS.items():
 #                7 WeightUom, 8 PartsPerBasket, 9 DefaultSubLotQty, 10 Macola,
 #                11 SourceOfTruth, 12 Active, 13 Notes
 ITEMS = collections.OrderedDict()
+
+# Two part numbers each cover TWO different parts -- an AEP and an ISP variant with
+# different basket sizes and different packing rules. UQ_Item_PartNumber permits one
+# row, so they are split by suffixing the variant marker carried in the description.
+# Approved 2026-08-13; the suffix is stripped again on the way to AIM.
+VARIANT_PARTS = {'19320-6A0 -A510', '19410-6A0 -A000'}
+VARIANT_RE = re.compile(r'\((AEP|ISP)\)', re.I)
+
+
+def variant_pn(pn, desc):
+    if pn in VARIANT_PARTS:
+        m = VARIANT_RE.search(desc or '')
+        if m:
+            return '%s-%s' % (pn, m.group(1).upper())
+    return pn
+
+
 for r in P_ROWS:
-    pn = r[0]
+    pn = variant_pn(r[0], r[1])
     if not pn:
         continue
     if pn not in ITEMS:
@@ -195,15 +216,19 @@ for r in P_ROWS:
     if r[2] == 'FinishedGood':
         it['cust_type'] = 'FinishedGood'
 
-# duplicate part numbers carrying genuinely different parts
-for pn in ('19320-6A0 -A510', '19410-6A0 -A000'):
+# duplicate part numbers carrying genuinely different parts -> split into variants
+for pn in sorted(VARIANT_PARTS):
     variants = [(r[1], r[8]) for r in P_ROWS if r[0] == pn]
     if len(set(variants)) > 1:
-        issue('HIGH', 'Parts', pn,
+        issue('MED', 'Parts', pn,
               'One part number used for two different parts: %s.' % '; '.join(
                   '%s (basket %s)' % (d, b) for d, b in variants),
-              'UQ_Item_PartNumber allows one row. MPP must supply a distinct number '
-              'for the second variant, or confirm they are the same part.')
+              'Split into %s. The suffix is a Blue Ridge convention, NOT an MPP part '
+              'number, and MUST be stripped before the value reaches AIM -- '
+              'Parts.ufn_AimCustomerPartNumber currently only strips dashes, so it '
+              'would emit e.g. "193206A0 A510AEP". MPP should still confirm whether a '
+              'real distinct number exists.'
+              % ', '.join(sorted(set(variant_pn(pn, d) for d, _b in variants))))
 issue('HIGH', 'Parts', '19321-66V -A000 / 19321-66V-A100',
       'Two part numbers with the identical description "66V Thermo Case".',
       'Loaded as two items. MPP to confirm both are live, or retire one.')
@@ -504,6 +529,21 @@ for r in K_ROWS:
               'Blue Ridge dev-seed part number appears in the customer workbook.',
               'Row dropped - not an MPP part.')
         continue
+    # A split part number carries one packaging row per variant. Route each to its
+    # variant by basket size: MPP's Parts "Parts Per Basket" equals the Packaging
+    # "Parts Per Tray" for both of these (AEP 5 -> 16x5 / ISP 6 -> 16x6;
+    # AEP 60 -> 1x60 / ISP 15 -> 12x15), so the match is determined, not guessed.
+    if pn in VARIANT_PARTS:
+        cands = [k for k in ITEMS if k.startswith(pn + '-')
+                 and str(ITEMS[k]['basket']).strip() == str(r[2]).strip()]
+        if len(cands) == 1:
+            pn = cands[0]
+        else:
+            issue('HIGH', 'Packaging', r[0],
+                  'Packaging row (%s trays x %s parts) does not match exactly one '
+                  'AEP/ISP variant by basket size.' % (r[1], r[2]),
+                  'Row dropped - resolve the variant split first.')
+            continue
     if pn not in ITEMS:
         issue('HIGH', 'Packaging', r[0], 'Packaging row for an unknown part.', 'Row dropped.')
         continue
