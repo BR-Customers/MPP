@@ -341,6 +341,11 @@ DECLARE @DtSrc BIGINT = (SELECT Id FROM Oee.DowntimeSourceCode WHERE Code = N'Op
 -- ---- (A) IDENTITY SCRUB (display fields only; codes/PartNumbers unchanged) ----
 UPDATE Location.Location SET Name = N'Riverside Casting Group' WHERE Code = N'MPP-ENT';
 UPDATE Location.Location SET Name = N'Riverside Die Casting - Plant 1' WHERE Code = N'MPP-MAD';
+-- line names carry OEM program codes (6NA/6VJ/5G0/59B) -> neutral line names
+UPDATE Location.Location SET Name = N'Oil Pump Line'      WHERE Code = N'MA1-FP6NA';
+UPDATE Location.Location SET Name = N'Cover Line - Front' WHERE Code = N'MA1-5GOF';
+UPDATE Location.Location SET Name = N'Cover Line - Rear'  WHERE Code = N'MA1-5GOR';
+UPDATE Location.Location SET Name = N'Cam Holder Line'    WHERE Code = N'MA2-59B';
 
 UPDATE Parts.Item SET Description = v.d
 FROM Parts.Item i
@@ -360,6 +365,28 @@ JOIN (VALUES
     (N'92900-06014-1B',  N'Stud Bolt M6x14'),
     (N'94301-08100',     N'Dowel Pin 8x10')
 ) v(pn, d) ON v.pn = i.PartNumber;
+
+-- Part numbers too: the seeded set are real OEM-format numbers (Honda program codes
+-- 6NA/59B/5G0/5R0). Remap to a neutral supplier scheme (RDC-/FST-) AFTER the
+-- description scrub above (which keys on the old numbers). Runs before any capture.
+UPDATE Parts.Item SET PartNumber = v.pn
+FROM Parts.Item i
+JOIN (VALUES
+    (N'12270-6NA',        N'RDC-1027-C'),
+    (N'12270-6NA-M',      N'RDC-1027-M'),
+    (N'12270-6NA -0001',  N'RDC-1027-A'),
+    (N'12231-59B-0000',   N'RDC-1223-1'),
+    (N'12232-59B-0000',   N'RDC-1223-2'),
+    (N'12241-59B-0000',   N'RDC-1223-3'),
+    (N'1223A-59B -A0002', N'RDC-1223-SET'),
+    (N'5G0-c',            N'RDC-5100-C'),
+    (N'5G0-SA',           N'RDC-5100-S'),
+    (N'5G0-FG',           N'RDC-5100-A'),
+    (N'21001 pin',        N'FST-2100'),
+    (N'92900-06014-1B',   N'FST-6014'),
+    (N'90701-5R0-3000',   N'FST-9010'),
+    (N'94301-08100',      N'FST-8100')
+) v(old, pn) ON v.old = i.PartNumber;
 
 -- ---- (B) DIE SHOT COUNTS (idempotent; production die + report dies) ----
 UPDATE Tools.Tool SET ShotCount = 48250,  ShotLimit = 100000 WHERE Code = N'DC-OPH-01';
