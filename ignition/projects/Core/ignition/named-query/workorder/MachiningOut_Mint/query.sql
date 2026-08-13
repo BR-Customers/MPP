@@ -5,4 +5,5 @@ EXEC Workorder.MachiningOut_Mint
     @ProducedItemId      = :producedItemId,
     @AppUserId           = :appUserId,
     @TerminalLocationId  = :terminalLocationId,
-    @AllowPartial        = :allowPartial
+    @AllowPartial        = :allowPartial,
+    @ScrapLinesJson      = :scrapLinesJson

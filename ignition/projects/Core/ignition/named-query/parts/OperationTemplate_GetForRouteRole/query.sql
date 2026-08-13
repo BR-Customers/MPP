@@ -3,6 +3,9 @@
 -- 'MachiningOut'); this returns the template Id configured for that role on the
 -- scanned part's active (non-deprecated, latest-version) route. Empty result = the
 -- part's route has no step of that role.
+--
+-- Publish gate (FAT-OQ-030): a Draft OperationTemplate (PublishedAt IS NULL) must
+-- never resolve into execution -- only a Published-and-not-Deprecated template does.
 SELECT TOP 1
     ot.Id            AS OperationTemplateId,
     ot.Code          AS OperationTemplateCode,
@@ -15,5 +18,6 @@ INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
 WHERE rt.ItemId = :itemId
   AND rt.DeprecatedAt IS NULL
   AND ot.DeprecatedAt IS NULL
+  AND ot.PublishedAt IS NOT NULL
   AND oty.Code = :operationTypeCode
 ORDER BY rt.VersionNumber DESC, rs.SequenceNumber ASC;

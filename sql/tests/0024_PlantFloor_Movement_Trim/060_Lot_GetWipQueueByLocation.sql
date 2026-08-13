@@ -5,7 +5,12 @@
 --               next PENDING route step; an Advance ProductionEvent advances it; a
 --               ConsumeMint terminal step keeps it queued until Closed; empty loc -> 0.
 --               Fixture: casting 5G0-c (route DieCast->TrimIn->TrimOut->MachiningIn
---               [Advance]->MachiningOut[ConsumeMint]) at MA1-5GOF-MOUT. The DieCast/
+--               [Advance]->MachiningOut[ConsumeMint]), line-resident at MA1-5GOF (the
+--               line -- LOTs are line-resident, not sub-terminal-resident; matches the
+--               eligibility seeded in 020_seed_items.sql and the fixture pattern in
+--               0027/010_MachiningIn_RecordPick_happy.sql). MA1-5GOF-MOUT is a
+--               deprecated Site code (2026-07-23 location reconciliation) and no
+--               longer resolves to a row -- do not reintroduce it here. The DieCast/
 --               Trim steps are pre-stamped so the LOT's next pending step is MachiningIn
 --               (mirrors a casting that has already reached the machining line).
 -- =============================================
@@ -16,7 +21,7 @@ GO
 
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 
 DECLARE @Lot BIGINT;
@@ -83,7 +88,7 @@ GO
 
 -- ---- cleanup (by the fixture LOT id) ----
 DECLARE @Item2 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Line2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
 DECLARE @Lot2 BIGINT = (SELECT TOP 1 Id FROM Lots.Lot WHERE ItemId = @Item2 AND CurrentLocationId = @Line2 AND PieceCount = 10 ORDER BY Id DESC);
 DELETE FROM Workorder.ProductionEvent WHERE LotId = @Lot2;
 DELETE FROM Lots.LotEventLog WHERE LotId = @Lot2;

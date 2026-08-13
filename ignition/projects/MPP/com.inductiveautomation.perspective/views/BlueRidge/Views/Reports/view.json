@@ -1,0 +1,849 @@
+{
+  "custom": {
+    "rangeEnd": null,
+    "rangeStart": null,
+    "reportSource": "Downtime Report",
+    "selectedDesc": "Loss analysis for one shift, by machine and reason.",
+    "selectedKey": "downtime_shift",
+    "selectedShift": null,
+    "selectedTitle": "Downtime by Shift",
+    "selectedLot": null,
+    "lotOpts": []
+  },
+  "params": {},
+  "propConfig": {
+    "custom.reportParams": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Reports.composeParams\", 0, {view.custom.selectedKey}, {view.custom.selectedShift}, {view.custom.rangeStart}, {view.custom.rangeEnd}, {view.custom.selectedLot})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.shiftOpts": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Reports.shiftOptions\")"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.lotOpts": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Reports.lotOptions\")"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "RailTitle"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-tertiary)",
+                "fontSize": "11px",
+                "fontWeight": 700,
+                "letterSpacing": "0.1em",
+                "padding": "0 8px 10px"
+              },
+              "text": "REPORTS"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Downtime by Shift"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Loss analysis for one shift, by machine & reason."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"downtime_shift\", \"Downtime by Shift\", \"Loss analysis for one shift, by machine and reason.\", \"Downtime Report\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileDowntimeShift"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} = \"downtime_shift\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Downtime by Date Range"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Downtime across a start/end period, by area."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"downtime_range\", \"Downtime by Date Range\", \"Downtime across a start/end period, by area.\", \"Downtime by Date Range\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileDowntimeRange"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} = \"downtime_range\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Lot Detail"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Full traceability sheet for a scanned LOT."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"lot_detail\", \"Lot Detail\", \"Full traceability sheet for a scanned LOT.\", \"Lot Detail\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileLotDetail"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} = \"lot_detail\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Die Cast Shot Count"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Shots per die vs. shot-limit, over a period."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"shot_count\", \"Die Cast Shot Count\", \"Shots per die vs. shot-limit.\", \"Die Cast Shot Count\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileShotCount"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} = \"shot_count\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Production Line Performance"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Output, scrap & downtime by line, per shift/week."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"line_perf\", \"Production Line Performance\", \"Weekly output, scrap and downtime by process line.\", \"Production Line Performance\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileLinePerf"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} = \"line_perf\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Current Inventory"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Plantwide WIP snapshot by item & location."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"inventory\", \"Current Inventory\", \"Plantwide WIP snapshot by item and location.\", \"Inventory\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileInventory"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} = \"inventory\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Rail"
+        },
+        "position": {
+          "basis": "352px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "backgroundColor": "var(--mpp-neutral-20)",
+            "borderRight": "1px solid var(--mpp-neutral-40)",
+            "gap": "4px",
+            "overflowY": "auto",
+            "padding": "18px 14px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "DetailTitle"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.selectedTitle"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "22px",
+                "fontWeight": 700,
+                "padding": "18px 22px 2px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "DetailDesc"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.selectedDesc"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-tertiary)",
+                "fontSize": "13px",
+                "padding": "0 22px 12px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ShiftDropdown"
+                },
+                "position": {
+                  "basis": "320px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "meta.visible": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.selectedKey} = \"downtime_shift\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.shiftOpts"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selectedShift"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select shift",
+                  "style": {
+                    "classes": "pf-field-select"
+                  }
+                },
+                "type": "ia.input.dropdown"
+              },
+              {
+                "meta": {
+                  "name": "StartDate"
+                },
+                "position": {
+                  "basis": "180px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "meta.visible": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.selectedKey} = \"downtime_range\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.rangeStart"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "format": "YYYY-MM-DD",
+                  "pickerType": "date",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.date-time-input"
+              },
+              {
+                "meta": {
+                  "name": "EndDate"
+                },
+                "position": {
+                  "basis": "180px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "meta.visible": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.selectedKey} = \"downtime_range\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.rangeEnd"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "format": "YYYY-MM-DD",
+                  "pickerType": "date",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.date-time-input"
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": {
+                  "name": "LotDropdown"
+                },
+                "position": {
+                  "basis": "320px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "meta.visible": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.selectedKey} = \"lot_detail\""
+                      }
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.lotOpts"
+                      }
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selectedLot"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select LOT",
+                  "style": {
+                    "classes": "pf-field-select"
+                  }
+                }
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.printPdf()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "PrintButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  },
+                  "text": "Print PDF"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "Controls"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "flex-end",
+              "style": {
+                "classes": "pf-field-row",
+                "gap": "16px",
+                "padding": "0 22px 16px"
+              },
+              "wrap": "wrap"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "ReportViewer"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.params": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.reportParams"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.source": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.reportSource"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "page": 1,
+              "pageCount": 2,
+              "style": {
+                "backgroundColor": "var(--mpp-neutral-30)",
+                "borderRadius": "8px",
+                "margin": "0 22px 20px",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.reporting.report-viewer"
+          }
+        ],
+        "meta": {
+          "name": "Detail"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "0px",
+            "height": "100%",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "style": {
+        "classes": "canvas",
+        "gap": "0px",
+        "height": "100%",
+        "overflow": "hidden"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "selectReport",
+          "params": [
+            "key",
+            "title",
+            "desc",
+            "reportPath",
+            "available"
+          ],
+          "script": "\ttry:\n\t\tself.view.custom.selectedKey = key\n\t\tself.view.custom.selectedTitle = title\n\t\tself.view.custom.selectedDesc = desc\n\t\tif not available:\n\t\t\tBlueRidge.Common.Notify.toast(title, \"This report is coming soon.\", \"info\")\n\t\t\treturn\n\t\tself.view.custom.reportSource = reportPath\n\t\tif key == \"downtime_range\" and not self.view.custom.rangeStart:\n\t\t\tend = system.date.now()\n\t\t\tself.view.custom.rangeEnd = end\n\t\t\tself.view.custom.rangeStart = system.date.addDays(end, -7)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\"Report error\", str(e), \"error\")"
+        },
+        {
+          "name": "printPdf",
+          "params": [],
+          "script": "\ttry:\n\t\tsrc = self.view.custom.reportSource\n\t\tsel = self.view.custom.selectedKey\n\t\tparams = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.reportParams) or {}\n\t\tif sel == \"downtime_shift\" and not params.get(\"ShiftId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a shift\", \"Select a shift before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel == \"downtime_range\" and not params.get(\"StartDate\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick dates\", \"Select a date range before printing.\", \"warn\")\n\t\t\treturn\n\t\tif not src:\n\t\t\tBlueRidge.Common.Notify.toast(\"No report\", \"Select a report first.\", \"warn\")\n\t\t\treturn\n\t\tdata = system.report.executeReport(src, \"MPP\", params, \"pdf\")\n\t\tsystem.perspective.download(src + \".pdf\", data)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\"Print failed\", str(e), \"error\")"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
+    },
+    "type": "ia.container.flex"
+  }
+}

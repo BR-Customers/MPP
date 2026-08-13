@@ -42,3 +42,12 @@ def reprintLabel(shippingLabelId, printReasonCode=None, appUserId=None, terminal
     params = {"shippingLabelId": shippingLabelId, "printReasonCode": printReasonCode,
               "appUserId": appUserId, "terminalLocationId": terminalLocationId}
     return BlueRidge.Common.Db.execMutation("lots/ShippingLabel_Reprint", params)
+
+
+def ackBanner(shippingLabelId):
+    """Acknowledge (dismiss) a print-failure banner (Brief D). Sets BannerAcknowledgedAt
+       so the label stops re-broadcasting from PrintFailureGateway.broadcastTick.
+       Returns {Status, Message}."""
+    sid = BlueRidge.Common.Util.extractQualifiedValues(shippingLabelId)
+    BlueRidge.Common.Util.log("ackBanner shippingLabelId=%s" % sid)
+    return BlueRidge.Common.Db.execMutation("lots/ShippingLabel_AckBanner", {"shippingLabelId": sid})

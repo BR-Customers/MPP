@@ -118,7 +118,11 @@ GO
 
 -- =============================================
 -- Test 2: sublot label carries ParentLotId + the parent's LotName in the ZPL.
---   Print a Container (type 2) label on the split child L_SUBLOT.
+--   Print a Master (type 3) LTT label on the split child L_SUBLOT. (Type 2 'Container'
+--   is now the Honda SHIPPING label template -- Brief D / migration 0054 -- whose ZPL
+--   uses {PartNumber}/{Serial} tokens, not the LTT {LotName}/{ParentLotNumber}. Master
+--   still carries the generic 0021 LTT placeholder, so it exercises the sublot->parent
+--   LotName rendering this test is about.)
 -- =============================================
 DECLARE @SubId    BIGINT = (SELECT LotId FROM #LblFix WHERE Tag = N'L_SUBLOT');
 DECLARE @ParId    BIGINT = (SELECT LotId   FROM #LblFix WHERE Tag = N'L_PARENT');
@@ -126,7 +130,7 @@ DECLARE @ParName  NVARCHAR(50) = (SELECT LotName FROM #LblFix WHERE Tag = N'L_PA
 
 CREATE TABLE #l2 (Status BIT, Message NVARCHAR(500), NewId BIGINT, ZplContent NVARCHAR(MAX));
 INSERT INTO #l2 EXEC Lots.LotLabel_Print
-    @LotId = @SubId, @LabelTypeCodeId = 2, @PrintReasonCodeId = 1, @AppUserId = 1;
+    @LotId = @SubId, @LabelTypeCodeId = 3, @PrintReasonCodeId = 1, @AppUserId = 1;
 INSERT INTO #LblIds (LabelId) SELECT NewId FROM #l2 WHERE NewId IS NOT NULL;
 
 DECLARE @subOk BIT = (SELECT TOP 1 Status FROM #l2);

@@ -27,6 +27,7 @@
 --   2026-04-14 - 2.0 - Removed OUTPUT params for Named Query compatibility
 --   2026-07-02 - 3.0 - @AreaLocationId -> @OperationTypeId/@OperationCategoryId;
 --                      joins OperationType + Category; retires _ListByArea
+--   2026-08-07 - 3.1 - Surface PublishedAt (Draft/Published lifecycle, FAT-OQ-030)
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.OperationTemplate_List
     @OperationTypeId     BIGINT = NULL,
@@ -49,6 +50,7 @@ BEGIN
         cat.Name             AS OperationCategoryName,
         ot.Description,
         ot.CreatedAt,
+        ot.PublishedAt,
         ot.DeprecatedAt
     FROM Parts.OperationTemplate ot
     INNER JOIN Parts.OperationType     typ ON typ.Id = ot.OperationTypeId

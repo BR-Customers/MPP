@@ -80,8 +80,8 @@ DECLARE @DefAreaId BIGINT = (
     INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
     INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
     WHERE l.DeprecatedAt IS NULL AND lt.Code = N'Area' ORDER BY l.Id);
-INSERT INTO Quality.DefectCode (Code, Description, AreaLocationId, IsExcused, CreatedAt)
-VALUES (N'TEST-DEF-TLY', N'Tally test defect', @DefAreaId, 0, SYSUTCDATETIME());
+INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused, CreatedAt)
+VALUES (N'TEST-DEF-TLY', N'Tally test defect', NULL, 0, SYSUTCDATETIME());  -- OperationCategoryId NULL = plant-wide (AreaLocationId dropped in 0048)
 
 DECLARE @DieCellId BIGINT;
 SELECT TOP 1 @DieCellId = eil.LocationId

@@ -40,3 +40,15 @@ BEGIN
         FOREIGN KEY (DeprecatedByUserId) REFERENCES Location.AppUser(Id);
 END
 GO
+
+-- ============================================================
+-- == Record migration ========================================
+-- ============================================================
+-- Guarded so manual re-runs / a Dev already carrying the DDL stay idempotent.
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0017_qualityspec_attribute_uom_fk')
+    INSERT INTO dbo.SchemaVersion (MigrationId, Description)
+    VALUES (N'0017_qualityspec_attribute_uom_fk',
+            N'Add Quality.QualitySpecAttribute.UomId (FK -> Parts.Uom) and Quality.QualitySpec header soft-delete columns DeprecatedAt + DeprecatedByUserId (FK -> Location.AppUser).');
+GO
+PRINT 'Migration 0017 (QualitySpecAttribute.UomId + QualitySpec soft-delete) applied.';
+GO
