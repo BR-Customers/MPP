@@ -1,0 +1,245 @@
+<!--
+  LOCKED TEMPLATE — MPP MES report family exemplar (approved 2026-08-07).
+  Canonical look for all four in-scope reports (Downtime / Rejects / Die-Shot / Production):
+  blue-black header band on the app canvas + cyan accent rule; Inter; params band (shift-centric
+  default, lead cell tinted); 5-KPI summary row; single-scale Pareto (bars=minutes, line=cumulative %
+  on one axis relabeled 0-100%, dashed 80% vital-few); breakdown split; machine-grouped nested
+  detail (summary band + child events). Fields validated against Oee.DowntimeEvent / DowntimeReasonType
+  / DowntimeReasonCode / DowntimeSourceCode / Shift. Next: translate to ReportMill off the donor.
+-->
+<style>
+  /* Palette from the MPP Core stylesheet tokens (cyan accent, blue-black neutrals,
+     Inter). Light document surface = the print/PDF steps of the same hues. */
+  :root{
+    --n10:#0B1220; --n20:#111A2E; --n30:#172238; --n40:#1F2C44; --n50:#2C3A55;
+    --n60:#425270; --n70:#697A98; --n80:#9AA8BF; --n90:#C9D2E0; --n100:#F0F3F8;
+    --acc-40:#126680; --acc-50:#1888A8; --acc-60:#22A8CC; --acc-70:#4BC2E0; --acc-tint:#EAF6FA;
+    --good:#15803D; --warn:#B45309; --bad:#B91C1C;
+    --ink:var(--n10); --ink2:#3d4b63; --muted:#6b788f;
+    --hair:#dfe4ea; --hair2:#eef1f5; --band:#f4f7f9; --page:#ffffff;
+    --font:'Inter','Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  .wrap{background:#4a5468;padding:24px;display:flex;justify-content:center;font-family:var(--font);color:var(--ink);}
+  .page{background:var(--page);width:816px;min-height:1056px;padding:0 0 40px;box-shadow:0 8px 28px rgba(0,0,0,.4);position:relative;}
+  .band{background:var(--n10);color:var(--n100);padding:22px 40px 18px;}
+  .band .kicker{font:600 11px/1.2 var(--font);letter-spacing:.16em;text-transform:uppercase;color:var(--acc-70);}
+  .band h1{font:700 26px/1.15 var(--font);margin:5px 0 0;letter-spacing:-.01em;}
+  .band .sub{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px;}
+  .band .site{font:400 12px/1.4 var(--font);color:var(--n80);}
+  .band .plant{font:700 13px/1.3 var(--font);color:var(--n90);}
+  .accent{height:3px;background:var(--acc-50);}
+  .params{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);margin:16px 40px 0;border:1px solid var(--hair);border-radius:5px;overflow:hidden;}
+  .params .cell{background:var(--band);padding:8px 12px;}
+  .params .cell.lead{background:var(--acc-tint);}
+  .params .lbl{font:600 9px/1.2 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .params .val{font:600 12.5px/1.3 var(--font);color:var(--ink);margin-top:2px;}
+  section{margin:22px 40px 0;}
+  .h{font:700 11.5px/1 var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--acc-40);border-bottom:1.5px solid var(--acc-50);padding-bottom:6px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;}
+  .h .note{font:400 10px/1 var(--font);color:var(--muted);letter-spacing:0;text-transform:none;}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+  .kpi{border:1px solid var(--hair);border-top:3px solid var(--acc-50);border-radius:4px;padding:9px 11px 10px;}
+  .kpi .k{font:600 8.5px/1.2 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  .kpi .v{font:700 21px/1.05 var(--font);margin-top:5px;color:var(--ink);letter-spacing:-.02em;}
+  .kpi .v small{font:600 11px/1 var(--font);color:var(--ink2);}
+  .kpi .d{font:400 9.5px/1.2 var(--font);color:var(--muted);margin-top:3px;}
+  .kpi.flag{border-top-color:var(--warn);}
+  .kpi .v.warnc{color:var(--warn);}
+  .kpi .fnote{font:600 8px/1 var(--font);color:var(--warn);margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
+  .chartcard{border:1px solid var(--hair);border-radius:5px;padding:12px 14px 6px;}
+  .legend{display:flex;gap:18px;margin:2px 2px 6px;font:400 10.5px/1 var(--font);color:var(--ink2);}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;}
+  .legend .lc{width:16px;height:0;border-top:2px solid var(--n40);border-radius:0;position:relative;top:-3px;}
+  .legend .lr{width:16px;height:0;border-top:2px dashed var(--warn);border-radius:0;position:relative;top:-3px;}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  table{width:100%;border-collapse:collapse;}
+  .mini td{font:400 11px/1.5 var(--font);padding:3px 0;border-bottom:1px solid var(--hair2);}
+  .mini td.n{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2);}
+  .mini .barcell{width:34%;}
+  .mini .track{height:9px;background:var(--hair2);border-radius:2px;overflow:hidden;}
+  .mini .fill{height:9px;background:var(--acc-50);}
+  .mini .fill.dim{background:var(--n70);}
+  .mini .muted td{color:var(--muted);}
+  /* detail — nested by machine */
+  .detail{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;}
+  .detail th{font:600 8.5px/1.2 var(--font);letter-spacing:.05em;text-transform:uppercase;color:var(--n100);background:var(--n40);text-align:left;padding:6px 7px;}
+  .detail th.n,.detail td.n{text-align:right;}
+  .detail th.c,.detail td.c{text-align:center;}
+  .detail td{font:400 10px/1.3 var(--font);color:var(--ink);padding:5px 7px;border-bottom:1px solid var(--hair2);}
+  .detail tr.evt td:first-child{padding-left:16px;}
+  .detail tr.evt td{color:var(--ink2);}
+  .grpband{display:flex;align-items:center;gap:14px;background:var(--acc-tint);border-top:2px solid var(--acc-50);padding:7px 10px;}
+  .grpband .mc{font:700 13px/1 var(--font);color:var(--acc-40);letter-spacing:.01em;min-width:44px;}
+  .grpband .ev{font:600 9px/1 var(--font);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .grpband .top{flex:1;font:400 10.5px/1.3 var(--font);color:var(--ink2);}
+  .grpband .top b{color:var(--ink);font-weight:600;}
+  .grpband .tot{font:700 13px/1 var(--font);color:var(--ink);}
+  .grpband .tot small{font:600 9px/1 var(--font);color:var(--muted);}
+  td.grpcell{padding:0 !important;border-bottom:none;}
+  .tag{display:inline-block;font:600 8.5px/1 var(--font);padding:2px 5px;border-radius:3px;}
+  .tag.op{background:var(--acc-tint);color:var(--acc-40);}
+  .tag.sys{background:#eef1f5;color:var(--n60);}
+  .tag.plc{background:#f0eaf7;color:#6b3fa0;}
+  .yes{color:var(--good);font-weight:700;}
+  .no{color:var(--bad);font-weight:700;}
+  .more{font:italic 400 10px/1.4 var(--font);color:var(--muted);padding:7px 7px;}
+  .foot{position:absolute;bottom:16px;left:40px;right:40px;display:flex;justify-content:space-between;font:400 9px/1.2 var(--font);color:var(--muted);border-top:1px solid var(--hair);padding-top:8px;}
+  .foot .conf{letter-spacing:.1em;text-transform:uppercase;}
+</style>
+
+<div class="wrap">
+<div class="page">
+
+  <div class="band">
+    <div class="kicker">Madison Precision Products &middot; MES</div>
+    <h1>Downtime Report &mdash; Shift</h1>
+    <div class="sub">
+      <div class="site">Die Cast &middot; 1st Shift &middot; loss analysis by machine &amp; reason</div>
+      <div class="plant">MPP &middot; Madison, IN</div>
+    </div>
+  </div>
+  <div class="accent"></div>
+
+  <div class="params">
+    <div class="cell lead"><div class="lbl">Shift</div><div class="val">1st Shift &middot; 06:00&ndash;14:30</div></div>
+    <div class="cell"><div class="lbl">Date</div><div class="val">Mon, Jul 7, 2026</div></div>
+    <div class="cell"><div class="lbl">Area</div><div class="val">Die Cast (DC1&ndash;DC4)</div></div>
+    <div class="cell"><div class="lbl">Generated</div><div class="val">Aug 7, 2026 &middot; 3:52 PM ET</div></div>
+  </div>
+
+  <section>
+    <div class="h">Shift Summary</div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Total Downtime</div><div class="v">4.4<small> hr</small></div><div class="d">261 min</div></div>
+      <div class="kpi"><div class="k">Events</div><div class="v">12</div><div class="d">4 machines</div></div>
+      <div class="kpi"><div class="k">Avg Duration</div><div class="v">21.8<small> min</small></div><div class="d">per event</div></div>
+      <div class="kpi"><div class="k">Unexcused</div><div class="v">94<small>%</small></div><div class="d">245 min unplanned</div></div>
+      <div class="kpi"><div class="k">% of Sched. Shift Time</div><div class="v">85.5<small>%</small></div><div class="d">uptime vs. scheduled</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h">Downtime Pareto by Reason <span class="note">this shift &middot; minutes (bars) &middot; cumulative share (line) &middot; single scale</span></div>
+    <div class="chartcard">
+      <div class="legend">
+        <span><i style="background:var(--acc-50)"></i>Downtime minutes</span>
+        <span><i class="lc"></i>Cumulative %</span>
+        <span><i class="lr"></i>80% (vital few)</span>
+      </div>
+      <svg id="pareto" viewBox="0 0 760 330" width="100%" style="display:block"></svg>
+    </div>
+  </section>
+
+  <section>
+    <div class="h">Breakdown <span class="note">this shift</span></div>
+    <div class="split">
+      <div>
+        <div style="font:600 10px/1 var(--font);color:var(--ink2);margin-bottom:7px;">By reason type <span style="font-weight:400;color:var(--muted)">(DowntimeReasonType)</span></div>
+        <table class="mini">
+          <tr><td>Setup</td><td class="barcell"><div class="track"><div class="fill" style="width:36%"></div></div></td><td class="n">93 min</td><td class="n">36%</td></tr>
+          <tr><td>Equipment</td><td class="barcell"><div class="track"><div class="fill" style="width:25%"></div></div></td><td class="n">66 min</td><td class="n">25%</td></tr>
+          <tr><td>Unscheduled</td><td class="barcell"><div class="track"><div class="fill" style="width:19%"></div></div></td><td class="n">50 min</td><td class="n">19%</td></tr>
+          <tr><td>Quality</td><td class="barcell"><div class="track"><div class="fill" style="width:8%"></div></div></td><td class="n">22 min</td><td class="n">8%</td></tr>
+          <tr><td>Break</td><td class="barcell"><div class="track"><div class="fill" style="width:6%"></div></div></td><td class="n">16 min</td><td class="n">6%</td></tr>
+          <tr><td>Mold</td><td class="barcell"><div class="track"><div class="fill" style="width:5%"></div></div></td><td class="n">14 min</td><td class="n">5%</td></tr>
+        </table>
+      </div>
+      <div>
+        <div style="font:600 10px/1 var(--font);color:var(--ink2);margin-bottom:7px;">Excused vs. unexcused <span style="font-weight:400;color:var(--muted)">(IsExcused)</span></div>
+        <table class="mini">
+          <tr><td>Unexcused</td><td class="barcell"><div class="track"><div class="fill" style="width:94%"></div></div></td><td class="n">245 min</td><td class="n">94%</td></tr>
+          <tr><td>Excused</td><td class="barcell"><div class="track"><div class="fill dim" style="width:6%"></div></div></td><td class="n">16 min</td><td class="n">6%</td></tr>
+        </table>
+        <div style="font:600 10px/1 var(--font);color:var(--ink2);margin:14px 0 7px;">Capture source <span style="font-weight:400;color:var(--muted)">(DowntimeSourceCode)</span></div>
+        <table class="mini">
+          <tr><td>Operator</td><td class="barcell"><div class="track"><div class="fill" style="width:75%"></div></div></td><td class="n">9 evt</td><td class="n">75%</td></tr>
+          <tr><td>System</td><td class="barcell"><div class="track"><div class="fill dim" style="width:25%"></div></div></td><td class="n">3 evt</td><td class="n">25%</td></tr>
+          <tr class="muted"><td>PLC (auto)</td><td class="barcell"><div class="track"></div></td><td class="n">0 evt</td><td class="n">pending commissioning</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h">Event Detail <span class="note">grouped by machine (ranked by downtime) &middot; times ET</span></div>
+    <table class="detail">
+      <thead><tr>
+        <th>Start</th><th>End</th><th class="n">Min</th>
+        <th>Reason</th><th>Type</th><th class="c">Exc.</th><th class="c">Source</th><th>Operator</th><th>Remarks</th>
+      </tr></thead>
+      <tbody>
+        <!-- DC2 -->
+        <tr><td class="grpcell" colspan="9"><div class="grpband"><span class="mc">DC2</span><span class="ev">4 events</span><span class="top">Top reason: <b>Die Change</b> &mdash; 71 min &middot; 94% unexcused</span><span class="tot">118<small> min</small></span></div></td></tr>
+        <tr class="evt"><td>06:20</td><td>07:31</td><td class="n">71</td><td>DC-0104 Die Change</td><td>Setup</td><td class="c no">No</td><td class="c"><span class="tag op">OP</span></td><td>BRK</td><td>Tool 5G0F to 5G0R</td></tr>
+        <tr class="evt"><td>09:05</td><td>09:30</td><td class="n">25</td><td>DC-0308 Waiting on Material</td><td>Unscheduled</td><td class="c no">No</td><td class="c"><span class="tag op">OP</span></td><td>JPT</td><td>No sleeves at cell</td></tr>
+        <tr class="evt"><td>11:40</td><td>11:54</td><td class="n">14</td><td>DC-0405 Mold Repair</td><td>Mold</td><td class="c no">No</td><td class="c"><span class="tag op">OP</span></td><td>MNT</td><td>Ejector pin seized</td></tr>
+        <tr class="evt"><td>13:15</td><td>13:23</td><td class="n">8</td><td>DC-0501 Scheduled Break</td><td>Break</td><td class="c yes">Yes</td><td class="c"><span class="tag sys">SYS</span></td><td>&mdash;</td><td>Lunch relief</td></tr>
+        <!-- DC1 -->
+        <tr><td class="grpcell" colspan="9"><div class="grpband"><span class="mc">DC1</span><span class="ev">3 events</span><span class="top">Top reason: <b>Hydraulic Fault</b> &mdash; 38 min &middot; 100% unexcused</span><span class="tot">62<small> min</small></span></div></td></tr>
+        <tr class="evt"><td>07:12</td><td>07:50</td><td class="n">38</td><td>DC-0212 Hydraulic Fault</td><td>Equipment</td><td class="c no">No</td><td class="c"><span class="tag sys">SYS</span></td><td>&mdash;</td><td>Pump pressure alarm</td></tr>
+        <tr class="evt"><td>10:22</td><td>10:38</td><td class="n">16</td><td>DC-0221 Spray Malfunction</td><td>Equipment</td><td class="c no">No</td><td class="c"><span class="tag op">OP</span></td><td>MRA</td><td>Reciprocator jam</td></tr>
+        <tr class="evt"><td>12:05</td><td>12:13</td><td class="n">8</td><td>DC-0207 Quality Hold</td><td>Quality</td><td class="c no">No</td><td class="c"><span class="tag op">OP</span></td><td>QA2</td><td>Porosity check</td></tr>
+        <!-- DC4 -->
+        <tr><td class="grpcell" colspan="9"><div class="grpband"><span class="mc">DC4</span><span class="ev">3 events</span><span class="top">Top reason: <b>Waiting on Material</b> &mdash; 25 min &middot; 83% unexcused</span><span class="tot">47<small> min</small></span></div></td></tr>
+        <tr class="evt"><td>08:10</td><td>08:35</td><td class="n">25</td><td>DC-0308 Waiting on Material</td><td>Unscheduled</td><td class="c no">No</td><td class="c"><span class="tag op">OP</span></td><td>JPT</td><td>Awaiting alloy</td></tr>
+        <tr class="evt"><td>11:00</td><td>11:14</td><td class="n">14</td><td>DC-0207 Quality Hold</td><td>Quality</td><td class="c no">No</td><td class="c"><span class="tag op">OP</span></td><td>QA2</td><td>First-off check</td></tr>
+        <tr class="evt"><td>13:15</td><td>13:23</td><td class="n">8</td><td>DC-0501 Scheduled Break</td><td>Break</td><td class="c yes">Yes</td><td class="c"><span class="tag sys">SYS</span></td><td>&mdash;</td><td>Lunch relief</td></tr>
+        <!-- DC3 -->
+        <tr><td class="grpcell" colspan="9"><div class="grpband"><span class="mc">DC3</span><span class="ev">2 events</span><span class="top">Top reason: <b>Tip / Shot Sleeve</b> &mdash; 22 min &middot; 100% unexcused</span><span class="tot">34<small> min</small></span></div></td></tr>
+        <tr class="evt"><td>09:40</td><td>10:02</td><td class="n">22</td><td>DC-0119 Tip / Shot Sleeve</td><td>Setup</td><td class="c no">No</td><td class="c"><span class="tag op">OP</span></td><td>HK</td><td>Worn tip replaced</td></tr>
+        <tr class="evt"><td>12:30</td><td>12:42</td><td class="n">12</td><td>DC-0221 Spray Malfunction</td><td>Equipment</td><td class="c no">No</td><td class="c"><span class="tag op">OP</span></td><td>MRA</td><td>Nozzle clog</td></tr>
+      </tbody>
+    </table>
+    <div class="more">Shift totals: 4 machines &middot; 12 events &middot; 261 min. (Multi-shift range available via report parameters.)</div>
+  </section>
+
+  <div class="foot">
+    <div>MPP MES &middot; Downtime Report &middot; Die Cast &middot; 1st Shift &middot; Jul 7, 2026</div>
+    <div class="conf">Page 1 of 1 &middot; Confidential</div>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function(){
+  var data=[
+    ["Die Change",71],["Waiting on Material",50],["Hydraulic Fault",38],
+    ["Spray Malfunction",28],["Tip / Shot Sleeve",22],["Quality Hold",22],
+    ["Break",16],["Mold Repair",14]
+  ];
+  var total=data.reduce(function(s,d){return s+d[1];},0);
+  var W=760,H=330, L=54,R=44,T=16,B=64;
+  var pw=W-L-R, ph=H-T-B, x0=L, base=T+ph;
+  var slot=pw/data.length, bw=Math.min(46,slot*0.6);
+  var y=function(v){return base - (v/total)*ph;};
+  var cx=function(i){return x0 + slot*i + slot/2;};
+  var ACC='#1888A8', CUM='#1F2C44', REF='#B45309', MUT='#6b788f';
+  var grid='', svg='';
+  [0,.25,.5,.75,1].forEach(function(p){
+    var yy=base-p*ph, minv=Math.round(p*total);
+    grid+='<line x1="'+L+'" y1="'+yy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+yy.toFixed(1)+'" stroke="#eef1f5" stroke-width="1"/>';
+    grid+='<text x="'+(L-8)+'" y="'+(yy+3).toFixed(1)+'" text-anchor="end" fill="'+MUT+'" font-family="Inter,Segoe UI,sans-serif" font-size="9.5">'+minv+'</text>';
+    grid+='<text x="'+(W-R+8)+'" y="'+(yy+3).toFixed(1)+'" text-anchor="start" fill="'+MUT+'" font-family="Inter,Segoe UI,sans-serif" font-size="9.5">'+Math.round(p*100)+'%</text>';
+  });
+  grid+='<text x="'+L+'" y="'+(base+40)+'" fill="'+MUT+'" font-family="Inter,Segoe UI,sans-serif" font-size="9">min</text>';
+  var y80=base-0.8*ph;
+  grid+='<line x1="'+L+'" y1="'+y80.toFixed(1)+'" x2="'+(W-R)+'" y2="'+y80.toFixed(1)+'" stroke="'+REF+'" stroke-width="1.2" stroke-dasharray="5 4"/>';
+  var cum=0, pts=[];
+  data.forEach(function(d,i){
+    var v=d[1]; cum+=v;
+    var bx=cx(i)-bw/2, by=y(v), bh=base-by;
+    svg+='<rect x="'+bx.toFixed(1)+'" y="'+by.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="2" fill="'+ACC+'"/>';
+    svg+='<text x="'+cx(i).toFixed(1)+'" y="'+(by-4).toFixed(1)+'" text-anchor="middle" fill="#3d4b63" font-family="Inter,Segoe UI,sans-serif" font-size="9" font-weight="600">'+v+'</text>';
+    svg+='<text x="'+cx(i).toFixed(1)+'" y="'+(base+12)+'" text-anchor="end" fill="#3d4b63" font-family="Inter,Segoe UI,sans-serif" font-size="9" transform="rotate(-30 '+cx(i).toFixed(1)+' '+(base+12)+')">'+d[0]+'</text>';
+    pts.push([cx(i), y(cum), Math.round(cum/total*100)]);
+  });
+  var path=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
+  svg+='<path d="'+path+'" fill="none" stroke="'+CUM+'" stroke-width="2"/>';
+  pts.forEach(function(p){
+    svg+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.1" fill="'+CUM+'"/>';
+    svg+='<text x="'+p[0].toFixed(1)+'" y="'+(p[1]-7).toFixed(1)+'" text-anchor="middle" fill="'+CUM+'" font-family="Inter,Segoe UI,sans-serif" font-size="8.5" font-weight="700">'+p[2]+'%</text>';
+  });
+  document.getElementById('pareto').innerHTML=grid+svg;
+})();
+</script>

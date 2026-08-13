@@ -1,0 +1,15 @@
+{
+  "scope": "A",
+  "version": 1,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "data.bin"
+  ],
+  "attributes": {
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-08-10T18:00:00Z"
+    }
+  }
+}

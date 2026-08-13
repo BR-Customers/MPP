@@ -436,6 +436,50 @@
                       },
                       {
                         "meta": {
+                          "name": "SummaryBadgeDraft"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.editDraft.meta.Id} != null && {view.custom.editDraft.meta.PublishedAt} = null && {view.custom.editDraft.meta.DeprecatedAt} = null"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "badge badge-draft"
+                          },
+                          "text": "Draft"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SummaryBadgePublished"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.editDraft.meta.PublishedAt} != null && {view.custom.editDraft.meta.DeprecatedAt} = null"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "badge badge-published"
+                          },
+                          "text": "Published"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
                           "name": "SummaryBadgeDeprecated"
                         },
                         "propConfig": {
@@ -488,6 +532,39 @@
                             "classes": "btn btn-primary btn-sm"
                           },
                           "text": "Save"
+                        },
+                        "type": "ia.input.button"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\tBlueRidge.Common.Notify.toast('No template selected', 'Pick a Draft template first.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.publish(templateId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Template published')\n\tif result and result.get('Status'):\n\t\trefreshed = BlueRidge.Parts.OperationTemplate.getOne(templateId)\n\t\tif refreshed is not None:\n\t\t\tself.view.custom.selected  = {'meta': dict(refreshed)}\n\t\t\tself.view.custom.editDraft = {'meta': dict(refreshed)}\n\t\tsystem.perspective.sendMessage('templateListRefresh', scope='page')"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "BtnPublish"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.editDraft.meta.Id} != null && {view.custom.editDraft.meta.PublishedAt} = null && {view.custom.editDraft.meta.DeprecatedAt} = null"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-primary btn-sm"
+                          },
+                          "text": "Publish"
                         },
                         "type": "ia.input.button"
                       },
@@ -934,7 +1011,7 @@
                           },
                           "transforms": [
                             {
-                              "code": "\tout \u003d []\n\tfor v in (value or []):\n\t\tvnum \u003d v.get(\u0027VersionNumber\u0027, 0)\n\t\tname \u003d v.get(\u0027Name\u0027) or \u0027\u0027\n\t\tstate \u003d \u0027Deprecated\u0027 if v.get(\u0027Deprecated\u0027) else \u0027Active\u0027\n\t\tlabel \u003d \u0027v\u0027 + str(vnum) + \u0027 -- \u0027 + name + \u0027 (\u0027 + state + \u0027)\u0027\n\t\tout.append({\u0027label\u0027: label, \u0027value\u0027: v.get(\u0027Id\u0027)})\n\treturn out",
+                              "code": "\tout \u003d []\n\tfor v in (value or []):\n\t\tvnum \u003d v.get(\u0027VersionNumber\u0027, 0)\n\t\tname \u003d v.get(\u0027Name\u0027) or \u0027\u0027\n\t\tstate \u003d \u0027Deprecated\u0027 if v.get(\u0027Deprecated\u0027) else (\u0027Draft\u0027 if not v.get(\u0027Published\u0027) else \u0027Active\u0027)\n\t\tlabel \u003d \u0027v\u0027 + str(vnum) + \u0027 -- \u0027 + name + \u0027 (\u0027 + state + \u0027)\u0027\n\t\tout.append({\u0027label\u0027: label, \u0027value\u0027: v.get(\u0027Id\u0027)})\n\treturn out",
                               "type": "script"
                             }
                           ],

@@ -22,6 +22,12 @@
 --   The new row starts un-deprecated (DeprecatedAt IS NULL). The parent
 --   is NOT auto-deprecated — engineering decides when to retire it.
 --
+--   LIFECYCLE (FAT-OQ-030): the clone INSERT omits PublishedAt, so the new
+--   version is born a DRAFT (PublishedAt IS NULL). The prior published version
+--   stays active (resolving into execution) until the Draft is published via
+--   Parts.OperationTemplate_Publish, which then auto-deprecates the prior
+--   published version (single-Published invariant).
+--
 -- Parameters (input):
 --   @ParentOperationTemplateId BIGINT - The source version to clone. Required.
 --   @AppUserId BIGINT                 - Required for audit.
@@ -33,6 +39,8 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-08-07 - 2.1 - Draft/Published lifecycle (FAT-OQ-030): clone born a Draft
+--                       (INSERT omits PublishedAt); no signature change.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.OperationTemplate_CreateNewVersion
     @ParentOperationTemplateId BIGINT,

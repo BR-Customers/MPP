@@ -92,6 +92,10 @@
       "title": "Receiving",
       "viewPath": "BlueRidge/Views/ShopFloor/ReceivingDock"
     },
+    "/shop-floor/reports": {
+      "title": "Reports",
+      "viewPath": "BlueRidge/Views/Reports"
+    },
     "/shop-floor/shift-summary": {
       "title": "Shift-End Summary",
       "viewPath": "BlueRidge/Views/ShopFloor/ShiftEndSummary"

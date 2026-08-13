@@ -4,10 +4,21 @@
       "qty": ""
     },
     "refreshToken": 0,
-    "selectedLotId": null
+    "selectedLotId": null,
+    "queue": [],
+    "scrapLines": [],
+    "defectOptions": []
   },
   "params": {},
   "propConfig": {
+    "custom.defectOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0, \"MachiningOut\")"
+        },
+        "type": "expr"
+      }
+    },
     "custom.opTemplateId": {
       "binding": {
         "config": {
@@ -691,11 +702,102 @@
                   {
                     "children": [
                       {
+                        "meta": {
+                          "name": "ScrapLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Scrap / defects (optional)"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ScrapRepeater"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.scrapLines"
+                              },
+                              "transforms": [
+                                {
+                                  "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.defectOptions) or []\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = r or {}\n\t\tout.append({\"index\": i, \"defectCodeId\": r.get(\"defectCodeId\"), \"quantity\": r.get(\"quantity\") or \"\", \"defectOptions\": opts})\n\treturn out",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "path": "BlueRidge/Components/PlantFloor/MachiningEntry/ScrapLineRow",
+                          "style": {
+                            "gap": "6px"
+                          }
+                        },
+                        "type": "ia.display.flex-repeater"
+                      },
+                      {
                         "events": {
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource \u003d self.view.custom.parentLot\n\totId \u003d self.view.custom.opTemplateId\n\tcellId \u003d self.session.custom.cell.locationId\n\td \u003d self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q \u003c\u003d 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult \u003d BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tavail \u003d result.get(\"Available\") if result else None\n\tif result and (not result.get(\"Status\")) and avail and avail \u003e 0 and avail \u003c q:\n\t\tsystem.perspective.openPopup(\"mo-partial\", \"BlueRidge/Components/Popups/ConfirmDestructive\", params\u003d{\"title\": \"Not enough in the queue\", \"message\": \"Only %s available in the FIFO queue. Mint %s instead?\" % (avail, avail), \"confirmLabel\": \"Mint %s\" % avail, \"cancelLabel\": \"Cancel\", \"confirmClass\": \"pf-btn pf-btn-primary pf-btn-large\", \"replyMessage\": \"moPartialConfirmed\", \"popupId\": \"mo-partial\"}, modal\u003dTrue, showCloseIcon\u003dFalse)\n\t\treturn\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft \u003d {\"qty\": \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                                "script": "\tself.view.rootContainer.addScrapLine()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "AddScrapButton"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary"
+                          },
+                          "text": "+ Add scrap line"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ScrapSection"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-panel",
+                        "gap": "8px",
+                        "marginTop": "12px",
+                        "padding": "12px 16px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q <= 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\tscrapLines = []\n\tfor r in rows:\n\t\tr = r or {}\n\t\tdc = r.get(\"defectCodeId\")\n\t\tqq = BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif dc is None and not qq:\n\t\t\tcontinue\n\t\tif not qq or qq <= 0 or dc is None:\n\t\t\tBlueRidge.Common.Notify.toast(\"Incomplete scrap line\", \"Each scrap line needs a reason and a positive quantity.\", \"warning\")\n\t\t\treturn\n\t\tscrapLines.append({\"defectCodeId\": dc, \"quantity\": qq})\n\tresult = BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId, False, scrapLines)\n\tavail = result.get(\"Available\") if result else None\n\tif result and (not result.get(\"Status\")) and avail and avail > 0 and avail < q:\n\t\tsystem.perspective.openPopup(\"mo-partial\", \"BlueRidge/Components/Popups/ConfirmDestructive\", params={\"title\": \"Not enough in the queue\", \"message\": \"Only %s available in the FIFO queue. Mint %s instead?\" % (avail, avail), \"confirmLabel\": \"Mint %s\" % avail, \"cancelLabel\": \"Cancel\", \"confirmClass\": \"pf-btn pf-btn-primary pf-btn-large\", \"replyMessage\": \"moPartialConfirmed\", \"popupId\": \"mo-partial\"}, modal=True, showCloseIcon=False)\n\t\treturn\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\"}\n\t\tself.view.custom.scrapLines = []\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
                               },
                               "scope": "G",
                               "type": "script"
@@ -835,9 +937,29 @@
       }
     },
     "scripts": {
-      "customMethods": [],
+      "customMethods": [
+        {
+          "name": "addScrapLine",
+          "params": [],
+          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = list(rows)\n\trows.append({\"defectCodeId\": None, \"quantity\": \"\"})\n\tself.view.custom.scrapLines = rows"
+        }
+      ],
       "extensionFunctions": null,
       "messageHandlers": [
+        {
+          "messageType": "machiningScrapLineChanged",
+          "pageScope": true,
+          "script": "\tidx = payload.get(\"index\")\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = list(rows)\n\tif idx is None or idx < 0 or idx >= len(rows):\n\t\treturn\n\trows[idx] = {\"defectCodeId\": payload.get(\"defectCodeId\"), \"quantity\": payload.get(\"quantity\") or \"\"}\n\tself.view.custom.scrapLines = rows",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "machiningScrapLineRemoved",
+          "pageScope": true,
+          "script": "\tidx = payload.get(\"index\")\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = list(rows)\n\tif idx is None or idx < 0 or idx >= len(rows):\n\t\treturn\n\tdel rows[idx]\n\tself.view.custom.scrapLines = rows",
+          "sessionScope": false,
+          "viewScope": false
+        },
         {
           "messageType": "machiningOutSelected",
           "pageScope": true,
@@ -855,7 +977,7 @@
         {
           "messageType": "moPartialConfirmed",
           "pageScope": true,
-          "script": "\t# Shortfall confirm: user chose to mint the FIFO queue\u0027s available qty.\n\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tsource \u003d self.view.custom.parentLot\n\totId \u003d self.view.custom.opTemplateId\n\tcellId \u003d self.session.custom.cell.locationId\n\tq \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.draft.get(\"qty\"))\n\tif cellId is None or not source or source.get(\"Id\") is None or otId is None or q is None or q \u003c\u003d 0:\n\t\treturn\n\tresult \u003d BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId, True)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft \u003d {\"qty\": \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "script": "\t# Shortfall confirm: user chose to mint the FIFO queue's available qty.\n\tif not payload or payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tsource = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\tq = BlueRidge.Common.Util.toIntOrNone(self.view.custom.draft.get(\"qty\"))\n\tif cellId is None or not source or source.get(\"Id\") is None or otId is None or q is None or q <= 0:\n\t\treturn\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\tscrapLines = []\n\tfor r in rows:\n\t\tr = r or {}\n\t\tdc = r.get(\"defectCodeId\")\n\t\tqq = BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif dc is None and not qq:\n\t\t\tcontinue\n\t\tif not qq or qq <= 0 or dc is None:\n\t\t\tBlueRidge.Common.Notify.toast(\"Incomplete scrap line\", \"Each scrap line needs a reason and a positive quantity.\", \"warning\")\n\t\t\treturn\n\t\tscrapLines.append({\"defectCodeId\": dc, \"quantity\": qq})\n\tresult = BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId, True, scrapLines)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\"}\n\t\tself.view.custom.scrapLines = []\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

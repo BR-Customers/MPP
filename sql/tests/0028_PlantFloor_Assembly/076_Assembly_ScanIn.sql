@@ -33,7 +33,7 @@ BEGIN
 END
 
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOR-ASER');     -- the assembly cell
-DECLARE @SrcCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');  -- where the LOTs start
+DECLARE @SrcCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');  -- where the LOTs start (was MA1-5GOF-MOUT, since deprecated)
 -- P6-SCAN-OUT is produced at the assembly cell (IsConsumptionPoint = 0)
 IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @Out AND LocationId = @Cell AND DeprecatedAt IS NULL)
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@Out, @Cell, @Now, 0);

@@ -389,12 +389,39 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1')
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 022', N'MA2-59B-AOUT1-P1', N'Label printer for MA2-59B-AOUT1', 99;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P2')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 023', N'MA2-59B-AOUT1-P2', N'Label printer for MA2-59B-AOUT1', 99;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P3')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 024', N'MA2-59B-AOUT1-P3', N'Label printer for MA2-59B-AOUT1', 99;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P4')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 025', N'MA2-59B-AOUT1-P4', N'Label printer for MA2-59B-AOUT1', 99;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P5')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 026', N'MA2-59B-AOUT1-P5', N'Label printer for MA2-59B-AOUT1', 99;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P6')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 027', N'MA2-59B-AOUT1-P6', N'Label printer for MA2-59B-AOUT1', 99;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P7')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 028', N'MA2-59B-AOUT1-P7', N'Label printer for MA2-59B-AOUT1', 99;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P8')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 029', N'MA2-59B-AOUT1-P8', N'Label printer for MA2-59B-AOUT1', 99;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P9')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 030', N'MA2-59B-AOUT1-P9', N'Label printer for MA2-59B-AOUT1', 99;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT1-P10')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT1'), N'P - 031', N'MA2-59B-AOUT1-P10', N'Label printer for MA2-59B-AOUT1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT2')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B'), N'Assembly Out', N'MA2-59B-AOUT2', N'MA2-59B-AOUT2', 3;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-59B-AOUT2-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT2'), N'P - 023', N'MA2-59B-AOUT2-P1', N'Label printer for MA2-59B-AOUT2', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-AOUT2'), N'P - 032', N'MA2-59B-AOUT2-P1', N'Label printer for MA2-59B-AOUT2', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6FBCHOP')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'MA2'), N'6FB Small Parts', N'MA2-6FBCHOP', N'MA2-6FBCHOP', 10;
@@ -406,7 +433,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6FBCHOP-AOUT')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6FBCHOP'), N'Assembly Out Cam Holders', N'MA2-6FBCHOP-AOUT', N'MA2-6FBCHOP-AOUT', 2;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6FBCHOP-AOUT-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6FBCHOP-AOUT'), N'P - 024', N'MA2-6FBCHOP-AOUT-P1', N'Label printer for MA2-6FBCHOP-AOUT', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6FBCHOP-AOUT'), N'P - 033', N'MA2-6FBCHOP-AOUT-P1', N'Label printer for MA2-6FBCHOP-AOUT', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-64AOP')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'MA2'), N'64A Oil Pan', N'MA2-64AOP', N'MA2-64AOP', 7;
@@ -418,7 +445,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-64AOP-AOUT')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MA2-64AOP'), N'Assembly Out', N'MA2-64AOP-AOUT', N'MA2-64AOP-AOUT', 2;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-64AOP-AOUT-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-64AOP-AOUT'), N'P - 025', N'MA2-64AOP-AOUT-P1', N'Label printer for MA2-64AOP-AOUT', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-64AOP-AOUT'), N'P - 034', N'MA2-64AOP-AOUT-P1', N'Label printer for MA2-64AOP-AOUT', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6MACH')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'MA2'), N'6MA Cam Holder Line 1', N'MA2-6MACH', N'MA2-6MACH', 8;
@@ -430,19 +457,19 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH'), N'METTs Assembly Out A', N'MA2-6MACH-AOUT1', N'MA2-6MACH-AOUT1', 2;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT1'), N'P - 026', N'MA2-6MACH-AOUT1-P1', N'Label printer for MA2-6MACH-AOUT1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT1'), N'P - 035', N'MA2-6MACH-AOUT1-P1', N'Label printer for MA2-6MACH-AOUT1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT2')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH'), N'METTs Assembly Out B', N'MA2-6MACH-AOUT2', N'MA2-6MACH-AOUT2', 3;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT2-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT2'), N'P - 027', N'MA2-6MACH-AOUT2-P1', N'Label printer for MA2-6MACH-AOUT2', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT2'), N'P - 036', N'MA2-6MACH-AOUT2-P1', N'Label printer for MA2-6MACH-AOUT2', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT3')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH'), N'Assembly Out', N'MA2-6MACH-AOUT3', N'MA2-6MACH-AOUT3', 4;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT3-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT3'), N'P - 028', N'MA2-6MACH-AOUT3-P1', N'Label printer for MA2-6MACH-AOUT3', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT3'), N'P - 037', N'MA2-6MACH-AOUT3-P1', N'Label printer for MA2-6MACH-AOUT3', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'WHSE')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 4, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Warehouse', N'WHSE', N'WHSE', 9;
@@ -472,7 +499,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-5PA-AOUT')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MA2-5PA'), N'Assembly Out', N'MA2-5PA-AOUT', N'MA2-5PA-AOUT', 4;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-5PA-AOUT-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-5PA-AOUT'), N'P - 029', N'MA2-5PA-AOUT-P1', N'Label printer for MA2-5PA-AOUT', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-5PA-AOUT'), N'P - 038', N'MA2-5PA-AOUT-P1', N'Label printer for MA2-5PA-AOUT', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'66B-TC')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'MA1'), N'66B Thermal Case', N'66B-TC', N'66B-TC', 7;
@@ -484,7 +511,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-R
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2'), N'Rocker Shaft 1-4 Machining Out', N'MA2-RPYCAM2-MOUT-RS', N'MA2-RPYCAM2-MOUT-RS', 4;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS'), N'P - 030', N'MA2-RPYCAM2-MOUT-RS-P1', N'Label printer for MA2-RPYCAM2-MOUT-RS', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS'), N'P - 039', N'MA2-RPYCAM2-MOUT-RS-P1', N'Label printer for MA2-RPYCAM2-MOUT-RS', 99;
 
 -- === Exception 1: Trim Storage (one per trim shop) ===
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-STORE')
@@ -1394,3 +1421,61 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Locatio
     SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS'),
            (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'RequiresCompletionConfirm' AND LocationTypeDefinitionId = 7 ORDER BY Id),
            N'0', SYSUTCDATETIME();
+
+-- === Inventory overlay: terminal IPs (MPP_Terminal_Printer_Inventory.xlsx; keyed by FINAL code) ===
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'MA2-6MAOP-AOUT' AND ad.AttributeName = N'IpAddress')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MAOP-AOUT'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'IpAddress' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'172.17.20.115', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'MA2-59B-MIN' AND ad.AttributeName = N'IpAddress')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-59B-MIN'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'IpAddress' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'172.17.14.117', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'MA2-64AOP-AOUT' AND ad.AttributeName = N'IpAddress')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-64AOP-AOUT'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'IpAddress' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'172.17.14.232', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'MA2-6MACH-AOUT1' AND ad.AttributeName = N'IpAddress')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT1'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'IpAddress' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'172.17.20.55', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'MA2-6MACH-AOUT2' AND ad.AttributeName = N'IpAddress')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH-AOUT2'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'IpAddress' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'172.17.20.57', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'MA2-6MACH-MIN' AND ad.AttributeName = N'IpAddress')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-6MACH-MIN'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'IpAddress' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'172.17.14.211', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'MA2-6FBCHOP-MIN' AND ad.AttributeName = N'IpAddress')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-6FBCHOP-MIN'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'IpAddress' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'172.17.14.169', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'MA2-RPYCAM2-AOUT1' AND ad.AttributeName = N'IpAddress')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2-AOUT1'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'IpAddress' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'172.17.20.162', SYSUTCDATETIME();

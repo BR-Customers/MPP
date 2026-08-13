@@ -7,12 +7,14 @@ def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
 
 
-def record(data, appUserId=None, terminalLocationId=None):
+def record(data, appUserId=None, terminalLocationId=None, allowHeldLot=False):
     """Log a reject. data: {lotId, defectCodeId, quantity, chargeToArea,
        productionEventId, remarks, operationTypeCode}. The proc derives additive-vs-
        subtractive from Parts.OperationType.ScrapIsAdditive for operationTypeCode
        (0042): die-cast scrap is additive (LOT NOT decremented); downstream scrap
-       decrements + closes-at-zero (D3). Returns {Status, Message, NewId}."""
+       decrements + closes-at-zero (D3). allowHeldLot=True permits scrap directly
+       against a HELD LOT (FAT-QH-150: no split, no hold release; Hold status only,
+       the LOT stays held). Returns {Status, Message, NewId}."""
     BlueRidge.Common.Util.log(
         "record data=%s appUserId=%s terminalLocationId=%s"
         % (data, appUserId, terminalLocationId)
@@ -30,5 +32,6 @@ def record(data, appUserId=None, terminalLocationId=None):
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
         "operationTypeCode":  d.get("operationTypeCode"),
+        "allowHeldLot":       (1 if allowHeldLot else 0),
     }
     return BlueRidge.Common.Db.execMutation("workorder/RejectEvent_Record", params)

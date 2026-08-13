@@ -7,4 +7,5 @@ EXEC Workorder.RejectEvent_Record
     @Remarks            = :remarks,
     @AppUserId          = :appUserId,
     @TerminalLocationId = :terminalLocationId,
-    @OperationTypeCode  = :operationTypeCode
+    @OperationTypeCode  = :operationTypeCode,
+    @AllowHeldLot       = :allowHeldLot

@@ -30,8 +30,8 @@ DECLARE @AreaId BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
     INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
     INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
     WHERE l.DeprecatedAt IS NULL AND lt.Code = N'Area' ORDER BY l.Id);
-INSERT INTO Quality.DefectCode (Code, Description, AreaLocationId, IsExcused, CreatedAt)
-VALUES (N'TEST-DEF-CG', N'Concurrency guard test', @AreaId, 0, SYSUTCDATETIME());
+INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused, CreatedAt)
+VALUES (N'TEST-DEF-CG', N'Concurrency guard test', NULL, 0, SYSUTCDATETIME());  -- OperationCategoryId NULL = plant-wide (AreaLocationId dropped in 0048)
 GO
 
 -- Build a 10-piece LOT, valid reject of 4 -> PieceCount=6; assert never negative.

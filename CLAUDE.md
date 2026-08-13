@@ -66,6 +66,7 @@ Start here and work down. Each document builds on the previous. Current version 
 - **Auth:** Active Directory + Ignition roles. Initials-based attribution for shop-floor operators (no AD account); per-action AD elevation for protected actions. No custom RBAC tables.
 - **PLC/OPC:** OmniServer (scales), TOPServer (assembly PLCs), Cognex (vision). MIP handshake for serialized lines.
 - **External:** AIM (Honda EDI), Zebra printers via ZPL. Direct calls logged to `Audit.InterfaceLog`. Gateway-script-async dispatch (FDS-01-014).
+- **Reporting:** Ignition **Reporting Module** PDF reports authored as file-based binary `data.bin` resources (no scripting API to author them) via the global **`ignition-reporting` skill**. A plant-floor **Reports landing page** (`/shop-floor/reports`) drives a registry of reports through an inline Report Viewer + Print-PDF. Mechanics + hard-won gotchas: `ignition-context-pack/10_reporting_module.md`.
 - **Design patterns:** ISA-95 hierarchy with polymorphic three-tier location model (`LocationType` → `LocationTypeDefinition` → `LocationAttributeDefinition`), adjacency list genealogy, spec-driven quality, three-state versioning (Draft/Published/Deprecated) on BOMs/routes/operation templates/quality specs, append-only event tables, `DeprecatedAt` soft deletes, `BIGINT IDENTITY` surrogate `Id` PKs everywhere.
 
 ## Scope Boundaries
@@ -144,6 +145,7 @@ The `ignition-context-pack/` folder contains a vendor-neutral, DevTools-verified
 - Project lifecycle / timers        → `ignition-context-pack/05_lifecycle_and_timers.md`
 - Custom icon libraries             → `ignition-context-pack/08_custom_icon_libraries.md`
 - Repo ↔ Gateway sync / linking      → `ignition-context-pack/09_repo_gateway_sync.md`
+- Reporting Module (PDF reports)     → `ignition-context-pack/10_reporting_module.md` (+ global `ignition-reporting` skill)
 - All view authoring (always read)  → `ignition-context-pack/07_conventions_and_antipatterns.md`
 
 Pack pattern is "read it when relevant, don't preload" — most tasks need only one or two files. Project-specific overlays (this section's MPP-specific subsections) take precedence over the pack where they conflict.

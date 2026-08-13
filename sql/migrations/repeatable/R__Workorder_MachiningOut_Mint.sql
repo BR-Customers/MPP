@@ -1,6 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
+-- Version:     2.3 (2026-08-07, FAT-MACH-140) - defect/reject capture. New optional
+--              @ScrapLinesJson ([{"defectCodeId","quantity"}, ...]) writes one
+--              Workorder.RejectEvent per line (ProductionEventId NULL, LotId =
+--              @SourceLotId), and decrements the scanned casting by the scrap total
+--              IN ADDITION to the FIFO consumption (mirror of TrimOut_Record's inline
+--              scrap). Pre-txn: valid JSON, every qty>0, every DefectCode active, and
+--              the source casting's MIN(InvAvail,PieceCount) covers the scrap. The
+--              mint availability is computed NET of scrap (@NetAvail = @TotalAvail -
+--              @ScrapTotal when @SourceLotId is in the FIFO eligible set) so consumed
+--              + scrap can never over-draw; the scrap decrement is applied in-txn
+--              BEFORE the FIFO walk, which reads lock-fresh MIN(InvAvail,PieceCount).
 -- Version:     2.2 (2026-07-21) - bound each draw by MIN(InventoryAvailable, PieceCount).
 -- Description: Machining OUT consume-mint. @SourceLotId is the FIFO HANDLE (its cell +
 --              casting part). Consumes strict oldest-first (arrival order) across ALL
@@ -30,7 +41,8 @@ CREATE OR ALTER PROCEDURE Workorder.MachiningOut_Mint
     @ProducedItemId      BIGINT = NULL,
     @AppUserId           BIGINT,
     @TerminalLocationId  BIGINT = NULL,
-    @AllowPartial        BIT    = 0
+    @AllowPartial        BIT    = 0,
+    @ScrapLinesJson      NVARCHAR(MAX) = NULL   -- [{"defectCodeId":<bigint>,"quantity":<int>}, ...]
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
@@ -38,14 +50,18 @@ BEGIN
     DECLARE @ProcName NVARCHAR(200) = N'Workorder.MachiningOut_Mint';
     DECLARE @Params NVARCHAR(MAX) = (SELECT @SourceLotId AS SourceLotId, @OperationTemplateId AS OperationTemplateId,
         @PieceCount AS PieceCount, @ProducedItemId AS ProducedItemId, @AppUserId AS AppUserId,
-        @TerminalLocationId AS TerminalLocationId, @AllowPartial AS AllowPartial FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        @TerminalLocationId AS TerminalLocationId, @AllowPartial AS AllowPartial,
+        LEFT(@ScrapLinesJson, 2000) AS ScrapLinesJson FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
     DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
     DECLARE @ClosedStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed');
     DECLARE @ManufacturedOriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code=N'Manufactured');
     DECLARE @SrcItem BIGINT, @SrcLoc BIGINT, @Blocks BIT, @SrcStatusCode NVARCHAR(20);
+    DECLARE @SrcPieceCount INT, @SrcInvAvail INT;
     DECLARE @BomId BIGINT, @QtyPer DECIMAL(18,4), @Consumed INT, @CandCount INT, @TotalAvail INT;
+    DECLARE @ScrapTotal INT = 0, @SrcEligible BIT = 0, @NetAvail INT;
     DECLARE @MintedName NVARCHAR(50), @OldestName NVARCHAR(50), @NextOrd INT, @ProducedPn NVARCHAR(50);
     DECLARE @Activity NVARCHAR(500), @NewValue NVARCHAR(MAX);
+    DECLARE @Scrap TABLE (DefectCodeId BIGINT, Quantity INT);
 
     BEGIN TRY
         -- ===== Pre-transaction validations =====
@@ -65,12 +81,36 @@ BEGIN
         DECLARE @OpTypeCode NVARCHAR(20) = (SELECT oty.Code FROM Parts.OperationTemplate ot
             JOIN Parts.OperationType oty ON oty.Id=ot.OperationTypeId WHERE ot.Id=@OperationTemplateId);
         -- Source LOT = FIFO handle (cell + part); must be open/not-blocked.
-        SELECT @SrcItem=l.ItemId, @SrcLoc=l.CurrentLocationId, @Blocks=sc.BlocksProduction, @SrcStatusCode=sc.Code
+        SELECT @SrcItem=l.ItemId, @SrcLoc=l.CurrentLocationId, @Blocks=sc.BlocksProduction, @SrcStatusCode=sc.Code,
+               @SrcPieceCount=l.PieceCount, @SrcInvAvail=l.InventoryAvailable
         FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@SourceLotId;
         IF @SrcItem IS NULL BEGIN SET @Message=N'Source LOT not found.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
         IF @Blocks=1 OR @SrcStatusCode=N'Closed' BEGIN SET @Message=N'Source LOT is '+@SrcStatusCode+N' and cannot be consumed.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
+
+        -- ---- Scrap lines (pre-txn): parse + validate (mirror TrimOut_Record). One
+        --      RejectEvent per line is fanned out in-txn against @SourceLotId, which is
+        --      ALSO decremented by the scrap total (FAT-MACH-140). ----
+        IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) <> 1
+        BEGIN SET @Message=N'ScrapLinesJson is not valid JSON.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
+        IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) = 1
+            INSERT INTO @Scrap (DefectCodeId, Quantity)
+            SELECT j.defectCodeId, j.quantity
+            FROM OPENJSON(@ScrapLinesJson) WITH (defectCodeId BIGINT N'$.defectCodeId', quantity INT N'$.quantity') j;
+        SET @ScrapTotal = ISNULL((SELECT SUM(Quantity) FROM @Scrap), 0);
+        IF EXISTS (SELECT 1 FROM @Scrap WHERE Quantity IS NULL OR Quantity <= 0)
+        BEGIN SET @Message=N'Each scrap line quantity must be positive.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
+        IF EXISTS (SELECT 1 FROM @Scrap s WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Id=s.DefectCodeId AND dc.DeprecatedAt IS NULL))
+        BEGIN SET @Message=N'One or more scrap defect codes are invalid or deprecated.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
+        -- source casting must hold enough to cover the scrap alone (never drive it negative)
+        IF @ScrapTotal > 0 AND (CASE WHEN @SrcInvAvail < @SrcPieceCount THEN @SrcInvAvail ELSE @SrcPieceCount END) < @ScrapTotal
+        BEGIN SET @Message=N'Scrap total '+CAST(@ScrapTotal AS NVARCHAR(10))+N' exceeds the source casting available quantity.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
+
         -- Derive produced part (published BOM whose child = @SrcItem, parent line-eligible).
         IF @ProducedItemId IS NULL
         BEGIN
@@ -123,9 +163,39 @@ BEGIN
         FROM Lots.Lot l
         WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0 AND l.PieceCount > 0
           AND EXISTS (SELECT 1 FROM NextStep ns WHERE ns.LotId=l.Id AND ns.rn=1 AND ns.OpCode=@OpTypeCode);
-        SET @Available = CAST(FLOOR(@TotalAvail / @QtyPer) AS INT);
+        -- Scrap decrements @SourceLotId (FAT-MACH-140). If @SourceLotId is itself in the
+        -- FIFO eligible set, that scrap reduces the mintable pool -- so the availability
+        -- the mint sees is NET of scrap. @SrcEligible mirrors the @TotalAvail predicate
+        -- restricted to @SourceLotId; the source-covers-scrap guard above already ensures
+        -- its eligible contribution (MIN(InvAvail,PieceCount)) >= @ScrapTotal.
+        ;WITH NextStep AS (
+            SELECT l.Id AS LotId, rs.SequenceNumber, oty2.Code AS OpCode,
+                   ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
+            FROM Lots.Lot l
+            INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
+            INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId
+                 AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+            INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+            INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
+            INNER JOIN Parts.OperationType oty2 ON oty2.Id = ot2.OperationTypeId
+            INNER JOIN Parts.OperationRoleKind rk ON rk.Id = oty2.OperationRoleKindId
+            WHERE l.Id = @SourceLotId
+              AND ( rk.Code = N'ConsumeMint'
+                    OR (rk.Code = N'Advance' AND NOT EXISTS (
+                           SELECT 1 FROM Workorder.ProductionEvent pe
+                           WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId)) )
+        )
+        SELECT @SrcEligible = CASE WHEN EXISTS (
+            SELECT 1 FROM Lots.Lot l
+            WHERE l.Id=@SourceLotId AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0 AND l.PieceCount > 0
+              AND EXISTS (SELECT 1 FROM NextStep ns WHERE ns.LotId=l.Id AND ns.rn=1 AND ns.OpCode=@OpTypeCode)
+        ) THEN 1 ELSE 0 END;
 
-        IF @TotalAvail < @Consumed
+        SET @NetAvail = @TotalAvail - (CASE WHEN @SrcEligible = 1 THEN @ScrapTotal ELSE 0 END);
+        IF @NetAvail < 0 SET @NetAvail = 0;
+        SET @Available = CAST(FLOOR(@NetAvail / @QtyPer) AS INT);
+
+        IF @NetAvail < @Consumed
         BEGIN
             IF @AllowPartial = 0
             BEGIN SET @Message=N'Only '+CAST(@Available AS NVARCHAR(10))+N' available in the FIFO queue (requested '+CAST(@PieceCount AS NVARCHAR(10))+N').';
@@ -139,6 +209,31 @@ BEGIN
 
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
+
+        -- Scrap (FAT-MACH-140): decrement the scanned casting by the scrap total and
+        -- fan out one RejectEvent per line (ProductionEventId NULL, charged to
+        -- @SourceLotId) BEFORE the FIFO walk, so the lock-fresh walk sees post-scrap
+        -- counts and can never over-draw. Mirror of TrimOut_Record's inline scrap write.
+        IF @ScrapTotal > 0
+        BEGIN
+            UPDATE Lots.Lot
+            SET PieceCount = PieceCount - @ScrapTotal,
+                InventoryAvailable = InventoryAvailable - @ScrapTotal,
+                UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
+            WHERE Id = @SourceLotId;
+
+            IF (SELECT PieceCount FROM Lots.Lot WHERE Id = @SourceLotId) = 0
+            BEGIN
+                UPDATE Lots.Lot SET LotStatusId = @ClosedStatusId WHERE Id = @SourceLotId;
+                INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
+                VALUES (@SourceLotId, @GoodStatusId, @ClosedStatusId, N'Closed by Machining OUT scrap (fully scrapped).', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+            END
+
+            INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, RecordedAt)
+            SELECT NULL, @SourceLotId, s.DefectCodeId, s.Quantity, NULL, N'Machining OUT scrap', @AppUserId, SYSUTCDATETIME()
+            FROM @Scrap s;
+        END
+
         -- Ordered FIFO list of candidate castings (arrival-first, matches Lot_GetWipQueueByLocation).
         -- Same predicate as @TotalAvail above: Good/non-blocking status AND next-pending
         -- route step is THIS MachiningOut ConsumeMint step.
@@ -219,8 +314,13 @@ BEGIN
 
         -- Audit (subject = minted LOT; source castings summarized).
         SET @Activity = Audit.ufn_TruncateActivity(@MintedName+N' '+Audit.ufn_MidDot()+N' Machining OUT '+Audit.ufn_MidDot()
-            +N' Minted '+@ProducedPn+N' ('+CAST(@PieceCount AS NVARCHAR(10))+N' pcs, consumed '+CAST(@Consumed AS NVARCHAR(10))+N' from '+CAST(@n AS NVARCHAR(10))+N' casting(s))');
-        SET @NewValue = (SELECT @NewId AS MintedLotId, @MintedName AS MintedLotName, @PieceCount AS MintedPieceCount, @Consumed AS ConsumedPieceCount,
+            +N' Minted '+@ProducedPn+N' ('+CAST(@PieceCount AS NVARCHAR(10))+N' pcs, consumed '+CAST(@Consumed AS NVARCHAR(10))+N' from '+CAST(@n AS NVARCHAR(10))+N' casting(s)'
+            + CASE WHEN @ScrapTotal > 0
+                   THEN N', scrapped '+CAST(@ScrapTotal AS NVARCHAR(10))+N' ('+CAST((SELECT COUNT(*) FROM @Scrap) AS NVARCHAR(10))+N' reason'
+                        + CASE WHEN (SELECT COUNT(*) FROM @Scrap) = 1 THEN N'' ELSE N's' END + N')'
+                   ELSE N'' END
+            + N')');
+        SET @NewValue = (SELECT @NewId AS MintedLotId, @MintedName AS MintedLotName, @PieceCount AS MintedPieceCount, @Consumed AS ConsumedPieceCount, @ScrapTotal AS ScrapPieceCount,
             JSON_QUERY((SELECT i.Id, i.PartNumber AS Code, i.Description AS Name FROM Parts.Item i WHERE i.Id=@ProducedItemId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ProducedItem
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
         EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=@SrcLoc,

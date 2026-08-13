@@ -46,3 +46,15 @@ INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Code = N'DieCastMachine'
 WHERE tt.Code = N'Die'
   AND tt.CompatibleLocationTypeDefinitionId IS NULL;
 GO
+
+-- ============================================================
+-- == Record migration ========================================
+-- ============================================================
+-- Guarded so manual re-runs / a Dev already carrying the DDL stay idempotent.
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0018_tooltype_compatible_celldef')
+    INSERT INTO dbo.SchemaVersion (MigrationId, Description)
+    VALUES (N'0018_tooltype_compatible_celldef',
+            N'Add Tools.ToolType.CompatibleLocationTypeDefinitionId (FK -> Location.LocationTypeDefinition) and seed Die -> DieCastMachine; drives the Mount-to-Cell compatibility filter.');
+GO
+PRINT 'Migration 0018 (ToolType.CompatibleLocationTypeDefinitionId + Die seed) applied.';
+GO

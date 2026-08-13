@@ -1,0 +1,1 @@
+EXEC Lots.ShippingLabel_GetForBanner
