@@ -107,6 +107,7 @@ and nothing routes (FAT-PLC-020 — **the #1 integration blocker**). Detail:
 - **☐ 6.7 Quality specs published** — spec attributes + UoM per operation where inspection is required.
 - **☐ 6.8 Eligibility** — line/part move-eligibility loaded so validated moves resolve against the terminal's parent zone; confirm each active part is eligible at its line's terminals (no false "Not eligible").
 - **☐ 6.9 Die-rank compatibility** (Seeding Registry **S-08** — the one seed that blocks) — die-rank genealogy mapping loaded for the shipping-label DC part-level.
+- **☐ 🚩 6.10 Die-cast press × part eligibility** (working session w/ MPP Engineering) — capture which physical die-cast presses may run each casting, **keyed by clamp tonnage**. Neither legacy system recorded this transactionally — the traceability MES collapses all casting into two cells (`5A2 Casting 1` / `5G0 Casting 1`, machine granularity is only the `Die Name` + `Cavity Name` LOT attributes), and the Productivity DB holds the ~27 numbered presses + tonnage but no machine→part link. **MPP Engineering knows the eligibility by tonnage** (part → allowable press set); sit with them on day one, capture the matrix, and load it as die-cast machine/part eligibility so the DieCast terminal queue + validated moves resolve the correct press set per part. Machine names/tonnages source from the PD roster (`reference/seed_data/machines.csv`: DieCast#1‑#77 @125‑1650T, VCM#501‑504, Hoffman DC, ACP, KensCorp).
 
 ---
 
@@ -142,3 +143,4 @@ and nothing routes (FAT-PLC-020 — **the #1 integration blocker**). Detail:
 |---|---|---|
 | 0.1 | 2026-08-12 | Initial — terminal IP match, printers, PLC device mapping, vision-through-scale, closure. |
 | 0.2 | 2026-08-12 | Expanded to full pre-commissioning scope: infrastructure/connectivity, DB & schema, Active Directory & users, part & process master data + eligibility, code tables & seed registry, reporting & smoke. Added 6FB "just small parts" floor-walk confirmation item. |
+| 0.3 | 2026-08-12 | Added 6.10 die-cast press × part eligibility (tonnage-driven) — MPP Engineering working session to capture the machine→part mapping neither legacy system recorded. |
