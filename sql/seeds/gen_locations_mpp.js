@@ -91,7 +91,11 @@ function roleOf(name, code) {
   if (code === 'FALLBACK-TERMINAL') return 'FALLBACK';
   return 'OTHER';
 }
-const printsFor = role => ['MOUT','AOUT','COMBINED','ASER'].includes(role);
+// INSPECT joined the set on 2026-08-13. The original rule (OUT terminals only) predates
+// the pass-through parts screen, which RECEIVES a vendor box as a LOT and prints an LTT
+// at the inspection terminal -- so an INSPECT terminal with no Printer child makes
+// Terminal_GetPrinter resolve nothing and the print fail silently.
+const printsFor = role => ['MOUT','AOUT','COMBINED','ASER','INSPECT'].includes(role);
 
 // ---- closure normalization (+ vision-through-scale override by NEW code) ----
 const CLOSURE_NORM = { 'weight':'ByWeight', 'vision':'ByVision', 'bycount':'ByCount' };
@@ -227,6 +231,10 @@ loc(DEFID.ProductionArea, 'MPP-MAD', 'Inspection', 'INSP', 'INSP', 98);
 loc(DEFID.InspectionLine, 'INSP', 'Sort Cage Inspection', 'INSP-SORT', 'INSP-SORT', 1);
 loc(DEFID.Terminal, 'INSP-SORT', 'Inspection', 'INSP-SORT-T1', 'INSP-SORT-T1', 1);
 terminals.push({ code: 'INSP-SORT-T1', code0: 'INSP-SORT-T1', role: 'INSPECT', parentDef: 'InspectionLine' });
+// This terminal is created here, outside the Site loop, so printsFor never sees it --
+// emit its printer explicitly (same LTT reason as 66B - Ins above).
+printerSeq++;
+loc(DEFID.Printer, 'INSP-SORT-T1', `P - ${pad3(printerSeq)}`, 'INSP-SORT-T1-P1', 'Label printer for INSP-SORT-T1', 99);
 // re-parent 66B Thermal Case under the inspection area (INSP now exists)
 out.push(`UPDATE Location.Location SET ParentLocationId = (SELECT Id FROM Location.Location WHERE Code = N'INSP')
     WHERE Code = N'66B-TC' AND ParentLocationId <> (SELECT Id FROM Location.Location WHERE Code = N'INSP');`);

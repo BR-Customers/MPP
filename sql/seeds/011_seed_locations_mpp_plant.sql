@@ -479,12 +479,15 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'66B-TC')
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'66B - Ins')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 13, (SELECT Id FROM Location.Location WHERE Code = N'66B-TC'), N'Terminal', N'66B - Ins', N'66B - Ins', 1;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'66B - Ins-P1')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'66B - Ins'), N'P - 030', N'66B - Ins-P1', N'Label printer for 66B - Ins', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2'), N'Rocker Shaft 1-4 Machining Out', N'MA2-RPYCAM2-MOUT-RS', N'MA2-RPYCAM2-MOUT-RS', 4;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS'), N'P - 030', N'MA2-RPYCAM2-MOUT-RS-P1', N'Label printer for MA2-RPYCAM2-MOUT-RS', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS'), N'P - 031', N'MA2-RPYCAM2-MOUT-RS-P1', N'Label printer for MA2-RPYCAM2-MOUT-RS', 99;
 
 -- === Exception 1: Trim Storage (one per trim shop) ===
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-STORE')
@@ -509,7 +512,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-RJ2-PB-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-RJ2-PB'), N'Pass-Through', N'OS-RJ2-PB-T1', N'OS-RJ2-PB-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-RJ2-PB-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-RJ2-PB-T1'), N'P - 031', N'OS-RJ2-PB-T1-P1', N'Label printer for OS-RJ2-PB-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-RJ2-PB-T1'), N'P - 032', N'OS-RJ2-PB-T1-P1', N'Label printer for OS-RJ2-PB-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-TCM')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'6A0 Thermo Case Manual', N'OS-6A0-TCM', N'19320-6A0 -A010', 2;
@@ -518,7 +521,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-TCM-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-TCM'), N'Pass-Through', N'OS-6A0-TCM-T1', N'OS-6A0-TCM-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-TCM-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-TCM-T1'), N'P - 032', N'OS-6A0-TCM-T1-P1', N'Label printer for OS-6A0-TCM-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-TCM-T1'), N'P - 033', N'OS-6A0-TCM-T1-P1', N'Label printer for OS-6A0-TCM-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-TCA-AEP')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'6A0 Thermo Case Auto (AEP)', N'OS-6A0-TCA-AEP', N'19320-6A0 -A510-AEP', 3;
@@ -527,7 +530,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-TCA-AEP-T1'
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-TCA-AEP'), N'Pass-Through', N'OS-6A0-TCA-AEP-T1', N'OS-6A0-TCA-AEP-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-TCA-AEP-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-TCA-AEP-T1'), N'P - 033', N'OS-6A0-TCA-AEP-T1-P1', N'Label printer for OS-6A0-TCA-AEP-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-TCA-AEP-T1'), N'P - 034', N'OS-6A0-TCA-AEP-T1-P1', N'Label printer for OS-6A0-TCA-AEP-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-TCA-ISP')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'6A0 Thermo Case Auto (ISP)', N'OS-6A0-TCA-ISP', N'19320-6A0 -A510-ISP', 4;
@@ -536,7 +539,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-TCA-ISP-T1'
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-TCA-ISP'), N'Pass-Through', N'OS-6A0-TCA-ISP-T1', N'OS-6A0-TCA-ISP-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-TCA-ISP-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-TCA-ISP-T1'), N'P - 034', N'OS-6A0-TCA-ISP-T1-P1', N'Label printer for OS-6A0-TCA-ISP-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-TCA-ISP-T1'), N'P - 035', N'OS-6A0-TCA-ISP-T1-P1', N'Label printer for OS-6A0-TCA-ISP-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-WP-AEP')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'6A0 Water Passage (AEP)', N'OS-6A0-WP-AEP', N'19410-6A0 -A000-AEP', 5;
@@ -545,7 +548,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-WP-AEP-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-WP-AEP'), N'Pass-Through', N'OS-6A0-WP-AEP-T1', N'OS-6A0-WP-AEP-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-WP-AEP-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-WP-AEP-T1'), N'P - 035', N'OS-6A0-WP-AEP-T1-P1', N'Label printer for OS-6A0-WP-AEP-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-WP-AEP-T1'), N'P - 036', N'OS-6A0-WP-AEP-T1-P1', N'Label printer for OS-6A0-WP-AEP-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-WP-ISP')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'6A0 Water Passage (ISP)', N'OS-6A0-WP-ISP', N'19410-6A0 -A000-ISP', 6;
@@ -554,7 +557,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-WP-ISP-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-WP-ISP'), N'Pass-Through', N'OS-6A0-WP-ISP-T1', N'OS-6A0-WP-ISP-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6A0-WP-ISP-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-WP-ISP-T1'), N'P - 036', N'OS-6A0-WP-ISP-T1-P1', N'Label printer for OS-6A0-WP-ISP-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6A0-WP-ISP-T1'), N'P - 037', N'OS-6A0-WP-ISP-T1-P1', N'Label printer for OS-6A0-WP-ISP-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-64S-TC')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'64S Thermo Case', N'OS-64S-TC', N'19321-64S -A000', 7;
@@ -563,7 +566,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-64S-TC-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-64S-TC'), N'Pass-Through', N'OS-64S-TC-T1', N'OS-64S-TC-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-64S-TC-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-64S-TC-T1'), N'P - 037', N'OS-64S-TC-T1-P1', N'Label printer for OS-64S-TC-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-64S-TC-T1'), N'P - 038', N'OS-64S-TC-T1-P1', N'Label printer for OS-64S-TC-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MA-FP')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'6MA Fuel Pump', N'OS-6MA-FP', N'12270-6MA -J000', 8;
@@ -572,7 +575,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MA-FP-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MA-FP'), N'Pass-Through', N'OS-6MA-FP-T1', N'OS-6MA-FP-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MA-FP-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MA-FP-T1'), N'P - 038', N'OS-6MA-FP-T1-P1', N'Label printer for OS-6MA-FP-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MA-FP-T1'), N'P - 039', N'OS-6MA-FP-T1-P1', N'Label printer for OS-6MA-FP-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-66V-TC')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'66V Thermo Case', N'OS-66V-TC', N'19321-66V -A000', 9;
@@ -581,7 +584,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-66V-TC-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-66V-TC'), N'Pass-Through', N'OS-66V-TC-T1', N'OS-66V-TC-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-66V-TC-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-66V-TC-T1'), N'P - 039', N'OS-66V-TC-T1-P1', N'Label printer for OS-66V-TC-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-66V-TC-T1'), N'P - 040', N'OS-66V-TC-T1-P1', N'Label printer for OS-66V-TC-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-66V-TC-A100')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'66V Thermo Case (A100)', N'OS-66V-TC-A100', N'19321-66V-A100', 10;
@@ -590,7 +593,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-66V-TC-A100-T1'
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-66V-TC-A100'), N'Pass-Through', N'OS-66V-TC-A100-T1', N'OS-66V-TC-A100-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-66V-TC-A100-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-66V-TC-A100-T1'), N'P - 040', N'OS-66V-TC-A100-T1-P1', N'Label printer for OS-66V-TC-A100-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-66V-TC-A100-T1'), N'P - 041', N'OS-66V-TC-A100-T1-P1', N'Label printer for OS-66V-TC-A100-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MD-FP')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'6MD Fuel Pump', N'OS-6MD-FP', N'12270-6MD -A000', 11;
@@ -599,7 +602,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MD-FP-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MD-FP'), N'Pass-Through', N'OS-6MD-FP-T1', N'OS-6MD-FP-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MD-FP-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MD-FP-T1'), N'P - 041', N'OS-6MD-FP-T1-P1', N'Label printer for OS-6MD-FP-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MD-FP-T1'), N'P - 042', N'OS-6MD-FP-T1-P1', N'Label printer for OS-6MD-FP-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MD-OJ')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'6MD Oil Jet', N'OS-6MD-OJ', N'14850-6MD -A000', 12;
@@ -608,7 +611,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MD-OJ-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MD-OJ'), N'Pass-Through', N'OS-6MD-OJ-T1', N'OS-6MD-OJ-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MD-OJ-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MD-OJ-T1'), N'P - 042', N'OS-6MD-OJ-T1-P1', N'Label printer for OS-6MD-OJ-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MD-OJ-T1'), N'P - 043', N'OS-6MD-OJ-T1-P1', N'Label printer for OS-6MD-OJ-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MD-WP')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'6MD Water Passage', N'OS-6MD-WP', N'19410-6MD -A000', 13;
@@ -617,7 +620,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MD-WP-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MD-WP'), N'Pass-Through', N'OS-6MD-WP-T1', N'OS-6MD-WP-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-6MD-WP-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MD-WP-T1'), N'P - 043', N'OS-6MD-WP-T1-P1', N'Label printer for OS-6MD-WP-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-6MD-WP-T1'), N'P - 044', N'OS-6MD-WP-T1-P1', N'Label printer for OS-6MD-WP-T1', 99;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-P8A-CT')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'OS-PROD'), N'Cam Thrust Front', N'OS-P8A-CT', N'12230-P8A -A000', 14;
@@ -626,7 +629,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-P8A-CT-T1')
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'OS-P8A-CT'), N'Pass-Through', N'OS-P8A-CT-T1', N'OS-P8A-CT-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'OS-P8A-CT-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-P8A-CT-T1'), N'P - 044', N'OS-P8A-CT-T1-P1', N'Label printer for OS-P8A-CT-T1', 99;
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'OS-P8A-CT-T1'), N'P - 045', N'OS-P8A-CT-T1-P1', N'Label printer for OS-P8A-CT-T1', 99;
 
 -- === Exception 2: Inspection area (66B-TC re-parented here; sort-cage line; 3-closure terminal) ===
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'INSP')
@@ -638,6 +641,9 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'INSP-SORT')
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'INSP-SORT-T1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'INSP-SORT'), N'Inspection', N'INSP-SORT-T1', N'INSP-SORT-T1', 1;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'INSP-SORT-T1-P1')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'INSP-SORT-T1'), N'P - 046', N'INSP-SORT-T1-P1', N'Label printer for INSP-SORT-T1', 99;
 UPDATE Location.Location SET ParentLocationId = (SELECT Id FROM Location.Location WHERE Code = N'INSP')
     WHERE Code = N'66B-TC' AND ParentLocationId <> (SELECT Id FROM Location.Location WHERE Code = N'INSP');
 

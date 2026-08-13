@@ -505,8 +505,11 @@ for pn, it in ITEMS.items():
     t = item_type(pn)
     lcs = sorted(lines_for.get(pn, ()))
     if t == 'FinishedGood':
-        if pn in OFFSITE:
-            continue
+        # Off-site parts route exactly like every other finished good: a single
+        # AssemblyOut step. Their pass-through terminal IS an assembly line, just a
+        # single-part one -- the part is received as a LOT and closed out at Assembly
+        # OUT on its own line. Approved 2026-08-13; before that they were skipped and
+        # nothing could queue at those terminals.
         ROUTES.append((pn, 1, 'AssemblyOut', 'Assembly out', ''))
     elif t == 'SubAssembly':
         ROUTES.append((pn, 1, 'MachiningOut', 'Machining out', ''))
