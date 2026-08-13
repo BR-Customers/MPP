@@ -80,8 +80,11 @@ DECLARE @DefAreaId BIGINT = (
     INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
     INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
     WHERE l.DeprecatedAt IS NULL AND lt.Code = N'Area' ORDER BY l.Id);
-INSERT INTO Quality.DefectCode (Code, Description, AreaLocationId, IsExcused, CreatedAt)
-VALUES (N'TEST-DEF-TLY', N'Tally test defect', @DefAreaId, 0, SYSUTCDATETIME());
+-- Migration 0048 replaced Quality.DefectCode.AreaLocationId with the nullable
+-- OperationCategoryId (NULL = plant-wide). These are die-cast defect codes, so they
+-- map to the DieCast category; resolved by Code, never a hardcoded Id.
+INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused, CreatedAt)
+VALUES (N'TEST-DEF-TLY', N'Tally test defect', (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast'), 0, SYSUTCDATETIME());
 
 DECLARE @DieCellId BIGINT;
 SELECT TOP 1 @DieCellId = eil.LocationId

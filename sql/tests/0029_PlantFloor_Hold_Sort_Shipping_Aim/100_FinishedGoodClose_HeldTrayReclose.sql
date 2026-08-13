@@ -14,7 +14,9 @@ GO
 DELETE FROM Quality.HoldEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG'));
 DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P21-FGR-FG');
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P21-FGR-FG';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P21-FGR-FG';
+-- Migration 0052 made the AIM pool per-company-code and dropped PartNumber.
+-- Clear it wholesale, the convention eight sibling test files already follow.
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG') OR ConsumedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-CHILD');
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG')) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG'));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG')) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-CHILD'));
@@ -47,7 +49,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @Fg AND LocationI
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId)
     VALUES (N'STG-100', @Child, 1, 1, 100000, @Cell, 0, 100000, 1);
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P21-FGR-FG', @AimShipperId = N'AIM-FGR-1';
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-FGR-1';
 
 DECLARE @AT TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
 INSERT INTO @AT EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Fg, @PieceCount = 1, @CellLocationId = @Cell, @ClosureMethod = N'ByCount', @AppUserId = 1, @TerminalLocationId = @Cell;
@@ -105,7 +107,9 @@ GO
 DELETE FROM Quality.HoldEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG'));
 DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P21-FGR-FG');
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P21-FGR-FG';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P21-FGR-FG';
+-- Migration 0052 made the AIM pool per-company-code and dropped PartNumber.
+-- Clear it wholesale, the convention eight sibling test files already follow.
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG') OR ConsumedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-CHILD');
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG')) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG'));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-FG')) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGR-CHILD'));

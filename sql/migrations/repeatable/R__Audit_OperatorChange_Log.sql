@@ -35,6 +35,9 @@ BEGIN
     DECLARE @NewInit NVARCHAR(10), @NewName NVARCHAR(100), @OldInit NVARCHAR(10), @OldName NVARCHAR(100);
     DECLARE @TermCode NVARCHAR(50), @TermLabel NVARCHAR(50), @Action NVARCHAR(200);
     DECLARE @Description NVARCHAR(500), @OldValue NVARCHAR(MAX), @NewValue NVARCHAR(MAX);
+    -- Attribution for Audit.FailureLog, whose AppUserId is NOT NULL with an FK to
+    -- Location.AppUser. Resolved to a user that provably EXISTS before any failure write.
+    DECLARE @FailUserId BIGINT;
 
     BEGIN TRY
         -- ---- pre-transaction guards ----
@@ -48,9 +51,22 @@ BEGIN
         IF @NewInit IS NULL
         BEGIN
             SET @Message = N'New operator (AppUser ' + CAST(@NewAppUserId AS NVARCHAR(20)) + N') not found.';
-            EXEC Audit.Audit_LogFailure @AppUserId = @NewAppUserId, @LogEntityTypeCode = N'AppUser',
-                @EntityId = @NewAppUserId, @LogEventTypeCode = N'OperatorChanged', @FailureReason = @Message,
-                @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+            -- Attribute the failure to the ACTING user, never to @NewAppUserId: that id was
+            -- just proven not to exist, and Audit.FailureLog.AppUserId is NOT NULL with an FK
+            -- to Location.AppUser -- so passing it raised an FK violation, which fell into the
+            -- CATCH, whose ROLLBACK then threw Msg 3915 under INSERT-EXEC and aborted the
+            -- caller. A reject path must never be able to throw.
+            -- Nested TRY/CATCH per sql/scripts/_TEMPLATE_stored_procedure.sql: failure logging
+            -- can never be allowed to take down the operation it is reporting on.
+            SET @FailUserId = CASE WHEN EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
+                                   THEN @AppUserId ELSE NULL END;
+            IF @FailUserId IS NOT NULL
+            BEGIN TRY
+                EXEC Audit.Audit_LogFailure @AppUserId = @FailUserId, @LogEntityTypeCode = N'AppUser',
+                    @EntityId = @NewAppUserId, @LogEventTypeCode = N'OperatorChanged', @FailureReason = @Message,
+                    @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+            END TRY
+            BEGIN CATCH END CATCH;
             SELECT @Status AS Status, @Message AS Message; RETURN;
         END
 
@@ -104,10 +120,18 @@ BEGIN
         DECLARE @ErrState INT = ERROR_STATE();
         SET @Status = 0;
         SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
+        -- Same defect as the reject path above: @NewAppUserId is not guaranteed to exist, and
+        -- FailureLog.AppUserId is NOT NULL with an FK, so this write was ALWAYS failing and
+        -- being swallowed by the nested CATCH -- this proc has never actually logged a
+        -- failure. Resolve to a user that exists first.
+        SET @FailUserId = COALESCE(
+            (SELECT Id FROM Location.AppUser WHERE Id = @AppUserId),
+            (SELECT Id FROM Location.AppUser WHERE Id = @NewAppUserId));
         BEGIN TRY
-            EXEC Audit.Audit_LogFailure @AppUserId = @NewAppUserId, @LogEntityTypeCode = N'AppUser',
-                @EntityId = @NewAppUserId, @LogEventTypeCode = N'OperatorChanged', @FailureReason = @Message,
-                @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+            IF @FailUserId IS NOT NULL
+                EXEC Audit.Audit_LogFailure @AppUserId = @FailUserId, @LogEntityTypeCode = N'AppUser',
+                    @EntityId = @NewAppUserId, @LogEventTypeCode = N'OperatorChanged', @FailureReason = @Message,
+                    @ProcedureName = @ProcName, @AttemptedParameters = @Params;
         END TRY
         BEGIN CATCH END CATCH
         SELECT @Status AS Status, @Message AS Message;

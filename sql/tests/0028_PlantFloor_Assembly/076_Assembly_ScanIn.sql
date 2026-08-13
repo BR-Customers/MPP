@@ -4,7 +4,7 @@
 --               Moves a component LOT into an Assembly Cell's queue (LotMovement, no
 --               rename). A LOT whose Item is a BOM component of an assembly produced at
 --               the cell scans in (Status 1); a non-component LOT rejects (Status 0,
---               not moved). Uses MA1-5GOR-ASER as the assembly cell, MA1-5GOF-MOUT as the
+--               not moved). Uses MA1-5GOR-ASER as the assembly cell, MA1-5GOF-MIN as the
 --               source location.
 -- =============================================
 SET NOCOUNT ON;
@@ -33,7 +33,12 @@ BEGIN
 END
 
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOR-ASER');     -- the assembly cell
-DECLARE @SrcCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');  -- where the LOTs start
+-- NOTE: was 'MA1-5GOF-MIN' -- that row carries Deprecated=1 (column 7) in
+-- sql/seeds/_site_locations.tsv, so sql/seeds/gen_locations_mpp.js's skip()
+-- intentionally omits it from the generated seed; there is no seed bug.
+-- Repointed to 'MA1-5GOF-MIN', a live cell on the SAME 5G0 line, so the
+-- 5G0 eligibility seeded at MA1-5GOF still cascades down to it.
+DECLARE @SrcCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');  -- where the LOTs start
 -- P6-SCAN-OUT is produced at the assembly cell (IsConsumptionPoint = 0)
 IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @Out AND LocationId = @Cell AND DeprecatedAt IS NULL)
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@Out, @Cell, @Now, 0);

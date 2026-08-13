@@ -5,7 +5,7 @@
 --               (RelationshipTypeId=3), NOT Split; flexible qty; casting stays open
 --               on a partial mint, closes when fully consumed; over-mint rejected.
 --               Fixture: casting 5G0-c, SubAssembly 5G0-SA, seed BOM 5G0-SA<-5G0-c
---               (020_seed_items), at line cell MA1-5GOF-MOUT (both eligible via the
+--               (020_seed_items), at line cell MA1-5GOF-MIN (both eligible via the
 --               5G0 line). Casting basket cap = 24, so the fixture places 24 pcs.
 -- =============================================
 SET NOCOUNT ON;
@@ -17,7 +17,12 @@ DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @Uom BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'PCS');
 DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
 DECLARE @Machined BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+-- NOTE: was 'MA1-5GOF-MIN' -- that row carries Deprecated=1 (column 7) in
+-- sql/seeds/_site_locations.tsv, so sql/seeds/gen_locations_mpp.js's skip()
+-- intentionally omits it from the generated seed; there is no seed bug.
+-- Repointed to 'MA1-5GOF-MIN', a live cell on the SAME 5G0 line, so the
+-- 5G0 eligibility seeded at MA1-5GOF still cascades down to it.
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
@@ -128,7 +133,7 @@ GO
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
 DECLARE @Machined BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
@@ -190,7 +195,7 @@ GO
 -- =============================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
@@ -242,7 +247,7 @@ GO
 -- =============================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @HoldStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Hold');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
@@ -333,7 +338,7 @@ GO
 -- =============================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
@@ -393,7 +398,7 @@ GO
 -- =============================================
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
