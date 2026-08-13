@@ -433,7 +433,37 @@ for pn, it in ITEMS.items():
 
 OFFSITE = set(pn for pn, it in ITEMS.items() if it['src'] == 'Off-Site')
 for pn in OFFSITE:
-    lines_for.pop(pn, None)          # off-site: no eligibility, no route
+    lines_for.pop(pn, None)          # off-site parts are not made on a Madison line
+
+# Each off-site part has its own line under the Offsite facility. The catalog is
+# the SAME TSV sql/seeds/gen_locations_mpp.js builds the tree from, so a line that
+# gets eligibility here is guaranteed to exist in the location model -- they cannot
+# drift. Parsed here rather than duplicated.
+OFFSITE_TSV = os.path.join(ROOT, 'sql', 'seeds', '_offsite_lines.tsv')
+OFFSITE_LINE = {}
+with open(OFFSITE_TSV, encoding='utf-8-sig') as fh:
+    for i, ln in enumerate(fh):
+        if i == 0 or not ln.strip():
+            continue
+        pn, lc, nm, _closure = (ln.rstrip('\n').split('\t') + [''] * 4)[:4]
+        OFFSITE_LINE[pn] = lc
+        LINES[lc] = {'name': nm, 'parent': 'OS-PROD', 'terminals': collections.defaultdict(list)}
+        LINE_NAME[lc] = nm
+
+for pn, lc in OFFSITE_LINE.items():
+    if pn not in ITEMS:
+        issue('HIGH', 'Locations', pn,
+              '_offsite_lines.tsv names a part that is not on the customer list.',
+              'Line %s would have no part. Fix the TSV.' % lc)
+        continue
+    lines_for[pn] = {lc}
+    ITEMS[pn]['match_note'] = 'off-site part; dedicated line under the Offsite facility'
+
+_unhoused = sorted(p for p in OFFSITE if p not in OFFSITE_LINE)
+if _unhoused:
+    issue('HIGH', 'Locations', ', '.join(_unhoused),
+          'Off-site part(s) with no line in _offsite_lines.tsv.',
+          'Add a row to sql/seeds/_offsite_lines.tsv so the part gets a line.')
 
 UNMATCHED = [pn for pn in ITEMS if pn not in lines_for]
 

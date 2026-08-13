@@ -1,0 +1,15 @@
+PartNumber	LineCode	LineName	ClosureMethod
+22533-RJ2 -0000	OS-RJ2-PB	RVS Piston Brake	ByWeight
+19320-6A0 -A010	OS-6A0-TCM	6A0 Thermo Case Manual	ByWeight
+19320-6A0 -A510-AEP	OS-6A0-TCA-AEP	6A0 Thermo Case Auto (AEP)	ByWeight
+19320-6A0 -A510-ISP	OS-6A0-TCA-ISP	6A0 Thermo Case Auto (ISP)	ByWeight
+19410-6A0 -A000-AEP	OS-6A0-WP-AEP	6A0 Water Passage (AEP)	ByWeight
+19410-6A0 -A000-ISP	OS-6A0-WP-ISP	6A0 Water Passage (ISP)	ByWeight
+19321-64S -A000	OS-64S-TC	64S Thermo Case	ByWeight
+12270-6MA -J000	OS-6MA-FP	6MA Fuel Pump	ByWeight
+19321-66V -A000	OS-66V-TC	66V Thermo Case	ByWeight
+19321-66V-A100	OS-66V-TC-A100	66V Thermo Case (A100)	ByWeight
+12270-6MD -A000	OS-6MD-FP	6MD Fuel Pump	ByWeight
+14850-6MD -A000	OS-6MD-OJ	6MD Oil Jet	ByVision
+19410-6MD -A000	OS-6MD-WP	6MD Water Passage	ByWeight
+12230-P8A -A000	OS-P8A-CT	Cam Thrust Front	ByWeight
