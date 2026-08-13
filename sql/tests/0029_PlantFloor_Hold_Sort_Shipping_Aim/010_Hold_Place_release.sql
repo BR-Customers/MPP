@@ -59,7 +59,7 @@ DECLARE @S2 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @P2);
 EXEC test.Assert_IsEqual @TestName = N'[Hold] double-place on LOT rejects (B3)', @Expected = N'0', @Actual = @S2;
 
 -- GetOpenByLot returns it
-DECLARE @G TABLE (Id BIGINT, LotId BIGINT, ContainerId BIGINT, HoldTypeCodeId BIGINT, HoldTypeCode NVARCHAR(50), Reason NVARCHAR(500), PlacedByUserId BIGINT, PlacedAt DATETIME2(3));
+DECLARE @G TABLE (Id BIGINT, LotId BIGINT, ContainerId BIGINT, HoldTypeCodeId BIGINT, HoldTypeCode NVARCHAR(50), Reason NVARCHAR(500), PlacedByUserId BIGINT, PlacedByInitials NVARCHAR(50), PlacedAt DATETIME2(3));
 INSERT INTO @G EXEC Quality.Hold_GetOpenByLot @LotId = @Lot;
 DECLARE @GC NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @G);
 EXEC test.Assert_IsEqual @TestName = N'[Hold] GetOpenByLot returns the open hold', @Expected = N'1', @Actual = @GC;

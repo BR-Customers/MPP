@@ -20,9 +20,11 @@ BEGIN
         htc.Code AS HoldTypeCode,
         he.Reason,
         he.PlacedByUserId,
+        u.Initials AS PlacedByInitials,
         CAST(he.PlacedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS PlacedAt
     FROM Quality.HoldEvent he
     INNER JOIN Quality.HoldTypeCode htc ON htc.Id = he.HoldTypeCodeId
+    LEFT  JOIN Location.AppUser u       ON u.Id  = he.PlacedByUserId
     WHERE he.LotId = @LotId AND he.ReleasedAt IS NULL;
 END;
 GO
