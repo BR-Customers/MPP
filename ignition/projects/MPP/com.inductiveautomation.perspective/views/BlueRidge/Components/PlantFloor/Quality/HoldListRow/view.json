@@ -1,0 +1,123 @@
+{
+  "custom": {},
+  "params": {
+    "holdEventId": 0,
+    "lotId": 0,
+    "containerId": 0,
+    "label": "",
+    "holdTypeCode": "",
+    "reason": "",
+    "placedByInitials": "",
+    "placedAt": "",
+    "selectedHoldEventId": 0
+  },
+  "propConfig": {
+    "params.holdEventId": { "paramDirection": "input" },
+    "params.lotId": { "paramDirection": "input" },
+    "params.containerId": { "paramDirection": "input" },
+    "params.label": { "paramDirection": "input" },
+    "params.holdTypeCode": { "paramDirection": "input" },
+    "params.reason": { "paramDirection": "input" },
+    "params.placedByInitials": { "paramDirection": "input" },
+    "params.placedAt": { "paramDirection": "input" },
+    "params.selectedHoldEventId": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 72, "width": 640 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.holdEventId} = {view.params.selectedHoldEventId} && {view.params.selectedHoldEventId} > 0, \"pf-queue-row pf-queue-row-selected\", \"pf-queue-row\")"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-queue-row",
+        "gap": "16px",
+        "padding": "12px 16px",
+        "cursor": "pointer"
+      }
+    },
+    "events": {
+      "component": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"holdRowSelected\", payload={\"holdEventId\": self.view.params.holdEventId, \"lotId\": self.view.params.lotId or 0, \"containerId\": self.view.params.containerId or 0}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Info" },
+        "position": { "grow": 1, "basis": "0" },
+        "props": {
+          "direction": "column",
+          "style": { "gap": "2px" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Label" },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.label}" }
+                }
+              }
+            },
+            "props": {
+              "style": { "classes": "pf-queue-name" }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Detail" },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.holdTypeCode} + if(isNull({view.params.reason}) || {view.params.reason} = \"\", \"\", \"  ·  \" + {view.params.reason}) + if(isNull({view.params.placedByInitials}) || {view.params.placedByInitials} = \"\", \"\", \"  ·  \" + {view.params.placedByInitials})" }
+                }
+              }
+            },
+            "props": {
+              "style": { "classes": "pf-queue-detail" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "HoldPill" },
+        "position": { "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "\"#\" + toStr({view.params.holdEventId})" }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": { "classes": "pf-pill pf-pill-hold" }
+        }
+      }
+    ]
+  }
+}
