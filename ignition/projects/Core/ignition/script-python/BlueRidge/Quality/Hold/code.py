@@ -50,7 +50,8 @@ def getOpenByLotOne(lotId):
         h = dict(rows[0])
         h["IsHeld"] = True
         return h
-    return {"IsHeld": False, "Id": None, "HoldTypeCode": None, "Reason": None, "PlacedAt": None}
+    return {"IsHeld": False, "Id": None, "HoldTypeCode": None, "Reason": None,
+            "PlacedByInitials": None, "PlacedAt": None}
 
 
 def getOpenByContainer(containerId):
@@ -59,6 +60,19 @@ def getOpenByContainer(containerId):
     BlueRidge.Common.Util.log("getOpenByContainer containerId=%s" % containerId)
     params = {"containerId": containerId}
     return BlueRidge.Common.Db.execList("quality/Hold_GetOpenByContainer", params)
+
+
+def getOpenByContainerOne(containerId):
+    """HoldPanel bound-container state: the single open hold as a shaped dict
+       (IsHeld flags presence) or a shaped-empty dict when the container has no
+       open hold -- keeps the bound custom prop safe per the pre-declared-props rule."""
+    rows = getOpenByContainer(containerId) or []
+    if rows:
+        h = dict(rows[0])
+        h["IsHeld"] = True
+        return h
+    return {"IsHeld": False, "Id": None, "HoldTypeCode": None, "Reason": None,
+            "PlacedByInitials": None, "PlacedAt": None}
 
 
 def listOpen(filterText=None, filterTypeId=None, _refreshToken=None):
