@@ -2,7 +2,13 @@
   "custom": {
     "children": [],
     "samples": [],
-    "hold": { "IsHeld": false, "Id": null, "HoldTypeCode": null, "Reason": null, "PlacedAt": null },
+    "hold": {
+      "IsHeld": false,
+      "Id": null,
+      "HoldTypeCode": null,
+      "Reason": null,
+      "PlacedAt": null
+    },
     "history": [],
     "lot": {
       "BomVersionNumber": null,
@@ -29,7 +35,23 @@
       "RejectedTotal": 0,
       "TotalScrap": 0
     },
-    "container": { "IsLinked": false, "ContainerId": null, "ContainerTrayId": null, "TrayPosition": null, "ClosureMethod": null, "TrayClosedAt": null, "ItemId": null, "ItemPartNumber": null, "ContainerStatusCode": null, "ContainerStatusName": null, "CurrentLocationId": null, "CurrentLocationName": null, "OpenedAt": null, "CompletedAt": null, "AimShipperId": null }
+    "container": {
+      "IsLinked": false,
+      "ContainerId": null,
+      "ContainerTrayId": null,
+      "TrayPosition": null,
+      "ClosureMethod": null,
+      "TrayClosedAt": null,
+      "ItemId": null,
+      "ItemPartNumber": null,
+      "ContainerStatusCode": null,
+      "ContainerStatusName": null,
+      "CurrentLocationId": null,
+      "CurrentLocationName": null,
+      "OpenedAt": null,
+      "CompletedAt": null,
+      "AimShipperId": null
+    }
   },
   "params": {
     "lotId": null
@@ -74,10 +96,18 @@
         {
           "name": "load",
           "params": [],
-          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container = BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples = BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold = BlueRidge.Quality.Hold.getOpenByLotOne(lotId)"
+          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container = BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples = BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold = BlueRidge.Quality.Hold.getOpenByLotOne(lotId)\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload={\"lotId\": (self.view.params.lotId or 0), \"containerId\": 0, \"allowLookup\": False}, scope=\"page\")"
         }
       ],
-      "messageHandlers": null,
+      "messageHandlers": [
+        {
+          "messageType": "holdChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.load()"
+        }
+      ],
       "extensionFunctions": null
     },
     "events": {
@@ -247,45 +277,45 @@
               }
             }
           },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "HoldPill"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "coalesce({view.custom.hold.IsHeld}, false)"
-                      }
-                    }
-                  },
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "\"ON HOLD  ·  #\" + toStr({view.custom.hold.Id}) + \"  ·  \" + coalesce({view.custom.hold.HoldTypeCode}, \"\")"
-                      }
-                    }
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HoldPill"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "coalesce({view.custom.hold.IsHeld}, false)"
                   }
-                },
-                "props": {
-                  "text": "ON HOLD",
-                  "style": {
-                    "classes": "pf-pill pf-pill-hold",
-                    "fontSize": "13px",
-                    "fontWeight": "700",
-                    "padding": "4px 12px",
-                    "borderRadius": "999px",
-                    "textTransform": "uppercase"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"ON HOLD  ·  #\" + toStr({view.custom.hold.Id}) + \"  ·  \" + coalesce({view.custom.hold.HoldTypeCode}, \"\")"
                   }
                 }
               }
+            },
+            "props": {
+              "text": "ON HOLD",
+              "style": {
+                "classes": "pf-pill pf-pill-hold",
+                "fontSize": "13px",
+                "fontWeight": "700",
+                "padding": "4px 12px",
+                "borderRadius": "999px",
+                "textTransform": "uppercase"
+              }
+            }
+          }
         ]
       },
       {
@@ -861,6 +891,11 @@
                 },
                 {
                   "text": "Inspections",
+                  "runWhileHidden": true,
+                  "disabled": false
+                },
+                {
+                  "text": "Hold",
                   "runWhileHidden": true,
                   "disabled": false
                 }
@@ -1747,6 +1782,52 @@
                     }
                   }
                 ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "PanelHold"
+                },
+                "position": {
+                  "tabIndex": 5
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "gap": "8px",
+                    "padding": "12px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "HoldPanelEmbed"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.params.lotId": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.params.lotId"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/Quality/HoldPanel",
+                      "params": {
+                        "lotId": 0,
+                        "containerId": 0,
+                        "allowLookup": false
+                      }
+                    }
+                  }
+                ]
               }
             ]
           }
@@ -1957,80 +2038,6 @@
                   }
                 }
               }
-            }
-          },
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "BtnReleaseHold"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "coalesce({view.custom.hold.IsHeld}, false)"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "text": "Release Hold",
-                  "style": {
-                    "classes": "pf-btn pf-btn-elevated"
-                  },
-                  "toolTipText": "Release this LOT's quality hold and restore its prior status."
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tterm = self.session.custom.terminal\n\tresult = BlueRidge.Quality.Hold.release(self.view.custom.hold.Id, appUserId=self.session.custom.appUserId, terminalLocationId=(term.terminalLocationId if term else None))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Hold\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
-                      }
-                    }
-                  }
-                }
-              },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "BtnPlaceHold"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "text": "Place Hold",
-              "enabled": false,
-              "style": {
-                "classes": "pf-btn pf-btn-elevated"
-              },
-              "toolTipText": "Place Hold is a later phase action."
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "BtnScrap"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "text": "Scrap",
-              "enabled": false,
-              "style": {
-                "classes": "pf-btn pf-btn-elevated"
-              },
-              "toolTipText": "Scrap is a later phase action."
             }
           }
         ]
