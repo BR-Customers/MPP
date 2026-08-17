@@ -26,21 +26,28 @@ param(
     [string]$DatabaseName = "MPP_MES_Prod",
     [string]$Username     = "",
     [string]$Password     = "",
-    [switch]$MapIgnitionUser
+    [switch]$MapIgnitionUser,
+    [switch]$FullCatalog
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # Auth args: SQL auth if a username was supplied, else explicit trusted (Windows) auth.
-if ($Username -ne "") { $AuthArgs = @("-U", $Username, "-P", $Password) }
-else                  { $AuthArgs = @("-E") }
+# When -Password is omitted but a username is given, rely on the SQLCMDPASSWORD env var
+# (keeps the secret out of every sqlcmd process's argument list).
+if ($Username -ne "") {
+    if ($Password -ne "") { $AuthArgs = @("-U", $Username, "-P", $Password) }
+    else                  { $AuthArgs = @("-U", $Username) }
+}
+else { $AuthArgs = @("-E") }
 
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SqlRoot    = Split-Path -Parent $ScriptDir            # /sql
 $Versioned  = Join-Path $SqlRoot "migrations\versioned"
 $Repeatable = Join-Path $SqlRoot "migrations\repeatable"
 $Seeds      = Join-Path $SqlRoot "seeds"
+$Scratch    = Join-Path $SqlRoot "scratch"
 
 function Invoke-SqlFile {
     param([string]$FilePath, [string]$Database = $DatabaseName)
@@ -130,6 +137,24 @@ Write-Host "[5/6] Running seed scripts (config + real plant, no demo)..." -Foreg
 $seeds = @(Get-ChildItem -Path $Seeds -Filter "*.sql" | Sort-Object Name)
 foreach ($file in $seeds) { Invoke-SqlFile -FilePath $file.FullName }
 Write-Host "  $($seeds.Count) seed script(s) loaded." -ForegroundColor Green
+
+# ---- STEP 5b (optional): full MPP part catalog from sql/scratch ----
+# The 020 seed is a 14-part minimal config; the REAL ~155-item customer catalog
+# (Items + ContainerConfig + BOMs + routes + eligibility) lives in sql/scratch,
+# generated from reference/MPP_Part_Data_Final.xlsx. Additive + idempotent; the
+# 020 parts are left intact. The Dev-only cleanup (deprecates non-catalog parts)
+# is intentionally NOT applied here. Sequence is the proven one: seed -> variant
+# split -> seed (2nd pass inserts the -ISP variant siblings).
+if ($FullCatalog) {
+    Write-Host "[5b] Applying full MPP part catalog (sql/scratch)..." -ForegroundColor Cyan
+    $catalog = @("seed_mpp_parts.sql", "seed_mpp_parts_variant_split.sql", "seed_mpp_parts.sql")
+    foreach ($f in $catalog) {
+        $p = Join-Path $Scratch $f
+        if (-not (Test-Path $p)) { throw "Deploy-Prod: -FullCatalog needs '$p' (not found)." }
+        Invoke-SqlFile -FilePath $p
+    }
+    Write-Host "  Full catalog applied. NOTE: carries the workbook's open DataIssues (13 HIGH) -- confirm with MPP." -ForegroundColor Green
+}
 
 # ---- STEP 6: optionally map the Ignition runtime login (login must already exist) ----
 Write-Host "[6/6] Ignition runtime user..." -ForegroundColor Cyan
