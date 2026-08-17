@@ -77,7 +77,7 @@ INSERT INTO Lots.ContainerTray (ContainerId, TrayPosition, PartsClosedCount, Clo
 VALUES (@Cont, 1, 6, SYSUTCDATETIME(), 1, N'LFC-TEST', @FgLot);
 
 -- AIM pool row for the part
-INSERT INTO Lots.AimShipperIdPool (AimShipperId, PartNumber) VALUES (N'AIM99887766', N'PN-COMPLETE');
+INSERT INTO Lots.AimShipperIdPool (AimShipperId, FetchedAt) VALUES (N'AIM99887766', SYSUTCDATETIME());
 
 -- complete the container
 DECLARE @SLId BIGINT;

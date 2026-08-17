@@ -1,0 +1,174 @@
+{
+  "custom": {
+    "note": ""
+  },
+  "params": {
+    "poolId": 0,
+    "serial": "",
+    "replyMessage": "aimMarkPostedResult",
+    "popupId": "mpp-aim-mark-posted"
+  },
+  "propConfig": {
+    "params.poolId": { "paramDirection": "input", "persistent": true },
+    "params.serial": { "paramDirection": "input", "persistent": true },
+    "params.replyMessage": { "paramDirection": "input", "persistent": true },
+    "params.popupId": { "paramDirection": "input", "persistent": true }
+  },
+  "props": {
+    "defaultSize": { "height": 320, "width": 520 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "surface-card", "gap": "16px", "padding": "24px" }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Title" },
+        "position": { "shrink": 0 },
+        "props": {
+          "text": "Mark Posted to AIM",
+          "style": { "fontSize": "20px", "fontWeight": 700 }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "SerialLabel" },
+        "position": { "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "\"Shipper ID \" + {view.params.serial}" }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": { "color": "var(--mpp-text-primary)", "fontFamily": "monospace", "fontSize": "16px", "fontWeight": "600" }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Message" },
+        "position": { "shrink": 0 },
+        "props": {
+          "text": "This records that AIM already has this label. Only do this after confirming the serial on AIM's Unshipped Labels report -- the MES cannot verify it.",
+          "style": {
+            "background": "var(--pf-status-warn-bg)",
+            "border": "1px solid var(--pf-status-warn-fg)",
+            "borderRadius": "6px",
+            "color": "var(--pf-status-warn-fg)",
+            "fontSize": "14px",
+            "padding": "10px 12px"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "NoteField" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": { "classes": "pf-field", "gap": "4px" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "L" },
+            "position": { "shrink": 0 },
+            "props": {
+              "text": "Justification note (required)",
+              "style": { "classes": "pf-field-label" }
+            }
+          },
+          {
+            "type": "ia.input.text-area",
+            "meta": { "name": "NoteInput" },
+            "position": { "grow": 1 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.note"
+                  }
+                }
+              }
+            },
+            "props": {
+              "placeholder": "e.g. Confirmed on AIM Unshipped Labels report 2026-08-03, serial present.",
+              "style": { "classes": "pf-field-input" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ButtonRow" },
+        "position": { "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "wrap": "wrap",
+          "style": { "gap": "10px" }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CancelButton" },
+            "position": { "shrink": 0 },
+            "props": {
+              "text": "Cancel",
+              "style": { "classes": "pf-btn pf-btn-secondary pf-btn-large" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"cancel\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "ConfirmButton" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "len({view.custom.note}) > 0" }
+                }
+              }
+            },
+            "props": {
+              "text": "Mark Posted",
+              "style": { "classes": "pf-btn pf-btn-danger pf-btn-large" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tnote = self.view.custom.note\n\tif not note or not note.strip():\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a justification note before confirming.\"}, \"AIM Mark Posted\")\n\t\treturn\n\tresult = BlueRidge.Lots.AimPool.markPosted(self.view.params.poolId, note)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Marked posted\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"confirm\", \"poolId\": self.view.params.poolId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

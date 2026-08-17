@@ -8,13 +8,13 @@
 --   Creates the first version (VersionNumber = 1) for a given
 --   QualitySpec. Starts as Draft (PublishedAt = NULL) so engineering
 --   can add/edit attributes before publishing. The version starts
---   empty — attributes are added via QualitySpecAttribute_Add.
+--   empty - attributes are added via QualitySpecAttribute_Add.
 --   For subsequent versions, use _CreateNewVersion.
 --
 -- Parameters (input):
 --   @QualitySpecId BIGINT - Required. Parent spec must exist.
 --   @EffectiveFrom DATETIME2(3) NULL - When this version becomes active.
---                                       NULL → uses SYSUTCDATETIME().
+--                                       NULL -> uses SYSUTCDATETIME().
 --   @AppUserId BIGINT - Required for audit and CreatedByUserId.
 --
 -- Result set:
@@ -159,7 +159,7 @@ BEGIN
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'Quality spec version created successfully (Draft — add attributes and call _Publish when ready).';
+        SET @Message = N'Quality spec version created successfully (Draft - add attributes and call _Publish when ready).';
     SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
     END TRY
     BEGIN CATCH

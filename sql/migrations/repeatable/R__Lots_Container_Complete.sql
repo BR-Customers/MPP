@@ -5,8 +5,9 @@
 -- Description: Atomic container close (Arc 2 Phase 6; FDS-06-014/06-028/07-010a).
 --              Validates the container is Open + full (accumulated tray parts >= target
 --              TraysPerContainer*PartsPerTray), enforces the RequiresCompletionConfirm
---              terminal gate (OI-16), then INLINES the AIM-ID claim (FIFO by the
---              container's part number) + inserts the ShippingLabel + flips status to
+--              terminal gate (OI-16), then INLINES the AIM-ID claim (FIFO from the
+--              part-agnostic pool -- Migration 0052, AIM's nextserial.csv takes no part
+--              parameter) + inserts the ShippingLabel + flips status to
 --              Complete -- one transaction. On completion it also closes the container's
 --              Good finished-good LOTs (tray = LOT) via Lots.Lot_CloseInline (FAT #21).
 --
@@ -40,7 +41,7 @@ BEGIN
     DECLARE @Params   NVARCHAR(MAX) = (SELECT @ContainerId AS ContainerId, @OperatorConfirmed AS OperatorConfirmed,
         @PlcCompletionConfirmed AS PlcCompletionConfirmed, @AppUserId AS AppUserId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
-    DECLARE @StatusCode BIGINT, @ItemId BIGINT, @PartNumber NVARCHAR(50),
+    DECLARE @StatusCode BIGINT, @ItemId BIGINT,
             @TraysPerContainer INT, @PartsPerTray INT, @Target INT, @Accum INT,
             @MustConfirm BIT, @RequiresConfirm NVARCHAR(50),
             @ClaimedPoolId BIGINT, @LabelTypeId BIGINT, @Activity NVARCHAR(500), @NewValue NVARCHAR(MAX);
@@ -75,8 +76,6 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @ShippingLabelId AS ShippingLabelId, @AimShipperId AS AimShipperId;
             RETURN;
         END
-        SET @PartNumber = (SELECT PartNumber FROM Parts.Item WHERE Id = @ItemId);
-
         -- ---- OI-16 completion-confirm gate (per-terminal RequiresCompletionConfirm) ----
         SET @RequiresConfirm = (
             SELECT TOP 1 la.AttributeValue
@@ -117,9 +116,9 @@ BEGIN
         END
 
         -- ---- OI-33 empty-pool hard-fail (BEFORE tran: container stays Open) ----
-        IF @PartNumber IS NULL OR NOT EXISTS (SELECT 1 FROM Lots.AimShipperIdPool WHERE PartNumber = @PartNumber AND ConsumedAt IS NULL)
+        IF NOT EXISTS (SELECT 1 FROM Lots.AimShipperIdPool WHERE ConsumedAt IS NULL)
         BEGIN
-            SET @Message = N'AIM shipper ID pool is empty for part ' + ISNULL(@PartNumber, N'(unknown)') + N'. Container left open.';
+            SET @Message = N'AIM shipper ID pool is empty. Container left open.';
             EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'Container', @EntityId = @ContainerId,
                 @LogEventTypeCode = N'ContainerCompleted', @FailureReason = @Message, @ProcedureName = @ProcName, @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message, @ShippingLabelId AS ShippingLabelId, @AimShipperId AS AimShipperId;
@@ -134,7 +133,7 @@ BEGIN
         ;WITH c AS (
             SELECT TOP 1 Id, AimShipperId, ConsumedAt, ConsumedByContainerId, ConsumedByUserId
             FROM Lots.AimShipperIdPool WITH (ROWLOCK, UPDLOCK, READPAST)
-            WHERE PartNumber = @PartNumber AND ConsumedAt IS NULL
+            WHERE ConsumedAt IS NULL
             ORDER BY FetchedAt, Id)
         UPDATE c
             SET ConsumedAt = SYSUTCDATETIME(), ConsumedByContainerId = @ContainerId, ConsumedByUserId = @AppUserId
@@ -142,12 +141,37 @@ BEGIN
 
         SELECT @ClaimedPoolId = Id, @AimShipperId = AimShipperId FROM @claimed;
 
+        -- AIM post-back payload, frozen at completion. Written in the same transaction
+        -- as the claim: a rolled-back container never leaves a row owed to AIM.
+        DECLARE @PostQty  INT = (SELECT ISNULL(SUM(t.PartsClosedCount), 0)
+                                 FROM Lots.ContainerTray t
+                                 WHERE t.ContainerId = @ContainerId AND t.ClosedAt IS NOT NULL);
+        DECLARE @PostLot  NVARCHAR(50) = (SELECT TOP 1 l.LotName
+                                          FROM Lots.ContainerTray t
+                                          INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
+                                          WHERE t.ContainerId = @ContainerId
+                                          ORDER BY t.TrayPosition);
+        -- 2026-08-04: AIM customer part is derived from Item.PartNumber (dash-strip),
+        -- not a stored per-item column (Migration 0054; Parts.ufn_AimCustomerPartNumber
+        -- header has the evidence). PartNumber is NOT NULL, so this can never be NULL
+        -- for a real item.
+        DECLARE @PostPart NVARCHAR(50) = (SELECT Parts.ufn_AimCustomerPartNumber(i.PartNumber)
+                                          FROM Lots.Container c
+                                          INNER JOIN Parts.Item i ON i.Id = c.ItemId
+                                          WHERE c.Id = @ContainerId);
+
+        UPDATE Lots.AimShipperIdPool
+           SET CustomerPartNumber = @PostPart,
+               Quantity           = @PostQty,
+               LotNumber          = @PostLot
+         WHERE Id = @ClaimedPoolId;
+
         IF @ClaimedPoolId IS NULL
         BEGIN
             -- lost the race: no-op COMMIT (never ROLLBACK in an INSERT-EXEC-captured proc)
             COMMIT TRANSACTION;
             SET @Status = 0;
-            SET @Message = N'AIM shipper ID pool is empty for part ' + @PartNumber + N'. Container left open.';
+            SET @Message = N'AIM shipper ID pool is empty. Container left open.';
             SELECT @Status AS Status, @Message AS Message, @ShippingLabelId AS ShippingLabelId, @AimShipperId AS AimShipperId;
             RETURN;
         END
