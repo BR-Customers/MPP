@@ -77,7 +77,7 @@
 | FDS-05-017 Bidirectional query | SHALL | Built | `Lot_GetGenealogyTree`/`GetParents`/`GetChildren` | UI drill-down clicks dead (P2-1) |
 | FDS-05-018 Genealogy report | SHALL | Partial | `GenealogyViewer` + tree proc | LotName-only resolve (P9-3); **no printable export** (P9-4) |
 | FDS-05-019 Label print tracking | SHALL | Built | `LotLabel_Print` INSERT | — |
-| FDS-05-020 Print reasons | SHALL | Built | `PrintReasonCode` (5 seeded) | em-dash mojibake (P4-7) |
+| FDS-05-020 Print reasons | SHALL | Built | `PrintReasonCode` (5 seeded) | em-dash mojibake fixed 2026-07-28 (`0045`) |
 | FDS-05-021 Attribute-change log | SHALL | Built | `LotAttributeChange` + writers | — |
 | FDS-05-022 Sublot pattern | SHALL | Built | `MachiningOut_RecordSplit` children | — |
 | FDS-05-024 Sublot labels (parent ref) | SHALL | Built | `LotLabel_Print` `{ParentLotNumber}` | — |
@@ -141,10 +141,10 @@
 | FDS-07-003 Serialized fill | SHALL | Partial | leaf procs; orchestration unbuilt (P6-5) | — |
 | FDS-07-004 Non-serialized fill | SHALL | Built | `ContainerTray_Close`/`Container_Complete` | — |
 | FDS-07-005 Container closure (1 txn) | SHALL | Built | `Container_Complete` atomic claim+label+status | dispatch sync not `sendRequestAsync` (006a) |
-| FDS-07-006 Label content | SHALL | Partial | `ShippingDispatcher._renderZpl` | AIM barcode only; **Honda part/qty fields absent** |
-| FDS-07-006a Print dispatch (GW-async) | SHALL · MVP | Partial | `ShippingDispatcher` | label state machine / retry / write-back sim/unbuilt |
-| FDS-07-006b Print-failure sweep/banner | SHALL · MVP | Partial | timers + `PrintFailureGateway` | ticks no-op; banner not terminal-filtered (P7-11) |
-| FDS-07-007 Label tracking | SHALL | Built | `ShippingLabel` + Void/Reprint | — |
+| FDS-07-006 Label content | SHALL | Built | `LabelTemplate` (type `Container`) + `Container_GetLabelData` | Honda part/qty/lot/serial now populated; 4 blanks (Part Ext C, D/C Level 2P, Auditor, 2D DataMatrix) are **not AIM-sourced** and await part-master data + the Honda content spec |
+| FDS-07-006a Print dispatch (GW-async) | SHALL · MVP | Partial | `ShippingDispatcher.dispatchContainer` + `ShippingLabel_RecordDispatch` | dispatch + write-back now real (2026-07-28); still **synchronous with one attempt**, not `sendRequestAsync` with 3-attempt retry |
+| FDS-07-006b Print-failure sweep/banner | SHALL · MVP | Partial | timers + `PrintFailureGateway` | ticks still no-op, but the columns they read are now written; banner not terminal-filtered (P7-11). **⚠ When building the sweep, key on `PrintedAt IS NULL AND LastPrintAttemptAt` age — NOT on `PrintFailedAt`.** No production path retries the same `ShippingLabel` row (`Container.complete` dispatches once; `Shipping.reprintLabel` writes back to a NEW row), so every real failure lands at `PrintAttempts = 1` with `PrintFailedAt` still NULL — indistinguishable to a `PrintFailedAt`-driven sweep from a label never attempted. The 3-attempt cap is a retry budget with no retry loop behind it yet. Also note the queue transport reports success on **spool**, not on print: a paused or out-of-media Windows queue accepts the job silently, so `PrintedAt` can assert a label that does not physically exist (`javax.print` is async; no `PrintJobListener` is attached). |
+| FDS-07-007 Label tracking | SHALL | Partial | `ShippingLabel` + Void/Reprint | **`ZplContent` column absent** — the FDS names it, and `LotLabel` stores its rendered ZPL, so a shipped shipping label cannot be reproduced from its record |
 | FDS-07-008 Label void | SHALL | Partial | `ShippingLabel_Void` (row kept, no pool return) | AIM void notify not invoked (P7-13) |
 | FDS-07-009 Label reprint | SHALL | Built | `ShippingLabel_Reprint` (new row) | no AD gate (P7-1) |
 | FDS-07-010 AIM local pool | SHALL | Partial | claim/topup/depth + provenance | topup loop sim (commissioning) |

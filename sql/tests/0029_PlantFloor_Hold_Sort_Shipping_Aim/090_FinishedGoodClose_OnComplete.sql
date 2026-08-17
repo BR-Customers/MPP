@@ -15,7 +15,7 @@ GO
 -- ---- teardown (FK-safe order) ----
 DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'));
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
+DELETE FROM Lots.AimShipperIdPool WHERE AimShipperId IN (N'AIM-FGC-1', N'AIM-NUL-1');
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')) OR ConsumedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD');
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD'));
@@ -53,7 +53,7 @@ INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
     VALUES (N'STG-090', @Child, 1, 1, 100000, @Cell, 0, 100000, 1);
 -- AIM pool for the FG part (Container_Complete claims one).
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P21-FGC-FG', @AimShipperId = N'AIM-FGC-1';
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-FGC-1';
 
 -- ---- Act: mint two FG-LOT-linked trays into one container ----
 DECLARE @AT TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
@@ -117,7 +117,7 @@ END
 -- section's staged component LOT above, so this second staged LOT uses a distinct name.
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId) VALUES (N'STG-090B', @NChild, 1, 1, 100000, @Cell2, 0, 100000, 1);
 DECLARE @TP2 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO @TP2 EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P21-FGC-NUL', @AimShipperId = N'AIM-NUL-1';
+INSERT INTO @TP2 EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-NUL-1';
 
 DECLARE @O TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @TC TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, ContainerAccumulatedParts INT);
@@ -136,7 +136,7 @@ GO
 -- ---- teardown (FK-safe order) ----
 DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'));
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL');
+DELETE FROM Lots.AimShipperIdPool WHERE AimShipperId IN (N'AIM-FGC-1', N'AIM-NUL-1');
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')) OR ConsumedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD');
 DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL')));
 DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P21-FGC-FG', N'P21-FGC-NUL'))) OR ParentLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P21-FGC-CHILD'));

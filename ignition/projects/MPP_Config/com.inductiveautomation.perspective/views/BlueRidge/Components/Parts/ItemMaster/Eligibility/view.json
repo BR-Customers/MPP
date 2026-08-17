@@ -149,6 +149,9 @@
         "meta": {
           "name": "HeaderRow"
         },
+        "position": {
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "style": {
@@ -299,6 +302,9 @@
         "meta": {
           "name": "ColumnHeader"
         },
+        "position": {
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "style": {
@@ -335,16 +341,17 @@
         "props": {
           "direction": "column",
           "elementPosition": {
-            "basis": "auto"
+            "basis": "36px",
+            "shrink": 0
           },
           "elementStyle": {
-            "maxHeight": "44px"
+            "overflow": "hidden"
           },
           "path": "BlueRidge/Components/Parts/ItemMaster/EligibilityRow",
           "style": {
-            "overflow": "scroll",
-            "overflowY": "visible"
+            "overflowY": "auto"
           },
+          "useDefaultViewHeight": true,
           "useDefaultViewWidth": false
         },
         "type": "ia.display.flex-repeater"

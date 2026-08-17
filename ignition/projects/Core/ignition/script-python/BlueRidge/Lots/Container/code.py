@@ -56,7 +56,9 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
              appUserId=None, terminalLocationId=None):
     """Complete (close out) a full container -- claims an AIM shipper ID + prints
        the shipping label when configured. Returns
-       {Status, Message, ShippingLabelId, AimShipperId}."""
+       {Status, Message, ShippingLabelId, AimShipperId, LabelPrint (dispatch outcome,
+       present only when a ShippingLabelId was claimed)}."""
+    from java.lang import Throwable
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     BlueRidge.Common.Util.log(
@@ -65,7 +67,46 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
     params = {"containerId": containerId, "plcCompletionConfirmed": plcCompletionConfirmed,
               "operatorConfirmed": operatorConfirmed, "appUserId": appUserId,
               "terminalLocationId": terminalLocationId}
-    return BlueRidge.Common.Db.execMutation("lots/Container_Complete", params)
+    result = BlueRidge.Common.Db.execMutation("lots/Container_Complete", params)
+    # Print the container's shipping label. Mirrors Workorder.Machining.mint: check the
+    # RETURNED Status (dispatchContainer does not raise for the common shop-floor cases)
+    # AND catch genuine exceptions -- either way NEVER lose the completed container.
+    # Complete and print are separate steps (FDS-07-005/006a).
+    if result and result.get("Status") and result.get("ShippingLabelId") is not None:
+        try:
+            printRes = BlueRidge.Lots.ShippingDispatcher.dispatchContainer(
+                containerId, terminalLocationId, result.get("ShippingLabelId"))
+        except Throwable as t:
+            printRes = {"Status": 0, "Message": "print raised: %s" % (t.getMessage() or t)}
+        except Exception as e:
+            printRes = {"Status": 0, "Message": "print raised: %s" % e}
+        result["LabelPrint"] = printRes
+        if not (printRes and printRes.get("Status")):
+            BlueRidge.Common.Util.log(
+                "Container shipping label print failed: %s" % (printRes or {}).get("Message"))
+            try:
+                BlueRidge.Common.Notify.toast(
+                    "Label not printed",
+                    "The container was completed but its shipping label did not print. "
+                    "Reprint from the Shipping Dock.",
+                    "warning")
+            except:
+                # Gateway scope (PLC auto-complete) has no session to toast into.
+                # The container is already committed; never let a toast failure escape.
+                pass
+    # Report the completed container to AIM. Runs AFTER the proc committed and is fully
+    # guarded: complete, print and post are three separate steps (FDS-07-005/006a/012).
+    # A failure leaves the row owed; AimPostTimer retries it. NEVER lose the container.
+    if result and result.get("Status") and result.get("AimShipperId"):
+        try:
+            result["AimPost"] = BlueRidge.Lots.AimPost.postOne(result.get("AimShipperId"))
+        except Throwable as t:
+            BlueRidge.Common.Util.log("AIM post-back failed: %s" % t, level="error")
+            result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(t)}
+        except Exception as e:
+            BlueRidge.Common.Util.log("AIM post-back failed: %s" % e, level="error")
+            result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(e)}
+    return result
 
 
 def getOpenByCell(cellLocationId, _refreshToken=None):

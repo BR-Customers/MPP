@@ -275,10 +275,14 @@
         "meta": {
           "name": "HeaderBar"
         },
+        "position": {
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "style": {
-            "gap": "8px"
+            "gap": "8px",
+          "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -428,8 +432,11 @@
         "meta": {
           "name": "DraftHeaderRow"
         },
+        "position": {
+          "shrink": 0
+        },
         "propConfig": {
-          "meta.visible": {
+          "position.display": {
             "binding": {
               "config": {
                 "expression": "{view.custom.state.editDraft.status} \u003d \"Draft\""
@@ -441,7 +448,8 @@
         "props": {
           "alignItems": "center",
           "style": {
-            "gap": "8px"
+            "gap": "8px",
+          "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -550,8 +558,11 @@
         "meta": {
           "name": "ColumnHeader"
         },
+        "position": {
+          "shrink": 0
+        },
         "propConfig": {
-          "meta.visible": {
+          "position.display": {
             "binding": {
               "config": {
                 "expression": "{view.custom.state.selected.id} !\u003d null"
@@ -569,6 +580,7 @@
             "fontSize": "11px",
             "fontWeight": "600",
             "gap": "8px",
+            "overflow": "hidden",
             "padding": "6px 10px"
           }
         },
@@ -601,16 +613,17 @@
         "props": {
           "direction": "column",
           "elementPosition": {
-            "basis": "auto"
+            "basis": "36px",
+            "shrink": 0
           },
           "elementStyle": {
-            "maxHeight": "44px"
+            "overflow": "hidden"
           },
           "path": "BlueRidge/Components/Parts/ItemMaster/BomLineRow",
           "style": {
             "overflowY": "auto"
           },
-          "useDefaultViewHeight": false,
+          "useDefaultViewHeight": true,
           "useDefaultViewWidth": false
         },
         "type": "ia.display.flex-repeater"
@@ -647,8 +660,11 @@
         "meta": {
           "name": "DraftFooter"
         },
+        "position": {
+          "shrink": 0
+        },
         "propConfig": {
-          "meta.visible": {
+          "position.display": {
             "binding": {
               "config": {
                 "expression": "{view.custom.state.editDraft.status} \u003d \"Draft\""
@@ -661,6 +677,7 @@
           "alignItems": "center",
           "style": {
             "borderTop": "1px solid var(--mpp-border-subtle)",
+            "overflow": "hidden",
             "padding": "6px 10px"
           }
         },
@@ -671,7 +688,7 @@
           "name": "EmptyHint"
         },
         "propConfig": {
-          "meta.visible": {
+          "position.display": {
             "binding": {
               "config": {
                 "expression": "{view.custom.state.selected.id} \u003d null"

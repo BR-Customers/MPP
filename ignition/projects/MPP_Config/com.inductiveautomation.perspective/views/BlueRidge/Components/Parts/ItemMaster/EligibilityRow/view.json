@@ -336,6 +336,7 @@
         "borderBottom": "1px solid var(--mpp-border-subtle)",
         "gap": "6px",
         "height": "100%",
+        "overflow": "hidden",
         "padding": "2px 10px"
       }
     },
