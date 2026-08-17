@@ -1,0 +1,110 @@
+AIM Responsibilities:
+Provide software to create Shipping labels based on the content of an HTTP POST request.  If there are exceptions, the exceptions will be written to the AIMVision\Lineside\Exceptions folder using the same name as the label number with a “.txt” extension when possible.  A message will also be written to the acsMobileLog Event Log.
+ 
+ 
+Activities and Deliverables
+Customer Activities
+Provide two HTTP POST requests as outlined in Exhibit A   Provide network infrastructure to facilitate the HTTP POST request to the server
+ 
+AIM Activities
+Modify the AIM Mobility Web service to allow processing the HTTP POST request as described in this document.  The service will listen on the designated port, usually port 8080 to allow the application service to create a shipping label.  The label will not be printed from AIM but instead printed by the MPP MES system as it does today.  If exceptions occur, an exception will be created and written to the AIMVision\Lineside\Exceptions folder using the same name as the serial number when possible with a “.txt”.
+ 
+Modify the AIM Mobility application service (MobileMain) to create a shipping label using the content of the HTTP POST request to locate an active blanket from the AIM Vision Orders system, using the quantity and supplier lot number based on the HTTP POST request content.  See Exhibit A for details of the HTTP POST request.
+
+Constraints and Exclusions
+Label types must be identified as Quick Label Allowed
+Labels that require additional input are outside the scope of this project
+Lot control is outside the scope of this project
+The label content must be the same for a given Customer Part number issued from the floor. For example, if the same customer part is sent to multiple destinations and the label requires destination specific content, adjustments will have to be made and are considered outside the scope of this project.
+
+
+Exhibit A – HTTP POST request and content
+ 
+Two different POST requests will be used for the label creation.  The first request will be used when a label number is needed to get a unique 9 digit serial for a specific company code.  The second request will be used to fill in the label content.
+ 
+Each request will be in the format
+      http://{servername}:8080/mes/floor/{CompanyCode}/636652666553236784/{request}
+ 
+{servername} is the name of the AIM Server (or IP address of the server).
+{CompanyCode} is the company code defined in AIM. “99” is usually used for test.
+{request} will be one of the following:
+      nextserial.csv - used to request the next 9 digit serial number form the {CompanyCode}
+      postserial.csv - used to create serial label using POST content
+ 
+Serial Number Request/Reply
+ 
+Request next Serial Number:
+      http://{servername}:8080/mes/floor/{CompanyCode}/636652666553236784/nextserial.csv
+ 
+Reply:
+{serialnumber} – Nine digit unique per company code, (i.e. 123456789)
+{cr} – carriage return (hex 0x0d)
+{lf} – linefeed (hex 0x0a)
+ 
+Sample POST Request content:
+POST /mes/floor/99/636652666553236784/nextserial.csv HTTP/1.1
+User-Agent: Dalvik/1.6.0 (Linux; U; Android 4.1.1; androVM for VirtualBox ('Tablet' version with phone caps)
+Host: 10.1.9.17:8080
+Connection: Keep-Alive
+Accept-Encoding: gzip
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 4
+{cr}{lf}
+{cr}{lf}
+ 
+Sample POST reply content:
+HTTP/1.1 200 OK
+Content-Type: text/csv
+Server: acsMobile-HTTPAPI/2.0
+Date: 6/22/2018 12:00:00 AM
+Connection: close
+Content-Length: 13
+{cr}{lf}
+        000002234
+        {cr}{lf}
+
+ 
+Post Serial Number Request/Reply
+ 
+Update Serial Number URL:
+      http://{servername}:8080/mes/floor/{CompanyCode}/636652666553236784/postserial.csv
+ 
+Update Serial Number Content:
+{serialnumber} – Nine digit unique per company code, (i.e. 123456789)
+{tab} – tab character (hex 0x09)
+{Customer Part Number}
+{tab} – tab character (hex 0x09)
+{Quantity}
+{tab} – tab character (hex 0x09)
+{Lot Number}
+{cr} – carriage return (hex 0x0d)
+{lf} – linefeed (hex 0x0a)
+ 
+ 
+Reply:
+{serialnumber} – Nine digit unique per company code, (i.e. 123456789)
+{cr} – carriage return (hex 0x0d)
+{lf} – linefeed (hex 0x0a)
+ 
+Sample POST Request content:
+POST /mes/floor/99/636652666553236784/postserial.csv HTTP/1.1
+User-Agent: Dalvik/1.6.0 (Linux; U; Android 4.1.1; androVM for VirtualBox ('Tablet' version with phone caps)
+Host: 10.1.9.17:8080
+Connection: Keep-Alive
+Accept-Encoding: gzip
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 4
+{cr}{lf}
+000002234{tab}PART1234{tab}50{tab}LOT1234
+{cr}{lf}
+ 
+Sample POST reply content:
+HTTP/1.1 200 OK
+Content-Type: text/csv
+Server: acsMobile-HTTPAPI/2.0
+Date: 6/22/2018 12:00:00 AM
+Connection: close
+Content-Length: 13
+{cr}{lf}
+        000002234
+        {cr}{lf}

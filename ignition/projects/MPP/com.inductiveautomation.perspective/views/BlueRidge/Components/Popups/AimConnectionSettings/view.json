@@ -1,0 +1,500 @@
+{
+  "custom": {
+    "state": {
+      "selected": {
+        "Id": 0,
+        "TargetBufferDepth": "",
+        "TopupThreshold": "",
+        "AlarmWarningDepth": "",
+        "AlarmCriticalDepth": "",
+        "AimBaseUrl": "",
+        "AimCompanyCode": "",
+        "AimPathToken": "",
+        "PostWarningAgeMinutes": "",
+        "PostCriticalAgeMinutes": "",
+        "AimPostingEnabled": false
+      },
+      "editDraft": {
+        "Id": 0,
+        "TargetBufferDepth": "",
+        "TopupThreshold": "",
+        "AlarmWarningDepth": "",
+        "AlarmCriticalDepth": "",
+        "AimBaseUrl": "",
+        "AimCompanyCode": "",
+        "AimPathToken": "",
+        "PostWarningAgeMinutes": "",
+        "PostCriticalAgeMinutes": "",
+        "AimPostingEnabled": false
+      }
+    }
+  },
+  "params": {
+    "popupId": "mpp-aim-connection",
+    "replyMessage": "aimConnectionResult"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Title"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "fontSize": "20px",
+            "fontWeight": "700"
+          },
+          "text": "AIM connection settings"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "ConnLabel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          },
+          "text": "Clearing a field keeps its stored value."
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "AIM base URL"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "AimBaseUrlInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.state.editDraft.AimBaseUrl"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "leave blank to keep current",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "BaseUrlField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "AIM company code"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "AimCompanyCodeInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.state.editDraft.AimCompanyCode"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "leave blank to keep current",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
+                "type": "ia.input.text-field"
+              },
+              {
+                "meta": {
+                  "name": "CompanyCodeWarning"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--pf-status-warn-fg)",
+                    "fontSize": "11px",
+                    "fontWeight": "600"
+                  },
+                  "text": "01 is test. Never point at 99 (live production)."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "CompanyCodeField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "AIM path token"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "AimPathTokenInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.state.editDraft.AimPathToken"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "leave blank to keep current",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "PathTokenField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Post warning age (min)"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "PostWarningAgeInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.state.editDraft.PostWarningAgeMinutes"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "leave blank to keep current",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "PostWarningAgeField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Post critical age (min)"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "PostCriticalAgeInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.state.editDraft.PostCriticalAgeMinutes"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "leave blank to keep current",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "PostCriticalAgeField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "ConnFieldRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "stretch",
+          "style": {
+            "gap": "14px"
+          },
+          "direction": "column"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary pf-btn-large"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {},
+              "text": ""
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\td = self.view.custom.state.editDraft\n\tcur = self.view.custom.state.selected\n\tbaseUrl = d.get(\"AimBaseUrl\") or None\n\tcompanyCode = d.get(\"AimCompanyCode\") or None\n\tpathToken = d.get(\"AimPathToken\") or None\n\twarnAge = BlueRidge.Common.Util.toIntOrNone(d.get(\"PostWarningAgeMinutes\"))\n\tcritAge = BlueRidge.Common.Util.toIntOrNone(d.get(\"PostCriticalAgeMinutes\"))\n\t# thresholds are owned by the parent screen -- pass the pristine values straight back\n\ttarget = BlueRidge.Common.Util.toIntOrNone(cur.get(\"TargetBufferDepth\")) or 0\n\ttopup = BlueRidge.Common.Util.toIntOrNone(cur.get(\"TopupThreshold\")) or 0\n\twarn = BlueRidge.Common.Util.toIntOrNone(cur.get(\"AlarmWarningDepth\")) or 0\n\tcritical = BlueRidge.Common.Util.toIntOrNone(cur.get(\"AlarmCriticalDepth\")) or 0\n\tresult = BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical, baseUrl, companyCode, pathToken, warnAge, critAge)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Connection settings saved\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"save\"}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SaveButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary pf-btn-large"
+              },
+              "text": "Save"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "ButtonRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "12px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tself.load()"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "surface-card",
+        "gap": "16px",
+        "padding": "24px",
+        "overflow": "hidden"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\trows = BlueRidge.Lots.AimPoolConfig.get() or []\n\tr = rows[0] if rows else {}\n\tdef _s(val):\n\t\treturn \"\" if val is None else (val if isinstance(val, basestring) else unicode(val))\n\tloaded = {\n\t\t\"Id\":                     r.get(\"Id\"),\n\t\t\"TargetBufferDepth\":      _s(r.get(\"TargetBufferDepth\")),\n\t\t\"TopupThreshold\":         _s(r.get(\"TopupThreshold\")),\n\t\t\"AlarmWarningDepth\":      _s(r.get(\"AlarmWarningDepth\")),\n\t\t\"AlarmCriticalDepth\":     _s(r.get(\"AlarmCriticalDepth\")),\n\t\t\"AimBaseUrl\":             _s(r.get(\"AimBaseUrl\")),\n\t\t\"AimCompanyCode\":         _s(r.get(\"AimCompanyCode\")),\n\t\t\"AimPathToken\":           _s(r.get(\"AimPathToken\")),\n\t\t\"PostWarningAgeMinutes\":  _s(r.get(\"PostWarningAgeMinutes\")),\n\t\t\"PostCriticalAgeMinutes\": _s(r.get(\"PostCriticalAgeMinutes\")),\n\t\t\"AimPostingEnabled\":      bool(r.get(\"AimPostingEnabled\")),\n\t}\n\tself.view.custom.state = {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  },
+  "props": {
+    "defaultSize": {
+      "height": 620,
+      "width": 560
+    }
+  }
+}

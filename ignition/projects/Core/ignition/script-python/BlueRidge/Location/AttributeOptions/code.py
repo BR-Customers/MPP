@@ -31,7 +31,7 @@ _DEFAULT_SCREENS = [
     ("/shop-floor/assembly-serialized",   "Assembly (Serialized)"),
     ("/shop-floor/assembly-nonserialized","Assembly (Non-Serialized)"),
     ("/shop-floor/sort-cage",             "Sort Cage"),
-    ("/shop-floor/third-party-inspection","Third-Party Inspection"),
+    ("/shop-floor/third-party-inspection","Pass-Through Parts"),
     ("/shop-floor/receiving",             "Receiving"),
     ("/shop-floor/shipping",              "Shipping Dock"),
 ]

@@ -1,23 +1,48 @@
 {
   "custom": {
-    "draft": {
-      "alarmCriticalDepth": "",
-      "alarmWarningDepth": "",
-      "targetBufferDepth": "",
-      "topupThreshold": ""
+    "poolDepth": {
+      "Depth": 0
     },
-    "refreshToken": 0
+    "state": {
+      "editDraft": {
+        "AimBaseUrl": "http://172.17.10.86:8080",
+        "AimCompanyCode": "01",
+        "AimPathToken": "636652666553236784",
+        "AimPostingEnabled": true,
+        "AlarmCriticalDepth": "10",
+        "AlarmWarningDepth": "20",
+        "Id": 1,
+        "PostCriticalAgeMinutes": "120",
+        "PostWarningAgeMinutes": "30",
+        "TargetBufferDepth": "75",
+        "TopupThreshold": "51"
+      },
+      "selected": {
+        "AimBaseUrl": "http://172.17.10.86:8080",
+        "AimCompanyCode": "01",
+        "AimPathToken": "636652666553236784",
+        "AimPostingEnabled": true,
+        "AlarmCriticalDepth": "10",
+        "AlarmWarningDepth": "20",
+        "Id": 1,
+        "PostCriticalAgeMinutes": "120",
+        "PostWarningAgeMinutes": "30",
+        "TargetBufferDepth": "75",
+        "TopupThreshold": "51"
+      }
+    },
+    "unposted": []
   },
   "params": {},
   "propConfig": {
-    "custom.cfg": {
+    "custom.poolDepth": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0, runScript(\"BlueRidge.Lots.AimPoolConfig.get\", 0, {view.custom.refreshToken}), \"\")"
+          "expression": "runScript(\"BlueRidge.Lots.AimPool.getDepth\", 5000)"
         },
         "transforms": [
           {
-            "code": "\trows \u003d value or []\n\tr \u003d rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\") or 1, \"TargetBufferDepth\": r.get(\"TargetBufferDepth\") or 0, \"TopupThreshold\": r.get(\"TopupThreshold\") or 0, \"AlarmWarningDepth\": r.get(\"AlarmWarningDepth\") or 0, \"AlarmCriticalDepth\": r.get(\"AlarmCriticalDepth\") or 0}",
+            "code": "\trows \u003d value or []\n\tr \u003d rows[0] if rows else {}\n\treturn {\"Depth\": r.get(\"Depth\") or 0}",
             "type": "script"
           }
         ],
@@ -35,66 +60,109 @@
       {
         "children": [
           {
-            "meta": {
-              "name": "Header"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "fontSize": "22px",
-                "fontWeight": "700"
-              },
-              "text": "AIM Pool Configuration"
-            },
-            "type": "ia.display.label"
-          },
-          {
             "children": [
               {
                 "meta": {
-                  "name": "Tag"
+                  "name": "Header"
+                },
+                "position": {
+                  "shrink": 0
                 },
                 "props": {
-                  "text": "AIM Shipper Pool"
+                  "style": {
+                    "fontSize": "22px",
+                    "fontWeight": "700"
+                  },
+                  "text": "AIM Pool Configuration"
                 },
                 "type": "ia.display.label"
               },
               {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Tag"
+                    },
+                    "props": {
+                      "text": "AIM Shipper Pool"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Sep"
+                    },
+                    "props": {
+                      "text": "-"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Desc"
+                    },
+                    "props": {
+                      "text": "Buffer depth, top-up and alarm thresholds"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
                 "meta": {
-                  "name": "Sep"
+                  "name": "Meta"
+                },
+                "position": {
+                  "shrink": 0
                 },
                 "props": {
-                  "text": "-"
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "pf-location-meta",
+                    "gap": "8px"
+                  },
+                  "wrap": "wrap"
                 },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "Desc"
-                },
-                "props": {
-                  "text": "Buffer depth, top-up and alarm thresholds"
-                },
-                "type": "ia.display.label"
+                "type": "ia.container.flex"
               }
             ],
             "meta": {
-              "name": "Meta"
+              "name": "HeaderText"
             },
             "position": {
               "shrink": 0
             },
             "props": {
-              "alignItems": "center",
+              "direction": "column",
               "style": {
-                "classes": "pf-location-meta",
-                "gap": "8px"
-              },
-              "wrap": "wrap"
+                "gap": "4px"
+              }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-aim-connection\", \"BlueRidge/Components/Popups/AimConnectionSettings\", params\u003d{\"popupId\": \"mpp-aim-connection\", \"replyMessage\": \"aimConnectionResult\"}, modal\u003dTrue, showCloseIcon\u003dTrue)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ConnSettingsButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Connection settings"
+            },
+            "type": "ia.input.button"
           }
         ],
         "meta": {
@@ -104,11 +172,13 @@
           "shrink": 0
         },
         "props": {
-          "direction": "column",
+          "alignItems": "center",
+          "justify": "space-between",
           "style": {
             "borderBottom": "1px solid var(--mpp-border-subtle)",
             "classes": "pf-details-header",
-            "gap": "4px",
+            "gap": "12px",
+            "overflow": "hidden",
             "padding": "16px"
           }
         },
@@ -120,22 +190,22 @@
             "children": [
               {
                 "meta": {
-                  "name": "KpiLabel"
+                  "name": "PoolCardLabel"
                 },
                 "position": {
                   "shrink": 0
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-kpi-label"
+                    "classes": "pf-field-label"
                   },
-                  "text": "Target Buffer Depth"
+                  "text": "AIM serials available in pool"
                 },
                 "type": "ia.display.label"
               },
               {
                 "meta": {
-                  "name": "KpiValue"
+                  "name": "PoolCardValue"
                 },
                 "position": {
                   "shrink": 0
@@ -144,7 +214,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "toStr({view.custom.cfg.TargetBufferDepth})"
+                        "expression": "toStr({view.custom.poolDepth.Depth})"
                       },
                       "type": "expr"
                     }
@@ -152,38 +222,16 @@
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-kpi-value pf-kpi-value-good"
-                  }
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "KpiSub"
-                },
-                "position": {
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "expression": "\u0027Top-up: \u0027 + toStr({view.custom.cfg.TopupThreshold}) + \u0027   |   Warn: \u0027 + toStr({view.custom.cfg.AlarmWarningDepth}) + \u0027   |   Critical: \u0027 + toStr({view.custom.cfg.AlarmCriticalDepth})"
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
+                    "fontSize": "40px",
+                    "fontWeight": "700",
+                    "lineHeight": "1.1"
                   }
                 },
                 "type": "ia.display.label"
               }
             ],
             "meta": {
-              "name": "CurrentKpi"
+              "name": "PoolCard"
             },
             "position": {
               "shrink": 0
@@ -191,9 +239,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "borderColor": "var(--pf-status-good-fg)",
-                "classes": "pf-kpi pf-panel",
-                "gap": "6px",
+                "classes": "pf-panel",
+                "gap": "4px",
                 "padding": "16px"
               }
             },
@@ -214,21 +261,6 @@
                     "fontWeight": "700"
                   },
                   "text": "Set thresholds"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "EditLabel"
-                },
-                "position": {
-                  "shrink": 0
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  },
-                  "text": "All four threshold values are required to save."
                 },
                 "type": "ia.display.label"
               },
@@ -257,7 +289,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.draft.targetBufferDepth"
+                                "path": "view.custom.state.editDraft.TargetBufferDepth"
                               },
                               "type": "property"
                             }
@@ -312,7 +344,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.draft.topupThreshold"
+                                "path": "view.custom.state.editDraft.TopupThreshold"
                               },
                               "type": "property"
                             }
@@ -367,7 +399,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.draft.alarmWarningDepth"
+                                "path": "view.custom.state.editDraft.AlarmWarningDepth"
                               },
                               "type": "property"
                             }
@@ -422,7 +454,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.draft.alarmCriticalDepth"
+                                "path": "view.custom.state.editDraft.AlarmCriticalDepth"
                               },
                               "type": "property"
                             }
@@ -472,11 +504,66 @@
                 "type": "ia.container.flex"
               },
               {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "AimPostingEnabledInput"
+                    },
+                    "propConfig": {
+                      "props.selected": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.state.editDraft.AimPostingEnabled"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "AIM posting enabled"
+                    },
+                    "type": "ia.input.checkbox"
+                  },
+                  {
+                    "meta": {
+                      "name": "AimPostingEnabledHelp"
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--pf-status-warn-fg)",
+                        "fontSize": "11px",
+                        "fontWeight": "600"
+                      },
+                      "text": "On consumes real AIM serials, which cannot be returned."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "PostingToggleRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "gap": "4px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
                 "events": {
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\td \u003d self.view.custom.draft\n\ttarget \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"targetBufferDepth\"))\n\ttopup \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"topupThreshold\"))\n\twarn \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmWarningDepth\"))\n\tcritical \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmCriticalDepth\"))\n\tif target is None or topup is None or warn is None or critical is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter all four threshold values.\"}, \"AIM Pool Config\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Thresholds saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\td \u003d self.view.custom.state.editDraft\n\ttarget \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"TargetBufferDepth\"))\n\ttopup \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"TopupThreshold\"))\n\twarn \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"AlarmWarningDepth\"))\n\tcritical \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"AlarmCriticalDepth\"))\n\tposting \u003d bool(d.get(\"AimPostingEnabled\"))\n\tif target is None or topup is None or warn is None or critical is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter all four threshold values.\"}, \"AIM Pool Config\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical, aimPostingEnabled\u003dposting)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Thresholds saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.rootContainer.load()"
                       },
                       "scope": "G",
                       "type": "script"
@@ -513,6 +600,161 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "UnpostedTitle"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "18px",
+                        "fontWeight": "700"
+                      },
+                      "text": "AIM post backlog"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "UnpostedCountBadge"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr(len({view.custom.unposted})) + \" owed\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "background": "var(--bg-row-alt)",
+                        "borderRadius": "12px",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "13px",
+                        "padding": "4px 10px"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "UnpostedHeaderRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "10px"
+                  },
+                  "wrap": "wrap"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "UnpostedEmptyState"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.unposted}) \u003d 0"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "14px",
+                    "padding": "12px 0"
+                  },
+                  "text": "Nothing owed to AIM."
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "UnpostedList"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.unposted}) \u003e 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.unposted"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn [BlueRidge.Common.Util.extractQualifiedValues(r) or {} for r in (value or [])]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "64px",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/AimUnpostedRow",
+                  "style": {
+                    "gap": "6px",
+                    "maxHeight": "420px",
+                    "overflowY": "auto"
+                  },
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": {
+              "name": "UnpostedSection"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "16px"
+              }
+            },
+            "type": "ia.container.flex"
           }
         ],
         "meta": {
@@ -533,6 +775,17 @@
         "type": "ia.container.flex"
       }
     ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tself.load()\n\tself.loadUnposted()"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
     "meta": {
       "name": "root"
     },
@@ -541,6 +794,44 @@
       "style": {
         "classes": "canvas"
       }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\trows \u003d BlueRidge.Lots.AimPoolConfig.get() or []\n\tr \u003d rows[0] if rows else {}\n\tdef _s(val):\n\t\treturn \"\" if val is None else (val if isinstance(val, basestring) else unicode(val))\n\tloaded \u003d {\n\t\t\"Id\":                     r.get(\"Id\"),\n\t\t\"TargetBufferDepth\":      _s(r.get(\"TargetBufferDepth\")),\n\t\t\"TopupThreshold\":         _s(r.get(\"TopupThreshold\")),\n\t\t\"AlarmWarningDepth\":      _s(r.get(\"AlarmWarningDepth\")),\n\t\t\"AlarmCriticalDepth\":     _s(r.get(\"AlarmCriticalDepth\")),\n\t\t\"AimBaseUrl\":             _s(r.get(\"AimBaseUrl\")),\n\t\t\"AimCompanyCode\":         _s(r.get(\"AimCompanyCode\")),\n\t\t\"AimPathToken\":           _s(r.get(\"AimPathToken\")),\n\t\t\"PostWarningAgeMinutes\":  _s(r.get(\"PostWarningAgeMinutes\")),\n\t\t\"PostCriticalAgeMinutes\": _s(r.get(\"PostCriticalAgeMinutes\")),\n\t\t\"AimPostingEnabled\":      bool(r.get(\"AimPostingEnabled\")),\n\t}\n\tself.view.custom.state \u003d {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
+        },
+        {
+          "name": "loadUnposted",
+          "params": [],
+          "script": "\trows \u003d BlueRidge.Lots.AimPool.listUnposted(50) or []\n\tmapped \u003d []\n\tfor r in rows:\n\t\tageMin \u003d r.get(\"AgeMinutes\") or 0\n\t\tif ageMin \u003e\u003d 60:\n\t\t\tageDisplay \u003d \"%dh %dm\" % (ageMin // 60, ageMin % 60)\n\t\telse:\n\t\t\tageDisplay \u003d \"%d min\" % ageMin\n\t\tmapped.append({\"poolId\": r.get(\"Id\"), \"serial\": r.get(\"AimShipperId\") or \"\", \"containerId\": r.get(\"ContainerId\") or 0, \"customerPartNumber\": r.get(\"CustomerPartNumber\") or \"\", \"quantity\": r.get(\"Quantity\") or 0, \"lotNumber\": r.get(\"LotNumber\") or \"\", \"postAttempts\": r.get(\"PostAttempts\") or 0, \"lastPostError\": r.get(\"LastPostError\") or \"\", \"ageDisplay\": ageDisplay})\n\tself.view.custom.unposted \u003d mapped"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "aimMarkPostedResult",
+          "pageScope": true,
+          "script": "\tif payload and payload.get(\"action\") \u003d\u003d \"confirm\":\n\t\tself.loadUnposted()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "aimConnectionResult",
+          "pageScope": true,
+          "script": "\tif payload and payload.get(\"action\") \u003d\u003d \"save\":\n\t\tself.load()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "mpp-toast",
+          "pageScope": false,
+          "script": "\tBlueRidge.Common.Notify._handle(self, payload)",
+          "sessionScope": true,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }

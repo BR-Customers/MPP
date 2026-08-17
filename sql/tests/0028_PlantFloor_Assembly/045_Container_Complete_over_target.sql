@@ -19,7 +19,9 @@ GO
 
 -- ---- cleanup ----
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-OVT-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-OVT-TEST';
+-- AimShipperIdPool is part-agnostic (Migration 0049); blanket clear so this file's own
+-- topped-up id is the only one present for the untouched-pool assertion below.
+DELETE FROM Lots.AimShipperIdPool;
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-OVT-TEST';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-OVT-TEST');
 GO
@@ -48,7 +50,7 @@ VALUES (@Cid, 1, 10, @Now, 1, N'ByCount'),
 
 -- seed a healthy AIM pool so over-target is the ONLY reason completion can fail
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P6-OVT-TEST', @AimShipperId = N'AIM-OVT-1';
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-OVT-1';
 GO
 
 -- =============================================
@@ -73,13 +75,13 @@ EXEC test.Assert_IsEqual @TestName = N'[Complete] over-target container left Ope
 -- no ShippingLabel, AIM pool untouched
 DECLARE @Labels NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.ShippingLabel WHERE ContainerId = @Cid);
 EXEC test.Assert_IsEqual @TestName = N'[Complete] no ShippingLabel on over-target reject', @Expected = N'0', @Actual = @Labels;
-DECLARE @PoolFree NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-OVT-TEST' AND ConsumedAt IS NULL);
+DECLARE @PoolFree NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.AimShipperIdPool WHERE AimShipperId = N'AIM-OVT-1' AND ConsumedAt IS NULL);
 EXEC test.Assert_IsEqual @TestName = N'[Complete] AIM id NOT consumed on over-target reject', @Expected = N'1', @Actual = @PoolFree;
 GO
 
 -- ---- cleanup ----
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-OVT-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-OVT-TEST';
+DELETE FROM Lots.AimShipperIdPool;
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-OVT-TEST';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-OVT-TEST');
 GO

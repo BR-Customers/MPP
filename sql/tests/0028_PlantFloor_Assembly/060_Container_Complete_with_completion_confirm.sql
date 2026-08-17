@@ -12,7 +12,7 @@ GO
 
 -- ---- cleanup (containers + the RequiresCompletionConfirm override we manage) ----
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-060';
@@ -69,7 +69,7 @@ BEGIN
 END
 
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P6-ASM-TEST', @AimShipperId = N'AIM-CFM-1';
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-CFM-1';
 
 -- without operator confirm -> reject
 DECLARE @R1 TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
@@ -95,7 +95,7 @@ DECLARE @Cell2 BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
 DELETE la FROM Location.LocationAttribute la INNER JOIN Location.LocationAttributeDefinition lad ON lad.Id = la.LocationAttributeDefinitionId
     WHERE la.LocationId = @Cell2 AND lad.AttributeName = N'RequiresCompletionConfirm' AND la.AttributeValue = N'true';
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-060';

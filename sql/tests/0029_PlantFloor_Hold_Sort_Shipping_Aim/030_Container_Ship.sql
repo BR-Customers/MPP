@@ -11,7 +11,7 @@ GO
 
 DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST');
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P7-SHIP-TEST';
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-030';
@@ -42,9 +42,9 @@ INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
 DECLARE @HoldType BIGINT = (SELECT TOP 1 Id FROM Quality.HoldTypeCode ORDER BY Id);
 
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P7-SHIP-TEST', @AimShipperId = N'AIM-SH-1'; DELETE FROM @TP;
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P7-SHIP-TEST', @AimShipperId = N'AIM-SH-2'; DELETE FROM @TP;
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P7-SHIP-TEST', @AimShipperId = N'AIM-SH-3';
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-SH-1'; DELETE FROM @TP;
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-SH-2'; DELETE FROM @TP;
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-SH-3';
 
 -- reusable: complete one container, return @Con + @Slid via the last-row temp tables
 DECLARE @O TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -89,7 +89,7 @@ GO
 
 DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST');
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P7-SHIP-TEST';
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-030';

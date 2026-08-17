@@ -2003,7 +2003,7 @@
       "system": {
         "onStartup": {
           "config": {
-            "script": "\tself.rootContainer.initIncoming()"
+            "script": "\tself.initIncoming()"
           },
           "scope": "G",
           "type": "script"

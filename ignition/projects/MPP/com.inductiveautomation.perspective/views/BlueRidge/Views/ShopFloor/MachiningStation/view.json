@@ -7,24 +7,18 @@
       {
         "children": [
           {
-            "meta": {
-              "name": "TabMachiningIn"
-            },
-            "position": {
-              "grow": 1
-            },
+            "type": "ia.display.view",
+            "meta": { "name": "TabMachiningIn" },
+            "position": { "grow": 1, "tabIndex": 0 },
             "props": {
               "path": "BlueRidge/Views/ShopFloor/MachiningIn"
             },
             "type": "ia.display.view"
           },
           {
-            "meta": {
-              "name": "TabMachiningOut"
-            },
-            "position": {
-              "grow": 1
-            },
+            "type": "ia.display.view",
+            "meta": { "name": "TabMachiningOut" },
+            "position": { "grow": 1, "tabIndex": 1 },
             "props": {
               "path": "BlueRidge/Views/ShopFloor/MachiningOutSplit"
             },

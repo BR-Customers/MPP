@@ -7,35 +7,77 @@
    no appUserId."""
 
 
-def topup(partNumber, aimShipperId, fetchedInterfaceLogId=None):
-    """Add a fetched AIM shipper ID to the pool for a part number, optionally
-       linked to the Audit.InterfaceLog row that fetched it. Returns
+def topup(aimShipperId, fetchedInterfaceLogId=None):
+    """Add a fetched AIM shipper ID to the pool, optionally linked to the
+       Audit.InterfaceLog row that fetched it. Returns
        {Status, Message, NewId (AimShipperIdPoolId)}."""
     BlueRidge.Common.Util.log(
-        "topup partNumber=%s aimShipperId=%s fetchedInterfaceLogId=%s"
-        % (partNumber, aimShipperId, fetchedInterfaceLogId))
-    params = {"partNumber": partNumber, "aimShipperId": aimShipperId,
+        "topup aimShipperId=%s fetchedInterfaceLogId=%s"
+        % (aimShipperId, fetchedInterfaceLogId))
+    params = {"aimShipperId": aimShipperId,
               "fetchedInterfaceLogId": fetchedInterfaceLogId}
     return BlueRidge.Common.Db.execMutation("lots/AimShipperIdPool_Topup", params)
 
 
-def claim(partNumber, containerId, appUserId=None):
-    """Claim the next available AIM shipper ID from the pool for a part number,
-       binding it to a container. Returns {Status, Message, AimShipperId}."""
+def claim(containerId, appUserId=None):
+    """Claim the next available AIM shipper ID from the pool, binding it to a
+       container. Returns {Status, Message, AimShipperId}."""
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     BlueRidge.Common.Util.log(
-        "claim partNumber=%s containerId=%s appUserId=%s"
-        % (partNumber, containerId, appUserId))
-    params = {"partNumber": partNumber, "containerId": containerId,
-              "appUserId": appUserId}
+        "claim containerId=%s appUserId=%s"
+        % (containerId, appUserId))
+    params = {"containerId": containerId, "appUserId": appUserId}
     return BlueRidge.Common.Db.execMutation("lots/AimShipperIdPool_Claim", params)
 
 
-def getDepth(partNumber=None):
-    """Read the un-consumed pool depth per part number. partNumber=None returns
-       every part. Returns list[dict] of {PartNumber, Depth} (empty list = no
-       available IDs)."""
-    BlueRidge.Common.Util.log("getDepth partNumber=%s" % partNumber)
-    params = {"partNumber": partNumber}
-    return BlueRidge.Common.Db.execList("lots/AimShipperIdPool_GetDepth", params)
+def getDepth():
+    """Read the un-consumed pool depth across the whole pool. Returns a
+       single-row list[dict] of {Depth, OldestAvailableAt}.
+
+       Deliberately does NOT log on the success path: the AIM Pool Config screen
+       binds this on a 5s poll, so an info line per call floods the gateway log
+       (one line per open session per tick). Errors still log, then re-raise so
+       the binding surfaces bad quality rather than silently reading zero."""
+    from java.lang import Throwable
+    try:
+        return BlueRidge.Common.Db.execList("lots/AimShipperIdPool_GetDepth", {})
+    except Throwable, t:
+        BlueRidge.Common.Util.log("getDepth failed: %s" % t, level="error")
+        raise
+    except Exception, e:
+        BlueRidge.Common.Util.log("getDepth failed: %s" % e, level="error")
+        raise
+
+
+def getForPost(aimShipperId):
+    """Read one pool row's AIM post-back payload. Returns list[dict] (empty = not found).
+       CustomerPartNumber is COALESCEd against the live item, so a row completed before
+       the item had an AIM customer part picks the value up once it is configured."""
+    BlueRidge.Common.Util.log("getForPost aimShipperId=%s" % aimShipperId, level="debug")
+    return BlueRidge.Common.Db.execList(
+        "lots/AimShipperIdPool_GetForPost", {"aimShipperId": aimShipperId})
+
+
+def recordPostResult(poolId, success, error=None):
+    """Record one AIM post attempt's outcome. Returns {Status, Message}."""
+    BlueRidge.Common.Util.log(
+        "recordPostResult poolId=%s success=%s" % (poolId, success), level="debug")
+    return BlueRidge.Common.Db.execMutation(
+        "lots/AimShipperIdPool_RecordPostResult",
+        {"id": poolId, "success": 1 if success else 0, "error": error})
+
+
+def listUnposted(top=50):
+    """Rows owed to AIM (consumed, not yet posted), oldest first. Returns list[dict]."""
+    return BlueRidge.Common.Db.execList("lots/AimShipperIdPool_ListUnposted", {"top": top})
+
+
+def markPosted(poolId, note, appUserId=None):
+    """Human-confirmed resolution for a row AIM already has but never acknowledged.
+       Returns {Status, Message}."""
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    return BlueRidge.Common.Db.execMutation(
+        "lots/AimShipperIdPool_MarkPosted",
+        {"id": poolId, "appUserId": appUserId, "note": note})

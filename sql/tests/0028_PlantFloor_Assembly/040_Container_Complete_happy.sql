@@ -10,7 +10,9 @@ EXEC test.BeginTestFile @FileName = N'0028_PlantFloor_Assembly/040_Container_Com
 GO
 
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
+-- AimShipperIdPool is part-agnostic (Migration 0049) and claim is global FIFO by FetchedAt;
+-- a blanket clear guarantees this file's own topped-up ids are claimed first.
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-040';
@@ -55,10 +57,10 @@ BEGIN
     SET @t = @t + 1;
 END
 
--- seed the AIM pool for this part
+-- seed the AIM pool (global; pool is part-agnostic per Migration 0049)
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P6-ASM-TEST', @AimShipperId = N'AIM-CMP-1'; DELETE FROM @TP;
-INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @PartNumber = N'P6-ASM-TEST', @AimShipperId = N'AIM-CMP-2';
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-CMP-1'; DELETE FROM @TP;
+INSERT INTO @TP EXEC Lots.AimShipperIdPool_Topup @AimShipperId = N'AIM-CMP-2';
 
 -- complete
 DECLARE @R TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
@@ -85,7 +87,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Complete] ContainerCompleted audit in Op
 GO
 
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
-DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
+DELETE FROM Lots.AimShipperIdPool;
 DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-040';

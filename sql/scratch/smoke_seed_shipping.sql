@@ -49,12 +49,12 @@ BEGIN
 END
 PRINT N'Assembly point resolved: ' + ISNULL(@AssyCode, N'?');
 
-DECLARE @PoolFree INT = (SELECT COUNT(*) FROM Lots.AimShipperIdPool
-                         WHERE ConsumedAt IS NULL AND PartNumber = N'6MA');
-PRINT N'AIM pool free ids for 6MA: ' + CAST(@PoolFree AS NVARCHAR(10));
+-- AimShipperIdPool is part-agnostic (Migration 0049) -- the pool free count is global.
+DECLARE @PoolFree INT = (SELECT COUNT(*) FROM Lots.AimShipperIdPool WHERE ConsumedAt IS NULL);
+PRINT N'AIM pool free ids: ' + CAST(@PoolFree AS NVARCHAR(10));
 IF @PoolFree = 0
 BEGIN
-    PRINT 'AIM pool for 6MA is drained - Container_Complete would (correctly) hard-fail (FDS-07-010a). Reseed the pool first.';
+    PRINT 'AIM pool is drained - Container_Complete would (correctly) hard-fail (FDS-07-010a). Reseed the pool first.';
     RETURN;
 END
 

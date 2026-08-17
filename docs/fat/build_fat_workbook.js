@@ -37,7 +37,7 @@ const SHEETS = [
   ['trim', 'Trim'],
   ['machining', 'Machining'],
   ['assembly', 'Assembly'],
-  ['inspection', 'Third-Party Inspection'],
+  ['inspection', 'Pass-Through Parts'],
   ['quality-holds', 'Quality Capture & Holds'],
   ['movements', 'Movements & Inventory'],
   ['traceability', 'LOT Traceability & Genealogy'],

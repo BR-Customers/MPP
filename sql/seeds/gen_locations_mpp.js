@@ -199,11 +199,46 @@ out.push('\n-- === Exception 1: Trim Storage (one per trim shop) ===');
 loc(DEFID.InventoryLocation, 'TRIM1', 'Trim Storage', 'TRIM1-STORE', 'TRIM1-STORE', 99);
 loc(DEFID.InventoryLocation, 'TRIM2', 'Trim Storage', 'TRIM2-STORE', 'TRIM2-STORE', 99);
 
+// ---- Exception 3: the Offsite facility ----
+// MPP ships parts it does not manufacture in Madison. They are real shippable
+// parts with Honda packing rules, so they need somewhere to live: one line each,
+// under their own Facility, every line carrying a pass-through terminal (the same
+// screen the Madison inspection stations use), a printer and a barcode scanner.
+//
+// Facility -> ProductionArea -> ProductionLine, NOT Facility -> ProductionLine:
+// ProductionLine is a WorkCenter and every Madison line hangs off an Area, so
+// skipping the Area tier would make the ItemLocation Area/WorkCenter cascade in
+// v_EffectiveItemLocation behave differently here than everywhere else.
+//
+// Emitted AFTER the Site loop on purpose so `printerSeq` keeps the existing
+// P-001..P-030 numbering intact and offsite printers continue from P-031.
+//
+// The catalog is shared with reference/scripts/build_seed_layout_proposal.py,
+// which reads the same TSV to attach each part's eligibility to its line -- one
+// source of truth, so the tree and the eligibility cannot drift apart.
+out.push('\n-- === Exception 3: Offsite facility (one line per off-site part) ===');
+const offsite = tsv('_offsite_lines.tsv').slice(1);   // drop header row
+loc(DEFID.Facility, 'MPP-ENT', 'Offsite', 'OFFSITE', 'OFFSITE', 2);
+loc(DEFID.ProductionArea, 'OFFSITE', 'Offsite Production', 'OS-PROD', 'OS-PROD', 1);
+offsite.forEach(([partNumber, lineCode, lineName, closure], i) => {
+  loc(DEFID.ProductionLine, 'OS-PROD', clean(lineName), lineCode, partNumber, i + 1);
+  const term = `${lineCode}-T1`;
+  loc(DEFID.Terminal, lineCode, 'Pass-Through', term, term, 1);
+  printerSeq++;
+  loc(DEFID.Printer, term, `P - ${pad3(printerSeq)}`, `${term}-P1`, `Label printer for ${term}`, 99);
+  attrByCode[term] = { HasBarcodeScanner: '1', CurrentClosureMethod: closure };
+  terminals.push({ code: term, code0: term, role: 'INSPECT', parentDef: 'ProductionLine' });
+});
+
 out.push('\n-- === Exception 2: Inspection area (66B-TC re-parented here; sort-cage line; 3-closure terminal) ===');
 loc(DEFID.ProductionArea, 'MPP-MAD', 'Inspection', 'INSP', 'INSP', 98);
 loc(DEFID.InspectionLine, 'INSP', 'Sort Cage Inspection', 'INSP-SORT', 'INSP-SORT', 1);
 loc(DEFID.Terminal, 'INSP-SORT', 'Inspection', 'INSP-SORT-T1', 'INSP-SORT-T1', 1);
 terminals.push({ code: 'INSP-SORT-T1', code0: 'INSP-SORT-T1', role: 'INSPECT', parentDef: 'InspectionLine' });
+// Sort-cage inspection terminal is created outside the Site loop, so printsFor never
+// sees it -- emit its printer explicitly (same LTT reason as the Site inspection stations).
+printerSeq++;
+loc(DEFID.Printer, 'INSP-SORT-T1', `P - ${pad3(printerSeq)}`, 'INSP-SORT-T1-P1', 'Label printer for INSP-SORT-T1', 99);
 // re-parent 66B Thermal Case under the inspection area (INSP now exists)
 out.push(`UPDATE Location.Location SET ParentLocationId = (SELECT Id FROM Location.Location WHERE Code = N'INSP')
     WHERE Code = N'66B-TC' AND ParentLocationId <> (SELECT Id FROM Location.Location WHERE Code = N'INSP');`);

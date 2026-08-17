@@ -8,13 +8,13 @@
 --   Creates the first version (VersionNumber = 1) of a BOM for a given
 --   Item. Starts as a Draft (PublishedAt = NULL) so engineering can edit
 --   lines across multiple sessions before publishing to production.
---   The BOM starts empty — lines are added via Parts.BomLine_Add. For
+--   The BOM starts empty - lines are added via Parts.BomLine_Add. For
 --   subsequent versions, use _CreateNewVersion which clones prior lines.
 --
 -- Parameters (input):
 --   @ParentItemId BIGINT  - Required. Must be active.
 --   @EffectiveFrom DATETIME2(3) NULL - When this version becomes active.
---                                       NULL → uses SYSUTCDATETIME().
+--                                       NULL -> uses SYSUTCDATETIME().
 --   @AppUserId BIGINT     - Required for audit.
 --
 -- Result set:
@@ -139,7 +139,7 @@ BEGIN
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'BOM created successfully (Draft — add lines and call _Publish when ready).';
+        SET @Message = N'BOM created successfully (Draft - add lines and call _Publish when ready).';
     SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
     END TRY
     BEGIN CATCH

@@ -4,14 +4,15 @@
 -- Version:     1.0
 -- Description: Inserts a fetched Honda AIM shipper ID into the pool (Arc 2 Phase 6;
 --              normally called by the Phase 7 Gateway topup loop after an AIM
---              GetNextNumber HTTP call, but the pool can also be dev-seeded). Idempotent
+--              GetNextNumber HTTP call, but the pool can also be dev-seeded). Migration
+--              0049: the pool is part-agnostic -- AIM's nextserial.csv accepts no part
+--              parameter, serials are unique per company code only. Idempotent
 --              on AimShipperId (UNIQUE) -- a duplicate is a no-op success so concurrent
 --              topups don't double-insert. No OUTPUT params (FDS-11-011); single terminal
 --              SELECT @Status,@Message,@NewId. RAISERROR in the CATCH.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.AimShipperIdPool_Topup
-    @PartNumber            NVARCHAR(50),
     @AimShipperId          NVARCHAR(50),
     @FetchedInterfaceLogId BIGINT = NULL
 AS
@@ -24,26 +25,23 @@ BEGIN
     DECLARE @NewId   BIGINT        = NULL;
 
     BEGIN TRY
-        IF @PartNumber IS NULL OR @AimShipperId IS NULL
+        IF @AimShipperId IS NULL
         BEGIN
-            SET @Message = N'Required parameter missing (PartNumber, AimShipperId).';
+            SET @Message = N'Required parameter missing (AimShipperId).';
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
 
-        -- idempotent: an already-present shipper ID is a benign no-op (concurrent topup).
-        SET @NewId = (SELECT Id FROM Lots.AimShipperIdPool WHERE AimShipperId = @AimShipperId);
-        IF @NewId IS NOT NULL
+        IF EXISTS (SELECT 1 FROM Lots.AimShipperIdPool WHERE AimShipperId = @AimShipperId)
         BEGIN
-            SET @Status = 1;
-            SET @Message = N'AIM shipper ID already in pool.';
+            SET @Message = N'That AIM shipper ID is already in the pool.';
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
 
         BEGIN TRANSACTION;
-        INSERT INTO Lots.AimShipperIdPool (AimShipperId, PartNumber, FetchedAt, FetchedInterfaceLogId)
-        VALUES (@AimShipperId, @PartNumber, SYSUTCDATETIME(), @FetchedInterfaceLogId);
+        INSERT INTO Lots.AimShipperIdPool (AimShipperId, FetchedAt, FetchedInterfaceLogId)
+        VALUES (@AimShipperId, SYSUTCDATETIME(), @FetchedInterfaceLogId);
         SET @NewId = SCOPE_IDENTITY();
         COMMIT TRANSACTION;
 
