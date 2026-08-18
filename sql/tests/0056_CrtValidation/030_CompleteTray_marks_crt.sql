@@ -3,10 +3,9 @@
 -- Desc: Assembly_CompleteTray mints the FG LOT with CrtActive = 1 when the
 --       terminal has CrtEnabled = '1', and 0 when it does not.
 --
---       ALSO PINS: the FG LOT ends Closed, so Quality.Crt_GetRequiredInspections
---       (which filters sc.Code <> 'Closed') never surfaces it. If the FG LOT ever
---       stops being closed at completion, CRT containers would start demanding
---       200% inspection - a burden MPP did not ask for. That assert is the guard.
+--       This file does NOT complete a container, so the FG LOT is still open here.
+--       The guard that CRT never drags in 200% inspection lives in 040 (below),
+--       where Container_Complete actually runs and closes the LOT.
 --
 --       Fixture note: the seeded 6NA ContainerConfig (sql/seeds/020_seed_items.sql)
 --       is ByVision only (4 trays x 6 parts), not ByCount -- @ClosureMethod and
@@ -21,22 +20,38 @@ GO
 DELETE FROM Lots.AimShipperIdPool;
 GO
 
--- Fixture: reuse the seeded 6NA assembly chain at MA1-FP6NA.
-DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA');
-DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-AOUT');
-DECLARE @Fg   BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA -0001');
-
+-- ---- teardown (FK-safe order): this file's own FG containers/LOTs only ----
 -- Fixture isolation: this shared cell/item's open Container accumulates trays
 -- across every run of this file (the orchestrator intentionally never
 -- auto-completes a full container -- see Assembly_CompleteTray step 8). A prior
 -- run can leave the container at/near its 24-part target, which would reject
--- this file's two 6-part trays with "container is full". No legitimate proc can
--- close a PARTIALLY-full container (Container_Complete requires accum = target
--- exactly), so this is a direct test-only reset: force any stray open container
--- for this Item/Cell to Complete so a fresh one auto-opens for this run's trays.
-UPDATE Lots.Container
-SET ContainerStatusCodeId = 2, CompletedAt = ISNULL(CompletedAt, SYSUTCDATETIME())
-WHERE ItemId = @Fg AND CurrentLocationId = @Cell AND ContainerStatusCodeId = 1;
+-- this file's two 6-part trays with "container is full". Rather than force-close
+-- that container mid-schema (which would fabricate a Complete container with no
+-- AIM Shipper ID / ShippingLabel -- debris Container_Complete would never
+-- produce), delete this file's own FG containers/LOTs outright so a fresh
+-- container auto-opens for this run's trays. Scoped to part 12270-6NA -0001 at
+-- cell MA1-FP6NA only -- do not touch other fixtures' rows.
+DECLARE @TdFg   BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA -0001');
+DECLARE @TdCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA');
+
+DELETE FROM Quality.HoldEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT Id FROM Lots.Container WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId WHERE c.ItemId = @TdFg AND c.CurrentLocationId = @TdCell;
+DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId = @TdFg;
+DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId WHERE c.ItemId = @TdFg AND c.CurrentLocationId = @TdCell;
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Lots.Container WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell;
+DELETE FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell;
+GO
+
+-- Fixture: reuse the seeded 6NA assembly chain at MA1-FP6NA.
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA');
+DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-AOUT');
+DECLARE @Fg   BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA -0001');
 
 -- Top up component stock at the cell (BOM: 12270-6NA-M x1, 92900-06014-1B x1,
 -- 94301-08100 x2 per FG piece; two trays of 6 need 12/12/24 -- seeded with a
@@ -82,6 +97,25 @@ EXEC test.Assert_IsEqual @TestName = N'[CrtMint] CRT on -> FG LOT CrtActive = 1'
 -- reset the terminal so later files start clean
 DECLARE @R2 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @R2 EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = @Term, @Enabled = 0, @AppUserId = 1;
+GO
+
+-- ---- teardown (FK-safe order): this file's own FG containers/LOTs only ----
+DECLARE @TdFg   BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA -0001');
+DECLARE @TdCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA');
+
+DELETE FROM Quality.HoldEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT Id FROM Lots.Container WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId WHERE c.ItemId = @TdFg AND c.CurrentLocationId = @TdCell;
+DELETE FROM Lots.AimShipperIdPool;
+DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId = @TdFg;
+DELETE FROM Lots.LotGenealogyClosure WHERE DescendantLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Lots.LotGenealogy WHERE ChildLotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId WHERE c.ItemId = @TdFg AND c.CurrentLocationId = @TdCell;
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell);
+DELETE FROM Lots.Container WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell;
+DELETE FROM Lots.Lot WHERE ItemId = @TdFg AND CurrentLocationId = @TdCell;
 GO
 
 EXEC test.EndTestFile;
