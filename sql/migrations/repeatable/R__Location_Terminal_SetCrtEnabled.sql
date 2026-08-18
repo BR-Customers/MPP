@@ -70,7 +70,9 @@ BEGIN
             INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
             VALUES (@TerminalLocationId, @AttrDefId, @NewValue, SYSUTCDATETIME());
         ELSE
-            UPDATE Location.LocationAttribute SET AttributeValue = @NewValue WHERE Id = @ExistingId;
+            UPDATE Location.LocationAttribute
+            SET AttributeValue = @NewValue, UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
+            WHERE Id = @ExistingId;
 
         DECLARE @Descr NVARCHAR(500) = Audit.ufn_TruncateActivity(
             @TermCode + N' ' + Audit.ufn_MidDot() + N' Controlled Run Tag ' + Audit.ufn_MidDot() + N' '
@@ -93,6 +95,8 @@ BEGIN
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
         DECLARE @ErrMsg NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrSev INT = ERROR_SEVERITY();
+        DECLARE @ErrState INT = ERROR_STATE();
         SET @Status = 0;
         SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
         BEGIN TRY
@@ -103,6 +107,7 @@ BEGIN
         BEGIN CATCH
         END CATCH
         SELECT @Status AS Status, @Message AS Message;
+        RAISERROR(@ErrMsg, @ErrSev, @ErrState);
     END CATCH
 END;
 GO
