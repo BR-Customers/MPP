@@ -239,11 +239,12 @@ New SQL test folder `sql/tests/0058_CrtValidation/`:
 Gateway smoke (no automated coverage): drive the changeover popup, complete a
 container under CRT, confirm nothing posts, validate it, confirm it posts.
 
-## Open questions for MPP
+## Decisions (settled 2026-08-14)
 
-* Should a **held** container's AIM serial ever be released back to the pool, or does
-  it stay consumed against that container permanently? Current design keeps it
-  consumed — serials are cheap and reuse risks double-shipping a number.
-* Is there a maximum age after which an unvalidated container should escalate? The
-  existing backlog escalation deliberately ignores these, so today they can sit
-  indefinitely.
+* **A held container's AIM serial stays consumed** against that container
+  permanently. It is never returned to the pool. Serials are cheap; reuse risks
+  double-shipping a number to Honda.
+* **No age escalation.** An unvalidated container may sit indefinitely. It is
+  deliberately excluded from `alarmTick`'s backlog-age escalation, and nothing
+  replaces that. If MPP later wants a ceiling, it belongs in the validation list as
+  its own ordering/warning concern, not in the AIM owed backlog.
