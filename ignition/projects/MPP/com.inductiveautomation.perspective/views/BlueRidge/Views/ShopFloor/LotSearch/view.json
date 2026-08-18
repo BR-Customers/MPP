@@ -22,22 +22,23 @@
           "$": [
             "ts",
             192,
-            1784215629056
+            1786714832987
           ],
-          "$ts": 1784138165344
+          "$ts": 1786037313783
         },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 6,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000006",
+        "CurrentLocationId": 81,
+        "CurrentLocationName": "5G0 Front",
+        "Id": 10275,
+        "ItemId": 149,
+        "ItemPartNumber": "5G0-SA",
+        "LastOperationName": null,
+        "LotName": "000000024-05",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
-        "PieceCount": 93,
-        "TotalCount": 6,
+        "PieceCount": 1120,
+        "TotalCount": 33,
         "VendorLotNumber": null
       },
       {
@@ -45,22 +46,23 @@
           "$": [
             "ts",
             192,
-            1784215629056
+            1786714832987
           ],
-          "$ts": 1784138157211
+          "$ts": 1786037010851
         },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 5,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000005",
+        "CurrentLocationId": 81,
+        "CurrentLocationName": "5G0 Front",
+        "Id": 10274,
+        "ItemId": 149,
+        "ItemPartNumber": "5G0-SA",
+        "LastOperationName": null,
+        "LotName": "000000024-04",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 96,
-        "TotalCount": 6,
+        "TotalCount": 33,
         "VendorLotNumber": null
       },
       {
@@ -68,22 +70,23 @@
           "$": [
             "ts",
             192,
-            1784215629056
+            1786714832987
           ],
-          "$ts": 1784138149346
+          "$ts": 1786037003128
         },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 4,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000004",
+        "CurrentLocationId": 81,
+        "CurrentLocationName": "5G0 Front",
+        "Id": 10273,
+        "ItemId": 149,
+        "ItemPartNumber": "5G0-SA",
+        "LastOperationName": null,
+        "LotName": "000000024-03",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
-        "PieceCount": 79,
-        "TotalCount": 6,
+        "PieceCount": 96,
+        "TotalCount": 33,
         "VendorLotNumber": null
       },
       {
@@ -91,22 +94,335 @@
           "$": [
             "ts",
             192,
-            1784215629056
+            1786714832987
           ],
-          "$ts": 1784138141346
+          "$ts": 1786036968237
+        },
+        "CurrentLocationId": 81,
+        "CurrentLocationName": "5G0 Front",
+        "Id": 10272,
+        "ItemId": 149,
+        "ItemPartNumber": "5G0-SA",
+        "LastOperationName": null,
+        "LotName": "000000024-02",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 96,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786036904182
+        },
+        "CurrentLocationId": 81,
+        "CurrentLocationName": "5G0 Front",
+        "Id": 10271,
+        "ItemId": 149,
+        "ItemPartNumber": "5G0-SA",
+        "LastOperationName": null,
+        "LotName": "000000024-01",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 96,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786027806857
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 10270,
+        "ItemId": 155,
+        "ItemPartNumber": "1223A-59B -A0002",
+        "LastOperationName": null,
+        "LotName": "MESL3000146",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Closed",
+        "LotStatusId": 4,
+        "PieceCount": 60,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786027675667
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 10269,
+        "ItemId": 155,
+        "ItemPartNumber": "1223A-59B -A0002",
+        "LastOperationName": null,
+        "LotName": "MESL3000145",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Closed",
+        "LotStatusId": 4,
+        "PieceCount": 60,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786026010997
+        },
+        "CurrentLocationId": 81,
+        "CurrentLocationName": "5G0 Front",
+        "Id": 10268,
+        "ItemId": 148,
+        "ItemPartNumber": "5G0-c",
+        "LastOperationName": "Machining Out",
+        "LotName": "000000025",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1496,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786025986111
+        },
+        "CurrentLocationId": 81,
+        "CurrentLocationName": "5G0 Front",
+        "Id": 10267,
+        "ItemId": 148,
+        "ItemPartNumber": "5G0-c",
+        "LastOperationName": "Machining Out",
+        "LotName": "000000024",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Closed",
+        "LotStatusId": 4,
+        "PieceCount": 0,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786023350292
+        },
+        "CurrentLocationId": 37,
+        "CurrentLocationName": "Trim Shop 1",
+        "Id": 10266,
+        "ItemId": 154,
+        "ItemPartNumber": "12241-59B-0000",
+        "LastOperationName": "Trim In",
+        "LotName": "000000022",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1000,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786023325996
+        },
+        "CurrentLocationId": 37,
+        "CurrentLocationName": "Trim Shop 1",
+        "Id": 10265,
+        "ItemId": 153,
+        "ItemPartNumber": "12232-59B-0000",
+        "LastOperationName": "Trim In",
+        "LotName": "000000021",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 998,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786023314531
+        },
+        "CurrentLocationId": 37,
+        "CurrentLocationName": "Trim Shop 1",
+        "Id": 10264,
+        "ItemId": 152,
+        "ItemPartNumber": "12231-59B-0000",
+        "LastOperationName": "Trim In",
+        "LotName": "000000020",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 997,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786019859008
+        },
+        "CurrentLocationId": 407,
+        "CurrentLocationName": "Trim Storage",
+        "Id": 10263,
+        "ItemId": 154,
+        "ItemPartNumber": "12241-59B-0000",
+        "LastOperationName": "Trim Out",
+        "LotName": "000000019",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1000,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786019845822
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 10262,
+        "ItemId": 153,
+        "ItemPartNumber": "12232-59B-0000",
+        "LastOperationName": "Machining In",
+        "LotName": "000000018",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1150,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1786019823256
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 10261,
+        "ItemId": 152,
+        "ItemPartNumber": "12231-59B-0000",
+        "LastOperationName": "Machining In",
+        "LotName": "000000017",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1150,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785856175553
+        },
+        "CurrentLocationId": 4,
+        "CurrentLocationName": "Machine 01",
+        "Id": 10260,
+        "ItemId": 154,
+        "ItemPartNumber": "12241-59B-0000",
+        "LastOperationName": null,
+        "LotName": "000000016",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Scrap",
+        "LotStatusId": 3,
+        "PieceCount": 0,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785855500268
         },
         "CurrentLocationId": 181,
         "CurrentLocationName": "Warehouse",
-        "Id": 3,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000003",
+        "Id": 10259,
+        "ItemId": 154,
+        "ItemPartNumber": "12241-59B-0000",
+        "LastOperationName": null,
+        "LotName": "000000015",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
-        "PieceCount": 96,
-        "TotalCount": 6,
+        "PieceCount": 1608,
+        "TotalCount": 33,
         "VendorLotNumber": null
       },
       {
@@ -114,22 +430,23 @@
           "$": [
             "ts",
             192,
-            1784215629056
+            1786714832987
           ],
-          "$ts": 1784137991497
+          "$ts": 1785850008280
         },
-        "CurrentLocationId": 81,
-        "CurrentLocationName": "5G0 Front",
-        "Id": 2,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000002",
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 10258,
+        "ItemId": 152,
+        "ItemPartNumber": "12231-59B-0000",
+        "LastOperationName": "Machining In",
+        "LotName": "000000009",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
-        "PieceCount": 70,
-        "TotalCount": 6,
+        "PieceCount": 88,
+        "TotalCount": 33,
         "VendorLotNumber": null
       },
       {
@@ -137,22 +454,359 @@
           "$": [
             "ts",
             192,
-            1784215629056
+            1786714832987
           ],
-          "$ts": 1784137981733
+          "$ts": 1785845887345
         },
-        "CurrentLocationId": 81,
-        "CurrentLocationName": "5G0 Front",
-        "Id": 1,
-        "ItemId": 9,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000001",
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 10257,
+        "ItemId": 155,
+        "ItemPartNumber": "1223A-59B -A0002",
+        "LastOperationName": null,
+        "LotName": "MESL3000144",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
-        "PieceCount": 96,
-        "TotalCount": 6,
+        "PieceCount": 60,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785783416291
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 267,
+        "ItemId": 155,
+        "ItemPartNumber": "1223A-59B -A0002",
+        "LastOperationName": null,
+        "LotName": "MESL3000143",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 60,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785783331720
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 266,
+        "ItemId": 155,
+        "ItemPartNumber": "1223A-59B -A0002",
+        "LastOperationName": null,
+        "LotName": "MESL3000142",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 60,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785782588214
+        },
+        "CurrentLocationId": 50,
+        "CurrentLocationName": "RPY Comp bracket",
+        "Id": 265,
+        "ItemId": 151,
+        "ItemPartNumber": "21001 pin",
+        "LastOperationName": null,
+        "LotName": "MESL3000141",
+        "LotOriginTypeCode": "Received",
+        "LotOriginTypeId": 2,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 100,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785782093469
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 264,
+        "ItemId": 156,
+        "ItemPartNumber": "90701-5R0-3000",
+        "LastOperationName": null,
+        "LotName": "MESL3000140",
+        "LotOriginTypeCode": "Received",
+        "LotOriginTypeId": 2,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 4300,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785526100809
+        },
+        "CurrentLocationId": 181,
+        "CurrentLocationName": "Warehouse",
+        "Id": 263,
+        "ItemId": 153,
+        "ItemPartNumber": "12232-59B-0000",
+        "LastOperationName": null,
+        "LotName": "000000014",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 910,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785525126874
+        },
+        "CurrentLocationId": 181,
+        "CurrentLocationName": "Warehouse",
+        "Id": 262,
+        "ItemId": 154,
+        "ItemPartNumber": "12241-59B-0000",
+        "LastOperationName": null,
+        "LotName": "000000012",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1110,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785525114220
+        },
+        "CurrentLocationId": 181,
+        "CurrentLocationName": "Warehouse",
+        "Id": 261,
+        "ItemId": 153,
+        "ItemPartNumber": "12232-59B-0000",
+        "LastOperationName": null,
+        "LotName": "000000011",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1000,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785525105831
+        },
+        "CurrentLocationId": 181,
+        "CurrentLocationName": "Warehouse",
+        "Id": 260,
+        "ItemId": 152,
+        "ItemPartNumber": "12231-59B-0000",
+        "LastOperationName": null,
+        "LotName": "000000010",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1110,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785519194709
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 259,
+        "ItemId": 154,
+        "ItemPartNumber": "12241-59B-0000",
+        "LastOperationName": "Machining In",
+        "LotName": "000000006",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1208,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785519181979
+        },
+        "CurrentLocationId": 37,
+        "CurrentLocationName": "Trim Shop 1",
+        "Id": 258,
+        "ItemId": 153,
+        "ItemPartNumber": "12232-59B-0000",
+        "LastOperationName": "Trim In",
+        "LotName": "000000005",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Hold",
+        "LotStatusId": 2,
+        "PieceCount": 1220,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785519148623
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 257,
+        "ItemId": 152,
+        "ItemPartNumber": "12231-59B-0000",
+        "LastOperationName": "Machining In",
+        "LotName": "000000004",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1220,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785437361856
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 256,
+        "ItemId": 154,
+        "ItemPartNumber": "12241-59B-0000",
+        "LastOperationName": "Machining In",
+        "LotName": "000000003",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1800,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785437223452
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 255,
+        "ItemId": 153,
+        "ItemPartNumber": "12232-59B-0000",
+        "LastOperationName": "Machining In",
+        "LotName": "000000002",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1800,
+        "TotalCount": 33,
+        "VendorLotNumber": null
+      },
+      {
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1786714832987
+          ],
+          "$ts": 1785437180261
+        },
+        "CurrentLocationId": 155,
+        "CurrentLocationName": "59b Cam holder",
+        "Id": 254,
+        "ItemId": 152,
+        "ItemPartNumber": "12231-59B-0000",
+        "LastOperationName": "Machining In",
+        "LotName": "000000001",
+        "LotOriginTypeCode": "Manufactured",
+        "LotOriginTypeId": 1,
+        "LotStatusCode": "Good",
+        "LotStatusId": 1,
+        "PieceCount": 1800,
+        "TotalCount": 33,
         "VendorLotNumber": null
       }
     ],
@@ -169,6 +823,10 @@
       {
         "label": "Hold",
         "value": 2
+      },
+      {
+        "label": "Open",
+        "value": 5
       },
       {
         "label": "Scrap",

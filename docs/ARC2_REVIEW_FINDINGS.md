@@ -1,10 +1,60 @@
 # Arc 2 (Plant Floor) — Review Findings
 
-**Reviewer:** Claude (Opus 4.8) · **Started:** 2026-06-26 · **Branch:** `hunter/explore`
+**Reviewer:** Claude (Opus 4.8) · **Started:** 2026-06-26 (`hunter/explore`, FDS v1.4) · **Re-verified:** 2026-08-13 (`jacques/working`, FDS v1.7, migration 0054)
 **Scope:** Full stack (Perspective views → entity scripts → Named Queries → procs/migrations/seeds).
-**Method:** Review against **FDS v1.4** + the actual code (the Plant-Floor Plan v1.3 and User Journeys v0.9 lag the code on the terminal-mode model — code/FDS are authoritative).
+**Method:** Review against the FDS + the actual code (the Plant-Floor Plan and User Journeys lag the code on the terminal-mode model — code/FDS are authoritative).
 
 Severity legend: 🔴 High (breaks runtime / data integrity) · 🟠 Medium (functional gap / FDS divergence) · 🟡 Low (fragility / maintainability) · 🟢 Info / verify.
+
+> The body below is the **original 2026-06-26 review** (preserved as authored). The **Resolution status** section immediately following is the authoritative 2026-08-13 overlay — where the two disagree, the overlay wins. Companion matrix: `ARC2_FDS_CONFORMANCE.md`.
+
+---
+
+## Resolution status — 2026-08-13 re-verification
+
+Every cited finding re-checked against current code (24 migrations `0031`→`0054`, terminal-mint `0035`/`0036`, per-cavity `0045`, Phase-9/CRT `0037`, PLC `0038`/`0039` + seed `012`, Reporting Module + trace procs, FAT Briefs A–F). Categories: **RESOLVED** (fixed) · **SUPERSEDED** (obsolete due to redesign — close as won't-fix) · **STILL-OPEN** (real, unaddressed).
+
+**RESOLVED (13):**
+- **P4-1** 🔴 (Trim OUT `shotCount:0` blocks happy path) — `TrimBody:1156,1188` derive count; NULL-safe guard. Trim OUT unblocked.
+- **P3-4 / P3-1** (die-cast `ProductionEventValue` dropped / no checkpoint) — die-cast redesigned to the per-cavity ledger (`DieCastShiftOutput_Record` → `DieCastContribution`); `CheckpointPanel` orphaned. Reconcile-by-design (FDS-06-003 amended).
+- **P5-4** 🟠 (PLC watcher `queue[0]` auto-completes un-machined LOT) — `MachiningPlc` retired no-op; `MachiningOut_Mint` FIFO gated to next-pending route step.
+- **P6-1** 🟠 (HOLD/Scrap source consumed into tray) — `Assembly_CompleteTray` v1.1 excludes `BlocksProduction=1` in pre-check + FIFO walk; `ContainerTray_Close` no longer consumes.
+- **P6-7** 🟡 (BOM check before BEGIN TRAN race) — authoritative in-txn `RAISERROR('drained mid-consume')` → CATCH rollback.
+- **P7-4** 🟠 (ship writes no movement) — `Container_Ship` sets `CurrentLocationId→SHIPOUT` + audit (LotMovement N/A to container model; FDS-07-014 wording reconcile).
+- **P7-6** 🟠 (HoldRow release button dead) — `HoldManagement` ReleasePanel + `LotDetail` one-click Release (2026-08-04).
+- **P7-7** 🟠 (shipped→hold→release double-ship) — `0031` `PriorContainerStatusCodeId`; release restores **Shipped**.
+- **P7-11** (print-failure banner not terminal-filtered) — `PrintFailureBanner:107` filters terminal; `PrintFailureGateway` sweep/broadcast real (Brief D).
+- **P8-1** 🟠 (open-downtime list never refreshes) — rebuilt `DowntimeManager` `refreshRows()` imperative re-query.
+- **P8-5** 🟠 / **P8-7** (shift ticker mixed-TZ / PausedAt UTC) — OI-36 ET sweep + `Shift_Reconcile` (note new OI-38: reconcile stores LOCAL by design).
+- **P9-1** 🔴 (inspection capture absent) — Phase-9 `0037`: `QualitySample`/`Result`/`Attachment` + `QualitySample_Record` + `InspectionEntry` view.
+- **P9-2** 🔴 (CRT lifecycle absent) — `0037` + `Lot_SetCrt`/`Lot_ClearCrt`/`Crt_GetRequiredInspections`/`Crt_FlagMissedInspection`; `CrtActive` written; codes seeded. **P9-3** (Global Trace tool) — `GlobalTrace_Resolve` + `/shop-floor/trace`.
+
+**RESOLVED-partial (2):**
+- **P9-4** (Honda genealogy export) — **PDF** built (Lot Detail 2-page report over the three trace procs); **CSV export + a Print/Export control on the Global Trace screen still owed.**
+- **P8-2** (reason dropdown lists everything) — proc + primary dropdown now scope by OperationCategory (`0051`); **type-first selector absent; DowntimeManager per-row dropdown still unscoped.**
+
+**SUPERSEDED by redesign (close as won't-fix) (4+):** **P5-1** (MachiningOut N-way split UI), **P5-2** (rename-confirm src-vs-dst), **P5-11** (pickAndConsume system-mint vs scan-fresh) — all obsolete: Machining-IN rename removed, minting moved to Machining OUT consume-mint (`0035`/`0036`). **P3-2** (free-entry cavity PK) — die-cast rebuilt on cavity dropdown (`0045`); re-verify against `DieCastBody` if still tracked.
+
+**STILL-OPEN (real, unaddressed):**
+- **P7-1** 🟠 systemic — **AD elevation wired into zero hold/AIM views** (blocked on AD IdP seam); the elevation *primitive/window* now exists and is wired into DieCast/AppHeader/Movement, but not HoldManagement/LotDetail/reprint/AimPoolConfig.
+- **P7-2 / P7-3** 🟡 — `AimPoolConfig_Update`: no ordering CHECK, no `Audit.ConfigLog`. Small proc edit.
+- **P7-5** 🟠 — `Container_Ship` never validates `AimShipperId`.
+- **P7-8** — Sort Cage 8-step re-containerize orchestration unwired (serial move + history only).
+- **P7-12** — AIM pool alarms: `alarmTick` functional but writes no seeded audit events / no clear-broadcast / no IT-notify.
+- **P7-13** — AIM `placeOnHold`/`releaseFromHold`/`update` are sim stubs (commissioning).
+- **P6-5** 🟠 — serialized-assembly per-piece BOM consume/rollup (`AssemblyPlc._handlePiece`, `NonSerializedMipWatcher._resolveLineConfig`) commissioning-stubbed; the serial-mint handshake IS built.
+- **P6-6** 🟡 — `ConsumptionEvent_RecordWithBomCheck` takes an override user but no AD elevation wired (same seam as P7-1).
+- **P6-8** 🟢 — `Container_Complete` skips the fullness gate on NULL config (mitigated by over-target guard).
+- **P2-1** 🟠 — genealogy drill-down clicks dead (handler on `ia.container.flex` root; not moved to `events.dom.onClick`).
+- **P4-6** 🟠 — FIFO `ORDER BY LastMovementAt` with no `ISNULL(…, CreatedAt)` (`Lot_GetWipQueueByLocation:103`, `MachiningOut_Mint:264`).
+- **P4-7** 🟡 — `PrintReasonCode` em-dash mojibake (`0004:114`, cosmetic).
+- **P3-5** 🟠 — no inline elevated tool-mismatch edit (Die Cast tool-config gates on elevation but navigates to Config app).
+- **P8-3 / P8-4 / P8-8** 🟠 — EndOfShift: no ±15-min window; machine still picker-not-terminal + no inline initials; zero-break re-submittable. Proc accepts `@TerminalLocationId`, view passes none.
+- **P2-7** 🟢 VERIFY — `LotPause_Resume` threads `@TerminalLocationId` in the proc; Ignition NQ/entity wiring not re-verified.
+- **P9-6** — LotDetail CRT badge: `0037` + LotDetail CRT set/clear buttons + badge now present (largely addressed; verify live).
+- **P9-7** — NCM FUTURE boundary still respected (no action).
+
+**Stale conformance notes corrected:** FDS-08-001 hold-type taxonomy is conformant since `0030` (Quality/CustomerComplaint/Precautionary) — the "PRECAUTIONARY dropped" flag is obsolete. The original mis-cited **P9-2** against FDS-05-014's scrap-transition gap; those are unrelated — the scrap-transition gap (GOOD/HOLD→SCRAP/CLOSED) remains independently open.
 
 ---
 

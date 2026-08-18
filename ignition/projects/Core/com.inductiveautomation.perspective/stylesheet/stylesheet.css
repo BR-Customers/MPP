@@ -2518,7 +2518,7 @@ button {
     font-weight: var(--mpp-fw-semibold);
     color: var(--mpp-text-primary);
     letter-spacing: -0.01em;
-    line-height: 1.1;
+    line-height: 1.2;
 }
 
 .psc-pf-kpi-value-bad   { color: var(--pf-status-bad-fg); }
