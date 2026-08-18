@@ -65,6 +65,11 @@ BEGIN
     DECLARE @ContainerTrayId BIGINT        = NULL;
     DECLARE @ContainerFull   BIT           = 0;
 
+    -- Controlled Run Tag: when the completing terminal has CrtEnabled = '1', the FG LOT
+    -- is minted CRT-active so the container's AIM post is held for a second-person
+    -- validation. Absent attribute reads as '0'. NULL @TerminalLocationId -> off.
+    DECLARE @CrtActive BIT = 0;
+
     DECLARE @ProcName NVARCHAR(200) = N'Workorder.Assembly_CompleteTray';
     DECLARE @Params   NVARCHAR(MAX) = (
         SELECT @FinishedGoodItemId AS FinishedGoodItemId, @PieceCount AS PieceCount,
@@ -265,6 +270,15 @@ BEGIN
             THEN @SeqPrefix + CAST(@SeqLast AS NVARCHAR(20))
             ELSE @SeqPrefix + RIGHT(REPLICATE(N'0', @SeqPad) + CAST(@SeqLast AS NVARCHAR(20)), @SeqPad) END;
 
+        SELECT @CrtActive = CASE WHEN la.AttributeValue = N'1' THEN 1 ELSE 0 END
+        FROM Location.LocationAttribute la
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE la.LocationId = @TerminalLocationId
+          AND ad.LocationTypeDefinitionId = 7
+          AND ad.AttributeName = N'CrtEnabled'
+          AND ad.DeprecatedAt IS NULL;
+        SET @CrtActive = ISNULL(@CrtActive, 0);
+
         -- FG assembly LOT: origin Manufactured, at the cell, Tool/Cavity NULL (not
         -- die-cast; no ToolAssignment at an assembly cell), B5 materialized 0/@PieceCount.
         INSERT INTO Lots.Lot (
@@ -272,13 +286,13 @@ BEGIN
             Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
-            CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId)
+            CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId, CrtActive)
         VALUES (
             @MintedName, @FinishedGoodItemId, @ManufacturedOriginId, @GoodStatusId, @PieceCount, @MaxLotSize,
             NULL, NULL, NULL, NULL, NULL, NULL,
             NULL, NULL, @CellLocationId,
             0, @PieceCount,
-            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId);
+            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive);
         SET @FinishedGoodLotId = SCOPE_IDENTITY();
 
         -- side effects mirror Lot_Create: status-history / closure self-row / first placement
