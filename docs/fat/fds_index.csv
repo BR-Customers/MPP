@@ -3,16 +3,16 @@ FDS-01-001,Ignition Gateway,1.2 System Topology,environment,MVP,Y,,VERIFY
 FDS-01-002,Database Server,1.2 System Topology,environment,MVP,Y,,VERIFY
 FDS-01-003,Redundancy,1.2 System Topology,environment,MVP,Y,,VERIFY
 FDS-01-004,Development/Test Environment,1.2 System Topology,environment,MVP,Y,,VERIFY
-FDS-01-005,Event Immutability,1.4 Data Flow Architecture,environment,MVP,Y,"3.5.4, 3.9.6",VERIFY
-FDS-01-006,External Interface Dispatch Pattern,1.4 Data Flow Architecture,environment,MVP,Y,"3.17.4, 5.5.1",VERIFY
+FDS-01-005,Event Immutability,1.4 Data Flow Architecture,traceability,MVP,Y,"3.5.4, 3.9.6",VERIFY
+FDS-01-006,External Interface Dispatch Pattern,1.4 Data Flow Architecture,audit,MVP,Y,"3.17.4, 5.5.1",VERIFY
 FDS-01-007,Tag Historian Separation,1.4 Data Flow Architecture,environment,MVP,Y,"3.4.10, 5.5.1",VERIFY
 FDS-01-013,BOM Source System at Cutover,1.4 Data Flow Architecture,environment,MVP,Y,,VERIFY
-FDS-01-008,OPC Server Connections,1.5 OPC Connection Architecture,environment,MVP,Y,,VERIFY
-FDS-01-009,OPC Tag Namespace,1.5 OPC Connection Architecture,environment,MVP,Y,,VERIFY
-FDS-01-010,Authentication,1.6 Security Architecture,environment,MVP,Y,5.3,VERIFY
-FDS-01-011,Authorization,1.6 Security Architecture,environment,MVP,Y,,VERIFY
-FDS-01-012,Audit Attribution,1.6 Security Architecture,environment,MVP,Y,,VERIFY
-FDS-01-014,External Integration Pattern (Gateway-script-async),1.6 Security Architecture,environment,MVP,Y,,VERIFY
+FDS-01-008,OPC Server Connections,1.5 OPC Connection Architecture,plc-mapping,MVP,Y,,VERIFY
+FDS-01-009,OPC Tag Namespace,1.5 OPC Connection Architecture,plc-mapping,MVP,Y,,VERIFY
+FDS-01-010,Authentication,1.6 Security Architecture,users,MVP,Y,5.3,VERIFY
+FDS-01-011,Authorization,1.6 Security Architecture,users,MVP,Y,,VERIFY
+FDS-01-012,Audit Attribution,1.6 Security Architecture,users,MVP,Y,,VERIFY
+FDS-01-014,External Integration Pattern (Gateway-script-async),1.6 Security Architecture,labels,MVP,Y,,VERIFY
 FDS-02-001,ISA-95 Location Types,2.2 Location Type Hierarchy,plant-hierarchy,MVP,Y,,VERIFY
 FDS-02-002,Hierarchy Enforcement,2.2 Location Type Hierarchy,plant-hierarchy,MVP,Y,,VERIFY
 FDS-02-003,Areas as Instances,2.2 Location Type Hierarchy,plant-hierarchy,MVP,Y,"3.3.2, 3.7.1",VERIFY
@@ -40,13 +40,13 @@ FDS-03-010,Route Versioning,3.3 Route Templates,routes-boms,MVP,Y,,VERIFY
 FDS-03-011,Operation Sequence Flexibility,3.3 Route Templates,routes-boms,MVP,Y,3.11.10,VERIFY
 FDS-03-012,Operation Template Design,3.4 Operation Templates,op-quality,MVP,Y,,VERIFY
 FDS-03-013,Operation Templates Drive Screen Behavior,3.4 Operation Templates,op-quality,MVP,Y,3.11.6,VERIFY
-FDS-03-014,Eligibility Map with Hierarchy Cascade,3.5 Part-to-Location Eligibility,plant-hierarchy,MVP,Y,3.4.7,VERIFY
+FDS-03-014,Eligibility Map with Hierarchy Cascade,3.5 Part-to-Location Eligibility,movements,MVP,Y,3.4.7,VERIFY
 FDS-03-015,Eligibility Management,3.5 Part-to-Location Eligibility,plant-hierarchy,MVP,Y,,VERIFY
 FDS-03-018,Consumption Metadata on Item-Location Eligibility,3.5 Part-to-Location Eligibility,plant-hierarchy,MVP,Y,,VERIFY
 FDS-03-016,Container Config,3.6 Container Configuration,container-configs,MVP,Y,3.9.7,VERIFY
 FDS-03-017,Container Closure Logic,3.6 Container Configuration,container-configs,MVP,Y,,VERIFY
-FDS-03-019,Per-Item Per-Location Piece Cap,3.6 Container Configuration,container-configs,MVP,Y,,VERIFY
-FDS-03-020,Lineside Inventory Cap,3.6 Container Configuration,container-configs,MVP,Y,,VERIFY
+FDS-03-019,Per-Item Per-Location Piece Cap,3.6 Container Configuration,movements,MVP,Y,,VERIFY
+FDS-03-020,Lineside Inventory Cap,3.6 Container Configuration,movements,MVP,Y,,VERIFY
 FDS-03-021,Tray-Divisibility Validation on Work Order,3.6 Container Configuration,container-configs,MVP,Y,,VERIFY
 FDS-04-001,Two Identity Classes,4.1 Identity Model,users,MVP,Y,,VERIFY
 FDS-04-002,Operator Initials Capture,4.1 Identity Model,users,MVP,Y,,VERIFY

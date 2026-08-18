@@ -5,5 +5,5 @@ FAT-SS-030,FDS-09-008,Overnight shift,Shift Schedules screen,Create a schedule w
 FAT-SS-040,FDS-09-008,Unique schedule name,An existing shift schedule,Attempt to create another schedule with the same name,System rejects the duplicate with a clear message,,,,
 FAT-SS-050,FDS-09-008,Shift schedule soft-delete,An active shift schedule,Deprecate the schedule,"Schedule is soft-deleted (DeprecatedAt), not overwritten; EffectiveFrom preserves the schedule across time",,,,
 FAT-SS-060,FDS-09-008,Edit shift schedule,An existing shift schedule,Change its start/end time and save,Edit persists and is audit-logged,,,,
-FAT-SS-070,FDS-09-012,Shift schedule import idempotency,Shift schedules already loaded,Re-apply the schedule set with a revised sheet (updated + new rows),"Existing rows update and new rows add without duplicating (idempotent by unique name)",,,,bulk spreadsheet import is a cutover step
+FAT-SS-070,FDS-09-012,Shift schedule import idempotency,Shift schedules already loaded,Re-apply the schedule set with a revised sheet (updated + new rows),Existing rows update and new rows add without duplicating (idempotent by unique name),,,,bulk spreadsheet import is a cutover step
 FAT-SS-080,FDS-09-012,Post-import edit audit,A shift schedule maintained in the Config Tool,Make a manual edit after import,Manual Configuration Tool edit is audit-logged,,,,

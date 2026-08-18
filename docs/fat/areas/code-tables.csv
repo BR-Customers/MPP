@@ -1,8 +1,8 @@
 TestID,FDS,Workflow,Precondition,Step,Expected Result,Result,Witness,Date,Notes
-FAT-CT-010,FDS-08-016,Defect code CRUD,Config Tool open at Quality > Defect Codes,Create a new defect code and edit an existing one,"Code is created and saved; edits persist; changes are audited (config log)",,,,
+FAT-CT-010,FDS-08-016,Defect code CRUD,Config Tool open at Quality > Defect Codes,Create a new defect code and edit an existing one,Code is created and saved; edits persist; changes are audited (config log),,,,
 FAT-CT-020,FDS-08-016,Defect code fields,A defect code open in the editor,Set the code's Area and IsExcused flag,"Defect code carries Code, Description, Area association, and IsExcused; IsExcused feeds future OEE quality math",,,,
 FAT-CT-030,FDS-08-016,Defect code seed load,Freshly deployed database,Verify the FRS Appendix E defect codes were seeded,"Defect codes loaded from Appendix E (153 rows), each associated with an area (Die Cast, Machine Shop, Trim Shop, Production Control, Quality Control, HSP) with IsExcused set per the appendix",,,,deploy-day check
-FAT-CT-040,FDS-08-016,Defect code deprecation,An active defect code,Deprecate a defect code,"Code is soft-deleted (DeprecatedAt) and drops out of active lists; historical references are retained",,,,
+FAT-CT-040,FDS-08-016,Defect code deprecation,An active defect code,Deprecate a defect code,Code is soft-deleted (DeprecatedAt) and drops out of active lists; historical references are retained,,,,
 FAT-CT-050,FDS-08-017,Area filtering — Die Cast,A Die Cast production screen,Open the defect/scrap reason picker,Only Die Cast area defect codes are offered,,,,
 FAT-CT-060,FDS-08-017,Area filtering — cross-check,A Machine Shop production screen,Open the defect picker on a Machine Shop screen,Only Machine Shop codes are shown; Die Cast-only codes are absent,,,,
 FAT-CT-070,FDS-09-006,Reason code seed load,Freshly deployed database,Verify the downtime reason codes were seeded,"353 downtime reason codes loaded from FRS Appendix D; each carries code, description, area, reason type, and IsExcused",,,,deploy-day check

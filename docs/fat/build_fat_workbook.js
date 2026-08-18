@@ -173,6 +173,15 @@ function dataRow(ws, t, zebra) {
 
 // --- area sheets -------------------------------------------------------------
 const areaRowCount = new Map();
+// A test row's FDS field may name SEVERAL requirements, separated by ';' --
+// one witnessable step can satisfy more than one FDS clause. Everything that
+// files or counts a test goes through this, so a multi-FDS row appears under
+// each banner it covers and is credited to each requirement on Coverage.
+function fdsList(t) {
+  if (!t || !t.FDS || t.FDS === 'NONE') return [];
+  return String(t.FDS).split(';').map((x) => x.trim()).filter(Boolean);
+}
+
 function buildAreaSheet(wb, slug, name) {
   const tests = testsByArea.get(slug) || [];
   if (!tests.length && !reqsByArea.has(slug)) return;
@@ -183,10 +192,14 @@ function buildAreaSheet(wb, slug, name) {
   const byReq = new Map(); const none = []; const unfiled = [];
   const areaSet = new Set((reqsByArea.get(slug) || []).map((c) => c.FDS));
   for (const t of tests) {
-    if (!t.FDS || t.FDS === 'NONE') { none.push(t); continue; }
-    if (!areaSet.has(t.FDS)) { unfiled.push(t); continue; }
-    if (!byReq.has(t.FDS)) byReq.set(t.FDS, []);
-    byReq.get(t.FDS).push(t);
+    const ids = fdsList(t);
+    if (!ids.length) { none.push(t); continue; }
+    const mine = ids.filter((id) => areaSet.has(id));
+    if (!mine.length) { unfiled.push(t); continue; }
+    for (const id of mine) {
+      if (!byReq.has(id)) byReq.set(id, []);
+      byReq.get(id).push(t);
+    }
   }
   let zebra = false;
   for (const c of reqsByArea.get(slug) || []) {
@@ -213,7 +226,7 @@ function buildCoverage(wb) {
   for (let i = 1; i <= heads.length; i++) { const cell = hr.getCell(i); cell.fill = fill(C.header); cell.font = { bold: true, color: { argb: C.headerText } }; cell.alignment = { vertical: 'middle' }; cell.border = allBorders; }
 
   const byFds = new Map();
-  for (const t of allTests) { if (!t.FDS || t.FDS === 'NONE') continue; if (!byFds.has(t.FDS)) byFds.set(t.FDS, []); byFds.get(t.FDS).push(t.TestID); }
+  for (const t of allTests) { for (const id of fdsList(t)) { if (!byFds.has(id)) byFds.set(id, []); byFds.get(id).push(t.TestID); } }
   let gaps = 0;
   for (const c of indexRows) {
     if (!c.FDS) continue;
