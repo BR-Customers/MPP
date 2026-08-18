@@ -740,14 +740,14 @@ DECLARE @CC TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, Ai
 INSERT INTO @CC EXEC Lots.Container_Complete @ContainerId = @Con, @AppUserId = 1, @TerminalLocationId = @Term;
 
 DECLARE @L1 TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
-    PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, FinishedGoodLotId BIGINT);
+    PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, PendingLotCount INT);
 INSERT INTO @L1 EXEC Lots.Container_ListPendingValidation @LocationId = @Cell, @ContainerId = NULL;
 DECLARE @Act5 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L1 WHERE ContainerId = @Con);
 EXEC test.Assert_IsEqual @TestName = N'[Pending] held container is listed for its line',
     @Expected = N'1', @Actual = @Act5;
 
 DECLARE @L2 TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
-    PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, FinishedGoodLotId BIGINT);
+    PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, PendingLotCount INT);
 INSERT INTO @L2 EXEC Lots.Container_ListPendingValidation @LocationId = @Other, @ContainerId = NULL;
 DECLARE @Act6 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L2 WHERE ContainerId = @Con);
 EXEC test.Assert_IsEqual @TestName = N'[Pending] a different line does NOT see it',
@@ -755,7 +755,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Pending] a different line does NOT see i
 
 -- @ContainerId probe (the path Container.complete uses)
 DECLARE @L3 TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
-    PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, FinishedGoodLotId BIGINT);
+    PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, PendingLotCount INT);
 INSERT INTO @L3 EXEC Lots.Container_ListPendingValidation @LocationId = NULL, @ContainerId = @Con;
 DECLARE @Act7 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L3);
 EXEC test.Assert_IsEqual @TestName = N'[Pending] container probe finds the held container',
@@ -765,7 +765,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Pending] container probe finds the held 
 DECLARE @CL TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @CL EXEC Lots.Lot_ClearCrt @LotId = @Lot, @AppUserId = 1, @TerminalLocationId = @Term;
 DECLARE @L4 TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
-    PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, FinishedGoodLotId BIGINT);
+    PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, PendingLotCount INT);
 INSERT INTO @L4 EXEC Lots.Container_ListPendingValidation @LocationId = @Cell, @ContainerId = NULL;
 DECLARE @Act8 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L4 WHERE ContainerId = @Con);
 EXEC test.Assert_IsEqual @TestName = N'[Pending] validated container drops out of the list',
@@ -796,6 +796,11 @@ Create `sql/migrations/repeatable/R__Lots_Container_ListPendingValidation.sql`:
 -- Version:     1.0
 -- Description: Containers awaiting Controlled Run Tag validation: their finished-good
 --              LOT is still CrtActive, so their AIM Shipper ID is claimed but held.
+--
+--              A container carries ONE finished-good LOT PER TRAY
+--              (Lots.ContainerTray.FinishedGoodLotId is 1:1 with the tray), so a 4-tray
+--              container has 4 CRT-active LOTs. A container is pending while ANY of them
+--              is still CrtActive; PendingLotCount reports how many.
 --
 --              @LocationId scopes to that location and every descendant (mirrors
 --              Lot_GetWipQueueByLocation's Descendants CTE) - callers pass the
@@ -828,7 +833,7 @@ BEGIN
              AS DATETIME2(3))               AS CompletedAtEt,
         MAX(p.AimShipperId)                 AS AimShipperId,
         DATEDIFF(MINUTE, c.CompletedAt, SYSUTCDATETIME()) AS AgeMinutes,
-        MAX(fgl.Id)                         AS FinishedGoodLotId
+        COUNT(*)                            AS PendingLotCount
     FROM Lots.Container c
     INNER JOIN Lots.ContainerTray ct ON ct.ContainerId = c.Id
     INNER JOIN Lots.Lot fgl          ON fgl.Id = ct.FinishedGoodLotId AND fgl.CrtActive = 1
@@ -1003,6 +1008,9 @@ Create `sql/migrations/repeatable/R__Lots_Container_ValidateCrt.sql`. Note the I
 --              finished-good LOT(s), which releases the container's AIM Shipper ID
 --              back to the normal post path (AimShipperIdPool_ListUnposted stops
 --              excluding it). The POST itself is the Python caller's next step.
+--
+--              Clears EVERY tray LOT of the container, not one: a container carries one
+--              FG LOT per tray, and the serial stays held while ANY of them is CrtActive.
 --
 --              INSERT-EXEC: this proc returns a status row and is captured by
 --              callers, so it must NOT EXEC Lots.Lot_ClearCrt - a nested status-row
