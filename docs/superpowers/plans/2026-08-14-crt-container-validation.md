@@ -22,6 +22,7 @@
 - Audit descriptions use the `<SUBJECT> · <CATEGORY> · <ACTION>` shape via `Audit.ufn_MidDot()`, with resolved-name FK sub-objects in Old/New JSON, capped by `Audit.ufn_TruncateActivity()`.
 - SQL is applied with `sqlcmd -S localhost -d <db> -E -b -I -C -i <file>`. The `-I` flag is mandatory (filtered indexes reject `QUOTED_IDENTIFIER OFF`).
 - Perspective conditional visibility uses `position.display`, never `meta.visible` — `meta.visible:false` still occupies flex space.
+- **`EXEC` parameters must be literals or `@variables` - never an inline subquery.** `@Actual = (SELECT ...)` is invalid T-SQL and fails regardless of whether the target proc exists. Hoist the value into a local first: `DECLARE @Act NVARCHAR(10) = (SELECT ...);` then `@Actual = @Act`. (Found during Task 1; every test fixture in this plan has been corrected.)
 - Run the SQL suite with `sql\tests\Run-Tests.ps1` (defaults to `MPP_MES_Test`). A green run is `Failed: 0` **and** zero `ERROR running` lines.
 
 ---
