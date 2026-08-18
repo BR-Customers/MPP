@@ -27,7 +27,7 @@
 --              role templates exist). Quality specs are not part of this seed.
 --
 --              Dependencies: 011_seed_locations_mpp_plant.sql (Location.Code:
---              DC1/DC2/DC3, TRIM1, MA1/MA2, MA1-5GOF, MA2-59B, MA1-FP6NA).
+--              DC1/DC2/DC3, TRIM1/TRIM2, MA1/MA2, MA1-5GOF, MA2-59B, MA1-FP6NA).
 -- ============================================================
 
 SET NOCOUNT ON;
@@ -204,7 +204,7 @@ DECLARE @IL TABLE (Pn NVARCHAR(60), Lc NVARCHAR(50), Cp BIT, MnQ INT, MxQ INT, D
 INSERT INTO @IL (Pn, Lc, Cp, MnQ, MxQ, DfQ) VALUES
  -- 5G0 family
  (N'5G0-c', N'DC1', 0, NULL, NULL, NULL),
- (N'5G0-c', N'TRIM1', 0, NULL, NULL, NULL),
+ (N'5G0-c', N'TRIM2', 0, NULL, NULL, NULL),
  (N'5G0-c', N'MA1-5GOF', 0, NULL, NULL, NULL),
  (N'5G0-SA', N'MA1-5GOF', 0, NULL, NULL, NULL),
  (N'5G0-FG', N'MA1-5GOF', 0, NULL, NULL, NULL),
@@ -224,7 +224,7 @@ INSERT INTO @IL (Pn, Lc, Cp, MnQ, MxQ, DfQ) VALUES
  (N'1223A-59B -A0002', N'MA2-59B', 0, NULL, NULL, NULL),
  -- 6NA family
  (N'12270-6NA', N'DC3', 0, NULL, NULL, NULL),
- (N'12270-6NA', N'TRIM1', 0, NULL, NULL, NULL),
+ (N'12270-6NA', N'TRIM2', 0, NULL, NULL, NULL),
  (N'12270-6NA', N'MA1-FP6NA', 1, 15, 100, 50),
  (N'12270-6NA-M', N'MA1-FP6NA', 1, 12, 96, 48),
  (N'92900-06014-1B', N'MA1-FP6NA', 1, NULL, NULL, NULL),

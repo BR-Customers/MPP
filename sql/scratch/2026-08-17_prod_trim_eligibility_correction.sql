@@ -35,11 +35,17 @@ DECLARE @AppUserId BIGINT;
 
 IF @DryRun IS NULL SET @DryRun = 1;
 
--- Attribute the change to the operator running it.
-SELECT @AppUserId = Id FROM Location.AppUser WHERE AdAccount = N'admin1' AND DeprecatedAt IS NULL;
+-- Attribute the change to the operator running it. Prod runs as 'admin1';
+-- Dev / Test have no such account, so fall back to DEV then the bootstrap user.
+SELECT TOP 1 @AppUserId = Id
+FROM Location.AppUser
+WHERE DeprecatedAt IS NULL
+  AND AdAccount IN (N'admin1', N'dev.user', N'system.bootstrap')
+ORDER BY CASE AdAccount WHEN N'admin1' THEN 0 WHEN N'dev.user' THEN 1 ELSE 2 END;
+
 IF @AppUserId IS NULL
 BEGIN
-    RAISERROR(N'ABORT: could not resolve AppUser admin1.', 16, 1);
+    RAISERROR(N'ABORT: could not resolve an AppUser to attribute the change to.', 16, 1);
     RETURN;
 END
 
