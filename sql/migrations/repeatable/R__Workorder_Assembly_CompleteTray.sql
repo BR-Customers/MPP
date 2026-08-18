@@ -100,7 +100,7 @@ BEGIN
         IF @FinishedGoodItemId IS NULL OR @PieceCount IS NULL OR @CellLocationId IS NULL OR @ClosureMethod IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (FinishedGoodItemId, PieceCount, CellLocationId, ClosureMethod, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
                     @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
                     @ProcedureName = @ProcName, @AttemptedParameters = @Params;

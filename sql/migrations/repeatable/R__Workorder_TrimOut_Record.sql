@@ -93,7 +93,7 @@ BEGIN
            OR @SourceLocationId IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (ParentLotId, OperationTemplateId, SourceLocationId, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
                     @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',

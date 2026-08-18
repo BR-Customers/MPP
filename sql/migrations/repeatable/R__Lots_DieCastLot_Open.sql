@@ -34,7 +34,14 @@
 --              audit call. Lot_Create hit and fixed this exact case (see its
 --              "FailureLog.AppUserId is NOT NULL + FK; only attribute the
 --              failure when we have a user" comment); mirrored here by
---              guarding the Fail: audit call with IF @AppUserId IS NOT NULL.
+--              guarding the Fail: audit call with an EXISTS check on
+--              Location.AppUser. NOTE (2026-08-18): the guard was originally
+--              IF @AppUserId IS NOT NULL, which only covers a NULL actor. A
+--              non-NULL but NON-EXISTENT id -- exactly what the 'AppUser not
+--              found' validation detects, e.g. a session cached against a
+--              different database -- passed that guard and violated the FK
+--              inside the logger, turning a clean rejection into an unhandled
+--              JDBC exception on the operator's screen. Hardened to EXISTS.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.DieCastLot_Open
     @ItemId BIGINT, @CurrentLocationId BIGINT, @ToolId BIGINT, @ToolCavityId BIGINT,
@@ -122,7 +129,7 @@ BEGIN
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
         DECLARE @ErrMsg NVARCHAR(4000)=ERROR_MESSAGE(), @ErrSev INT=ERROR_SEVERITY(), @ErrState INT=ERROR_STATE();
         SET @Status=0; SET @NewId=NULL; SET @Message=N'Unexpected error: ' + LEFT(@ErrMsg,400);
-        IF @AppUserId IS NOT NULL
+        IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
         BEGIN TRY EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=NULL,
             @LogEventTypeCode=N'DieCastLotOpened', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; END TRY BEGIN CATCH END CATCH
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RAISERROR(@ErrMsg,@ErrSev,@ErrState); RETURN;
@@ -132,7 +139,7 @@ Fail:
     -- above can reach here with @AppUserId itself NULL (no actor to attribute
     -- the failure to) -- guard the audit call so that case returns cleanly
     -- instead of throwing (mirrors Lot_Create's identical guard).
-    IF @AppUserId IS NOT NULL
+    IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
         EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=NULL,
             @LogEventTypeCode=N'DieCastLotOpened', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
     SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;

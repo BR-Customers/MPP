@@ -92,7 +92,7 @@ BEGIN
         IF @SourceLotId IS NULL OR @ConsumedPieceCount IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (SourceLotId, ConsumedPieceCount, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                     @EntityId = @SourceLotId, @LogEventTypeCode = N'LotConsumed',

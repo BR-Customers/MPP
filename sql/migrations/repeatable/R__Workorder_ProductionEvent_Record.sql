@@ -73,7 +73,7 @@ BEGIN
         BEGIN
             SET @Message = N'Required parameter missing (LotId, OperationTemplateId, AppUserId).';
             -- FailureLog.AppUserId is NOT NULL + FK; only attribute when we have a user.
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
                     @EntityId = NULL, @LogEventTypeCode = N'DieCastCheckpointRecorded',
