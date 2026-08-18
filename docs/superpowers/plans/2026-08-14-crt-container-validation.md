@@ -149,8 +149,9 @@ DECLARE @Base INT = (SELECT COUNT(*) FROM Audit.ConfigLog);
 
 DECLARE @R1 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @R1 EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = @Term, @Enabled = 1, @AppUserId = 1;
+DECLARE @Act1 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R1);
 EXEC test.Assert_IsEqual @TestName = N'[SetCrt] enable returns Status 1',
-    @Expected = N'1', @Actual = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R1);
+    @Expected = N'1', @Actual = @Act1;
 
 DECLARE @V1 NVARCHAR(20) = (SELECT la.AttributeValue FROM Location.LocationAttribute la
     JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
@@ -169,8 +170,9 @@ EXEC test.Assert_IsEqual @TestName = N'[SetCrt] disable flips it back to 0', @Ex
 
 DECLARE @R3 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @R3 EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = 999999999, @Enabled = 1, @AppUserId = 1;
+DECLARE @Act2 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R3);
 EXEC test.Assert_IsEqual @TestName = N'[SetCrt] unknown terminal rejected, Status 0',
-    @Expected = N'0', @Actual = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R3);
+    @Expected = N'0', @Actual = @Act2;
 GO
 
 EXEC test.EndTestFile;
@@ -395,8 +397,9 @@ INSERT INTO @Off EXEC Workorder.Assembly_CompleteTray
     @FinishedGoodItemId = @Fg, @PieceCount = 1, @CellLocationId = @Cell,
     @ClosureMethod = N'ByCount', @AppUserId = 1, @TerminalLocationId = @Term;
 DECLARE @LotOff BIGINT = (SELECT FinishedGoodLotId FROM @Off);
+DECLARE @Act3 NVARCHAR(10) = (SELECT CAST(CrtActive AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @LotOff);
 EXEC test.Assert_IsEqual @TestName = N'[CrtMint] CRT off -> FG LOT CrtActive = 0',
-    @Expected = N'0', @Actual = (SELECT CAST(CrtActive AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @LotOff);
+    @Expected = N'0', @Actual = @Act3;
 
 -- CRT ON -> CrtActive 1
 DECLARE @R1 TABLE (Status BIT, Message NVARCHAR(500));
@@ -408,8 +411,9 @@ INSERT INTO @On EXEC Workorder.Assembly_CompleteTray
     @FinishedGoodItemId = @Fg, @PieceCount = 1, @CellLocationId = @Cell,
     @ClosureMethod = N'ByCount', @AppUserId = 1, @TerminalLocationId = @Term;
 DECLARE @LotOn BIGINT = (SELECT FinishedGoodLotId FROM @On);
+DECLARE @Act4 NVARCHAR(10) = (SELECT CAST(CrtActive AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @LotOn);
 EXEC test.Assert_IsEqual @TestName = N'[CrtMint] CRT on -> FG LOT CrtActive = 1',
-    @Expected = N'1', @Actual = (SELECT CAST(CrtActive AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @LotOn);
+    @Expected = N'1', @Actual = @Act4;
 
 -- reset the terminal so later files start clean
 DECLARE @R2 TABLE (Status BIT, Message NVARCHAR(500));
@@ -717,21 +721,24 @@ INSERT INTO @CC EXEC Lots.Container_Complete @ContainerId = @Con, @AppUserId = 1
 DECLARE @L1 TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
     PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, FinishedGoodLotId BIGINT);
 INSERT INTO @L1 EXEC Lots.Container_ListPendingValidation @LocationId = @Cell, @ContainerId = NULL;
+DECLARE @Act5 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L1 WHERE ContainerId = @Con);
 EXEC test.Assert_IsEqual @TestName = N'[Pending] held container is listed for its line',
-    @Expected = N'1', @Actual = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L1 WHERE ContainerId = @Con);
+    @Expected = N'1', @Actual = @Act5;
 
 DECLARE @L2 TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
     PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, FinishedGoodLotId BIGINT);
 INSERT INTO @L2 EXEC Lots.Container_ListPendingValidation @LocationId = @Other, @ContainerId = NULL;
+DECLARE @Act6 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L2 WHERE ContainerId = @Con);
 EXEC test.Assert_IsEqual @TestName = N'[Pending] a different line does NOT see it',
-    @Expected = N'0', @Actual = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L2 WHERE ContainerId = @Con);
+    @Expected = N'0', @Actual = @Act6;
 
 -- @ContainerId probe (the path Container.complete uses)
 DECLARE @L3 TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
     PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, FinishedGoodLotId BIGINT);
 INSERT INTO @L3 EXEC Lots.Container_ListPendingValidation @LocationId = NULL, @ContainerId = @Con;
+DECLARE @Act7 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L3);
 EXEC test.Assert_IsEqual @TestName = N'[Pending] container probe finds the held container',
-    @Expected = N'1', @Actual = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L3);
+    @Expected = N'1', @Actual = @Act7;
 
 -- validated -> drops out
 DECLARE @CL TABLE (Status BIT, Message NVARCHAR(500));
@@ -739,8 +746,9 @@ INSERT INTO @CL EXEC Lots.Lot_ClearCrt @LotId = @Lot, @AppUserId = 1, @TerminalL
 DECLARE @L4 TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
     PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, FinishedGoodLotId BIGINT);
 INSERT INTO @L4 EXEC Lots.Container_ListPendingValidation @LocationId = @Cell, @ContainerId = NULL;
+DECLARE @Act8 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L4 WHERE ContainerId = @Con);
 EXEC test.Assert_IsEqual @TestName = N'[Pending] validated container drops out of the list',
-    @Expected = N'0', @Actual = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @L4 WHERE ContainerId = @Con);
+    @Expected = N'0', @Actual = @Act8;
 
 DECLARE @Off TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @Off EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = @Term, @Enabled = 0, @AppUserId = 1;
@@ -925,22 +933,26 @@ INSERT INTO @CC EXEC Lots.Container_Complete @ContainerId = @Con, @AppUserId = 1
 
 DECLARE @V1 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @V1 EXEC Lots.Container_ValidateCrt @ContainerId = @Con, @AppUserId = 1, @TerminalLocationId = @Term;
+DECLARE @Act9 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @V1);
 EXEC test.Assert_IsEqual @TestName = N'[Validate] returns Status 1',
-    @Expected = N'1', @Actual = (SELECT CAST(Status AS NVARCHAR(10)) FROM @V1);
+    @Expected = N'1', @Actual = @Act9;
 
+DECLARE @Act10 NVARCHAR(10) = (SELECT CAST(CrtActive AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @Lot);
 EXEC test.Assert_IsEqual @TestName = N'[Validate] FG LOT CrtActive cleared to 0',
-    @Expected = N'0', @Actual = (SELECT CAST(CrtActive AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @Lot);
+    @Expected = N'0', @Actual = @Act10;
 
 -- second call must reject: nothing pending any more
 DECLARE @V2 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @V2 EXEC Lots.Container_ValidateCrt @ContainerId = @Con, @AppUserId = 1, @TerminalLocationId = @Term;
+DECLARE @Act11 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @V2);
 EXEC test.Assert_IsEqual @TestName = N'[Validate] double-validate rejected, Status 0',
-    @Expected = N'0', @Actual = (SELECT CAST(Status AS NVARCHAR(10)) FROM @V2);
+    @Expected = N'0', @Actual = @Act11;
 
 DECLARE @V3 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @V3 EXEC Lots.Container_ValidateCrt @ContainerId = 999999999, @AppUserId = 1, @TerminalLocationId = @Term;
+DECLARE @Act12 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @V3);
 EXEC test.Assert_IsEqual @TestName = N'[Validate] unknown container rejected, Status 0',
-    @Expected = N'0', @Actual = (SELECT CAST(Status AS NVARCHAR(10)) FROM @V3);
+    @Expected = N'0', @Actual = @Act12;
 
 DECLARE @Off TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @Off EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = @Term, @Enabled = 0, @AppUserId = 1;
