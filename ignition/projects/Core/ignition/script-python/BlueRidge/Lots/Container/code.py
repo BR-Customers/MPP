@@ -97,7 +97,16 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
     # Report the completed container to AIM. Runs AFTER the proc committed and is fully
     # guarded: complete, print and post are three separate steps (FDS-07-005/006a/012).
     # A failure leaves the row owed; AimPostTimer retries it. NEVER lose the container.
+    #
+    # Controlled Run Tag: a container whose finished-good LOT is CRT-active is awaiting a
+    # second-person validation, so its serial stays CLAIMED but UNPOSTED. Validating it
+    # clears the flag and posts. AimShipperIdPool_ListUnposted excludes it meanwhile, so
+    # the retry sweep leaves it alone too - both halves are needed.
     if result and result.get("Status") and result.get("AimShipperId"):
+        if _isCrtHeld(containerId):
+            result["AimPost"] = {"ok": False, "outcome": "held",
+                                 "error": "Container is pending Controlled Run Tag validation."}
+            return result
         try:
             result["AimPost"] = BlueRidge.Lots.AimPost.postOne(result.get("AimShipperId"))
         except Throwable as t:
@@ -107,6 +116,14 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
             BlueRidge.Common.Util.log("AIM post-back failed: %s" % e, level="error")
             result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(e)}
     return result
+
+
+def _isCrtHeld(containerId):
+    """True when any of the container's trays carries a CRT-active finished-good LOT.
+       TODO(task-4): replaced with the real Container_ListPendingValidation lookup once
+       that named query exists. Returns False meanwhile, so the synchronous post is NOT
+       yet suppressed - the ListUnposted exclusion below is what holds the serial today."""
+    return False
 
 
 def getOpenByCell(cellLocationId, _refreshToken=None):
