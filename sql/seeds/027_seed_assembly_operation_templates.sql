@@ -30,16 +30,16 @@ DECLARE @OpTypeAsmIn  BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = 
 DECLARE @OpTypeAsmOut BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'AssemblyOut' AND DeprecatedAt IS NULL);
 
 IF @OpTypeAsmIn IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'AssemblyIn')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt, PublishedAt)
     VALUES (N'AssemblyIn', 1, N'Assembly In', @OpTypeAsmIn,
             N'Assembly-line IN checkpoint template. FIFO pick of machined sub-assembly + BOM component consumption (mounting hardware, etc.) at the start of final assembly.',
-            @Now);
+            @Now, @Now);
 
 IF @OpTypeAsmOut IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'AssemblyOut')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt, PublishedAt)
     VALUES (N'AssemblyOut', 1, N'Assembly Out', @OpTypeAsmOut,
             N'Assembly-line OUT template. Closing checkpoint for final assembly -- produces the finished-good LOT (serialized or non-serialized) ready for container packout.',
-            @Now);
+            @Now, @Now);
 GO
 PRINT 'Seed 027 (AssemblyIn/AssemblyOut OperationTemplates) loaded.';
 GO

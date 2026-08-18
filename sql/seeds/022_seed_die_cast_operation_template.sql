@@ -13,10 +13,15 @@
 --              seed runs after 011 (locations) + 0004 migration (DataCollection
 --              field code table) so both FK targets exist.
 --
---              OperationTemplate is a TWO-state versioned entity (VersionNumber +
---              CreatedAt + DeprecatedAt; NO PublishedAt column — verified against
---              migration 0006). An active row (DeprecatedAt IS NULL) is the
---              published/usable state. Seeded at VersionNumber=1.
+--              OperationTemplate is a THREE-state versioned entity (VersionNumber +
+--              CreatedAt + PublishedAt + DeprecatedAt). This header previously said
+--              two-state with "NO PublishedAt column"; FAT-OQ-030 added the
+--              Draft/Published lifecycle and the route-role resolver
+--              (Core NQ parts/OperationTemplate_GetForRouteRole) now requires
+--              PublishedAt IS NOT NULL. A seeded template left Draft therefore
+--              resolves for NO part and NO role, and nothing on the shop floor can
+--              run -- so seed PublishedAt, not just CreatedAt. Seeded at
+--              VersionNumber=1, published on insert.
 --
 --              Idempotent (IF NOT EXISTS on Code). ASCII-only.
 --              Dependencies: 011_seed_locations_mpp_plant.sql (Area Code 'DC1').
@@ -31,10 +36,10 @@ DECLARE @OpTypeId BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'Di
 
 IF @OpTypeId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'DieCastShot')
 BEGIN
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt, PublishedAt)
     VALUES (N'DieCastShot', 1, N'Die Cast Shot', @OpTypeId,
             N'Die-cast operator-station production checkpoint template (Arc 2 Phase 3). Captures cumulative shot/scrap counters plus per-shot data-collection fields.',
-            @Now);
+            @Now, @Now);
 
     DECLARE @OtId BIGINT = CAST(SCOPE_IDENTITY() AS BIGINT);
 
