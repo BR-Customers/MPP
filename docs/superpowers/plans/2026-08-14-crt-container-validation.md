@@ -377,10 +377,9 @@ Create `sql/tests/0056_CrtValidation/030_CompleteTray_marks_crt.sql`. This is th
 -- Desc: Assembly_CompleteTray mints the FG LOT with CrtActive = 1 when the
 --       terminal has CrtEnabled = '1', and 0 when it does not.
 --
---       ALSO PINS: the FG LOT ends Closed, so Quality.Crt_GetRequiredInspections
---       (which filters sc.Code <> 'Closed') never surfaces it. If the FG LOT ever
---       stops being closed at completion, CRT containers would start demanding
---       200% inspection - a burden MPP did not ask for. That assert is the guard.
+--       This file does NOT complete a container, so the FG LOT is still open here.
+--       The guard that CRT never drags in 200% inspection lives in 040 (below),
+--       where Container_Complete actually runs and closes the LOT.
 -- =============================================
 EXEC test.BeginTestFile @FileName = N'0056_CrtValidation/030_CompleteTray_marks_crt.sql';
 GO
@@ -572,6 +571,22 @@ INSERT INTO @U1 EXEC Lots.AimShipperIdPool_ListUnposted @Top = 50;
 DECLARE @Held NVARCHAR(10) = CASE WHEN EXISTS (SELECT 1 FROM @U1 WHERE ContainerId = @Con) THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName = N'[Held] CRT-held serial is EXCLUDED from ListUnposted',
     @Expected = N'0', @Actual = @Held;
+
+-- THE 200%-INSPECTION GUARD. Reusing Lots.Lot.CrtActive is only safe because
+-- Container_Complete closes the FG LOT and Quality.Crt_GetRequiredInspections filters
+-- sc.Code <> 'Closed'. If the FG LOT ever stops closing at completion, every CRT
+-- container would silently start demanding 200% inspection. Assert both halves.
+DECLARE @Act9 NVARCHAR(10) = (SELECT sc.Code FROM Lots.Lot l
+    JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @Lot);
+EXEC test.Assert_IsEqual @TestName = N'[Held] FG LOT is Closed after container completion',
+    @Expected = N'Closed', @Actual = @Act9;
+
+DECLARE @Insp TABLE (LotId BIGINT, LotName NVARCHAR(50), ItemPartNumber NVARCHAR(50),
+    PieceCount INT, SampleCount INT, LastSampledAt DATETIME2(3), LastResultCode NVARCHAR(20));
+INSERT INTO @Insp EXEC Quality.Crt_GetRequiredInspections @LocationId = @Cell;
+DECLARE @Act10 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Insp WHERE LotId = @Lot);
+EXEC test.Assert_IsEqual @TestName = N'[Held] CRT-active but Closed -> NOT in the 200% inspection surface',
+    @Expected = N'0', @Actual = @Act10;
 
 -- clearing CRT hands it straight back to the normal retry machinery
 DECLARE @CL TABLE (Status BIT, Message NVARCHAR(500));
