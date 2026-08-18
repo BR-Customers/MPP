@@ -39,3 +39,24 @@ def changeover(terminalLocationId, newMethod, adAccount, password):
             "appUserId":          el.get("appUserId"),
         },
     )
+
+
+def setCrt(terminalLocationId, enabled, adAccount, password):
+    """Elevate for 'Changeover', then set the terminal's Controlled Run Tag flag.
+       Same stateless per-action elevation as changeover(): the elevated appUserId is
+       passed straight to the proc, never stored on the session."""
+    terminalLocationId = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    enabled = BlueRidge.Common.Util.extractQualifiedValues(enabled)
+
+    el = BlueRidge.Location.AppUser.elevate(adAccount, password, "Changeover", terminalLocationId)
+    if not el or not el.get("success"):
+        return {"Status": 0, "Message": (el or {}).get("message") or "Elevation failed."}
+
+    return BlueRidge.Common.Db.execMutation(
+        "location/Terminal_SetCrtEnabled",
+        {
+            "terminalLocationId": terminalLocationId,
+            "enabled":            1 if enabled else 0,
+            "appUserId":          el.get("appUserId"),
+        },
+    )
