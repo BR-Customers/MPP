@@ -1,0 +1,131 @@
+{
+  "custom": {},
+  "params": {
+    "defectCodeId": null,
+    "code": "",
+    "description": "",
+    "quantity": 0,
+    "isSelected": false,
+    "isPrimary": false,
+    "badge": ""
+  },
+  "propConfig": {
+    "params.defectCodeId": { "paramDirection": "input" },
+    "params.code": { "paramDirection": "input" },
+    "params.description": { "paramDirection": "input" },
+    "params.quantity": { "paramDirection": "input" },
+    "params.isSelected": { "paramDirection": "input" },
+    "params.isPrimary": { "paramDirection": "input" },
+    "params.badge": { "paramDirection": "input" }
+  },
+  "props": { "defaultSize": { "height": 72, "width": 152 } },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root", "tooltip": { "text": "Tap to add 1" } },
+    "props": {
+      "direction": "column",
+      "justify": "space-between",
+      "alignItems": "stretch",
+      "style": {
+        "cursor": "pointer",
+        "gap": "2px",
+        "minHeight": "68px",
+        "overflow": "hidden",
+        "padding": "6px 8px",
+        "textAlign": "center"
+      }
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.isSelected}, 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
+          }
+        }
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload={\"defectCodeId\": self.view.params.defectCodeId, \"delta\": 1}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "DescLabel" },
+        "position": { "basis": "0", "grow": 1, "shrink": 1 },
+        "propConfig": {
+          "props.text": {
+            "binding": { "type": "property", "config": { "path": "view.params.description" } }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "fontWeight": 600,
+            "letterSpacing": "normal",
+            "lineHeight": "1.15",
+            "overflow": "hidden",
+            "textAlign": "center",
+            "textTransform": "none",
+            "whiteSpace": "normal"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "MetaRow" },
+        "position": { "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "justify": "space-between",
+          "style": { "gap": "6px", "overflow": "hidden" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "CodeLabel" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": { "type": "property", "config": { "path": "view.params.code" } }
+              }
+            },
+            "props": { "style": { "classes": "pf-toggle-btn-meta", "overflow": "hidden" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "CountLabel" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.quantity} > 0" }
+                }
+              },
+              "props.text": {
+                "binding": { "type": "property", "config": { "path": "view.params.badge" } }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent-90)",
+                "fontSize": "14px",
+                "fontWeight": 700,
+                "overflow": "hidden"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
