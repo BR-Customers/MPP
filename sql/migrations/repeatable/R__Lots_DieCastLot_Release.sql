@@ -1,8 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Lots_DieCastLot_Release.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-29
--- Version:     1.1
+-- Modified:    2026-08-19
+-- Version:     1.2
+-- Change:      v1.2 -- shift-override ATTRIBUTION (OI-2 / spec sec 5): new
+--              @CellLocationId param (default NULL, backward-compatible) and the
+--              final-delta Workorder.DieCastContribution row now stamps
+--              CellLocationId -- the PRESS. Mirrors
+--              R__Workorder_DieCastShiftOutput_Record.sql v1.4 verbatim,
+--              including its fall-back to the die's currently-mounted
+--              Tools.ToolAssignment when the caller supplies nothing. Without
+--              this the release-time delta would be the one contribution row
+--              Oee.ShiftOverride_Restamp could not see.
 -- Change:      v1.1 -- pre-transaction defect-code validation: every
 --              @ScrapLinesJson[].defectCodeId must exist and be active in
 --              Quality.DefectCode, else GOTO Fail with a clean Status=0
@@ -55,7 +64,8 @@
 CREATE OR ALTER PROCEDURE Lots.DieCastLot_Release
     @LotId BIGINT, @StorageLocationId BIGINT = NULL, @FinalPieceDelta INT = NULL,
     @ScrapLinesJson NVARCHAR(MAX) = NULL, @ShiftId BIGINT = NULL,
-    @AppUserId BIGINT, @TerminalLocationId BIGINT = NULL
+    @AppUserId BIGINT, @TerminalLocationId BIGINT = NULL,
+    @CellLocationId BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
@@ -114,14 +124,27 @@ BEGIN
         DECLARE @FromLocationId BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @LotId);
         DECLARE @LotName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = @LotId);
 
+        -- v1.2: resolve the PRESS for the contribution row (mirrors
+        -- R__Workorder_DieCastShiftOutput_Record.sql v1.4's identical block).
+        -- @CellLocationId when the screen supplied it, else the cell this LOT's
+        -- die is currently mounted on. NULL stays NULL -- excluded from
+        -- equipment-scoped restamps rather than guessed at (spec sec 5).
+        DECLARE @ResolvedCellLocationId BIGINT = @CellLocationId;
+        IF @ResolvedCellLocationId IS NULL
+            SELECT TOP 1 @ResolvedCellLocationId = a.CellLocationId
+            FROM Tools.ToolAssignment a
+            INNER JOIN Lots.Lot l ON l.Id = @LotId
+            WHERE a.ToolId = l.ToolId AND a.ReleasedAt IS NULL
+            ORDER BY a.AssignedAt DESC, a.Id DESC;
+
         -- ===== mutation =====
         BEGIN TRANSACTION;
 
         -- final good-piece delta (inline, mirrors DieCastShiftOutput_Record's contribution block)
         IF @FinalPieceDelta IS NOT NULL AND @FinalPieceDelta > 0
         BEGIN
-            INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt)
-            VALUES (@LotId, @ShiftId, @FinalPieceDelta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+            INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId)
+            VALUES (@LotId, @ShiftId, @FinalPieceDelta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId);
             UPDATE Lots.Lot WITH (UPDLOCK, HOLDLOCK)
             SET PieceCount = PieceCount + @FinalPieceDelta, InventoryAvailable = InventoryAvailable + @FinalPieceDelta,
                 UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId

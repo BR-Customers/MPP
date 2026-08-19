@@ -21,6 +21,16 @@ DELETE FROM Oee.ShiftOverride
 WHERE ShiftScheduleId IN (SELECT Id FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_SW_%');
 DELETE FROM Oee.ShiftSchedule WHERE Name LIKE N'TEST_SW_%';
 
+-- Cross-file fixture isolation (added 2026-08-19 with the attribution work).
+-- Deleting only THIS file's overrides is no longer enough: OI-4 contiguity
+-- validation in Oee.ShiftOverride_Create evaluates the whole day's window set
+-- for one EQUIPMENT, so 010's surviving TEST_SO_First override on the same
+-- press and the same date now collides with the override test 3 authors below.
+-- (These test files deliberately seed several 06:00-14:00 schedules at once,
+-- which is not a shape the real plant has.) Clear every override on the dates
+-- this file uses.
+DELETE FROM Oee.ShiftOverride WHERE BusinessDate IN ('2026-09-14', '2026-09-15');
+
 INSERT INTO Oee.ShiftSchedule (Name, Description, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedByUserId)
 VALUES (N'TEST_SW_Day',   N'Day 06-14',   '06:00:00', '14:00:00', 31, '2020-01-01', 1),
        (N'TEST_SW_Night', N'Night 22-06', '22:00:00', '06:00:00', 31, '2020-01-01', 1);

@@ -124,6 +124,17 @@ BEGIN
             @OldValue          = @OldValue,
             @NewValue          = NULL;
 
+        -- ATTRIBUTION RESTAMP (spec sec 4.3 / design D3) -- mirrors
+        -- Oee.ShiftOverride_Create's block. Runs AFTER the DeprecatedAt UPDATE
+        -- above, deliberately: Oee.ufn_ShiftIdForInstant reads only ACTIVE
+        -- overrides, so by this point the equipment has already reverted to the
+        -- plant-global window and the restamp moves the affected rows BACK. This
+        -- is what makes an override reversible -- deprecating it restores the
+        -- original attribution rather than freezing the rewritten one.
+        EXEC Oee.ShiftOverride_Restamp
+            @ShiftOverrideId = @Id,
+            @AppUserId       = @AppUserId;
+
         COMMIT TRANSACTION;
 
         SET @Status  = 1;

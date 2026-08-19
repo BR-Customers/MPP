@@ -201,6 +201,26 @@ def deprecate(id):
     return BlueRidge.Common.Db.execMutation("oee/ShiftOverride_Deprecate", params)
 
 
+def apply(id):
+    """Re-run the ATTRIBUTION RESTAMP for an override (Oee.ShiftOverride_Apply).
+
+       NOT needed on the normal path: add() / update() / deprecate() already
+       restamp inside their own transaction, so the Config Tool screen never has
+       to call this. It exists for a DELIBERATE re-run -- after
+       Oee.Shift_Reconcile backfills a missing shift instance, after a data
+       repair, or to confirm a day's attribution is settled. Idempotent.
+
+       Message carries the audit summary of what moved
+       ('<PRESS> . Shift Override . Reattributed N events from <A> to <B>').
+       Returns {Status, Message, NewId} -- NewId is always None."""
+    BlueRidge.Common.Util.log("id=%s" % id)
+    params = {
+        "shiftOverrideId": _u(id),
+        "appUserId":       BlueRidge.Common.Util._currentAppUserId(),
+    }
+    return BlueRidge.Common.Db.execMutation("oee/ShiftOverride_Apply", params)
+
+
 # ---- editor shapes ----
 def emptyMeta():
     """Blank editor dict (create mode). EVERY key the editor form binds is

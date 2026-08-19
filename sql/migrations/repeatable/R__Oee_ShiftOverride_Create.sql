@@ -180,6 +180,49 @@ BEGIN
             RETURN;
         END
 
+        -- OI-4 CONTIGUITY (design D1: attribution must be TOTAL and
+        -- UNAMBIGUOUS). Oee.ufn_ShiftOverrideConflicts replays the day's
+        -- effective windows for THIS equipment with the proposal substituted,
+        -- and reports (a) a collision with another OVERRIDDEN window -- two
+        -- overrides claiming the same instant, which the resolver's
+        -- override-precedence rule cannot break -- and (b) coverage minutes the
+        -- change would DESTROY, leaving instants attributable to no shift at
+        -- all. Overlapping a plant-GLOBAL window is not a conflict: that is the
+        -- ordinary extension, and override-precedence is exactly what makes it
+        -- unambiguous (see that function's header).
+        -- Pre-transaction, like every other rejecting validation (Msg 3915).
+        DECLARE @NewGapMinutes  INT;
+        DECLARE @OverlapSchName NVARCHAR(100);
+        SELECT @NewGapMinutes  = c.NewGapMinutes,
+               @OverlapSchName = c.OverlapScheduleName
+        FROM Oee.ufn_ShiftOverrideConflicts(@LocationId, @ShiftScheduleId, @BusinessDate, @StartTime, @EndTime) c;
+
+        IF @OverlapSchName IS NOT NULL
+        BEGIN
+            SET @Message = N'This window overlaps the ' + @OverlapSchName
+                         + N' override already set for this equipment on this date. Adjust that override first so the shifts meet at one boundary.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ShiftOverride',
+                @EntityId = NULL, @LogEventTypeCode = N'Created',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        IF @NewGapMinutes > 0
+        BEGIN
+            SET @Message = N'This window would leave ' + CAST(@NewGapMinutes AS NVARCHAR(10))
+                         + N' minute(s) of the day covered by no shift for this equipment. Extend the neighbouring shift first.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ShiftOverride',
+                @EntityId = NULL, @LogEventTypeCode = N'Created',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
         -- ====================
         -- Mutation (atomic)
         -- ====================
@@ -223,6 +266,19 @@ BEGIN
             @Description       = @Activity,
             @OldValue          = NULL,
             @NewValue          = @NewValue;
+
+        -- ATTRIBUTION RESTAMP (spec sec 4.3 / design D3). Retroactive is the
+        -- NORMAL path -- nobody knows a shift ran long until after it did -- so
+        -- creating the override must also move the rows already recorded inside
+        -- the moved boundary, in the SAME transaction. Oee.ShiftOverride_Restamp
+        -- emits no result set and owns no transaction precisely so it can be
+        -- EXEC'd from here: this proc returns a status row and is itself captured
+        -- via INSERT-EXEC by tests and callers, so it may not EXEC a sibling
+        -- status-row proc (FDS-11-011, one result set per proc). Idempotent, and
+        -- writes its own audit row summarising what moved.
+        EXEC Oee.ShiftOverride_Restamp
+            @ShiftOverrideId = @NewId,
+            @AppUserId       = @AppUserId;
 
         COMMIT TRANSACTION;
 

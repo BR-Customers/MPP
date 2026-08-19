@@ -86,15 +86,19 @@ BEGIN
         DECLARE @StartUtc DATETIME2(3) = CAST(@StartedAtEt AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
         DECLARE @EndUtc   DATETIME2(3) = CAST(@EndedAtEt   AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
 
-        -- Shift covering the start (NULL if none open/covering).
-        -- Oee.Shift.ActualStart/ActualEnd are LOCAL Eastern (OI-38), so the
-        -- comparison must use the LOCAL start (@StartedAtEt), NOT the UTC one.
-        -- Comparing @StartUtc against local bounds shifted the probe 4-5 hours
-        -- forward and routinely attributed a historical entry to the FOLLOWING
-        -- shift (or to none at all near a boundary).
-        SELECT TOP 1 @ShiftId = Id FROM Oee.Shift
-        WHERE ActualStart <= @StartedAtEt AND (ActualEnd IS NULL OR ActualEnd >= @StartedAtEt)
-        ORDER BY ActualStart DESC;
+        -- Shift covering the start (NULL if none covering -- a real answer).
+        --
+        -- Shift-override attribution, spec sec 4.2: resolved through
+        -- Oee.ufn_ShiftIdForInstant for THIS equipment instead of scanning
+        -- Oee.Shift bounds directly. Two things that buys:
+        --   * a press extended past the plant boundary attributes a historical
+        --     entry inside the extension to the EXTENDED shift, per-equipment;
+        --   * the OI-38 local/UTC hazard is handled in exactly ONE place. The
+        --     resolver takes the UTC instant (@StartUtc) and does its own single
+        --     AT TIME ZONE conversion internally, so the "compare a UTC probe
+        --     against LOCAL Oee.Shift bounds" defect this comment used to warn
+        --     about is now structurally impossible rather than avoided by hand.
+        SELECT @ShiftId = r.ShiftId FROM Oee.ufn_ShiftIdForInstant(@ScopeLocationId, @StartUtc) r;
 
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
             @LocCode + N' ' + Audit.ufn_MidDot() + N' Downtime ' + Audit.ufn_MidDot() + N' Recorded (historical)');

@@ -92,8 +92,22 @@ BEGIN
             RETURN;
         END
 
-        -- Active shift (may be NULL -- downtime still records; FDS-09-010).
-        SELECT TOP 1 @ShiftId = Id FROM Oee.Shift WHERE ActualEnd IS NULL ORDER BY ActualStart DESC;
+        -- Shift attribution (may be NULL -- downtime still records; FDS-09-010).
+        --
+        -- v1.1 (shift-override attribution, spec sec 4.2): resolved through
+        -- Oee.ufn_ShiftIdForInstant for THIS equipment, not
+        -- "SELECT TOP 1 ... WHERE ActualEnd IS NULL" (the plant-open shift).
+        -- When this press is extended past the plant-wide boundary, downtime it
+        -- incurs during the extension belongs to the EXTENDED shift; the old
+        -- lookup gave it whichever shift happened to be open plant-wide, which
+        -- is the exact roll-onto-the-next-shift bug the override feature exists
+        -- to fix. Presses with no override still get the same answer as before.
+        --
+        -- @NowUtc is captured ONCE and used for BOTH the resolution and the
+        -- stored StartedAt, so the row can never be stamped against a shift that
+        -- does not cover its own timestamp.
+        DECLARE @NowUtc DATETIME2(3) = SYSUTCDATETIME();
+        SELECT @ShiftId = r.ShiftId FROM Oee.ufn_ShiftIdForInstant(@LocationId, @NowUtc) r;
 
         -- ---- Audit narrative + resolved-FK NewValue (pre-mutation) ----
         DECLARE @ActivityRaw NVARCHAR(MAX) =
@@ -114,7 +128,7 @@ BEGIN
         INSERT INTO Oee.DowntimeEvent
             (LocationId, DowntimeReasonCodeId, ShiftId, StartedAt, DowntimeSourceCodeId, AppUserId, ShotCount)
         VALUES
-            (@LocationId, @DowntimeReasonCodeId, @ShiftId, SYSUTCDATETIME(), @DowntimeSourceCodeId, @AppUserId, @ShotCount);
+            (@LocationId, @DowntimeReasonCodeId, @ShiftId, @NowUtc, @DowntimeSourceCodeId, @AppUserId, @ShotCount);
 
         SET @NewId = SCOPE_IDENTITY();
 

@@ -57,6 +57,8 @@ BEGIN
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @LocCode      NVARCHAR(50);
+    DECLARE @LocationId   BIGINT;
+    DECLARE @ScheduleId   BIGINT;
     DECLARE @ScheduleName NVARCHAR(100);
     DECLARE @BusinessDate DATE;
     DECLARE @OldStart     TIME(0);
@@ -93,6 +95,8 @@ BEGIN
         END
 
         SELECT @LocCode      = loc.Code,
+               @LocationId   = ov.LocationId,
+               @ScheduleId   = ov.ShiftScheduleId,
                @ScheduleName = ss.Name,
                @BusinessDate = ov.BusinessDate,
                @OldStart     = ov.StartTime,
@@ -106,6 +110,45 @@ BEGIN
         IF @LocCode IS NULL
         BEGIN
             SET @Message = N'Shift override not found or already deprecated.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ShiftOverride',
+                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- OI-4 CONTIGUITY (design D1). Identical rule to
+        -- Oee.ShiftOverride_Create -- see that proc's comment and
+        -- Oee.ufn_ShiftOverrideConflicts's header for why an overlap with a
+        -- plant-GLOBAL window is allowed but one with another OVERRIDE is not.
+        -- The conflicts function substitutes the PROPOSED window for this
+        -- override's schedule, so this row's own current window is replaced, not
+        -- compared against itself. Pre-transaction (Msg 3915).
+        DECLARE @NewGapMinutes  INT;
+        DECLARE @OverlapSchName NVARCHAR(100);
+        SELECT @NewGapMinutes  = c.NewGapMinutes,
+               @OverlapSchName = c.OverlapScheduleName
+        FROM Oee.ufn_ShiftOverrideConflicts(@LocationId, @ScheduleId, @BusinessDate, @StartTime, @EndTime) c;
+
+        IF @OverlapSchName IS NOT NULL
+        BEGIN
+            SET @Message = N'This window overlaps the ' + @OverlapSchName
+                         + N' override already set for this equipment on this date. Adjust that override first so the shifts meet at one boundary.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ShiftOverride',
+                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        IF @NewGapMinutes > 0
+        BEGIN
+            SET @Message = N'This window would leave ' + CAST(@NewGapMinutes AS NVARCHAR(10))
+                         + N' minute(s) of the day covered by no shift for this equipment. Extend the neighbouring shift first.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ShiftOverride',
                 @EntityId = @Id, @LogEventTypeCode = N'Updated',
@@ -155,6 +198,17 @@ BEGIN
             @Description       = @Activity,
             @OldValue          = @OldValue,
             @NewValue          = @NewValue;
+
+        -- ATTRIBUTION RESTAMP (spec sec 4.3 / design D3) -- mirrors
+        -- Oee.ShiftOverride_Create's block. Moving a boundary must move the rows
+        -- already recorded either side of it, in the SAME transaction. The
+        -- restamp recomputes from the resolver, so it corrects in BOTH
+        -- directions: widening the window pulls rows in, narrowing it pushes
+        -- them back out. Emits no result set / owns no transaction, which is
+        -- what makes it legal to EXEC from an INSERT-EXEC-captured proc.
+        EXEC Oee.ShiftOverride_Restamp
+            @ShiftOverrideId = @Id,
+            @AppUserId       = @AppUserId;
 
         COMMIT TRANSACTION;
 
