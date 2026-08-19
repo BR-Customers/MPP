@@ -135,7 +135,8 @@ END
 -- Part A: Workorder.DieCast_GetShiftOutputBreakdown (read)
 -- =============================================
 DECLARE @B TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
-    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT);
+    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
+    CavityDescription NVARCHAR(500));
 INSERT INTO @B EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=100;
 
 DECLARE @rowCount NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @B);
@@ -286,7 +287,8 @@ IF @LotB IS NULL
     RAISERROR(N'0045/030 Part B multi-lot fixture: DieCastLot_Open failed to mint lot B (cavity should be free after A''s release) -- BLOCKED.', 16, 1);
 
 DECLARE @B2 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
-    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT);
+    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
+    CavityDescription NVARCHAR(500));
 INSERT INTO @B2 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=100;
 
 -- scoped to @Cavity2 -- the tool-wide result also includes @Lot's own
@@ -310,7 +312,8 @@ EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood=60 (100 gross
 
 -- at a lower gross-shot count than lot A already claimed, lot B floors at 0 (not negative)
 DECLARE @B3 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
-    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT);
+    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
+    CavityDescription NVARCHAR(500));
 INSERT INTO @B3 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=30;
 DECLARE @bPropFloor NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B3 WHERE LotId=@LotB);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood floors at 0 (GrossShots=30 < lot A''s 40)', @Expected=N'0', @Actual=@bPropFloor;

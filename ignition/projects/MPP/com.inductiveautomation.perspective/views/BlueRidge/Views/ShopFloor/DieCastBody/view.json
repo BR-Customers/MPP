@@ -1,9 +1,26 @@
 {
   "custom": {
     "activeTab": 0,
+    "activeTool": {
+      "AssignedAt": null,
+      "AssignedByUserId": null,
+      "CellLocationId": null,
+      "Id": null,
+      "Notes": null,
+      "ToolCode": "",
+      "ToolId": null,
+      "ToolName": "",
+      "ToolTypeCode": ""
+    },
+    "autoTick": null,
     "breakdown": [],
     "breakdownEntries": {},
+    "cavityOptions": [],
+    "cells": [],
+    "defaultShiftId": null,
     "grossShots": "",
+    "itemOptions": [],
+    "openBasketInstances": [],
     "openDraft": {
       "itemId": null,
       "scannedLtt": "",
@@ -14,10 +31,25 @@
     "pendingSubmit": "",
     "pendingVoidLotId": null,
     "pendingVoidLotName": "",
+    "priorGoodSnapshot": {},
     "refreshToken": 0,
     "selectedShiftId": null,
+    "shiftOptions": [],
     "shotLossDefectCodeId": null,
-    "shotLossQty": ""
+    "shotLossDefectOptions": [],
+    "shotLossQty": "",
+    "shotStatus": {
+      "IsNearLimit": false,
+      "IsOverLimit": false,
+      "PercentOfLimit": null,
+      "ShotCount": 0,
+      "ShotLimit": null,
+      "ShotsRemaining": null,
+      "ToolCode": "",
+      "ToolId": null,
+      "ToolName": ""
+    },
+    "terminalRecent": []
   },
   "params": {
     "areaId": "",
@@ -30,6 +62,18 @@
           "expression": "runScript(\"BlueRidge.Parts.Tool.getMountedToolForCellOrEmpty\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken})"
         },
         "type": "expr"
+      }
+    },
+    "custom.autoTick": {
+      "binding": {
+        "config": {
+          "expression": "now(20000)"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# backlog 3.3: several terminals can be open on ONE die cast machine, and a\n\t# peer\u0027s Open / Release / Void / shift-output write is invisible here until\n\t# something re-reads. now(ms) is Perspective\u0027s only timer, so a 20 s tick\n\t# drives the SAME refreshToken the Refresh button and every mutation already\n\t# bump -- no existing binding had to change. Cost: the ~9 refreshToken-keyed\n\t# runScript bindings on this view re-run once per tick per open terminal.\n\t# The computed breakdown is deliberately NOT auto-recomputed (that would\n\t# wipe an operator\u0027s half-typed scrap); submitShiftOutput\u0027s staleness guard\n\t# covers the concurrent-submit case instead.\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
       }
     },
     "custom.cavityOptions": {
@@ -51,7 +95,7 @@
     "custom.defaultShiftId": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Oee.Shift.defaultEntryShiftId\", 0, {view.custom.refreshToken})"
+          "expression": "runScript(\"BlueRidge.Oee.Shift.defaultEntryShiftId\", 0)"
         },
         "type": "expr"
       },
@@ -258,7 +302,8 @@
             "props": {
               "alignItems": "center",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -452,18 +497,6 @@
                           }
                         },
                         "type": "ia.input.text-field"
-                      },
-                      {
-                        "meta": {
-                          "name": "LttHelp"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-help"
-                          },
-                          "text": "Pre-printed 9-digit LTT (FRS 2.2.1). One basket per (tool, cavity) at a time."
-                        },
-                        "type": "ia.display.label"
                       }
                     ],
                     "meta": {
@@ -528,18 +561,6 @@
                       },
                       {
                         "meta": {
-                          "name": "ItemHelp"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-help"
-                          },
-                          "text": "Eligible die-cast-route items for the active cell."
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
                           "name": "NoTemplateWarning"
                         },
                         "position": {
@@ -590,7 +611,7 @@
                               "style": {
                                 "classes": "pf-field-label"
                               },
-                              "text": "Tool (auto-populated)"
+                              "text": "Tool"
                             },
                             "type": "ia.display.label"
                           },
@@ -733,18 +754,6 @@
                               }
                             },
                             "type": "ia.input.dropdown"
-                          },
-                          {
-                            "meta": {
-                              "name": "CavityHelp"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-field-help"
-                              },
-                              "text": "Must be an active cavity of the mounted tool with no basket already open."
-                            },
-                            "type": "ia.display.label"
                           }
                         ],
                         "meta": {
@@ -879,7 +888,7 @@
                           "style": {
                             "classes": "pf-field-label"
                           },
-                          "text": "Register shot loss (all cavities)"
+                          "text": "Shot loss (all cavities)"
                         },
                         "type": "ia.display.label"
                       },
@@ -1165,7 +1174,7 @@
                       "style": {
                         "classes": "pf-kpi-sub"
                       },
-                      "text": "Enter gross shots and press Compute to see the proposed per-cavity split."
+                      "text": "No breakdown computed."
                     },
                     "type": "ia.display.label"
                   },
@@ -1185,7 +1194,7 @@
                           },
                           "transforms": [
                             {
-                              "code": "\treturn BlueRidge.Workorder.DieCast.mapBreakdownInstances(value)",
+                              "code": "\t# One shared defect-code fetch for the whole list: the row view used to run its\n\t# own runScript(getForDropdown) binding, i.e. one identical query PER CAVITY.\n\trows \u003d BlueRidge.Workorder.DieCast.mapBreakdownInstances(value)\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.shotLossDefectOptions) or []\n\tfor r in rows:\n\t\tr[\"defectOptions\"] \u003d opts\n\treturn rows",
                               "type": "script"
                             }
                           ],
@@ -1749,7 +1758,7 @@
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)\n\t# backlog 2.1: pre-select the reporting shift with the CURRENT shift. The\n\t# custom.defaultShiftId binding also seeds it through its onChange, but that\n\t# only fires once the binding produces a value -- seeding here makes the\n\t# first paint deterministic instead of racing the binding.\n\tif self.view.custom.selectedShiftId is None:\n\t\tself.view.custom.selectedShiftId \u003d BlueRidge.Oee.Shift.defaultEntryShiftId()"
         },
         {
           "name": "submitOpen",
@@ -1764,12 +1773,12 @@
         {
           "name": "computeBreakdown",
           "params": [],
-          "script": "\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\ttoolId \u003d tool.get(\"ToolId\")\n\tif toolId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No die mounted\", \"Mount a tool at this cell before recording shift output.\", \"warning\")\n\t\treturn\n\tshiftId \u003d self.view.custom.selectedShiftId\n\tif shiftId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Select a shift\", \"Pick the shift this output is reported against.\", \"warning\")\n\t\treturn\n\tgross \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.grossShots)\n\tif gross is None:\n\t\tBlueRidge.Common.Notify.toast(\"Enter gross shots\", \"Enter the die-wide gross shot count for this shift before computing.\", \"warning\")\n\t\treturn\n\trows \u003d BlueRidge.Workorder.DieCast.getShiftOutputBreakdown(toolId, shiftId, gross)\n\tself.view.custom.breakdown \u003d rows or []\n\tself.view.custom.breakdownEntries \u003d {}"
+          "script": "\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\ttoolId \u003d tool.get(\"ToolId\")\n\tif toolId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No die mounted\", \"Mount a tool at this cell before recording shift output.\", \"warning\")\n\t\treturn\n\tshiftId \u003d self.view.custom.selectedShiftId\n\tif shiftId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Select a shift\", \"Pick the shift this output is reported against.\", \"warning\")\n\t\treturn\n\tgross \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.grossShots)\n\tif gross is None:\n\t\tBlueRidge.Common.Notify.toast(\"Enter gross shots\", \"Enter the die-wide gross shot count for this shift before computing.\", \"warning\")\n\t\treturn\n\trows \u003d BlueRidge.Workorder.DieCast.getShiftOutputBreakdown(toolId, shiftId, gross)\n\t# backlog 2.4: operators only need the baskets they can still add to -- a\n\t# basket released mid-shift is reference-only noise here.\n\trows \u003d BlueRidge.Workorder.DieCast.openRowsOnly(rows)\n\t# Blank first so the row sub-views REMOUNT: params.proposedGood\u0027s onChange is\n\t# what clears a row\u0027s scrap lines, and it only fires on a CHANGE -- so a\n\t# re-Compute at the same gross would otherwise keep the previous scrap.\n\tself.view.custom.breakdown \u003d []\n\tself.view.custom.breakdown \u003d rows\n\tself.view.custom.breakdownEntries \u003d {}\n\t# Concurrency baseline for the peer-terminal guard in submitShiftOutput.\n\tself.view.custom.priorGoodSnapshot \u003d BlueRidge.Workorder.DieCast.priorGoodSnapshot(rows)\n\tif not rows:\n\t\tBlueRidge.Common.Notify.toast(\"No open baskets\", \"This die has no open baskets to record against.\", \"warning\")"
         },
         {
           "name": "submitShiftOutput",
           "params": [],
-          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.breakdown) or []\n\tentries \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.breakdownEntries) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tlines \u003d []\n\toverflow \u003d []\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\tif not r.get(\"IsOpen\"):\n\t\t\tcontinue\n\t\tlotId \u003d r.get(\"LotId\")\n\t\te \u003d entries.get(\"%s\" % lotId) or {}\n\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif good is None:\n\t\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\tscrapLines \u003d []\n\t\tfor sl in (BlueRidge.Common.Util.extractQualifiedValues(e.get(\"scrapLines\")) or []):\n\t\t\tsl \u003d sl or {}\n\t\t\td \u003d sl.get(\"defectCodeId\")\n\t\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif d and q:\n\t\t\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\t\tlines.append({\"lotId\": lotId, \"pieceDelta\": good, \"scrapLines\": scrapLines})\n\t\th \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"MaxHeadroom\"))\n\t\tif h is not None and h \u003c 2147483647 and good \u003e h:\n\t\t\toverflow.append({\"lotId\": lotId, \"lotName\": r.get(\"LotName\") or \"\",\n\t\t\t\t\"cavityNumber\": r.get(\"CavityNumber\") or \"\", \"toolCavityId\": r.get(\"ToolCavityId\"),\n\t\t\t\t\"itemId\": r.get(\"ItemId\"), \"headroom\": h, \"good\": good,\n\t\t\t\t\"remainder\": good - h, \"scrapLines\": scrapLines})\n\tif not lines:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to submit\", \"Compute a breakdown first (enter gross shots and press Compute).\", \"warning\")\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\tif overflow:\n\t\tself.view.custom.pendingSubmit \u003d system.util.jsonEncode({\"grossShots\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.grossShots), \"lines\": lines, \"overflow\": overflow,\n\t\t\t\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"),\n\t\t\t\"cellLocationId\": cell.get(\"locationId\"), \"terminalLocationId\": term})\n\t\tsystem.perspective.openPopup(\"mpp-diecast-overflow\",\n\t\t\t\"BlueRidge/Components/Popups/DieCastOverflow\",\n\t\t\tparams\u003d{\"replyMessage\": \"dieCastOverflowResult\", \"popupId\": \"mpp-diecast-overflow\", \"overflow\": overflow},\n\t\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)\n\t\treturn\n\tdata \u003d {\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"), \"lines\": lines, \"shotLoss\": [], \"grossShots\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.grossShots), \"cellLocationId\": cell.get(\"locationId\")}\n\tresult \u003d BlueRidge.Workorder.DieCast.recordShiftOutput(data, appUserId\u003dself.session.custom.appUserId, terminalLocationId\u003dterm)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Shift output recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself._afterSubmit()"
+          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.breakdown) or []\n\tentries \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.breakdownEntries) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# backlog 3.3: another terminal on this die cast machine may have recorded\n\t# output for the same (tool, shift) since Compute ran. Re-read the breakdown\n\t# and compare each lot\u0027s PriorGoodThisShift with the snapshot taken then --\n\t# any difference means this preview\u0027s proposed split is stale and submitting\n\t# it would double-count. Refuse + recompute rather than silently over-report.\n\tdef _norm(mp):\n\t\tout \u003d {}\n\t\tfor k, v in (mp or {}).items():\n\t\t\tout[\"%s\" % k] \u003d \"%s\" % (BlueRidge.Common.Util.toIntOrNone(v) or 0)\n\t\treturn out\n\tsnap \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.priorGoodSnapshot) or {}\n\tif snap:\n\t\tgrossNow \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.grossShots) or 0\n\t\tfresh \u003d BlueRidge.Workorder.DieCast.priorGoodSnapshot(\n\t\t\tBlueRidge.Workorder.DieCast.getShiftOutputBreakdown(tool.get(\"ToolId\"), self.view.custom.selectedShiftId, grossNow))\n\t\tif _norm(fresh) !\u003d _norm(snap):\n\t\t\tBlueRidge.Common.Notify.toast(\"Another terminal recorded output\",\n\t\t\t\t\"This die\u0027s shift tally changed since you pressed Compute. The preview has been refreshed - review it and submit again.\", \"warning\")\n\t\t\tself.computeBreakdown()\n\t\t\treturn\n\tlines \u003d []\n\toverflow \u003d []\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\tif not r.get(\"IsOpen\"):\n\t\t\tcontinue\n\t\tlotId \u003d r.get(\"LotId\")\n\t\te \u003d entries.get(\"%s\" % lotId) or {}\n\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif good is None:\n\t\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\tscrapLines \u003d []\n\t\tfor sl in (BlueRidge.Common.Util.extractQualifiedValues(e.get(\"scrapLines\")) or []):\n\t\t\tsl \u003d sl or {}\n\t\t\td \u003d sl.get(\"defectCodeId\")\n\t\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif d and q:\n\t\t\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\t\tlines.append({\"lotId\": lotId, \"pieceDelta\": good, \"scrapLines\": scrapLines})\n\t\th \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"MaxHeadroom\"))\n\t\tif h is not None and h \u003c 2147483647 and good \u003e h:\n\t\t\toverflow.append({\"lotId\": lotId, \"lotName\": r.get(\"LotName\") or \"\",\n\t\t\t\t\"cavityNumber\": r.get(\"CavityNumber\") or \"\", \"toolCavityId\": r.get(\"ToolCavityId\"),\n\t\t\t\t\"itemId\": r.get(\"ItemId\"), \"headroom\": h, \"good\": good,\n\t\t\t\t\"remainder\": good - h, \"scrapLines\": scrapLines})\n\tif not lines:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to submit\", \"Compute a breakdown first (enter gross shots and press Compute).\", \"warning\")\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\tif overflow:\n\t\tself.view.custom.pendingSubmit \u003d system.util.jsonEncode({\"grossShots\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.grossShots), \"lines\": lines, \"overflow\": overflow,\n\t\t\t\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"),\n\t\t\t\"cellLocationId\": cell.get(\"locationId\"), \"terminalLocationId\": term})\n\t\tsystem.perspective.openPopup(\"mpp-diecast-overflow\",\n\t\t\t\"BlueRidge/Components/Popups/DieCastOverflow\",\n\t\t\tparams\u003d{\"replyMessage\": \"dieCastOverflowResult\", \"popupId\": \"mpp-diecast-overflow\", \"overflow\": overflow},\n\t\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)\n\t\treturn\n\tdata \u003d {\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"), \"lines\": lines, \"shotLoss\": [], \"grossShots\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.grossShots), \"cellLocationId\": cell.get(\"locationId\")}\n\tresult \u003d BlueRidge.Workorder.DieCast.recordShiftOutput(data, appUserId\u003dself.session.custom.appUserId, terminalLocationId\u003dterm)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Shift output recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself._afterSubmit()"
         },
         {
           "name": "registerShotLoss",
@@ -1808,7 +1817,7 @@
         {
           "name": "_afterSubmit",
           "params": [],
-          "script": "\tself.view.custom.pendingSubmit \u003d \"\"\n\tself.view.custom.grossShots \u003d \"\"\n\tself.view.custom.breakdown \u003d []\n\tself.view.custom.breakdownEntries \u003d {}\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tself.view.custom.pendingSubmit \u003d \"\"\n\tself.view.custom.grossShots \u003d \"\"\n\tself.view.custom.breakdown \u003d []\n\tself.view.custom.breakdownEntries \u003d {}\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\tself.view.custom.priorGoodSnapshot \u003d {}"
         },
         {
           "name": "resolveOverflow",

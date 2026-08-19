@@ -73,6 +73,22 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None, cellLocatio
     return BlueRidge.Common.Db.execMutation("workorder/DieCastShiftOutput_Record", params)
 
 
+def cavityDisplayName(cavityNumber, cavityDescription):
+    """The operator-facing name of a die cavity.
+
+       DECISION (2026-08-19, backlog 2.2): Tools.ToolCavity.Description IS the
+       cavity's name; Tools.ToolCavity.CavityNumber is only its ordinal (the
+       (ToolId, CavityNumber) uniqueness key). So the Description wins whenever
+       it is populated, and the bare ordinal 'Cavity <N>' is the fallback for a
+       cavity nobody has named yet. Same source the Open-Basket cavity dropdown
+       already reads (Parts.Tool.getCavitiesForDropdown), so the two surfaces
+       agree on what a cavity is called."""
+    desc = ("%s" % (cavityDescription or "")).strip()
+    if desc:
+        return desc
+    return "Cavity %s" % (cavityNumber if cavityNumber is not None else "?")
+
+
 def mapBreakdownInstances(rows):
     """Cavity-lot row instances for DieCastBody's shift-output repeater (Task
        12): one instance per Workorder.DieCast_GetShiftOutputBreakdown row,
@@ -82,14 +98,26 @@ def mapBreakdownInstances(rows):
        a script transform on a property path to view.custom.breakdown (NOT a
        runScript call -- passing the already-fetched list through a runScript
        arg hits the QualifiedValue[] array bug, feedback_ignition_runscript_
-       list_arg_qv_array). Returns list[dict] ([] on empty/None)."""
+       list_arg_qv_array). Returns list[dict] ([] on empty/None).
+
+       Released/closed lots are already filtered out upstream by the view's
+       computeBreakdown (backlog 2.4) -- openRowsOnly below is the same filter,
+       re-applied here so a stray closed row can never reach the row view."""
     rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
     out = []
     for r in rows:
         r = r or {}
+        if not r.get("IsOpen"):
+            continue
+        num = r.get("CavityNumber")
+        desc = r.get("CavityDescription") or ""
         out.append({
             "toolCavityId":       r.get("ToolCavityId"),
-            "cavityNumber":       r.get("CavityNumber") or "",
+            "cavityNumber":       num if num is not None else "",
+            "cavityDescription":  desc,
+            "cavityName":         cavityDisplayName(num, desc),
+            "cavityOrdinalLabel": "Cavity %s" % (num if num is not None else "?"),
+            "hasCavityName":      bool(("%s" % desc).strip()),
             "lotId":              r.get("LotId"),
             "lotName":            r.get("LotName") or "",
             "isOpen":             bool(r.get("IsOpen")),
@@ -100,19 +128,75 @@ def mapBreakdownInstances(rows):
     return out
 
 
+def openRowsOnly(rows):
+    """The still-OPEN baskets from a DieCast_GetShiftOutputBreakdown result.
+
+       backlog 2.4: operators recording shift output only need the baskets they
+       can still add to; a basket released mid-shift is reference-only noise.
+
+       Filtered HERE (read side) rather than in the proc on purpose: the proc's
+       documented contract is 'one row per LOT open at ANY point during the
+       shift window', which the reconciliation/assertion consumers (the 0045
+       test suite's multi-lot cavity-handoff assertions) depend on, and which
+       is genuinely the right answer for a shift-reconciliation read. Narrowing
+       the proc would be a semantic regression for every other caller, so the
+       screen narrows its own view of it instead."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    return [r for r in rows if r and r.get("IsOpen")]
+
+
+def priorGoodSnapshot(rows):
+    """{lotId(str): PriorGoodThisShift(int)} for the rows a breakdown preview
+       was computed from -- the concurrency baseline for backlog 3.3 (two
+       terminals on ONE die cast machine). submitShiftOutput re-reads the
+       breakdown and compares against this snapshot; any difference means a
+       PEER terminal recorded output for the same (tool, shift) since the
+       preview was computed, so the preview's proposed split is stale and
+       submitting it would double-count."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    out = {}
+    for r in rows:
+        r = r or {}
+        if r.get("LotId") is None:
+            continue
+        out["%s" % r.get("LotId")] = BlueRidge.Common.Util.toIntOrNone(
+            r.get("PriorGoodThisShift")) or 0
+    return out
+
+
 def registerShotLoss(toolId, shiftId, defectCodeId, quantity, appUserId=None, terminalLocationId=None):
     """Record a shot-level defect (e.g. a short shot on the whole cycle) against
        EVERY currently-open basket on a tool -- builds a one-element shotLoss
        line with no per-cavity lines and calls recordShiftOutput /
-       Workorder.DieCastShiftOutput_Record. Returns {Status, Message, NewId}."""
+       Workorder.DieCastShiftOutput_Record. Returns {Status, Message, NewId}.
+
+       backlog 3.2 (2026-08-19): the lost shots now ALSO advance the die's
+       materialized shot counter (Tools.Tool.ShotCount). A shot-loss quantity is
+       a count of CYCLES the die ran and lost -- one lost shot spoils one piece
+       in every open cavity, which is exactly why the proc fans the RejectEvent
+       across every open lot -- so those cycles are die wear and must be counted.
+       They are threaded through the existing @GrossShots parameter, which is
+       the proc's one shot-counter increment path (no SQL change needed).
+
+       NOTE FOR REVIEW: the 2026-08-04 tool-shot-count design deliberately chose
+       'shot-loss path does NOT increment -- gross already counts those cycles,
+       a separate bump would double-count'. That holds only if the shift-end
+       gross the operator types INCLUDES the cycles they already registered as
+       shot loss. MPP reports the counter not moving, so the field convention is
+       evidently the other way round (gross = cycles not already accounted for).
+       If MPP instead reads gross straight off the machine counter, this bump
+       double-counts and should be reverted rather than patched -- flagged for
+       Hunter."""
     BlueRidge.Common.Util.log(
         "registerShotLoss toolId=%s shiftId=%s defectCodeId=%s quantity=%s"
         % (toolId, shiftId, defectCodeId, quantity)
     )
+    qty = BlueRidge.Common.Util.toIntOrNone(_u(quantity))
     data = {
-        "shiftId":  _u(shiftId),
-        "toolId":   _u(toolId),
-        "lines":    [],
-        "shotLoss": [{"defectCodeId": _u(defectCodeId), "quantity": _u(quantity)}],
+        "shiftId":    _u(shiftId),
+        "toolId":     _u(toolId),
+        "lines":      [],
+        "shotLoss":   [{"defectCodeId": _u(defectCodeId), "quantity": qty}],
+        "grossShots": qty,
     }
     return recordShiftOutput(data, appUserId=appUserId, terminalLocationId=terminalLocationId)
