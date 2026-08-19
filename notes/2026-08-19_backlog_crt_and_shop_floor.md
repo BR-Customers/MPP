@@ -61,7 +61,7 @@ Open questions to resolve with Hunter/MPP first:
 | 3.1 | Defect codes offered at die cast must be **die-cast codes only** | DONE (not a code bug - see below) |
 | 3.2 | **Die total shots does not increment** when Register Shot Loss is used | DONE (CONFLICTS WITH AN APPROVED DECISION - needs Hunter) |
 | 3.3 | Multiple terminals on the **same die cast machine** must see each other's entries | DONE |
-| 3.4 | **Bulk open of baskets**: a row per cavity on the mounted tool, auto-assign a part per row from the cavity name, operator scans each basket's LTT | OPEN |
+| 3.4 | **Bulk open of baskets**: a row per cavity on the mounted tool, operator selects the part and scans the LTT per row | WIP - auto-assign DROPPED 2026-08-19 |
 | 3.5 | Die cast **supervisor dashboard** — registered production total, current + previous shift (explore) | DONE (explore) |
 
 ## 4. Auth / permissions
@@ -197,3 +197,15 @@ the system. It now exists and is override-aware.
 spanning a transition is off by 60 min - MPP's real exposure is the Sat 23:00 ->
 Sun 07:00 third shift on two Sundays a year (~12.5% availability skew for that
 shift). Fixing it properly means the OI-38 UTC migration.
+
+**3.4 scope decision (Hunter, 2026-08-19): no cavity-name -> part auto-assignment.**
+The operator selects the part on every row. The rule was unknowable from the data
+anyway - only DC-03 carries cavity descriptions in Dev and they are `test` / `yest`,
+so there was no convention to infer. Each row's dropdown reuses the existing
+die-cast-route-items-eligible-at-the-active-cell binding rather than a second
+resolution path. If MPP later states a real naming convention, the pre-fill can be
+added on top without reshaping the screen.
+
+That leaves **partial submission** (open 3 of 5, leave the rest untouched, per-row
+results) and **duplicate-LTT rejection before any write** as the two behaviours that
+decide whether this feature is worth shipping.
