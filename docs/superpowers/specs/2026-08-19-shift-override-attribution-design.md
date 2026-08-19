@@ -121,8 +121,17 @@ Options, none chosen:
    schema change plus a backfill, and only `DieCastShiftOutput_Record` /
    `DieCastLot_Release` write that table.
 
-Recommendation: **(2)**, because attribution should not silently change when a die moves
-months later. Needs Hunter's decision.
+**DECIDED 2026-08-19 (Hunter): option (2) — stamp `CellLocationId` on
+`Workorder.DieCastContribution` at write time.** Attribution must not silently change
+when a die moves months later. Requires a new versioned migration adding the column
+(NULL-able, FK to `Location.Location`), a backfill of existing rows via the
+`Lot.ToolId` -> `ToolAssignment`-active-at-`EventAt` derivation, and both writers
+(`Workorder.DieCastShiftOutput_Record`, `Lots.DieCastLot_Release`) stamping it. The
+restamp then keys on a plain equality.
+
+Backfilled rows carry the derivation's answer, which is the best available reading of
+history; rows whose die had no active assignment at `EventAt` stay NULL and are
+excluded from equipment-scoped restamps rather than being guessed.
 
 ## 6. Consequences to accept
 
@@ -144,7 +153,7 @@ months later. Needs Hunter's decision.
 | id | item |
 |---|---|
 | **OI-1** | No lock point on how far back an override may be edited (D4, deferred). When one is wanted, it is one rejecting validation in `ShiftOverride_Apply`, before `BEGIN TRANSACTION`. |
-| **OI-2** | `DieCastContribution` press grain — derive vs. stamp `CellLocationId` (§5). Blocks the restamp for production counts; downtime restamp is unaffected. |
+| ~~**OI-2**~~ | ~~`DieCastContribution` press grain~~ — **RESOLVED 2026-08-19**: stamp `CellLocationId` at write time. See §5. |
 | **OI-3** | Should `ShiftOverride` gain a `DidNotRun` equivalent — "this equipment did not run this shift" — so availability can distinguish zero planned time from a data error? Not required by the stated requirement. |
 | **OI-4** | Contiguity validation for D1: reject an override that would leave a gap or an overlap in a day's windows for one equipment. |
 | **OI-5** | Elevation gating on override create/edit. Peer to backlog 4.1; interacts with 4.3 (no AD user source exists yet). |
