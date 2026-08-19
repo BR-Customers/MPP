@@ -245,7 +245,6 @@
               "name": "CloseButton"
             },
             "position": {
-              "basis": "94px",
               "shrink": 0
             },
             "props": {

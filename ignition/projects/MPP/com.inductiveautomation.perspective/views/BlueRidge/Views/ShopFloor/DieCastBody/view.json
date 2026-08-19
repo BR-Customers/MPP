@@ -349,7 +349,6 @@
               }
             },
             "position": {
-              "basis": "116px",
               "shrink": 0
             },
             "props": {
@@ -374,9 +373,6 @@
             },
             "meta": {
               "name": "CloseButton"
-            },
-            "position": {
-              "basis": "94px"
             },
             "props": {
               "style": {
@@ -798,9 +794,6 @@
                         "meta": {
                           "name": "OpenButton"
                         },
-                        "position": {
-                          "basis": "119px"
-                        },
                         "props": {
                           "style": {
                             "classes": "pf-btn pf-btn-primary pf-btn-large"
@@ -823,9 +816,6 @@
                         },
                         "meta": {
                           "name": "ClearButton"
-                        },
-                        "position": {
-                          "basis": "93px"
                         },
                         "props": {
                           "style": {
@@ -1137,9 +1127,6 @@
                         "meta": {
                           "name": "ComputeButton"
                         },
-                        "position": {
-                          "basis": "260px"
-                        },
                         "props": {
                           "style": {
                             "classes": "pf-btn pf-btn-secondary pf-btn-large"
@@ -1239,9 +1226,6 @@
                         },
                         "meta": {
                           "name": "SubmitShiftOutputButton"
-                        },
-                        "position": {
-                          "basis": "305px"
                         },
                         "props": {
                           "style": {

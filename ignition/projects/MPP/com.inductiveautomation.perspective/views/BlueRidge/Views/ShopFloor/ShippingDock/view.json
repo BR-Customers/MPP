@@ -72,9 +72,6 @@
             "meta": {
               "name": "CloseButton"
             },
-            "position": {
-              "basis": "94px"
-            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -410,9 +407,6 @@
                     "meta": {
                       "name": "ShipButton"
                     },
-                    "position": {
-                      "basis": "173px"
-                    },
                     "props": {
                       "style": {
                         "classes": "pf-btn pf-btn-primary pf-btn-large"
@@ -435,9 +429,6 @@
                     },
                     "meta": {
                       "name": "ReprintButton"
-                    },
-                    "position": {
-                      "basis": "162px"
                     },
                     "props": {
                       "style": {

@@ -85,9 +85,6 @@
             "meta": {
               "name": "CloseButton"
             },
-            "position": {
-              "basis": "94px"
-            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"

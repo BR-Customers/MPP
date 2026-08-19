@@ -105,9 +105,6 @@
             "meta": {
               "name": "CancelButton"
             },
-            "position": {
-              "basis": "129px"
-            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary pf-btn-large"
