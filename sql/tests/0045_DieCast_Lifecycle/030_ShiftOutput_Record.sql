@@ -5,8 +5,10 @@
 -- Description:  Die-Cast Per-Cavity Lifecycle plan, Phase 2. SHARED file:
 --               Task 3 (this pass) covers the READ half --
 --               Workorder.DieCast_GetShiftOutputBreakdown, a pure-computation
---               proc that proposes a per-cavity-lot good-piece split for a
---               shift's gross shot count. Task 4 (a later pass) will APPEND
+--               proc that proposes per-cavity-lot good-piece counts for an
+--               ENTERED (additive, since-last-entry) shot count -- see the
+--               multi-lot block below for the additive contract. Task 4 (a
+--               later pass) will APPEND
 --               its write-half assertions -- Workorder.DieCastShiftOutput_Record
 --               -- below the "PART B" marker, BEFORE EXEC test.EndTestFile, and
 --               will reuse this same fixture (the @Lot/@Shift/@Tool/@Cavity/
@@ -146,7 +148,7 @@ DECLARE @row NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @B WHERE
 EXEC test.Assert_IsEqual @TestName=N'[Breakdown] open basket row present', @Expected=N'1', @Actual=@row;
 
 DECLARE @prop NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B WHERE LotId=@Lot);
-EXEC test.Assert_IsEqual @TestName=N'[Breakdown] proposed good = gross (no prior, no scrap yet)', @Expected=N'100', @Actual=@prop;
+EXEC test.Assert_IsEqual @TestName=N'[Breakdown] proposed good = the entered shots (additive)', @Expected=N'100', @Actual=@prop;
 
 DECLARE @prior NVARCHAR(10) = (SELECT CAST(PriorGoodThisShift AS NVARCHAR(10)) FROM @B WHERE LotId=@Lot);
 EXEC test.Assert_IsEqual @TestName=N'[Breakdown] prior good = 0 (nothing recorded yet)', @Expected=N'0', @Actual=@prior;
@@ -233,22 +235,27 @@ EXEC test.Assert_IsEqual @TestName=N'[DefectCode] deprecated scrap defectCodeId 
 DELETE FROM Quality.DefectCode WHERE Id = @DepDefectCode;
 
 -- ---------------------------------------------------------------
--- Multi-lot-per-cavity breakdown coverage (closes the Task 3 review gap: the
--- read proc's core purpose -- splitting a shift's gross shots across MORE
--- THAN ONE lot that occupied the same cavity during the shift window -- had
--- no automated coverage). A SECOND cavity (@Cavity2) is minted on the SAME
--- @Tool -- reusing @Cavity would entangle the numbers with @Lot's own 95-piece
--- contribution recorded on @Cavity THIS SAME SHIFT just above (the read
--- proc's ProposedGood subquery sums every OTHER lot's contribution on the
--- SAME ToolCavityId this shift, so @Lot's 95 would bleed into lot B's
--- remainder math if they shared a cavity). Recipe: open lot A on @Cavity2,
+-- Multi-lot-per-cavity breakdown coverage: the read proc must report BOTH lots
+-- that occupied one cavity during the shift window -- the one released
+-- mid-shift and the one open now -- with the right ProposedGood on each.
+--
+-- ADDITIVE MODEL (proc v1.3, 2026-08-19). @GrossShots is the shots SINCE THE
+-- OPERATOR'S LAST ENTRY, not a climbing shift total, so the open lot proposes
+-- the entered number VERBATIM and no prior claim on the cavity is subtracted
+-- from it. A released lot keeps whatever it was credited this shift. The old
+-- "remainder of gross after every other lot on the cavity" arithmetic (and the
+-- floor-at-0 that came with it) is GONE -- the assertions below pin the new
+-- behaviour, including the regression that a small entry against a cavity with
+-- a large prior claim proposes that small entry rather than 0.
+--
+-- A SECOND cavity (@Cavity2) is still minted on the SAME @Tool so the two
+-- lots' handoff is isolated from @Lot's own 95-piece contribution on @Cavity
+-- above -- the counts stay independently readable per cavity even though the
+-- proposal math no longer crosses lots. Recipe: open lot A on @Cavity2,
 -- credit it 40 good via the write proc under test, hand-simulate a mid-shift
 -- Release (Release itself is Task 6 / not yet built -- flip LotStatusId
 -- Open->Good directly, exactly as the task brief prescribes) so the cavity is
--- free, open lot B on the SAME cavity, then assert
--- DieCast_GetShiftOutputBreakdown reports lot A closed-out-with-its-shift-
--- credit and lot B getting the remainder of gross shots (floored at 0, never
--- negative).
+-- free, open lot B on the SAME cavity, then assert the breakdown.
 -- ---------------------------------------------------------------
 DECLARE @LotAName NVARCHAR(50) = N'303030302', @LotBName NVARCHAR(50) = N'303030303';
 DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
@@ -307,16 +314,37 @@ EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A ProposedGood=40 (keeps its
 
 DECLARE @bIsOpen NVARCHAR(10)  = (SELECT CAST(IsOpen AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotB);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B row IsOpen=1 (still open)', @Expected=N'1', @Actual=@bIsOpen;
+-- ADDITIVE: lot B gets the ENTERED shots verbatim. Lot A's 40 on the same
+-- cavity is NOT subtracted (was 60 under the removed cumulative model).
 DECLARE @bProp NVARCHAR(10)    = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotB);
-EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood=60 (100 gross - lot A''s 40)', @Expected=N'60', @Actual=@bProp;
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood=100 (entered shots, lot A''s 40 NOT subtracted)', @Expected=N'100', @Actual=@bProp;
 
--- at a lower gross-shot count than lot A already claimed, lot B floors at 0 (not negative)
+-- REGRESSION (additive model, 2026-08-19): an entry SMALLER than what was
+-- already claimed on the cavity this shift must propose that entry, NOT 0.
+-- Under the removed cumulative model these both floored at 0 -- the real-world
+-- symptom was a cavity already carrying thousands of pieces showing
+-- ProposedGood = 0 for every realistic entry, which looks like a dead binding.
 DECLARE @B3 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500));
 INSERT INTO @B3 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=30;
-DECLARE @bPropFloor NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B3 WHERE LotId=@LotB);
-EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood floors at 0 (GrossShots=30 < lot A''s 40)', @Expected=N'0', @Actual=@bPropFloor;
+DECLARE @bProp30 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B3 WHERE LotId=@LotB);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] entry (30) below lot A''s prior claim (40) still proposes 30, not 0', @Expected=N'30', @Actual=@bProp30;
+-- @Lot itself carries a 95-piece claim on @Cavity this same shift; a 30-shot
+-- entry against its own still-open basket must likewise propose 30.
+DECLARE @lotProp30 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B3 WHERE LotId=@Lot);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] entry (30) below the lot''s OWN prior claim (95) still proposes 30', @Expected=N'30', @Actual=@lotProp30;
+
+-- and a deliberately tiny entry against those same large prior claims
+DECLARE @B4 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
+    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
+    CavityDescription NVARCHAR(500));
+INSERT INTO @B4 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=5;
+DECLARE @bProp5 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B4 WHERE LotId=@LotB);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] small entry (5) against a large prior claim proposes 5, not 0', @Expected=N'5', @Actual=@bProp5;
+-- the released lot A is unaffected by the entered number -- it keeps its credit
+DECLARE @aProp5 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B4 WHERE LotId=@LotA);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] released lot A keeps its 40 regardless of the entered shots', @Expected=N'40', @Actual=@aProp5;
 
 -- ---- cleanup (FK-safe, reverse order) ----
 DELETE FROM Workorder.RejectEvent WHERE LotId IN (@Lot, @LotA, @LotB);

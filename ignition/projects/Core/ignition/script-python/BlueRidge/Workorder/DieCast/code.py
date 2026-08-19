@@ -16,12 +16,20 @@ def _u(value):
 
 
 def getShiftOutputBreakdown(toolId, shiftId, grossShots):
-    """Proposed per-cavity-lot good-piece split for a shift's gross shot count
+    """Proposed per-cavity-lot good-piece counts for an entered shot count
        (Workorder.DieCast_GetShiftOutputBreakdown) -- the read-side proposal the
-       shift-end recording flow presents to the operator for confirmation/
-       adjustment before recordShiftOutput writes the contribution rows.
-       Returns list[dict] ([] when the tool has no lots open/contributing this
-       shift)."""
+       recording flow presents to the operator for confirmation/adjustment
+       before recordShiftOutput writes the contribution rows. Returns list[dict]
+       ([] when the tool has no lots open/contributing this shift).
+
+       grossShots IS ADDITIVE -- IT IS THIS ENTRY, NOT A SHIFT TOTAL (proc v1.3,
+       2026-08-19). Operators count shots SINCE THEIR LAST ENTRY, so the number
+       passed here is already the increment. Gross is die-wide and each cavity
+       yields one part per shot, so every OPEN lot proposes the same entered
+       number; a lot already released this shift keeps its recorded credit.
+       Nothing is apportioned and no prior claim is subtracted -- the old
+       cumulative "remainder of gross" behaviour zeroed the proposal whenever
+       prior claims on a cavity exceeded the entry."""
     toolId = _u(toolId)
     shiftId = _u(shiftId)
     grossShots = _u(grossShots)
