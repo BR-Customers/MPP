@@ -46,31 +46,31 @@ Open questions to resolve with Hunter/MPP first:
 
 | # | Item | Status |
 |---|---|---|
-| 2.1 | Pre-populate the reporting shift with the **current** shift | OPEN |
-| 2.2 | Cavity name must show the **actual cavity name**, not "Cavity 1" | OPEN |
-| 2.3 | Remove the **limit on scrap reasons** per cavity | OPEN |
-| 2.4 | Operators should **not see released lots** on record shift output | OPEN |
-| 2.5 | Good-pc entry field → **display only** (no longer operator-editable) | OPEN |
-| 2.6 | Better use of space for cavities (layout explore) | OPEN |
-| 2.7 | Remove the extra comments/instruction text on the die cast screen | OPEN |
+| 2.1 | Pre-populate the reporting shift with the **current** shift | DONE |
+| 2.2 | Cavity name must show the **actual cavity name**, not "Cavity 1" | DONE |
+| 2.3 | Remove the **limit on scrap reasons** per cavity | DONE |
+| 2.4 | Operators should **not see released lots** on record shift output | DONE |
+| 2.5 | Good-pc entry field → **display only** (no longer operator-editable) | DONE |
+| 2.6 | Better use of space for cavities (layout explore) | DONE |
+| 2.7 | Remove the extra comments/instruction text on the die cast screen | DONE |
 
 ## 3. Die Cast — behaviour / back end
 
 | # | Item | Status |
 |---|---|---|
-| 3.1 | Defect codes offered at die cast must be **die-cast codes only** | OPEN |
-| 3.2 | **Die total shots does not increment** when Register Shot Loss is used | OPEN |
-| 3.3 | Multiple terminals on the **same die cast machine** must see each other's entries | OPEN |
+| 3.1 | Defect codes offered at die cast must be **die-cast codes only** | DONE (not a code bug - see below) |
+| 3.2 | **Die total shots does not increment** when Register Shot Loss is used | DONE (CONFLICTS WITH AN APPROVED DECISION - needs Hunter) |
+| 3.3 | Multiple terminals on the **same die cast machine** must see each other's entries | DONE |
 | 3.4 | **Bulk open of baskets**: a row per cavity on the mounted tool, auto-assign a part per row from the cavity name, operator scans each basket's LTT | OPEN |
-| 3.5 | Die cast **supervisor dashboard** — registered production total, current + previous shift (explore) | OPEN |
+| 3.5 | Die cast **supervisor dashboard** — registered production total, current + previous shift (explore) | DONE (explore) |
 
 ## 4. Auth / permissions
 
 | # | Item | Status |
 |---|---|---|
-| 4.1 | Only a **supervisor** may edit or void a downtime event | OPEN |
-| 4.2 | **Sort cage** needs an elevated-access requirement | OPEN |
-| 4.3 | Elevated access must authenticate against the **Active Directory** user source, not the MPP internal source | OPEN |
+| 4.1 | Only a **supervisor** may edit or void a downtime event | DONE |
+| 4.2 | **Sort cage** needs an elevated-access requirement | DONE |
+| 4.3 | Elevated access must authenticate against the **Active Directory** user source, not the MPP internal source | BLOCKED - no AD user source exists on the gateway |
 
 > 4.3 relates to `AppUser.elevate` / `_validateAdCredentials`. Note the interim
 > `system.security.validateUser(..., _DEV_USER_SOURCE)` path added in `ebc70495`
@@ -80,23 +80,23 @@ Open questions to resolve with Hunter/MPP first:
 
 | # | Item | Status |
 |---|---|---|
-| 5.1 | **8-digit LTT** at machining and die cast — the current 9-digit check is wrong there | OPEN |
-| 5.2 | **Scrap tab on Lot Detail** — attribute scrap to a LOT against its *current location* (die cast → die cast, warehouse → warehouse, …). All defect reasons available, not a filtered subset | OPEN |
-| 5.3 | **Rectify LOT counts** in Lot Detail when entered wrong, with a mandatory reason | OPEN |
+| 5.1 | **8-digit LTT** at machining and die cast — the current 9-digit check is wrong there | DONE |
+| 5.2 | **Scrap tab on Lot Detail** — attribute scrap to a LOT against its *current location* (die cast → die cast, warehouse → warehouse, …). All defect reasons available, not a filtered subset | DONE |
+| 5.3 | **Rectify LOT counts** in Lot Detail when entered wrong, with a mandatory reason | DONE |
 
 ## 6. OEE / shifts
 
 | # | Item | Status |
 |---|---|---|
 | 6.1 | **Shift override screen** — let an operator extend a shift on a given day for a *specific piece of equipment*. Affects OEE. Resolution order: for a given day, if the equipment has an override use it, else fall back to the global shift | OPEN |
-| 6.2 | **Validate the shift hours** used by the downtime report | OPEN |
+| 6.2 | **Validate the shift hours** used by the downtime report | DONE - found 6 bugs, 2 corrupting stored data |
 
 ## 7. Styling
 
 | # | Item | Status |
 |---|---|---|
-| 7.1 | Checkbox component **label text is dark grey**; should match the rest of the app | OPEN |
-| 7.2 | **Trim IN** — left-side flex container to 50% width, to make room for the scrap reason rows | OPEN |
+| 7.1 | Checkbox component **label text is dark grey**; should match the rest of the app | DONE |
+| 7.2 | **Trim IN** — left-side flex container to 50% width, to make room for the scrap reason rows | DONE (Trim OUT, not Trim IN - see below) |
 
 ---
 
@@ -117,3 +117,83 @@ Open questions to resolve with Hunter/MPP first:
   referenced by 11 MPP_Config views but never defined; `sql_best_practices_mes.md`
   omits `JSON_QUERY` in its resolved-FK example that 82 procs use;
   `MachiningEntry/ScrapLineRow` still the pre-refactor twin of the Trim row.
+
+
+---
+
+## Session addendum — 2026-08-19 (work done, and what it surfaced)
+
+**Corrections to the "known-open" list above:** the stale-fixture failure is NOT
+only `070_Lot_GetLatestForToolCavity`. `sql/tests/0022_PlantFloor_DieCast/030`,
+`040` and `050` fail identically (`ToolAssignment.CellLocationId` NULL, because
+`Parts.v_EffectiveItemLocation` returns no `Source='Direct'` Cell row after the
+2026-07-06 eligibility-tier decision), as does `0020/040_Lot_Create`. All are
+pre-existing and make the runner exit 1 while assertion counts stay green.
+
+**Decisions now waiting on Hunter:**
+1. **3.2 shot count** — the fix contradicts `docs/superpowers/specs/2026-08-04-tool-shot-count-design.md`
+   line 44 ("Shot-loss path | Does **not** increment | ... would double-count").
+   That holds only if the operator's typed gross already includes shot-loss
+   cycles. If gross is read off the machine counter, the fix double-counts and
+   should be reverted rather than patched.
+2. **3.1 defect codes** — filtering works (72 = 59 Die Cast + 13 plant-wide). The
+   13 "plant-wide" codes are misclassified: dowel pin / baffle plate / NG bolt /
+   supply-part codes are Assembly; 201-205 and 225 are logistics. Fix belongs in
+   `sql/seeds/030_seed_defect_codes.sql`, not in the query.
+3. **4.3 AD** — verified: the gateway has three user sources (`MPP`, `default`,
+   `opcua-module`), ALL `type: INTERNAL`, and no AD identity provider. Repointing
+   at an AD source name today would deny every elevation. MPP IT must create the
+   source first; then `_ELEVATION_USER_SOURCE` is a one-line change.
+   Related: "supervisor" currently means "any active AppUser whose password
+   validates" - there is no role check anywhere, and `admin1` (the only AD-linked
+   dev user) has `IgnitionRole` NULL, so a role gate would lock dev out.
+4. **5.1 LTT** — set to accept **8 OR 9** digits rather than 8-only, because the
+   9-digit rule traces to a verbal note (FRS 2.2.1 states no digit count) and
+   narrowing would orphan every existing 9-digit LotName. Tightening later is a
+   one-line edit. AIM shipper serials stay 9 — that is a separate, verified
+   contract.
+5. **5.3 count rectification** — deliberately NOT elevation-gated; peer to 4.1 and
+   arguably deserves the same treatment. Hunter's call.
+6. **7.2** — Trim IN has no scrap block; the scrap grid is on Trim **OUT**, which is
+   what was widened (500px -> 50%, 3 -> 5 tiles/row). Confirm this was the intent.
+
+**Deliberate non-changes worth preserving:**
+- `Workorder.RejectEvent` gets NO `LocationId` FK — five other procs write that
+  table and would leave it NULL. Scrap-by-area reporting needs one migration that
+  backfills all five writers together.
+- Released lots are filtered out of Record Shift Output in the read layer, not in
+  `DieCast_GetShiftOutputBreakdown` — the proc's contract is "one row per LOT open
+  at any point in the shift" and the 0045 suite asserts released rows are present.
+
+**Small pre-existing bugs found in passing:** `LotDetail.reprintLabel` read a
+non-existent `view.custom.lotId` (AttributeError on every press) - fixed;
+`BlueRidge/Lots/Lot/code.py:331` has a Windows-style backslash inside a named-query
+path (`"lots\Lot_GetLinkedContainer"`) which Python treats as a literal backslash
+and which works only by accident - NOT fixed.
+
+**OI-38 is now the project's highest-value open issue.** The shift subsystem stores
+`Oee.Shift.ActualStart/ActualEnd` in LOCAL Eastern while everything around it is
+UTC. That single mismatch produced SIX defects, found 2026-08-19:
+
+| where | effect |
+|---|---|
+| `Oee.EndOfShiftEntry_Submit` | wrote local shift start into the UTC `DowntimeEvent.StartedAt` - every break/lunch event stamped 4-5 h early. **Corrupted stored data.** |
+| `Oee.DowntimeEvent_RecordHistorical` | compared a UTC instant against local shift bounds - routinely stamped the FOLLOWING shift's id. **Corrupted stored data.** |
+| Downtime Report `data.bin` | double-converted an already-local value: printed "2:00 AM - 2:00 AM" instead of "6:00 AM - 2:30 PM" |
+| same | `COALESCE(ActualEnd, ActualStart)` made an open shift print a zero-length window |
+| `reports/Shift_ListForPicker` | same double-conversion; any shift starting 00:00-04:00 labelled with the previous day |
+| `Downtime by Date Range` | filtered UTC `StartedAt` with local date-picker params - whole window off by the offset |
+
+All six fixed. **The CLASS stays open until the shift subsystem moves to UTC.**
+Two more suspects found but NOT touched (outside that agent's lane):
+`Workorder.DieCast_GetShiftOutputBreakdown` and `Lots.Lot_GetShiftCavityTally`
+both mix the two bases.
+
+Also note `Oee.Shift_GetAvailability` was specified in the Phase 8 plan and had
+**never been built** - there was no planned-time or availability figure anywhere in
+the system. It now exists and is override-aware.
+
+**DST is explicitly NOT solved.** Override windows are wall-clock, so a window
+spanning a transition is off by 60 min - MPP's real exposure is the Sat 23:00 ->
+Sun 07:00 third shift on two Sundays a year (~12.5% availability skew for that
+shift). Fixing it properly means the OI-38 UTC migration.
