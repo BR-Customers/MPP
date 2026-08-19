@@ -1,5 +1,6 @@
 {
   "custom": {
+    "queueByPartVertical": "",
     "closureMethodTracker": "",
     "componentProjection": [],
     "queueByPartText": "",
@@ -129,6 +130,20 @@
         "transforms": [
           {
             "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.queueByPartVertical": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"\\n\".join([\"%s   %d pcs\" % (k, totals[k]) for k in order])",
             "type": "script"
           }
         ],
