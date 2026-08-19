@@ -19,10 +19,12 @@
 #     listAvailableItems(itemId, search)  -> list[dict] for ChildItem dropdown
 #     listUoms()                          -> list[dict] for UOM dropdown
 #   Mutations:
-#     handleCreateOrCloneVersion(parentItemId)
+#     handleCreateOrCloneVersion(parentItemId, sourceBomId=None)
 #                                         -> "+ New Version" router:
 #                                              no existing Bom -> Bom_Create v1 Draft
-#                                              else clone latest non-deprecated
+#                                              sourceBomId given -> clone THAT version
+#                                              sourceBomId omitted -> clone latest
+#                                                non-deprecated (legacy fallback)
 #     handleSaveDraft(bomId, effectiveFrom, lines)
 #     handlePublish(bomId, effectiveFrom, lines)
 #     handleDeprecate(bomId)
@@ -37,6 +39,12 @@
 #                      handleCreateOrCloneVersion, handleSaveDraft,
 #                      handlePublish, handleDeprecate, handleDiscardDraft,
 #                      emptyLine.
+#   2026-08-18 - 2.1 - handleCreateOrCloneVersion clones the version the
+#                      operator has SELECTED (new optional sourceBomId arg)
+#                      instead of always auto-picking the most-recent
+#                      Published. Deprecated selections are clonable on
+#                      purpose. Arg omitted keeps the old auto-pick so no
+#                      caller breaks.
 # =============================================================================
 
 import system
@@ -53,6 +61,17 @@ def _isoDate(d):
         return str(d)[:10]
     except Exception:
         return ""
+
+
+def _id(value):
+    """Coerce a BIGINT Id to a comparable int, or None.
+
+    Ids reach us as java.lang.Long from JDBC but as whatever was last
+    written there (Long, Integer, or unicode after a JSON round-trip)
+    from a Perspective custom property, so comparing the raw values is
+    not reliable. Util.toIntOrNone already unwraps QualifiedValues and
+    tolerates strings/blanks, which is exactly the normalization needed."""
+    return BlueRidge.Common.Util.toIntOrNone(value)
 
 
 def _mapLines(rows):
@@ -248,11 +267,26 @@ def listUoms():
 
 # ---------- Phase 6 mutations ----------
 
-def handleCreateOrCloneVersion(parentItemId):
+def handleCreateOrCloneVersion(parentItemId, sourceBomId=None):
     """Routes '+ New Version' to either Bom_Create (no Bom exists yet
-    for this Item) or Bom_CreateNewVersion (clone latest non-deprecated
-    source). Both produce a Draft. Returns {Status, Message, NewId}."""
+    for this Item) or Bom_CreateNewVersion. Both produce a Draft.
+    Returns {Status, Message, NewId}.
+
+    `sourceBomId` is the version the operator currently has selected in
+    the BOMs tab — that is the version we clone. Passing it is what makes
+    "+ New Version" honour the selection instead of silently re-spinning
+    the newest Published version.
+
+    A Deprecated selection IS clonable. Deprecated versions only reach
+    the dropdown when the operator ticks "Include deprecated", so having
+    one selected is a deliberate act (engineering re-spinning an archived
+    BOM), and the clone lands as an unpublished Draft either way.
+
+    `sourceBomId=None` keeps the legacy auto-pick (latest non-deprecated,
+    falling back to the most recent deprecated when every version is
+    archived) so older callers keep working."""
     parentItemId = _u(parentItemId)
+    sourceBomId  = _id(sourceBomId)
     if not parentItemId:
         return {"Status": False,
                 "Message": "No parent item selected.",
@@ -287,24 +321,44 @@ def handleCreateOrCloneVersion(parentItemId):
                                "Open it or discard it before creating a new version.",
                     "NewId": None}
 
-        # Otherwise clone the latest non-deprecated (Published) version.
-        # ListByParentItem orders Draft-first then Published DESC by
-        # EffectiveFrom; with no Drafts present, [0] is the most-recent
-        # Published.
-        nonDep = [r for r in existing if r.get("DeprecatedAt") is None]
-        sourceBomId = None
-        if nonDep:
-            sourceBomId = nonDep[0].get("Id")
+        # Resolve the clone source.
+        sourceId = None
+        if sourceBomId is not None:
+            # Explicit selection: clone exactly what the operator has on
+            # screen. Deprecated rows are in `existing` (includeDeprecated
+            # = True above) and are deliberately eligible — see docstring.
+            for r in existing:
+                if _id(r.get("Id")) == sourceBomId:
+                    sourceId = r.get("Id")
+                    break
+            if sourceId is None:
+                # The named version is not (or is no longer) a version of
+                # this Item. Refuse rather than silently cloning something
+                # else: Bom_CreateNewVersion derives ParentItemId FROM the
+                # source row, so a stale/foreign id would mint a version
+                # under the WRONG Item.
+                return {"Status": False,
+                        "Message": "The selected BOM version is no longer available "
+                                   "for this Item. Refresh the version list and try again.",
+                        "NewId": None}
         else:
-            # All previous versions are deprecated — clone the most
-            # recent deprecated (rare; engineering re-spinning an
-            # archived BOM).
-            sourceBomId = existing[0].get("Id")
+            # No selection supplied (legacy callers) — fall back to the
+            # latest non-deprecated. ListByParentItem orders Draft-first
+            # then Published DESC by EffectiveFrom; with no Drafts present,
+            # [0] is the most-recent Published.
+            nonDep = [r for r in existing if r.get("DeprecatedAt") is None]
+            if nonDep:
+                sourceId = nonDep[0].get("Id")
+            else:
+                # All previous versions are deprecated — clone the most
+                # recent deprecated (rare; engineering re-spinning an
+                # archived BOM).
+                sourceId = existing[0].get("Id")
 
         return BlueRidge.Common.Db.execMutation(
             "parts/Bom_CreateNewVersion",
             {
-                "parentBomId":   sourceBomId,
+                "parentBomId":   sourceId,
                 "effectiveFrom": None,
                 "appUserId":     BlueRidge.Common.Util._currentAppUserId(),
             },

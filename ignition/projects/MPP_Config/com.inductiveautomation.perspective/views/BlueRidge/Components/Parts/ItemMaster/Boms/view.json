@@ -753,7 +753,7 @@
         {
           "name": "handleNewVersion",
           "params": [],
-          "script": "\titemId \u003d self.view.params.value\n\tresult \u003d BlueRidge.Parts.Bom.handleCreateOrCloneVersion(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"New draft version created\")\n\tif not (result and result.get(\"Status\")):\n\t\treturn\n\tnewId \u003d result.get(\"NewId\")\n\tself.refreshVersionList()\n\tif not newId:\n\t\treturn\n\tself.view.custom.activeVersionId \u003d newId\n\tbundle \u003d BlueRidge.Parts.Bom.getOneFull(newId)\n\tself.view.custom.state \u003d {\"selected\": bundle, \"editDraft\": self._cloneBundle(bundle)}"
+          "script": "\titemId \u003d self.view.params.value\n\tsel \u003d self.view.custom.state.selected or {}\n\tsourceBomId \u003d sel.get(\"id\") or self.view.custom.activeVersionId\n\tresult \u003d BlueRidge.Parts.Bom.handleCreateOrCloneVersion(itemId, sourceBomId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"New draft version created\")\n\tif not (result and result.get(\"Status\")):\n\t\treturn\n\tnewId \u003d result.get(\"NewId\")\n\tself.refreshVersionList()\n\tif not newId:\n\t\treturn\n\tself.view.custom.activeVersionId \u003d newId\n\tbundle \u003d BlueRidge.Parts.Bom.getOneFull(newId)\n\tself.view.custom.state \u003d {\"selected\": bundle, \"editDraft\": self._cloneBundle(bundle)}"
         },
         {
           "name": "refreshVersionList",
