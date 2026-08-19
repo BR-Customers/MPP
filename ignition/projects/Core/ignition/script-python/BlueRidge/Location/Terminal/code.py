@@ -10,10 +10,14 @@
        findByCode(terminals, code)                    -> dict | None
        listContextCells(terminalLocationId)           -> list[dict]
        getContextCellsForDropdown(terminalLocationId) -> list[{label, value, code, name}]
+       getCrtEnabled(terminalLocationId)              -> bool
 
    Change Log:
        2026-06-11 - Add listContextCells + getContextCellsForDropdown
-                    (location/Terminal_ListContextCells NQ access layer)."""
+                    (location/Terminal_ListContextCells NQ access layer).
+       2026-08-18 - Add getCrtEnabled (CRT switch, Task 6) -- reads the
+                    CrtEnabled LocationAttribute via the existing generic
+                    location/getLocationAttributes NQ."""
 
 
 def getByIpAddress(ipAddress):
@@ -179,6 +183,21 @@ def getClosureContext(terminalLocationId):
     except Exception as e:
         BlueRidge.Common.Util.log("getClosureContext failed: %s" % str(e))
         return {}
+
+
+def getCrtEnabled(terminalLocationId):
+    """The terminal's CrtEnabled attribute (Location.LocationAttributeDefinition,
+       LTD 7, migration 0058) as a bool. Absent attribute -> False, same '0'/'1'
+       convention as HasBarcodeScanner. Reuses the generic
+       location/getLocationAttributes NQ (LocationAttribute_GetByLocation) --
+       no dedicated terminal-attribute read exists, so no new NQ is added here."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return False
+    for r in (BlueRidge.Common.Db.execList("location/getLocationAttributes", {"locationId": tid}) or []):
+        if r.get("AttributeName") == "CrtEnabled":
+            return str(r.get("AttributeValue") or "0") == "1"
+    return False
 
 
 def operationCategoryForScreen(defaultScreen):
