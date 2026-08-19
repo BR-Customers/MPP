@@ -12,12 +12,12 @@
         "MaxLotSize": null,
         "MaxParts": 500,
         "PartNumber": "5G0",
+        "PlcId": null,
         "UnitWeight": 3.25,
         "UomCode": "EA",
         "UomId": 1,
         "WeightUomCode": "LB",
-        "WeightUomId": 2,
-        "PlcId": null
+        "WeightUomId": 2
       },
       "selected": {
         "CountryOfOrigin": "US",
@@ -30,12 +30,12 @@
         "MaxLotSize": null,
         "MaxParts": 500,
         "PartNumber": "5G0",
+        "PlcId": null,
         "UnitWeight": 3.25,
         "UomCode": "EA",
         "UomId": 1,
         "WeightUomCode": "LB",
-        "WeightUomId": 2,
-        "PlcId": null
+        "WeightUomId": 2
       }
     }
   },
@@ -46,13 +46,13 @@
     "custom.isDirty": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected})"
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected})"
         },
         "type": "expr"
       },
       "onChange": {
         "enabled": true,
-        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"identity\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload\u003d{\"section\": \"identity\", \"isDirty\": bool(currentValue.value)}, scope\u003d\"page\")"
       }
     },
     "custom.uomOptions": {
@@ -97,7 +97,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "coalesce({view.custom.state.editDraft.PartNumber}, '') + ' - ' + coalesce({view.custom.state.editDraft.Description}, '')"
+                    "expression": "coalesce({view.custom.state.editDraft.PartNumber}, \u0027\u0027) + \u0027 - \u0027 + coalesce({view.custom.state.editDraft.Description}, \u0027\u0027)"
                   },
                   "type": "expr"
                 }
@@ -106,7 +106,7 @@
             "props": {
               "style": {
                 "fontSize": "13px",
-                "fontWeight": "600"
+                "fontWeight": 600
               }
             },
             "type": "ia.display.label"
@@ -156,6 +156,9 @@
             "meta": {
               "name": "BtnDiscard"
             },
+            "position": {
+              "basis": "66px"
+            },
             "propConfig": {
               "meta.visible": {
                 "binding": {
@@ -189,6 +192,9 @@
             "meta": {
               "name": "BtnSave"
             },
+            "position": {
+              "basis": "51px"
+            },
             "propConfig": {
               "meta.visible": {
                 "binding": {
@@ -212,7 +218,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\titemId = (self.view.custom.state.editDraft or {}).get('Id') or (self.view.custom.state.selected or {}).get('Id')\n\tif not itemId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title': 'Deprecate Part',\n\t\t\t'message': 'Deprecating this part also deprecates its routes, BOMs, eligibility, and container config. Active LOTs of the part will block this. Continue?',\n\t\t\t'confirmLabel': 'Deprecate',\n\t\t\t'replyMessage': 'itemDeprecateConfirmed'\n\t\t}\n\t)"
+                    "script": "\titemId \u003d (self.view.custom.state.editDraft or {}).get(\u0027Id\u0027) or (self.view.custom.state.selected or {}).get(\u0027Id\u0027)\n\tif not itemId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-confirm-destructive\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/ConfirmDestructive\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\u0027title\u0027: \u0027Deprecate Part\u0027,\n\t\t\t\u0027message\u0027: \u0027Deprecating this part also deprecates its routes, BOMs, eligibility, and container config. Active LOTs of the part will block this. Continue?\u0027,\n\t\t\t\u0027confirmLabel\u0027: \u0027Deprecate\u0027,\n\t\t\t\u0027replyMessage\u0027: \u0027itemDeprecateConfirmed\u0027\n\t\t}\n\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -221,6 +227,9 @@
             },
             "meta": {
               "name": "BtnDeprecate"
+            },
+            "position": {
+              "basis": "81px"
             },
             "props": {
               "style": {
@@ -237,7 +246,8 @@
         "props": {
           "alignItems": "center",
           "style": {
-            "gap": "8px"
+            "gap": "8px",
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -365,7 +375,7 @@
                   "name": "Label",
                   "tooltip": {
                     "enabled": true,
-                    "text": "Counting unit of measure the part is tracked in (e.g. EA = each)."
+                    "text": "Counting unit of measure the part is tracked in (e.g. EA \u003d each)."
                   }
                 },
                 "props": {
@@ -499,7 +509,7 @@
                   "name": "Label",
                   "tooltip": {
                     "enabled": true,
-                    "text": "Cross-reference to this part's number in Macola (the ERP system). Optional."
+                    "text": "Cross-reference to this part\u0027s number in Macola (the ERP system). Optional."
                   }
                 },
                 "props": {
@@ -774,8 +784,7 @@
                 },
                 "props": {
                   "style": {
-                    "classes": "search-input",
-                    "width": "100px"
+                    "classes": "search-input"
                   }
                 },
                 "type": "ia.input.text-field"
@@ -783,6 +792,9 @@
             ],
             "meta": {
               "name": "FieldDefaultSubLotQty"
+            },
+            "position": {
+              "basis": "138px"
             },
             "props": {
               "direction": "column",
@@ -1000,22 +1012,22 @@
         {
           "name": "load",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\trow = BlueRidge.Parts.Item.getOneOrEmpty(itemId)\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\tloaded = {\n\t\t\"Id\":               row.get(\"Id\"),\n\t\t\"PartNumber\":       _s(row.get(\"PartNumber\")),\n\t\t\"Description\":      _s(row.get(\"Description\")),\n\t\t\"ItemTypeId\":       row.get(\"ItemTypeId\"),\n\t\t\"ItemTypeName\":     _s(row.get(\"ItemTypeName\")),\n\t\t\"UomId\":            row.get(\"UomId\"),\n\t\t\"UomCode\":          _s(row.get(\"UomCode\")),\n\t\t\"WeightUomId\":      row.get(\"WeightUomId\"),\n\t\t\"WeightUomCode\":    _s(row.get(\"WeightUomCode\")),\n\t\t\"MacolaPartNumber\": _s(row.get(\"MacolaPartNumber\")),\n\t\t\"CountryOfOrigin\":  _s(row.get(\"CountryOfOrigin\")),\n\t\t\"UnitWeight\":       _s(row.get(\"UnitWeight\")),\n\t\t\"DefaultSubLotQty\": _s(row.get(\"DefaultSubLotQty\")),\n\t\t\"MaxLotSize\":       _s(row.get(\"MaxLotSize\")),\n\t\t\"MaxParts\":         _s(row.get(\"MaxParts\")),\n\t}\n\t_pid = BlueRidge.Parts.Item.getPlcId(itemId)\n\tloaded[\"PlcId\"] = (_pid.get(\"PlcId\") if _pid else None)\n\tself.view.custom.state = {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
+          "script": "\titemId \u003d self.view.params.value\n\trow \u003d BlueRidge.Parts.Item.getOneOrEmpty(itemId)\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\tloaded \u003d {\n\t\t\"Id\":               row.get(\"Id\"),\n\t\t\"PartNumber\":       _s(row.get(\"PartNumber\")),\n\t\t\"Description\":      _s(row.get(\"Description\")),\n\t\t\"ItemTypeId\":       row.get(\"ItemTypeId\"),\n\t\t\"ItemTypeName\":     _s(row.get(\"ItemTypeName\")),\n\t\t\"UomId\":            row.get(\"UomId\"),\n\t\t\"UomCode\":          _s(row.get(\"UomCode\")),\n\t\t\"WeightUomId\":      row.get(\"WeightUomId\"),\n\t\t\"WeightUomCode\":    _s(row.get(\"WeightUomCode\")),\n\t\t\"MacolaPartNumber\": _s(row.get(\"MacolaPartNumber\")),\n\t\t\"CountryOfOrigin\":  _s(row.get(\"CountryOfOrigin\")),\n\t\t\"UnitWeight\":       _s(row.get(\"UnitWeight\")),\n\t\t\"DefaultSubLotQty\": _s(row.get(\"DefaultSubLotQty\")),\n\t\t\"MaxLotSize\":       _s(row.get(\"MaxLotSize\")),\n\t\t\"MaxParts\":         _s(row.get(\"MaxParts\")),\n\t}\n\t_pid \u003d BlueRidge.Parts.Item.getPlcId(itemId)\n\tloaded[\"PlcId\"] \u003d (_pid.get(\"PlcId\") if _pid else None)\n\tself.view.custom.state \u003d {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
         },
         {
           "name": "handleSave",
           "params": [],
-          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\titemId = draft.get(\"Id\")\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Select an item first.\", \"warning\")\n\t\treturn\n\tif not draft.get(\"UomId\"):\n\t\tBlueRidge.Common.Notify.toast(\"UOM required\", \"Pick a UOM before saving.\", \"warning\")\n\t\treturn\n\tdef _toNum(v):\n\t\tif v is None or v == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\tpayload = dict(draft)\n\tpayload[\"DefaultSubLotQty\"] = _toNum(draft.get(\"DefaultSubLotQty\"))\n\tpayload[\"MaxLotSize\"]       = _toNum(draft.get(\"MaxLotSize\"))\n\tpayload[\"UnitWeight\"]       = _toNum(draft.get(\"UnitWeight\"))\n\tpayload[\"MaxParts\"]         = _toNum(draft.get(\"MaxParts\"))\n\tresult = BlueRidge.Parts.Item.update(payload)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item updated\")\n\tif result and result.get(\"Status\"):\n\t\tBlueRidge.Parts.Item.setPlcId(itemId, _toNum(draft.get(\"PlcId\")))\n\t\tself.load()\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")"
+          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\titemId \u003d draft.get(\"Id\")\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Select an item first.\", \"warning\")\n\t\treturn\n\tif not draft.get(\"UomId\"):\n\t\tBlueRidge.Common.Notify.toast(\"UOM required\", \"Pick a UOM before saving.\", \"warning\")\n\t\treturn\n\tdef _toNum(v):\n\t\tif v is None or v \u003d\u003d \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\tpayload \u003d dict(draft)\n\tpayload[\"DefaultSubLotQty\"] \u003d _toNum(draft.get(\"DefaultSubLotQty\"))\n\tpayload[\"MaxLotSize\"]       \u003d _toNum(draft.get(\"MaxLotSize\"))\n\tpayload[\"UnitWeight\"]       \u003d _toNum(draft.get(\"UnitWeight\"))\n\tpayload[\"MaxParts\"]         \u003d _toNum(draft.get(\"MaxParts\"))\n\tresult \u003d BlueRidge.Parts.Item.update(payload)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item updated\")\n\tif result and result.get(\"Status\"):\n\t\tBlueRidge.Parts.Item.setPlcId(itemId, _toNum(draft.get(\"PlcId\")))\n\t\tself.load()\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope\u003d\"page\")"
         },
         {
           "name": "handleDiscard",
           "params": [],
-          "script": "\tself.view.custom.state.editDraft = dict(self.view.custom.state.selected)"
+          "script": "\tself.view.custom.state.editDraft \u003d dict(self.view.custom.state.selected)"
         },
         {
           "name": "handleDeprecate",
           "params": [],
-          "script": "\titemId = (self.view.custom.state.editDraft or {}).get(\"Id\") or (self.view.custom.state.selected or {}).get(\"Id\")\n\tif not itemId:\n\t\treturn\n\tresult = BlueRidge.Parts.Item.deprecate(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")\n\t\tsystem.perspective.sendMessage(\"itemDeprecated\", payload={\"id\": itemId}, scope=\"page\")"
+          "script": "\titemId \u003d (self.view.custom.state.editDraft or {}).get(\"Id\") or (self.view.custom.state.selected or {}).get(\"Id\")\n\tif not itemId:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.Item.deprecate(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.sendMessage(\"itemDeprecated\", payload\u003d{\"id\": itemId}, scope\u003d\"page\")"
         }
       ],
       "extensionFunctions": null,
@@ -1023,21 +1035,21 @@
         {
           "messageType": "sectionSaveRequested",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"section\") == \"identity\":\n\t\tself.handleSave()",
+          "script": "\tif payload and payload.get(\"section\") \u003d\u003d \"identity\":\n\t\tself.handleSave()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "sectionDiscardRequested",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"section\") == \"identity\":\n\t\tself.handleDiscard()",
+          "script": "\tif payload and payload.get(\"section\") \u003d\u003d \"identity\":\n\t\tself.handleDiscard()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "itemDeprecateConfirmed",
           "pageScope": true,
-          "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\tself.handleDeprecate()",
+          "script": "\taction \u003d (payload or {}).get(\u0027action\u0027)\n\tif action !\u003d \u0027confirm\u0027:\n\t\treturn\n\tself.handleDeprecate()",
           "sessionScope": false,
           "viewScope": false
         }

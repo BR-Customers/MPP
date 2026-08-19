@@ -31,36 +31,10 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "modal"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Header"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "classes": "modal-header",
-            "gap": "10px"
-          }
-        },
         "children": [
           {
-            "type": "ia.display.icon",
             "meta": {
               "name": "TimerIcon"
             },
@@ -71,28 +45,68 @@
             "props": {
               "path": "mpp/pending_actions",
               "style": {
-                "width": "22px",
-                "height": "22px"
+                "height": "22px",
+                "width": "22px"
               }
-            }
+            },
+            "type": "ia.display.icon"
           },
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "HeaderTitle"
             },
             "position": {
-              "basis": "auto",
               "grow": 1
             },
             "props": {
               "text": "Still there?"
-            }
+            },
+            "type": "ia.display.label"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "Prompt"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Operate as \" + {view.params.displayName} + \" (\" + {view.params.initials} + \")?\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "18px"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
         "meta": {
           "name": "Body"
         },
@@ -106,42 +120,67 @@
             "classes": "modal-body"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "Prompt"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
+            "events": {
+              "component": {
+                "onActionPerformed": {
                   "config": {
-                    "expression": "\"Operate as \" + {view.params.displayName} + \" (\" + {view.params.initials} + \")?\""
-                  }
+                    "script": "\tself.session.custom.user \u003d {\"appUserId\": None, \"initials\": \"\", \"displayName\": \"\", \"ignitionRole\": \"\"}\n\tself.session.custom.appUserId \u003d None\n\tsystem.perspective.closePopup(self.view.params.popupId)\n\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
               }
             },
+            "meta": {
+              "name": "ChangeOperatorButton"
+            },
+            "position": {
+              "shrink": 0
+            },
             "props": {
               "style": {
-                "color": "var(--mpp-text-primary)",
-                "fontSize": "18px"
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "No - change operator"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"continue\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
               }
-            }
+            },
+            "meta": {
+              "name": "ContinueButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              },
+              "text": "Yes, continue"
+            },
+            "type": "ia.input.button"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
+        ],
         "meta": {
           "name": "Footer"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "props": {
@@ -152,61 +191,18 @@
             "gap": "10px"
           }
         },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "ChangeOperatorButton"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "text": "No - change operator",
-              "style": {
-                "classes": "pf-btn pf-btn-secondary"
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.session.custom.user = {\"appUserId\": None, \"initials\": \"\", \"displayName\": \"\", \"ignitionRole\": \"\"}\n\tself.session.custom.appUserId = None\n\tsystem.perspective.closePopup(self.view.params.popupId)\n\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "ContinueButton"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "text": "Yes, continue",
-              "style": {
-                "classes": "pf-btn pf-btn-primary"
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"continue\"}, scope=\"page\")\n\tsystem.perspective.closePopup(self.view.params.popupId)"
-                  }
-                }
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

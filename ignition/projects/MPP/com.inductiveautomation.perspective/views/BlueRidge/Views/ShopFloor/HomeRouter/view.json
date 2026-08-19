@@ -3,8 +3,7 @@
   "params": {},
   "props": {
     "defaultSize": {
-      "width": 1280,
-      "height": 800
+      "width": 1280
     }
   },
   "root": {
@@ -107,7 +106,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                        "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                       },
                       "scope": "G",
                       "type": "script"
@@ -185,7 +184,7 @@
                     "height": "62px",
                     "minWidth": "220px"
                   },
-                  "text": "Track & Trace"
+                  "text": "Track \u0026 Trace"
                 },
                 "type": "ia.input.button"
               }
@@ -257,7 +256,7 @@
         {
           "name": "route",
           "params": [],
-          "script": "\tt = self.session.custom.terminal\n\tif (not t.terminalLocationId) or t.isFallback:\n\t\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")\n\t\treturn\n\tif t.defaultScreen:\n\t\tsystem.perspective.navigate(t.defaultScreen)\n\t\treturn"
+          "script": "\tt \u003d self.session.custom.terminal\n\tif (not t.terminalLocationId) or t.isFallback:\n\t\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")\n\t\treturn\n\tif t.defaultScreen:\n\t\tsystem.perspective.navigate(t.defaultScreen)\n\t\treturn"
         }
       ],
       "extensionFunctions": null,

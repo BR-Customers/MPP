@@ -303,6 +303,9 @@
             "meta": {
               "name": "BtnDieRanks"
             },
+            "position": {
+              "basis": "92px"
+            },
             "props": {
               "style": {
                 "classes": "btn"
@@ -325,6 +328,9 @@
             },
             "meta": {
               "name": "BtnAddDie"
+            },
+            "position": {
+              "basis": "90px"
             },
             "props": {
               "style": {
@@ -524,7 +530,7 @@
                           "props.text": {
                             "binding": {
                               "config": {
-                                "path": "view.custom.editDraft.meta.StatusCode"
+                                "path": "view.custom.editDraft.meta.StatusName"
                               },
                               "type": "property"
                             }
@@ -638,6 +644,9 @@
                         "meta": {
                           "name": "BtnSave"
                         },
+                        "position": {
+                          "basis": "51px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -671,6 +680,9 @@
                         "meta": {
                           "name": "BtnRetire"
                         },
+                        "position": {
+                          "basis": "58px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -696,7 +708,8 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "8px"
+                        "gap": "8px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -941,7 +954,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "field",
-                            "gap": "2px"
+                            "gap": "2px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1010,7 +1024,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "field",
-                            "gap": "2px"
+                            "gap": "2px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1022,7 +1037,8 @@
                     "props": {
                       "style": {
                         "classes": "field-row",
-                        "gap": "12px"
+                        "gap": "12px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"

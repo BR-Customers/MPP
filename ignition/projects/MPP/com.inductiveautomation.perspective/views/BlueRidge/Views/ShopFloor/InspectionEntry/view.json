@@ -11,30 +11,28 @@
       "ItemId": null,
       "ItemPartNumber": "",
       "LotName": "",
+      "LotOriginTypeCode": "",
       "LotStatusCode": "",
       "LotStatusName": "",
-      "PieceCount": 0
+      "MaxPieceCount": 0,
+      "PieceCount": 0,
+      "ToolCavityNumber": "",
+      "ToolCode": "",
+      "ToolId": null,
+      "TotalInProcess": 0
     },
     "lotQuery": "",
-    "refreshToken": 0,
-    "samples": [],
-    "spec": {
-      "attributes": [],
-      "specId": null,
-      "specName": "",
-      "versionId": null,
-      "versionNumber": null
-    },
-    "triggerCodeId": null,
-    "triggerOptions": []
+    "refreshToken": 1,
+    "triggerCodeId": null
   },
-  "params": { "lotName": null },
+  "params": {
+    "lotName": null
+  },
   "propConfig": {
-    "params.lotName": { "paramDirection": "input" },
     "custom.samples": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Quality.QualitySample.listByLotInstances\", 0, {view.custom.lot.Id}, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0, runScript(\"BlueRidge.Quality.QualitySample.listByLotInstances\", 0, {view.custom.lot.Id}, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -48,7 +46,7 @@
     "custom.spec": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Quality.QualitySpec.getActiveVersionForItemOrEmpty\", 0, {view.custom.lot.ItemId}, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0, runScript(\"BlueRidge.Quality.QualitySpec.getActiveVersionForItemOrEmpty\", 0, {view.custom.lot.ItemId}, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -72,6 +70,9 @@
         ],
         "type": "expr"
       }
+    },
+    "params.lotName": {
+      "paramDirection": "input"
     }
   },
   "props": {
@@ -106,7 +107,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.terminal.terminalName}) || {session.custom.terminal.terminalName} = \"\", \"Shared terminal\", {session.custom.terminal.terminalName}) + \"  ·  Quality capture - measurements record against the part's active spec - a Fail does NOT auto-hold\""
+                        "expression": "if(isNull({session.custom.terminal.terminalName}) || {session.custom.terminal.terminalName} \u003d \"\", \"Shared terminal\", {session.custom.terminal.terminalName}) + \"  ·  Quality capture - measurements record against the part\u0027s active spec - a Fail does NOT auto-hold\""
                       },
                       "type": "expr"
                     }
@@ -136,7 +137,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -153,7 +154,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -172,7 +173,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                    "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                   },
                   "scope": "G",
                   "type": "script"
@@ -186,6 +187,7 @@
               }
             },
             "position": {
+              "basis": "94px",
               "shrink": 0
             },
             "props": {
@@ -211,6 +213,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "79px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -230,7 +235,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -313,8 +318,7 @@
                           "placeholder": "Scan or type a LOT name",
                           "style": {
                             "classes": "pf-field-input"
-                          },
-                          "text": ""
+                          }
                         },
                         "type": "ia.input.text-field"
                       }
@@ -330,7 +334,7 @@
                       "style": {
                         "classes": "pf-field",
                         "gap": "12px",
-                        "overflow": "hidden"
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -378,7 +382,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "isNull({view.custom.lot.Id}) && {view.custom.lotQuery} != \"\""
+                            "expression": "isNull({view.custom.lot.Id}) \u0026\u0026 {view.custom.lotQuery} !\u003d \"\""
                           },
                           "type": "expr"
                         }
@@ -434,8 +438,7 @@
                             "fontWeight": "600",
                             "letterSpacing": "0.06em",
                             "textTransform": "uppercase"
-                          },
-                          "text": "Inspection Form"
+                          }
                         },
                         "type": "ia.display.label"
                       }
@@ -490,7 +493,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "!isNull({view.custom.lot.Id}) && isNull({view.custom.spec.versionId})"
+                            "expression": "!isNull({view.custom.lot.Id}) \u0026\u0026 isNull({view.custom.spec.versionId})"
                           },
                           "type": "expr"
                         }
@@ -610,7 +613,6 @@
                             "gap": "4px",
                             "overflowY": "auto"
                           },
-                          "useDefaultViewHeight": true,
                           "useDefaultViewWidth": false
                         },
                         "type": "ia.display.flex-repeater"
@@ -654,7 +656,7 @@
                               "position.display": {
                                 "binding": {
                                   "config": {
-                                    "expression": "{view.custom.lastResult} = \"Fail\""
+                                    "expression": "{view.custom.lastResult} \u003d \"Fail\""
                                   },
                                   "type": "expr"
                                 }
@@ -722,7 +724,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "!isNull({view.custom.lot.Id}) && !isNull({view.custom.spec.versionId})"
+                            "expression": "!isNull({view.custom.lot.Id}) \u0026\u0026 !isNull({view.custom.spec.versionId})"
                           },
                           "type": "expr"
                         }
@@ -785,7 +787,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "'Inspection History - ' + toStr(len({view.custom.samples})) + ' samples'"
+                            "expression": "\u0027Inspection History - \u0027 + toStr(len({view.custom.samples})) + \u0027 samples\u0027"
                           },
                           "type": "expr"
                         }
@@ -798,8 +800,7 @@
                         "fontWeight": "600",
                         "letterSpacing": "0.06em",
                         "textTransform": "uppercase"
-                      },
-                      "text": "Inspection History"
+                      }
                     },
                     "type": "ia.display.label"
                   }
@@ -829,7 +830,7 @@
                   "position.display": {
                     "binding": {
                       "config": {
-                        "expression": "len({view.custom.samples}) = 0"
+                        "expression": "len({view.custom.samples}) \u003d 0"
                       },
                       "type": "expr"
                     }
@@ -837,7 +838,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({view.custom.lot.Id}), 'No LOT selected.', 'No inspections recorded for this LOT yet.')"
+                        "expression": "if(isNull({view.custom.lot.Id}), \u0027No LOT selected.\u0027, \u0027No inspections recorded for this LOT yet.\u0027)"
                       },
                       "type": "expr"
                     }
@@ -885,7 +886,6 @@
                     "gap": "8px",
                     "overflowY": "auto"
                   },
-                  "useDefaultViewHeight": true,
                   "useDefaultViewWidth": false
                 },
                 "type": "ia.display.flex-repeater"
@@ -930,7 +930,7 @@
       "system": {
         "onStartup": {
           "config": {
-            "script": "\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)\n\tif self.view.params.lotName:\n\t\tself.resolveLot(self.view.params.lotName)"
+            "script": "\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)\n\tif self.view.params.lotName:\n\t\tself.resolveLot(self.view.params.lotName)"
           },
           "scope": "G",
           "type": "script"
@@ -956,17 +956,17 @@
           "params": [
             "lotName"
           ],
-          "script": "\tquery = (lotName or \"\").strip()\n\tself.view.custom.lotQuery = query\n\tself.view.custom.lot = BlueRidge.Lots.Lot.getOrEmpty(lotName=query)\n\tself.view.custom.entries = {}\n\tself.view.custom.triggerCodeId = None\n\tself.view.custom.lastResult = \"\"\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tquery \u003d (lotName or \"\").strip()\n\tself.view.custom.lotQuery \u003d query\n\tself.view.custom.lot \u003d BlueRidge.Lots.Lot.getOrEmpty(lotName\u003dquery)\n\tself.view.custom.entries \u003d {}\n\tself.view.custom.triggerCodeId \u003d None\n\tself.view.custom.lastResult \u003d \"\"\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "name": "record",
           "params": [],
-          "script": "\tterm = self.session.custom.terminal\n\tterminalId = term.terminalLocationId if term else None\n\tresult = BlueRidge.Quality.QualitySample.recordFromEntries(self.view.custom.lot, self.view.custom.spec, self.view.custom.entries, self.view.custom.triggerCodeId, self.session.custom.appUserId, terminalId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Inspection\", result.get(\"Message\"))\n\tif result and result.get(\"Status\"):\n\t\tmsg = result.get(\"Message\") or \"\"\n\t\tself.view.custom.lastResult = \"Fail\" if \"Fail\" in msg else \"Pass\"\n\t\tif \"Fail\" in msg:\n\t\t\tBlueRidge.Common.Notify.toast(\"Inspection FAILED - place a Hold to block check-out\", msg, \"warning\")\n\t\tself.view.custom.entries = {}\n\t\tself.view.custom.triggerCodeId = None\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tterm \u003d self.session.custom.terminal\n\tterminalId \u003d term.terminalLocationId if term else None\n\tresult \u003d BlueRidge.Quality.QualitySample.recordFromEntries(self.view.custom.lot, self.view.custom.spec, self.view.custom.entries, self.view.custom.triggerCodeId, self.session.custom.appUserId, terminalId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Inspection\", result.get(\"Message\"))\n\tif result and result.get(\"Status\"):\n\t\tmsg \u003d result.get(\"Message\") or \"\"\n\t\tself.view.custom.lastResult \u003d \"Fail\" if \"Fail\" in msg else \"Pass\"\n\t\tif \"Fail\" in msg:\n\t\t\tBlueRidge.Common.Notify.toast(\"Inspection FAILED - place a Hold to block check-out\", msg, \"warning\")\n\t\tself.view.custom.entries \u003d {}\n\t\tself.view.custom.triggerCodeId \u003d None\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "name": "placeHold",
           "params": [],
-          "script": "\tlotId = self.view.custom.lot.Id\n\tif not lotId:\n\t\treturn\n\tterm = self.session.custom.terminal\n\tterminalId = term.terminalLocationId if term else None\n\tresult = BlueRidge.Quality.Hold.place(1, lotId=lotId, reason=\"Failed incoming inspection\", appUserId=self.session.custom.appUserId, terminalLocationId=terminalId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Hold placed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.lastResult = \"Held\"\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tlotId \u003d self.view.custom.lot.Id\n\tif not lotId:\n\t\treturn\n\tterm \u003d self.session.custom.terminal\n\tterminalId \u003d term.terminalLocationId if term else None\n\tresult \u003d BlueRidge.Quality.Hold.place(1, lotId\u003dlotId, reason\u003d\"Failed incoming inspection\", appUserId\u003dself.session.custom.appUserId, terminalLocationId\u003dterminalId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Hold placed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.lastResult \u003d \"Held\"\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         }
       ],
       "extensionFunctions": null,
@@ -974,7 +974,7 @@
         {
           "messageType": "inspectionValueChanged",
           "pageScope": true,
-          "script": "\tentries = dict(self.view.custom.entries or {})\n\tentries[\"%s\" % payload.get(\"qualitySpecAttributeId\")] = payload.get(\"measuredValue\") or \"\"\n\tself.view.custom.entries = entries",
+          "script": "\tentries \u003d dict(self.view.custom.entries or {})\n\tentries[\"%s\" % payload.get(\"qualitySpecAttributeId\")] \u003d payload.get(\"measuredValue\") or \"\"\n\tself.view.custom.entries \u003d entries",
           "sessionScope": false,
           "viewScope": false
         }

@@ -163,7 +163,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "classes": "pf-field"
+                "classes": "pf-field",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -295,6 +296,7 @@
               "name": "CancelButton"
             },
             "position": {
+              "basis": "87px",
               "shrink": 0
             },
             "props": {
@@ -321,6 +323,7 @@
               "name": "AuthenticateButton"
             },
             "position": {
+              "basis": "130px",
               "shrink": 0
             },
             "props": {

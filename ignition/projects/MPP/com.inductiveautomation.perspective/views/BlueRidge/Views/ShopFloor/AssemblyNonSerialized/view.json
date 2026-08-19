@@ -1,6 +1,5 @@
 {
   "custom": {
-    "closureMethodTracker": "",
     "draft": {
       "partsCount": "",
       "trayPosition": ""
@@ -37,7 +36,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\t# Closure method changed via the Change Closure Mode changeover: RESET the\n\t# parts-in-tray field to the newly-selected config default PartsPerTray\n\t# (overwrites any prior/stale value; fgConfig.onChange only prefills empty).\n\tmethod = self.session.custom.closureMethod\n\tif not method:\n\t\treturn\n\tcontainer = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.container) or {}\n\titemId = container.get(\"ItemId\") or self.view.custom.selectedFinishedGoodItemId\n\tif not itemId:\n\t\treturn\n\tcfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty(itemId, method) or {}\n\tppt = cfg.get(\"PartsPerTray\")\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tself.view.custom.draft = {\"partsCount\": ppt if ppt else \"\", \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
+        "script": "\t# Closure method changed via the Change Closure Mode changeover: RESET the\n\t# parts-in-tray field to the newly-selected config default PartsPerTray\n\t# (overwrites any prior/stale value; fgConfig.onChange only prefills empty).\n\tmethod \u003d self.session.custom.closureMethod\n\tif not method:\n\t\treturn\n\tcontainer \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.container) or {}\n\titemId \u003d container.get(\"ItemId\") or self.view.custom.selectedFinishedGoodItemId\n\tif not itemId:\n\t\treturn\n\tcfg \u003d BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty(itemId, method) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tself.view.custom.draft \u003d {\"partsCount\": ppt if ppt else \"\", \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
       }
     },
     "custom.closureRaw": {
@@ -51,11 +50,11 @@
     "custom.componentProjection": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Workorder.Assembly.getComponentProjection\", 0, {session.custom.cell.locationId}, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}), {session.custom.closureMethod}, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
-            "code": "\treturn value or []",
+            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
             "type": "script"
           }
         ],
@@ -65,11 +64,11 @@
     "custom.container": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
-            "code": "\trows \u003d value or []\n\tr \u003d rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemId\": r.get(\"ItemId\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False, \"ClosureMethod\": r.get(\"ClosureMethod\") or \"\"}",
+            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"\\n\".join([\"%s   %d pcs\" % (k, totals[k]) for k in order])",
             "type": "script"
           }
         ],
@@ -86,34 +85,6 @@
       "onChange": {
         "enabled": true,
         "script": "\t# Auto-populate from the part\u0027s container config: prefill the parts-in-tray\n\t# field with PartsPerTray (only into an EMPTY field - never overwrite input).\n\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif ppt and d.get(\"partsCount\") in (None, \"\"):\n\t\tself.view.custom.draft \u003d {\"partsCount\": ppt, \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
-      }
-    },
-    "custom.queueByPartText": {
-      "binding": {
-        "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
-        },
-        "transforms": [
-          {
-            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
-            "type": "script"
-          }
-        ],
-        "type": "expr"
-      }
-    },
-    "custom.queueByPartVertical": {
-      "binding": {
-        "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
-        },
-        "transforms": [
-          {
-            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"\\n\".join([\"%s   %d pcs\" % (k, totals[k]) for k in order])",
-            "type": "script"
-          }
-        ],
-        "type": "expr"
       }
     }
   },
@@ -312,6 +283,7 @@
               }
             },
             "position": {
+              "basis": "116px",
               "shrink": 0
             },
             "props": {
@@ -341,6 +313,7 @@
               }
             },
             "position": {
+              "basis": "137px",
               "shrink": 0
             },
             "props": {
@@ -366,6 +339,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "94px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -382,7 +358,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -870,7 +846,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if(isNull({view.custom.container.Id}), 'Configured PartsPerTray = ' + toStr({view.custom.fgConfig.PartsPerTray}) + ' - complete the first tray to open a Container', 'Configured PartsPerTray = ' + toStr({view.custom.container.PartsPerTray}) + ' - accumulated ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' toward Container')"
+                                    "expression": "if(isNull({view.custom.container.Id}), \u0027Configured PartsPerTray \u003d \u0027 + toStr({view.custom.fgConfig.PartsPerTray}) + \u0027 - complete the first tray to open a Container\u0027, \u0027Configured PartsPerTray \u003d \u0027 + toStr({view.custom.container.PartsPerTray}) + \u0027 - accumulated \u0027 + toStr({view.custom.container.AccumulatedParts}) + \u0027 / \u0027 + toStr({view.custom.container.TargetParts}) + \u0027 toward Container\u0027)"
                                   },
                                   "type": "expr"
                                 }
@@ -1130,7 +1106,8 @@
                                   "direction": "column",
                                   "style": {
                                     "classes": "pf-field",
-                                    "gap": "4px"
+                                    "gap": "4px",
+                                    "overflow": "visible"
                                   }
                                 },
                                 "type": "ia.container.flex"
@@ -1178,7 +1155,8 @@
                                   "direction": "column",
                                   "style": {
                                     "classes": "pf-field",
-                                    "gap": "4px"
+                                    "gap": "4px",
+                                    "overflow": "visible"
                                   }
                                 },
                                 "type": "ia.container.flex"
@@ -1248,7 +1226,8 @@
                                   "direction": "column",
                                   "style": {
                                     "classes": "pf-field",
-                                    "gap": "4px"
+                                    "gap": "4px",
+                                    "overflow": "visible"
                                   }
                                 },
                                 "type": "ia.container.flex"
@@ -1300,7 +1279,8 @@
                             "props": {
                               "direction": "column",
                               "style": {
-                                "gap": "10px"
+                                "gap": "10px",
+                                "overflow": "visible"
                               }
                             },
                             "type": "ia.container.flex"
@@ -1311,7 +1291,8 @@
                         },
                         "props": {
                           "style": {
-                            "gap": "12px"
+                            "gap": "12px",
+                            "overflow": "visible"
                           },
                           "wrap": "wrap"
                         },

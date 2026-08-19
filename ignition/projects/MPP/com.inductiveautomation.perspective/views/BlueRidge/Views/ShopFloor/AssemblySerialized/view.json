@@ -1,17 +1,5 @@
 {
   "custom": {
-    "container": {
-      "Id": null,
-      "ItemPartNumber": "",
-      "ItemDescription": "",
-      "AccumulatedParts": 0,
-      "TargetParts": 0,
-      "ClosedTrays": 0,
-      "TraysPerContainer": 0,
-      "PartsPerTray": 0,
-      "IsSerialized": false
-    },
-    "queueByPartText": "",
     "refreshToken": 0
   },
   "params": {},
@@ -19,11 +7,11 @@
     "custom.container": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False}",
+            "code": "\trows \u003d value or []\n\tr \u003d rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False}",
             "type": "script"
           }
         ],
@@ -33,11 +21,11 @@
     "custom.queueByPartText": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals = {}\n\torder = []\n\tfor r in rows:\n\t\tk = r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] = 0\n\t\t\torder.append(k)\n\t\ttotals[k] = totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
+            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
             "type": "script"
           }
         ],
@@ -77,7 +65,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Dedicated terminal - MIP integrated - operator monitoring\""
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Dedicated terminal - MIP integrated - operator monitoring\""
                       },
                       "type": "expr"
                     }
@@ -107,7 +95,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-changeover\", \"BlueRidge/Components/Popups/ChangeoverElevation\", params={\"terminalLocationId\": self.session.custom.terminal.terminalLocationId}, modal=True, showCloseIcon=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-changeover\", \"BlueRidge/Components/Popups/ChangeoverElevation\", params\u003d{\"terminalLocationId\": self.session.custom.terminal.terminalLocationId}, modal\u003dTrue, showCloseIcon\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -124,7 +112,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if({session.custom.closureMethod} = \"ByCount\", \"By Count\", if({session.custom.closureMethod} = \"ByWeight\", \"By Weight\", if({session.custom.closureMethod} = \"ByVision\", \"By Vision\", \"—\")))"
+                    "expression": "if({session.custom.closureMethod} \u003d \"ByCount\", \"By Count\", if({session.custom.closureMethod} \u003d \"ByWeight\", \"By Weight\", if({session.custom.closureMethod} \u003d \"ByVision\", \"By Vision\", \"—\")))"
                   },
                   "type": "expr"
                 }
@@ -143,7 +131,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -160,7 +148,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -218,7 +206,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                    "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                   },
                   "scope": "G",
                   "type": "script"
@@ -232,6 +220,7 @@
               }
             },
             "position": {
+              "basis": "116px",
               "shrink": 0
             },
             "props": {
@@ -247,7 +236,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.session.custom.cell.locationId}, modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -261,6 +250,7 @@
               }
             },
             "position": {
+              "basis": "137px",
               "shrink": 0
             },
             "props": {
@@ -286,6 +276,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "94px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -302,7 +295,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -400,7 +393,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell bound to see its open container.', 'No open container at this cell.')"
+                    "expression": "if(isNull({session.custom.cell.locationId}), \u0027No cell bound to see its open container.\u0027, \u0027No open container at this cell.\u0027)"
                   },
                   "type": "expr"
                 }
@@ -509,7 +502,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr({view.custom.container.AccumulatedParts}) + ' of ' + toStr({view.custom.container.TargetParts})"
+                            "expression": "toStr({view.custom.container.AccumulatedParts}) + \u0027 of \u0027 + toStr({view.custom.container.TargetParts})"
                           },
                           "type": "expr"
                         }
@@ -530,7 +523,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer}) + ' trays closed - parts accumulated'"
+                            "expression": "toStr({view.custom.container.ClosedTrays}) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer}) + \u0027 trays closed - parts accumulated\u0027"
                           },
                           "type": "expr"
                         }
@@ -581,7 +574,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "'Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer})"
+                            "expression": "\u0027Tray \u0027 + toStr(({view.custom.container.ClosedTrays} + 1)) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer})"
                           },
                           "type": "expr"
                         }
@@ -602,7 +595,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "'TrayFullFlag at ' + toStr({view.custom.container.PartsPerTray}) + ' pcs'"
+                            "expression": "\u0027TrayFullFlag at \u0027 + toStr({view.custom.container.PartsPerTray}) + \u0027 pcs\u0027"
                           },
                           "type": "expr"
                         }
@@ -668,7 +661,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "'Tray Fill - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1))"
+                            "expression": "\u0027Tray Fill - Tray \u0027 + toStr(({view.custom.container.ClosedTrays} + 1))"
                           },
                           "type": "expr"
                         }
@@ -690,7 +683,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "if({session.custom.closureMethod} = \"ByCount\", \"By Count\", if({session.custom.closureMethod} = \"ByWeight\", \"By Weight\", \"By Vision\")) + \" - camera scans the tray as a whole - 1 validation event per tray\""
+                            "expression": "if({session.custom.closureMethod} \u003d \"ByCount\", \"By Count\", if({session.custom.closureMethod} \u003d \"ByWeight\", \"By Weight\", \"By Vision\")) + \" - camera scans the tray as a whole - 1 validation event per tray\""
                           },
                           "type": "expr"
                         }
@@ -751,7 +744,7 @@
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "The camera scans the full tray as a single image once TrayFullFlag asserts - one validation event per tray; positions show each etched serial. A serial placed during a HardwareInterlockEnable=false window is flagged hardware-interlock-bypassed per UJ-16; the audit row captures the bypass."
+                  "text": "The camera scans the full tray as a single image once TrayFullFlag asserts - one validation event per tray; positions show each etched serial. A serial placed during a HardwareInterlockEnable\u003dfalse window is flagged hardware-interlock-bypassed per UJ-16; the audit row captures the bypass."
                 },
                 "type": "ia.display.label"
               }
@@ -766,7 +759,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{session.custom.closureMethod} = \"ByVision\""
+                    "expression": "{session.custom.closureMethod} \u003d \"ByVision\""
                   },
                   "type": "expr"
                 }
@@ -846,7 +839,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{session.custom.closureMethod} = \"ByWeight\""
+                    "expression": "{session.custom.closureMethod} \u003d \"ByWeight\""
                   },
                   "type": "expr"
                 }
@@ -886,7 +879,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "'Operator count - tray closes at ' + toStr({view.custom.container.PartsPerTray}) + ' pcs'"
+                            "expression": "\u0027Operator count - tray closes at \u0027 + toStr({view.custom.container.PartsPerTray}) + \u0027 pcs\u0027"
                           },
                           "type": "expr"
                         }
@@ -920,7 +913,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "'Accumulated ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' parts - trays close by operator count.'"
+                        "expression": "\u0027Accumulated \u0027 + toStr({view.custom.container.AccumulatedParts}) + \u0027 / \u0027 + toStr({view.custom.container.TargetParts}) + \u0027 parts - trays close by operator count.\u0027"
                       },
                       "type": "expr"
                     }
@@ -944,7 +937,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{session.custom.closureMethod} = \"ByCount\""
+                    "expression": "{session.custom.closureMethod} \u003d \"ByCount\""
                   },
                   "type": "expr"
                 }
@@ -1079,11 +1072,11 @@
     "events": {
       "system": {
         "onStartup": {
-          "type": "script",
-          "scope": "G",
           "config": {
-            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal's parent line.\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy = \"confirm\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
-          }
+            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal\u0027s parent line.\n\tt \u003d self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell \u003d {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy \u003d \"confirm\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+          },
+          "scope": "G",
+          "type": "script"
         }
       }
     },
@@ -1105,7 +1098,7 @@
         {
           "messageType": "inventoryChanged",
           "pageScope": true,
-          "script": "\tloc = (payload or {}).get(\"cellLocationId\")\n\tmyCell = None\n\ttry:\n\t\tmyCell = self.session.custom.cell.locationId\n\texcept:\n\t\tmyCell = None\n\tif loc is None or loc == myCell:\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tloc \u003d (payload or {}).get(\"cellLocationId\")\n\tmyCell \u003d None\n\ttry:\n\t\tmyCell \u003d self.session.custom.cell.locationId\n\texcept:\n\t\tmyCell \u003d None\n\tif loc is None or loc \u003d\u003d myCell:\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

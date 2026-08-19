@@ -86,6 +86,7 @@
               "name": "BtnDiscard"
             },
             "position": {
+              "basis": "66px",
               "shrink": 0
             },
             "propConfig": {
@@ -122,6 +123,7 @@
               "name": "BtnSave"
             },
             "position": {
+              "basis": "52px",
               "shrink": 0
             },
             "propConfig": {
@@ -149,7 +151,8 @@
         "props": {
           "alignItems": "center",
           "style": {
-            "gap": "8px"
+            "gap": "8px",
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -287,6 +290,7 @@
           "name": "BtnAddRow"
         },
         "position": {
+          "basis": "31px",
           "shrink": 0
         },
         "propConfig": {
@@ -324,7 +328,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tempty \u003d {\"rows\": []}\n\t\tself.view.custom.state \u003d {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\tinstances \u003d BlueRidge.Parts.Tool.getCavityInstancesForTool(toolId) or []\n\tloaded \u003d []\n\tfor inst in instances:\n\t\tcav \u003d (inst or {}).get(\"cavity\") or {}\n\t\tsc \u003d cav.get(\"StatusCode\") or \"Active\"\n\t\tloaded.append({\n\t\t\t\"id\":              cav.get(\"Id\"),\n\t\t\t\"cavityNumber\":    cav.get(\"Number\"),\n\t\t\t\"description\":     cav.get(\"Description\") if cav.get(\"Description\") is not None else \"\",\n\t\t\t\"statusCode\":      sc,\n\t\t\t\"isScrappedSaved\": (sc \u003d\u003d \"Scrapped\"),\n\t\t})\n\tself.view.custom.state \u003d {\"selected\": {\"rows\": loaded}, \"editDraft\": {\"rows\": [dict(r) for r in loaded]}}"
+          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tempty \u003d {\"rows\": []}\n\t\tself.view.custom.state \u003d {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\tinstances \u003d BlueRidge.Parts.Tool.getCavityInstancesForTool(toolId) or []\n\tloaded \u003d []\n\tfor inst in instances:\n\t\tcav \u003d (inst or {}).get(\"cavity\") or {}\n\t\tsc \u003d cav.get(\"StatusCode\") or \"Active\"\n\t\tloaded.append({\n\t\t\t\"id\":              cav.get(\"Id\"),\n\t\t\t\"cavityNumber\":    cav.get(\"Number\"),\n\t\t\t\"description\":     cav.get(\"Description\") if cav.get(\"Description\") is not None else \"\",\n\t\t\t\"statusCode\":      sc,\n\t\t\t\"isScrappedSaved\": (sc \u003d\u003d \"Scrapped\"),\n\t\t\t\"isDeprecated\":    self.view.params.deprecated\n\t\t})\n\tself.view.custom.state \u003d {\"selected\": {\"rows\": loaded}, \"editDraft\": {\"rows\": [dict(r) for r in loaded]}}"
         },
         {
           "name": "handleSave",
@@ -334,12 +338,12 @@
         {
           "name": "handleDiscard",
           "params": [],
-          "script": "\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": {\"rows\": [dict(r) for r in (selected.get(\"rows\") or [])]}}"
+          "script": "\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\n\t\t\"selected\": selected, \n\t\t\"editDraft\": selected\n\t}"
         },
         {
           "name": "addRow",
           "params": [],
-          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":              None,\n\t\t\"cavityNumber\":    None,\n\t\t\"description\":     \"\",\n\t\t\"statusCode\":      \"Active\",\n\t\t\"isScrappedSaved\": False,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":              None,\n\t\t\"cavityNumber\":    None,\n\t\t\"description\":     \"\",\n\t\t\"statusCode\":      \"Active\",\n\t\t\"isScrappedSaved\": False,\n\t\t\"isDeprecated\": self.view.params.deprecated,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
         },
         {
           "name": "_applyNumberChange",

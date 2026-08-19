@@ -85,6 +85,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "94px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -101,7 +104,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -448,7 +451,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -502,7 +506,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -556,7 +561,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -571,7 +577,8 @@
                 "props": {
                   "alignItems": "flex-end",
                   "style": {
-                    "gap": "12px"
+                    "gap": "12px",
+                    "overflow": "visible"
                   },
                   "wrap": "wrap"
                 },

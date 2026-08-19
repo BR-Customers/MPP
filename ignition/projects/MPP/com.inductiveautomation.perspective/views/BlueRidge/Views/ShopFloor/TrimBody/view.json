@@ -4,12 +4,12 @@
     "activeLotName": null,
     "destValue": null,
     "inScan": "",
+    "lotPieceCount": null,
     "outScan": "",
     "refreshToken": 0,
     "scrapLines": [],
     "defectOptions": [],
     "shotCount": null,
-    "lotPieceCount": null,
     "trimState": "in"
   },
   "params": {
@@ -31,6 +31,12 @@
           "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0, {view.custom.activeLotId}, {view.custom.refreshToken})"
         },
         "type": "expr"
+      }
+    },
+    "custom.scrapCount": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tlp \u003d self.view.custom.lotPieceCount\n\tif lp is None:\n\t\treturn\n\ts \u003d currentValue.value\n\ttry:\n\t\ts \u003d int(s) if s not in (None, \"\") else 0\n\texcept (ValueError, TypeError):\n\t\ts \u003d 0\n\tself.view.custom.shotCount \u003d max(0, int(lp) - s)"
       }
     },
     "custom.trimInventory": {
@@ -84,7 +90,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"No terminal resolved\", {session.custom.terminal.zoneName})"
+                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} \u003d \"\", \"No terminal resolved\", {session.custom.terminal.zoneName})"
                       },
                       "type": "expr"
                     }
@@ -114,7 +120,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -131,7 +137,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -221,7 +227,7 @@
                   },
                   "transforms": [
                     {
-                      "code": "\tcells = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
+                      "code": "\tcells \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
                       "type": "script"
                     }
                   ],
@@ -290,7 +296,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.trimState = \"in\""
+                    "script": "\tself.view.custom.trimState \u003d \"in\""
                   },
                   "scope": "G",
                   "type": "script"
@@ -304,7 +310,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.trimState} = \"in\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+                    "expression": "if({view.custom.trimState} \u003d \"in\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
                   },
                   "type": "expr"
                 }
@@ -324,7 +330,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.trimState = \"out\""
+                    "script": "\tself.view.custom.trimState \u003d \"out\""
                   },
                   "scope": "G",
                   "type": "script"
@@ -338,7 +344,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.trimState} = \"out\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+                    "expression": "if({view.custom.trimState} \u003d \"out\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
                   },
                   "type": "expr"
                 }
@@ -360,7 +366,7 @@
         "props": {
           "style": {
             "gap": "8px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -421,7 +427,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "len({view.custom.trimInventory}) = 0"
+                            "expression": "len({view.custom.trimInventory}) \u003d 0"
                           },
                           "type": "expr"
                         }
@@ -578,7 +584,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.trimState} = \"in\""
+                "expression": "{view.custom.trimState} \u003d \"in\""
               },
               "type": "expr"
             }
@@ -649,7 +655,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "len({view.custom.trimInventory}) = 0"
+                            "expression": "len({view.custom.trimInventory}) \u003d 0"
                           },
                           "type": "expr"
                         }
@@ -714,7 +720,7 @@
                   "direction": "column",
                   "style": {
                     "gap": "8px",
-                    "overflow": "hidden"
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -813,7 +819,7 @@
                       "style": {
                         "classes": "pf-field",
                         "gap": "4px",
-                        "overflow": "hidden"
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -868,7 +874,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -958,7 +965,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -973,7 +981,7 @@
                     "props": {
                       "style": {
                         "gap": "12px",
-                        "overflow": "hidden"
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1061,7 +1069,7 @@
                   "direction": "column",
                   "style": {
                     "gap": "12px",
-                    "overflow": "hidden"
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -1077,7 +1085,7 @@
               "direction": "row-reverse",
               "style": {
                 "gap": "16px",
-                "overflow": "hidden"
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -1093,7 +1101,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.trimState} = \"out\""
+                "expression": "{view.custom.trimState} \u003d \"out\""
               },
               "type": "expr"
             }
@@ -1138,7 +1146,7 @@
           "params": [
             "cellId"
           ],
-          "script": "\tcellId = BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow = BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.session.custom.cell = {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
+          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
         },
         {
           "name": "resolveOutScan",
@@ -1177,7 +1185,7 @@
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
         }
       ],
       "extensionFunctions": null,

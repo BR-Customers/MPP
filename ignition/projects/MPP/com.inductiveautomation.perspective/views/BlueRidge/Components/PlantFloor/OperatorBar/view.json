@@ -1,32 +1,15 @@
 {
   "custom": {},
   "params": {},
-  "propConfig": {},
   "props": {
     "defaultSize": {
-      "width": 1920,
-      "height": 44
+      "height": 44,
+      "width": 1920
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "justify": "flex-end",
-      "style": {
-        "classes": "canvas",
-        "gap": "12px",
-        "padding": "6px 16px",
-        "borderBottom": "1px solid var(--mpp-border-subtle)"
-      }
-    },
     "children": [
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "OperatorLabel"
         },
@@ -36,10 +19,10 @@
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
-              }
+                "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+              },
+              "type": "expr"
             }
           }
         },
@@ -47,10 +30,21 @@
           "style": {
             "classes": "pf-kpi-sub"
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.input.button",
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
         "meta": {
           "name": "ChangeOperatorButton"
         },
@@ -58,23 +52,27 @@
           "shrink": 0
         },
         "props": {
-          "text": "Change Operator",
           "style": {
             "classes": "pf-btn pf-btn-secondary"
-          }
+          },
+          "text": "Change Operator"
         },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
-              }
-            }
-          }
-        }
+        "type": "ia.input.button"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "justify": "flex-end",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "classes": "canvas",
+        "gap": "12px",
+        "padding": "6px 16px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

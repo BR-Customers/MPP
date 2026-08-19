@@ -211,7 +211,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -262,7 +263,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -320,7 +322,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -335,7 +338,7 @@
                   "style": {
                     "classes": "field-label"
                   },
-                  "text": "Reason Type"
+                  "text": "REASON TYPE (OPTIONAL)"
                 },
                 "type": "ia.display.label"
               },
@@ -378,7 +381,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -500,6 +504,7 @@
                   "name": "CancelButton"
                 },
                 "position": {
+                  "basis": "62px",
                   "shrink": 0
                 },
                 "props": {
@@ -526,6 +531,7 @@
                   "name": "SaveButton"
                 },
                 "position": {
+                  "basis": "51px",
                   "shrink": 0
                 },
                 "props": {
@@ -543,7 +549,8 @@
             "props": {
               "alignItems": "center",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"

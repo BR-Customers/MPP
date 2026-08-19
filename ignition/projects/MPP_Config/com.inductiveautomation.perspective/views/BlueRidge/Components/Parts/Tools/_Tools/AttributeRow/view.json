@@ -316,7 +316,7 @@
           "props.value": {
             "binding": {
               "config": {
-                "expression": "if(isNull({view.params.row.value}) || {view.params.row.value} \u003d \"\", null, parseDate({view.params.row.value}, \"yyyy-MM-dd\"))"
+                "expression": "if(isNull({view.params.row.value}) || {view.params.row.value} \u003d \"\", null, dateFormat({view.params.row.value}, \"yyyy-MM-dd\"))"
               },
               "type": "expr"
             }
@@ -324,6 +324,7 @@
         },
         "props": {
           "format": "YYYY-MM-DD",
+          "formattedValue": "2026-08-06",
           "style": {
             "classes": "search-input",
             "height": "30px"

@@ -466,6 +466,9 @@
         "meta": {
           "name": "GoToSpecButton"
         },
+        "position": {
+          "basis": "29px"
+        },
         "props": {
           "style": {
             "alignSelf": "flex-end"

@@ -69,6 +69,29 @@
             "type": "ia.container.flex"
           },
           {
+            "meta": {
+              "name": "DirtyIndicator"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.draft} !\u003d {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
             "events": {
               "dom": {
                 "onClick": {
@@ -164,7 +187,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -228,7 +252,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -279,7 +304,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -330,7 +356,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -370,6 +397,7 @@
               "name": "CancelButton"
             },
             "position": {
+              "basis": "62px",
               "shrink": 0
             },
             "props": {
@@ -396,6 +424,7 @@
               "name": "CreateButton"
             },
             "position": {
+              "basis": "61px",
               "shrink": 0
             },
             "props": {

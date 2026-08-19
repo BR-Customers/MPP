@@ -1,6 +1,6 @@
 {
   "custom": {
-    "activeVersionId": 6,
+    "activeVersionId": null,
     "dataTypes": [
       {
         "label": "Numeric",
@@ -16,6 +16,7 @@
       }
     ],
     "filter": {
+      "includeDeprecated": false,
       "searchText": "",
       "type": "All"
     },
@@ -26,22 +27,22 @@
       "editDraft": {
         "deprecatedAt": null,
         "description": "",
-        "id": 8,
-        "itemCode": "5G0",
-        "itemDesc": "5G0 Front Cover Assembly",
-        "itemId": 1,
-        "name": "Draft Reconcile Test Spec",
+        "id": null,
+        "itemCode": "",
+        "itemDesc": "",
+        "itemId": null,
+        "name": "",
         "opCode": "",
         "operationTemplateId": null
       },
       "selected": {
         "deprecatedAt": null,
         "description": "",
-        "id": 8,
-        "itemCode": "5G0",
-        "itemDesc": "5G0 Front Cover Assembly",
-        "itemId": 1,
-        "name": "Draft Reconcile Test Spec",
+        "id": null,
+        "itemCode": "",
+        "itemDesc": "",
+        "itemId": null,
+        "name": "",
         "opCode": "",
         "operationTemplateId": null
       }
@@ -50,24 +51,12 @@
       "editDraft": {
         "attributes": [
           {
-            "attributeName": "Bore Dia",
+            "attributeName": "",
             "dataType": "Numeric",
-            "id": 4,
+            "id": null,
             "isRequired": true,
-            "lowerLimit": 25.38,
-            "sortOrder": 1,
-            "targetValue": 25.4,
-            "uomCode": "EA",
-            "uomId": 1,
-            "upperLimit": 25.42
-          },
-          {
-            "attributeName": "Surface",
-            "dataType": "Text",
-            "id": 6,
-            "isRequired": false,
             "lowerLimit": null,
-            "sortOrder": 2,
+            "sortOrder": null,
             "targetValue": null,
             "uomCode": "",
             "uomId": null,
@@ -75,56 +64,24 @@
           }
         ],
         "deprecatedAt": null,
-        "effectiveFrom": "2026-05-29 15:33:46.008",
-        "effectiveFromDisplay": "2026-05-29",
-        "id": 6,
+        "effectiveFrom": null,
+        "effectiveFromDisplay": "",
+        "id": null,
         "publishedAt": null,
-        "specId": 8,
-        "status": "Draft",
-        "versionNumber": 1
+        "specId": null,
+        "status": null,
+        "versionNumber": null
       },
       "selected": {
-        "attributes": [
-          {
-            "attributeName": "Bore Dia",
-            "dataType": "Numeric",
-            "id": 4,
-            "isRequired": true,
-            "lowerLimit": 25.38,
-            "sortOrder": 1,
-            "targetValue": 25.4,
-            "uomCode": "EA",
-            "uomId": 1,
-            "upperLimit": 25.42
-          },
-          {
-            "attributeName": "Surface",
-            "dataType": "Text",
-            "id": 6,
-            "isRequired": false,
-            "lowerLimit": null,
-            "sortOrder": 2,
-            "targetValue": null,
-            "uomCode": "",
-            "uomId": null,
-            "upperLimit": null
-          }
-        ],
+        "attributes": [],
         "deprecatedAt": null,
-        "effectiveFrom": {
-          "$": [
-            "ts",
-            192,
-            1780078582212
-          ],
-          "$ts": 1780083226008
-        },
-        "effectiveFromDisplay": "2026-05-29",
-        "id": 6,
+        "effectiveFrom": null,
+        "effectiveFromDisplay": "",
+        "id": null,
         "publishedAt": null,
-        "specId": 8,
-        "status": "Draft",
-        "versionNumber": 1
+        "specId": null,
+        "status": null,
+        "versionNumber": null
       }
     },
     "typeOptions": [
@@ -152,9 +109,9 @@
           "$": [
             "ts",
             192,
-            1780078582210
+            1782914708214
           ],
-          "$ts": 1780083204696
+          "$ts": 1782847842226
         },
         "DeprecatedAt": null,
         "Description": "Discrete unit count",
@@ -167,9 +124,9 @@
           "$": [
             "ts",
             192,
-            1780078582210
+            1782914708214
           ],
-          "$ts": 1780083204696
+          "$ts": 1782847842226
         },
         "DeprecatedAt": null,
         "Description": "Inch (imperial length)",
@@ -182,9 +139,9 @@
           "$": [
             "ts",
             192,
-            1780078582210
+            1782914708214
           ],
-          "$ts": 1780083204696
+          "$ts": 1782847842226
         },
         "DeprecatedAt": null,
         "Description": "Kilogram (metric)",
@@ -197,9 +154,9 @@
           "$": [
             "ts",
             192,
-            1780078582210
+            1782914708214
           ],
-          "$ts": 1780083204696
+          "$ts": 1782847842226
         },
         "DeprecatedAt": null,
         "Description": "Pound mass (imperial)",
@@ -212,9 +169,9 @@
           "$": [
             "ts",
             192,
-            1780078582210
+            1782914708214
           ],
-          "$ts": 1780083204696
+          "$ts": 1782847842226
         },
         "DeprecatedAt": null,
         "Description": "Millimeter (metric length)",
@@ -227,9 +184,9 @@
           "$": [
             "ts",
             192,
-            1780078582210
+            1782914708214
           ],
-          "$ts": 1780083204696
+          "$ts": 1782847842226
         },
         "DeprecatedAt": null,
         "Description": "Piece count",
@@ -237,36 +194,7 @@
         "Name": "Pieces"
       }
     ],
-    "versions": [
-      {
-        "AttributeCount": 2,
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1780078582210
-          ],
-          "$ts": 1780083226008
-        },
-        "CreatedByDisplayName": "System Bootstrap",
-        "CreatedByUserId": 1,
-        "DeprecatedAt": null,
-        "EffectiveFrom": {
-          "$": [
-            "ts",
-            192,
-            1780078582210
-          ],
-          "$ts": 1780083226008
-        },
-        "Id": 6,
-        "PublishedAt": null,
-        "QualitySpecId": 8,
-        "State": "Draft",
-        "VersionNumber": 1,
-        "effectiveFromDisplay": "2026-05-29"
-      }
-    ]
+    "versions": []
   },
   "params": {
     "specId": null
@@ -419,6 +347,9 @@
             "meta": {
               "name": "NewSpecButton"
             },
+            "position": {
+              "basis": "101px"
+            },
             "props": {
               "style": {
                 "classes": "btn btn-primary",
@@ -506,6 +437,49 @@
                       }
                     },
                     "type": "ia.input.dropdown"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "IncludeDeprecated"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.includeDeprecated"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "12px",
+                            "whiteSpace": "nowrap"
+                          },
+                          "text": "Include deprecated"
+                        },
+                        "type": "ia.input.checkbox"
+                      }
+                    ],
+                    "meta": {
+                      "name": "IncludeDeprecatedField"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px",
+                        "paddingTop": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
                 ],
                 "meta": {
@@ -608,6 +582,14 @@
                           "name": "StateBadge"
                         },
                         "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.state.selected.status} !\u003d null"
+                              },
+                              "type": "expr"
+                            }
+                          },
                           "props.style.classes": {
                             "binding": {
                               "config": {
@@ -676,6 +658,19 @@
                         "meta": {
                           "name": "SaveHeaderButton"
                         },
+                        "position": {
+                          "basis": "79px"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.specHeader.selected.deprecatedAt} \u003d null"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
                         "props": {
                           "style": {
                             "classes": "btn btn-primary btn-sm"
@@ -699,6 +694,19 @@
                         "meta": {
                           "name": "DeprecateSpecButton"
                         },
+                        "position": {
+                          "basis": "109px"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.specHeader.selected.deprecatedAt} \u003d null"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
                         "props": {
                           "style": {
                             "classes": "btn btn-danger btn-sm"
@@ -714,7 +722,8 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "8px"
+                        "gap": "8px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -740,6 +749,14 @@
                               "name": "Input"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "{view.custom.specHeader.selected.deprecatedAt} \u003d null"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
                               "props.text": {
                                 "binding": {
                                   "config": {
@@ -927,6 +944,14 @@
                               "name": "Input"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "{view.custom.specHeader.selected.deprecatedAt} \u003d null"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
                               "props.text": {
                                 "binding": {
                                   "config": {
@@ -986,6 +1011,14 @@
                           "shrink": 0
                         },
                         "propConfig": {
+                          "props.enabled": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.specHeader.selected.deprecatedAt} \u003d null"
+                              },
+                              "type": "expr"
+                            }
+                          },
                           "props.options": {
                             "binding": {
                               "config": {
@@ -1133,7 +1166,19 @@
                         "meta": {
                           "name": "NewVersionButton"
                         },
+                        "position": {
+                          "basis": "102px",
+                          "display": false
+                        },
                         "propConfig": {
+                          "meta.visible": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.specHeader.selected.deprecatedAt} \u003d null"
+                              },
+                              "type": "expr"
+                            }
+                          },
                           "props.enabled": {
                             "binding": {
                               "config": {
@@ -1165,6 +1210,9 @@
                         },
                         "meta": {
                           "name": "SaveDraftButton"
+                        },
+                        "position": {
+                          "basis": "81px"
                         },
                         "propConfig": {
                           "position.display": {
@@ -1207,6 +1255,9 @@
                         "meta": {
                           "name": "PublishButton"
                         },
+                        "position": {
+                          "basis": "66px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -1239,6 +1290,9 @@
                         },
                         "meta": {
                           "name": "DiscardDraftButton"
+                        },
+                        "position": {
+                          "basis": "97px"
                         },
                         "propConfig": {
                           "position.display": {
@@ -1273,6 +1327,9 @@
                         "meta": {
                           "name": "DeprecateVersionButton"
                         },
+                        "position": {
+                          "basis": "124px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -1298,7 +1355,8 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "8px"
+                        "gap": "8px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1565,6 +1623,7 @@
                               "name": "AddAttributeButton"
                             },
                             "position": {
+                              "basis": "108px",
                               "shrink": 0
                             },
                             "props": {
@@ -1578,6 +1637,9 @@
                         ],
                         "meta": {
                           "name": "DraftFooter"
+                        },
+                        "position": {
+                          "basis": "44px"
                         },
                         "propConfig": {
                           "position.display": {
@@ -1816,7 +1878,6 @@
                   "contentStyle": {
                     "classes": "tab-content-fill"
                   },
-                  "currentTabIndex": 1,
                   "menuStyle": {
                     "classes": "tab-strip"
                   },
@@ -1985,7 +2046,7 @@
         {
           "name": "loadSpec",
           "params": [],
-          "script": "\tspecId \u003d self.view.custom.selectedSpecId\n\tself.view.custom.activeVersionId \u003d None\n\tif not specId:\n\t\tself.view.custom.specHeader \u003d {\"selected\": self._emptyHeader(), \"editDraft\": self._emptyHeader()}\n\t\tself.view.custom.state \u003d {\"selected\": self._emptyVersion(), \"editDraft\": self._emptyVersion()}\n\t\tself.view.custom.versions \u003d []\n\t\treturn\n\theader \u003d BlueRidge.Quality.QualitySpec.getSpecHeader(specId)\n\tself.view.custom.specHeader \u003d {\"selected\": dict(header), \"editDraft\": dict(header)}\n\tself.view.custom.uoms \u003d BlueRidge.Quality.QualitySpec.listUoms()\n\tversions \u003d BlueRidge.Quality.QualitySpec.listVersions(specId, True)\n\tself.view.custom.versions \u003d versions\n\tif versions:\n\t\tself.view.custom.activeVersionId \u003d versions[0].get(\"Id\")\n\telse:\n\t\tself.view.custom.state \u003d {\"selected\": self._emptyVersion(), \"editDraft\": self._emptyVersion()}"
+          "script": "\tspecId \u003d self.view.custom.selectedSpecId\n\tself.view.custom.activeVersionId \u003d None\n\tif not specId:\n\t\tself.view.custom.specHeader \u003d {\"selected\": self._emptyHeader(), \"editDraft\": self._emptyHeader()}\n\t\tself.view.custom.state \u003d {\"selected\": self._emptyVersion(), \"editDraft\": self._emptyVersion()}\n\t\tself.view.custom.versions \u003d []\n\t\treturn\n\t\t\n\theader \u003d BlueRidge.Quality.QualitySpec.getSpecHeader(specId)\n\tself.view.custom.specHeader \u003d {\"selected\": dict(header), \"editDraft\": dict(header)}\n\tself.view.custom.uoms \u003d BlueRidge.Quality.QualitySpec.listUoms()\n\tversions \u003d BlueRidge.Quality.QualitySpec.listVersions(specId, True)\n\tself.view.custom.versions \u003d versions\n\tif versions:\n\t\tself.view.custom.activeVersionId \u003d versions[0].get(\"Id\")\n\telse:\n\t\tself.view.custom.state \u003d {\"selected\": self._emptyVersion(), \"editDraft\": self._emptyVersion()}"
         },
         {
           "name": "loadActiveVersion",

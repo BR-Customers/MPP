@@ -1,13 +1,5 @@
 {
   "custom": {
-    "selectedDevice": "",
-    "selectedDeviceType": "",
-    "inNetWeight": "",
-    "inTargetWeight": "",
-    "inMetFlag": false,
-    "inPartSN": "",
-    "inInterlock": false,
-    "inVisionPartNumber": "",
     "dispositions": [
       false,
       false,
@@ -28,53 +20,29 @@
       false,
       false
     ],
-    "pendingScenarios": [],
     "failedScenarios": [],
-    "failedText": ""
+    "failedText": "",
+    "inInterlock": false,
+    "inMetFlag": false,
+    "inNetWeight": "",
+    "inPartSN": "",
+    "inTargetWeight": "",
+    "inVisionPartNumber": "",
+    "pendingScenarios": [],
+    "selectedDevice": "",
+    "selectedDeviceType": ""
   },
   "params": {},
   "props": {
     "defaultSize": {
-      "width": 1280,
-      "height": 800
+      "width": 1280
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "pf-terminal",
-        "gap": "10px",
-        "padding": "12px"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Header"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "props": {
-          "direction": "row",
-          "alignItems": "center",
-          "justify": "space-between",
-          "style": {
-            "classes": "pf-terminal-header",
-            "gap": "8px",
-            "padding": "8px 12px"
-          }
-        },
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "Title"
             },
@@ -83,90 +51,159 @@
                 "classes": "pf-details-header"
               },
               "text": "PLC Device Simulator"
-            }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "HeaderActions"
-            },
-            "props": {
-              "direction": "row",
-              "style": {
-                "gap": "8px"
-              }
-            },
             "children": [
               {
-                "type": "ia.input.button",
-                "version": 0,
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.resetScenarios()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
                 "meta": {
                   "name": "ResetScenarios"
                 },
                 "props": {
-                  "text": "Reset Scenarios",
                   "style": {
                     "classes": "pf-btn"
-                  }
+                  },
+                  "text": "Reset Scenarios"
                 },
+                "type": "ia.input.button"
+              },
+              {
                 "events": {
                   "component": {
                     "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
                       "config": {
-                        "script": "\tself.view.rootContainer.resetScenarios()"
-                      }
+                        "script": "\tself.view.rootContainer.copyFailed()"
+                      },
+                      "scope": "G",
+                      "type": "script"
                     }
                   }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "version": 0,
+                },
                 "meta": {
                   "name": "CopyFailed"
                 },
                 "props": {
-                  "text": "Copy Failed List",
                   "style": {
                     "classes": "pf-btn"
-                  }
+                  },
+                  "text": "Copy Failed List"
                 },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "HeaderActions"
+            },
+            "props": {
+              "style": {
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "space-between",
+          "style": {
+            "classes": "pf-terminal-header",
+            "gap": "8px",
+            "padding": "8px 12px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "DeviceLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Device"
+                },
+                "type": "ia.display.label"
+              },
+              {
                 "events": {
                   "component": {
                     "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
                       "config": {
-                        "script": "\tself.view.rootContainer.copyFailed()"
-                      }
+                        "script": "\tself.view.rootContainer.selectDevice(self.props.value)"
+                      },
+                      "scope": "G",
+                      "type": "script"
                     }
                   }
-                }
+                },
+                "meta": {
+                  "name": "DeviceDropdown"
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Sim.getDeviceOptions\", 0)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": {
+                    "text": "Select device..."
+                  },
+                  "style": {
+                    "classes": "pf-field-select"
+                  }
+                },
+                "type": "ia.input.dropdown"
+              },
+              {
+                "meta": {
+                  "name": "SelTypeLabel"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"Type: \" + coalesce({view.custom.selectedDeviceType}, \"-\")"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-cell-context-label"
+                  }
+                },
+                "type": "ia.display.label"
               }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Body"
-        },
-        "position": {
-          "grow": 1,
-          "basis": "0"
-        },
-        "props": {
-          "direction": "row",
-          "style": {
-            "gap": "10px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
               "name": "LeftRail"
             },
@@ -182,151 +219,35 @@
                 "padding": "12px"
               }
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "DeviceLabel"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-field-label"
-                  },
-                  "text": "Device"
-                }
-              },
-              {
-                "type": "ia.input.dropdown",
-                "version": 0,
-                "meta": {
-                  "name": "DeviceDropdown"
-                },
-                "props": {
-                  "placeholder": {
-                    "text": "Select device...",
-                    "color": "",
-                    "icon": {
-                      "path": "",
-                      "color": ""
-                    }
-                  },
-                  "style": {
-                    "classes": "pf-field-select"
-                  }
-                },
-                "propConfig": {
-                  "props.options": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "runScript(\"BlueRidge.Sim.getDeviceOptions\", 0)"
-                      }
-                    }
-                  }
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.selectDevice(self.props.value)"
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "SelTypeLabel"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-cell-context-label"
-                  }
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "\"Type: \" + coalesce({view.custom.selectedDeviceType}, \"-\")"
-                      }
-                    }
-                  }
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "Center"
-            },
-            "position": {
-              "grow": 1,
-              "basis": "0"
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "gap": "10px",
-                "overflowY": "auto"
-              }
-            },
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "NoDeviceHint"
                 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.selectedDeviceType} \u003d \"\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
-                  "text": "Select a device on the left to drive its handshake.",
                   "style": {
                     "classes": "pf-empty-state"
-                  }
+                  },
+                  "text": "Select a device on the left to drive its handshake."
                 },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.selectedDeviceType} = \"\""
-                      }
-                    }
-                  }
-                }
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "ScaleGroup"
-                },
-                "position": {
-                  "basis": "auto"
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "pf-panel",
-                    "gap": "10px",
-                    "padding": "12px"
-                  }
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.selectedDeviceType} = \"ScaleStation\""
-                      }
-                    }
-                  }
-                },
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "ScaleHeader"
                     },
@@ -335,10 +256,46 @@
                         "classes": "pf-panel-header"
                       },
                       "text": "Scale Station"
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.container.flex",
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "NetWeightFieldLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Net Weight"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "NetWeightInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.inNetWeight"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
                     "meta": {
                       "name": "NetWeightField"
                     },
@@ -349,91 +306,88 @@
                         "gap": "4px"
                       }
                     },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "MetFlagCheck"
+                    },
+                    "propConfig": {
+                      "props.selected": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.inMetFlag"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Target Weight Met"
+                    },
+                    "type": "ia.input.checkbox"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.fireScaleDataReady()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "FireScaleDataReady"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      },
+                      "text": "Fire NET_DataReady"
+                    },
+                    "type": "ia.input.button"
+                  },
+                  {
                     "children": [
                       {
-                        "type": "ia.display.label",
                         "meta": {
-                          "name": "NetWeightFieldLabel"
+                          "name": "TargetWeightFieldLabel"
                         },
                         "props": {
                           "style": {
                             "classes": "pf-field-label"
                           },
-                          "text": "Net Weight"
-                        }
+                          "text": "Target Weight"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.text-field",
-                        "version": 0,
                         "meta": {
-                          "name": "NetWeightInput"
+                          "name": "TargetWeightInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.inTargetWeight"
+                              },
+                              "type": "property"
+                            }
+                          }
                         },
                         "props": {
                           "style": {
                             "classes": "pf-field-input"
                           }
                         },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.inNetWeight",
-                                "bidirectional": true
-                              }
-                            }
-                          }
-                        }
+                        "type": "ia.input.text-field"
                       }
-                    ]
-                  },
-                  {
-                    "type": "ia.input.checkbox",
-                    "version": 0,
-                    "meta": {
-                      "name": "MetFlagCheck"
-                    },
-                    "props": {
-                      "text": "Target Weight Met"
-                    },
-                    "propConfig": {
-                      "props.selected": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.inMetFlag",
-                            "bidirectional": true
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.input.button",
-                    "version": 0,
-                    "meta": {
-                      "name": "FireScaleDataReady"
-                    },
-                    "props": {
-                      "text": "Fire NET_DataReady",
-                      "style": {
-                        "classes": "pf-btn pf-btn-primary"
-                      }
-                    },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.fireScaleDataReady()"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.container.flex",
+                    ],
                     "meta": {
                       "name": "TargetWeightField"
                     },
@@ -444,77 +398,44 @@
                         "gap": "4px"
                       }
                     },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "TargetWeightFieldLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-label"
-                          },
-                          "text": "Target Weight"
-                        }
-                      },
-                      {
-                        "type": "ia.input.text-field",
-                        "version": 0,
-                        "meta": {
-                          "name": "TargetWeightInput"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-input"
-                          }
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.inTargetWeight",
-                                "bidirectional": true
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ]
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.input.button",
-                    "version": 0,
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.setScaleTarget()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
                     "meta": {
                       "name": "SetScaleTarget"
                     },
                     "props": {
-                      "text": "Set Target + TRG_SendMessage",
                       "style": {
                         "classes": "pf-btn"
-                      }
+                      },
+                      "text": "Set Target + TRG_SendMessage"
                     },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.setScaleTarget()"
-                          }
-                        }
-                      }
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "ScaleGroup"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.selectedDeviceType} \u003d \"ScaleStation\""
+                      },
+                      "type": "expr"
                     }
                   }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "SerializedGroup"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "direction": "column",
@@ -524,19 +445,11 @@
                     "padding": "12px"
                   }
                 },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.selectedDeviceType} = \"SerializedMipStation\""
-                      }
-                    }
-                  }
-                },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "SerHeader"
                     },
@@ -545,10 +458,46 @@
                         "classes": "pf-panel-header"
                       },
                       "text": "Serialized MIP Station"
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.container.flex",
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "PartSNFieldLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Part Serial Number"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "PartSNInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.inPartSN"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
                     "meta": {
                       "name": "PartSNField"
                     },
@@ -559,146 +508,110 @@
                         "gap": "4px"
                       }
                     },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "PartSNFieldLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-label"
-                          },
-                          "text": "Part Serial Number"
-                        }
-                      },
-                      {
-                        "type": "ia.input.text-field",
-                        "version": 0,
-                        "meta": {
-                          "name": "PartSNInput"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-input"
-                          }
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.inPartSN",
-                                "bidirectional": true
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ]
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.input.checkbox",
-                    "version": 0,
                     "meta": {
                       "name": "InterlockCheck"
-                    },
-                    "props": {
-                      "text": "Hardware Interlock Enforced"
                     },
                     "propConfig": {
                       "props.selected": {
                         "binding": {
-                          "type": "property",
                           "config": {
-                            "path": "view.custom.inInterlock",
-                            "bidirectional": true
-                          }
+                            "bidirectional": true,
+                            "path": "view.custom.inInterlock"
+                          },
+                          "type": "property"
                         }
                       }
-                    }
+                    },
+                    "props": {
+                      "text": "Hardware Interlock Enforced"
+                    },
+                    "type": "ia.input.checkbox"
                   },
                   {
-                    "type": "ia.input.button",
-                    "version": 0,
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.fireSerializedDataReady()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
                     "meta": {
                       "name": "FireSerDataReady"
                     },
                     "props": {
-                      "text": "Fire DataReady",
                       "style": {
                         "classes": "pf-btn pf-btn-primary"
-                      }
+                      },
+                      "text": "Fire DataReady"
                     },
+                    "type": "ia.input.button"
+                  },
+                  {
                     "events": {
                       "component": {
                         "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.fireSerializedDataReady()"
-                          }
+                            "script": "\tself.view.rootContainer.firePartComplete()"
+                          },
+                          "scope": "G",
+                          "type": "script"
                         }
                       }
-                    }
-                  },
-                  {
-                    "type": "ia.input.button",
-                    "version": 0,
+                    },
                     "meta": {
                       "name": "FirePartComplete"
                     },
                     "props": {
-                      "text": "Fire PartComplete",
                       "style": {
                         "classes": "pf-btn pf-btn-primary"
-                      }
+                      },
+                      "text": "Fire PartComplete"
                     },
+                    "type": "ia.input.button"
+                  },
+                  {
                     "events": {
                       "component": {
                         "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.firePartComplete()"
-                          }
+                            "script": "\tself.view.rootContainer.fireContainerCountRequest()"
+                          },
+                          "scope": "G",
+                          "type": "script"
                         }
                       }
-                    }
-                  },
-                  {
-                    "type": "ia.input.button",
-                    "version": 0,
+                    },
                     "meta": {
                       "name": "FireCountRequest"
                     },
                     "props": {
-                      "text": "Fire ContainerCountRequest",
                       "style": {
                         "classes": "pf-btn"
-                      }
+                      },
+                      "text": "Fire ContainerCountRequest"
                     },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.fireContainerCountRequest()"
-                          }
-                        }
-                      }
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "SerializedGroup"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.selectedDeviceType} \u003d \"SerializedMipStation\""
+                      },
+                      "type": "expr"
                     }
                   }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "NonSerializedGroup"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "direction": "column",
@@ -708,19 +621,11 @@
                     "padding": "12px"
                   }
                 },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.selectedDeviceType} = \"NonSerializedMipStation\""
-                      }
-                    }
-                  }
-                },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "NonSerHeader"
                     },
@@ -729,41 +634,45 @@
                         "classes": "pf-panel-header"
                       },
                       "text": "Non-Serialized MIP Station"
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.input.button",
-                    "version": 0,
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.fireNonSerializedDataReady()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
                     "meta": {
                       "name": "FireNonSerDataReady"
                     },
                     "props": {
-                      "text": "Fire DataReady",
                       "style": {
                         "classes": "pf-btn pf-btn-primary"
-                      }
+                      },
+                      "text": "Fire DataReady"
                     },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.fireNonSerializedDataReady()"
-                          }
-                        }
-                      }
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "NonSerializedGroup"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.selectedDeviceType} \u003d \"NonSerializedMipStation\""
+                      },
+                      "type": "expr"
                     }
                   }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "TrayGroup"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "direction": "column",
@@ -773,19 +682,11 @@
                     "padding": "12px"
                   }
                 },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.selectedDeviceType} = \"TrayInspectionStation\""
-                      }
-                    }
-                  }
-                },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "TrayHeader"
                     },
@@ -794,10 +695,46 @@
                         "classes": "pf-panel-header"
                       },
                       "text": "Tray Inspection Station"
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.container.flex",
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "VisionPnFieldLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Vision Part Number"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "VisionPnInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.inVisionPartNumber"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
                     "meta": {
                       "name": "VisionPnField"
                     },
@@ -808,46 +745,9 @@
                         "gap": "4px"
                       }
                     },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "VisionPnFieldLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-label"
-                          },
-                          "text": "Vision Part Number"
-                        }
-                      },
-                      {
-                        "type": "ia.input.text-field",
-                        "version": 0,
-                        "meta": {
-                          "name": "VisionPnInput"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-input"
-                          }
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.inVisionPartNumber",
-                                "bidirectional": true
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ]
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "DispLabel"
                     },
@@ -855,475 +755,475 @@
                       "style": {
                         "classes": "pf-field-label"
                       },
-                      "text": "Part Dispositions (checked = pass)"
-                    }
+                      "text": "Part Dispositions (checked \u003d pass)"
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "DispositionGrid"
-                    },
-                    "props": {
-                      "direction": "row",
-                      "wrap": "wrap",
-                      "style": {
-                        "classes": "pf-field",
-                        "gap": "6px"
-                      }
-                    },
                     "children": [
                       {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
                         "meta": {
                           "name": "Disp01"
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.0"
+                              },
+                              "type": "property"
+                            }
+                          }
                         },
                         "props": {
                           "text": "01"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp02"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.0",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.1"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp02"
                         },
                         "props": {
                           "text": "02"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp03"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.1",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.2"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp03"
                         },
                         "props": {
                           "text": "03"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp04"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.2",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.3"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp04"
                         },
                         "props": {
                           "text": "04"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp05"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.3",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.4"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp05"
                         },
                         "props": {
                           "text": "05"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp06"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.4",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.5"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp06"
                         },
                         "props": {
                           "text": "06"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp07"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.5",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.6"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp07"
                         },
                         "props": {
                           "text": "07"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp08"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.6",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.7"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp08"
                         },
                         "props": {
                           "text": "08"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp09"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.7",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.8"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp09"
                         },
                         "props": {
                           "text": "09"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp10"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.8",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.9"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp10"
                         },
                         "props": {
                           "text": "10"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp11"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.9",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.10"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp11"
                         },
                         "props": {
                           "text": "11"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp12"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.10",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.11"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp12"
                         },
                         "props": {
                           "text": "12"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp13"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.11",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.12"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp13"
                         },
                         "props": {
                           "text": "13"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp14"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.12",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.13"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp14"
                         },
                         "props": {
                           "text": "14"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp15"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.13",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.14"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp15"
                         },
                         "props": {
                           "text": "15"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp16"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.14",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.15"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp16"
                         },
                         "props": {
                           "text": "16"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp17"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.15",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.16"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp17"
                         },
                         "props": {
                           "text": "17"
                         },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Disp18"
+                        },
                         "propConfig": {
                           "props.selected": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "view.custom.dispositions.16",
-                                "bidirectional": true
-                              }
+                                "bidirectional": true,
+                                "path": "view.custom.dispositions.17"
+                              },
+                              "type": "property"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.checkbox",
-                        "version": 0,
-                        "meta": {
-                          "name": "Disp18"
                         },
                         "props": {
                           "text": "18"
                         },
-                        "propConfig": {
-                          "props.selected": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.dispositions.17",
-                                "bidirectional": true
-                              }
-                            }
-                          }
-                        }
+                        "type": "ia.input.checkbox"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "DispositionGrid"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "6px"
+                      },
+                      "wrap": "wrap"
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.input.button",
-                    "version": 0,
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.fireTrayLocked()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
                     "meta": {
                       "name": "FireTrayLocked"
                     },
                     "props": {
-                      "text": "Fire TrayLocked",
                       "style": {
                         "classes": "pf-btn pf-btn-primary"
-                      }
+                      },
+                      "text": "Fire TrayLocked"
                     },
+                    "type": "ia.input.button"
+                  },
+                  {
                     "events": {
                       "component": {
                         "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.fireTrayLocked()"
-                          }
+                            "script": "\tself.view.rootContainer.fireInspectionComplete()"
+                          },
+                          "scope": "G",
+                          "type": "script"
                         }
                       }
-                    }
-                  },
-                  {
-                    "type": "ia.input.button",
-                    "version": 0,
+                    },
                     "meta": {
                       "name": "FireInspectionComplete"
                     },
                     "props": {
-                      "text": "Fire InspectionComplete",
                       "style": {
                         "classes": "pf-btn pf-btn-primary"
-                      }
+                      },
+                      "text": "Fire InspectionComplete"
                     },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.fireInspectionComplete()"
-                          }
-                        }
-                      }
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "TrayGroup"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.selectedDeviceType} \u003d \"TrayInspectionStation\""
+                      },
+                      "type": "expr"
                     }
                   }
-                ]
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-panel",
+                    "gap": "10px",
+                    "padding": "12px"
+                  }
+                },
+                "type": "ia.container.flex"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
-              "name": "RightRail"
+              "name": "Center"
             },
             "position": {
-              "basis": "360px",
-              "shrink": 0
+              "basis": "0",
+              "grow": 1
             },
             "props": {
               "direction": "column",
               "style": {
-                "classes": "pf-panel",
-                "gap": "8px",
-                "padding": "12px"
+                "gap": "10px",
+                "overflowY": "auto"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "ScenarioHeader"
                 },
@@ -1332,24 +1232,24 @@
                     "classes": "pf-panel-header"
                   },
                   "text": "Scenarios"
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.display.flex-repeater",
                 "meta": {
                   "name": "ScenarioRepeater"
                 },
                 "position": {
-                  "grow": 1,
-                  "basis": "0"
+                  "basis": "0",
+                  "grow": 1
                 },
                 "propConfig": {
                   "props.instances": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "path": "view.custom.pendingScenarios"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -1365,10 +1265,10 @@
                   },
                   "useDefaultViewHeight": false,
                   "useDefaultViewWidth": false
-                }
+                },
+                "type": "ia.display.flex-repeater"
               },
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "FailedHeader"
                 },
@@ -1377,11 +1277,10 @@
                     "classes": "pf-field-label"
                   },
                   "text": "Failed (copy from below)"
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-area",
-                "version": 0,
                 "meta": {
                   "name": "FailedText"
                 },
@@ -1389,27 +1288,68 @@
                   "basis": "120px",
                   "shrink": 0
                 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.failedText"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "pf-field-input-mono"
                   }
                 },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.failedText"
-                      }
-                    }
-                  }
-                }
+                "type": "ia.input.text-area"
               }
-            ]
+            ],
+            "meta": {
+              "name": "RightRail"
+            },
+            "position": {
+              "basis": "360px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px",
+                "padding": "12px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "gap": "10px"
+          }
+        },
+        "type": "ia.container.flex"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-terminal",
+        "gap": "10px",
+        "padding": "12px"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
@@ -1417,12 +1357,12 @@
           "params": [
             "deviceCode"
           ],
-          "script": "\tself.view.custom.selectedDevice = deviceCode\n\tdt = BlueRidge.Sim.getDeviceType(deviceCode)\n\tself.view.custom.selectedDeviceType = dt\n\tself.view.custom.pendingScenarios = BlueRidge.Sim.getScenariosForDeviceType(dt)\n\tself.view.custom.failedScenarios = []\n\tself.view.custom.failedText = \"\""
+          "script": "\tself.view.custom.selectedDevice \u003d deviceCode\n\tdt \u003d BlueRidge.Sim.getDeviceType(deviceCode)\n\tself.view.custom.selectedDeviceType \u003d dt\n\tself.view.custom.pendingScenarios \u003d BlueRidge.Sim.getScenariosForDeviceType(dt)\n\tself.view.custom.failedScenarios \u003d []\n\tself.view.custom.failedText \u003d \"\""
         },
         {
           "name": "resetScenarios",
           "params": [],
-          "script": "\tdt = self.view.custom.selectedDeviceType\n\tself.view.custom.pendingScenarios = BlueRidge.Sim.getScenariosForDeviceType(dt)\n\tself.view.custom.failedScenarios = []\n\tself.view.custom.failedText = \"\""
+          "script": "\tdt \u003d self.view.custom.selectedDeviceType\n\tself.view.custom.pendingScenarios \u003d BlueRidge.Sim.getScenariosForDeviceType(dt)\n\tself.view.custom.failedScenarios \u003d []\n\tself.view.custom.failedText \u003d \"\""
         },
         {
           "name": "fireScaleDataReady",
@@ -1462,23 +1402,25 @@
         {
           "name": "fireInspectionComplete",
           "params": [],
-          "script": "\tdisp = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dispositions)\n\tBlueRidge.Sim.fireInspection(self.view.custom.selectedDevice, self.view.custom.inVisionPartNumber, disp)"
+          "script": "\tdisp \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dispositions)\n\tBlueRidge.Sim.fireInspection(self.view.custom.selectedDevice, self.view.custom.inVisionPartNumber, disp)"
         },
         {
           "name": "copyFailed",
           "params": [],
-          "script": "\tfailed = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.failedScenarios) or []\n\tlines = [\"FAILED: \" + str(f.get(\"title\", \"\")) for f in failed]\n\tself.view.custom.failedText = \"\\n\".join(lines)"
+          "script": "\tfailed \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.failedScenarios) or []\n\tlines \u003d [\"FAILED: \" + str(f.get(\"title\", \"\")) for f in failed]\n\tself.view.custom.failedText \u003d \"\\n\".join(lines)"
         }
       ],
+      "extensionFunctions": null,
       "messageHandlers": [
         {
           "messageType": "scenarioResult",
           "pageScope": true,
+          "script": "\tp \u003d payload or {}\n\tidx \u003d p.get(\"index\")\n\tif idx is None:\n\t\treturn\n\tpending \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.pendingScenarios) or []\n\tself.view.custom.pendingScenarios \u003d [s for s in pending if s.get(\"index\") !\u003d idx]\n\tif p.get(\"outcome\") \u003d\u003d \"failed\":\n\t\tfailed \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.failedScenarios) or []\n\t\tfailed.append({\"title\": p.get(\"title\", \"\"), \"note\": \"\"})\n\t\tself.view.custom.failedScenarios \u003d failed",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\tp = payload or {}\n\tidx = p.get(\"index\")\n\tif idx is None:\n\t\treturn\n\tpending = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.pendingScenarios) or []\n\tself.view.custom.pendingScenarios = [s for s in pending if s.get(\"index\") != idx]\n\tif p.get(\"outcome\") == \"failed\":\n\t\tfailed = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.failedScenarios) or []\n\t\tfailed.append({\"title\": p.get(\"title\", \"\"), \"note\": \"\"})\n\t\tself.view.custom.failedScenarios = failed"
+          "viewScope": false
         }
       ]
-    }
+    },
+    "type": "ia.container.flex"
   }
 }

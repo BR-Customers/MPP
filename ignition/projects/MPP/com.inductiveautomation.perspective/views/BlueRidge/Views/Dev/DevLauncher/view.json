@@ -5,8 +5,7 @@
   "params": {},
   "props": {
     "defaultSize": {
-      "width": 340,
-      "height": 800
+      "width": 340
     }
   },
   "root": {

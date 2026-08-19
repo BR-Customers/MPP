@@ -349,6 +349,7 @@
               }
             },
             "position": {
+              "basis": "116px",
               "shrink": 0
             },
             "props": {
@@ -374,6 +375,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "94px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -388,12 +392,13 @@
         },
         "position": {
           "basis": "84px",
-          "grow": 1
+          "grow": 1,
+          "shrink": 0
         },
         "props": {
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -473,7 +478,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -571,7 +577,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -661,7 +668,8 @@
                             "props": {
                               "alignItems": "center",
                               "style": {
-                                "gap": "8px"
+                                "gap": "8px",
+                                "overflow": "visible"
                               }
                             },
                             "type": "ia.container.flex"
@@ -677,7 +685,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -753,7 +762,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -766,7 +776,7 @@
                       "direction": "column",
                       "style": {
                         "gap": "12px",
-                        "overflow": "hidden"
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -787,6 +797,9 @@
                         },
                         "meta": {
                           "name": "OpenButton"
+                        },
+                        "position": {
+                          "basis": "119px"
                         },
                         "props": {
                           "style": {
@@ -811,6 +824,9 @@
                         "meta": {
                           "name": "ClearButton"
                         },
+                        "position": {
+                          "basis": "93px"
+                        },
                         "props": {
                           "style": {
                             "classes": "pf-btn pf-btn-secondary"
@@ -826,7 +842,8 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "10px"
+                        "gap": "10px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -977,7 +994,7 @@
                       "style": {
                         "borderBottom": "1px solid var(--mpp-border, #e0e0e0)",
                         "gap": "10px",
-                        "overflow": "hidden",
+                        "overflow": "visible",
                         "paddingBottom": "10px"
                       }
                     },
@@ -1044,7 +1061,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1098,7 +1116,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1118,6 +1137,9 @@
                         "meta": {
                           "name": "ComputeButton"
                         },
+                        "position": {
+                          "basis": "260px"
+                        },
                         "props": {
                           "style": {
                             "classes": "pf-btn pf-btn-secondary pf-btn-large"
@@ -1134,7 +1156,7 @@
                       "alignItems": "flex-end",
                       "style": {
                         "gap": "10px",
-                        "overflow": "hidden"
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1218,6 +1240,9 @@
                         "meta": {
                           "name": "SubmitShiftOutputButton"
                         },
+                        "position": {
+                          "basis": "305px"
+                        },
                         "props": {
                           "style": {
                             "classes": "pf-btn pf-btn-primary pf-btn-large"
@@ -1236,7 +1261,8 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "10px"
+                        "gap": "10px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"

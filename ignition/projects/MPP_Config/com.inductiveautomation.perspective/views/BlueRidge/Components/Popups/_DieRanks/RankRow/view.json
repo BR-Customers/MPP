@@ -10,7 +10,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 40,
+      "height": 44,
       "width": 200
     }
   },
@@ -57,6 +57,7 @@
           "name": "EditButton"
         },
         "position": {
+          "basis": "47px",
           "shrink": 0
         },
         "props": {

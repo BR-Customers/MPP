@@ -1,8 +1,8 @@
 {
   "custom": {
     "draft": {
-      "newMethod": "",
       "adAccount": "",
+      "newMethod": "",
       "password": ""
     }
   },
@@ -22,24 +22,30 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "modal"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              },
+              "text": "Change Closure Mode"
+            },
+            "type": "ia.display.label"
+          }
+        ],
         "meta": {
           "name": "Header"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "props": {
@@ -49,98 +55,48 @@
             "gap": "10px"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "HeaderTitle"
-            },
-            "position": {
-              "basis": "auto",
-              "grow": 1
-            },
-            "props": {
-              "text": "Change Closure Mode",
-              "style": {
-                "fontSize": "18px",
-                "fontWeight": "700"
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Body"
-        },
-        "position": {
-          "basis": "0",
-          "grow": 1
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "classes": "modal-body"
-          }
-        },
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "Prompt"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "text": "Select the new closure mode and authorize with supervisor Active Directory credentials. The mode persists until the next changeover.",
               "style": {
                 "color": "var(--mpp-text-secondary)",
                 "fontSize": "13px"
-              }
-            }
+              },
+              "text": "Select the new closure mode and authorize with supervisor Active Directory credentials. The mode persists until the next changeover."
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "MethodField"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-field"
-              }
-            },
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "MethodLabel"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "props": {
-                  "text": "New closure mode",
                   "style": {
                     "classes": "pf-field-label"
-                  }
-                }
+                  },
+                  "text": "New closure mode"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
                 "meta": {
                   "name": "MethodDropdown"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -175,49 +131,47 @@
                   "style": {
                     "classes": "pf-field-input"
                   }
-                }
+                },
+                "type": "ia.input.dropdown"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
-              "name": "AccountField"
+              "name": "MethodField"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
               "direction": "column",
               "style": {
-                "classes": "pf-field"
+                "classes": "pf-field",
+                "overflow": "visible"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "AccountLabel"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "props": {
-                  "text": "AD account",
                   "style": {
                     "classes": "pf-field-label"
-                  }
-                }
+                  },
+                  "text": "AD account"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
                 "meta": {
                   "name": "AccountInput"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -237,49 +191,48 @@
                   "style": {
                     "classes": "pf-field-input"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
-              "name": "PasswordField"
+              "name": "AccountField"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
               "direction": "column",
               "style": {
-                "classes": "pf-field"
+                "classes": "pf-field",
+                "overflow": "visible"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "PasswordLabel"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Password",
                   "style": {
                     "classes": "pf-field-label"
-                  }
-                }
+                  },
+                  "text": "Password"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.password-field",
                 "meta": {
                   "name": "PasswordInput"
                 },
                 "position": {
-                  "basis": "auto",
+                  "basis": "45px",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -299,38 +252,44 @@
                   "style": {
                     "classes": "pf-field-input"
                   }
-                }
+                },
+                "type": "ia.input.password-field"
               }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Footer"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "props": {
-          "alignItems": "center",
-          "justify": "flex-end",
-          "style": {
-            "classes": "modal-footer",
-            "gap": "10px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.input.button",
+            ],
             "meta": {
-              "name": "CancelButton"
+              "name": "PasswordField"
             },
             "position": {
               "shrink": 0
             },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
             "events": {
               "dom": {
                 "onClick": {
@@ -342,41 +301,75 @@
                 }
               }
             },
-            "props": {
-              "text": "Cancel",
-              "style": {
-                "classes": "pf-btn pf-btn-secondary"
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
             "meta": {
-              "name": "ConfirmButton"
+              "name": "CancelButton"
             },
             "position": {
+              "basis": "107px",
               "shrink": 0
             },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
             "events": {
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tr = BlueRidge.Location.ClosureMode.changeover(self.view.params.terminalLocationId, self.view.custom.draft.newMethod, self.view.custom.draft.adAccount, self.view.custom.draft.password)\n\tBlueRidge.Common.Ui.notifyResult(r, \"Closure mode changed\")\n\tif r and r.get(\"Status\"):\n\t\tself.session.custom.closureMethod = self.view.custom.draft.newMethod\n\t\tsystem.perspective.closePopup(\"mpp-changeover\")"
+                    "script": "\tr \u003d BlueRidge.Location.ClosureMode.changeover(self.view.params.terminalLocationId, self.view.custom.draft.newMethod, self.view.custom.draft.adAccount, self.view.custom.draft.password)\n\tBlueRidge.Common.Ui.notifyResult(r, \"Closure mode changed\")\n\tif r and r.get(\"Status\"):\n\t\tself.session.custom.closureMethod \u003d self.view.custom.draft.newMethod\n\t\tsystem.perspective.closePopup(\"mpp-changeover\")"
                   },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
+            "meta": {
+              "name": "ConfirmButton"
+            },
+            "position": {
+              "basis": "241px",
+              "shrink": 0
+            },
             "props": {
-              "text": "Confirm changeover",
               "style": {
                 "classes": "pf-btn pf-btn-primary"
-              }
-            }
+              },
+              "text": "Confirm changeover"
+            },
+            "type": "ia.input.button"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

@@ -128,6 +128,7 @@
               "name": "BtnRelease"
             },
             "position": {
+              "basis": "67px",
               "shrink": 0
             },
             "props": {
@@ -319,6 +320,7 @@
               "name": "BtnMount"
             },
             "position": {
+              "basis": "61px",
               "shrink": 0
             },
             "propConfig": {

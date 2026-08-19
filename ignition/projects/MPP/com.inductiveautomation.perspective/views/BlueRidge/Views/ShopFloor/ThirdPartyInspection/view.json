@@ -1,20 +1,8 @@
 {
   "custom": {},
   "params": {},
-  "propConfig": {},
   "props": {},
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "canvas",
-        "height": "100%"
-      }
-    },
     "children": [
       {
         "type": "ia.container.tab",
@@ -60,7 +48,6 @@
         },
         "children": [
           {
-            "type": "ia.display.view",
             "meta": {
               "name": "InventoryTab"
             },
@@ -78,7 +65,6 @@
             }
           },
           {
-            "type": "ia.display.view",
             "meta": {
               "name": "AssemblyTab"
             },
@@ -87,13 +73,68 @@
               "tabIndex": 1
             },
             "props": {
-              "path": "BlueRidge/Views/ShopFloor/AssemblyNonSerialized",
-              "useDefaultViewHeight": false,
-              "useDefaultViewWidth": false
-            }
+              "path": "BlueRidge/Views/ShopFloor/AssemblyNonSerialized"
+            },
+            "type": "ia.display.view"
           }
-        ]
+        ],
+        "meta": {
+          "name": "TabContainer"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "contentStyle": {
+            "classes": "tab-content-fill"
+          },
+          "menuStyle": {
+            "classes": "tab-strip"
+          },
+          "menuType": "modern",
+          "tabStyle": {
+            "active": {
+              "classes": "tab-item tab-item-active"
+            },
+            "disabled": {
+              "classes": "tab-item"
+            },
+            "inactive": {
+              "classes": "tab-item"
+            }
+          },
+          "tabs": [
+            {
+              "disabled": false,
+              "runWhileHidden": true,
+              "text": "Check In"
+            },
+            {
+              "disabled": false,
+              "runWhileHidden": true,
+              "text": "Inspect"
+            },
+            {
+              "disabled": false,
+              "runWhileHidden": true,
+              "text": "Check Out"
+            }
+          ]
+        },
+        "type": "ia.container.tab"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "height": "100%"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }
