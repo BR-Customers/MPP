@@ -2418,6 +2418,44 @@ button {
     letter-spacing: 0.06em;
 }
 
+/* ─── CRT container-validation row + list header (Task 7) ─────────── */
+.psc-crt-row {
+    background: var(--mpp-surface-raised);
+    border-bottom: 1px solid var(--mpp-border-subtle);
+    padding: 0 var(--mpp-space-3);
+    height: 100%;
+}
+
+.psc-crt-part {
+    font-size: var(--mpp-fs-sm);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.psc-crt-meta {
+    font-size: var(--mpp-fs-xs);
+    color: var(--mpp-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.psc-crt-mono {
+    font-family: var(--mpp-font-mono);
+}
+
+.psc-crt-list-header {
+    padding: 0 var(--mpp-space-3);
+    font-size: var(--mpp-fs-xs);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
 .psc-pf-repeater-entity {
     display: grid;
     grid-template-columns: auto 1fr 1fr auto;
