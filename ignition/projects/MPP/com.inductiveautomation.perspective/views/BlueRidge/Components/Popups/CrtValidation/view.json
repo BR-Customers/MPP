@@ -43,7 +43,7 @@
     "meta": { "name": "root" },
     "props": {
       "direction": "column",
-      "style": { "classes": "modal" }
+      "style": { "classes": "canvas" }
     },
     "children": [
       {
@@ -175,7 +175,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tel = BlueRidge.Location.AppUser.elevate(self.view.custom.adAccount, self.view.custom.password,\n\t\t\"CrtValidation\", self.view.params.terminalLocationId)\n\tif el and el.get(\"success\"):\n\t\tself.view.custom.elevated = True\n\t\tself.view.custom.elevatedAppUserId = el.get(\"appUserId\")\n\t\tself.view.custom.password = \"\"   # credentials are not retained; the id is\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Elevation failed\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")"
+                    "script": "\tel = BlueRidge.Location.AppUser.elevate(self.view.custom.adAccount, self.view.custom.password,\n\t\t\"CrtValidation\", self.view.params.terminalLocationId)\n\tif el and el.get(\"success\"):\n\t\tself.view.custom.elevated = True\n\t\tself.view.custom.elevatedAppUserId = el.get(\"appUserId\")\n\t\tself.view.custom.password = \"\"   # credentials are not retained; the id is\n\telse:\n\t\tself.view.custom.password = \"\"\n\t\tBlueRidge.Common.Notify.toast(\"Elevation failed\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")"
                   }
                 }
               }
@@ -307,7 +307,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tp = payload or {}\n\tcid = p.get(\"containerId\")\n\taction = p.get(\"action\")\n\tif action == \"validate\":\n\t\tr = BlueRidge.Lots.Container.validateCrt(cid, self.view.custom.elevatedAppUserId, self.view.params.terminalLocationId)\n\t\tif r and r.get(\"Status\"):\n\t\t\taim = r.get(\"AimPost\") or {}\n\t\t\tif aim.get(\"ok\"):\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container validated\", \"AIM Shipper ID posted.\", \"success\")\n\t\t\telse:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container validated\", \"Validated. AIM post pending retry.\", \"warning\")\n\t\telse:\n\t\t\tBlueRidge.Common.Notify.toast(\"Validation failed\", (r or {}).get(\"Message\") or \"\", \"error\")\n\telse:\n\t\t# Precautionary (HoldTypeCodeId=3, Quality.HoldTypeCode) - a CRT container held\n\t\t# back by a supervisor for further review has no confirmed defect yet, matching\n\t\t# the Precautionary type's FDS-08-001/004 intent; Quality can reclassify later.\n\t\tr = BlueRidge.Quality.Hold.place(3, containerId=cid,\n\t\t\tappUserId=self.view.custom.elevatedAppUserId, terminalLocationId=self.view.params.terminalLocationId)\n\t\tBlueRidge.Common.Ui.notifyResult(r, \"Container held\")\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tp = payload or {}\n\tcid = p.get(\"containerId\")\n\taction = p.get(\"action\")\n\tif action == \"validate\":\n\t\tr = BlueRidge.Lots.Container.validateCrt(cid, self.view.custom.elevatedAppUserId, self.view.params.terminalLocationId)\n\t\tif r and r.get(\"Status\"):\n\t\t\taim = r.get(\"AimPost\") or {}\n\t\t\tif aim.get(\"ok\"):\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container validated\", \"AIM Shipper ID posted.\", \"success\")\n\t\t\telse:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container validated\", \"Validated. AIM post pending retry.\", \"warning\")\n\t\telse:\n\t\t\tBlueRidge.Common.Notify.toast(\"Validation failed\", (r or {}).get(\"Message\") or \"\", \"error\")\n\telse:\n\t\t# Precautionary (HoldTypeCodeId=3, Quality.HoldTypeCode) - a CRT container held\n\t\t# back by a supervisor for further review has no confirmed defect yet, matching\n\t\t# the Precautionary type's FDS-08-001/004 intent; Quality can reclassify later.\n\t\tr = BlueRidge.Quality.Hold.place(3, containerId=cid, reason=\"CRT - held for supervisor review\",\n\t\t\tappUserId=self.view.custom.elevatedAppUserId, terminalLocationId=self.view.params.terminalLocationId)\n\t\tBlueRidge.Common.Ui.notifyResult(r, \"Container held\")\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
         }
       ]
     }
