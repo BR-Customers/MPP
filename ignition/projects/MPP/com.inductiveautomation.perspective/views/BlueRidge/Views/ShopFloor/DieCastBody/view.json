@@ -387,11 +387,10 @@
           "name": "HeaderBand"
         },
         "position": {
-          "basis": "84px",
-          "grow": 1,
           "shrink": 0
         },
         "props": {
+          "alignItems": "center",
           "style": {
             "gap": "16px",
             "overflow": "visible"

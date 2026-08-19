@@ -88,6 +88,15 @@
       },
       {
         "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tself.view.rootContainer.submitInitials()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          },
           "dom": {
             "onBlur": {
               "config": {
@@ -221,7 +230,7 @@
             "displayName",
             "ignitionRole"
           ],
-          "script": "\t# Popup login: set the session identity, then close. The screen underneath is\n\t# still mounted, and session.custom is reactive, so its operator label / mutations\n\t# pick up the new user without any navigation or post-login re-populate.\n\t_oldId \u003d None\n\ttry:\n\t\t_o \u003d self.session.custom.user\n\t\tif _o:\n\t\t\t_oldId \u003d _o[\"appUserId\"]\n\texcept Exception:\n\t\t_oldId \u003d None\n\tself.session.custom.user \u003d {\"appUserId\": appUserId, \"initials\": initials, \"displayName\": displayName, \"ignitionRole\": ignitionRole}\n\tself.session.custom.appUserId \u003d appUserId\n\t# audit the operator handoff (fire-and-forget; never blocks sign-in)\n\ttry:\n\t\t_t \u003d self.session.custom.terminal\n\t\tBlueRidge.Location.AppUser.logOperatorChange(_oldId, appUserId, _t[\"terminalLocationId\"] if _t else None)\n\texcept Exception:\n\t\tpass\n\tsystem.perspective.closePopup(self.view.params.popupId or \"mpp-initials\")"
+          "script": "\t# Popup login: set the session identity, then close. The screen underneath is\n\t# still mounted, and session.custom is reactive, so its operator label / mutations\n\t# pick up the new user without any navigation or post-login re-populate.\n\t_oldId \u003d None\n\ttry:\n\t\t_o \u003d self.session.custom.user\n\t\tif _o:\n\t\t\t_oldId \u003d _o[\"appUserId\"]\n\texcept Exception:\n\t\t_oldId \u003d None\n\tself.session.custom.user \u003d {\"appUserId\": appUserId, \"initials\": initials, \"displayName\": displayName, \"ignitionRole\": ignitionRole}\n\tself.session.custom.appUserId \u003d appUserId\n\t# audit the operator handoff (fire-and-forget; never blocks sign-in)\n\ttry:\n\t\t_t \u003d self.session.custom.terminal\n\t\tBlueRidge.Location.AppUser.logOperatorChange(_oldId, appUserId, _t[\"terminalLocationId\"] if _t else None)\n\texcept Exception:\n\t\tpass\n\t# clear before closing: a blur fired during unmount would otherwise re-enter\n\t# submitInitials and log a second operator-change row\n\tself.view.custom.initials \u003d \"\"\n\tsystem.perspective.closePopup(self.view.params.popupId or \"mpp-initials\")"
         },
         {
           "name": "submitInitials",
