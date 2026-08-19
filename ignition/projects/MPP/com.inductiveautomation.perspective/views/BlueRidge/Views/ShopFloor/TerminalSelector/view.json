@@ -58,6 +58,101 @@
         "children": [
           {
             "meta": {
+              "name": "BannerIcon"
+            },
+            "position": {
+              "basis": "26px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "mpp/warning",
+              "style": {
+                "classes": "psc-pf-banner-icon"
+              }
+            },
+            "type": "ia.display.icon"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "BannerTitle"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "psc-pf-banner-title"
+                  },
+                  "text": "This device is not registered as a terminal"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "BannerDetail"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"The gateway sees this device as \" + {session.props.address} + \" and no terminal carries that address. Pick your terminal below, or ask Engineering to register this IP.\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "psc-pf-banner-detail"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "BannerContent"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "psc-pf-banner-content"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "UnregisteredBanner"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{session.custom.terminal.isFallback}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "psc-pf-banner"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
               "name": "ScanIcon"
             },
             "position": {
