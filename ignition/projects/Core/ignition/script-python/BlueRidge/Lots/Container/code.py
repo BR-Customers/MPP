@@ -147,6 +147,50 @@ def listPendingValidation(locationId, _refreshToken=None):
         {"locationId": locationId, "containerId": None}) or []
 
 
+def validateCrt(containerId, appUserId, terminalLocationId):
+    """Clear the container's Controlled Run Tag, then post its AIM serial.
+
+       appUserId is ALREADY ELEVATED - the CrtValidation popup elevates once on open
+       and both row actions reuse it, so there is no prompt here.
+
+       The post is deliberately NOT rolled back on failure: the human validation
+       decision is recorded regardless of whether AIM was reachable, and clearing the
+       flag is exactly what hands the serial to AimPost.retryTick.
+       Returns {Status, Message, AimPost (present only when the clear succeeded and
+       the container had a claimed serial)}."""
+    from java.lang import Throwable
+    containerId = BlueRidge.Common.Util.extractQualifiedValues(containerId)
+    appUserId = BlueRidge.Common.Util.extractQualifiedValues(appUserId)
+    terminalLocationId = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    BlueRidge.Common.Util.log(
+        "validateCrt containerId=%s appUserId=%s terminalLocationId=%s"
+        % (containerId, appUserId, terminalLocationId))
+
+    # Grab the pending-validation row (and its AimShipperId) BEFORE clearing -- the
+    # container drops out of Container_ListPendingValidation the instant the flag clears.
+    serial = None
+    for r in (BlueRidge.Common.Db.execList("lots/Container_ListPendingValidation",
+                                           {"locationId": None, "containerId": containerId}) or []):
+        serial = r.get("AimShipperId")
+        break
+
+    result = BlueRidge.Common.Db.execMutation(
+        "lots/Container_ValidateCrt",
+        {"containerId": containerId, "appUserId": appUserId,
+         "terminalLocationId": terminalLocationId})
+
+    if result and result.get("Status") and serial:
+        try:
+            result["AimPost"] = BlueRidge.Lots.AimPost.postOne(serial)
+        except Throwable as t:
+            BlueRidge.Common.Util.log("CRT validate post failed: %s" % t, level="error")
+            result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(t)}
+        except Exception as e:
+            BlueRidge.Common.Util.log("CRT validate post failed: %s" % e, level="error")
+            result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(e)}
+    return result
+
+
 def getOpenByCell(cellLocationId, _refreshToken=None):
     """Read the OPEN container(s) at a Cell with fill progress (TargetParts /
        AccumulatedParts / ClosedTrays). Returns list[dict] (empty list = none
