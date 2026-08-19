@@ -873,27 +873,6 @@
                         "type": "ia.container.flex"
                       },
                       {
-                        "meta": {
-                          "name": "TrayNote"
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "if({session.custom.closureMethod} \u003d \"ByWeight\", \"The line scale reports net weight to the PLC; at the configured target weight the PLC closes the container and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes.\", if({session.custom.closureMethod} \u003d \"ByVision\", \"The Cognex camera scans the full tray as a single image once the PLC asserts TrayFullFlag at PartsPerTray - one validation event per tray, never per piece. On PASS, the tray closes and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes.\", \"The operator confirms the piece count for the full tray; on Complete Tray the tray closes and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes.\"))"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-kpi-sub"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
                         "children": [
                           {
                             "children": [
@@ -1116,18 +1095,6 @@
                                 "children": [
                                   {
                                     "meta": {
-                                      "name": "L"
-                                    },
-                                    "props": {
-                                      "style": {
-                                        "classes": "pf-field-label"
-                                      },
-                                      "text": "Closure method (from config)"
-                                    },
-                                    "type": "ia.display.label"
-                                  },
-                                  {
-                                    "meta": {
                                       "name": "ClosureValue"
                                     },
                                     "propConfig": {
@@ -1171,7 +1138,7 @@
                                       "style": {
                                         "classes": "pf-field-label"
                                       },
-                                      "text": "Finished good (opens a container)"
+                                      "text": "Finished good"
                                     },
                                     "type": "ia.display.label"
                                   },

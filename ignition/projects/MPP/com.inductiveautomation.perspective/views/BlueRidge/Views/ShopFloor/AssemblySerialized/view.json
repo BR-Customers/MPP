@@ -735,18 +735,6 @@
                   }
                 },
                 "type": "ia.display.inline-frame"
-              },
-              {
-                "meta": {
-                  "name": "TrayNote"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  },
-                  "text": "The camera scans the full tray as a single image once TrayFullFlag asserts - one validation event per tray; positions show each etched serial. A serial placed during a HardwareInterlockEnable\u003dfalse window is flagged hardware-interlock-bypassed per UJ-16; the audit row captures the bypass."
-                },
-                "type": "ia.display.label"
               }
             ],
             "meta": {
@@ -790,18 +778,6 @@
                       "text": "Tray Close - By Weight"
                     },
                     "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "Hsub"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-sub"
-                      },
-                      "text": "Scale-validated - the PLC closes the tray when target weight is met"
-                    },
-                    "type": "ia.display.label"
                   }
                 ],
                 "meta": {
@@ -824,7 +800,7 @@
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "Waiting for scale — PLC closes at target weight."
+                  "text": "Waiting for scale - PLC closes at target weight."
                 },
                 "type": "ia.display.label"
               }

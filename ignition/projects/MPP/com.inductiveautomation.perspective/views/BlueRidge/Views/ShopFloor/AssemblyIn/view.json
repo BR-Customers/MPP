@@ -228,18 +228,6 @@
       {
         "children": [
           {
-            "meta": {
-              "name": "ScanTitle"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-label"
-              },
-              "text": "Scan a machined component LTT to add it to this cell"
-            },
-            "type": "ia.display.label"
-          },
-          {
             "children": [
               {
                 "meta": {
