@@ -119,18 +119,43 @@ DECLARE @Act10 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.L
 EXEC test.Assert_IsEqual @TestName = N'[Validate] ALL 4 tray LOTs CrtActive cleared to 0 (remaining count)',
     @Expected = N'0', @Actual = @Act10;
 
--- second call must reject: nothing pending any more
+-- Finding 1: the per-LOT CRT-clear must reach EACH tray LOT's own genealogy trail
+-- (Lots.LotEventLog, 20-yr Honda-traceability retention), not just a single
+-- container-level summary row. Assert one 'CrtCleared' row per tray LOT.
+DECLARE @Act10b NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
+    FROM Lots.LotEventLog lel
+    INNER JOIN Audit.LogEventType let ON let.Id = lel.LogEventTypeId
+    WHERE lel.LotId IN (SELECT LotId FROM @TrayLots) AND let.Code = N'CrtCleared');
+EXEC test.Assert_IsEqual @TestName = N'[Validate] LotEventLog has one CrtCleared row per tray LOT (4)',
+    @Expected = N'4', @Actual = @Act10b;
+
+-- second call must reject: nothing pending any more (Finding 3: this is the
+-- @@ROWCOUNT race-guard path taken serially -- assert both the status AND the
+-- distinguishing "already validated" message, not just a non-1 status).
 DECLARE @V2 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @V2 EXEC Lots.Container_ValidateCrt @ContainerId = @Con, @AppUserId = 1, @TerminalLocationId = @Term;
 DECLARE @Act11 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @V2);
 EXEC test.Assert_IsEqual @TestName = N'[Validate] double-validate rejected, Status 0',
     @Expected = N'0', @Actual = @Act11;
+DECLARE @Act11b NVARCHAR(500) = (SELECT Message FROM @V2);
+EXEC test.Assert_IsEqual @TestName = N'[Validate] double-validate message is the not-pending rejection',
+    @Expected = N'Container is not pending validation.', @Actual = @Act11b;
+
+-- Finding 2: a reject path (container not found) must write an Audit.FailureLog row.
+DECLARE @PreFailCount INT = (SELECT COUNT(*) FROM Audit.FailureLog
+    WHERE ProcedureName = N'Lots.Container_ValidateCrt' AND EntityId = 999999999);
 
 DECLARE @V3 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @V3 EXEC Lots.Container_ValidateCrt @ContainerId = 999999999, @AppUserId = 1, @TerminalLocationId = @Term;
 DECLARE @Act12 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @V3);
 EXEC test.Assert_IsEqual @TestName = N'[Validate] unknown container rejected, Status 0',
     @Expected = N'0', @Actual = @Act12;
+
+DECLARE @PostFailCount INT = (SELECT COUNT(*) FROM Audit.FailureLog
+    WHERE ProcedureName = N'Lots.Container_ValidateCrt' AND EntityId = 999999999);
+DECLARE @FailDelta NVARCHAR(10) = CAST(@PostFailCount - @PreFailCount AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Validate] unknown-container reject writes an Audit.FailureLog row',
+    @Expected = N'1', @Actual = @FailDelta;
 
 DECLARE @Off TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @Off EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = @Term, @Enabled = 0, @AppUserId = 1;
