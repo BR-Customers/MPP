@@ -510,7 +510,7 @@
         {
           "messageType": "dtReasonSelected",
           "pageScope": true,
-          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tres \u003d D.updateReason(payload[\"downtimeEventId\"], payload[\"reasonCodeId\"])\n\tUi.notifyResult(res, \"Reason updated\")\n\tself.refreshRows()",
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\t# Supervisor-only (auth backlog 4.1). requireElevation stashes {code, params}\n\t# and opens the ElevationModal; on success Session.dispatchElevatedAction\n\t# re-sends THIS message and the isElevated test below passes. refreshRows on\n\t# the deferred path snaps the dropdown back to the stored reason so a\n\t# cancelled elevation leaves no phantom selection on screen.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeReason\", \"Edit downtime reason\", p)\n\t\tself.refreshRows()\n\t\treturn\n\tres \u003d D.updateReason(p.get(\"downtimeEventId\"), p.get(\"reasonCodeId\"))\n\tUi.notifyResult(res, \"Reason updated\")\n\tself.refreshRows()",
           "sessionScope": false,
           "viewScope": false
         },
@@ -524,14 +524,14 @@
         {
           "messageType": "dtVoidRequested",
           "pageScope": true,
-          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tres \u003d D.void(payload[\"downtimeEventId\"])\n\tUi.notifyResult(res, \"Downtime voided\")\n\tself.refreshRows()",
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\t# Supervisor-only (auth backlog 4.1) - voiding is irreversible.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeVoid\", \"Void downtime event\", p)\n\t\treturn\n\tres \u003d D.void(p.get(\"downtimeEventId\"))\n\tUi.notifyResult(res, \"Downtime voided\")\n\tself.refreshRows()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "dtEditRequested",
           "pageScope": true,
-          "script": "\teid \u003d payload[\"downtimeEventId\"]\n\trow \u003d None\n\tfor r in (self.view.custom.rows or []):\n\t\tif r.get(\"DowntimeEventId\") \u003d\u003d eid:\n\t\t\trow \u003d r; break\n\tif row is None:\n\t\treturn\n\tst \u003d row.get(\"StartedAtEt\"); en \u003d row.get(\"EndedAtEt\")\n\tsystem.perspective.openPopup(id\u003d\"mpp-downtime-editor\", view\u003d\"BlueRidge/Components/Popups/DowntimeEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\n\t\t\"mode\": \"update\", \"editId\": eid, \"scopeLocationId\": self.view.custom.scopeLocationId,\n\t\t\"reasonCodeId\": row.get(\"DowntimeReasonCodeId\"),\n\t\t\"startedAtEtStr\": system.date.format(st, \"yyyy-MM-dd HH:mm:ss\") if st is not None else None,\n\t\t\"endedAtEtStr\": system.date.format(en, \"yyyy-MM-dd HH:mm:ss\") if en is not None else None,\n\t\t\"remarks\": row.get(\"Remarks\")})",
+          "script": "\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\teid \u003d p.get(\"downtimeEventId\")\n\t# Supervisor-only (auth backlog 4.1). Gate BEFORE the editor opens; the\n\t# editor\u0027s Save re-tests as defence in depth.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeEdit\", \"Edit downtime event\", p)\n\t\treturn\n\trow \u003d None\n\tfor r in (self.view.custom.rows or []):\n\t\tif r.get(\"DowntimeEventId\") \u003d\u003d eid:\n\t\t\trow \u003d r; break\n\tif row is None:\n\t\treturn\n\tst \u003d row.get(\"StartedAtEt\"); en \u003d row.get(\"EndedAtEt\")\n\tsystem.perspective.openPopup(id\u003d\"mpp-downtime-editor\", view\u003d\"BlueRidge/Components/Popups/DowntimeEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\n\t\t\"mode\": \"update\", \"editId\": eid, \"scopeLocationId\": self.view.custom.scopeLocationId,\n\t\t\"reasonCodeId\": row.get(\"DowntimeReasonCodeId\"),\n\t\t\"startedAtEtStr\": system.date.format(st, \"yyyy-MM-dd HH:mm:ss\") if st is not None else None,\n\t\t\"endedAtEtStr\": system.date.format(en, \"yyyy-MM-dd HH:mm:ss\") if en is not None else None,\n\t\t\"remarks\": row.get(\"Remarks\")})",
           "sessionScope": false,
           "viewScope": false
         },

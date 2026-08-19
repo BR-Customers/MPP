@@ -586,7 +586,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\td \u003d self.view.custom.draft\n\tserialId \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"containerSerialId\"))\n\tnewContainerId \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"newContainerId\"))\n\tnewTrayPosition \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"newTrayPosition\"))\n\tif serialId is None or newContainerId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a Container Serial Id and a New Container Id.\"}, \"Migrate Serial\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.SortCage.migrateSerial(serialId, newContainerId, newTrayPosition\u003dnewTrayPosition)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Serial migrated\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft \u003d {\"containerSerialId\": \"\", \"newContainerId\": \"\", \"newTrayPosition\": \"\"}"
+                        "script": "\tself.view.rootContainer.doMigrate()"
                       },
                       "scope": "G",
                       "type": "script"
@@ -770,6 +770,25 @@
         "gap": "16px",
         "padding": "24px"
       }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "doMigrate",
+          "params": [],
+          "script": "\td \u003d self.view.custom.draft\n\tserialId \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"containerSerialId\"))\n\tnewContainerId \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"newContainerId\"))\n\tnewTrayPosition \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"newTrayPosition\"))\n\tif serialId is None or newContainerId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a Container Serial Id and a New Container Id.\"}, \"Migrate Serial\")\n\t\treturn\n\t# Supervisor-only (auth backlog 4.2). Re-containerizing a serial is\n\t# irreversible - ContainerSerial is rewritten in place and a history row is\n\t# appended - so it is gated on an open AD elevation window. One authorization\n\t# covers the whole rolling window; the operator is not re-prompted per serial.\n\t# requireElevation stashes the intent and opens the ElevationModal;\n\t# Session.dispatchElevatedAction replays it as the sortCageMigrateAuthorized\n\t# page message, whose handler calls straight back into this method.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"SortCageMigrate\", \"Sort cage serial migration\", {})\n\t\treturn\n\tresult \u003d BlueRidge.Lots.SortCage.migrateSerial(serialId, newContainerId, newTrayPosition\u003dnewTrayPosition)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Serial migrated\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft \u003d {\"containerSerialId\": \"\", \"newContainerId\": \"\", \"newTrayPosition\": \"\"}"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "sortCageMigrateAuthorized",
+          "pageScope": true,
+          "script": "\t# Elevation replay hook (see Session._ELEVATED_REPLAY_MESSAGES). Fired only\n\t# after a successful ElevationModal authorization, so isElevated now passes.\n\tself.doMigrate()",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }
