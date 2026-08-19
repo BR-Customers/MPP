@@ -1,0 +1,280 @@
+<!--
+  Production & Inventory by Area — mockup for FAT day-1 punch list item 4.
+  Follows the LOCKED family template (downtime_report_mock.html, approved 2026-08-07):
+  blue-black header band + cyan accent rule; Inter; params band with tinted lead cell;
+  5-KPI summary row; single chart card; grouped detail tables; footer.
+
+  Fields validated against the design doc
+  docs/superpowers/specs/2026-08-18-production-and-inventory-by-area-design.md and against
+  Workorder.ProductionEvent / Oee.Shift / Oee.ShiftSchedule / Lots.Lot / Location.Location.
+
+  The two honesty callouts from the spec are rendered ON THE FACE of the report, not buried
+  in a footnote: throughput double-counts a piece across the areas it passes through (so the
+  Area column must not be summed and called plant output), and inventory is a live snapshot
+  as of render time, not as of the selected production day.
+
+  Numbers are illustrative. Areas, shift windows and the 3rd -> 1st -> 2nd ordering are real.
+  Content runs ~1.5 letter pages, so this is a TWO-page report: the dashed 'Page 2' rule marks
+  where the break falls (Current Inventory starts page 2). The mockup renders both pages on one
+  continuous sheet for review; ReportMill paginates at that rule.
+-->
+<style>
+  :root{
+    --n10:#0B1220; --n20:#111A2E; --n30:#172238; --n40:#1F2C44; --n50:#2C3A55;
+    --n60:#425270; --n70:#697A98; --n80:#9AA8BF; --n90:#C9D2E0; --n100:#F0F3F8;
+    --acc-40:#126680; --acc-50:#1888A8; --acc-60:#22A8CC; --acc-70:#4BC2E0; --acc-tint:#EAF6FA;
+    --good:#15803D; --warn:#B45309; --bad:#B91C1C; --warn-tint:#FDF6EC;
+    --ink:var(--n10); --ink2:#3d4b63; --muted:#6b788f;
+    --hair:#dfe4ea; --hair2:#eef1f5; --band:#f4f7f9; --page:#ffffff;
+    --font:'Inter','Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  .wrap{background:#4a5468;padding:24px;display:flex;justify-content:center;font-family:var(--font);color:var(--ink);}
+  .page{background:var(--page);width:816px;min-height:1056px;padding:0 0 46px;box-shadow:0 8px 28px rgba(0,0,0,.4);position:relative;}
+  .band{background:var(--n10);color:var(--n100);padding:22px 40px 18px;}
+  .band .kicker{font:600 11px/1.2 var(--font);letter-spacing:.16em;text-transform:uppercase;color:var(--acc-70);}
+  .band h1{font:700 26px/1.15 var(--font);margin:5px 0 0;letter-spacing:-.01em;}
+  .band .sub{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px;}
+  .band .site{font:400 12px/1.4 var(--font);color:var(--n80);}
+  .band .plant{font:700 13px/1.3 var(--font);color:var(--n90);}
+  .accent{height:3px;background:var(--acc-50);}
+  .params{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);margin:16px 40px 0;border:1px solid var(--hair);border-radius:5px;overflow:hidden;}
+  .params .cell{background:var(--band);padding:8px 12px;}
+  .params .cell.lead{background:var(--acc-tint);}
+  .params .lbl{font:600 9px/1.2 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .params .val{font:600 12.5px/1.3 var(--font);color:var(--ink);margin-top:2px;}
+  .params .val small{font:400 10px/1.3 var(--font);color:var(--muted);display:block;margin-top:1px;}
+  section{margin:22px 40px 0;}
+  .h{font:700 11.5px/1 var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--acc-40);border-bottom:1.5px solid var(--acc-50);padding-bottom:6px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;}
+  .h .note{font:400 10px/1 var(--font);color:var(--muted);letter-spacing:0;text-transform:none;}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+  .kpi{border:1px solid var(--hair);border-top:3px solid var(--acc-50);border-radius:4px;padding:9px 11px 10px;}
+  .kpi .k{font:600 8.5px/1.2 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  .kpi .v{font:700 21px/1.05 var(--font);margin-top:5px;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+  .kpi .v small{font:600 11px/1 var(--font);color:var(--ink2);}
+  .kpi .d{font:400 9.5px/1.2 var(--font);color:var(--muted);margin-top:3px;}
+  .kpi.primary{border-top-color:var(--n40);}
+  .kpi.flag{border-top-color:var(--warn);}
+  .kpi .v.warnc{color:var(--warn);}
+  .chartcard{border:1px solid var(--hair);border-radius:5px;padding:12px 14px 6px;}
+  .legend{display:flex;gap:18px;margin:2px 2px 8px;font:400 10.5px/1 var(--font);color:var(--ink2);}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;}
+  table{width:100%;border-collapse:collapse;}
+  .grid{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;}
+  .grid th{font:600 8.5px/1.2 var(--font);letter-spacing:.05em;text-transform:uppercase;color:var(--n100);background:var(--n40);text-align:left;padding:6px 7px;}
+  .grid th.n,.grid td.n{text-align:right;}
+  .grid td{font:400 10.5px/1.35 var(--font);color:var(--ink);padding:5px 7px;border-bottom:1px solid var(--hair2);}
+  .grid td.area{font-weight:600;}
+  .grid td.area small{font-weight:400;color:var(--muted);margin-left:5px;}
+  .grid tr.tot td{border-top:2px solid var(--acc-50);border-bottom:none;font-weight:700;background:var(--acc-tint);color:var(--acc-40);}
+  .grid tr.unassigned td{background:var(--warn-tint);color:var(--warn);}
+  .grid tr.unassigned td.area{font-weight:700;}
+  .grid td.dim{color:var(--muted);}
+  .grid th.u{background:#7a4a12;}
+  .grid td.u{color:var(--warn);font-weight:700;background:var(--warn-tint);}
+  .grid .sub{font:400 9px/1 var(--font);color:var(--muted);}
+  .callout{display:flex;gap:9px;align-items:flex-start;border-left:3px solid var(--warn);background:var(--warn-tint);padding:7px 11px;margin-top:9px;border-radius:0 3px 3px 0;}
+  .callout .cw{font:700 8.5px/1.4 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--warn);white-space:nowrap;padding-top:1px;}
+  .callout .ct{font:400 10px/1.45 var(--font);color:var(--ink2);}
+  .callout .ct b{color:var(--ink);font-weight:600;}
+  .callout.info{border-left-color:var(--acc-50);background:var(--acc-tint);}
+  .callout.info .cw{color:var(--acc-40);}
+  .foot{position:absolute;bottom:16px;left:40px;right:40px;display:flex;justify-content:space-between;font:400 9px/1.2 var(--font);color:var(--muted);border-top:1px solid var(--hair);padding-top:8px;}
+  .foot .conf{letter-spacing:.1em;text-transform:uppercase;}
+  /* Where the letter-size page break falls once translated to ReportMill. */
+  .pgbreak{display:flex;align-items:center;gap:10px;margin:26px 40px 0;}
+  .pgbreak .rule{flex:1;border-top:1px dashed var(--n80);}
+  .pgbreak .lbl{font:600 8.5px/1 var(--font);letter-spacing:.1em;text-transform:uppercase;color:var(--n70);white-space:nowrap;}
+</style>
+
+<div class="wrap">
+<div class="page">
+
+  <div class="band">
+    <div class="kicker">Madison Precision Products &middot; MES</div>
+    <h1>Production &amp; Inventory by Area</h1>
+    <div class="sub">
+      <div class="site">Plant-wide &middot; one production day &middot; throughput and scrap by area and shift</div>
+      <div class="plant">MPP &middot; Madison, IN</div>
+    </div>
+  </div>
+  <div class="accent"></div>
+
+  <div class="params">
+    <div class="cell lead">
+      <div class="lbl">Production Day</div>
+      <div class="val">Tue, Aug 18, 2026<small>3rd &rarr; 1st &rarr; 2nd</small></div>
+    </div>
+    <div class="cell">
+      <div class="lbl">Shift Window</div>
+      <div class="val">Mon 23:00 &ndash; Tue 23:00<small>3rd shift starts the prior evening</small></div>
+    </div>
+    <div class="cell">
+      <div class="lbl">Areas</div>
+      <div class="val">8 production<small>+ 3 support (inventory only)</small></div>
+    </div>
+    <div class="cell">
+      <div class="lbl">Generated</div>
+      <div class="val">Aug 19, 2026<small>7:14 AM ET</small></div>
+    </div>
+  </div>
+
+  <section>
+    <div class="h">Day Summary</div>
+    <div class="kpis">
+      <div class="kpi primary">
+        <div class="k">Plant Output</div><div class="v">18,430</div>
+        <div class="d">finished goods, Assembly OUT</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Total Throughput</div><div class="v">105,674</div>
+        <div class="d">pieces across all steps</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Scrap</div><div class="v">1,533</div>
+        <div class="d">all areas</div>
+      </div>
+      <div class="kpi flag">
+        <div class="k">Scrap Rate</div><div class="v warnc">1.45<small>%</small></div>
+        <div class="d">of throughput</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Areas Reporting</div><div class="v">8<small> / 8</small></div>
+        <div class="d">3 shifts each</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h">Throughput by Area &amp; Shift <span class="note">pieces credited at the step performed in that area</span></div>
+    <div class="chartcard">
+      <div class="legend">
+        <span><i style="background:#126680"></i>3rd shift &middot; 23:00&ndash;07:00</span>
+        <span><i style="background:#1888A8"></i>1st shift &middot; 07:00&ndash;15:00</span>
+        <span><i style="background:#4BC2E0"></i>2nd shift &middot; 15:00&ndash;23:00</span>
+        <span><i style="background:#B45309"></i>Unassigned (schedule gap)</span>
+      </div>
+      <svg id="stack" viewBox="0 0 760 300" width="100%" style="display:block"></svg>
+    </div>
+  </section>
+
+  <section>
+    <div class="h">Production by Area <span class="note">pieces &middot; scrap from ProductionEvent.ScrapCount</span></div>
+    <table class="grid">
+      <thead><tr>
+        <th>Area</th>
+        <th class="n">3rd</th><th class="n">1st</th><th class="n">2nd</th><th class="n u">Unassigned</th>
+        <th class="n">Day Total</th><th class="n">Scrap</th><th class="n">Scrap %</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="area">DC1 <small>Die Cast 1</small></td><td class="n">6,240</td><td class="n">7,180</td><td class="n">6,905</td><td class="n dim">&mdash;</td><td class="n">20,325</td><td class="n">412</td><td class="n">2.03%</td></tr>
+        <tr><td class="area">DC2 <small>Die Cast 2</small></td><td class="n">2,110</td><td class="n">2,480</td><td class="n">2,395</td><td class="n dim">&mdash;</td><td class="n">6,985</td><td class="n">143</td><td class="n">2.05%</td></tr>
+        <tr><td class="area">DC3 <small>Die Cast 3</small></td><td class="n">3,050</td><td class="n">3,610</td><td class="n">3,480</td><td class="n dim">&mdash;</td><td class="n">10,140</td><td class="n">268</td><td class="n">2.64%</td></tr>
+        <tr><td class="area">DC4 <small>Die Cast 4</small></td><td class="n">1,880</td><td class="n">2,240</td><td class="n">2,150</td><td class="n dim">&mdash;</td><td class="n">6,270</td><td class="n">121</td><td class="n">1.93%</td></tr>
+        <tr><td class="area">TRIM1 <small>Trim Shop 1</small></td><td class="n">5,420</td><td class="n">6,310</td><td class="n">6,040</td><td class="n dim">&mdash;</td><td class="n">17,770</td><td class="n">96</td><td class="n">0.54%</td></tr>
+        <tr><td class="area">TRIM2 <small>Trim Shop 2</small></td><td class="n">4,180</td><td class="n">4,905</td><td class="n">4,720</td><td class="n dim">&mdash;</td><td class="n">13,805</td><td class="n">74</td><td class="n">0.54%</td></tr>
+        <tr><td class="area">MA1 <small>Machining &amp; Assembly 1</small></td><td class="n">3,960</td><td class="n">4,720</td><td class="n">4,505</td><td class="n dim">&mdash;</td><td class="n">13,185</td><td class="n">188</td><td class="n">1.43%</td></tr>
+        <tr><td class="area">MA2 <small>Machining &amp; Assembly 2</small></td><td class="n">5,110</td><td class="n">6,040</td><td class="n">5,830</td><td class="n u">214</td><td class="n">17,194</td><td class="n">231</td><td class="n">1.34%</td></tr>
+        <tr class="tot"><td>Total throughput</td><td class="n">31,950</td><td class="n">37,485</td><td class="n">36,025</td><td class="n">214</td><td class="n">105,674</td><td class="n">1,533</td><td class="n">1.45%</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <div class="cw">Read this<br>as throughput</div>
+      <div class="ct">A piece is counted <b>once in every area it passes through</b> &mdash; a casting appears in Die Cast, Trim, Machining and Assembly. <b>Do not sum the Area column and call it plant output.</b> Plant output is the count at the finishing step (Assembly OUT) only: <b>18,430</b> pieces.</div>
+    </div>
+    <div class="callout">
+      <div class="cw">Unassigned<br>bucket</div>
+      <div class="ct">214 pieces were recorded at a time <b>no shift instance was open</b>. They are shown in their own column, against the area they occurred in, rather than dropped. A persistent non-zero value means a gap in the shift schedule &mdash; check <b>Oee.ShiftSchedule</b> covers every day the plant runs, weekends included.</div>
+    </div>
+  </section>
+
+  <div class="pgbreak"><div class="rule"></div><div class="lbl">Page 2</div><div class="rule"></div></div>
+
+  <section>
+    <div class="h">Current Inventory by Area <span class="note">live snapshot &middot; as of Aug 19, 2026 7:14 AM ET</span></div>
+    <table class="grid">
+      <thead><tr>
+        <th>Area</th><th>Type</th>
+        <th class="n">LOTs</th><th class="n">Pieces Available</th>
+        <th class="n">Held LOTs</th><th class="n">Held Pieces</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="area">DC1 <small>Die Cast 1</small></td><td class="dim">Production</td><td class="n">42</td><td class="n">8,420</td><td class="n">2</td><td class="n">380</td></tr>
+        <tr><td class="area">DC2 <small>Die Cast 2</small></td><td class="dim">Production</td><td class="n">18</td><td class="n">3,150</td><td class="n">0</td><td class="n dim">&mdash;</td></tr>
+        <tr><td class="area">DC3 <small>Die Cast 3</small></td><td class="dim">Production</td><td class="n">27</td><td class="n">5,240</td><td class="n">1</td><td class="n">210</td></tr>
+        <tr><td class="area">DC4 <small>Die Cast 4</small></td><td class="dim">Production</td><td class="n">15</td><td class="n">2,880</td><td class="n">0</td><td class="n dim">&mdash;</td></tr>
+        <tr><td class="area">TRIM1 <small>Trim Shop 1</small></td><td class="dim">Production</td><td class="n">61</td><td class="n">11,940</td><td class="n">3</td><td class="n">640</td></tr>
+        <tr><td class="area">TRIM2 <small>Trim Shop 2</small></td><td class="dim">Production</td><td class="n">48</td><td class="n">9,310</td><td class="n">1</td><td class="n">185</td></tr>
+        <tr><td class="area">MA1 <small>Machining &amp; Assembly 1</small></td><td class="dim">Production</td><td class="n">34</td><td class="n">5,120</td><td class="n">2</td><td class="n">415</td></tr>
+        <tr><td class="area">MA2 <small>Machining &amp; Assembly 2</small></td><td class="dim">Production</td><td class="n">46</td><td class="n">7,260</td><td class="n">1</td><td class="n">190</td></tr>
+        <tr><td class="area">WHSE <small>Warehouse</small></td><td class="dim">Support</td><td class="n">88</td><td class="n">24,510</td><td class="n">4</td><td class="n">1,120</td></tr>
+        <tr><td class="area">SHIPIN <small>Shipping IN</small></td><td class="dim">Support</td><td class="n">12</td><td class="n">3,040</td><td class="n">0</td><td class="n dim">&mdash;</td></tr>
+        <tr><td class="area">SHIPOUT <small>Shipping OUT</small></td><td class="dim">Support</td><td class="n">9</td><td class="n">2,180</td><td class="n">1</td><td class="n">260</td></tr>
+        <tr class="tot"><td>Plant total</td><td></td><td class="n">400</td><td class="n">83,050</td><td class="n">15</td><td class="n">3,400</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <div class="cw">Snapshot,<br>not history</div>
+      <div class="ct">Inventory is <b>as of the moment this report was rendered</b> &mdash; not as of the production day above. The model holds only current LOT state, so a report run for a past day shows <b>today's</b> stock beside <b>that day's</b> production. Held stock is physically present but excluded from Pieces Available.</div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <div>MPP MES &middot; Production &amp; Inventory by Area &middot; Production day Tue, Aug 18, 2026</div>
+    <div class="conf">Page 1 of 2 &middot; Confidential</div>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function(){
+  // area, 3rd, 1st, 2nd, unassigned
+  var data=[
+    ["DC1",6240,7180,6905,0],
+    ["DC2",2110,2480,2395,0],
+    ["DC3",3050,3610,3480,0],
+    ["DC4",1880,2240,2150,0],
+    ["TRIM1",5420,6310,6040,0],
+    ["TRIM2",4180,4905,4720,0],
+    ["MA1",3960,4720,4505,0],
+    ["MA2",5110,6040,5830,214]
+  ];
+  var C=['#126680','#1888A8','#4BC2E0','#B45309'];
+  var W=760,H=300,L=54,R=16,T=14,B=48;
+  var pw=W-L-R, ph=H-T-B, base=T+ph;
+  var max=0;
+  data.forEach(function(d){ var s=d[1]+d[2]+d[3]+d[4]; if(s>max) max=s; });
+  // round the axis top up to a clean 5,000
+  var top=Math.ceil(max/5000)*5000;
+  var slot=pw/data.length, bw=Math.min(52,slot*0.56);
+  var y=function(v){ return base-(v/top)*ph; };
+  var cx=function(i){ return L+slot*i+slot/2; };
+  var MUT='#6b788f', g='', s='';
+
+  for(var p=0;p<=4;p++){
+    var frac=p/4, yy=base-frac*ph, val=Math.round(frac*top);
+    g+='<line x1="'+L+'" y1="'+yy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+yy.toFixed(1)+'" stroke="#eef1f5" stroke-width="1"/>';
+    g+='<text x="'+(L-8)+'" y="'+(yy+3).toFixed(1)+'" text-anchor="end" fill="'+MUT+'" font-family="Inter,Segoe UI,sans-serif" font-size="9.5">'+val.toLocaleString()+'</text>';
+  }
+  g+='<text x="'+L+'" y="'+(base+40)+'" fill="'+MUT+'" font-family="Inter,Segoe UI,sans-serif" font-size="9">pieces</text>';
+
+  data.forEach(function(d,i){
+    var acc=0, x=cx(i)-bw/2;
+    for(var k=1;k<=4;k++){
+      var v=d[k]; if(!v) continue;
+      var yTop=y(acc+v), hgt=y(acc)-y(acc+v);
+      s+='<rect x="'+x.toFixed(1)+'" y="'+yTop.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hgt.toFixed(1)+'" fill="'+C[k-1]+'"/>';
+      acc+=v;
+    }
+    // rounded top cap on the stack
+    s+='<rect x="'+x.toFixed(1)+'" y="'+y(acc).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(base-y(acc)).toFixed(1)+'" fill="none" rx="2"/>';
+    s+='<text x="'+cx(i).toFixed(1)+'" y="'+(y(acc)-5).toFixed(1)+'" text-anchor="middle" fill="#3d4b63" font-family="Inter,Segoe UI,sans-serif" font-size="9.5" font-weight="700">'+acc.toLocaleString()+'</text>';
+    s+='<text x="'+cx(i).toFixed(1)+'" y="'+(base+15)+'" text-anchor="middle" fill="#3d4b63" font-family="Inter,Segoe UI,sans-serif" font-size="9.5" font-weight="600">'+d[0]+'</text>';
+  });
+  s+='<line x1="'+L+'" y1="'+base+'" x2="'+(W-R)+'" y2="'+base+'" stroke="#dfe4ea" stroke-width="1"/>';
+  document.getElementById('stack').innerHTML=g+s;
+})();
+</script>
