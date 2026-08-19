@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_Container_ListPendingValidation.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-18
--- Version:     1.0
+-- Version:     1.1
 -- Description: Containers awaiting Controlled Run Tag validation: their finished-good
 --              LOT is still CrtActive, so their AIM Shipper ID is claimed but held.
 --
@@ -24,6 +24,20 @@
 --              terminal's PARENT LINE. @ContainerId probes one container instead
 --              (used by the completion path to decide whether to post).
 --              Exactly one of the two should be supplied.
+--
+--              Defence in depth (whole-feature review Finding 1, 2026-08-18):
+--              Container_Ship now rejects a still-CRT-pending container, so a container
+--              should never legitimately reach Shipped (3) while any tray LOT is
+--              CrtActive. IF that guard is ever bypassed by a bug elsewhere, shipping
+--              moves CurrentLocationId to SHIPOUT, which would drop the row out of every
+--              @LocationId-scoped line's query and strand the serial invisibly (the exact
+--              harm Container_Ship's new guard exists to prevent). So the @LocationId mode
+--              ALSO matches a Shipped container regardless of its current location -
+--              deliberately NOT any non-Open status, because a normal just-Completed (2)
+--              container is expected to sit at its own line's location and must NOT leak
+--              into every other line's query (Container_ListPendingValidation's own test
+--              056/050 "a different line does NOT see it" pins this) - only Shipped (3) is
+--              the "moved away" signal this defends against.
 --
 --              Read proc: no OUTPUT params, empty result set = nothing pending.
 --              Times are ET-converted and CAST to DATETIME2(3) - a raw
@@ -59,7 +73,8 @@ BEGIN
     WHERE c.CompletedAt IS NOT NULL   -- see header: only a COMPLETED container has a serial
       AND ((@ContainerId IS NOT NULL AND c.Id = @ContainerId)
         OR (@ContainerId IS NULL AND @LocationId IS NOT NULL
-            AND c.CurrentLocationId IN (SELECT Id FROM Descendants)))
+            AND (c.CurrentLocationId IN (SELECT Id FROM Descendants)
+              OR c.ContainerStatusCodeId = 3)))  -- Shipped: defence in depth, see header
     GROUP BY c.Id, i.PartNumber, i.Description, c.CompletedAt
     ORDER BY c.CompletedAt, c.Id
     OPTION (MAXRECURSION 8);

@@ -55,20 +55,31 @@ The container's finished-good LOT is the natural carrier: `Assembly_CompleteTray
 already mints exactly one FG LOT per tray, and `ContainerTray.FinishedGoodLotId` ties
 it to the container.
 
-### It does not inflict 200% inspection
+### It does not inflict 200% inspection (post-completion)
 
 The obvious risk of reusing `CrtActive` is dragging in the 200%-inspection prompt,
-which MPP did not ask for. It does not happen, and the reason is precise:
+which MPP did not ask for. **Once the container completes**, it does not happen, and
+the reason is precise:
 
 * `Lots.Container_Complete` **closes** the finished-good LOT on completion
   ("Closed on container completion (finished-goods packed & shipping-ready)").
 * `Quality.Crt_GetRequiredInspections` filters `CrtActive = 1 AND sc.Code <> 'Closed'`.
 
-So a CRT-marked FG LOT is Closed within the same operation that marks it, and is
-therefore never surfaced to the inspection prompt. The flag serves purely as the
-container-validation marker. **This is load-bearing: if the FG LOT ever stops being
-closed at completion, these containers would begin demanding 200% inspection.** The
-test suite pins it.
+So a CRT-marked FG LOT is Closed by the time the container it belongs to is done, and
+is therefore never surfaced to the inspection prompt from that point on. The flag
+serves purely as the container-validation marker post-completion. **This is
+load-bearing: if the FG LOT ever stops being closed at completion, these containers
+would begin demanding 200% inspection.** The test suite pins it.
+
+**Caveat — the fill window.** The flag is set earlier than the close: `CrtActive = 1`
+is minted onto the FG LOT at **tray close** (`Assembly_CompleteTray`'s `INSERT INTO
+Lots.Lot`), status `Good`; the LOT is not closed until `Container_Complete` runs, which
+can be several trays and potentially a whole shift later on a multi-tray container. In
+that window each already-closed tray's FG LOT is `CrtActive = 1` with a non-Closed
+status, so it **does** sit on `Quality.Crt_GetRequiredInspections`'s surface. Nothing
+currently reads that surface for these LOTs (no consuming view exists yet), which is
+why this has stayed latent, but the guarantee above holds only from container
+completion onward, not from tray close.
 
 ### Which existing proc goes where
 

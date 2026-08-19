@@ -279,6 +279,17 @@ BEGIN
           AND ad.DeprecatedAt IS NULL;
         SET @CrtActive = ISNULL(@CrtActive, 0);
 
+        -- CAVEAT (2026-08-18, whole-feature review Finding 3): the FG LOT minted below is
+        -- CrtActive=1 status Good the instant this tray closes, but it is NOT Closed until
+        -- Container_Complete runs for the whole container -- potentially several trays and a
+        -- whole shift later. During that fill window this LOT (CrtActive=1, status <> Closed)
+        -- sits on Quality.Crt_GetRequiredInspections' surface, i.e. it IS eligible for
+        -- 200%-inspection prompting, contrary to the design doc's blanket "never surfaced"
+        -- claim (see docs/superpowers/specs/2026-08-14-crt-container-validation-design.md,
+        -- "It does not inflict 200% inspection" -- corrected to a post-completion-only
+        -- guarantee). Latent only because no view consumes that surface yet; whoever builds
+        -- the 200%-inspection prompt screen needs to account for CRT tray LOTs mid-fill.
+
         -- FG assembly LOT: origin Manufactured, at the cell, Tool/Cavity NULL (not
         -- die-cast; no ToolAssignment at an assembly cell), B5 materialized 0/@PieceCount.
         INSERT INTO Lots.Lot (

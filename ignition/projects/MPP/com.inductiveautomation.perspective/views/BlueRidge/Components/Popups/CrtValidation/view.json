@@ -211,7 +211,7 @@
             "props": {
               "direction": "row",
               "alignItems": "center",
-              "style": { "classes": "psc-crt-list-header", "gap": "12px" }
+              "style": { "classes": "crt-list-header", "gap": "12px" }
             },
             "children": [
               { "type": "ia.display.label", "meta": { "name": "HdrPart" }, "position": { "grow": 1, "basis": "0" }, "props": { "text": "Part / Description" } },
@@ -237,7 +237,7 @@
             },
             "props": {
               "text": "No containers awaiting validation.",
-              "style": { "classes": "psc-pf-empty-state" }
+              "style": { "classes": "pf-empty-state" }
             }
           },
           {
