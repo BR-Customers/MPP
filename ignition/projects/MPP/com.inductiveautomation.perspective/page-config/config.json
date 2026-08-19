@@ -48,6 +48,10 @@
       "title": "Die Cast Entry (Dedicated)",
       "viewPath": "BlueRidge/Views/ShopFloor/DieCastDedicated"
     },
+    "/shop-floor/die-cast/supervisor": {
+      "title": "Die Cast Production",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastSupervisor"
+    },
     "/shop-floor/downtime": {
       "title": "Downtime Entry",
       "viewPath": "BlueRidge/Views/ShopFloor/DowntimeEntry"

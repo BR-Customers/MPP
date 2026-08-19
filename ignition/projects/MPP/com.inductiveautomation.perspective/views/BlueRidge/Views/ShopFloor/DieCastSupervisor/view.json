@@ -1,0 +1,516 @@
+{
+  "custom": {
+    "filter": {
+      "areaLocationId": null
+    },
+    "refreshToken": 0,
+    "areaOptions": [],
+    "dash": {
+      "current": {
+        "slot": "",
+        "shiftId": null,
+        "scheduleName": "",
+        "isOpen": false,
+        "windowEt": "",
+        "goodTotal": 0,
+        "lotTotal": 0,
+        "pressTotal": 0,
+        "rowCount": 0,
+        "rows": []
+      },
+      "previous": {
+        "slot": "",
+        "shiftId": null,
+        "scheduleName": "",
+        "isOpen": false,
+        "windowEt": "",
+        "goodTotal": 0,
+        "lotTotal": 0,
+        "pressTotal": 0,
+        "rowCount": 0,
+        "rows": []
+      },
+      "currentLabel": "Current shift",
+      "previousLabel": "Previous shift",
+      "deltaGood": 0,
+      "deltaText": "--",
+      "deltaLabel": "no previous shift",
+      "deltaTone": "",
+      "hasData": false
+    }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.areaOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCastSupervisor.getAreaOptions\", 0, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.dash": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCastSupervisor.getDashboard\", 30, {view.custom.filter.areaLocationId}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280,
+      "height": 800
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": { "name": "Title" },
+            "position": { "basis": "0", "grow": 1 },
+            "props": {
+              "style": { "fontSize": "22px", "fontWeight": "700" },
+              "text": "Die Cast Production"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": { "name": "AreaLabel" },
+                "props": { "style": { "classes": "pf-field-label" }, "text": "Area" },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "AreaSelect" },
+                "propConfig": {
+                  "props.options": {
+                    "binding": { "config": { "path": "view.custom.areaOptions" }, "type": "property" }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": { "bidirectional": true, "path": "view.custom.filter.areaLocationId" },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "All Die Cast",
+                  "style": { "classes": "pf-field-input" }
+                },
+                "type": "ia.input.dropdown"
+              }
+            ],
+            "meta": { "name": "AreaField" },
+            "position": { "basis": "280px", "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-field", "gap": "4px", "overflow": "visible" }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.refreshToken = system.date.toMillis(system.date.now())"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": { "name": "RefreshButton" },
+            "position": { "basis": "130px", "shrink": 0 },
+            "props": {
+              "style": { "classes": "pf-btn pf-btn-secondary" },
+              "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": {
+          "alignItems": "flex-end",
+          "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "16px",
+            "overflow": "hidden",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": { "name": "L" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": { "path": "view.custom.dash.currentLabel" },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-kpi-label" } },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "V" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "numberFormat({view.custom.dash.current.goodTotal}, \"#,##0\")"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-kpi-value" } },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "S" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": { "path": "view.custom.dash.current.windowEt" },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-kpi-sub" } },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": { "name": "TileCurrent" },
+            "position": { "basis": "300px", "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-panel", "gap": "6px", "overflow": "hidden", "padding": "16px" }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": { "name": "L" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": { "path": "view.custom.dash.previousLabel" },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-kpi-label" } },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "V" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "numberFormat({view.custom.dash.previous.goodTotal}, \"#,##0\")"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-kpi-value" } },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "S" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": { "path": "view.custom.dash.previous.windowEt" },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-kpi-sub" } },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": { "name": "TilePrevious" },
+            "position": { "basis": "300px", "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-panel", "gap": "6px", "overflow": "hidden", "padding": "16px" }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": { "name": "L" },
+                "props": { "style": { "classes": "pf-kpi-label" }, "text": "Change" },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "V" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": { "path": "view.custom.dash.deltaText" },
+                      "type": "property"
+                    }
+                  },
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "trim(\"pf-kpi-value \" + {view.custom.dash.deltaTone})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-kpi-value" } },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "S" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": { "path": "view.custom.dash.deltaLabel" },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-kpi-sub" } },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": { "name": "TileDelta" },
+            "position": { "basis": "300px", "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-panel", "gap": "6px", "overflow": "hidden", "padding": "16px" }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": { "name": "Kpis" },
+        "position": { "shrink": 0 },
+        "props": {
+          "style": { "gap": "16px", "overflow": "hidden", "padding": "16px 16px 0 16px" },
+          "wrap": "nowrap"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": { "name": "H" },
+                "position": { "shrink": 0 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"Current shift  |  \" + toStr({view.custom.dash.current.pressTotal}) + \" press(es)  |  \" + toStr({view.custom.dash.current.lotTotal}) + \" basket(s)\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-panel-header" } },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  { "meta": { "name": "A" }, "position": { "basis": "110px", "shrink": 0 }, "props": { "text": "PRESS" }, "type": "ia.display.label" },
+                  { "meta": { "name": "B" }, "position": { "basis": "100px", "shrink": 0 }, "props": { "text": "DIE" }, "type": "ia.display.label" },
+                  { "meta": { "name": "C" }, "position": { "basis": "0", "grow": 1 }, "props": { "text": "PART" }, "type": "ia.display.label" },
+                  { "meta": { "name": "D" }, "position": { "basis": "100px", "shrink": 0 }, "props": { "style": { "textAlign": "right" }, "text": "GOOD PC" }, "type": "ia.display.label" },
+                  { "meta": { "name": "E" }, "position": { "basis": "95px", "shrink": 0 }, "props": { "style": { "textAlign": "right" }, "text": "LAST ENTRY" }, "type": "ia.display.label" }
+                ],
+                "meta": { "name": "ColHeader" },
+                "position": { "shrink": 0 },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "700",
+                    "gap": "10px",
+                    "letterSpacing": "0.04em",
+                    "overflow": "hidden",
+                    "padding": "0 12px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": { "name": "Empty" },
+                "position": { "shrink": 0 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": { "expression": "{view.custom.dash.current.rowCount} = 0" },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": { "color": "var(--mpp-text-secondary)", "padding": "12px" },
+                  "text": "No production registered for this shift yet."
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "Rows" },
+                "position": { "basis": "0", "grow": 1 },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": { "path": "view.custom.dash.current.rows" },
+                      "transforms": [
+                        { "code": "\treturn value or []", "type": "script" }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": { "basis": "44px", "shrink": 0 },
+                  "path": "BlueRidge/Components/PlantFloor/DieCastSupervisor/PressRow",
+                  "style": { "gap": "6px", "overflowY": "auto" },
+                  "useDefaultViewHeight": true,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": { "name": "PanelCurrent" },
+            "position": { "basis": "0", "grow": 1 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": { "name": "H" },
+                "position": { "shrink": 0 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"Previous shift  |  \" + toStr({view.custom.dash.previous.pressTotal}) + \" press(es)  |  \" + toStr({view.custom.dash.previous.lotTotal}) + \" basket(s)\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": { "style": { "classes": "pf-panel-header" } },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  { "meta": { "name": "A" }, "position": { "basis": "110px", "shrink": 0 }, "props": { "text": "PRESS" }, "type": "ia.display.label" },
+                  { "meta": { "name": "B" }, "position": { "basis": "100px", "shrink": 0 }, "props": { "text": "DIE" }, "type": "ia.display.label" },
+                  { "meta": { "name": "C" }, "position": { "basis": "0", "grow": 1 }, "props": { "text": "PART" }, "type": "ia.display.label" },
+                  { "meta": { "name": "D" }, "position": { "basis": "100px", "shrink": 0 }, "props": { "style": { "textAlign": "right" }, "text": "GOOD PC" }, "type": "ia.display.label" },
+                  { "meta": { "name": "E" }, "position": { "basis": "95px", "shrink": 0 }, "props": { "style": { "textAlign": "right" }, "text": "LAST ENTRY" }, "type": "ia.display.label" }
+                ],
+                "meta": { "name": "ColHeader" },
+                "position": { "shrink": 0 },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "700",
+                    "gap": "10px",
+                    "letterSpacing": "0.04em",
+                    "overflow": "hidden",
+                    "padding": "0 12px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": { "name": "Empty" },
+                "position": { "shrink": 0 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": { "expression": "{view.custom.dash.previous.rowCount} = 0" },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": { "color": "var(--mpp-text-secondary)", "padding": "12px" },
+                  "text": "No production registered for the previous shift."
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "Rows" },
+                "position": { "basis": "0", "grow": 1 },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": { "path": "view.custom.dash.previous.rows" },
+                      "transforms": [
+                        { "code": "\treturn value or []", "type": "script" }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": { "basis": "44px", "shrink": 0 },
+                  "path": "BlueRidge/Components/PlantFloor/DieCastSupervisor/PressRow",
+                  "style": { "gap": "6px", "overflowY": "auto" },
+                  "useDefaultViewHeight": true,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": { "name": "PanelPrevious" },
+            "position": { "basis": "0", "grow": 1 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": { "name": "Body" },
+        "position": { "basis": "0", "grow": 1 },
+        "props": {
+          "style": { "gap": "16px", "padding": "16px" }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "canvas" }
+    },
+    "type": "ia.container.flex"
+  }
+}
