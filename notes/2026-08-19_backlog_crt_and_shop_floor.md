@@ -256,3 +256,45 @@ edit can move either boundary in either direction and a midnight-crossing shift
 extended past midnight reaches into the next calendar day. Safe at any width because
 the resolver is total and a row already correct is not rewritten. Documented in the
 proc header.
+
+---
+
+## Gross shots made additive 2026-08-19 — knock-on items
+
+Operators count shots **since their last entry**, not off a climbing machine
+counter (Hunter, 2026-08-19). `DieCast_GetShiftOutputBreakdown` no longer subtracts
+prior claims. Consequences that are NOT yet actioned:
+
+**1. The peer-terminal guard is now a false positive.** `DieCastBody.submitShiftOutput`
+(backlog 3.3) re-reads the breakdown and refuses to submit if any lot's
+`PriorGoodThisShift` moved since Compute, because under the cumulative model a peer's
+recording changed this terminal's proposed split. Under the additive model it does
+not — this terminal's count is its own. The guard now blocks a legitimate independent
+entry and forces a recompute returning identical numbers. Not data-destructive, but
+it should be narrowed or dropped.
+
+**2. The shot-loss decision needs closing.** `2026-08-04-tool-shot-count-design.md`
+line 44 says the shot-loss path must not increment ShotCount "because gross already
+counts those cycles". That rationale is void — it only holds for a machine counter
+that ticks on every cycle including spoiled ones. So the `registerShotLoss` fix in
+`e9b1c61c` is consistent with the additive model. **Residual field-convention
+question for MPP:** if an operator counts total cycles for the entry and THEN
+registers some as shot loss, `e9b1c61c` double-counts those. Confirm the typed count
+excludes cycles already registered as loss, and update the design-doc row either way
+— its stated rationale no longer supports its conclusion.
+
+**3. Docs now stale on this point** (not edited):
+- `2026-07-28-diecast-per-cavity-lifecycle-design.md` §3.2 — "entered **once**"
+- `docs/fat/areas/die-cast.csv` FAT-DC-050 — "gross shot count ... **for the shift**"
+  will mislead a tester
+- `2026-08-04-tool-shot-count-design.md` — the "What a shot is" and "Shot-loss path" rows
+
+**Verified unaffected:** `Lots.Lot_GetShiftCavityTally` (derives shots from PieceCount,
+never gross) and `Workorder.DieCastSupervisor_GetShiftTotals` (sums PieceDelta).
+
+**Correction to an earlier entry in this note:** the four `0022_PlantFloor_DieCast`
+fixtures (030/040/050/070) are STILL broken. An agent reported mid-session that they
+had been fixed; that was wrong — a controlled A/B (stash the work, re-run at HEAD)
+produced a byte-identical error list. Root cause unchanged: `Msg 515`, NULL
+`ToolAssignment.CellLocationId`, because the fixture's cell lookup resolves to
+nothing on a clean reset.
