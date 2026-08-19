@@ -183,10 +183,13 @@ BEGIN
                 SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
                 RETURN;
             END
-            -- Die-cast LTT must match the external format (9 numeric digits; checksum).
+            -- Die-cast LTT must match the external format (8 or 9 numeric digits; checksum
+            -- stub). MPP's pre-printed stock is 8 digits (backlog 5.1, 2026-08-19); 9 stays
+            -- legal for the LTTs already minted in Dev/Test. Single source of the rule:
+            -- Lots.ufn_IsValidExternalLtt.
             IF @CellHasActiveTool = 1 AND Lots.ufn_IsValidExternalLtt(@LotName) = 0
             BEGIN
-                SET @Message = N'LTT must be 9 digits.';
+                SET @Message = N'LTT must be 8 or 9 digits.';
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                     @EntityId = NULL, @LogEventTypeCode = N'LotCreated',

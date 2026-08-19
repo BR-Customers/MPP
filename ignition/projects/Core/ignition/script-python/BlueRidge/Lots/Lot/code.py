@@ -817,3 +817,129 @@ def getOpenByToolInstances(toolId, _refreshToken=None):
             "voidEligible":     (pieceCount == 0),
         })
     return out
+# =============================================================================
+# LOT Detail - Scrap tab + count rectification (backlog 5.2 / 5.3, 2026-08-19)
+# =============================================================================
+
+def getScrapEvents(lotId, topN=100, _refreshToken=None):
+    """LOT Detail Scrap tab: the per-event scrap list behind the Total Scrap card.
+       Rows come back newest-first with RecordedAt ALREADY converted to Eastern by
+       Lots.Lot_GetScrapEvents. _refreshToken is an ignored runScript re-read arg --
+       it must be passed as an ARG (not just referenced in the if() condition) or
+       runScript's arg-keyed cache never re-executes after a scrap is recorded."""
+    lotId = _u(lotId)
+    if lotId is None or lotId == "":
+        return []
+    BlueRidge.Common.Util.log("lotId=%s topN=%s" % (lotId, topN))
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetScrapEvents", {"lotId": lotId, "topN": topN or 100})
+
+
+def mapScrapEventInstances(rows):
+    """Scrap tab repeater instances: one {'row': {...}} per Lot_GetScrapEvents row
+       with RecordedAtDisplay precomputed in Python. Same reason as
+       mapHistoryInstances -- a Date serializes to a string on the repeater param
+       hop, so dateFormat in a child binding renders the raw value."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    out = []
+    for r in rows:
+        r = dict(r or {})
+        ev = r.get("RecordedAt")
+        disp = ""
+        if ev is not None:
+            try:
+                disp = system.date.format(ev, "MM/dd HH:mm")
+            except:
+                disp = ("%s" % ev)[:16]
+        r["RecordedAtDisplay"] = disp
+        out.append({"row": r})
+    return out
+
+
+def getScrapEventInstances(lotId, topN=100, _refreshToken=None):
+    """Binding-safe one-shot for the Scrap tab repeater: read + map in one call.
+       ALWAYS returns a list (never None) per the pre-declared-bound-props rule."""
+    return mapScrapEventInstances(getScrapEvents(lotId, topN, _refreshToken))
+
+
+def recordScrapAtCurrentLocation(lotId, defectCodeId, quantity, remarks=None,
+                                 appUserId=None, terminalLocationId=None):
+    """LOT Detail Scrap tab (backlog 5.2): record scrap against a LOT and charge it
+       to the LOT's CURRENT location -- die cast if the LOT sits at die cast, the
+       warehouse if it sits in the warehouse, and so on.
+
+       Reuses the existing scrap model verbatim: ONE Workorder.RejectEvent via
+       Workorder.RejectEvent_Record (the same proc Trim OUT, Machining OUT and the
+       die-cast release all write through), with ChargeToArea set to the LOT's
+       current location name. The location is re-read from the LOT here, on the
+       server, immediately before the call -- never taken from the view -- so a
+       stale screen cannot charge scrap to the wrong area. Lots.Lot_GetAttributeHistory
+       already renders ChargeToArea in the LOT timeline ('... charged to <area>').
+
+       operationTypeCode is deliberately NOT passed. That parameter drives the
+       additive-vs-subtractive rule (Parts.OperationType.ScrapIsAdditive, migration
+       0042), and additive exists ONLY for the die-cast entry screen, where the bad
+       shots are pulled at the press and never enter the basket. A LOT Detail scrap
+       is the opposite act: the pieces ARE in the basket and are being pulled out of
+       it, so it is subtractive at every location including die cast. Omitting the
+       code takes RejectEvent_Record's subtractive default.
+
+       Returns {Status, Message, NewId (RejectEvent.Id)}."""
+    lotId        = _u(lotId)
+    defectCodeId = _u(defectCodeId)
+    quantity     = BlueRidge.Common.Util.toIntOrNone(_u(quantity))
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+
+    if lotId is None:
+        return {"Status": False, "Message": "No LOT selected.", "NewId": None}
+    if defectCodeId is None:
+        return {"Status": False, "Message": "Select a scrap reason.", "NewId": None}
+    if quantity is None or quantity <= 0:
+        return {"Status": False, "Message": "Enter a scrap quantity greater than zero.", "NewId": None}
+
+    lot = get(lotId=lotId) or {}
+    if lot.get("Id") is None:
+        return {"Status": False, "Message": "LOT not found.", "NewId": None}
+    chargeToArea = lot.get("CurrentLocationName") or None
+
+    remarks = ("%s" % (remarks or "")).strip() or None
+    BlueRidge.Common.Util.log(
+        "recordScrapAtCurrentLocation lotId=%s defectCodeId=%s quantity=%s chargeToArea=%s appUserId=%s"
+        % (lotId, defectCodeId, quantity, chargeToArea, appUserId))
+
+    return BlueRidge.Common.Db.execMutation(
+        "workorder/RejectEvent_Record",
+        {"lotId": lotId, "defectCodeId": defectCodeId, "quantity": quantity,
+         "productionEventId": None, "chargeToArea": chargeToArea, "remarks": remarks,
+         "appUserId": appUserId, "terminalLocationId": _u(terminalLocationId),
+         "operationTypeCode": None, "allowHeldLot": False})
+
+
+def rectifyPieceCount(lotId, newPieceCount, reason, appUserId=None, terminalLocationId=None):
+    """LOT Detail count correction (backlog 5.3). Corrects a mis-keyed LOT piece
+       count. The reason is MANDATORY and is enforced server-side by
+       Lots.Lot_RectifyPieceCount as well as here -- it is stored on the append-only
+       Lots.LotAttributeChange row (migration 0059) and in the audit operation, so
+       the correction is always explainable afterwards.
+
+       Returns {Status, Message, NewId (LotAttributeChange.Id)}."""
+    lotId         = _u(lotId)
+    newPieceCount = BlueRidge.Common.Util.toIntOrNone(_u(newPieceCount))
+    reason        = ("%s" % (_u(reason) or "")).strip()
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+
+    if lotId is None:
+        return {"Status": False, "Message": "No LOT selected.", "NewId": None}
+    if newPieceCount is None:
+        return {"Status": False, "Message": "Enter the corrected piece count.", "NewId": None}
+    if not reason:
+        return {"Status": False, "Message": "A reason is required to correct a LOT count.", "NewId": None}
+
+    BlueRidge.Common.Util.log(
+        "rectifyPieceCount lotId=%s newPieceCount=%s appUserId=%s" % (lotId, newPieceCount, appUserId))
+    return BlueRidge.Common.Db.execMutation(
+        "lots/Lot_RectifyPieceCount",
+        {"lotId": lotId, "newPieceCount": newPieceCount, "reason": reason,
+         "appUserId": appUserId, "terminalLocationId": _u(terminalLocationId)})

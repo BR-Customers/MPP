@@ -1,0 +1,474 @@
+{
+  "custom": {
+    "lot": {
+      "Id": null,
+      "LotName": "",
+      "ItemId": null,
+      "ItemPartNumber": "",
+      "PieceCount": 0,
+      "MaxPieceCount": 0,
+      "InventoryAvailable": 0,
+      "TotalInProcess": 0,
+      "LotStatusCode": "",
+      "LotStatusName": "",
+      "LotOriginTypeCode": "",
+      "CurrentLocationId": null,
+      "CurrentLocationName": "",
+      "CrtActive": null,
+      "ToolId": null,
+      "ToolCode": "",
+      "ToolCavityNumber": ""
+    },
+    "draft": {
+      "defectCodeId": null,
+      "quantity": "",
+      "remarks": ""
+    },
+    "defectOptions": [],
+    "events": [],
+    "scrapSummary": {
+      "RejectedTotal": 0,
+      "CounterScrap": 0,
+      "TotalScrap": 0
+    }
+  },
+  "params": {
+    "lotId": 0
+  },
+  "propConfig": {
+    "params.lotId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 460,
+      "width": 900
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "overflowY": "auto"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applyLot",
+          "params": [
+            "lotId"
+          ],
+          "script": "\tlid = BlueRidge.Common.Util.toIntOrNone(lotId) or 0\n\tself.view.custom.lot = BlueRidge.Lots.Lot.getOrEmpty(lid if lid > 0 else None)\n\t# ALL defect reasons, deliberately unscoped (backlog 5.2). getForDropdown() with\n\t# no operationTypeCode makes Quality.DefectCode_List skip the category filter\n\t# entirely, so the LOT Detail scrap tab offers the whole active catalog -- not\n\t# the operation-scoped subset the terminals use.\n\tif len(self.view.custom.defectOptions or []) == 0:\n\t\tself.view.custom.defectOptions = BlueRidge.Quality.DefectCode.getForDropdown()\n\tself.refresh()"
+        },
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\tlot = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\tlid = lot.get(\"Id\")\n\tif lid:\n\t\tself.view.custom.lot = BlueRidge.Lots.Lot.getOrEmpty(lid)\n\tself.view.custom.events = BlueRidge.Lots.Lot.getScrapEventInstances(lid) if lid else []\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lid)\n\tself.view.custom.draft = {\"defectCodeId\": None, \"quantity\": \"\", \"remarks\": \"\"}"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "lotScrapPanelLoad",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.applyLot(payload.get(\"lotId\"))"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ContextRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "14px",
+            "overflow": "hidden"
+          },
+          "wrap": "wrap"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "TargetLabel"
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": 700,
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.lot.LotName}"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LocationLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-help"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Scrap is charged to the LOT current location: ' + if({view.custom.lot.CurrentLocationName} = '', '(unknown)', {view.custom.lot.CurrentLocationName})"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "OnHandLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-help"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'On hand ' + {view.custom.lot.PieceCount} + ' pc \u00b7 already scrapped ' + {view.custom.scrapSummary.TotalScrap} + ' pc'"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "EntryRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "coalesce({view.custom.lot.Id}, 0) > 0"
+              }
+            }
+          }
+        },
+        "props": {
+          "alignItems": "flex-end",
+          "style": {
+            "gap": "12px",
+            "overflow": "hidden"
+          },
+          "wrap": "wrap"
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ReasonField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "text": "Scrap reason (all codes)",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": {
+                  "name": "DefectCode"
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.defectOptions"
+                      }
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.defectCodeId",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select a scrap reason",
+                  "search": true,
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "380px",
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "QtyField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "text": "Quantity",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Quantity"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.quantity",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "0",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "120px",
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "RemarksField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "text": "Remarks (optional)",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Remarks"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.remarks",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Note",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "240px",
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "RecordButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Record scrap",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tlot = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tlid = lot.get(\"Id\")\n\tif not lid:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No LOT loaded.\"}, \"Record scrap\")\n\t\treturn\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Lots.Lot.recordScrapAtCurrentLocation(lid, d.get(\"defectCodeId\"),\n\t\td.get(\"quantity\"), d.get(\"remarks\"), self.session.custom.appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Scrap recorded\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.rootContainer.refresh()\n\t\tsystem.perspective.sendMessage(\"lotScrapChanged\", payload={\"lotId\": lid}, scope=\"page\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ListHeading"
+        },
+        "props": {
+          "text": "Recorded scrap",
+          "style": {
+            "classes": "pf-panel-header"
+          }
+        },
+        "position": {
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "EmptyState"
+        },
+        "props": {
+          "text": "No scrap recorded against this LOT.",
+          "style": {
+            "classes": "pf-empty-state"
+          }
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.events}) = 0"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "EventsRepeater"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.events"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "elementPosition": {
+            "basis": "48px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/LotDetail/ScrapEventRow",
+          "style": {
+            "gap": "6px"
+          },
+          "useDefaultViewHeight": true,
+          "useDefaultViewWidth": false
+        }
+      }
+    ]
+  }
+}

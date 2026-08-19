@@ -1,0 +1,328 @@
+{
+  "custom": {
+    "lot": {
+      "Id": null,
+      "LotName": "",
+      "ItemId": null,
+      "ItemPartNumber": "",
+      "PieceCount": 0,
+      "MaxPieceCount": 0,
+      "InventoryAvailable": 0,
+      "TotalInProcess": 0,
+      "LotStatusCode": "",
+      "LotStatusName": "",
+      "LotOriginTypeCode": "",
+      "CurrentLocationId": null,
+      "CurrentLocationName": "",
+      "CrtActive": null,
+      "ToolId": null,
+      "ToolCode": "",
+      "ToolCavityNumber": ""
+    },
+    "draft": {
+      "newPieceCount": "",
+      "reason": ""
+    }
+  },
+  "params": {
+    "lotId": 0
+  },
+  "propConfig": {
+    "params.lotId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 320,
+      "width": 900
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "overflowY": "auto"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applyLot",
+          "params": [
+            "lotId"
+          ],
+          "script": "\tlid = BlueRidge.Common.Util.toIntOrNone(lotId) or 0\n\tself.view.custom.lot = BlueRidge.Lots.Lot.getOrEmpty(lid if lid > 0 else None)\n\tself.view.custom.draft = {\"newPieceCount\": \"\", \"reason\": \"\"}"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "lotCountPanelLoad",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.applyLot(payload.get(\"lotId\"))"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ContextRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "14px",
+            "overflow": "hidden"
+          },
+          "wrap": "wrap"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "TargetLabel"
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": 700,
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.lot.LotName}"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CurrentLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-help"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Current count ' + {view.custom.lot.PieceCount} + ' pc \u00b7 available ' + {view.custom.lot.InventoryAvailable} + ' pc \u00b7 at ' + if({view.custom.lot.CurrentLocationName} = '', '(unknown)', {view.custom.lot.CurrentLocationName})"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Hint"
+        },
+        "props": {
+          "text": "Use this only to correct a count that was keyed in wrong. The correction is logged against the LOT with your reason and shows in the History tab. To remove bad parts, record scrap on the Scrap tab instead.",
+          "style": {
+            "classes": "pf-field-help"
+          }
+        },
+        "position": {
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "EntryRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "coalesce({view.custom.lot.Id}, 0) > 0"
+              }
+            }
+          }
+        },
+        "props": {
+          "alignItems": "flex-end",
+          "style": {
+            "gap": "12px",
+            "overflow": "hidden"
+          },
+          "wrap": "wrap"
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "NewCountField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "text": "Corrected piece count",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "NewPieceCount"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.newPieceCount",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "0",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "180px",
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ReasonField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "text": "Reason (required)",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Reason"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.reason",
+                        "bidirectional": true
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Why is the count being corrected?",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "420px",
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ApplyButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len(trim(coalesce({view.custom.draft.reason}, ''))) > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Correct count",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tlot = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tlid = lot.get(\"Id\")\n\tif not lid:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No LOT loaded.\"}, \"Correct count\")\n\t\treturn\n\treason = (\"%s\" % (d.get(\"reason\") or \"\")).strip()\n\tif not reason:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"A reason is required to correct a LOT count.\"}, \"Correct count\")\n\t\treturn\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Lots.Lot.rectifyPieceCount(lid, d.get(\"newPieceCount\"), reason,\n\t\tself.session.custom.appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Count corrected\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.rootContainer.applyLot(lid)\n\t\tsystem.perspective.sendMessage(\"lotCountChanged\", payload={\"lotId\": lid}, scope=\"page\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

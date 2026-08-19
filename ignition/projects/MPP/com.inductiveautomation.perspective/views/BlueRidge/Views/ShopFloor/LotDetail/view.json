@@ -1751,6 +1751,78 @@
                   "direction": "column"
                 },
                 "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ScrapPanelEmbed"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.params.lotId": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.lotId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/ScrapPanel"
+                    },
+                    "type": "ia.display.view"
+                  }
+                ],
+                "meta": {
+                  "name": "PanelScrap"
+                },
+                "position": {
+                  "tabIndex": 6
+                },
+                "props": {
+                  "direction": "column"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "CountPanelEmbed"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.params.lotId": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.lotId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/CountPanel"
+                    },
+                    "type": "ia.display.view"
+                  }
+                ],
+                "meta": {
+                  "name": "PanelCorrectCount"
+                },
+                "position": {
+                  "tabIndex": 7
+                },
+                "props": {
+                  "direction": "column"
+                },
+                "type": "ia.container.flex"
               }
             ],
             "meta": {
@@ -1813,6 +1885,16 @@
                   "disabled": false,
                   "runWhileHidden": true,
                   "text": "Hold"
+                },
+                {
+                  "disabled": false,
+                  "runWhileHidden": true,
+                  "text": "Scrap"
+                },
+                {
+                  "disabled": false,
+                  "runWhileHidden": true,
+                  "text": "Correct Count"
                 }
               ]
             },
@@ -2068,18 +2150,32 @@
         {
           "name": "reprintLabel",
           "params": [],
-          "script": "\tlotId \u003d self.view.custom.lotId\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"No LOT loaded to reprint.\", \"warning\")\n\t\treturn\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tresult \u003d BlueRidge.Lots.LotLabel.reprint(lotId, None, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"LTT reprinted\")"
+          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"No LOT loaded to reprint.\", \"warning\")\n\t\treturn\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tresult \u003d BlueRidge.Lots.LotLabel.reprint(lotId, None, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"LTT reprinted\")"
         },
         {
           "name": "load",
           "params": [],
-          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      \u003d BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  \u003d BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children \u003d BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   \u003d BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container \u003d BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples \u003d BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold \u003d BlueRidge.Quality.Hold.getOpenByLotOne(lotId)\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0), \"containerId\": 0, \"allowLookup\": False}, scope\u003d\"page\")"
+          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      \u003d BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  \u003d BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children \u003d BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   \u003d BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container \u003d BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples \u003d BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold \u003d BlueRidge.Quality.Hold.getOpenByLotOne(lotId)\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0), \"containerId\": 0, \"allowLookup\": False}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotScrapPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotCountPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")"
         }
       ],
       "extensionFunctions": null,
       "messageHandlers": [
         {
           "messageType": "holdChanged",
+          "pageScope": true,
+          "script": "\tself.load()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "lotScrapChanged",
+          "pageScope": true,
+          "script": "\tself.load()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "lotCountChanged",
           "pageScope": true,
           "script": "\tself.load()",
           "sessionScope": false,

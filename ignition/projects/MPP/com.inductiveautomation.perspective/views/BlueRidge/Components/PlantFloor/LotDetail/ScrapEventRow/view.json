@@ -1,0 +1,163 @@
+{
+  "custom": {},
+  "params": {
+    "row": {
+      "RejectEventId": null,
+      "RecordedAt": "",
+      "RecordedAtDisplay": "",
+      "Quantity": 0,
+      "DefectCodeId": null,
+      "DefectCode": "",
+      "DefectDescription": "",
+      "DefectCategoryName": "",
+      "ChargeToArea": "",
+      "Remarks": "",
+      "ByUserId": null,
+      "ByUserName": ""
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 48
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "10px",
+        "overflow": "hidden",
+        "padding": "6px 10px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "WhenLabel"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-mono"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.RecordedAtDisplay"
+              }
+            }
+          }
+        },
+        "position": {
+          "basis": "96px",
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "QtyLabel"
+        },
+        "props": {
+          "style": {
+            "fontSize": "16px",
+            "fontWeight": 700,
+            "overflow": "hidden",
+            "textAlign": "right"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "'' + {view.params.row.Quantity} + ' pc'"
+              }
+            }
+          }
+        },
+        "position": {
+          "basis": "64px",
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "CodeBlock"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "1px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CodeLabel"
+            },
+            "props": {
+              "style": {
+                "fontSize": "14px",
+                "fontWeight": 600,
+                "overflow": "hidden"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.row.DefectCode} + if({view.params.row.DefectDescription} = '', '', ' - ' + {view.params.row.DefectDescription})"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "MetaLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-help"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.row.ChargeToArea} = '', 'no area recorded', 'at ' + {view.params.row.ChargeToArea}) + ' \u00b7 ' + {view.params.row.ByUserName} + if({view.params.row.Remarks} = '', '', ' \u00b7 ' + {view.params.row.Remarks})"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
