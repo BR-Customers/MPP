@@ -17,6 +17,7 @@ This registry tracks every seed-data item the MES requires from sources **extern
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
 | 1.0 | 2026-04-27 | Blue Ridge Automation | Initial registry. Catalogues 11 external-source seed items extracted from CLAUDE.md "MPP-owed" + "MPP data loads" sections. Establishes the registry as the single source of truth for seed-data tracking, removing seed items from the "blocking specific downstream work" framing in CLAUDE.md. |
+| 1.1 | 2026-08-18 | Blue Ridge Automation | Adds **S-12 — Macola part-number list** (workbook `MACOLA NUMBERS FOR INVENTORYupdate 6-15-26.xlsx`, received 2026-06-15, partially loaded to Dev). Records the governing rule that a Macola number comes only from a column headed `MACOLA #`, the finished-good gap it exposes, and the reconciliation outcome. Cross-references added to S-05 (Parts master) and S-06 (BOM export), both of which this workbook partially satisfies. |
 
 ---
 
@@ -46,8 +47,9 @@ This registry tracks every seed-data item the MES requires from sources **extern
 | S-09 | Label-type seed validation | `Lots.LabelTypeCode` (already seeded with Blue Ridge guesses) | ⬜ Owed | MPP Shipping | No |
 | S-10 | Identifier sequence baselines | `Lots.IdentifierSequence.LastValue` | ⬜ Owed | MPP IT (snapshot at cutover) | **Cutover-only** — not blocking dev |
 | S-11 | AIM pool config tuning | `Lots.AimPoolConfig` (defaults already seeded 50/30/20/10) | 🟡 Received (defaults) | MPP for post-deploy tuning | No |
+| S-12 | Macola part-number list | `Parts.Item.MacolaPartNumber` (+ partial `Parts.BomLine`) | 🟡 Received (partial) | MPP IT / Materials — FG Macola numbers still missing | No |
 
-**Counts:** 6 ⬜ Owed · 5 🟡 Received · 0 ✅ Loaded (Dev) · 0 🔵 Verified (Cutover)
+**Counts:** 6 ⬜ Owed · 6 🟡 Received · 0 ✅ Loaded (Dev) · 0 🔵 Verified (Cutover)
 
 **True blockers:** 1 (S-08 die rank compatibility — and even this has a supervisor-override workaround until populated).
 
@@ -166,6 +168,8 @@ This registry tracks every seed-data item the MES requires from sources **extern
 1. Every part on MPP's master list loads as an `Item` row with non-empty `PartNumber` (UNIQUE), valid `UomId` FK, and correct `ItemType` FK.
 2. `CountryOfOrigin` populated where MPP has the data.
 
+**Partially satisfied by S-12.** The 2026-06-15 Macola workbook supplies the `MacolaPartNumber` field for 22 catalog components, and names ~40 further purchased parts (plus 4 raw-aluminum alloys) that are NOT in the current catalog. It does **not** supply `MacolaPartNumber` for any finished good. S-05 stays ⬜ Owed.
+
 ---
 
 ### S-06 — Flexware BOM Export (OI-13)
@@ -190,6 +194,8 @@ This registry tracks every seed-data item the MES requires from sources **extern
 3. Versioning: imported BOMs land as `Published` rows (not Draft) — they're already in active use at MPP.
 
 **Coupling:** Requires S-05 (Parts master) to be loaded first — BomLine.ChildItemId FKs into Item.
+
+**Partially satisfied by S-12.** The 2026-06-15 Macola workbook's `SUPPLY PARTS` sheet carries purchased-component-to-finished-good links with a `Pcs per part` quantity — 149 links in all, of which 21 resolve end-to-end against the loaded catalog (8 new lines emitted, 13 already present, 2 quantity conflicts pending MPP arbitration). It covers **purchased components only** — castings and machined sub-assemblies are absent — so it is not a substitute for the Flexware export. S-06 stays ⬜ Owed.
 
 ---
 
@@ -278,6 +284,64 @@ This registry tracks every seed-data item the MES requires from sources **extern
 - Operational tolerance for AIM-outage windows (how long should production survive an AIM outage on the buffer alone).
 
 **Loading procedure:** Configuration Tool exposes `Lots.AimPoolConfig_Update @TargetBufferDepth, @TopupThreshold, @AlarmWarningDepth, @AlarmCriticalDepth` (Admin-elevated per FDS-04-007).
+
+---
+
+### S-12 — Macola Part-Number List
+
+**Status:** 🟡 Received (partial) — transformed, generated, and dry-run verified; not yet applied to Dev.
+**Source:** `reference/MPP_Macola_Numbers_2026-06-15.xlsx` — MPP's workbook *"MACOLA NUMBERS FOR INVENTORYupdate 6-15-26.xlsx"*, received 2026-06-15.
+**Target:** `Parts.Item.MacolaPartNumber` (column + filtered index `IX_Item_MacolaPartNumber` already exist — migration `0005_item_master_container_config.sql`; no migration needed). Secondary target `Parts.Bom` / `Parts.BomLine`.
+**Owner:** MPP IT / Materials — for the finished-good Macola numbers, which this workbook does not contain.
+**Blocking:** No — `MacolaPartNumber` is NULLable and nothing in the MES reads it today.
+
+**THE GOVERNING RULE.** A Macola number is only a value from a column literally headed **`MACOLA #`**. Exactly two sheets have one: `ALUMINUM` (C1) and `SUPPLY PARTS` (C1). The eight per-family sheets carry `RAW` / `TUMBLED BLASTED` / `MACHINED` / `FINISHED GOODS` columns holding values like `187-090` / `187-091` / `187-092` / `187-MET` / `186-AEP`. Those are MPP **per-stage inventory codes, not Macola numbers**, and must never be written to `Parts.Item.MacolaPartNumber`.
+
+> ⚠️ **Pre-existing contamination.** Five catalog rows already carry a per-family `FINISHED GOODS` code in `MacolaPartNumber` — `1223A-59B-A000` = `186-AEP`, `1223A-RPY -A000` = `142-AEP`, `1223A-5BA -A000` = `141-HCM`, `1223A-6B2 -A000` = `630-AEP`, `1223A-6MA -J000` = `662-AEP`. They arrived via the `Macola #` column of `reference/MPP_Seed_Layout_Proposal.xlsx` → `sql/scratch/seed_mpp_parts.sql:40`. Under the governing rule these are **not** Macola numbers. The S-12 seed deliberately leaves them alone (it never overwrites a non-blank value); clearing them is a separate decision.
+
+**Workbook structure (10 sheets):**
+
+| Sheet | `MACOLA #`? | Shape |
+|---|---|---|
+| `ALUMINUM` | ✅ C1 | `Part Description \| Honda Part# \| MACOLA # \| Corresponding FG Assembly(s)`. 4 alloy rows (`ADC12`/`HD2BS`/`HD2G`/`NH41`, Macola 300/301/303/304), blank-line separated. "Honda Part#" holds an **alloy code**, not a Honda part number. |
+| `SUPPLY PARTS` | ✅ C1 | Adds `Pcs per part`. Header band **repeats at rows 1, 38, 75, 112**. 62 anchor rows (each carries a `MACOLA #`), 87 blank-first-three-columns continuation rows that forward-fill; 20 continuations carry their own per-FG quantity override. One anchor (row 91, Macola 330) has no Honda part number at all. |
+| 8 per-family sheets | ❌ none | `RAW \| TUMBLED BLASTED \| MACHINED \| FINISHED GOODS \| FG DUNNAGE INFO \| PART NAME \| CUSTOMER PART # \| CAST \| TUMB BLAST \| MACH \| FG`. **10 header bands across the 8 sheets** (`59B 6MA CH` r2+r14, `PASS THRU` r1+r19), so they must be parsed block-wise. Used for one purpose only: the `PART NAME` → `CUSTOMER PART #` lookup that turns `SUPPLY PARTS`' free-text FG names into part numbers. |
+
+**Reconciliation outcome (against the 170-item Dev catalog):**
+
+| Measure | Count |
+|---|---|
+| `MACOLA #` values in the workbook | 66 (ALUMINUM 4 + SUPPLY PARTS 62) |
+| Landed on an item | 22 (all catalog components) |
+| Held back on scope grounds | 4 (the ALUMINUM alloys — see below) |
+| No catalog counterpart | 40 |
+| Catalog items left with no Macola number | 143 |
+| **Finished goods given a Macola number** | **0 of 38** |
+| `SUPPLY PARTS` component→FG links | 149 |
+| BOM lines resolved end to end | 21 (8 new, 13 already present) |
+| BOM quantity conflicts (not emitted) | 2 |
+
+**⚠️ Open with MPP — finished goods have no Macola number.** The only `MACOLA #` columns sit on raw material and purchased components. Under the governing rule, no finished good receives one. Ask MPP whether FG Macola numbers exist in another export (the Macola item master itself is the obvious candidate), or whether finished goods genuinely have none.
+
+**Other open items for MPP:**
+1. 40 `MACOLA #` rows name purchased parts absent from the MES catalog (o-rings, oil seals, thermostats, dowel pins for lines outside MVP scope). Confirm whether these should become `Parts.Item` rows. The seed deliberately creates none — inventing them would mint near-duplicates of existing catalog part numbers.
+2. Near-miss part numbers, one side of which is a typo: `11222-64AA-A001` vs catalog `11222-64A-A001`; `90701-5A2A-A000` vs `90701-5A2-A000`; `19300-6C1-A010-M2` vs `19300-6CA-A010-M2`; `92900-06012-1B` vs both `92900-06012-0B` and `92900-06014-1B`.
+3. The catalog's `P` prefix on seven 5G0 purchased parts (`P146125GO A000`, `P90002-5GO-A000`, …) has no counterpart in the workbook. Confirm the prefix rule before matching them.
+4. Duplicate catalog rows for the same physical part: `90701-5R0-3000` (from `020_seed_items.sql`) and `90701-5RO-3000` (from the catalog seed) differ only by letter-O vs zero. Macola 313 is therefore ambiguous and was **not** assigned.
+5. BOM quantity conflicts: `1223A-5BA -A000` ← `96211-09000` and `1223A-6B2 -A000` ← `96211-09000` are qty 2 in the workbook, qty 1 in the loaded catalog.
+
+**Scope exclusion — the ALUMINUM sheet.** The four alloys (`ADC12` / `HD2BS` / `HD2G` / `NH41`, Macola 300 / 301 / 303 / 304) have no counterpart anywhere in the catalog: their Macola numbers can only land if the alloys exist as `Parts.Item` rows of ItemType `RawMaterial`. But **Traceability / Raw Material Tracking is FUTURE** — `MPP_Scope_Matrix.xlsx` row 21, "Not Included", excluded per FRS 3.9.1 — and the FUTURE rule is *schema supports it, but do NOT implement, populate, or test*. So `Parts.ItemType.RawMaterial` stays empty and these four Macola numbers are **not loaded**. Their SQL is emitted **commented out** in the seed, ready to un-comment if raw-material tracking is ever brought forward (the UoM assumption, `LB`, would need MPP confirmation at that point).
+
+**Loading procedure:** Generated, not hand-written. `reference/scripts/build_macola_and_fg_bom_seed.py` reads the workbook plus `reference/MPP_Seed_Layout_Proposal.xlsx` (the catalog baseline — no DB connection needed) and emits `sql/scratch/seed_macola_and_fg_boms.sql` + `sql/scratch/macola_bom_reconciliation.csv`. Re-run it on any workbook revision; never hand-edit the SQL. The seed lives in `sql/scratch/` (not `sql/seeds/`) for the same reason `seed_mpp_parts.sql` does — open customer data questions — and is therefore picked up by neither `Reset-DevDatabase.ps1` nor `Deploy-Prod.ps1`.
+
+**Other sheets:** `SERVICE`, `PASS THRU`, and `NEW MODEL` carry no `MACOLA #` column, so nothing is seeded on their behalf. They are read only as part of the `PART NAME` → `CUSTOMER PART #` lookup table, and no BOM parent in fact resolved through one. (Note for the record: `PASS THRU` is **not** out of scope — Scope Matrix row 3 puts pass-through receiving in MVP and row 20 puts pass-through tracking in MVP with a FUTURE full workflow. The only genuine scope exclusion this workbook hits is Raw Material Tracking, above.)
+
+**Acceptance criteria:**
+1. Every `MACOLA #` value in the workbook either lands on a `Parts.Item` row or appears in the reconciliation CSV with a reason.
+2. No value from a `RAW` / `TUMBLED BLASTED` / `MACHINED` / `FINISHED GOODS` column ever reaches `Parts.Item.MacolaPartNumber`.
+3. No existing non-blank `MacolaPartNumber` is overwritten.
+4. Re-running the seed changes nothing (verified: second run inserts/updates 0 rows).
+5. MPP answers the finished-good question, at which point this item can move toward ✅ Loaded (Dev).
 
 ---
 
