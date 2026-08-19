@@ -119,11 +119,22 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
 
 
 def _isCrtHeld(containerId):
-    """True when any of the container's trays carries a CRT-active finished-good LOT.
-       TODO(task-4): replaced with the real Container_ListPendingValidation lookup once
-       that named query exists. Returns False meanwhile, so the synchronous post is NOT
-       yet suppressed - the ListUnposted exclusion below is what holds the serial today."""
-    return False
+    """True when any of the container's trays carries a CRT-active finished-good LOT."""
+    containerId = BlueRidge.Common.Util.extractQualifiedValues(containerId)
+    rows = BlueRidge.Common.Db.execList(
+        "lots/Container_ListPendingValidation",
+        {"locationId": None, "containerId": containerId}) or []
+    return len(rows) > 0
+
+
+def listPendingValidation(locationId, _refreshToken=None):
+    """Containers at or under locationId awaiting CRT validation. _refreshToken is
+       ignored - it exists so a runScript binding can force a re-read (runScript
+       caches on its ARGUMENTS, so the token must be passed as one)."""
+    locationId = BlueRidge.Common.Util.extractQualifiedValues(locationId)
+    return BlueRidge.Common.Db.execList(
+        "lots/Container_ListPendingValidation",
+        {"locationId": locationId, "containerId": None}) or []
 
 
 def getOpenByCell(cellLocationId, _refreshToken=None):
