@@ -209,3 +209,50 @@ added on top without reshaping the screen.
 That leaves **partial submission** (open 3 of 5, leave the rest untouched, per-row
 results) and **duplicate-LTT rejection before any write** as the two behaviours that
 decide whether this feature is worth shipping.
+
+---
+
+## Shift attribution built 2026-08-19 — two findings that outlive it
+
+**1. `Oee.Shift.ActualStart` is written in TWO DIFFERENT TIME BASES.** OI-38 is
+recorded as "Oee.Shift is local Eastern". It is local *sometimes*:
+
+| proc | writes |
+|---|---|
+| `Oee.Shift_Reconcile` (the boundary engine, the normal path) | `ISNULL(@NowLocal, SYSDATETIME())` — **local**, commented "LOCAL, deliberately" |
+| `Oee.Shift_Start` | `ISNULL(@ActualStart, SYSUTCDATETIME())` — **UTC**, header says "defaults to now (UTC)" |
+
+Everything downstream reads it as local: `Shift_GetAvailability` takes
+`BusinessDate = CAST(s.ActualStart AS DATE)` with no conversion, the Downtime Report
+prints it, and the new `Oee.ufn_ShiftIdForInstant` resolves against it. **A shift
+started manually through `Shift_Start` therefore maps its business date 4-5 hours
+wrong**, and every consumer inherits that. Pre-existing debt, not introduced by the
+attribution work, but the resolver now depends on the local reading being true.
+This widens OI-38 from "one table is local" to "one COLUMN is inconsistently based".
+
+**2. OI-4 as originally written was unimplementable.** "Reject an override that would
+leave a gap or overlap", evaluated on post-change state, deadlocks: the first
+override of a pair is always non-contiguous with its neighbour, so both halves
+reject and no override can ever be created. What was built instead, and is better:
+
+- **Override-vs-global overlap is ACCEPTED**, resolved by override PRECEDENCE in the
+  resolver. D1's "Second effectively starts at 16:00 for that press" falls out of a
+  single override row as a derived consequence, instead of requiring the operator to
+  author a second row.
+- **Override-vs-override overlap is REJECTED** — the one ambiguity precedence cannot
+  break.
+- **Gaps reject as a DELTA**, not an absolute: only newly-opened uncovered minutes
+  reject, so a plant whose schedules already fail to tile the day is not blocked from
+  every override by a pre-existing hole.
+- **Deprecate is not validated** — reverting to the plant baseline cannot open a hole
+  the plant does not already have.
+
+Strict literal OI-4 would need a batch editor authoring both halves in one
+transaction. That is a UI change, not a proc change.
+
+**Restamp scope is wider than the design's "two shifts either side"** — it is
+`[BusinessDate-1 00:00, BusinessDate+2 00:00)` local for the one press, because an
+edit can move either boundary in either direction and a midnight-crossing shift
+extended past midnight reaches into the next calendar day. Safe at any width because
+the resolver is total and a row already correct is not rewritten. Documented in the
+proc header.
