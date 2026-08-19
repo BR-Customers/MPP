@@ -1,0 +1,550 @@
+{
+  "custom": {
+    "equipmentOptions": [],
+    "filter": {
+      "fromDate": "",
+      "includeDeprecated": false,
+      "locationId": null,
+      "searchText": "",
+      "toDate": ""
+    },
+    "rows": []
+  },
+  "params": {},
+  "propConfig": {
+    "custom.filter.includeDeprecated": {
+      "persistent": true
+    },
+    "custom.filter.locationId": {
+      "persistent": true
+    },
+    "custom.filter.searchText": {
+      "persistent": true
+    },
+    "custom.equipmentOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.ShiftOverride.equipmentOptions\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.rows": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.ShiftOverride.search\", 0, {view.custom.filter})"
+        },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 1080,
+      "width": 1920
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "BreadcrumbCategory"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb"
+                      },
+                      "text": "Operations"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbSep"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb crumb-sep"
+                      },
+                      "text": "›"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbActive"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "crumb-active"
+                      },
+                      "text": "Shift Overrides"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Breadcrumb"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "classes": "title-row-h1"
+                  },
+                  "text": "Shift Overrides"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "12px"
+                  },
+                  "text": "Extend or shorten a shift on one day for one piece of equipment. Anything without an override runs the global shift schedule."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TitleColumn"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "TitleRowSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "classes": "title-row-spacer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "EquipmentFilter"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.equipmentOptions"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.filter.locationId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": "All equipment",
+              "style": {
+                "marginRight": "12px",
+                "width": "240px"
+              }
+            },
+            "type": "ia.input.dropdown"
+          },
+          {
+            "meta": {
+              "name": "SearchInput"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.filter.searchText"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": "Search equipment…",
+              "style": {
+                "classes": "search-input",
+                "marginRight": "12px",
+                "width": "200px"
+              }
+            },
+            "type": "ia.input.text-field"
+          },
+          {
+            "meta": {
+              "name": "IncludeDeprecated"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.selected": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.filter.includeDeprecated"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "12px",
+                "marginRight": "12px",
+                "whiteSpace": "nowrap"
+              },
+              "text": "Include removed"
+            },
+            "type": "ia.input.checkbox"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(id=\"mpp-shift-override-editor\", view=\"BlueRidge/Components/Popups/ShiftOverrideEditor\", modal=True, showCloseIcon=False, draggable=False, params={\"mode\": \"create\", \"editId\": None})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "AddOverrideButton"
+            },
+            "position": {
+              "basis": "132px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary",
+                "marginRight": "12px"
+              },
+              "text": "+ Add Override"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "TitleRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "classes": "title-row",
+            "overflow": "hidden",
+            "paddingBottom": "8px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ColEquipment"
+                    },
+                    "position": {
+                      "basis": "220px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Equipment"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColDate"
+                    },
+                    "position": {
+                      "basis": "110px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Date"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColSchedule"
+                    },
+                    "position": {
+                      "basis": "110px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Shift"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColBaseline"
+                    },
+                    "position": {
+                      "basis": "130px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Scheduled"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColOverride"
+                    },
+                    "position": {
+                      "basis": "130px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Override"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColHours"
+                    },
+                    "position": {
+                      "basis": "80px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Hours"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColDelta"
+                    },
+                    "position": {
+                      "basis": "90px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Change"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColReason"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Reason"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ColEdit"
+                    },
+                    "position": {
+                      "basis": "80px",
+                      "shrink": 0
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "TableHeader"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "background": "var(--mpp-surface-card)",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "gap": "8px",
+                    "letterSpacing": "0.05em",
+                    "overflow": "hidden",
+                    "padding": "8px 12px",
+                    "textTransform": "uppercase"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Rows"
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.rows"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn [\n\t\t{\n\t\t\t\"id\":            r.get(\"Id\"),\n\t\t\t\"equipment\":     r.get(\"EquipmentName\") or r.get(\"EquipmentCode\"),\n\t\t\t\"schedule\":      r.get(\"ScheduleName\"),\n\t\t\t\"businessDate\":  r.get(\"BusinessDateText\"),\n\t\t\t\"baseline\":      r.get(\"BaselineText\"),\n\t\t\t\"override\":      r.get(\"OverrideText\"),\n\t\t\t\"hours\":         r.get(\"HoursText\"),\n\t\t\t\"delta\":         r.get(\"DeltaText\"),\n\t\t\t\"deltaPositive\": (r.get(\"DeltaMinutes\") or 0) >= 0,\n\t\t\t\"reason\":        r.get(\"Reason\"),\n\t\t\t\"deprecated\":    bool(r.get(\"IsDeprecated\")),\n\t\t\t\"selected\":      False\n\t\t}\n\t\tfor r in (value or [])\n\t]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "44px",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/ShiftOverrideRow",
+                  "useDefaultViewHeight": true,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              },
+              {
+                "meta": {
+                  "name": "EmptyState"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.rows}) = 0"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "13px",
+                    "padding": "24px 12px",
+                    "textAlign": "center"
+                  },
+                  "text": "No shift overrides. Every piece of equipment is running its global shift schedule."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "DataPanel"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "detail-panel",
+                "overflowX": "auto",
+                "padding": "0"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "ContentArea"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "background": "var(--mpp-surface-canvas)",
+            "overflowY": "auto",
+            "padding": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "screen-active"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "shiftOverridesRefresh",
+          "pageScope": true,
+          "script": "\tself.view.custom.filter = dict(self.view.custom.filter)",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

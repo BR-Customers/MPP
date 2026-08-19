@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Oee_DowntimeEvent_RecordHistorical.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-21
--- Version:     1.0
+-- Modified:    2026-08-19
+-- Version:     1.1
 -- Description: Inserts a fully-past (both times known) CLOSED downtime event from
 --              the Downtime Manager popup (Increment 1) -- operator forgot to log
 --              it live. Logs against @ScopeLocationId (the resolved line/press).
@@ -10,6 +10,23 @@
 --              start. The one-open filtered-unique index does NOT fire (EndedAt set).
 --              Audits 'DowntimeRecordedHistorical'. Returns SELECT @Status, @Message,
 --              @NewId. All rejects before BEGIN TRANSACTION.
+--
+--              TIME BASIS -- two different clocks, deliberately:
+--                Oee.DowntimeEvent.StartedAt/EndedAt  -> UTC (converted from the
+--                    ET inputs)
+--                Oee.Shift.ActualStart/ActualEnd      -> LOCAL Eastern (OI-38)
+--              so the shift lookup compares against @StartedAtEt (local) while
+--              the INSERT stores @StartUtc/@EndUtc. See the change log.
+--
+-- Change Log:
+--   2026-07-21 - 1.0 - Initial version.
+--   2026-08-19 - 1.1 - Fix: resolve the covering shift with the LOCAL start
+--                       (@StartedAtEt), not the UTC one. Oee.Shift bounds are
+--                       local, so probing them with a UTC instant shifted the
+--                       lookup 4-5 hours forward and routinely stamped a
+--                       historical entry with the FOLLOWING shift's id (or NULL
+--                       near a boundary), mis-bucketing it in every
+--                       ShiftId-scoped report.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Oee.DowntimeEvent_RecordHistorical
     @ScopeLocationId      BIGINT,
@@ -70,8 +87,13 @@ BEGIN
         DECLARE @EndUtc   DATETIME2(3) = CAST(@EndedAtEt   AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
 
         -- Shift covering the start (NULL if none open/covering).
+        -- Oee.Shift.ActualStart/ActualEnd are LOCAL Eastern (OI-38), so the
+        -- comparison must use the LOCAL start (@StartedAtEt), NOT the UTC one.
+        -- Comparing @StartUtc against local bounds shifted the probe 4-5 hours
+        -- forward and routinely attributed a historical entry to the FOLLOWING
+        -- shift (or to none at all near a boundary).
         SELECT TOP 1 @ShiftId = Id FROM Oee.Shift
-        WHERE ActualStart <= @StartUtc AND (ActualEnd IS NULL OR ActualEnd >= @StartUtc)
+        WHERE ActualStart <= @StartedAtEt AND (ActualEnd IS NULL OR ActualEnd >= @StartedAtEt)
         ORDER BY ActualStart DESC;
 
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
