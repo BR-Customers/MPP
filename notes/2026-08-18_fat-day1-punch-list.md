@@ -418,7 +418,7 @@ production date from the day the 3rd-shift instance's *scheduled* day belongs to
 than from any event timestamp. `Oee.Shift_Reconcile` already materializes one `Oee.Shift`
 row per scheduled instance, so the grouping key exists.
 
-**This item still gets its own spec** per Jacques.
+**Spec written:** `docs/superpowers/specs/2026-08-18-production-and-inventory-by-area-design.md`. Two decisions flagged for confirmation there — whether a production day is labelled by the shift it *ends* in, and whether "production" means throughput per area (double-counts a piece across the areas it passes through) or pieces minted (sums to plant output, but reports Trim as zero).
 
 ---
 
@@ -804,7 +804,7 @@ All seven load and compose correctly.
 | 2 | Die list load | Awaiting MPP: cavity roll-up, part mapping, status filter, shot-count source |
 | 2b | Cross-die merge gate | Awaiting Jacques: keep / drop / re-key on `ToolId` |
 | 3 | IP auto-navigation | **Shipped** — root-caused, banner + loopback script; live browser leg unverified (trial expired) |
-| 4 | Production/inventory report | Decided; spec pending |
+| 4 | Production/inventory report | **Spec written** — `docs/superpowers/specs/2026-08-18-production-and-inventory-by-area-design.md`; 2 items to confirm |
 | 5 | Weekend shifts | **Closed** — Jacques authoring the schedule; optional NULL-shift guard remains |
 | 6 | User timeout | **Shipped** — migration `0058` + minute-based editor; not render-verified (trial expired) |
 | 7 | Serialized-line validation number | Brief written, awaiting Tom / MPP |
