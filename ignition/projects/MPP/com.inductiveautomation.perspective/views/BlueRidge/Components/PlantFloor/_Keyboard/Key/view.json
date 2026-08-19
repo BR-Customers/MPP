@@ -31,8 +31,8 @@
   },
   "props": {
     "defaultSize": {
-      "height": 70,
-      "width": 70
+      "height": 62,
+      "width": 62
     }
   },
   "root": {
@@ -84,11 +84,7 @@
         },
         "props": {
           "style": {
-            "height": "62px",
-            "marginBottom": 4,
-            "marginLeft": 4,
-            "marginRight": 4,
-            "marginTop": 4
+            "height": "62px"
           }
         },
         "type": "ia.input.button"

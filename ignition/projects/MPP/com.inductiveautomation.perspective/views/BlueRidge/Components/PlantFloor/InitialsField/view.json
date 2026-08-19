@@ -29,21 +29,53 @@
     }
   },
   "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-field"
+      }
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tu = self.session.custom.user\n\tif self.session.custom.presence.policy == \"confirm\" and u and u.get(\"initials\"):\n\t\tself.view.custom.initials = u.get(\"initials\")\n\t\tself.resolveInitials()"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "resolveInitials",
+          "params": [],
+          "script": "\tres = BlueRidge.Location.AppUser.resolveForPresence(self.view.custom.initials)\n\tself.view.custom.resolved = res\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, res, scope=\"page\")"
+        }
+      ]
+    },
     "children": [
       {
+        "type": "ia.display.label",
         "meta": {
           "name": "FieldLabel"
         },
         "position": {
+          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
           "props.text": {
             "binding": {
+              "type": "property",
               "config": {
                 "path": "view.params.label"
-              },
-              "type": "property"
+              }
             }
           }
         },
@@ -51,35 +83,25 @@
           "style": {
             "classes": "pf-field-label"
           }
-        },
-        "type": "ia.display.label"
+        }
       },
       {
-        "events": {
-          "dom": {
-            "onBlur": {
-              "config": {
-                "script": "\tself.view.rootContainer.resolveInitials()"
-              },
-              "scope": "G",
-              "type": "script"
-            }
-          }
-        },
+        "type": "ia.input.text-field",
         "meta": {
           "name": "InitialsInput"
         },
         "position": {
+          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
           "props.text": {
             "binding": {
+              "type": "property",
               "config": {
                 "bidirectional": true,
                 "path": "view.custom.initials"
-              },
-              "type": "property"
+              }
             }
           }
         },
@@ -90,30 +112,42 @@
             "textTransform": "uppercase"
           }
         },
-        "type": "ia.input.text-field"
+        "events": {
+          "dom": {
+            "onBlur": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.rootContainer.resolveInitials()"
+              }
+            }
+          }
+        }
       },
       {
+        "type": "ia.display.label",
         "meta": {
           "name": "ResolvedName"
         },
         "position": {
+          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
           "position.display": {
             "binding": {
+              "type": "expr",
               "config": {
                 "expression": "{view.custom.resolved.valid}"
-              },
-              "type": "expr"
+              }
             }
           },
           "props.text": {
             "binding": {
+              "type": "property",
               "config": {
                 "path": "view.custom.resolved.displayName"
-              },
-              "type": "property"
+              }
             }
           }
         },
@@ -123,68 +157,36 @@
             "fontSize": "13px",
             "marginTop": "2px"
           }
-        },
-        "type": "ia.display.label"
+        }
       },
       {
+        "type": "ia.display.label",
         "meta": {
           "name": "NotRecognised"
         },
         "position": {
+          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
           "position.display": {
             "binding": {
+              "type": "expr",
               "config": {
-                "expression": "{view.custom.resolved.checked} \u0026\u0026 !{view.custom.resolved.valid} \u0026\u0026 {view.custom.initials} !\u003d \"\""
-              },
-              "type": "expr"
+                "expression": "{view.custom.resolved.checked} && !{view.custom.resolved.valid} && {view.custom.initials} != \"\""
+              }
             }
           }
         },
         "props": {
+          "text": "Initials not recognised",
           "style": {
             "color": "var(--mpp-state-bad-fg)",
             "fontSize": "13px",
             "marginTop": "2px"
-          },
-          "text": "Initials not recognised"
-        },
-        "type": "ia.display.label"
-      }
-    ],
-    "events": {
-      "system": {
-        "onStartup": {
-          "config": {
-            "script": "\tu \u003d self.session.custom.user\n\tif self.session.custom.presence.policy \u003d\u003d \"confirm\" and u and u.get(\"initials\"):\n\t\tself.view.custom.initials \u003d u.get(\"initials\")\n\t\tself.resolveInitials()"
-          },
-          "scope": "G",
-          "type": "script"
+          }
         }
       }
-    },
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "pf-field"
-      }
-    },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "resolveInitials",
-          "params": [],
-          "script": "\tres \u003d BlueRidge.Location.AppUser.resolveForPresence(self.view.custom.initials)\n\tself.view.custom.resolved \u003d res\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, res, scope\u003d\"page\")"
-        }
-      ],
-      "extensionFunctions": null,
-      "messageHandlers": null
-    },
-    "type": "ia.container.flex"
+    ]
   }
 }
