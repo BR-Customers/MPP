@@ -88,8 +88,25 @@ BEGIN
     SET @Con = (SELECT ContainerId FROM @AT);
     SET @Lot = (SELECT FinishedGoodLotId FROM @AT);
     INSERT INTO @TrayLots (LotId) VALUES (@Lot);
+
+    -- Finding 1 regression: after just ONE tray closes, the container is still OPEN
+    -- (CompletedAt IS NULL) -- but that tray's FG LOT is already CrtActive (minted at
+    -- TRAY close). Before the fix this mid-fill container leaked into the pending list
+    -- with a NULL AimShipperId. Must NOT be listed until the container itself completes.
+    IF @t = 1
+    BEGIN
+        DECLARE @LMidFill TABLE (ContainerId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
+            PieceCount INT, CompletedAtEt DATETIME2(3), AimShipperId NVARCHAR(50), AgeMinutes INT, PendingLotCount INT);
+        INSERT INTO @LMidFill EXEC Lots.Container_ListPendingValidation @LocationId = @Cell, @ContainerId = NULL;
+        DECLARE @ActMidFill NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @LMidFill WHERE ContainerId = @Con);
+        EXEC test.Assert_IsEqual @TestName = N'[Pending] mid-fill container (1 of 4 trays closed) is NOT listed',
+            @Expected = N'0', @Actual = @ActMidFill;
+    END
+
     SET @t = @t + 1;
 END
+-- ... and once the remaining trays close and the container itself completes, it now appears
+-- (proven below by the existing "[Pending] held container is listed for its line" assert).
 
 DECLARE @CC TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
 INSERT INTO @CC EXEC Lots.Container_Complete @ContainerId = @Con, @AppUserId = 1, @TerminalLocationId = @Term;

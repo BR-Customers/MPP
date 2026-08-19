@@ -103,7 +103,17 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
     # clears the flag and posts. AimShipperIdPool_ListUnposted excludes it meanwhile, so
     # the retry sweep leaves it alone too - both halves are needed.
     if result and result.get("Status") and result.get("AimShipperId"):
-        if _isCrtHeld(containerId):
+        try:
+            crtHeld = _isCrtHeld(containerId)
+        except Throwable as t:
+            BlueRidge.Common.Util.log(
+                "CRT-held check failed, defaulting to held: %s" % t, level="error")
+            crtHeld = True
+        except Exception as e:
+            BlueRidge.Common.Util.log(
+                "CRT-held check failed, defaulting to held: %s" % e, level="error")
+            crtHeld = True
+        if crtHeld:
             result["AimPost"] = {"ok": False, "outcome": "held",
                                  "error": "Container is pending Controlled Run Tag validation."}
             return result

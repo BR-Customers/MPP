@@ -11,6 +11,14 @@
 --              container has 4 CRT-active LOTs. A container is pending while ANY of them
 --              is still CrtActive; PendingLotCount reports how many.
 --
+--              ONLY COMPLETED containers qualify (c.CompletedAt IS NOT NULL). A tray LOT is
+--              minted CrtActive at TRAY close, so an OPEN container with one tray closed
+--              already has a CRT-active LOT - but no AIM serial has been claimed for it yet,
+--              and it is still being filled. Filtering on CompletedAt rather than on
+--              ContainerStatusCodeId = 2 is deliberate: Quality.Hold_Place moves a container
+--              to status 4 (Hold), and a HELD container must stay listed until it is
+--              released and validated. CompletedAt is set at completion and never cleared.
+--
 --              @LocationId scopes to that location and every descendant (mirrors
 --              Lot_GetWipQueueByLocation's Descendants CTE) - callers pass the
 --              terminal's PARENT LINE. @ContainerId probes one container instead
@@ -48,9 +56,10 @@ BEGIN
     INNER JOIN Lots.Lot fgl          ON fgl.Id = ct.FinishedGoodLotId AND fgl.CrtActive = 1
     INNER JOIN Parts.Item i          ON i.Id = c.ItemId
     LEFT  JOIN Lots.AimShipperIdPool p ON p.ConsumedByContainerId = c.Id
-    WHERE (@ContainerId IS NOT NULL AND c.Id = @ContainerId)
-       OR (@ContainerId IS NULL AND @LocationId IS NOT NULL
-           AND c.CurrentLocationId IN (SELECT Id FROM Descendants))
+    WHERE c.CompletedAt IS NOT NULL   -- see header: only a COMPLETED container has a serial
+      AND ((@ContainerId IS NOT NULL AND c.Id = @ContainerId)
+        OR (@ContainerId IS NULL AND @LocationId IS NOT NULL
+            AND c.CurrentLocationId IN (SELECT Id FROM Descendants)))
     GROUP BY c.Id, i.PartNumber, i.Description, c.CompletedAt
     ORDER BY c.CompletedAt, c.Id
     OPTION (MAXRECURSION 8);
