@@ -1213,7 +1213,7 @@
                   "name": "OutFormCol"
                 },
                 "position": {
-                  "basis": "500px",
+                  "basis": "50%",
                   "shrink": 0
                 },
                 "props": {
