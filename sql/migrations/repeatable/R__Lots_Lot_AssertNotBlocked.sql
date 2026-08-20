@@ -48,7 +48,7 @@ BEGIN
     BEGIN
         SET @IsBlocked = 1;
         SET @Message   = CASE WHEN @StatusCode = N'Open'
-            THEN N'LOT ' + @StatusCode + N' is still an open die-cast basket. Release it at the die cast station before it can be used here.'
+            THEN N'LOT is still an open die-cast basket. Release it at the die cast station before it can be used here.'
             ELSE N'LOT is ' + @StatusName + N' (status ' + @StatusCode + N') and cannot advance.' END;
     END
     ELSE
