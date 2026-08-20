@@ -2034,7 +2034,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tterm \u003d self.session.custom.terminal\n\tresult \u003d BlueRidge.Quality.Crt.setCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
+                    "script": "\tself.view.rootContainer.doCrtToggle()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -2042,7 +2042,7 @@
               }
             },
             "meta": {
-              "name": "BtnSetCrt"
+              "name": "BtnCrtToggle"
             },
             "position": {
               "shrink": 0
@@ -2051,7 +2051,15 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "!isNull({view.custom.lot.Id}) \u0026\u0026 !coalesce({view.custom.lot.CrtActive}, false)"
+                    "expression": "!isNull({view.custom.lot.Id})"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(coalesce({view.custom.lot.CrtActive}, false), \"Disable CRT\", \"Enable CRT\")"
                   },
                   "type": "expr"
                 }
@@ -2061,45 +2069,7 @@
               "style": {
                 "classes": "pf-btn pf-btn-elevated"
               },
-              "text": "Set CRT",
-              "toolTipText": "Place this LOT on a Controlled Run Tag (200% downstream inspection prompt)."
-            },
-            "type": "ia.input.button"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tterm \u003d self.session.custom.terminal\n\tresult \u003d BlueRidge.Quality.Crt.clearCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "BtnClearCrt"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "config": {
-                    "expression": "coalesce({view.custom.lot.CrtActive}, false)"
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-btn pf-btn-elevated"
-              },
-              "text": "Clear CRT",
-              "toolTipText": "Release the Controlled Run Tag (supervisor clearance per FDS-04-007)."
+              "toolTipText": "Apply or release the Controlled Run Tag on this LOT (200% downstream inspection prompt). Supervisor authorization required in both directions."
             },
             "type": "ia.input.button"
           }
@@ -2156,6 +2126,11 @@
           "name": "load",
           "params": [],
           "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      \u003d BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  \u003d BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children \u003d BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   \u003d BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container \u003d BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples \u003d BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold \u003d BlueRidge.Quality.Hold.getOpenByLotOne(lotId)\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0), \"containerId\": 0, \"allowLookup\": False}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotScrapPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotCountPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")"
+        },
+        {
+          "name": "doCrtToggle",
+          "params": [],
+          "script": "\tlot \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\tlotId \u003d lot.get(\"Id\")\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"No LOT loaded.\", \"warning\")\n\t\treturn\n\tactive \u003d bool(lot.get(\"CrtActive\"))\n\t# Supervisor-only in BOTH directions (design D7): applying a Controlled Run\n\t# Tag forces the 200% downstream inspection prompt, releasing one drops that\n\t# obligation - neither transition is an operator decision. Per D6 this acts on\n\t# THIS LOT only: no bulk clear, no clear-with-descendants.\n\t# requireElevation stashes the intent and opens the ElevationModal;\n\t# Session.dispatchElevatedAction replays it as the crtToggleRequested page\n\t# message, whose handler calls straight back into this method.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tif active:\n\t\t\tlabel \u003d \"Release the Controlled Run Tag\"\n\t\telse:\n\t\t\tlabel \u003d \"Apply a Controlled Run Tag\"\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"CrtToggle\", label, {})\n\t\treturn\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tif active:\n\t\tresult \u003d BlueRidge.Lots.Lot.clearCrt(lotId, appUserId, termId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"CRT released\")\n\telse:\n\t\tresult \u003d BlueRidge.Lots.Lot.setCrt(lotId, appUserId, termId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"CRT applied\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
         }
       ],
       "extensionFunctions": null,
@@ -2178,6 +2153,13 @@
           "messageType": "lotCountChanged",
           "pageScope": true,
           "script": "\tself.load()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "crtToggleRequested",
+          "pageScope": true,
+          "script": "\t# Elevation replay hook (see Session._ELEVATED_REPLAY_MESSAGES). Fired only\n\t# after a successful ElevationModal authorization, so isElevated now passes.\n\tself.doCrtToggle()",
           "sessionScope": false,
           "viewScope": false
         }

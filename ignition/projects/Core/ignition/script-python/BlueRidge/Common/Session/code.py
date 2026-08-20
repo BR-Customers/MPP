@@ -177,6 +177,7 @@ _ELEVATED_REPLAY_MESSAGES = {
     "DowntimeEdit":    "dtEditRequested",            # Downtime Manager - open the time/remarks editor
     "DowntimeVoid":    "dtVoidRequested",            # Downtime Manager - void an event
     "SortCageMigrate": "sortCageMigrateAuthorized",  # Sort Cage - re-containerize a serial
+    "CrtToggle":       "crtToggleRequested",         # LOT Detail - apply/release a Controlled Run Tag
 }
 
 
