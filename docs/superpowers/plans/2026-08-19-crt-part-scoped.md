@@ -349,8 +349,20 @@ Create `sql/tests/0063_Crt_PartScoped/030_crt_blocks.sql`:
 ```sql
 EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/030_crt_blocks.sql';
 GO
-DECLARE @LotCrt BIGINT = (SELECT TOP 1 Id FROM Lots.Lot ORDER BY Id);
-DECLARE @LotOk  BIGINT = (SELECT TOP 1 Id FROM Lots.Lot WHERE Id <> @LotCrt ORDER BY Id);
+-- Run-Tests.ps1 resets with -SkipDemoSeed, so Lots.Lot starts EMPTY and is then
+-- filled by whatever earlier test files happened to create. Never grab an
+-- arbitrary existing LOT: its status, hold state and location are another
+-- test's business, and a guard test that passes because the LOT was already
+-- closed proves nothing. INSERT your own, as 020_crt_for_mint.sql does:
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
+                      CurrentLocationId, CreatedByUserId, CrtActive)
+VALUES (N'TEST-CRT-<UNIQUE>', @Item, 1 /*Manufactured*/, 1 /*Good*/, 10, @StartLoc, @App, 1);
+DECLARE @LotCrt BIGINT = SCOPE_IDENTITY();
+
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
+                      CurrentLocationId, CreatedByUserId, CrtActive)
+VALUES (N'TEST-OK-<UNIQUE>', @Item, 1 /*Manufactured*/, 1 /*Good*/, 10, @StartLoc, @App, 0);
+DECLARE @LotOk BIGINT = SCOPE_IDENTITY();
 UPDATE Lots.Lot SET CrtActive = 1 WHERE Id = @LotCrt;
 UPDATE Lots.Lot SET CrtActive = 0 WHERE Id = @LotOk;
 
@@ -628,8 +640,20 @@ Create `sql/tests/0063_Crt_PartScoped/050_enforcement.sql` asserting, for a CRT 
 ```sql
 EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/050_enforcement.sql';
 GO
-DECLARE @LotCrt BIGINT = (SELECT TOP 1 Id FROM Lots.Lot ORDER BY Id);
-DECLARE @LotOk  BIGINT = (SELECT TOP 1 Id FROM Lots.Lot WHERE Id <> @LotCrt ORDER BY Id);
+-- Run-Tests.ps1 resets with -SkipDemoSeed, so Lots.Lot starts EMPTY and is then
+-- filled by whatever earlier test files happened to create. Never grab an
+-- arbitrary existing LOT: its status, hold state and location are another
+-- test's business, and a guard test that passes because the LOT was already
+-- closed proves nothing. INSERT your own, as 020_crt_for_mint.sql does:
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
+                      CurrentLocationId, CreatedByUserId, CrtActive)
+VALUES (N'TEST-CRT-<UNIQUE>', @Item, 1 /*Manufactured*/, 1 /*Good*/, 10, @StartLoc, @App, 1);
+DECLARE @LotCrt BIGINT = SCOPE_IDENTITY();
+
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
+                      CurrentLocationId, CreatedByUserId, CrtActive)
+VALUES (N'TEST-OK-<UNIQUE>', @Item, 1 /*Manufactured*/, 1 /*Good*/, 10, @StartLoc, @App, 0);
+DECLARE @LotOk BIGINT = SCOPE_IDENTITY();
 UPDATE Lots.Lot SET CrtActive = 1 WHERE Id = @LotCrt;
 UPDATE Lots.Lot SET CrtActive = 0 WHERE Id = @LotOk;
 
@@ -788,8 +812,20 @@ Hold/Scrap/Closed rejections keep precedence."
 ```sql
 EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/060_label_mark.sql';
 GO
-DECLARE @LotCrt BIGINT = (SELECT TOP 1 Id FROM Lots.Lot ORDER BY Id);
-DECLARE @LotOk  BIGINT = (SELECT TOP 1 Id FROM Lots.Lot WHERE Id <> @LotCrt ORDER BY Id);
+-- Run-Tests.ps1 resets with -SkipDemoSeed, so Lots.Lot starts EMPTY and is then
+-- filled by whatever earlier test files happened to create. Never grab an
+-- arbitrary existing LOT: its status, hold state and location are another
+-- test's business, and a guard test that passes because the LOT was already
+-- closed proves nothing. INSERT your own, as 020_crt_for_mint.sql does:
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
+                      CurrentLocationId, CreatedByUserId, CrtActive)
+VALUES (N'TEST-CRT-<UNIQUE>', @Item, 1 /*Manufactured*/, 1 /*Good*/, 10, @StartLoc, @App, 1);
+DECLARE @LotCrt BIGINT = SCOPE_IDENTITY();
+
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
+                      CurrentLocationId, CreatedByUserId, CrtActive)
+VALUES (N'TEST-OK-<UNIQUE>', @Item, 1 /*Manufactured*/, 1 /*Good*/, 10, @StartLoc, @App, 0);
+DECLARE @LotOk BIGINT = SCOPE_IDENTITY();
 UPDATE Lots.Lot SET CrtActive = 1 WHERE Id = @LotCrt;
 UPDATE Lots.Lot SET CrtActive = 0 WHERE Id = @LotOk;
 
