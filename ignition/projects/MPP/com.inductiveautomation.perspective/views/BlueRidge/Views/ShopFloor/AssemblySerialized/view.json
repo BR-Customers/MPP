@@ -1,9 +1,39 @@
 {
   "custom": {
+      "crtEnabled": false,
+      "crtPending": [],
     "refreshToken": 0
   },
   "params": {},
   "propConfig": {
+    "custom.crtEnabled": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.Terminal.getCrtEnabled\", 0, {session.custom.terminal.terminalLocationId}), \"\")"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\treturn bool(value)"
+          }
+        ]
+      }
+    },
+    "custom.crtPending": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.listPendingValidation\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\treturn value or []"
+          }
+        ]
+      }
+    },
     "custom.container": {
       "binding": {
         "config": {
@@ -256,6 +286,46 @@
                 "classes": "pf-btn pf-btn-secondary"
               },
               "text": "Inventory"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-crt-validation\", \"BlueRidge/Components/Popups/CrtValidation\", params={\"terminalLocationId\": self.session.custom.terminal.terminalLocationId, \"lineLocationId\": self.session.custom.cell.locationId}, modal=True, showCloseIcon=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnCrtValidation",
+              "tooltip": {
+                "text": "Validate containers held for Controlled Run Tag second-person review"
+              }
+            },
+            "position": {
+              "basis": "168px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.crtEnabled} || len({view.custom.crtPending}) > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "CRT Validation"
             },
             "type": "ia.input.button"
           },
