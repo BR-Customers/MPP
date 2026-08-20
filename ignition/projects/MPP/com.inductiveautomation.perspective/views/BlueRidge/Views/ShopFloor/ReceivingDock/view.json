@@ -90,6 +90,18 @@
     },
     "children": [
       {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "HeaderBand"
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "16px",
+            "overflow": "hidden"
+          }
+        },
         "children": [
           {
             "children": [
@@ -161,6 +173,17 @@
             "type": "ia.display.label"
           },
           {
+            "type": "ia.input.button",
+            "version": 0,
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "text": "Close",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
             "events": {
               "component": {
                 "onActionPerformed": {

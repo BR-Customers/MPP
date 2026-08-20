@@ -48,6 +48,7 @@
         },
         "children": [
           {
+            "type": "ia.display.view",
             "meta": {
               "name": "InventoryTab"
             },
