@@ -1,5 +1,5 @@
 -- =============================================
--- Migration:   0058_session_policy_operator_30min.sql
+-- Migration:   0062_session_policy_operator_30min.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-08-18
 -- Description: FAT Day 1 punch list item 6 -- the operator-presence idle timeout is
@@ -34,8 +34,8 @@
 -- dbo.SchemaVersion insert -- otherwise a re-run raises Msg 2627 on
 -- UQ_SchemaVersion_MigrationId.
 IF EXISTS (SELECT 1 FROM dbo.SchemaVersion
-           WHERE MigrationId = N'0058_session_policy_operator_30min')
-    PRINT 'Migration 0058 already applied -- statements below are individually guarded.';
+           WHERE MigrationId = N'0062_session_policy_operator_30min')
+    PRINT 'Migration 0062 already applied -- statements below are individually guarded.';
 GO
 
 -- ---- 1. Raise the shipped DEFAULT 180 s -> 1800 s (30 min) ----
@@ -64,11 +64,11 @@ WHERE  OperatorPresenceTimeoutSeconds <> 1800;
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion
-               WHERE MigrationId = N'0058_session_policy_operator_30min')
+               WHERE MigrationId = N'0062_session_policy_operator_30min')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0058_session_policy_operator_30min',
+    VALUES (N'0062_session_policy_operator_30min',
             N'Operator-presence idle timeout 180 s -> 1800 s (30 min) on the live row and on the shipped DEFAULT. Elevation unchanged (300 s). Storage stays in seconds; the Config-Tool editor presents minutes.');
 GO
 
-PRINT 'Migration 0058 (session policy operator 30 min) applied.';
+PRINT 'Migration 0062 (session policy operator 30 min) applied.';
 GO

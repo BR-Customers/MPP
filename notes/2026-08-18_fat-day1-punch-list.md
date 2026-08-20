@@ -566,7 +566,7 @@ setting MPP wants. Constraints deliberately left alone.
 
 ### Work done — SHIPPED
 
-- **`sql/migrations/versioned/0058_session_policy_operator_30min.sql`** — sets the live row's
+- **`sql/migrations/versioned/0062_session_policy_operator_30min.sql`** — sets the live row's
   `OperatorPresenceTimeoutSeconds` to 1800 and raises the shipped
   `DF_SessionPolicy_OpTimeout` default 180 → 1800 so a fresh deployment starts correct.
   Elevation unchanged at 300 s. Idempotent, guarded on `dbo.SchemaVersion`.
@@ -728,7 +728,7 @@ confirmed rather than guessed.
 
 ### Work done — SHIPPED
 
-- **`sql/migrations/versioned/0059_vision_app_ip.sql`** — renames the LTD-7 attribute
+- **`sql/migrations/versioned/0063_vision_app_ip.sql`** — renames the LTD-7 attribute
   `VisionAppUrl` → **`VisionAppIp`** and rewrites its Description (which surfaces as the
   editor's help text). Renamed rather than replaced so any existing value survives.
 - **`sql/migrations/repeatable/R__Location_ufn_VisionAppUrl.sql`** — new composer:
@@ -806,9 +806,9 @@ All seven load and compose correctly.
 | 3 | IP auto-navigation | **Shipped** — root-caused, banner + loopback script; live browser leg unverified (trial expired) |
 | 4 | Production/inventory report | **Spec written** — `docs/superpowers/specs/2026-08-18-production-and-inventory-by-area-design.md`; 2 items to confirm |
 | 5 | Weekend shifts | **Closed** — Jacques authoring the schedule; optional NULL-shift guard remains |
-| 6 | User timeout | **Shipped** — migration `0058` + minute-based editor; not render-verified (trial expired) |
+| 6 | User timeout | **Shipped** — migration `0062` + minute-based editor; not render-verified (trial expired) |
 | 7 | Serialized-line validation number | Brief written, awaiting Tom / MPP |
-| 8 | Vision screen IP | **Shipped** — migration `0059` + composer + 15 tests (157/0). Mapping derived, needs confirmation before promoting the seed |
+| 8 | Vision screen IP | **Shipped** — migration `0063` + composer + 15 tests (157/0). Mapping derived, needs confirmation before promoting the seed |
 
 ---
 
@@ -817,6 +817,6 @@ All seven load and compose correctly.
 | Date | Rev | Change |
 |---|---|---|
 | 2026-08-18 | 1.0 | Initial — FAT Day 1 punch list captured with per-item code findings, die-report structural analysis, and open questions. |
-| 2026-08-18 | 1.3 | #8 shipped: migration `0059` renames the LTD-7 attribute to `VisionAppIp`, new `Location.ufn_VisionAppUrl` composes `http://<ip>/` (+ optional port/path, full URL passed through), `Terminal_GetClosureContext` v1.1, 15 new tests (suite 157/0). No view work — second correction: the Plant Hierarchy attribute panel renders generically from the definitions. Station→terminal mapping derived via the ByVision closure method and loaded to Dev, pending confirmation. |
+| 2026-08-18 | 1.3 | #8 shipped: migration `0063` renames the LTD-7 attribute to `VisionAppIp`, new `Location.ufn_VisionAppUrl` composes `http://<ip>/` (+ optional port/path, full URL passed through), `Terminal_GetClosureContext` v1.1, 15 new tests (suite 157/0). No view work — second correction: the Plant Hierarchy attribute panel renders generically from the definitions. Station→terminal mapping derived via the ByVision closure method and loaded to Dev, pending confirmation. |
 | 2026-08-18 | 1.2 | #3 root-caused (no terminal carries 127.0.0.1 — the proc and normalizer are correct; 142/0 tests) and fixed with a self-diagnosing selector banner + a loopback registration script. #4 daily = shift-anchored (3rd→1st→2nd). #5 closed, no build. #8 URL shape + 7 station IPs recorded. Replaced the sequencing table with a status table. |
-| 2026-08-18 | 1.1 | Decisions folded in: #1 deferred; #2 Die column = `Tool.Code`, die rank dropped (+ new §2b on the consequences); #4 building = Area; #5 Plan B (weekend schedule); #6 30 min operator + minute-based UI; #8 IP only. #6 SQL + Python shipped (migration `0058`). #7 detailed out to its own brief. Corrected §6 — a SessionPolicy editor does exist, on the Config-Tool Users page. |
+| 2026-08-18 | 1.1 | Decisions folded in: #1 deferred; #2 Die column = `Tool.Code`, die rank dropped (+ new §2b on the consequences); #4 building = Area; #5 Plan B (weekend schedule); #6 30 min operator + minute-based UI; #8 IP only. #6 SQL + Python shipped (migration `0062`). #7 detailed out to its own brief. Corrected §6 — a SessionPolicy editor does exist, on the Config-Tool Users page. |

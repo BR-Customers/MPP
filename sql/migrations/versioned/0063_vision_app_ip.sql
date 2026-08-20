@@ -1,5 +1,5 @@
 -- =============================================
--- Migration:   0059_vision_app_ip.sql
+-- Migration:   0063_vision_app_ip.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-08-18
 -- Description: FAT Day 1 punch list item 8 -- "by vision screens the UI requires the
@@ -31,8 +31,8 @@
 --              exit its own batch.
 -- =============================================
 
-IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0059_vision_app_ip')
-    PRINT 'Migration 0059 already applied -- statements below are individually guarded.';
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0063_vision_app_ip')
+    PRINT 'Migration 0063 already applied -- statements below are individually guarded.';
 GO
 
 -- ---- 1. Rename the attribute definition + retarget its description ----
@@ -53,10 +53,10 @@ END
 GO
 
 INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-SELECT N'0059_vision_app_ip',
+SELECT N'0063_vision_app_ip',
        N'Terminal LTD-7 attribute VisionAppUrl renamed to VisionAppIp (bare IP + optional :port//path); URL composed at read time by Location.ufn_VisionAppUrl. Terminal_GetClosureContext result column stays VisionAppUrl, so Perspective is unchanged.'
-WHERE NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0059_vision_app_ip');
+WHERE NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0063_vision_app_ip');
 GO
 
-PRINT 'Migration 0059 (vision app IP) applied.';
+PRINT 'Migration 0063 (vision app IP) applied.';
 GO

@@ -7,7 +7,7 @@
 -- Change Log:
 --   2026-07-17 - 1.0 - Initial version.
 --   2026-08-18 - 1.1 - FAT day-1 item 8: the vision station is configured by IP, not
---                       by URL. Reads the renamed 'VisionAppIp' attribute (0059) and
+--                       by URL. Reads the renamed 'VisionAppIp' attribute (0063) and
 --                       COMPOSES the embed URL via Location.ufn_VisionAppUrl. The
 --                       result column keeps the name VisionAppUrl -- it is a URL by
 --                       the time it leaves here -- so applyToSession, the session

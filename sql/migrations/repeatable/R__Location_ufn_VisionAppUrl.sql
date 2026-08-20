@@ -21,7 +21,7 @@
 --                1. Trim. Blank -> NULL, so the embed binds nothing rather than an
 --                   'http:///' that would render a browser error page.
 --                2. A value already carrying a scheme ('://') is returned UNCHANGED.
---                   This is what makes the 0059 rename non-breaking: a terminal that
+--                   This is what makes the 0063 rename non-breaking: a terminal that
 --                   was configured under the old free-text 'VisionAppUrl' attribute
 --                   keeps working with no data edit.
 --                3. Otherwise prefix 'http://'. Append a trailing '/' only when the

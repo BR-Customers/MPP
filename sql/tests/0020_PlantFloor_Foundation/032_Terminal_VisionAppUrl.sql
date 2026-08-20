@@ -8,7 +8,7 @@
 --       Covers the composer directly (every input shape) and end-to-end through the
 --       proc, including the two regressions that matter:
 --         * a value that already carries a scheme is passed through UNCHANGED -- this
---           is what makes the 0059 rename non-breaking for a terminal configured under
+--           is what makes the 0063 rename non-breaking for a terminal configured under
 --           the old free-text VisionAppUrl attribute;
 --         * blank/absent -> NULL, so the inline-frame binds nothing rather than
 --           'http:///'.
