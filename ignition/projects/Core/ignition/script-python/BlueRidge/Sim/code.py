@@ -102,30 +102,52 @@ def _memberPath(deviceCode, member):
     return "%s%s/%s/%s" % (PROVIDER, DEVICE_FOLDER, deviceCode, member)
 
 
+def _checkWrite(deviceCode, members, qualityCodes):
+    """Turn system.tag.writeBlocking's per-path QualityCode list into
+    {"ok": bool, "message": str}. writeBlocking does NOT raise on a bad path (a
+    typo'd device, an unimported UDT instance, or an MPP_Sim device that was never
+    added in Config -> OPC Client -> Devices all write successfully from the
+    caller's point of view -- the call returns normally, quality is just Bad).
+    Nothing upstream ever checked this, so every Fire/Set button on the Sim panel
+    was indistinguishable between "wrote fine, nothing to see because a human has
+    to judge the downstream effect" and "the write silently landed nowhere" -- the
+    exact "we don't see it execute anything" report. This is the one place both
+    writeMember and writeMembers funnel through, so every caller gets the check."""
+    bad = [m for m, qc in zip(members, qualityCodes) if not qc.isGood()]
+    if not bad:
+        return {"ok": True, "message": ""}
+    return {"ok": False, "message": "Write failed for %s on %s -- tag not found or "
+            "MPP_Sim device not running (Config -> OPC Client -> Devices). See "
+            "ignition/tags/README.md for the commissioning steps." % (bad, deviceCode)}
+
+
 def writeMember(deviceCode, member, value):
-    """Write one UDT-instance member (OPC -> the MPP_Sim writeable tag). No-op on
-    a blank device."""
+    """Write one UDT-instance member (OPC -> the MPP_Sim writeable tag).
+    Returns {"ok": bool, "message": str}; ok=False with no device selected."""
     if not deviceCode:
-        return None
+        return {"ok": False, "message": "No device selected."}
     BlueRidge.Common.Util.log("device=%s member=%s value=%s" % (deviceCode, member, value))
-    return system.tag.writeBlocking([_memberPath(deviceCode, member)], [value])
+    qc = system.tag.writeBlocking([_memberPath(deviceCode, member)], [value])
+    return _checkWrite(deviceCode, [member], qc)
 
 
 def writeMembers(deviceCode, valuesByMember):
-    """Batch-write several members, then return. valuesByMember: {member: value}."""
+    """Batch-write several members. valuesByMember: {member: value}.
+    Returns {"ok": bool, "message": str}; ok=False with no device selected."""
     if not deviceCode or not valuesByMember:
-        return None
-    paths, vals = [], []
-    for member, value in valuesByMember.items():
-        paths.append(_memberPath(deviceCode, member))
-        vals.append(value)
-    BlueRidge.Common.Util.log("device=%s members=%s" % (deviceCode, list(valuesByMember.keys())))
-    return system.tag.writeBlocking(paths, vals)
+        return {"ok": False, "message": "No device selected."}
+    members = list(valuesByMember.keys())
+    paths = [_memberPath(deviceCode, m) for m in members]
+    vals = [valuesByMember[m] for m in members]
+    BlueRidge.Common.Util.log("device=%s members=%s" % (deviceCode, members))
+    qc = system.tag.writeBlocking(paths, vals)
+    return _checkWrite(deviceCode, members, qc)
 
 
 def pulse(deviceCode, member):
     """Set a boolean trigger member True (the rising edge the watcher acts on).
-    The watcher/PLC resets it; the panel just asserts it."""
+    The watcher/PLC resets it; the panel just asserts it.
+    Returns {"ok": bool, "message": str}."""
     return writeMember(deviceCode, member, True)
 
 
@@ -144,24 +166,37 @@ def _toInt(v, default=0):
         return default
 
 
+def _seedThenPulse(deviceCode, seedValues, pulseMember):
+    """Write the seed members, then pulse the trigger, and report ok only if BOTH
+    writes landed. A failed seed write with a successful pulse would otherwise
+    read as ok=True while the watcher picks up stale/default seed values -- a
+    second, subtler flavor of the same "looks fine, nothing really happened"
+    failure this module exists to catch."""
+    seedResult = writeMembers(deviceCode, seedValues)
+    pulseResult = pulse(deviceCode, pulseMember)
+    if seedResult["ok"] and pulseResult["ok"]:
+        return {"ok": True, "message": ""}
+    messages = [m["message"] for m in (seedResult, pulseResult) if not m["ok"]]
+    return {"ok": False, "message": " ".join(messages)}
+
+
 def fireScale(deviceCode, netWeight, metFlag):
     """Seed the scale read tags then pulse NET_DataReady (weight-ready handshake)."""
-    writeMembers(deviceCode, {"NET_NetWeightValue": _toFloat(netWeight),
-                              "NET_TargetWeightMetFlag": bool(metFlag)})
-    return pulse(deviceCode, "NET_DataReady")
+    return _seedThenPulse(deviceCode,
+        {"NET_NetWeightValue": _toFloat(netWeight), "NET_TargetWeightMetFlag": bool(metFlag)},
+        "NET_DataReady")
 
 
 def setScaleTarget(deviceCode, targetWeight):
     """Write the target weight then pulse TRG_SendMessage (commit target change)."""
-    writeMembers(deviceCode, {"TRG_TargetWeightValue": _toFloat(targetWeight)})
-    return pulse(deviceCode, "TRG_SendMessage")
+    return _seedThenPulse(deviceCode, {"TRG_TargetWeightValue": _toFloat(targetWeight)},
+        "TRG_SendMessage")
 
 
 def fireSerialized(deviceCode, partSN, interlock):
     """Seed PartSN + interlock then pulse DataReady (serialized-MIP add)."""
-    writeMembers(deviceCode, {"PartSN": partSN or "",
-                              "HardwareInterlockEnforced": bool(interlock)})
-    return pulse(deviceCode, "DataReady")
+    return _seedThenPulse(deviceCode,
+        {"PartSN": partSN or "", "HardwareInterlockEnforced": bool(interlock)}, "DataReady")
 
 
 def fireInspection(deviceCode, visionPartNumber, dispositions):
@@ -171,5 +206,4 @@ def fireInspection(deviceCode, visionPartNumber, dispositions):
     disp = dispositions or []
     for i in range(18):
         vals["PartDisposition%02d" % (i + 1)] = bool(disp[i]) if i < len(disp) else False
-    writeMembers(deviceCode, vals)
-    return pulse(deviceCode, "InspectionComplete")
+    return _seedThenPulse(deviceCode, vals, "InspectionComplete")

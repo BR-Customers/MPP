@@ -1367,42 +1367,42 @@
         {
           "name": "fireScaleDataReady",
           "params": [],
-          "script": "\tBlueRidge.Sim.fireScale(self.view.custom.selectedDevice, self.view.custom.inNetWeight, self.view.custom.inMetFlag)"
+          "script": "\tresult = BlueRidge.Sim.fireScale(self.view.custom.selectedDevice, self.view.custom.inNetWeight, self.view.custom.inMetFlag)\n\tif not result[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Write failed\", result[\"message\"], \"error\")"
         },
         {
           "name": "setScaleTarget",
           "params": [],
-          "script": "\tBlueRidge.Sim.setScaleTarget(self.view.custom.selectedDevice, self.view.custom.inTargetWeight)"
+          "script": "\tresult = BlueRidge.Sim.setScaleTarget(self.view.custom.selectedDevice, self.view.custom.inTargetWeight)\n\tif not result[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Write failed\", result[\"message\"], \"error\")"
         },
         {
           "name": "fireSerializedDataReady",
           "params": [],
-          "script": "\tBlueRidge.Sim.fireSerialized(self.view.custom.selectedDevice, self.view.custom.inPartSN, self.view.custom.inInterlock)"
+          "script": "\tresult = BlueRidge.Sim.fireSerialized(self.view.custom.selectedDevice, self.view.custom.inPartSN, self.view.custom.inInterlock)\n\tif not result[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Write failed\", result[\"message\"], \"error\")"
         },
         {
           "name": "firePartComplete",
           "params": [],
-          "script": "\tBlueRidge.Sim.pulse(self.view.custom.selectedDevice, \"PartComplete\")"
+          "script": "\tresult = BlueRidge.Sim.pulse(self.view.custom.selectedDevice, \"PartComplete\")\n\tif not result[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Write failed\", result[\"message\"], \"error\")"
         },
         {
           "name": "fireContainerCountRequest",
           "params": [],
-          "script": "\tBlueRidge.Sim.pulse(self.view.custom.selectedDevice, \"ContainerCountRequest\")"
+          "script": "\tresult = BlueRidge.Sim.pulse(self.view.custom.selectedDevice, \"ContainerCountRequest\")\n\tif not result[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Write failed\", result[\"message\"], \"error\")"
         },
         {
           "name": "fireNonSerializedDataReady",
           "params": [],
-          "script": "\tBlueRidge.Sim.pulse(self.view.custom.selectedDevice, \"DataReady\")"
+          "script": "\tresult = BlueRidge.Sim.pulse(self.view.custom.selectedDevice, \"DataReady\")\n\tif not result[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Write failed\", result[\"message\"], \"error\")"
         },
         {
           "name": "fireTrayLocked",
           "params": [],
-          "script": "\tBlueRidge.Sim.pulse(self.view.custom.selectedDevice, \"TrayLocked\")"
+          "script": "\tresult = BlueRidge.Sim.pulse(self.view.custom.selectedDevice, \"TrayLocked\")\n\tif not result[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Write failed\", result[\"message\"], \"error\")"
         },
         {
           "name": "fireInspectionComplete",
           "params": [],
-          "script": "\tdisp \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dispositions)\n\tBlueRidge.Sim.fireInspection(self.view.custom.selectedDevice, self.view.custom.inVisionPartNumber, disp)"
+          "script": "\tdisp \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dispositions)\n\tresult \u003d BlueRidge.Sim.fireInspection(self.view.custom.selectedDevice, self.view.custom.inVisionPartNumber, disp)\n\tif not result[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Write failed\", result[\"message\"], \"error\")"
         },
         {
           "name": "copyFailed",
