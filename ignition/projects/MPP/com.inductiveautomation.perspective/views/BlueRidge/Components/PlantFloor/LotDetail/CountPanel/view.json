@@ -29,6 +29,10 @@
   },
   "propConfig": {
     "params.lotId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Second safety net: if the parent's page-scoped load message is missed, a\n\t# lotId change still repopulates the panel.\n\tself.rootContainer.applyLot(currentValue.value)"
+      },
       "paramDirection": "input"
     }
   },
@@ -92,29 +96,6 @@
           {
             "type": "ia.display.label",
             "meta": {
-              "name": "TargetLabel"
-            },
-            "props": {
-              "style": {
-                "fontSize": "18px",
-                "fontWeight": 700,
-                "overflow": "hidden"
-              }
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.lot.LotName}"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
               "name": "CurrentLabel"
             },
             "props": {
@@ -141,7 +122,7 @@
           "name": "Hint"
         },
         "props": {
-          "text": "Use this only to correct a count that was keyed in wrong. The correction is logged against the LOT with your reason and shows in the History tab. To remove bad parts, record scrap on the Scrap tab instead.",
+          "text": "Use this only to correct a count that was keyed in wrong. The correction is logged against the LOT with your reason and shows in the History tab. To remove bad parts, record scrap in the Record scrap section above instead.",
           "style": {
             "classes": "pf-field-help"
           }
@@ -323,6 +304,17 @@
           }
         ]
       }
-    ]
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\t# Self-load on mount. The parent LotDetail also broadcasts its page-scoped\n\t# load message from load(), but that broadcast RACES this view's mount and is\n\t# silently dropped when it loses -- leaving custom.lot.Id at 0, which the\n\t# EntryRow's position.display gate reads as false, so the entry fields never\n\t# render. Mirrors Quality/HoldPanel, which has always self-loaded. Both paths\n\t# are safe to run: applyLot only re-reads and reseeds the blank draft.\n\tself.applyLot(self.view.params.lotId)"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    }
   }
 }

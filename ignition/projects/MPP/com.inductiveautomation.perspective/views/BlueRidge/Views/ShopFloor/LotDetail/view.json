@@ -922,6 +922,9 @@
                 "meta": {
                   "name": "PanelHistory"
                 },
+                "position": {
+                  "tabIndex": 0
+                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -1755,72 +1758,170 @@
               {
                 "children": [
                   {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SectionTitle"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Record scrap",
+                          "style": {
+                            "classes": "pf-section-title",
+                            "overflow": "hidden"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SectionHint"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Removes bad parts from the LOT and charges them to a defect code. This changes inventory.",
+                          "style": {
+                            "classes": "pf-field-help"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ScrapPanelEmbed"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 1
+                        },
+                        "propConfig": {
+                          "props.params.lotId": {
+                            "binding": {
+                              "config": {
+                                "path": "view.params.lotId"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "path": "BlueRidge/Components/PlantFloor/LotDetail/ScrapPanel"
+                        },
+                        "type": "ia.display.view"
+                      }
+                    ],
                     "meta": {
-                      "name": "ScrapPanelEmbed"
+                      "name": "ScrapSection"
                     },
                     "position": {
-                      "grow": 1
-                    },
-                    "propConfig": {
-                      "props.params.lotId": {
-                        "binding": {
-                          "config": {
-                            "path": "view.params.lotId"
-                          },
-                          "type": "property"
-                        }
-                      }
+                      "basis": "360px",
+                      "grow": 1,
+                      "shrink": 1
                     },
                     "props": {
-                      "path": "BlueRidge/Components/PlantFloor/LotDetail/ScrapPanel"
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-panel",
+                        "gap": "6px",
+                        "overflow": "hidden"
+                      }
                     },
-                    "type": "ia.display.view"
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SectionTitle"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Correct count",
+                          "style": {
+                            "classes": "pf-section-title",
+                            "overflow": "hidden"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SectionHint"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Fixes a piece count that was keyed in wrong. No parts are removed - use Record scrap above for that.",
+                          "style": {
+                            "classes": "pf-field-help"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "CountPanelEmbed"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 1
+                        },
+                        "propConfig": {
+                          "props.params.lotId": {
+                            "binding": {
+                              "config": {
+                                "path": "view.params.lotId"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "path": "BlueRidge/Components/PlantFloor/LotDetail/CountPanel"
+                        },
+                        "type": "ia.display.view"
+                      }
+                    ],
+                    "meta": {
+                      "name": "CountSection"
+                    },
+                    "position": {
+                      "basis": "250px",
+                      "grow": 0,
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-panel",
+                        "gap": "6px",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
                 ],
                 "meta": {
-                  "name": "PanelScrap"
+                  "name": "PanelScrapCount"
                 },
                 "position": {
                   "tabIndex": 6
                 },
                 "props": {
-                  "direction": "column"
-                },
-                "type": "ia.container.flex"
-              },
-              {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "CountPanelEmbed"
-                    },
-                    "position": {
-                      "grow": 1
-                    },
-                    "propConfig": {
-                      "props.params.lotId": {
-                        "binding": {
-                          "config": {
-                            "path": "view.params.lotId"
-                          },
-                          "type": "property"
-                        }
-                      }
-                    },
-                    "props": {
-                      "path": "BlueRidge/Components/PlantFloor/LotDetail/CountPanel"
-                    },
-                    "type": "ia.display.view"
+                  "direction": "column",
+                  "style": {
+                    "gap": "12px",
+                    "overflowY": "auto"
                   }
-                ],
-                "meta": {
-                  "name": "PanelCorrectCount"
-                },
-                "position": {
-                  "tabIndex": 7
-                },
-                "props": {
-                  "direction": "column"
                 },
                 "type": "ia.container.flex"
               }
@@ -1889,12 +1990,7 @@
                 {
                   "disabled": false,
                   "runWhileHidden": true,
-                  "text": "Scrap"
-                },
-                {
-                  "disabled": false,
-                  "runWhileHidden": true,
-                  "text": "Correct Count"
+                  "text": "Scrap \u0026 Count"
                 }
               ]
             },

@@ -37,6 +37,10 @@
   },
   "propConfig": {
     "params.lotId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Second safety net: if the parent's page-scoped load message is missed, a\n\t# lotId change still repopulates the panel.\n\tself.rootContainer.applyLot(currentValue.value)"
+      },
       "paramDirection": "input"
     }
   },
@@ -469,6 +473,17 @@
           "useDefaultViewWidth": false
         }
       }
-    ]
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\t# Self-load on mount. The parent LotDetail also broadcasts its page-scoped\n\t# load message from load(), but that broadcast RACES this view's mount and is\n\t# silently dropped when it loses -- leaving custom.lot.Id at 0, which the\n\t# EntryRow's position.display gate reads as false, so the entry fields never\n\t# render. Mirrors Quality/HoldPanel, which has always self-loaded. Both paths\n\t# are safe to run: applyLot only re-reads and reseeds the blank draft.\n\tself.applyLot(self.view.params.lotId)"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    }
   }
 }
