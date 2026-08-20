@@ -1,8 +1,13 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_MoveToValidated.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-16
--- Version:     1.0
+-- Modified:    2026-08-20
+-- Version:     1.1 (2026-08-20, part-scoped CRT) - D5 enforcement, identical to the
+--              guard added to Lots.Lot_MoveTo: a CRT LOT is refused a PRODUCTION
+--              destination (Lots.ufn_CrtBlocksMoveTo); inspection / inventory /
+--              support destinations still succeed. Placed LAST among the rejecting
+--              validations (Hold/Scrap/Closed, eligibility, forward-only route and
+--              MaxParts all keep precedence) and BEFORE BEGIN TRANSACTION.
 -- Description: Arc 2 Phase 4 (spec sec 4.2). The server-authoritative inbound
 --              move -- the Movement Scan pattern's commit step. A *validated*
 --              sibling of Lots.Lot_MoveTo: enforces, in addition to the B2
@@ -220,8 +225,28 @@ BEGIN
             END
         END
 
-        -- ===== Mutation (atomic) -- INLINED mirror of Lots.Lot_MoveTo =====
         DECLARE @LotName  NVARCHAR(50)  = (SELECT LotName FROM Lots.Lot WHERE Id = @LotId);
+
+        -- ---- 6. D5 (part-scoped CRT): a CRT LOT cannot move to a PRODUCTION
+        -- destination. Mirror of the guard in Lots.Lot_MoveTo -- see that proc for the
+        -- full rationale. Kept LAST so every pre-existing rejection (Hold/Scrap/Closed,
+        -- eligibility, forward-only route, MaxParts) keeps precedence, and still BEFORE
+        -- BEGIN TRANSACTION because a ROLLBACK inside an INSERT-EXEC-captured proc
+        -- throws Msg 3915. ----
+        IF (SELECT Blocked FROM Lots.ufn_CrtBlocksMoveTo(@LotId, @ToLocationId)) = 1
+        BEGIN
+            SET @Message = N'LOT ' + ISNULL(@LotName, N'?')
+                         + N' is marked CRT and cannot be moved to a production location until Quality clears it.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = @LotId, @LogEventTypeCode = N'LotMoved',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- ===== Mutation (atomic) -- INLINED mirror of Lots.Lot_MoveTo =====
         DECLARE @FromName NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @FromLocationId);
         DECLARE @ToName   NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @ToLocationId);
 

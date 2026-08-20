@@ -1,6 +1,18 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
+-- Version:     2.5 (2026-08-20, part-scoped CRT enforcement) - D4: the scanned casting
+--              (@SourceLotId, the FIFO handle the operator actually presented) is
+--              refused when it is CRT (Lots.ufn_CrtBlocksAdvance). The guard sits
+--              immediately after the B2 blocked-status rejection -- so Hold/Scrap/
+--              Closed keeps precedence -- and before BEGIN TRANSACTION (Msg 3915).
+--              NOTE the deliberate scope: the guard covers the SCANNED handle only,
+--              not the rest of the FIFO queue the walk may roll into. A CRT casting
+--              deeper in the queue is still consumed, and that is exactly the
+--              containment escape the post-consume CRT re-resolve below exists to
+--              close (it taints the minted sub-assembly instead of blocking). See
+--              sql/tests/0063_Crt_PartScoped/050_mint_procs.sql section C, which
+--              asserts that behaviour.
 -- Version:     2.4 (2026-08-20, part-scoped CRT) - the minted SubAssembly LOT is now
 --              stamped with Lots.Lot.CrtActive, resolved in ONE place
 --              (Lots.ufn_CrtForMint: part flag OR terminal switch OR any consumed input
@@ -67,7 +79,7 @@ BEGIN
     DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
     DECLARE @ClosedStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed');
     DECLARE @ManufacturedOriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code=N'Manufactured');
-    DECLARE @SrcItem BIGINT, @SrcLoc BIGINT, @Blocks BIT, @SrcStatusCode NVARCHAR(20);
+    DECLARE @SrcItem BIGINT, @SrcLoc BIGINT, @Blocks BIT, @SrcStatusCode NVARCHAR(20), @SrcLotName NVARCHAR(50);
     DECLARE @SrcPieceCount INT, @SrcInvAvail INT;
     DECLARE @BomId BIGINT, @QtyPer DECIMAL(18,4), @Consumed INT, @CandCount INT, @TotalAvail INT;
     DECLARE @ScrapTotal INT = 0, @SrcEligible BIT = 0, @NetAvail INT;
@@ -94,11 +106,21 @@ BEGIN
             JOIN Parts.OperationType oty ON oty.Id=ot.OperationTypeId WHERE ot.Id=@OperationTemplateId);
         -- Source LOT = FIFO handle (cell + part); must be open/not-blocked.
         SELECT @SrcItem=l.ItemId, @SrcLoc=l.CurrentLocationId, @Blocks=sc.BlocksProduction, @SrcStatusCode=sc.Code,
-               @SrcPieceCount=l.PieceCount, @SrcInvAvail=l.InventoryAvailable
+               @SrcPieceCount=l.PieceCount, @SrcInvAvail=l.InventoryAvailable, @SrcLotName=l.LotName
         FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@SourceLotId;
         IF @SrcItem IS NULL BEGIN SET @Message=N'Source LOT not found.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
         IF @Blocks=1 OR @SrcStatusCode=N'Closed' BEGIN SET @Message=N'Source LOT is '+@SrcStatusCode+N' and cannot be consumed.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
+
+        -- D4 (part-scoped CRT): the scanned casting cannot be consumed into a
+        -- sub-assembly while it is CRT. AFTER the blocked-status guard above (so
+        -- Hold/Scrap/Closed keeps precedence) and before BEGIN TRANSACTION -- a
+        -- ROLLBACK in an INSERT-EXEC-captured proc throws Msg 3915. Scope note: this
+        -- covers @SourceLotId, the handle the operator scanned, NOT the whole FIFO
+        -- queue; see the version header.
+        IF (SELECT Blocked FROM Lots.ufn_CrtBlocksAdvance(@SourceLotId)) = 1
+        BEGIN SET @Message=N'LOT '+ISNULL(@SrcLotName,N'?')+N' is marked CRT and cannot be used until Quality clears it.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
 
         -- ---- Scrap lines (pre-txn): parse + validate (mirror TrimOut_Record). One

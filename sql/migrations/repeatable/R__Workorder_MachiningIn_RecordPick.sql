@@ -1,8 +1,11 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningIn_RecordPick.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-06
--- Version:     1.0
+-- Modified:    2026-08-20
+-- Version:     1.1 (2026-08-20, part-scoped CRT) - D4 enforcement: a CRT LOT cannot
+--              be picked onto a machining line (Lots.ufn_CrtBlocksAdvance). The guard
+--              sits immediately AFTER the B2 Hold/Scrap/Closed rejection, so that
+--              rejection keeps precedence, and BEFORE BEGIN TRANSACTION.
 -- Description: Arc 2 Phase 5 Machining IN, "unworked arrivals" model (2026-07-06,
 --              supersedes MachiningIn_PickAndConsume). A LOT checked into a
 --              machining LINE with no prior events at the line is picked to START
@@ -98,6 +101,24 @@ BEGIN
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode
                          + N') and cannot be picked; release the hold first.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ---- 2b. D4 (part-scoped CRT): a CRT LOT cannot be advanced or consumed, so
+        -- it cannot be picked into a machining cell. Deliberately AFTER the B2 guard
+        -- above (a held CRT LOT is refused for the hold) and BEFORE BEGIN TRANSACTION,
+        -- because a ROLLBACK inside an INSERT-EXEC-captured proc throws Msg 3915.
+        -- Lots.ufn_CrtBlocksAdvance always returns exactly one row. ----
+        IF (SELECT Blocked FROM Lots.ufn_CrtBlocksAdvance(@LotId)) = 1
+        BEGIN
+            SET @Message = N'LOT ' + ISNULL(@LotName, N'?')
+                         + N' is marked CRT and cannot be used until Quality clears it.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
