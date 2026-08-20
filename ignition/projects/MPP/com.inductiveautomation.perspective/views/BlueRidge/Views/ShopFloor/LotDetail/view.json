@@ -18,64 +18,7 @@
       "TrayClosedAt": null,
       "TrayPosition": null
     },
-    "history": [
-      {
-        "ByUserId": 22,
-        "ByUserName": "JACQUES",
-        "Detail": "(none) -\u003e Good (SubAssembly LOT minted at Machining OUT (FIFO).)",
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858754
-          ],
-          "$ts": 1786037010851
-        },
-        "EventKind": "Status"
-      },
-      {
-        "ByUserId": 22,
-        "ByUserName": "JACQUES",
-        "Detail": "(none) -\u003e 5G0 Front (MA1-5GOF) [via Madison Facility]",
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858754
-          ],
-          "$ts": 1786037010852
-        },
-        "EventKind": "Movement"
-      },
-      {
-        "ByUserId": 22,
-        "ByUserName": "JACQUES",
-        "Detail": "Consumption \u003c- 000000024 (96 pcs)",
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858754
-          ],
-          "$ts": 1786037010852
-        },
-        "EventKind": "Genealogy"
-      },
-      {
-        "ByUserId": 22,
-        "ByUserName": "JACQUES",
-        "Detail": "Label printed: Primary Shipping Label (Initial)",
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858754
-          ],
-          "$ts": 1786037010864
-        },
-        "EventKind": "Label"
-      }
-    ],
+    "history": [],
     "hold": {
       "HoldTypeCode": null,
       "Id": null,
@@ -120,28 +63,7 @@
       "Weight": null,
       "WeightUomId": null
     },
-    "parents": [
-      {
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858762
-          ],
-          "$ts": 1786051410852
-        },
-        "EventUserId": 22,
-        "EventUserName": "JACQUES",
-        "ItemCode": "5G0-c",
-        "ItemId": 148,
-        "ItemName": "5G0 Front Cover Casting",
-        "ParentLotId": 10267,
-        "ParentLotName": "000000024",
-        "PieceCount": 96,
-        "RelationshipTypeCode": "Consumption",
-        "RelationshipTypeName": "Consumption"
-      }
-    ],
+    "parents": [],
     "pauses": [],
     "samples": [],
     "scrapSummary": {
