@@ -4659,6 +4659,17 @@
                                 "type": "ia.display.label"
                               },
                               {
+                                "events": {
+                                  "dom": {
+                                    "onBlur": {
+                                      "config": {
+                                        "script": "\tself.view.rootContainer.touchEditDraft()"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
                                 "meta": {
                                   "name": "Input"
                                 },
@@ -4714,6 +4725,17 @@
                                 "type": "ia.display.label"
                               },
                               {
+                                "events": {
+                                  "dom": {
+                                    "onBlur": {
+                                      "config": {
+                                        "script": "\tself.view.rootContainer.touchEditDraft()"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
                                 "meta": {
                                   "name": "Input"
                                 },
@@ -4783,6 +4805,17 @@
                                 "type": "ia.display.label"
                               },
                               {
+                                "events": {
+                                  "dom": {
+                                    "onBlur": {
+                                      "config": {
+                                        "script": "\tself.view.rootContainer.touchEditDraft()"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
                                 "meta": {
                                   "name": "Input"
                                 },
@@ -4840,6 +4873,17 @@
                               {
                                 "children": [
                                   {
+                                    "events": {
+                                      "dom": {
+                                        "onBlur": {
+                                          "config": {
+                                            "script": "\tself.view.rootContainer.touchEditDraft()"
+                                          },
+                                          "scope": "G",
+                                          "type": "script"
+                                        }
+                                      }
+                                    },
                                     "meta": {
                                       "name": "SortValue"
                                     },
@@ -5376,6 +5420,11 @@
             "currId"
           ],
           "script": "\tloc \u003d BlueRidge.Location.Location.getOne(currId)\n\tif not loc:\n\t\tempty \u003d BlueRidge.Location.Location.emptyMeta(None)\n\t\t# ATOMIC: baseline + draft land in ONE write. Two sequential writes\n\t\t# let the JSON-compare dirty binding re-evaluate mid-load, latch true,\n\t\t# and block every later switch behind a phantom prompt.\n\t\tself.view.custom.state \u003d {\n\t\t\t\"selected\":  {\"meta\": dict(empty), \"attributes\": []},\n\t\t\t\"editDraft\": {\"meta\": dict(empty), \"attributes\": []},\n\t\t}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\treturn\n\tmeta \u003d BlueRidge.Location.Location.metaFromLocation(loc)\n\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\t# ATOMIC -- see note above.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  {\"meta\": dict(meta), \"attributes\": [dict(a) for a in (attrs or [])]},\n\t\t\"editDraft\": {\"meta\": dict(meta), \"attributes\": [dict(a) for a in (attrs or [])]},\n\t}\n\tself.view.custom.mode \u003d \"update\"\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.oldSelectedPath \u003d self.view.custom.selectedPath"
+        },
+        {
+          "name": "touchEditDraft",
+          "params": [],
+          "script": "\t# Re-assert view.custom.state as a WHOLE-OBJECT write after a meta field's\n\t# own bidirectional binding has already landed its value at\n\t# editDraft.meta.<field> (two levels below the property this method touches).\n\t# The JSON-compare dirty binding watches view.custom.state.editDraft as a\n\t# unit; mirrors the attribute-row fix (updateAttributeValue below) applied\n\t# to the meta fields, which were missed when that fix went in.\n\tstate = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\tself.view.custom.state = {\n\t\t\"selected\":  state.get(\"selected\") or {},\n\t\t\"editDraft\": state.get(\"editDraft\") or {},\n\t}"
         },
         {
           "name": "handleSave",
