@@ -40,7 +40,7 @@
 | `.../MPP_Config/.../Parts/ItemMaster/Identity/view.json` | **Modify.** `CrtEnabled` checkbox. |
 | `.../MPP/.../Views/ShopFloor/LotDetail/view.json` | **Modify.** CRT badge + Enable/Disable toggle. |
 | `.../Core/ignition/script-python/BlueRidge/Lots/Lot/code.py` | **Modify.** `setCrt` / `clearCrt` wrappers. |
-| `sql/tests/0063_Crt_PartScoped/010..060_*.sql` | **Create.** One file per behavioural area: schema, resolver, guards, propagation, enforcement, label. |
+| `sql/tests/0063_Crt_PartScoped/010..070_*.sql` | **Create.** One file per behavioural area: schema, resolver, guards, propagation, enforcement, label. |
 
 ---
 
@@ -627,7 +627,7 @@ tainting future mints but leaves existing descendants tagged."
 **Files:**
 - Modify: `sql/migrations/repeatable/R__Lots_Lot_MoveTo.sql`, `R__Lots_Lot_MoveToValidated.sql`
 - Modify: `sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql`, `R__Workorder_MachiningOut_Mint.sql`, `R__Workorder_Assembly_CompleteTray.sql`
-- Test: `sql/tests/0063_Crt_PartScoped/050_enforcement.sql`
+- Test: `sql/tests/0063_Crt_PartScoped/060_enforcement.sql`
 
 **Interfaces:**
 - Consumes: `Lots.ufn_CrtBlocksAdvance`, `Lots.ufn_CrtBlocksMoveTo` (Task 3).
@@ -635,10 +635,10 @@ tainting future mints but leaves existing descendants tagged."
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0063_Crt_PartScoped/050_enforcement.sql` asserting, for a CRT LOT:
+Create `sql/tests/0063_Crt_PartScoped/060_enforcement.sql` asserting, for a CRT LOT:
 
 ```sql
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/050_enforcement.sql';
+EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/060_enforcement.sql';
 GO
 -- Run-Tests.ps1 resets with -SkipDemoSeed, so Lots.Lot starts EMPTY and is then
 -- filled by whatever earlier test files happened to create. Never grab an
@@ -786,7 +786,7 @@ Confirm the only `ERROR running` entries are the four pre-existing `0022_PlantFl
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_Lot_MoveTo.sql sql/migrations/repeatable/R__Lots_Lot_MoveToValidated.sql sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql sql/tests/0063_Crt_PartScoped/050_enforcement.sql
+git add sql/migrations/repeatable/R__Lots_Lot_MoveTo.sql sql/migrations/repeatable/R__Lots_Lot_MoveToValidated.sql sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql sql/tests/0063_Crt_PartScoped/060_enforcement.sql
 git commit -m "feat(crt): block advance and production moves for a CRT lot
 
 Every guard rejects BEFORE BEGIN TRANSACTION -- a ROLLBACK in a proc
@@ -801,7 +801,7 @@ Hold/Scrap/Closed rejections keep precedence."
 
 **Files:**
 - Modify: `sql/migrations/repeatable/R__Lots_LotLabel_Print.sql`, `R__Lots_LotLabel_Reprint.sql`
-- Test: `sql/tests/0063_Crt_PartScoped/060_label_mark.sql`
+- Test: `sql/tests/0063_Crt_PartScoped/070_label_mark.sql`
 
 **Interfaces:**
 - Consumes: `Lots.Lot.CrtActive`.
@@ -810,7 +810,7 @@ Hold/Scrap/Closed rejections keep precedence."
 - [ ] **Step 1: Write the failing test**
 
 ```sql
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/060_label_mark.sql';
+EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/070_label_mark.sql';
 GO
 -- Run-Tests.ps1 resets with -SkipDemoSeed, so Lots.Lot starts EMPTY and is then
 -- filled by whatever earlier test files happened to create. Never grab an
@@ -882,7 +882,7 @@ Wherever the print proc does its `REPLACE(@Zpl, N'{LotName}', …)` chain, add:
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_LotLabel_Print.sql sql/migrations/repeatable/R__Lots_LotLabel_Reprint.sql sql/tests/0063_Crt_PartScoped/060_label_mark.sql
+git add sql/migrations/repeatable/R__Lots_LotLabel_Print.sql sql/migrations/repeatable/R__Lots_LotLabel_Reprint.sql sql/tests/0063_Crt_PartScoped/070_label_mark.sql
 git commit -m "feat(crt): {CrtMark} label token
 
 One token in the existing templates rather than CRT template variants
