@@ -13,7 +13,13 @@ EXEC test.BeginTestFile @FileName = N'0025_PlantFloor_Label_Dispatch/050_Shippin
 GO
 
 -- ---- fixture cleanup (re-runnable; LFC namespace) ----
-DELETE FROM Lots.ShippingLabel     WHERE AimShipperId IN (N'AIM99887766', N'AIMSTRAND01', N'AIMBANNER01');
+-- Scoped by Container ownership (not a guessed AimShipperId list): a reprint row
+-- mints its OWN AimShipperId (e.g. a pooled numeric value), not one of the literal
+-- fixture strings below, so a name-based DELETE misses it and a later re-run's
+-- Container delete fails on FK_ShippingLabel_Container.
+DELETE FROM Lots.ShippingLabel
+    WHERE ContainerId IN (SELECT c.Id FROM Lots.Container c INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'PN-COMPLETE')
+       OR AimShipperId IN (N'AIM99887766', N'AIMSTRAND01', N'AIMBANNER01');
 DELETE FROM Lots.AimShipperIdPool  WHERE AimShipperId = N'AIM99887766';
 DELETE FROM Lots.ContainerTray     WHERE ClosureMethod = N'LFC-TEST';
 DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId   IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'LFC%');
@@ -24,6 +30,7 @@ DELETE FROM Lots.LotEventLog       WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE
 DELETE FROM Lots.Container         WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'PN-COMPLETE');
 DELETE FROM Lots.Lot               WHERE LotName LIKE N'LFC%';
 DELETE FROM Parts.ContainerConfig  WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'PN-COMPLETE');
+DELETE FROM Parts.Bom              WHERE ParentItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'PN-COMPLETE');
 DELETE FROM Parts.Item             WHERE PartNumber = N'PN-COMPLETE';
 DELETE FROM Tools.Tool             WHERE Code = N'LFC-DIE';
 DELETE FROM Tools.DieRank          WHERE Code = N'LFC-A';
@@ -52,6 +59,13 @@ DECLARE @Cfg BIGINT;
 INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, ClosureMethod) VALUES (@Item, 1, 6, N'ByCount');
 SET @Cfg = SCOPE_IDENTITY();
 
+-- published BOM version 7 -- the FG LOT mints against this; {DcPartLevel} should
+-- render it zero-padded ('07') on the persisted label.
+DECLARE @Bom BIGINT;
+INSERT INTO Parts.Bom (ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, CreatedByUserId, CreatedAt)
+VALUES (@Item, 7, SYSUTCDATETIME(), SYSUTCDATETIME(), 1, SYSUTCDATETIME());
+SET @Bom = SCOPE_IDENTITY();
+
 DECLARE @Loc     BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @Good    BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
 DECLARE @OrigMfg BIGINT = (SELECT Id FROM Lots.LotOriginType  WHERE Code = N'Manufactured');
@@ -63,8 +77,8 @@ VALUES (N'LFCCAST1', @Item, @OrigMfg, @Good, 6, @Loc, @Die, 1);
 SET @CastLot = SCOPE_IDENTITY();
 INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth) VALUES (@CastLot, @CastLot, 0);
 DECLARE @FgLot BIGINT;
-INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, CreatedByUserId)
-VALUES (N'LFCFG1', @Item, @OrigMfg, @Good, 6, @Loc, 1);
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, BomId, CreatedByUserId)
+VALUES (N'LFCFG1', @Item, @OrigMfg, @Good, 6, @Loc, @Bom, 1);
 SET @FgLot = SCOPE_IDENTITY();
 INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth) VALUES (@FgLot, @FgLot, 0), (@CastLot, @FgLot, 1);
 
@@ -97,8 +111,10 @@ EXEC test.Assert_IsEqual @TestName = N'[Complete] ShippingLabel.ZplContent persi
 DECLARE @HasPart NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%PN-COMPLETE%' THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName = N'[Complete] persisted ZPL carries part number', @Expected = N'1', @Actual = @HasPart;
 
-DECLARE @HasLevel NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%LFC-A%' THEN N'1' ELSE N'0' END;
-EXEC test.Assert_IsEqual @TestName = N'[Complete] persisted ZPL carries die-rank (DC part level)', @Expected = N'1', @Actual = @HasLevel;
+-- ^FD{value}^FS is ZPL's field-data start/stop delimiter -- anchoring on it avoids a
+-- false-positive match against unrelated coordinates/font codes in the template.
+DECLARE @HasLevel NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD07^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Complete] persisted ZPL carries DC part level (BOM version, zero-padded)', @Expected = N'1', @Actual = @HasLevel;
 
 -- ==========================================================================
 -- Part 2 -- ShippingLabel_Reprint re-renders ZplContent (Task 5 / LBL-060)

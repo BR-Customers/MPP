@@ -1,19 +1,30 @@
 -- ============================================================
 -- Repeatable: R__Lots_ufn_ShippingLabelZpl.sql
 -- Author:     Blue Ridge Automation
--- Version:    1.0
+-- Version:    1.1
 -- Description: Brief D (FAT-LBL-050) -- render the container shipping-label ZPL.
 --   Resolves the ACTIVE Container Lots.LabelTemplate.ZplBody and substitutes the
---   {Placeholder} tokens from the container + its Item + genealogy die rank + the
---   composed serial. Pure/deterministic (no side effects) so both Container_Complete
---   and ShippingLabel_Reprint call it inside their own transactions.
+--   {Placeholder} tokens from the container + its Item + the BOM version used to
+--   build it + the composed serial. Pure/deterministic (no side effects) so both
+--   Container_Complete and ShippingLabel_Reprint call it inside their own
+--   transactions.
 --
 --   Token map:
 --     {PartNumber}    <- Parts.Item.PartNumber (container's Item)
 --     {Description}   <- Parts.Item.Description
 --     {MfgLotNumber}  <- @AimShipperId (AIM minted serial)
 --     {MfgDate}       <- Container.CompletedAt, UTC->Eastern, M/dd/yy
---     {DcPartLevel}   <- Tools.ufn_ContainerOriginDieRankCode (genealogy die-rank trace)
+--     {DcPartLevel}   <- the BOM VersionNumber actually used to mint the container's
+--                        trays (Lots.ContainerTray -> FinishedGoodLotId -> Lot.BomId
+--                        -> Parts.Bom.VersionNumber), zero-padded to 2 digits ('00',
+--                        '01', '02', ...; FORMAT does not truncate past 2 digits, so
+--                        a 3-digit version like 100 still renders correctly). v1.1
+--                        (2026-08-20): was Tools.ufn_ContainerOriginDieRankCode
+--                        (genealogy die-rank trace) -- deliberately traces the BOM
+--                        actually recorded on the tray's FG LOT at mint time, NOT
+--                        whichever BOM version is currently active/published, so a
+--                        later reprint still shows the version the container was
+--                        actually built against.
 --     {Quantity}      <- SUM(closed tray PartsClosedCount)
 --     {Serial}        <- '13218001' (fixed MPP->Honda supplier code) + last 8 of the AIM serial
 --     {Coo}           <- 'USA'
@@ -40,7 +51,14 @@ BEGIN
     DECLARE @Description  NVARCHAR(500) = ISNULL((SELECT Description FROM Parts.Item WHERE Id = @ItemId), N'');
     DECLARE @Qty         INT           = ISNULL((SELECT SUM(PartsClosedCount) FROM Lots.ContainerTray
                                                  WHERE ContainerId = @ContainerId AND ClosedAt IS NOT NULL), 0);
-    DECLARE @DcPartLevel NVARCHAR(20)  = Tools.ufn_ContainerOriginDieRankCode(@ContainerId);
+    DECLARE @BomVersion INT = (
+        SELECT TOP 1 b.VersionNumber
+        FROM Lots.ContainerTray ct
+        INNER JOIN Lots.Lot l  ON l.Id = ct.FinishedGoodLotId
+        INNER JOIN Parts.Bom b ON b.Id = l.BomId
+        WHERE ct.ContainerId = @ContainerId
+        ORDER BY ct.TrayPosition DESC);
+    DECLARE @DcPartLevel NVARCHAR(20)  = CASE WHEN @BomVersion IS NULL THEN N'' ELSE FORMAT(@BomVersion, N'00') END;
     DECLARE @Aim         NVARCHAR(50)  = ISNULL(@AimShipperId, N'');
     DECLARE @Serial      NVARCHAR(16)  = N'13218001' + RIGHT(@Aim, 8);
     DECLARE @MfgDate     NVARCHAR(20)  =
