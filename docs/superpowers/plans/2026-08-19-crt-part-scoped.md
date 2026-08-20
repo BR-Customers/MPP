@@ -697,7 +697,19 @@ Expected: `[Enforce] MoveTo production rejected` fails with `Expected 0, Actual 
 
 - [ ] **Step 3: Add each guard BEFORE `BEGIN TRANSACTION`**
 
-In `Lots.Lot_MoveTo`, immediately **after** the existing Hold/Scrap/Closed rejection (so those keep precedence) and **before** `BEGIN TRANSACTION`:
+**`Lots.Lot_MoveTo` returns a TWO-column status row — `(Status, Message)`, no `NewId`.**
+Verified against the file: every existing rejection ends
+`SELECT @Status AS Status, @Message AS Message;`. Emitting a third column from your
+branch would give the proc two different result shapes and break every fixed-shape
+`INSERT-EXEC` capture of it — which aborts the calling test file with Msg 213 rather
+than failing an assertion.
+
+**Placement matters too.** `@LotName` is not declared until **line ~118**, which is
+after the last existing rejection (~line 114) but still before `BEGIN TRANSACTION`
+(~line 136). Put the guard **between the `@LotName` declaration and `BEGIN
+TRANSACTION`** — that keeps the Hold/Scrap/Closed rejections ahead of it (they keep
+precedence) and still satisfies the before-transaction rule. Re-check those line
+numbers before editing; they will have shifted.
 
 ```sql
     -- D5: a CRT LOT cannot move to a PRODUCTION destination. Moves to
@@ -707,12 +719,13 @@ In `Lots.Lot_MoveTo`, immediately **after** the existing Hold/Scrap/Closed rejec
     BEGIN
         SET @Message = N'LOT ' + ISNULL(@LotName, N'?')
                      + N' is marked CRT and cannot be moved to a production location until Quality clears it.';
-        SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+        SELECT @Status AS Status, @Message AS Message;
         RETURN;
     END
 ```
 
-Repeat verbatim in `Lot_MoveToValidated`.
+Repeat in `Lot_MoveToValidated` — **but confirm its result shape independently.** Match
+whatever that proc's own existing rejections emit; do not assume it matches `Lot_MoveTo`.
 
 In `MachiningIn_RecordPick`, `MachiningOut_Mint` and `Assembly_CompleteTray`, use the advance guard against the LOT being consumed:
 
@@ -727,7 +740,14 @@ In `MachiningIn_RecordPick`, `MachiningOut_Mint` and `Assembly_CompleteTray`, us
     END
 ```
 
-`@Status` is already initialised to 0 at the top of each of these procs; do not set it. Drop `@NewId AS NewId` from the `SELECT` in any proc whose result shape omits it — match each proc's existing status-row shape exactly, or fixed-shape `INSERT-EXEC` captures in the test suite break.
+**Before writing each guard, read that proc's existing rejection branches and copy
+their `SELECT` column list verbatim.** The shapes differ across procs — `Lot_MoveTo`
+emits `(Status, Message)` while others add `NewId` — and a branch that emits a
+different shape from its siblings gives the proc two result shapes, which aborts any
+fixed-shape `INSERT-EXEC` capture with Msg 213 instead of failing an assertion.
+
+`@Status` is already initialised to `0` at the top of all three procs (verified), so do
+not set it.
 
 - [ ] **Step 4: Run the test and watch it pass**
 
@@ -773,17 +793,19 @@ DECLARE @LotOk  BIGINT = (SELECT TOP 1 Id FROM Lots.Lot WHERE Id <> @LotCrt ORDE
 UPDATE Lots.Lot SET CrtActive = 1 WHERE Id = @LotCrt;
 UPDATE Lots.Lot SET CrtActive = 0 WHERE Id = @LotOk;
 
--- Capture the rendered ZPL. CHECK Lots.LotLabel_Print's header for its actual
--- result-set shape before writing this temp table -- a fixed-shape INSERT-EXEC
--- breaks if the column list is wrong, and it fails as a runner error, not a FAIL.
-CREATE TABLE #z (Zpl NVARCHAR(MAX), PrinterName NVARCHAR(200));
+-- Lots.LotLabel_Print emits (Status, Message, NewId, ZplContent) -- verified against
+-- the proc, whose header documents exactly that. The temp table MUST match it: a
+-- wrong column list aborts this whole file with Msg 213, which surfaces as a runner
+-- error rather than a FAIL. LotLabel_Print also takes @PrinterName; check whether it
+-- is required before relying on the two-argument call below.
+CREATE TABLE #z (Status BIT, Message NVARCHAR(500), NewId BIGINT, ZplContent NVARCHAR(MAX));
 DECLARE @zplCrt NVARCHAR(MAX), @zplOk NVARCHAR(MAX);
 
 INSERT INTO #z EXEC Lots.LotLabel_Print @LotId = @LotCrt, @AppUserId = 1;
-SELECT TOP 1 @zplCrt = Zpl FROM #z;
+SELECT TOP 1 @zplCrt = ZplContent FROM #z;
 DELETE FROM #z;
 INSERT INTO #z EXEC Lots.LotLabel_Print @LotId = @LotOk, @AppUserId = 1;
-SELECT TOP 1 @zplOk = Zpl FROM #z;
+SELECT TOP 1 @zplOk = ZplContent FROM #z;
 
 EXEC test.Assert_Contains @TestName = N'[Label] CRT lot renders the mark',
     @Expected = N'CRT', @Actual = @zplCrt;
