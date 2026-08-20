@@ -33,6 +33,18 @@
 #
 # Change Log:
 #   2026-05-14 - 1.0 - Initial version.
+#   2026-08-20 - 1.1 - Add crtNotice (ONE part-scoped Controlled Run Tag
+#                      creation notice per SUBMIT, design D9) and
+#                      notifyResultCrtAware (drop-in for notifyResult that
+#                      routes a CRT refusal to a modal popup instead of a
+#                      toast). Both drive
+#                      BlueRidge/Components/Popups/CrtNotice.
+#   2026-08-20 - 1.2 - CrtNotice popup moved MPP -> Core so MPP_Config
+#                      callers resolve it too (the path constant is
+#                      unchanged). Refusal detection widened beyond the
+#                      "marked CRT" phrase to also catch the spelled-out
+#                      "Controlled Run Tag" wording Lots.Container_Ship
+#                      refuses with.
 # =============================================================================
 
 
@@ -83,14 +95,33 @@ def notifyResult(result, successTitle, successMsg=None, errorTitle=None):
 # =============================================================================
 
 _CRT_POPUP_ID = "mpp-crt-notice"
+# The view lives in Core (alongside ConfirmDestructive and the other shared
+# popups), NOT in MPP -- Core is inherited by both MPP and MPP_Config, and
+# notifyResultCrtAware returns BEFORE reaching notifyResult when it fires, so
+# a path that failed to resolve for a Config-Tool caller would leave the
+# operator with no popup AND no toast.
 _CRT_POPUP_PATH = "BlueRidge/Components/Popups/CrtNotice"
 
-# Every CRT rejection message the procs emit contains this phrase
-# (Lot_MoveTo / Lot_MoveToValidated / Lot_Split / Lot_Merge /
-# MachiningIn_RecordPick / MachiningOut_Mint). Matching the phrase rather
-# than the bare token "CRT" keeps a part number or free-text reason that
-# happens to contain those three letters from being read as a CRT refusal.
-_CRT_REFUSAL_MARKER = "marked CRT"
+# The phrases a CRT rejection message carries. "marked CRT" covers the six
+# guarded procs (Lot_MoveTo / Lot_MoveToValidated / Lot_Split / Lot_Merge /
+# MachiningIn_RecordPick / MachiningOut_Mint); "Controlled Run Tag" covers the
+# spelled-out wording (Lots.Container_Ship refuses with "Container is pending
+# Controlled Run Tag validation (cannot ship)."), so swapping this helper in
+# at a site that uses that wording does not silently downgrade to a toast.
+# Matching a phrase rather than the bare token "CRT" keeps a part number or
+# free-text reason containing those three letters from being misread.
+_CRT_REFUSAL_MARKERS = ("marked CRT", "Controlled Run Tag")
+
+
+def _isCrtRefusal(result):
+    """True when result is a business-rule failure whose Message names CRT."""
+    if not result or result.get("Status"):
+        return False
+    message = result.get("Message") or ""
+    for marker in _CRT_REFUSAL_MARKERS:
+        if marker in message:
+            return True
+    return False
 
 
 def crtNotice(lotNames, mintedCount=None):
@@ -149,7 +180,7 @@ def notifyResultCrtAware(result, successTitle, successMsg=None, errorTitle=None)
         notifyResult as usual.
     """
     message = (result.get("Message") if result else None) or ""
-    if result and not result.get("Status") and _CRT_REFUSAL_MARKER in message:
+    if _isCrtRefusal(result):
         system.perspective.openPopup(
             _CRT_POPUP_ID, _CRT_POPUP_PATH,
             params={"title": "LOT is marked CRT", "body": message,

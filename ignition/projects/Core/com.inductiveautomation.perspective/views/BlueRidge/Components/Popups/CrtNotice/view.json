@@ -143,6 +143,7 @@
                 "border": "1px solid var(--mpp-border-subtle)",
                 "borderRadius": "var(--mpp-radius-md, 8px)",
                 "gap": "6px",
+                "overflow": "hidden",
                 "padding": "12px 14px"
               }
             },

@@ -995,12 +995,32 @@ def crtNamesFor(lotIds):
        (that rule lives in Lots.ufn_CrtForMint alone).
 
        Returns [] when nothing is CRT, so callers can pass the result straight
-       to BlueRidge.Common.Ui.crtNotice unconditionally."""
+       to BlueRidge.Common.Ui.crtNotice unconditionally.
+
+       FAILS OPEN, PER LOT. This is a cosmetic read that runs AFTER the mint
+       has already committed, so it must never be able to destroy the caller's
+       outcome reporting. system.db.runNamedQuery raises on a hard DB error
+       (only a business Status=0 is non-raising), so each read is guarded
+       individually: a LOT whose read fails is logged and skipped, and the
+       remaining LOTs still make it into the notice."""
     out = []
     for lotId in (lotIds or []):
         if lotId is None:
             continue
-        row = get(lotId) or {}
+        try:
+            row = get(lotId)
+        except Exception as e:
+            BlueRidge.Common.Util.log(
+                "crtNamesFor: read failed for lotId=%s (%s) - LOT omitted from "
+                "the CRT notice; the tag itself is unaffected." % (lotId, e),
+                level="warn")
+            continue
+        if not row:
+            BlueRidge.Common.Util.log(
+                "crtNamesFor: no row for lotId=%s - LOT omitted from the CRT "
+                "notice; the tag itself is unaffected." % lotId,
+                level="warn")
+            continue
         if row.get("CrtActive"):
             out.append(row.get("LotName") or ("%s" % lotId))
     return out

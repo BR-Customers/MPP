@@ -426,6 +426,20 @@ def submitBulkOpen(rows, toolId, cellLocationId, appUserId=None, terminalLocatio
     else:
         message = ("Opened %s of %s basket(s) - %s row(s) failed and were left "
                    "untouched. See each row for why." % (opened, opened + failed, failed))
+    # Cosmetic read-back, computed into a LOCAL first and never inline in the
+    # return dict: every basket above has already committed in its own
+    # transaction, so an exception raised while building the reply would cost
+    # the operator the per-row results, the draft pruning and the outcome
+    # toast for work the database has already done. crtNamesFor fails open per
+    # LOT; belt-and-braces here so this reply cannot depend on a presentation
+    # read at all.
+    try:
+        crtLots = BlueRidge.Lots.Lot.crtNamesFor(openedLotIds)
+    except Exception as e:
+        BlueRidge.Common.Util.log(
+            "submitBulkOpen: CRT read-back failed (%s) - notice suppressed; the "
+            "baskets opened above are unaffected." % e, level="warn")
+        crtLots = []
     return {"Status": 1 if opened else 0, "Message": message, "Rejected": False,
             "Opened": opened, "Failed": failed, "Rows": results,
-            "CrtLots": BlueRidge.Lots.Lot.crtNamesFor(openedLotIds)}
+            "CrtLots": crtLots}
