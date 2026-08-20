@@ -18,6 +18,7 @@ This registry tracks every seed-data item the MES requires from sources **extern
 |---|---|---|---|
 | 1.0 | 2026-04-27 | Blue Ridge Automation | Initial registry. Catalogues 11 external-source seed items extracted from CLAUDE.md "MPP-owed" + "MPP data loads" sections. Establishes the registry as the single source of truth for seed-data tracking, removing seed items from the "blocking specific downstream work" framing in CLAUDE.md. |
 | 1.1 | 2026-08-18 | Blue Ridge Automation | Adds **S-12 — Macola part-number list** (workbook `MACOLA NUMBERS FOR INVENTORYupdate 6-15-26.xlsx`, received 2026-06-15, partially loaded to Dev). Records the governing rule that a Macola number comes only from a column headed `MACOLA #`, the finished-good gap it exposes, and the reconciliation outcome. Cross-references added to S-05 (Parts master) and S-06 (BOM export), both of which this workbook partially satisfies. |
+| 1.2 | 2026-08-20 | Blue Ridge Automation | Adds **S-13 — Label template ZPL bodies**. Dev carries MPP's real LOT-ticket layouts, loaded out-of-band; no migration or seed reproduces them, so a fresh deploy ships migration 0021's placeholder. Records the CRT `{CrtMark}` interaction (D8) and why a blanket `{LotName}` replace is unsafe — the Master and Void templates carry a `{LotName}` inside a `^BC` barcode field. |
 
 ---
 
@@ -48,6 +49,7 @@ This registry tracks every seed-data item the MES requires from sources **extern
 | S-10 | Identifier sequence baselines | `Lots.IdentifierSequence.LastValue` | ⬜ Owed | MPP IT (snapshot at cutover) | **Cutover-only** — not blocking dev |
 | S-11 | AIM pool config tuning | `Lots.AimPoolConfig` (defaults already seeded 50/30/20/10) | 🟡 Received (defaults) | MPP for post-deploy tuning | No |
 | S-12 | Macola part-number list | `Parts.Item.MacolaPartNumber` (+ partial `Parts.BomLine`) | 🟡 Received (partial) | MPP IT / Materials — FG Macola numbers still missing | No |
+| S-13 | Label template ZPL bodies | `Lots.LabelTemplate.ZplBody` | 🟡 Received (Dev only, out-of-band) | MPP — to supply the real layouts for version control | No |
 
 **Counts:** 6 ⬜ Owed · 6 🟡 Received · 0 ✅ Loaded (Dev) · 0 🔵 Verified (Cutover)
 
@@ -249,6 +251,28 @@ This registry tracks every seed-data item the MES requires from sources **extern
 - Flag any additional types (e.g., `Repack`, `Reprint`) that should be seeded.
 
 **Loading procedure:** Already loaded. Updates land as a small versioned migration if values change.
+
+---
+
+### S-13 — Label Template ZPL Bodies
+
+**Status:** 🟡 Received (loaded into `MPP_MES_Dev` out-of-band; NOT reproduced by any migration or seed)
+**Source:** MPP's real LOT Tracking Ticket layouts, hand-loaded into the dev database. The repo's own migration `0021` seeds only a **placeholder** ZPL body per label type.
+**Target:** `Lots.LabelTemplate.ZplBody`
+**Owner:** MPP — to hand over the production ZPL so it can be version-controlled.
+**Blocking:** No for build. **Yes for cutover fidelity** — a fresh `Deploy-Prod.ps1` produces the placeholder layout, not MPP's.
+
+**Why this is here.** Verified 2026-08-20: `MPP_MES_Dev` template Id 1 (Primary LTT) carries a real plant layout with `{LocationName}` / `{ItemDescription}` fields that appears in no migration or seed. A fresh deploy produces migration `0021`'s placeholder instead. This is the same class of gap as the `Receiving` location type — real configuration living only in Dev.
+
+**CRT interaction (feature `2026-08-19-crt-part-scoped`, decision D8).** A CRT LOT's ticket is marked by a `{CrtMark}` token substituted by `Lots.LotLabel_Print` / `_Reprint`. Migration `0063_crt_label_mark_token.sql` inserts that token into the **seeded placeholder** templates only — it anchors on `0021`'s exact field string, so a real layout does not match and is skipped. The migration now PRINTs a WARNING naming how many active LTT templates were skipped, and on Dev it correctly reports 1 (the Primary).
+
+**Do NOT "fix" this with a blanket token replace.** Every active LTT template carries **two** `{LotName}` occurrences, and the Master and Void templates put one of them inside a `^BC` barcode field. Replacing the bare token would inject the mark into the barcode data and corrupt the scanned LOT number. Placing the mark in a real layout is a per-template decision and belongs to whoever owns the label design.
+
+**What is owed:**
+- MPP's production ZPL for each label type, so it can be committed as a seed and deployed rather than hand-loaded.
+- A placement decision for `{CrtMark}` on each real layout — outside any `^BC` field.
+
+**Loading procedure:** Commit the real bodies as a seed script, then re-run the CRT token migration (or fold the token straight into the seeded bodies). Until then, each environment needs `{CrtMark}` added to its live templates by hand or a CRT ticket prints with no mark.
 
 ---
 
