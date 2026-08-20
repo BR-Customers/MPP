@@ -1504,7 +1504,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if(isNull({view.custom.container.OpenedAt}), \"—\", dateFormat({view.custom.container.OpenedAt}, \"MM/dd/yyyy HH:mm\"))"
+                                    "expression": "if(isNull({view.custom.container.OpenedAt}), \"—\", dateFormat({view.custom.container.OpenedAt}, \"MM/dd HH:mm\"))"
                                   },
                                   "type": "expr"
                                 }
@@ -1559,7 +1559,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if(isNull({view.custom.container.CompletedAt}), \"—\", dateFormat({view.custom.container.CompletedAt}, \"MM/dd/yyyy HH:mm\"))"
+                                    "expression": "if(isNull({view.custom.container.CompletedAt}), \"—\", dateFormat({view.custom.container.CompletedAt}, \"MM/dd HH:mm\"))"
                                   },
                                   "type": "expr"
                                 }

@@ -134,7 +134,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Attempted at:  \" + dateFormat({view.params.attemptedAt}, \"yyyy-MM-dd HH:mm:ss\") + \"   |   User:  \" + coalesce({view.params.userDisplayName}, \"(unknown)\") + \"   |   Event:  \" + coalesce({view.params.logEventTypeCode}, \"\")"
+                    "expression": "\"Attempted at:  \" + dateFormat({view.params.attemptedAt}, \"MM/dd/yy HH:mm:ss\") + \"   |   User:  \" + coalesce({view.params.userDisplayName}, \"(unknown)\") + \"   |   Event:  \" + coalesce({view.params.logEventTypeCode}, \"\")"
                   },
                   "type": "expr"
                 }

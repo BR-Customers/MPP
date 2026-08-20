@@ -733,7 +733,7 @@
                         "props": {
                           "columns": [
                             {
-                              "dateFormat": "MM/DD/YYYY h:mm A",
+                              "dateFormat": "MM/DD/YY HH:mm",
                               "field": "AttemptedAt",
                               "header": {
                                 "title": "Timestamp"
