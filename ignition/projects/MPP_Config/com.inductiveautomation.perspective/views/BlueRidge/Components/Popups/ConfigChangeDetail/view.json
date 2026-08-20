@@ -50,8 +50,8 @@
   },
   "props": {
     "defaultSize": {
-      "height": 620,
-      "width": 880
+      "height": 900,
+      "width": 1600
     }
   },
   "root": {
@@ -138,7 +138,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Logged at:  \" + dateFormat({view.params.loggedAt}, \"yyyy-MM-dd HH:mm:ss\") + \"   |   User:  \" + coalesce({view.params.userDisplayName}, \"(unknown)\") + \"   |   Severity:  \" + coalesce({view.params.logSeverityCode}, \"\") + \"   |   Event:  \" + coalesce({view.params.logEventTypeCode}, \"\")"
+                    "expression": "\"Logged at:  \" + dateFormat({view.params.loggedAt}, \"MM/dd/yy HH:mm:ss\") + \"   |   User:  \" + coalesce({view.params.userDisplayName}, \"(unknown)\") + \"   |   Severity:  \" + coalesce({view.params.logSeverityCode}, \"\") + \"   |   Event:  \" + coalesce({view.params.logEventTypeCode}, \"\")"
                   },
                   "type": "expr"
                 }
@@ -317,6 +317,7 @@
                       }
                     },
                     "props": {
+                      "alignVertical": "top",
                       "style": {
                         "background": "var(--mpp-surface-card)",
                         "border": "1px solid var(--mpp-border-subtle)",
@@ -388,6 +389,7 @@
                       }
                     },
                     "props": {
+                      "alignVertical": "top",
                       "style": {
                         "background": "var(--mpp-surface-card)",
                         "border": "1px solid var(--mpp-border-subtle)",
@@ -479,6 +481,7 @@
               "name": "CloseButton"
             },
             "position": {
+              "basis": "55px",
               "shrink": 0
             },
             "props": {

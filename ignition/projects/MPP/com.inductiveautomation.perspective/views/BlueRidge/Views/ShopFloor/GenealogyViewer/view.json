@@ -6,167 +6,120 @@
     "nodes": [],
     "query": "",
     "rootLot": {
-      "Id": null,
-      "LotName": "",
-      "ItemId": null,
-      "ItemCode": "",
       "CurrentQty": null,
+      "Id": null,
+      "ItemCode": "",
+      "ItemId": null,
+      "LotName": "",
       "LotStatus": ""
     }
   },
   "params": {},
-  "propConfig": {},
   "props": {
     "defaultSize": {
-      "height": 800,
       "width": 1280
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "canvas",
-        "padding": "0"
-      }
-    },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "walk",
-          "params": [],
-          "script": "\tq = self.view.custom.query\n\tif not q:\n\t\treturn\n\troot = BlueRidge.Lots.Lot.get(lotName=q)\n\tif not root:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT found\", \"No LOT named %s\" % q, \"warning\")\n\t\treturn\n\tnodes = BlueRidge.Lots.Lot.getGenealogyTree(root[\"Id\"], self.view.custom.direction)\n\tself.view.custom.rootLot = root\n\tself.view.custom.nodes = nodes\n\tself.view.custom.ancestors = [n for n in nodes if n.get(\"Direction\") == \"Ancestor\"]\n\tself.view.custom.descendants = [n for n in nodes if n.get(\"Direction\") == \"Descendant\"]"
-        }
-      ],
-      "messageHandlers": null,
-      "extensionFunctions": null
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "PageHeader"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "background": "var(--mpp-surface-card)",
-            "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "gap": "0",
-            "padding": "16px 24px 12px 24px"
-          },
-          "direction": "column"
-        },
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "PageTitle"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "text": "Genealogy Lookup",
               "style": {
                 "color": "var(--mpp-text-primary)",
                 "fontSize": "22px",
                 "fontWeight": "600",
                 "marginBottom": "4px"
-              }
-            }
+              },
+              "text": "Genealogy Lookup"
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "ElevatedBadge"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "text": "Elevated · Honda audit query surface",
               "style": {
                 "color": "var(--mpp-text-secondary)",
                 "fontSize": "13px"
-              }
-            }
+              },
+              "text": "Elevated · Honda audit query surface"
+            },
+            "type": "ia.display.label"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
+        ],
         "meta": {
-          "name": "SearchBar"
+          "name": "PageHeader"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "props": {
-          "alignItems": "flex-end",
+          "alignItems": "center",
+          "direction": "column",
           "style": {
             "background": "var(--mpp-surface-card)",
             "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "gap": "12px",
-            "padding": "12px 24px"
+            "gap": "0",
+            "padding": "16px 24px 12px 24px"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "QueryFieldWrap"
-            },
-            "position": {
-              "grow": 1
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "gap": "4px"
-              }
-            },
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "QueryLabel"
                 },
                 "props": {
-                  "text": "LotName",
                   "style": {
                     "color": "var(--mpp-text-secondary)",
                     "fontSize": "11px",
                     "fontWeight": "600",
                     "letterSpacing": "0.05em",
                     "textTransform": "uppercase"
-                  }
-                }
+                  },
+                  "text": "LotName"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
+                "events": {
+                  "dom": {
+                    "onBlur": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.walk()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
                 "meta": {
                   "name": "QueryField"
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.query"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -177,65 +130,54 @@
                     "width": "100%"
                   }
                 },
-                "events": {
-                  "dom": {
-                    "onBlur": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.walk()"
-                      }
-                    }
-                  }
-                }
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
-              "name": "DirectionFieldWrap"
+              "name": "QueryFieldWrap"
             },
             "position": {
-              "basis": "220px",
-              "shrink": 0
+              "grow": 1
             },
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "DirectionLabel"
                 },
                 "props": {
-                  "text": "Direction",
                   "style": {
                     "color": "var(--mpp-text-secondary)",
                     "fontSize": "11px",
                     "fontWeight": "600",
                     "letterSpacing": "0.05em",
                     "textTransform": "uppercase"
-                  }
-                }
+                  },
+                  "text": "Direction"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
                 "meta": {
                   "name": "DirectionDropdown"
                 },
                 "propConfig": {
                   "props.value": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.direction"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -257,73 +199,135 @@
                   "style": {
                     "width": "100%"
                   }
-                }
+                },
+                "type": "ia.input.dropdown"
               }
-            ]
+            ],
+            "meta": {
+              "name": "DirectionFieldWrap"
+            },
+            "position": {
+              "basis": "220px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.input.button",
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.walk()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "WalkButton"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "text": "Walk Tree",
               "style": {
                 "classes": "pf-btn pf-btn-primary",
                 "height": "38px",
                 "minWidth": "110px"
-              }
+              },
+              "text": "Walk Tree"
             },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.walk()"
-                  }
-                }
-              }
-            }
+            "type": "ia.input.button"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
+        ],
         "meta": {
-          "name": "ContentArea"
+          "name": "SearchBar"
         },
         "position": {
-          "grow": 1
+          "shrink": 0
         },
         "props": {
-          "direction": "column",
+          "alignItems": "flex-end",
           "style": {
-            "overflowY": "auto",
-            "padding": "16px 24px"
+            "background": "var(--mpp-surface-card)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "padding": "12px 24px"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "TreeHeaderLabel"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"Tree for \" + if(isNull({view.custom.rootLot.LotName}), \"\", {view.custom.rootLot.LotName}) + \" · \" + toStr(len({view.custom.nodes})) + \" nodes\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "15px",
+                    "fontWeight": "600"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "AncestorCount"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr(len({view.custom.ancestors})) + \" ancestors · \" + toStr(len({view.custom.descendants})) + \" descendants\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "13px"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
             "meta": {
               "name": "ResultHeader"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "len({view.custom.nodes}) > 0"
-                  }
+                    "expression": "len({view.custom.nodes}) \u003e 0"
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -338,70 +342,271 @@
                 "padding": "10px 14px"
               }
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "TreeHeaderLabel"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "\"Tree for \" + if(isNull({view.custom.rootLot.LotName}), \"\", {view.custom.rootLot.LotName}) + \" · \" + toStr(len({view.custom.nodes})) + \" nodes\""
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "color": "var(--mpp-text-primary)",
-                    "fontSize": "15px",
-                    "fontWeight": "600"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "AncestorCount"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "toStr(len({view.custom.ancestors})) + \" ancestors · \" + toStr(len({view.custom.descendants})) + \" descendants\""
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "13px"
-                  }
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "AncestorsSectionLabel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.ancestors}) \u003e 0"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "background": "var(--mpp-surface-raised)",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "padding": "6px 12px",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Ancestors"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "AncestorsRepeater"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.ancestors}) \u003e 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.ancestors"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/NodeRow",
+                  "style": {
+                    "gap": "0"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "RootIcon"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "background": "var(--mpp-accent-60)",
+                        "borderRadius": "50%",
+                        "color": "var(--mpp-neutral-100)",
+                        "fontSize": "13px",
+                        "fontWeight": "700",
+                        "height": "30px",
+                        "lineHeight": "30px",
+                        "textAlign": "center",
+                        "width": "30px"
+                      },
+                      "text": "⊙"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "RootLotName"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "if(isNull({view.custom.rootLot.LotName}), \"\", {view.custom.rootLot.LotName}) + if(isNull({view.custom.rootLot.ItemCode}), \"\", \" · \" + {view.custom.rootLot.ItemCode}) + \" · search root\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-primary)",
+                        "fontFamily": "monospace",
+                        "fontSize": "14px",
+                        "fontWeight": "600"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "RootBadge"
+                    },
+                    "props": {
+                      "style": {
+                        "background": "var(--mpp-accent-60)",
+                        "borderRadius": "4px",
+                        "color": "var(--mpp-neutral-100)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.05em",
+                        "padding": "2px 8px",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "Root"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "RootRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "background": "var(--mpp-surface-selected)",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "borderTop": "1px solid var(--mpp-border-subtle)",
+                    "gap": "12px",
+                    "padding": "10px 12px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "DescendantsSectionLabel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.descendants}) \u003e 0"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "background": "var(--mpp-surface-raised)",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "borderTop": "1px solid var(--mpp-border-subtle)",
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "padding": "6px 12px",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Descendants"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "DescendantsRepeater"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.descendants}) \u003e 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.descendants"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/NodeRow",
+                  "style": {
+                    "gap": "0"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
             "meta": {
               "name": "TreePanel"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "len({view.custom.nodes}) > 0"
-                  }
+                    "expression": "len({view.custom.nodes}) \u003e 0"
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -416,278 +621,67 @@
                 "overflow": "hidden"
               }
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "AncestorsSectionLabel"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "len({view.custom.ancestors}) > 0"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "text": "Ancestors",
-                  "style": {
-                    "background": "var(--mpp-surface-raised)",
-                    "borderBottom": "1px solid var(--mpp-border-subtle)",
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "11px",
-                    "fontWeight": "600",
-                    "letterSpacing": "0.05em",
-                    "padding": "6px 12px",
-                    "textTransform": "uppercase"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.flex-repeater",
-                "meta": {
-                  "name": "AncestorsRepeater"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.instances": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.ancestors"
-                      },
-                      "transforms": [
-                        {
-                          "type": "script",
-                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]"
-                        }
-                      ]
-                    }
-                  },
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "len({view.custom.ancestors}) > 0"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "direction": "column",
-                  "elementPosition": {
-                    "basis": "auto",
-                    "shrink": 0
-                  },
-                  "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/NodeRow",
-                  "style": {
-                    "gap": "0"
-                  },
-                  "useDefaultViewHeight": false,
-                  "useDefaultViewWidth": false
-                }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "RootRow"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "props": {
-                  "alignItems": "center",
-                  "style": {
-                    "background": "var(--mpp-surface-selected)",
-                    "borderBottom": "1px solid var(--mpp-border-subtle)",
-                    "borderTop": "1px solid var(--mpp-border-subtle)",
-                    "gap": "12px",
-                    "padding": "10px 12px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "RootIcon"
-                    },
-                    "position": {
-                      "basis": "auto",
-                      "shrink": 0
-                    },
-                    "props": {
-                      "text": "⊙",
-                      "style": {
-                        "background": "var(--mpp-accent-60)",
-                        "borderRadius": "50%",
-                        "color": "var(--mpp-neutral-100)",
-                        "fontSize": "13px",
-                        "fontWeight": "700",
-                        "height": "30px",
-                        "lineHeight": "30px",
-                        "textAlign": "center",
-                        "width": "30px"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "RootLotName"
-                    },
-                    "position": {
-                      "grow": 1
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "if(isNull({view.custom.rootLot.LotName}), \"\", {view.custom.rootLot.LotName}) + if(isNull({view.custom.rootLot.ItemCode}), \"\", \" · \" + {view.custom.rootLot.ItemCode}) + \" · search root\""
-                          }
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "color": "var(--mpp-text-primary)",
-                        "fontFamily": "monospace",
-                        "fontSize": "14px",
-                        "fontWeight": "600"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "RootBadge"
-                    },
-                    "props": {
-                      "text": "Root",
-                      "style": {
-                        "background": "var(--mpp-accent-60)",
-                        "borderRadius": "4px",
-                        "color": "var(--mpp-neutral-100)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "letterSpacing": "0.05em",
-                        "padding": "2px 8px",
-                        "textTransform": "uppercase"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "DescendantsSectionLabel"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "len({view.custom.descendants}) > 0"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "text": "Descendants",
-                  "style": {
-                    "background": "var(--mpp-surface-raised)",
-                    "borderBottom": "1px solid var(--mpp-border-subtle)",
-                    "borderTop": "1px solid var(--mpp-border-subtle)",
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "11px",
-                    "fontWeight": "600",
-                    "letterSpacing": "0.05em",
-                    "padding": "6px 12px",
-                    "textTransform": "uppercase"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.flex-repeater",
-                "meta": {
-                  "name": "DescendantsRepeater"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.instances": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.descendants"
-                      },
-                      "transforms": [
-                        {
-                          "type": "script",
-                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]"
-                        }
-                      ]
-                    }
-                  },
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "len({view.custom.descendants}) > 0"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "direction": "column",
-                  "elementPosition": {
-                    "basis": "auto",
-                    "shrink": 0
-                  },
-                  "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/NodeRow",
-                  "style": {
-                    "gap": "0"
-                  },
-                  "useDefaultViewHeight": false,
-                  "useDefaultViewWidth": false
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "EmptyIcon"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "36px",
+                    "opacity": "0.4"
+                  },
+                  "text": "⊙"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "EmptyTitle"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "16px",
+                    "fontWeight": "600"
+                  },
+                  "text": "No genealogy tree loaded"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "EmptyHint"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "13px",
+                    "maxWidth": "420px",
+                    "textAlign": "center"
+                  },
+                  "text": "Enter a LotName and click Walk Tree to view the ancestry chain. A gen-0 LOT with no parents or children will show the root row only."
+                },
+                "type": "ia.display.label"
+              }
+            ],
             "meta": {
               "name": "EmptyState"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "len({view.custom.nodes}) = 0"
-                  }
+                    "expression": "len({view.custom.nodes}) \u003d 0"
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -700,54 +694,46 @@
                 "padding": "48px 24px"
               }
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "EmptyIcon"
-                },
-                "props": {
-                  "text": "⊙",
-                  "style": {
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "36px",
-                    "opacity": "0.4"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "EmptyTitle"
-                },
-                "props": {
-                  "text": "No genealogy tree loaded",
-                  "style": {
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "16px",
-                    "fontWeight": "600"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "EmptyHint"
-                },
-                "props": {
-                  "text": "Enter a LotName and click Walk Tree to view the ancestry chain. A gen-0 LOT with no parents or children will show the root row only.",
-                  "style": {
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "13px",
-                    "maxWidth": "420px",
-                    "textAlign": "center"
-                  }
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "ContentArea"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "overflowY": "auto",
+            "padding": "16px 24px"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "padding": "0"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "walk",
+          "params": [],
+          "script": "\tq \u003d self.view.custom.query\n\tif not q:\n\t\treturn\n\troot \u003d BlueRidge.Lots.Lot.get(lotName\u003dq)\n\tif not root:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT found\", \"No LOT named %s\" % q, \"warning\")\n\t\treturn\n\tnodes \u003d BlueRidge.Lots.Lot.getGenealogyTree(root[\"Id\"], self.view.custom.direction)\n\tself.view.custom.rootLot \u003d root\n\tself.view.custom.nodes \u003d nodes\n\tself.view.custom.ancestors \u003d [n for n in nodes if n.get(\"Direction\") \u003d\u003d \"Ancestor\"]\n\tself.view.custom.descendants \u003d [n for n in nodes if n.get(\"Direction\") \u003d\u003d \"Descendant\"]"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
+    },
+    "type": "ia.container.flex"
   }
 }

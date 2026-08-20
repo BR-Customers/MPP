@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetAttributeHistory.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-29
--- Version:     1.3
+-- Modified:    2026-08-19
+-- Version:     1.4
 --
 --              v1.3 (2026-07-29, Task 7 / Die-Cast Per-Cavity Lifecycle plan):
 --                * New stream 10 'Contribution' - Workorder.DieCastContribution
@@ -20,6 +20,11 @@
 --                  checkpoints with template, terminal, shots + scrap counters.
 --                * New stream 9 'Reject' - Workorder.RejectEvent rows
 --                  ('Rejected <n> pc (<defect>)') so scrap shows in the timeline.
+--              v1.4 (2026-08-19, backlog 5.3): stream 1 'Attribute' now appends
+--                the operator's rectification reason -- Lots.LotAttributeChange.Reason
+--                (migration 0059) -- as ' (<Reason>)'. NULL for the internal
+--                Lot_Split / Lot_UpdateAttribute writes, which append nothing.
+--
 -- Description: Unified LOT history read (Phase 2 Task 5 / G3; spec section 4.3).
 --              READ proc -- no @Status/@Message, no status row, ONE result set,
 --              empty set = not found (FDS-11-011). No OUTPUT params.
@@ -78,7 +83,8 @@ BEGIN
             CAST(7 AS INT)                        AS SortRank,
             CAST(N'Attribute' AS NVARCHAR(20))    AS EventKind,
             CAST(ac.AttributeName + N': ' + ISNULL(ac.OldValue, N'(none)')
-                 + N' -> ' + ISNULL(ac.NewValue, N'(none)') AS NVARCHAR(500)) AS Detail,
+                 + N' -> ' + ISNULL(ac.NewValue, N'(none)')
+                 + ISNULL(N' (' + ac.Reason + N')', N'') AS NVARCHAR(500)) AS Detail,
             CAST(ac.ChangedByUserId AS BIGINT)    AS ByUserId,
             CAST(au.DisplayName AS NVARCHAR(200))  AS ByUserName
         FROM Lots.LotAttributeChange ac

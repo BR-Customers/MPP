@@ -18,11 +18,13 @@
       }
     }
   },
-  "props": { "defaultSize": { "height": 220, "width": 360 } },
+  "props": {
+    "defaultSize": {
+      "height": 220,
+      "width": 360
+    }
+  },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": { "direction": "column", "style": { "classes": "pf-kpi pf-panel", "gap": "6px", "padding": "16px" } },
     "children": [
       { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "shrink": 0 }, "props": { "text": "AIM Shipper Pool", "style": { "classes": "pf-kpi-label" } } },
       {
@@ -62,6 +64,18 @@
           }
         ]
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-kpi pf-panel",
+        "gap": "6px",
+        "padding": "16px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

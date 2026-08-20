@@ -1,0 +1,835 @@
+{
+  "custom": {
+    "editDraft": {
+      "meta": {
+        "Code": "",
+        "Name": ""
+      }
+    },
+    "selected": {
+      "meta": {
+        "Code": "",
+        "Name": ""
+      }
+    },
+    "summary": {
+      "AttributeCount": 0,
+      "AttributeLabel": "0 attributes",
+      "CavityCount": 0,
+      "CavityLabel": "0 cavities",
+      "Description": "",
+      "DescriptionLabel": "(none)",
+      "DieRankLabel": "None",
+      "IsLoaded": false,
+      "ResetLabel": "",
+      "ShotLimitLabel": "Not set",
+      "SourceCode": "",
+      "SourceId": null,
+      "SourceLabel": "",
+      "SourceName": ""
+    }
+  },
+  "params": {
+    "sourceToolId": 0
+  },
+  "propConfig": {
+    "custom.summary": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getDuplicateSummaryOrEmpty\", 0, {view.params.sourceToolId})"
+        },
+        "type": "expr"
+      }
+    },
+    "params.sourceToolId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 520
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "TitleLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "modal-title",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              },
+              "text": "Duplicate Die"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "DirtyIndicator"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, '● Unsaved changes', '')"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-state-warn-fg)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
+              }
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "overflow": "hidden",
+            "padding": "0 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Duplicating"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Value"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.summary.SourceLabel"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-value",
+                    "fontWeight": "600"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "SourceCallout"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-subtle)",
+                "borderRadius": "var(--mpp-radius-sm, 4px)",
+                "gap": "4px",
+                "overflow": "hidden",
+                "padding": "8px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "New Code"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.Code"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "e.g. DC-043-B",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "CodeField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "New Name"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.Name"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "e.g. Cam Holder Die (B)",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "NameField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "CopyHeading"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Copied from the source die"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "120px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontSize": "12px"
+                      },
+                      "text": "Die Rank"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Value"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.summary.DieRankLabel"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "12px"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "RowRank"
+                },
+                "position": {
+                  "basis": "20px",
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "120px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontSize": "12px"
+                      },
+                      "text": "Shot Limit"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Value"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.summary.ShotLimitLabel"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "12px"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "RowShotLimit"
+                },
+                "position": {
+                  "basis": "20px",
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "120px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontSize": "12px"
+                      },
+                      "text": "Cavities"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Value"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.summary.CavityLabel"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "12px"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "RowCavities"
+                },
+                "position": {
+                  "basis": "20px",
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "120px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontSize": "12px"
+                      },
+                      "text": "Attributes"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Value"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.summary.AttributeLabel"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "12px"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "RowAttributes"
+                },
+                "position": {
+                  "basis": "20px",
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "120px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontSize": "12px"
+                      },
+                      "text": "Description"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Value"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.summary.DescriptionLabel"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "12px",
+                        "textOverflow": "ellipsis",
+                        "whiteSpace": "nowrap"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "RowDescription"
+                },
+                "position": {
+                  "basis": "20px",
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "CopyPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "border": "1px solid var(--mpp-border-subtle)",
+                "borderRadius": "var(--mpp-radius-sm, 4px)",
+                "gap": "8px",
+                "overflow": "hidden",
+                "padding": "12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ResetHeading"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Starts clean on the new die"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ResetBody"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "12px",
+                    "lineHeight": "1.5"
+                  },
+                  "text": "Shot count resets to 0 and status is set to Active. Cell mount history is not copied. Cavities carry over exactly, including Closed and Scrapped ones."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ResetPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "FormBody"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "basis": "62px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleDuplicate()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DuplicateButton"
+            },
+            "position": {
+              "basis": "104px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "Duplicate Die"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "overflow": "hidden",
+            "padding": "12px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "handleDuplicate",
+          "params": [],
+          "script": "\tsourceId = self.view.params.sourceToolId\n\tif not sourceId:\n\t\tBlueRidge.Common.Notify.toast('No source die', 'Select a die on the Tools screen first.', 'warning')\n\t\treturn\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif not (meta.get('Code') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Code required', 'Enter a code for the new die.', 'warning')\n\t\treturn\n\tif not (meta.get('Name') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Name required', 'Enter a name for the new die.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.handleDuplicate(sourceId, meta.get('Code'), meta.get('Name'))\n\tBlueRidge.Common.Ui.notifyResult(result, 'Die duplicated')\n\tif result and result.get('Status'):\n\t\tnewId = result.get('NewId')\n\t\tsystem.perspective.sendMessage('toolRefresh', scope='page')\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage('toolSelectId', payload={'id': newId}, scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-duplicate-die')"
+        },
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\t# Clean form closes straight away; a part-filled one routes through the\n\t# shared ConfirmUnsaved popup (same shape as AddDie).\n\tif str(self.view.custom.editDraft) == str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id='mpp-duplicate-die')\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid='mpp-confirm-unsaved',\n\t\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t'title':       'Discard Duplicate?',\n\t\t\t\t'message':     'You have started filling out this form. Discard before closing?',\n\t\t\t\t'saveLabel':   'Duplicate & Close',\n\t\t\t\t'discardLabel': 'Discard & Close',\n\t\t\t},\n\t\t)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction = payload.get('action') if payload else None\n\tif action == 'save':\n\t\tself.handleDuplicate()\n\telif action == 'discard':\n\t\tsystem.perspective.closePopup(id='mpp-duplicate-die')",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

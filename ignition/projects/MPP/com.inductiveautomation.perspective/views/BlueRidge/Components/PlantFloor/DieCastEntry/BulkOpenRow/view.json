@@ -1,0 +1,361 @@
+{
+  "custom": {
+    "itemId": null,
+    "scannedLtt": ""
+  },
+  "params": {
+    "toolCavityId": null,
+    "cavityNumber": "",
+    "cavityName": "",
+    "cavityOrdinalLabel": "",
+    "alreadyOpen": false,
+    "openLotName": "",
+    "openPieceCount": 0,
+    "itemId": null,
+    "scannedLtt": "",
+    "itemOptions": [],
+    "resultState": "",
+    "resultMessage": "",
+    "seedToken": -1
+  },
+  "propConfig": {
+    "params.toolCavityId": {
+      "paramDirection": "input"
+    },
+    "params.cavityNumber": {
+      "paramDirection": "input"
+    },
+    "params.cavityName": {
+      "paramDirection": "input"
+    },
+    "params.cavityOrdinalLabel": {
+      "paramDirection": "input"
+    },
+    "params.alreadyOpen": {
+      "paramDirection": "input"
+    },
+    "params.openLotName": {
+      "paramDirection": "input"
+    },
+    "params.openPieceCount": {
+      "paramDirection": "input"
+    },
+    "params.itemId": {
+      "paramDirection": "input"
+    },
+    "params.scannedLtt": {
+      "paramDirection": "input"
+    },
+    "params.itemOptions": {
+      "paramDirection": "input"
+    },
+    "params.resultState": {
+      "paramDirection": "input"
+    },
+    "params.resultMessage": {
+      "paramDirection": "input"
+    },
+    "params.seedToken": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\t# seedToken changes ONLY when the parent rebuilds the repeater (it carries\n\t# the view\u0027s refreshToken), so this is the reseed hook: take the values the\n\t# parent just handed down -- the retained draft for a row that failed to\n\t# open, or blanks for a row that succeeded and is now read-only. Mirrors\n\t# CavityLotRow\u0027s params.proposedGood reseed.\n\tself.view.custom.itemId \u003d self.view.params.itemId\n\tself.view.custom.scannedLtt \u003d self.view.params.scannedLtt or \"\""
+      }
+    },
+    "custom.itemId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Cross the embed boundary the only way an input-only param allows: a\n\t# page-scoped message up to DieCastBody, which owns the authoritative\n\t# bulkOpenDraft map (feedback_ignition_embed_params_input_only).\n\tsystem.perspective.sendMessage(\"bulkOpenRowChanged\", payload\u003d{\n\t\t\"toolCavityId\": self.view.params.toolCavityId,\n\t\t\"itemId\": self.view.custom.itemId,\n\t\t\"scannedLtt\": self.view.custom.scannedLtt or \"\",\n\t}, scope\u003d\"page\")"
+      }
+    },
+    "custom.scannedLtt": {
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Cross the embed boundary the only way an input-only param allows: a\n\t# page-scoped message up to DieCastBody, which owns the authoritative\n\t# bulkOpenDraft map (feedback_ignition_embed_params_input_only).\n\tsystem.perspective.sendMessage(\"bulkOpenRowChanged\", payload\u003d{\n\t\t\"toolCavityId\": self.view.params.toolCavityId,\n\t\t\"itemId\": self.view.custom.itemId,\n\t\t\"scannedLtt\": self.view.custom.scannedLtt or \"\",\n\t}, scope\u003d\"page\")"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 64,
+      "width": 1000
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "CavityName"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.cavityName"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontWeight": 600,
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "CavityOrdinal"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.cavityOrdinalLabel"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "CavityBlock"
+        },
+        "position": {
+          "basis": "180px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "ItemDropdown"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.alreadyOpen}"
+              },
+              "type": "expr"
+            }
+          },
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.params.itemOptions"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.itemId"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "placeholder": {
+            "text": "Select the part for this cavity"
+          },
+          "style": {
+            "classes": "pf-field-select",
+            "width": "100%"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "meta": {
+          "name": "LttInput"
+        },
+        "position": {
+          "basis": "210px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.alreadyOpen}"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.scannedLtt"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "placeholder": "Scan LTT",
+          "style": {
+            "classes": "pf-field-input-mono",
+            "width": "100%"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "OpenPill"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-pill pf-pill-good"
+              },
+              "text": "Open"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "OpenLotLabel"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.openLotName} + \"  ·  \" + toStr({view.params.openPieceCount}) + \" pc\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontFamily": "var(--mpp-font-mono)",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "OpenLotBlock"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.alreadyOpen"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "10px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "ResultLabel"
+        },
+        "position": {
+          "basis": "280px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.resultState} !\u003d \"\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.resultState} \u003d \"ok\", \"var(--pf-status-good-fg)\", \"var(--pf-status-bad-fg)\")"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.resultMessage"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "13px",
+            "fontWeight": 600,
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "12px",
+        "overflow": "hidden"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

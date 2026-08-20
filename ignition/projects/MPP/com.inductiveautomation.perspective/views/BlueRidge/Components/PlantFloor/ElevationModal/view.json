@@ -163,7 +163,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "classes": "pf-field"
+                "classes": "pf-field",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"

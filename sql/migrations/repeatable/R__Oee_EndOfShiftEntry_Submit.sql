@@ -15,6 +15,21 @@
 --              '[3,4]'. Returns SELECT @Status, @Message, @EventCountInserted.
 --              Recorded divergence from FDS-09-013: breaks are fixed reason codes
 --              with uniform durations, not per-schedule config (spec section 3.2).
+--
+--              TIME BASIS. Oee.Shift.ActualStart is LOCAL Eastern (OI-38);
+--              Oee.DowntimeEvent.StartedAt is UTC. The proc converts at the
+--              boundary. See the change log entry for 2026-08-19.
+--
+-- Change Log:
+--   2026-06-16 - 1.0 - Initial version.
+--   2026-08-19 - 1.1 - Fix: convert Oee.Shift.ActualStart/ActualEnd from LOCAL
+--                       to UTC before writing them into Oee.DowntimeEvent.
+--                       Previously the local value was written straight into the
+--                       UTC column, so every break/lunch event was stamped 4-5
+--                       hours early -- landing outside the shift's real window
+--                       (understating downtime in any overlap-based rollup) and
+--                       rendering 4-5 hours early in every ET-converting read,
+--                       including the Downtime Report detail table.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Oee.EndOfShiftEntry_Submit
@@ -50,7 +65,14 @@ BEGIN
             RETURN;
         END
 
-        SELECT @ActualStart = s.ActualStart, @ActualEnd = s.ActualEnd
+        -- Oee.Shift.ActualStart/ActualEnd are LOCAL Eastern (OI-38), but
+        -- Oee.DowntimeEvent.StartedAt/EndedAt are UTC. Convert at the boundary
+        -- (AT TIME ZONE is DST-aware) so the break events land at the right
+        -- instant. Writing the local value straight through stamped every
+        -- break 4-5 hours early in UTC terms -- which put it outside the
+        -- shift's real window and rendered 4-5 hours early in every ET read.
+        SELECT @ActualStart = CAST(s.ActualStart AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)),
+               @ActualEnd   = CAST(s.ActualEnd   AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3))
         FROM Oee.Shift s WHERE s.Id = @ShiftId;
 
         IF @ActualStart IS NULL

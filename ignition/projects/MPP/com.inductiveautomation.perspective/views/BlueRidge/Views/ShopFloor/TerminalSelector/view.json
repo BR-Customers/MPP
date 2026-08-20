@@ -15,8 +15,7 @@
   },
   "props": {
     "defaultSize": {
-      "width": 1280,
-      "height": 800
+      "width": 1280
     }
   },
   "root": {
@@ -210,7 +209,6 @@
             "type": "ia.input.text-field"
           },
           {
-            "children": [],
             "meta": {
               "name": "ScanSpacer"
             },
@@ -218,7 +216,6 @@
               "basis": "26px",
               "shrink": 0
             },
-            "props": {},
             "type": "ia.container.flex"
           }
         ],
@@ -234,7 +231,7 @@
           "style": {
             "gap": "10px",
             "marginTop": "4px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -252,9 +249,7 @@
           "style": {
             "maxWidth": "900px",
             "width": "100%"
-          },
-          "useDefaultViewHeight": false,
-          "useDefaultViewWidth": false
+          }
         },
         "type": "ia.display.view"
       }
@@ -278,12 +273,12 @@
           "params": [
             "row"
           ],
-          "script": "\trow = BlueRidge.Common.Util.extractQualifiedValues(row) or {}\n\ttid = row.get(\"TerminalId\")\n\tif not tid:\n\t\treturn\n\tfull = BlueRidge.Location.Terminal.findById(self.view.custom.terminals, tid) or row\n\tBlueRidge.Location.Terminal.applyToSession(self.session, {\"terminalLocationId\": full.get(\"TerminalId\"), \"terminalCode\": full.get(\"TerminalCode\"), \"terminalName\": full.get(\"TerminalName\"), \"zoneLocationId\": full.get(\"ZoneId\"), \"zoneName\": full.get(\"ZoneName\"), \"defaultScreen\": full.get(\"DefaultScreen\") or \"\", \"isFallback\": bool(full.get(\"IsFallback\"))})\n\tsystem.perspective.navigate(full.get(\"DefaultScreen\") or \"/\")"
+          "script": "\trow \u003d BlueRidge.Common.Util.extractQualifiedValues(row) or {}\n\ttid \u003d row.get(\"TerminalId\")\n\tif not tid:\n\t\treturn\n\tfull \u003d BlueRidge.Location.Terminal.findById(self.view.custom.terminals, tid) or row\n\tBlueRidge.Location.Terminal.applyToSession(self.session, {\"terminalLocationId\": full.get(\"TerminalId\"), \"terminalCode\": full.get(\"TerminalCode\"), \"terminalName\": full.get(\"TerminalName\"), \"zoneLocationId\": full.get(\"ZoneId\"), \"zoneName\": full.get(\"ZoneName\"), \"defaultScreen\": full.get(\"DefaultScreen\") or \"\", \"isFallback\": bool(full.get(\"IsFallback\"))})\n\tsystem.perspective.navigate(full.get(\"DefaultScreen\") or \"/\")"
         },
         {
           "name": "selectByScan",
           "params": [],
-          "script": "\tcode = (self.view.custom.scanCode or \"\").strip().upper()\n\tif not code:\n\t\treturn\n\tmatch = BlueRidge.Location.Terminal.findByCode(self.view.custom.terminals, code)\n\tif match is None:\n\t\treturn\n\tself.selectTerminal(match)"
+          "script": "\tcode \u003d (self.view.custom.scanCode or \"\").strip().upper()\n\tif not code:\n\t\treturn\n\tmatch \u003d BlueRidge.Location.Terminal.findByCode(self.view.custom.terminals, code)\n\tif match is None:\n\t\treturn\n\tself.selectTerminal(match)"
         }
       ],
       "extensionFunctions": null,

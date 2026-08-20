@@ -1,34 +1,85 @@
 {
   "custom": {},
   "params": {
-    "index": 0,
     "defectCodeId": null,
-    "quantity": "",
-    "defectOptions": []
+    "code": "",
+    "description": "",
+    "quantity": 0
   },
   "propConfig": {
-    "params.index": { "paramDirection": "input" },
     "params.defectCodeId": { "paramDirection": "input" },
-    "params.quantity": { "paramDirection": "input" },
-    "params.defectOptions": { "paramDirection": "input" }
+    "params.code": { "paramDirection": "input" },
+    "params.description": { "paramDirection": "input" },
+    "params.quantity": { "paramDirection": "input" }
   },
-  "props": { "defaultSize": { "height": 44, "width": 600 } },
+  "props": { "defaultSize": { "height": 52, "width": 480 } },
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
-    "props": { "alignItems": "center", "style": { "gap": "8px" } },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "background": "var(--mpp-surface-card)",
+        "border": "1px solid var(--mpp-border-subtle)",
+        "borderRadius": "var(--mpp-radius-md)",
+        "gap": "6px",
+        "overflow": "hidden",
+        "padding": "4px 6px"
+      }
+    },
     "children": [
       {
-        "type": "ia.input.dropdown",
-        "meta": { "name": "ReasonDropdown" },
+        "type": "ia.container.flex",
+        "meta": { "name": "Info" },
         "position": { "basis": "0", "grow": 1, "shrink": 1 },
         "props": {
-          "placeholder": { "text": "Scrap reason" },
-          "style": { "classes": "pf-field-input", "minWidth": "160px" }
+          "direction": "column",
+          "style": { "gap": "0px", "overflow": "hidden" }
         },
-        "propConfig": {
-          "props.options": { "binding": { "type": "property", "config": { "path": "view.params.defectOptions" } } },
-          "props.value": { "binding": { "type": "property", "config": { "path": "view.params.defectCodeId" } } }
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "DescLabel" },
+            "propConfig": {
+              "props.text": {
+                "binding": { "type": "property", "config": { "path": "view.params.description" } }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "CodeLabel" },
+            "propConfig": {
+              "props.text": {
+                "binding": { "type": "property", "config": { "path": "view.params.code" } }
+              }
+            },
+            "props": { "style": { "classes": "pf-field-help", "overflow": "hidden" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "MinusButton", "tooltip": { "text": "One less" } },
+        "position": { "basis": "44px", "shrink": 0 },
+        "props": {
+          "text": "-",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "20px",
+            "fontWeight": 700,
+            "minHeight": "44px",
+            "padding": "0"
+          }
         },
         "events": {
           "component": {
@@ -36,7 +87,7 @@
               "type": "script",
               "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapLineChanged\", payload={\"index\": self.view.params.index, \"defectCodeId\": self.props.value, \"quantity\": self.getSibling(\"QtyInput\").props.text}, scope=\"page\")"
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload={\"defectCodeId\": self.view.params.defectCodeId, \"delta\": -1}, scope=\"page\")"
               }
             }
           }
@@ -44,15 +95,23 @@
       },
       {
         "type": "ia.input.text-field",
-        "meta": { "name": "QtyInput" },
-        "position": { "basis": "90px", "shrink": 0 },
+        "meta": { "name": "QtyInput", "tooltip": { "text": "Type a quantity" } },
+        "position": { "basis": "68px", "shrink": 0 },
         "props": {
           "deferUpdates": false,
           "placeholder": "qty",
-          "style": { "classes": "pf-field-input" }
+          "style": {
+            "classes": "pf-field-input",
+            "fontSize": "16px",
+            "fontWeight": 700,
+            "minHeight": "44px",
+            "textAlign": "center"
+          }
         },
         "propConfig": {
-          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.quantity" } } }
+          "props.text": {
+            "binding": { "type": "property", "config": { "path": "view.params.quantity" } }
+          }
         },
         "events": {
           "dom": {
@@ -60,7 +119,7 @@
               "type": "script",
               "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapLineChanged\", payload={\"index\": self.view.params.index, \"defectCodeId\": self.getSibling(\"ReasonDropdown\").props.value, \"quantity\": self.props.text}, scope=\"page\")"
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload={\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": self.props.text}, scope=\"page\")"
               }
             }
           }
@@ -68,12 +127,17 @@
       },
       {
         "type": "ia.input.button",
-        "meta": { "name": "RemoveButton" },
+        "meta": { "name": "PlusButton", "tooltip": { "text": "One more" } },
         "position": { "basis": "44px", "shrink": 0 },
         "props": {
-          "text": "",
-          "image": { "icon": { "path": "mpp/cancel", "color": "var(--mpp-state-bad-fg)" } },
-          "style": { "classes": "pf-btn pf-btn-secondary" }
+          "text": "+",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "20px",
+            "fontWeight": 700,
+            "minHeight": "44px",
+            "padding": "0"
+          }
         },
         "events": {
           "component": {
@@ -81,7 +145,28 @@
               "type": "script",
               "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapLineRemoved\", payload={\"index\": self.view.params.index}, scope=\"page\")"
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload={\"defectCodeId\": self.view.params.defectCodeId, \"delta\": 1}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "RemoveButton", "tooltip": { "text": "Remove this reason" } },
+        "position": { "basis": "44px", "shrink": 0 },
+        "props": {
+          "text": "",
+          "image": { "icon": { "path": "mpp/cancel", "color": "var(--mpp-state-bad-fg)" } },
+          "style": { "classes": "pf-btn pf-btn-secondary", "minHeight": "44px", "padding": "0" }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload={\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": 0}, scope=\"page\")"
               }
             }
           }

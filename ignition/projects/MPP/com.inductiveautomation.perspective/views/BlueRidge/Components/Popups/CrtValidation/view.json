@@ -1,0 +1,315 @@
+{
+  "custom": {
+    "elevated": false,
+    "elevatedAppUserId": null,
+    "adAccount": "",
+    "password": "",
+    "refreshToken": 0,
+    "rows": []
+  },
+  "params": {
+    "terminalLocationId": null,
+    "lineLocationId": null
+  },
+  "propConfig": {
+    "params.terminalLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.lineLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.rows": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({view.params.lineLocationId}), runScript(\"BlueRidge.Lots.Container.listPendingValidation\", 0, {view.params.lineLocationId}, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\treturn value or []"
+          }
+        ]
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 620, "width": 900 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "canvas" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": { "classes": "modal-header", "gap": "10px" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "HeaderTitle" },
+            "position": { "grow": 1 },
+            "props": {
+              "text": "Controlled Run Tag — Pending Validation",
+              "style": { "fontSize": "18px", "fontWeight": "700" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ElevationGate" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "!{view.custom.elevated}" }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": { "classes": "modal-body" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Prompt" },
+            "position": { "shrink": 0 },
+            "props": {
+              "text": "This action requires supervisor Active Directory elevation. One authorization covers every container in this list — validate or hold as many as needed.",
+              "style": { "color": "var(--mpp-text-secondary)", "fontSize": "13px" }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "AccountField" },
+            "position": { "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-field", "overflow": "visible" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "AccountLabel" },
+                "props": {
+                  "text": "AD account",
+                  "style": { "classes": "pf-field-label" }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "AccountInput" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.adAccount" }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "domain\\username",
+                  "style": { "classes": "pf-field-input" }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "PasswordField" },
+            "position": { "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "pf-field", "overflow": "visible" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "PasswordLabel" },
+                "props": {
+                  "text": "Password",
+                  "style": { "classes": "pf-field-label" }
+                }
+              },
+              {
+                "type": "ia.input.password-field",
+                "meta": { "name": "PasswordInput" },
+                "position": { "basis": "45px", "shrink": 0 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.password" }
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "Password",
+                  "style": { "classes": "pf-field-input" }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "UnlockButton" },
+            "position": { "shrink": 0, "basis": "130px" },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tel = BlueRidge.Location.AppUser.elevate(self.view.custom.adAccount, self.view.custom.password,\n\t\t\"CrtValidation\", self.view.params.terminalLocationId)\n\tif el and el.get(\"success\"):\n\t\tself.view.custom.elevated = True\n\t\tself.view.custom.elevatedAppUserId = el.get(\"appUserId\")\n\t\tself.view.custom.password = \"\"   # credentials are not retained; the id is\n\telse:\n\t\tself.view.custom.password = \"\"\n\t\tBlueRidge.Common.Notify.toast(\"Elevation failed\", (el or {}).get(\"message\") or \"Authentication failed.\", \"error\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Unlock",
+              "style": { "classes": "pf-btn pf-btn-primary" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ListPanel" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.custom.elevated" }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": { "classes": "modal-body", "gap": "6px" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ColumnHeaderRow" },
+            "position": { "shrink": 0 },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": { "classes": "crt-list-header", "gap": "12px" }
+            },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "HdrPart" }, "position": { "grow": 1, "basis": "0" }, "props": { "text": "Part / Description" } },
+              { "type": "ia.display.label", "meta": { "name": "HdrPending" }, "position": { "basis": "120px", "shrink": 0 }, "props": { "text": "Pending Qty" } },
+              { "type": "ia.display.label", "meta": { "name": "HdrCompleted" }, "position": { "basis": "130px", "shrink": 0 }, "props": { "text": "Completed" } },
+              { "type": "ia.display.label", "meta": { "name": "HdrAim" }, "position": { "basis": "150px", "shrink": 0 }, "props": { "text": "AIM Shipper" } },
+              { "type": "ia.display.label", "meta": { "name": "HdrAge" }, "position": { "basis": "70px", "shrink": 0 }, "props": { "text": "Age" } },
+              { "type": "ia.display.label", "meta": { "name": "HdrLots" }, "position": { "basis": "78px", "shrink": 0 }, "props": { "text": "LOTs" } },
+              { "type": "ia.display.label", "meta": { "name": "HdrActions" }, "position": { "basis": "184px", "shrink": 0 }, "props": { "text": "Actions" } }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "EmptyState" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "len({view.custom.rows}) = 0" }
+                }
+              }
+            },
+            "props": {
+              "text": "No containers awaiting validation.",
+              "style": { "classes": "pf-empty-state" }
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "PendingRepeater" },
+            "position": { "basis": "0", "grow": 1 },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.rows" },
+                  "transforms": [
+                    {
+                      "type": "script",
+                      "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tcompletedRaw = r.get(\"CompletedAtEt\")\n\t\ttry:\n\t\t\tcompletedStr = system.date.format(completedRaw, \"MM/dd HH:mm\") if completedRaw else \"\"\n\t\texcept:\n\t\t\tcompletedStr = str(completedRaw) if completedRaw else \"\"\n\t\tout.append({\n\t\t\t\"containerId\": r.get(\"ContainerId\"),\n\t\t\t\"partNumber\": r.get(\"ItemPartNumber\") or \"\",\n\t\t\t\"description\": r.get(\"ItemDescription\") or \"\",\n\t\t\t\"pieceCount\": r.get(\"PieceCount\") or 0,\n\t\t\t\"completedAt\": completedStr,\n\t\t\t\"aimShipperId\": r.get(\"AimShipperId\") or \"\",\n\t\t\t\"ageMinutes\": r.get(\"AgeMinutes\") or 0,\n\t\t\t\"pendingLotCount\": r.get(\"PendingLotCount\") or 0\n\t\t})\n\treturn out"
+                    }
+                  ]
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "useDefaultViewHeight": true,
+              "elementPosition": { "basis": "44px", "shrink": 0 },
+              "elementStyle": { "overflow": "hidden" },
+              "path": "BlueRidge/Components/PlantFloor/CrtContainerRow"
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Footer" },
+        "position": { "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": { "classes": "modal-footer", "gap": "10px" }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CloseButton" },
+            "position": { "basis": "94px", "shrink": 0 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tsystem.perspective.closePopup(\"mpp-crt-validation\")" }
+                }
+              }
+            },
+            "props": {
+              "text": "Close",
+              "style": { "classes": "pf-btn pf-btn-secondary" }
+            }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "crtRowAction",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = payload or {}\n\tcid = p.get(\"containerId\")\n\taction = p.get(\"action\")\n\tif action == \"validate\":\n\t\tr = BlueRidge.Lots.Container.validateCrt(cid, self.view.custom.elevatedAppUserId, self.view.params.terminalLocationId)\n\t\tif r and r.get(\"Status\"):\n\t\t\taim = r.get(\"AimPost\") or {}\n\t\t\tif aim.get(\"ok\"):\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container validated\", \"AIM Shipper ID posted.\", \"success\")\n\t\t\telse:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container validated\", \"Validated. AIM post pending retry.\", \"warning\")\n\t\telse:\n\t\t\tBlueRidge.Common.Notify.toast(\"Validation failed\", (r or {}).get(\"Message\") or \"\", \"error\")\n\telse:\n\t\t# Precautionary (HoldTypeCodeId=3, Quality.HoldTypeCode) - a CRT container held\n\t\t# back by a supervisor for further review has no confirmed defect yet, matching\n\t\t# the Precautionary type's FDS-08-001/004 intent; Quality can reclassify later.\n\t\tr = BlueRidge.Quality.Hold.place(3, containerId=cid, reason=\"CRT - held for supervisor review\",\n\t\t\tappUserId=self.view.custom.elevatedAppUserId, terminalLocationId=self.view.params.terminalLocationId)\n\t\tBlueRidge.Common.Ui.notifyResult(r, \"Container held\")\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        }
+      ]
+    }
+  }
+}

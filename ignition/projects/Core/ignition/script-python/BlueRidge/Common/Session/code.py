@@ -143,6 +143,15 @@ def resetTerminal(session):
         params={"popupId": "mpp-initials"}, modal=True, showCloseIcon=False, overlayDismiss=False)
 
 
+# A stashed intent is only replayable for this long. The ElevationModal can be
+# dismissed (close icon / overlay) without any event, which leaves the stash
+# behind; without a deadline the NEXT successful elevation -- even one raised for
+# an unrelated reason, e.g. the header's Supervisor Access button -- would replay
+# it. Several replayable actions are irreversible (DowntimeVoid), so the stash is
+# both time-boxed and consumed exactly once (see dispatchElevatedAction).
+PENDING_ACTION_TTL_MS = 120000
+
+
 def requireElevation(session, code, label, params=None):
     """Style-2 gate for a param-carrying protected action. If already elevated, act
     immediately; otherwise stash the intent and open the ElevationModal (the
@@ -150,7 +159,8 @@ def requireElevation(session, code, label, params=None):
     if isElevated(session):
         dispatchElevatedAction(session, code, params)
     else:
-        session.custom.pendingElevatedAction = {"code": code, "params": params}
+        session.custom.pendingElevatedAction = {
+            "code": code, "params": params, "expiresAt": nowMs() + PENDING_ACTION_TTL_MS}
         system.perspective.openPopup(
             "mpp-elevation-modal", "BlueRidge/Components/PlantFloor/ElevationModal",
             params={"actionCode": code, "actionLabel": label,
@@ -158,13 +168,47 @@ def requireElevation(session, code, label, params=None):
             modal=True, showCloseIcon=True, overlayDismiss=True)
 
 
+# Explicit actionCode -> page-message replay map. NEVER eval, never a computed
+# message name: a protected action re-enters its OWN handler, which re-tests
+# isElevated (now True) and proceeds. Adding a gated action = one entry here plus
+# the requireElevation guard at the top of that handler.
+_ELEVATED_REPLAY_MESSAGES = {
+    "DowntimeReason":  "dtReasonSelected",           # Downtime Manager - change/clear a reason
+    "DowntimeEdit":    "dtEditRequested",            # Downtime Manager - open the time/remarks editor
+    "DowntimeVoid":    "dtVoidRequested",            # Downtime Manager - void an event
+    "SortCageMigrate": "sortCageMigrateAuthorized",  # Sort Cage - re-containerize a serial
+}
+
+
 def dispatchElevatedAction(session, code, params):
     """Explicit code -> action map for param-carrying protected actions. NEVER eval.
     Access-only codes (SupervisorAccess / nav / config launch) have no follow-up.
-    Param-carrying codes (e.g. MoveOverride) get a branch here as their popups
-    migrate to requireElevation."""
+    Param-carrying codes replay through _ELEVATED_REPLAY_MESSAGES: the stashed
+    payload is re-sent as the originating page message, so the requesting view's
+    own handler runs the action with the elevation window now open.
+
+    Replay is page-scoped and fires from the AppHeader elevationResult handler --
+    AppHeader is a shared TOP dock, so every Perspective page carries it.
+
+    A replay is CONSUMED (stash cleared) and REFUSED once PENDING_ACTION_TTL_MS
+    has passed, so a prompt the operator dismissed can never be resurrected by a
+    later, unrelated elevation."""
     p = BlueRidge.Common.Util.extractQualifiedValues(params) or {}
-    # if code == "MoveOverride": <wired when MoveOverride migrates to requireElevation>
+    messageType = _ELEVATED_REPLAY_MESSAGES.get(code)
+    if messageType:
+        pend = BlueRidge.Common.Util.extractQualifiedValues(
+            session.custom.pendingElevatedAction) or {}
+        # Only a stash for THIS code can veto: a direct (already-elevated) call
+        # must not be refused by some other action's leftover deadline.
+        expiresAt = pend.get("expiresAt") if pend.get("code") == code else None
+        session.custom.pendingElevatedAction = None   # one-shot: never replay twice
+        if expiresAt is not None and expiresAt < nowMs():
+            BlueRidge.Common.Util.log(
+                "dispatchElevatedAction: stale intent discarded for code=%s" % code,
+                level="warn")
+            return
+        system.perspective.sendMessage(messageType, payload=p, scope="page")
+        return
     if code and code != "SupervisorAccess":
         BlueRidge.Common.Util.log(
             "dispatchElevatedAction: no handler wired for code=%s (params=%s)" % (code, p))

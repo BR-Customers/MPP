@@ -1,0 +1,79 @@
+{
+  "custom": {},
+  "params": {
+    "cell": "",
+    "die": "",
+    "part": "",
+    "descr": "",
+    "good": "",
+    "lots": "",
+    "last": ""
+  },
+  "propConfig": {
+    "params.cell":  { "paramDirection": "input" },
+    "params.die":   { "paramDirection": "input" },
+    "params.part":  { "paramDirection": "input" },
+    "params.descr": { "paramDirection": "input" },
+    "params.good":  { "paramDirection": "input" },
+    "params.lots":  { "paramDirection": "input" },
+    "params.last":  { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 44 }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": { "name": "Cell" },
+        "position": { "basis": "110px", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "config": { "path": "view.params.cell" }, "type": "property" } }
+        },
+        "props": { "style": { "fontWeight": "700" } },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Die" },
+        "position": { "basis": "100px", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "config": { "path": "view.params.die" }, "type": "property" } }
+        },
+        "props": { "style": { "color": "var(--mpp-text-secondary)" } },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Part" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.text": { "binding": { "config": { "path": "view.params.part" }, "type": "property" } }
+        },
+        "props": { "style": { "overflow": "hidden", "textOverflow": "ellipsis", "whiteSpace": "nowrap" } },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Good" },
+        "position": { "basis": "100px", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "config": { "path": "view.params.good" }, "type": "property" } }
+        },
+        "props": { "style": { "fontWeight": "700", "textAlign": "right" } },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Last" },
+        "position": { "basis": "95px", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "config": { "path": "view.params.last" }, "type": "property" } }
+        },
+        "props": { "style": { "color": "var(--mpp-text-secondary)", "textAlign": "right" } },
+        "type": "ia.display.label"
+      }
+    ],
+    "meta": { "name": "root" },
+    "props": {
+      "alignItems": "center",
+      "style": { "classes": "surface-card", "gap": "10px", "overflow": "hidden", "padding": "8px 12px" }
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -138,7 +138,31 @@ def getRecentOptions(_arg=None):
     return out
 
 
-def defaultEntryShiftId():
+def getForInstant(locationId, instantUtc=None):
+    """Which shift does an instant belong to ON THIS EQUIPMENT?
+       (Oee.Shift_GetForInstant -> Oee.ufn_ShiftIdForInstant, the single
+       attribution authority the stamping procs use.)
+
+       locationId is the OEE equipment -- the die cast press / the M&A line --
+       NOT the terminal. None asks the plant-global question (no override
+       lookup). instantUtc defaults to now.
+
+       Returns a dict, or None when NO shift runs on that equipment at that
+       instant -- which is a real answer, not an error. A returned dict may
+       still carry ShiftId None: a shift is scheduled but has no runtime
+       Oee.Shift instance yet.
+
+       TIME BASIS (OI-38): instantUtc is UTC; StartLocal / EndLocal /
+       InstantLocal come back LOCAL Eastern and are already display-ready."""
+    BlueRidge.Common.Util.log("locationId=%s instantUtc=%s" % (locationId, instantUtc),
+                              level="debug")
+    return BlueRidge.Common.Db.execOne("oee/Shift_GetForInstant", {
+        "locationId": BlueRidge.Common.Util.extractQualifiedValues(locationId),
+        "instantUtc": instantUtc,
+    })
+
+
+def defaultEntryShiftId(cellLocationId=None):
     """Default shift for the die-cast shift-output entry screen (Task 12).
 
        SIMPLIFIED vs spec Sec 3.3: returns the currently open shift if one
@@ -148,7 +172,21 @@ def defaultEntryShiftId():
        clock-vs-ActualStart comparison that's easy to get subtly wrong blind
        (shift-length assumptions, DST). Flagged as a documented follow-up for
        Jacques to refine; the operator can always override the shift picker,
-       so this is a UX nicety, not a data-integrity gap."""
+       so this is a UX nicety, not a data-integrity gap.
+
+       EQUIPMENT-AWARE (2026-08-19, shift-override attribution spec sec 4.2).
+       When cellLocationId is supplied -- the terminal's die cast press -- the
+       preselection comes from Oee.ufn_ShiftIdForInstant for THAT press, so a
+       press extended past the plant-wide boundary pre-selects the shift it is
+       actually still on rather than the one the rest of the plant rolled to.
+       The operator's picker stays authoritative; this only seeds it. With no
+       cellLocationId, or when the resolver has no instantiated shift for that
+       press, the original open-shift / most-recent behaviour is used
+       unchanged."""
+    if cellLocationId is not None:
+        row = getForInstant(cellLocationId)
+        if row and row.get("ShiftId") is not None:
+            return row.get("ShiftId")
     open_ = getOpen()
     if open_ and open_.get("Id") is not None:
         return open_.get("Id")

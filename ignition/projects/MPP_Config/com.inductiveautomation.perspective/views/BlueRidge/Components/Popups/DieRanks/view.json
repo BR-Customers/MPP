@@ -1,37 +1,6 @@
 {
   "custom": {
-    "compatibilityData": [
-      {
-        "CanMix": true,
-        "RankAId": 1,
-        "RankBId": 1
-      },
-      {
-        "CanMix": false,
-        "RankAId": 3,
-        "RankBId": 1
-      },
-      {
-        "CanMix": false,
-        "RankAId": 4,
-        "RankBId": 1
-      },
-      {
-        "CanMix": true,
-        "RankAId": 3,
-        "RankBId": 3
-      },
-      {
-        "CanMix": false,
-        "RankAId": 4,
-        "RankBId": 3
-      },
-      {
-        "CanMix": true,
-        "RankAId": 4,
-        "RankBId": 4
-      }
-    ]
+    "compatibilityData": []
   },
   "params": {},
   "propConfig": {
@@ -209,7 +178,6 @@
                   "style": {
                     "overflowY": "auto"
                   },
-                  "useDefaultViewHeight": false,
                   "useDefaultViewWidth": false
                 },
                 "type": "ia.display.flex-repeater"
@@ -245,6 +213,7 @@
                   "name": "AddRankWrapper"
                 },
                 "position": {
+                  "basis": "52px",
                   "shrink": 0
                 },
                 "props": {
@@ -605,6 +574,7 @@
               "name": "CloseButton"
             },
             "position": {
+              "basis": "55px",
               "shrink": 0
             },
             "props": {
@@ -631,6 +601,7 @@
               "name": "SaveButton"
             },
             "position": {
+              "basis": "51px",
               "shrink": 0
             },
             "props": {

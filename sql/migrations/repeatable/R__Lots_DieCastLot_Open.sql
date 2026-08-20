@@ -20,7 +20,7 @@
 --                required params -> Item exists/not deprecated -> Location
 --                exists -> AppUser exists -> an active Tools.ToolAssignment
 --                mounts @ToolId on @CurrentLocationId -> @ToolCavityId belongs
---                to @ToolId and is Active -> @LotName is a valid 9-digit
+--                to @ToolId and is Active -> @LotName is a valid 8- or 9-digit
 --                external LTT (Lots.ufn_IsValidExternalLtt) and not already in
 --                use -> the Item has a published route with a DieCast step ->
 --                one-open-basket-per-(Tool,ToolCavity) guard.
@@ -78,7 +78,7 @@ BEGIN
         BEGIN SET @Message = N'Cavity is not an active cavity of this tool.'; GOTO Fail; END
         -- LTT format + uniqueness
         IF Lots.ufn_IsValidExternalLtt(@LotName) = 0
-        BEGIN SET @Message = N'LTT ' + @LotName + N' is not a valid external LTT (9 digits).'; GOTO Fail; END
+        BEGIN SET @Message = N'LTT ' + @LotName + N' is not a valid external LTT (8 or 9 digits).'; GOTO Fail; END
         IF EXISTS (SELECT 1 FROM Lots.Lot WHERE LotName = @LotName)
         BEGIN SET @Message = N'LTT ' + @LotName + N' is already in use.'; GOTO Fail; END
         -- route has a DieCast (OriginMint) step

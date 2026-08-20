@@ -1,7 +1,9 @@
 -- =============================================
 -- File:         0023_PlantFloor_DieCast_Deltas/031_ufn_IsValidExternalLtt.sql
 -- Description:  Lots.ufn_IsValidExternalLtt - external Die Cast LTT format rule
---               (exactly 9 numeric digits; checksum stubbed as valid for now).
+--               (8 or 9 numeric digits; checksum stubbed as valid for now).
+--               2026-08-19 backlog 5.1: MPP's pre-printed LTT stock is 8 digits,
+--               so 8 is now VALID; 9 stays valid for the LTTs already in Dev/Test.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -12,7 +14,10 @@ DECLARE @v9   NVARCHAR(10) = CAST(Lots.ufn_IsValidExternalLtt(N'123456789') AS N
 EXEC test.Assert_IsEqual @TestName = N'[LTT] 9 digits valid', @Expected = N'1', @Actual = @v9;
 
 DECLARE @v8   NVARCHAR(10) = CAST(Lots.ufn_IsValidExternalLtt(N'12345678') AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[LTT] 8 digits invalid', @Expected = N'0', @Actual = @v8;
+EXEC test.Assert_IsEqual @TestName = N'[LTT] 8 digits valid', @Expected = N'1', @Actual = @v8;
+
+DECLARE @v7   NVARCHAR(10) = CAST(Lots.ufn_IsValidExternalLtt(N'1234567') AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[LTT] 7 digits invalid', @Expected = N'0', @Actual = @v7;
 
 DECLARE @v10  NVARCHAR(10) = CAST(Lots.ufn_IsValidExternalLtt(N'1234567890') AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[LTT] 10 digits invalid', @Expected = N'0', @Actual = @v10;

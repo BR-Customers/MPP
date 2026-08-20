@@ -44,6 +44,10 @@
       "title": "Quality Specs",
       "viewPath": "BlueRidge/Views/Quality/QualitySpecs"
     },
+    "/shift-overrides": {
+      "title": "Shift Overrides",
+      "viewPath": "BlueRidge/Views/Oee/ShiftOverrides"
+    },
     "/shifts": {
       "title": "Shift Schedules",
       "viewPath": "BlueRidge/Views/Oee/ShiftSchedules"

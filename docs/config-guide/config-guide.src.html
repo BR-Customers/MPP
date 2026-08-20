@@ -208,8 +208,8 @@
         <div class="toc-grp">Start here</div>
         <a href="#overview">Overview &amp; conventions</a>
         <div class="toc-grp">Plant</div>
-        <a href="#location-type-definitions">Location Type Definitions</a>
         <a href="#plant-hierarchy">Plant Hierarchy</a>
+        <a href="#location-type-definitions">Location Type Definitions</a>
         <div class="toc-grp">Parts</div>
         <a href="#item-master">Item Master</a>
         <a href="#operation-templates">Operation Templates</a>
@@ -221,7 +221,7 @@
         <a href="#downtime-codes">Downtime Codes</a>
         <a href="#shift-schedules">Shift Schedules</a>
         <div class="toc-grp">System</div>
-        <a href="#users">Users &amp; Operators</a>
+        <a href="#users">Users</a>
         <a href="#audit-log">Audit Log</a>
         <a href="#failure-log">Failure Log</a>
         <a href="#plc-devices">PLC Devices</a>
@@ -233,168 +233,69 @@
   <main>
     <header class="mast">
       <span class="eyebrow">Blue Ridge Automation · Prepared for Madison Precision Products</span>
-      <h1>MES Configuration Tool — a screen-by-screen guide</h1>
-      <p class="lead">The Configuration Tool is where the plant is described to the MES —
-        its lines and machines, the parts that run on them, the routes those parts
-        follow, and the quality, downtime, shift, and operator data that shop-floor
-        screens depend on. This guide walks every configuration screen: what it sets up,
-        when you touch it, and exactly how.</p>
+      <h1>About this Guide</h1>
+      <p class="lead">The Configuration Tool allows an administrator to configure the details for everything on the shop 
+      floor terminals. This includes location details, routes, parts, and operator data. This guide will help an
+      administrator with how to use the tool.</p>
       <div class="meta">
         <span class="tag">Prepared by <b>Blue Ridge Automation</b></span>
         <span class="tag"><b>14</b> configuration screens</span>
-        <span class="tag">Draft <b>v0.1</b> · 2026-07-29</span>
+        <span class="tag">Draft <b>v0.2</b> · 2026-07-29</span>
       </div>
     </header>
 
     <!-- ============ OVERVIEW ============ -->
     <section id="overview">
-      <span class="eyebrow">Start here</span>
-      <h2>Overview &amp; shared conventions</h2>
+      <h2>How to navigate the Configuration Tool</h2>
       <p class="lead">Every screen in the Configuration Tool is reached from the five
-        category icons in the far-left rail — <b>Plant</b>, <b>Parts</b>, <b>Quality</b>,
-        <b>Ops</b>, and <b>System</b>. Selecting a category reveals its screens in the
-        second column. A handful of patterns repeat across all of them; learn these once
-        and every screen reads the same way.</p>
+        category tabs in the far-left rail. Those are the <b>Plant</b>, <b>Parts</b>, <b>Quality</b>,
+        <b>Ops</b>, and <b>System</b> tabs. Selecting a category brings up its sub-header. These items tabs
+        in the sub-header are pages that you can select.</p>
 
       <div class="cards">
         <div class="card">
-          <h4><span class="k">A</span> List &rarr; editor</h4>
-          <p>Most screens put a searchable list on the left and an editor on the right.
-            Click a row to load it; click <code>+ Add</code> to start a new one. Simpler
-            code tables (defect, downtime, shift, users) open a small pop-up editor per row
-            instead.</p>
+          <h4><span class="k">1</span>Plant</h4>
+          <p>Contains <b>Plant Hierarchy</b>. This is where all of the locations are organized.
+          You can configure terminals and attributes of all of the locations.
+          </p>
         </div>
         <div class="card">
-          <h4><span class="k">B</span> Draft &rarr; Published &rarr; Deprecated</h4>
-          <p>Routes, BOMs, operation templates and quality specs are <b>versioned</b>.
-            You edit a <span class="chip chip-draft">Draft</span>, then
-            <span class="chip chip-pub">Publish</span> it (optionally with an
-            <b>effective-from</b> date). Published versions are read-only; make changes by
-            creating a <code>+ New Version</code>. Old versions are
-            <span class="chip chip-dep">Deprecated</span>, never deleted.</p>
+          <h4><span class="k">2</span>Parts</h4>
+          <p>Contains <b>Item Master</b>, <b>Operation Templates</b>, 
+          and <b>Tools</b>. This is where parts and their routes are managed. Operation Templates are where you configure
+          a step of a route. Tools & Dies and their attributes are defined here. </p>
         </div>
         <div class="card">
-          <h4><span class="k">C</span> Deprecate, don't delete</h4>
-          <p>Nothing is hard-deleted — records are <b>deprecated</b> so history and
-            genealogy stay intact. An <code>Include deprecated</code> checkbox on most
-            lists brings retired records back into view.</p>
+          <h4><span class="k">3</span>Quality</h4>
+          <p>Contains <b>Quality Specs</b> and <b>Defect Codes</b>. Quality Specs set minimum requirements a part must meet. 
+          Defect Codes are standardized reasons for why a part is discarded.</p>
         </div>
         <div class="card">
-          <h4><span class="k">D</span> Schema-driven attributes</h4>
-          <p>Locations and tools carry <b>attributes</b> defined by their type (e.g. a Die
-            Cast machine has <code>Tonnage</code>, <code>NumberOfCavities</code>). The form
-            shows exactly the fields that type allows, with data type and unit — no free-for-all
-            custom columns. Those schemas are set in
-            <a href="#location-type-definitions">Location Type Definitions</a>.</p>
+          <h4><span class="k">4</span>Ops</h4>
+          <p>Contains <b>Downtime Codes</b> and <b>Shift Schedules</b>. Downtime Codes are for classifying why a machine
+          or line stopped. Shift Schedules are the shifts that operators take when running the plant.</p>
         </div>
         <div class="card">
-          <h4><span class="k">E</span> Everything is attributed &amp; audited</h4>
-          <p>Every save is written to the <b>Audit Log</b> with who, when, and the
-            before/after values. Rejected actions land in the <b>Failure Log</b>. You rarely
-            need to prove what changed — the system already recorded it.</p>
-        </div>
-        <div class="card">
-          <h4><span class="k">F</span> Effective dating</h4>
-          <p>Versioned records and shift schedules carry an <b>effective-from</b> date, so a
-            change can be staged today and take effect on a future date without disturbing
-            what's running now.</p>
+          <h4><span class="k">5</span>System</h4>
+          <p>Contains <b>Users</b>, <b>Audit Log</b>, <b>Failure Log</b>, and <b>PLC Devices</b>. Users store the initials
+          of the operators that log into the plant floor terminals. The Audit Log and Failure Log store past data of every
+          change and failure respectively.</p>
         </div>
       </div>
 
-      <div class="note"><span class="ic">i</span><div>Use the theme toggle in the app's top
-        bar (the sun/moon icon) freely — it only changes appearance. The
-        <code>Sign In</code> button elevates you for protected actions via Active Directory;
-        routine configuration is done as the signed-in operator.</div></div>
+      <div class="note"><span class="ic">i</span><div>On the top-right of the screeb, there is the <code>Sign In</code> button,
+        which elevates you for protected actions via Active Directory. Routine configuration is done as the signed-in operator.</div></div>
     </section>
 
-    <!-- ============ LOCATION TYPE DEFINITIONS ============ -->
-    <section id="location-type-definitions">
-      <span class="eyebrow">Plant</span>
-      <h2>Location Type Definitions</h2>
-      <p class="lead">This is the schema layer <em>behind</em> the plant hierarchy. The attributes
-        a location carries aren't hard-coded — they're defined here, per ISA-95 tier and per
-        definition. It's what lets a Die Cast machine carry <code>Tonnage</code> while a terminal
-        carries an IP address, a printer, a scanner flag and a closure method — each type with
-        exactly its own fields and nothing else.</p>
-
-      <div class="note"><span class="ic">&#9881;</span><div>Open it from the <b>gear icon</b> at
-        the top-right of the <a href="#plant-hierarchy">Plant Hierarchy</a> screen. This is
-        structural configuration — set up at commissioning and rarely touched afterward; the
-        day-to-day job is filling in attribute <em>values</em> in the hierarchy itself.</div></div>
-
-      <div class="www">
-        <div><h4>What</h4><p>For each ISA-95 tier (Enterprise, Site, Area, Work Center, Cell), the
-          named <b>definitions</b> available and the <b>attribute schema</b> each one carries —
-          attribute name, data type, required, default, UOM.</p></div>
-        <div><h4>When</h4><p>At commissioning, or when a new class of equipment/terminal is
-          introduced, or an attribute must be added to a type (e.g. a new terminal setting).</p></div>
-        <div><h4>Why</h4><p>It makes the hierarchy <b>polymorphic and safe</b>: every location of a
-          given type shares one schema, so there are no free-text columns and no drift between two
-          machines of the same kind.</p></div>
-      </div>
-
-      <figure class="shot">
-        <div class="frame">
-          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
-            <span class="path">Plant Hierarchy <b>&rsaquo;</b> Location Type Definitions <b>&rsaquo;</b> Area</span></div>
-          <img src="shots/18_loctype_area.png" alt="Location Type Definitions modal on the Area tier, showing ProductionArea and SupportArea definitions, Definition Details (code, name, icon, description), and an empty attribute-definitions grid.">
-        </div>
-        <figcaption>Pick a <b>tier</b> (here Area), then a <b>definition</b> (ProductionArea /
-          SupportArea). <b>Definition Details</b> sets the display Name, Icon and Description — the
-          <b>Code</b> is fixed once created. The <b>Attribute Definitions</b> grid is the schema
-          every location of this type inherits.</figcaption>
-      </figure>
-
-      <h3>Define a type or add an attribute</h3>
-      <ol class="steps">
-        <li>Choose the <b>Location Type (ISA-95 tier)</b>, then a <b>definition</b> in that tier —
-          or click <code>+ Add</code> to create a new definition.</li>
-        <li>Set the <b>Name</b>, an <b>Icon</b> (<code>Pick…</code>) and an optional description.
-          The <b>Code</b> is the stable identifier and can't be changed later.</li>
-        <li>Under <b>Attribute Definitions</b>, click <code>+ Add Attribute</code> and set the
-          attribute's <b>name</b>, <b>data type</b> (NVARCHAR / BIT / INT / DECIMAL), <b>required</b>
-          flag, <b>default</b> and <b>UOM</b>. Reorder with the arrows.</li>
-        <li>Click <code>Save</code>. Every existing and future location of this type immediately
-          exposes the field in its Attributes grid.</li>
-      </ol>
-
-      <figure class="shot">
-        <div class="frame">
-          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
-            <span class="path">Location Type Definitions <b>&rsaquo;</b> Cell <b>&rsaquo;</b> Terminal</span></div>
-          <img src="shots/19_loctype_terminal.png" alt="Cell tier showing all equipment definitions (AssemblyStation, CNCMachine, DieCastMachine, InspectionStation, InventoryLocation, Printer, Scale, SerializedAssemblyLine, Terminal, TrimPress) with the Terminal definition selected and its attribute schema beginning with IpAddress, DefaultPrinter, HasBarcodeScanner.">
-        </div>
-        <figcaption>The <b>Cell</b> tier holds the shop-floor equipment definitions —
-          AssemblyStation, CNCMachine, DieCastMachine, InspectionStation, InventoryLocation,
-          Printer, Scale, SerializedAssemblyLine, Terminal, TrimPress. Each carries its own schema;
-          the <b>Terminal</b> definition declares seven attributes (detailed under
-          <a href="#plant-hierarchy">Plant Hierarchy → Configuring a terminal</a>).</figcaption>
-      </figure>
-
-      <figure class="shot">
-        <div class="frame">
-          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
-            <span class="path">Location Type Definitions <b>&rsaquo;</b> Cell <b>&rsaquo;</b> Printer</span></div>
-          <img src="shots/20_loctype_printer.png" alt="Printer definition on the Cell tier with two attributes: Endpoint (required, NVARCHAR) and Model (NVARCHAR).">
-        </div>
-        <figcaption>The <b>Printer</b> definition is deliberately small: a required
-          <code>Endpoint</code> (the Zebra target — <span class="mono">IP:port</span> or a
-          print-queue name) and a <code>Model</code> (which informs label-template selection).
-          Printers are placed as child locations under the terminals they serve — see
-          <a href="#plant-hierarchy">Attaching a printer</a>.</figcaption>
-      </figure>
-    </section>
-
-    <hr class="div">
 
     <!-- ============ PLANT HIERARCHY ============ -->
     <section id="plant-hierarchy">
       <span class="eyebrow">Plant</span>
       <h2>Plant Hierarchy</h2>
-      <p class="lead">The plant hierarchy is the backbone of the whole system: the ISA-95
-        tree of Enterprise &rarr; Site &rarr; Area &rarr; Line/Cell &rarr; Terminal that every
-        LOT, move, and production event is anchored to. If a machine, line, or terminal
-        isn't in this tree, the shop floor can't use it.</p>
+      <p class="lead">The plant hierarchy organizes the locations of the plant into a tree. It is organized by specificity and goes
+      from the entire Enterprise all the way down to a specific terminal. The format is: Enterprise &rarr; Site &rarr; Area &rarr; 
+      Line/Cell &rarr; Terminal.
+      </p>
 
       <div class="www">
         <div><h4>What</h4><p>Defines every physical and logical location — facilities,
@@ -407,47 +308,66 @@
           die to the machine that's running it.</p></div>
       </div>
 
+      <h3>Page Navigation</h3>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Plant <b>&rsaquo;</b> Plant Hierarchy</span></div>
           <img src="shots/01_plant_hierarchy.png" alt="Plant Hierarchy screen showing the location tree, a selected die-cast machine's details, its mounted tool panel, and the attribute grid.">
         </div>
-        <figcaption>Selecting a node loads three panels: <b>Location Details</b> (name, code,
-          sort order), <b>Mounted Tool</b>, and the type-specific <b>Attributes</b> grid —
-          here a Die Cast machine exposing Tonnage, NumberOfCavities, RefCycleTimeSec and
-          OeeTarget.</figcaption>
+        <figcaption>The UI has been divided into numbered rectangles. The description for each part of the UI can be found below.</figcaption>
       </figure>
 
-      <h3>How to add a location</h3>
-      <ol class="steps">
-        <li>In the tree, select the <b>parent</b> the new location belongs under (e.g. a Die
-          Cast area to add a machine, or a line to add a terminal).</li>
-        <li>Click <code>+ Add Location</code>. A <b>(new Location)</b> node appears under the
-          parent and the editor switches to a blank form.</li>
-        <li>Pick a <b>Type</b>, then a <b>Definition</b> — the two dropdowns cascade, and the
-          Definition is what pulls in the correct attribute schema below.</li>
-        <li>Enter <b>Name</b> and <b>Code</b>. Names carry meaning in this system (they drive
-          role and default screen), so name deliberately; the Code is the stable identifier.</li>
-        <li>Set <b>Sort Order</b> to position it among its siblings, fill any required
-          attributes, then click <code>Save</code>.</li>
-      </ol>
+      <h4>1. The Location Tree</h3>
+      <p>This is how all of the locations are organized. Some locations have a right-pointing arrow to the right of them. This can be clicked on to expand
+      the location and reveal its children. The arrow can be clicked again to collapse it. Whenever the text of the location is selected, it becomes 
+      selected and its information is shown on the right. Above the tree is the <b>search input</b>, which filters the locations to the text that input there.
+      When the tree is being filtered, the locations will not show its children.
+      </p>
+      <h4>2. Add Location Button</h4>
+      <p>Clicking this button will create a new location. It will be place in the hierarchy as a child of whatever location you currently have selected
+      when pressing the button. Keep in mind that while it's sort order can be moved around, it's parent cannot be changed.</p>
+      <h4>3. Location Details</h4>
+      <p>This is the main substance of the page. The location details will be filled in based on what location is selected in the tree. By selected a detail,
+      it can be changed. At the top there are the <b>Cancel</b>, <b>Save</b>, and <b>Deprecate</b> buttons. </p>
+      <ul>
+        <li>The <b>Cancel</b> button will discard all changes that have been made before the last save. </li>
+        <li>The <b>Save</b> button will save all of the changes that have been made, allowing you to freely change locations again.</li>
+        <li>The <b>Deprecate</b> button will soft-delete the location. It won't be visible anymore from the location tree.</li>
+      </ul>
+      <h4>4. Location Definitions Popup</h4>
+      <p>Clicking this gear icon opens the <a href="#location-type-definitions">Location Type Definitions</a> popup.</p>
+      <h4>5. Dirty Indicator</h4>
+      <p>This indicates that there has been a change to the selected location. You will be unable to switch locations until the changes have either been
+      saved or discarded. Attempting to select a different location will open an <b>Unsaved Changes</b> popup.
+      </p>
 
+      <h3>Creating a new location</h3>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Plant <b>&rsaquo;</b> Plant Hierarchy <b>&rsaquo;</b> New Location</span></div>
           <img src="shots/02_plant_add_location.png" alt="Add Location form with cascading Type and Definition dropdowns, Name, Code, Description, Sort Order, and an empty schema-driven attributes grid.">
         </div>
-        <figcaption>The <b>Type &rarr; Definition</b> cascade is required (marked&nbsp;*). The
-          attribute grid stays empty until a Definition is chosen, then fills with exactly
-          that type's fields.</figcaption>
       </figure>
+      
+      <ol class="steps">
+        <li>In the tree, select the <b>parent</b> the new location belongs under (e.g. a Die
+          Cast area to add a machine, or a line to add a terminal).</li>
+        <li>Click <code>+ Add Location</code>. A <b>(new Location)</b> node appears under the
+          parent and the editor switches to a blank form.</li>
+        <li>Pick a <b>Type</b>, then a <b>Definition</b>. Selecting a Type changes the available
+        Definition. The definition will provide the attributes below.
+        <li>Enter <b>Name</b> and <b>Code</b>. Names carry meaning in this system (they drive
+          role and default screen), so name deliberately; the Code is the stable identifier.</li>
+        <li>Set <b>Sort Order</b> to position it among its siblings, fill any required
+          attributes, then click <code>Save</code>.</li>
+      </ol>
 
       <h3>Configuring a terminal</h3>
       <p>A terminal is a shop-floor station. Its <b>Attributes</b> (the Terminal schema) are what
-        make the physical station behave correctly — which screen it boots into, which printer and
-        scanner it uses, and how it closes out work. Getting these right is essential: an
+        make the physical station behave correctly. It controls which screen it boots into, which printer and
+        scanner it uses, and how it closes out work. Getting these right is essential; An
         unconfigured terminal falls back to plant-wide defaults and misbehaves on the floor.</p>
 
       <figure class="shot">
@@ -465,17 +385,17 @@
       <div class="tbl-scroll"><table class="fields">
         <thead><tr><th>Terminal attribute</th><th>Why it matters</th></tr></thead>
         <tbody>
-          <tr><td>IpAddress</td><td>The terminal's network identity — how a session recognizes
-            <b>which</b> terminal it's running on and binds to that station's line, queue and
+          <tr><td>IpAddress</td><td>The terminal's network identity. It's how a session recognizes
+            which terminal it's running on and binds to that station's line, queue and
             devices. An unregistered or blank IP drops to the plant-wide <b>Fallback Terminal</b>,
             which breaks eligibility and shows plant-wide queues. Set it to the station's actual IP.</td></tr>
-          <tr><td>DefaultPrinter</td><td>The label printer this station prints to — point it at the
-            <a href="#plant-hierarchy">Printer entity</a> attached beneath the terminal.</td></tr>
+          <tr><td>DefaultPrinter</td><td>The label printer this station prints to. Point it at the
+            printer entity attached beneath the terminal (if it has one).</td></tr>
           <tr><td>HasBarcodeScanner</td><td>Whether the station has a scanner — drives scan-vs-manual
             entry on the floor. <em>Schema-dependent:</em> present because the terminal's type
             definition declares it.</td></tr>
           <tr><td>DefaultScreen</td><td>The Perspective view the terminal opens to at session start
-            (e.g. <span class="mono">/shop-floor/assembly-nonserialized</span>) — this effectively
+            (e.g. <span class="mono">/shop-floor/assembly-nonserialized</span>). This effectively
             sets the station's role.</td></tr>
           <tr><td>CurrentClosureMethod</td><td>For assembly-out terminals, the active pack-out mode:
             <span class="mono">ByCount</span> / <span class="mono">ByWeight</span> /
@@ -491,8 +411,7 @@
       <div class="note"><span class="ic">i</span><div><b>Not every terminal has every field.</b>
         <code>HasBarcodeScanner</code> and <code>CurrentClosureMethod</code> come from the
         <a href="#location-type-definitions">type definition</a>, so which attributes a terminal
-        exposes depends on how its definition is set up — a die-cast IN terminal and an assembly-out
-        terminal legitimately differ.</div></div>
+        exposes depends on how its definition is set up.</div></div>
 
       <h3>Attaching a printer</h3>
       <p>Any terminal with a physical label printer gets a <b>Printer location as a child</b>
@@ -536,6 +455,83 @@
 
     <hr class="div">
 
+    <!-- ============ LOCATION TYPE DEFINITIONS ============ -->
+    <section id="location-type-definitions">
+      <span class="eyebrow">Plant</span>
+      <h2>Location Type Definitions</h2>
+      <p class="lead">This is the schema layer <em>behind</em> the plant hierarchy. The attributes
+        a location carries aren't hard-coded — they're defined here, per ISA-95 tier and per
+        definition. It's what lets a Die Cast machine carry <code>Tonnage</code> while a terminal
+        carries an IP address, a printer, a scanner flag and a closure method — each type with
+        exactly its own fields and nothing else.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>For each ISA-95 tier (Enterprise, Site, Area, Work Center, Cell), the
+          named <b>definitions</b> available and the <b>attribute schema</b> each one carries —
+          attribute name, data type, required, default, UOM.</p></div>
+        <div><h4>When</h4><p>At commissioning, or when a new class of equipment/terminal is
+          introduced, or an attribute must be added to a type (e.g. a new terminal setting).</p></div>
+        <div><h4>Why</h4><p>It makes the hierarchy <b>polymorphic and safe</b>: every location of a
+          given type shares one schema, so there are no free-text columns and no drift between two
+          machines of the same kind.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Plant Hierarchy <b>&rsaquo;</b> Location Type Definitions <b>&rsaquo;</b> Area</span></div>
+          <img src="shots/18_loctype_area.png" alt="Location Type Definitions modal on the Area tier, showing ProductionArea and SupportArea definitions, Definition Details (code, name, icon, description), and an empty attribute-definitions grid.">
+        </div>
+        <figcaption>Pick a <b>tier</b> (here Area), then a <b>definition</b> (ProductionArea /
+          SupportArea). <b>Definition Details</b> sets the display Name, Icon and Description — the
+          <b>Code</b> is fixed once created. The <b>Attribute Definitions</b> grid is the schema
+          every location of this type inherits.</figcaption>
+      </figure>
+
+      <h3>Define a type or add an attribute</h3>
+      <ol class="steps">
+        <li>Choose the <b>Location Type (ISA-95 tier)</b>, then a <b>definition</b> in that tier —
+          or click <code>+ Add</code> to create a new definition.</li>
+        <li>Set the <b>Name</b>, an <b>Icon</b> (<code>Pick…</code>) and an optional description.
+          The <b>Code</b> is the stable identifier and can't be changed later.</li>
+        <li>If needed <b>Attribute Definitions</b>, click <code>+ Add Attribute</code> and set the
+          attribute's <b>name</b>, <b>data type</b> (NVARCHAR / BIT / INT / DECIMAL), <b>required</b>
+          flag, <b>default</b> and <b>UOM</b>. Reorder with the arrows.</li> These are the attributes
+          that show up when creating a location under this code.
+        <li>Click <code>Save</code>. Every existing and future location of this type immediately
+          exposes the field in its Attributes grid.</li>
+      </ol>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Location Type Definitions <b>&rsaquo;</b> Cell <b>&rsaquo;</b> Terminal</span></div>
+          <img src="shots/19_loctype_terminal.png" alt="Cell tier showing all equipment definitions (AssemblyStation, CNCMachine, DieCastMachine, InspectionStation, InventoryLocation, Printer, Scale, SerializedAssemblyLine, Terminal, TrimPress) with the Terminal definition selected and its attribute schema beginning with IpAddress, DefaultPrinter, HasBarcodeScanner.">
+        </div>
+        <figcaption>The <b>Cell</b> tier holds the shop-floor equipment definitions —
+          AssemblyStation, CNCMachine, DieCastMachine, InspectionStation, InventoryLocation,
+          Printer, Scale, SerializedAssemblyLine, Terminal, TrimPress. Each carries its own schema;
+          the <b>Terminal</b> definition declares seven attributes (detailed under
+          <a href="#plant-hierarchy">Plant Hierarchy → Configuring a terminal</a>).</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Location Type Definitions <b>&rsaquo;</b> Cell <b>&rsaquo;</b> Printer</span></div>
+          <img src="shots/20_loctype_printer.png" alt="Printer definition on the Cell tier with two attributes: Endpoint (required, NVARCHAR) and Model (NVARCHAR).">
+        </div>
+        <figcaption>The <b>Printer</b> definition is deliberately small: a required
+          <code>Endpoint</code> (the Zebra target — <span class="mono">IP:port</span> or a
+          print-queue name) and a <code>Model</code> (which informs label-template selection).
+          Printers are placed as child locations under the terminals they serve — see
+          <a href="#plant-hierarchy">Attaching a printer</a>.</figcaption>
+      </figure>
+    </section>
+
+    <hr class="div">
+
+
     <!-- ============ ITEM MASTER ============ -->
     <section id="item-master">
       <span class="eyebrow">Parts</span>
@@ -554,42 +550,85 @@
         <div><h4>Why</h4><p>Routes drive the shop-floor queue and part identity; BOMs drive
           consumption/genealogy; eligibility controls where a part is allowed to run.</p></div>
       </div>
-
+      <h3>Navigation</h3>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Parts <b>&rsaquo;</b> Item Master <b>&rsaquo;</b> Identity</span></div>
           <img src="shots/03_item_master_identity.png" alt="Item Master with a sub-assembly selected, showing part number, item type, UOM, description, Macola part number, PLC/Vision recipe ID, weights and packaging fields, and the five configuration tabs.">
         </div>
-        <figcaption>The list uses type badges — <span class="chip chip-dep">COMP</span>
-          casting/component, <span class="chip chip-pub">FG</span> finished good,
-          <span class="chip chip-draft">SA</span> sub-assembly. The identity header sets part
-          number, <b>Item Type</b>, UOM, weights, packaging (<b>Default Sub-Lot Qty</b>,
-          <b>Parts Per Basket</b>), <b>Country of Origin</b> and the <b>PLC / Vision Recipe ID</b>
-          used by machine integration.</figcaption>
+        <figcaption>The UI has been divided into numbered rectangles. The description for each part of the UI can be found below.</figcaption>
       </figure>
+      <h4>1. Item List</h4>
+      <p>Clicking on an item in this list selects the item for it to be viewed and edited. You can also filter the list to include only a certain type of item 
+        (like <b>Raw Material</b>, <b>Component</b>, etc.) There is also a search input to filter by name/description.</p>
+      <h4>2. General Details</h4>
+      <p>Contains some generic configurable details of the item.</p>
+      <ul>
+        <li><b>Part Number</b> and <b>Item Type</b> categorize the part. They are set when the part is created and can't be changed later.</li>
+        <li><b>UOM</b>, or <b>Unit of Measurement</b>, defines the measurement used to test with Quality Specs.</li>
+        <li><b>Description</b> gives the user more detail on the part to better identify it.</li>
+        <li><b>Macola Part #</b> is used for integration with Macola. It is optional.</li>
+        <li><b>PLC / Version Recipe ID</b> is used for integration with PLCs. It is also optional.</li>
+        <li><b>Unit Weight</b> and <b>Weight UOM</b> defines the weight and measurement of an individual unit in a part. This is used only for
+        some items when get measured out of production to make sure they fit standards.</li>
+        <li><b>Parts Per Basket</b> defines how many individual parts are in an item when it first gets created. This only relevant in
+        components created at a <b>die cast</b>.</li>
+        <li><b>Country of Origin</b> sets which country the item is from if the item was imported.</li>
+        <li><b>Max Parts (Per Location)</b> sets the limit on how many parts can be in a single item. This is only needed if more parts are 
+        added to the item after it is created.</li>
+      </ul>
+      <h4>3. Tabs</h4>
+      <p>There are 5 tabs here that allow for more configuration. Some tabs may not be required to configure depending on the type of part that is being edited. See below
+        for more information.
+      </p>
+      <h4>4. Add Item Button</h4>
+      <p>Clicking this button opens a popup to create a new item.</p>
+      <h4>5. Item Badges</h4>
+      <p>All items have a type badge such as <b>Component</b> or <b>Finished Good</b>. They will be displayed here. The type of the item is set when the item is first
+      created and can't be changed afterwards.</p>
 
       <h3>Add a part</h3>
+      
       <ol class="steps">
-        <li>Click <code>+ Add Item</code>, then set <b>Part Number</b>, <b>Item Type</b> and
+        <li>Click the <code>+ Add Item</code> in the top-right corner, then set <b>Part Number</b>, <b>Item Type</b> and
           <b>UOM</b> — Item Type gates which routes and areas the part may later use.</li>
         <li>Fill the identity fields (description, weights, Macola part #, recipe ID,
-          packaging) and <code>Save</code>.</li>
+          packaging) and then click <code>Create Item</code>.</li>
         <li>Configure the five tabs below as needed (they're described next). Each tab saves
           independently.</li>
       </ol>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Parts <b>&rsaquo;</b> Item Master <b>&rsaquo;</b> Identity</span></div>
+          <img src="shots/23_add_item.png" alt="Item Master Add Item Popup screen.">
+        </div>
+      </figure>
 
       <h3>Container Config</h3>
       <p>Defines how finished parts are packed out — <b>By Count</b>, <b>By Weight</b>, or
         <b>By Vision</b>. Use <code>Add By Count / By Weight / By Vision pack-out</code> to
         configure the method that applies; a part with none configured shows the "not
-        configured" placeholder. This is what the pack-out station enforces at run time.</p>
+        configured" placeholder. This is what the pack-out station enforces at run time.
+        Make sure to save changes using the save button at the top right of the section.</p>
+      <div class="note"><span class="ic">i</span><div>Items classified as <b>Sub-assembly</b> or <b>Component</b> do not need Container
+        Config to be configured</div></div>
 
       <h3>Routes <span class="chip chip-draft">Draft</span> <span class="chip chip-pub">Published</span></h3>
       <p>The route is the ordered list of operation steps a part travels — and, in this
         system, the source of truth for the shop-floor queue and terminal identity. Each step
         pairs an <b>operation category</b> (Die Cast, Trim, Machining &amp; Assembly) with the
         <b>operation template</b> that governs it.</p>
+      <p>To create a route, click <code>+ New Version</code>. This will create a draft of a new version (all old versions will be saved). 
+        From here, you can click <code>+ Add Step</code> to add a new step to the route. The attributes of all the routes can also be configured.
+        Pressing the arrows on each element in the list will reorder the steps of the route. You can also change the 
+        <b>name</b> and <b>effective from</b> date if needed. </p>
+      <p>If you want to delete the current draft, click <code>Discard Draft</code>. Click the <code>Save Draft</code> button to save changes
+        to the draft if you need to come back to it later. Once the draft is finished, click <code>Publish</code> to finalize the draft. From
+        here, this draft won't be editable and any new changes wil require creating a new draft again.</p>
+      <div class="note"><span class="ic">i</span><div>Items classified as <b>Finished Goods</b> do not need Routes to be configured.</div></div>
+
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
@@ -604,7 +643,18 @@
 
       <h3>BOMs <span class="chip chip-pub">Published</span></h3>
       <p>The bill of materials lists the child components a part consumes, with quantity per
-        and UOM. BOMs are versioned and effective-dated exactly like routes.</p>
+        and UOM. BOMs use the same draft system as Routes, meaning they are versioned and 
+        effective-dated.</p>
+      <p>To create a new BOMs draft, click <code>+ New Version</code>.
+        From here, you can click <code>+ Add Component</code> to add a new component to the BOMs. The <b>Component</b>, 
+        <b>Qty Per</b>, and <b>UOM</b> attributes of each component can also be configured.
+        Pressing the arrows on each element in the list will reorder the steps of the route. You can also change the 
+        <b>effective from</b> date if needed. </p>
+      <p>If you want to delete the current draft, click <code>Discard Draft</code>. Click the <code>Save Draft</code> button to save changes
+        to the draft if you need to come back to it later. Once the draft is finished, click <code>Publish</code> to finalize the draft. From
+        here, this draft won't be editable and any new changes wil require creating a new draft again.</p>
+      <div class="note"><span class="ic">i</span><div>Items classified as <b>Component</b> do not need BOMs to be configured.</div></div>
+      
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
@@ -616,10 +666,18 @@
           record genealogy.</figcaption>
       </figure>
 
-      <h3>Quality Specs &amp; Eligibility</h3>
-      <p>The <b>Quality Specs</b> tab links measurement specifications to the part (authored on
-        the dedicated <a href="#quality-specs">Quality Specs</a> screen). The <b>Eligibility</b>
-        tab controls <em>where</em> the part may run.</p>
+      <h3>Quality Specs</h3>
+      <p>The <b>Quality Specs</b> tab shows all of the Quality Specs that have been linked to this item. These Quality Specs define target measurements
+      for this item. Quality Specs are not created on this tab. Instead, they are defined at the <a href="#quality-specs">Quality Specs</a> screen and linked
+      to the item from there.</p>
+
+      <h4>Eligbility</h4>
+      <p>The <b>Eligibility</b> tab controls <em>where</em> the part may run. This tab does not use a draft/published system like Routes and BOMs.
+        You can add a new eligible location by clicking <code>+ Add Location</code> at the bottom. Doing this will add a new row where you can set the
+        Location to one of the terminals. These terminals are defined in <a href="#plant-hierarchy">Plant Hierarchy</a>. You can also toggle
+        <b>Consumption</b> to set if the part gets consumed at this location.
+      </p>
+
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
@@ -710,11 +768,39 @@
             <span class="path">Parts <b>&rsaquo;</b> Tools</span></div>
           <img src="shots/08_tools.png" alt="Tools screen with a die selected showing Active, Die Cast Die, Rank A, and Mounted-Machine 02 badges, identity fields, and Attributes/Cavities/Assignments tabs.">
         </div>
-        <figcaption>Status badges tell the story at a glance —
-          <span class="chip chip-pub">Active</span>, tool type, <b>Rank</b>, and a
-          <b>Mounted</b> badge naming the machine it's on. <code>Die Ranks</code> (top-right)
-          manages the rank list; <code>+ Add Die</code> creates a new tool.</figcaption>
+        <figcaption>The UI has been divided into numbered rectangles. The description for each part of the UI can be found below.</figcaption>
       </figure>
+
+      <h4>1. Tool List</h4>
+      <p>Select a tool here to begin editing it. To find a specific tool, you can use the search bar that will filter by
+        both its code and description. 
+      </p>
+      <h4>2. Add Die &amp; Die Ranks Button</h4>
+      <p>Clicking <code>+ Add Die</code> opens a popup where you can configure a new die. Clicking <code>Die Ranks</code> 
+        opens the Die Rank Popup where you can configure merge compatibility. See <b>Configuring Die Ranks</b> below 
+        for more details.
+      </p>
+      <h4>3. Status Badges</h4>
+      <p>These status badges give a quick overview of the tool. The first badge shows it's current status (Active, Under
+        Repair, Scrapped, or Retired). The second badge shows its tool type. The 3rd badge shows the machine it is mounted
+        to. Use these badges to get info of a tool at a glance without having to dig through it's configuration.
+      </p>
+      <h4>4. General Details</h4>
+      <p>Configure General Details here</p>
+      <ul>
+        <li><b>Code</b> is the identiier of the tool</li>
+        <li><b>Name</b> gives the tool a more human-readable name</li>
+        <li><b>Tool Type</b> is for when you want to track your tooling. It is currently always set to Die Cast Die. 
+          It will later have support for more types of tools, like CNC machining.</li>
+        <li><b>Die Rank</b> is for setting merge compatibility with other tools. This can be configured on the
+        <a href="#configuring-die-ranks">Die Ranks</a> popup.</li>
+        <li><b>Status</b> defines how the tool is doing right now. It can be active, under repair, scrapped,
+          or retired.</li>
+      </ul>
+      <h4>5. Tabs</h4>
+      <p>More options for configuration can be found here. This includes creating your own custom attributes, 
+        setting cavities, or assigning the tool to a mount.
+      </p>
 
       <h3>Add or maintain a die</h3>
       <ol class="steps">
@@ -727,7 +813,51 @@
           <code>Retire</code> when a die leaves service. Filter the list with the status
           dropdown.</li>
       </ol>
+
+      <h3 id="configuring-die-ranks">Configuring Die Ranks</h3>
+      <p>By Clicking the <code>Die Ranks</code> button in the top-right corner, you can access the <b>Die Ranks</b> popup which allows
+      you to create Die Ranks and configure Merge Compatibility. Create a new Die Rank by clicking <code>+ Add Rank</code> and give it
+      a code (must be unique) and a name.</p>
+      <p>When there are multiple Die Ranks, you can configure how they merge with each other using the table in the center. Clicking
+        on a cell switches its compatibility. The gray squares are uneditable because they mirror the top half of the grid.
+      </p>
     </section>
+
+    <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Parts <b>&rsaquo;</b> Tools</span></div>
+          <img src="shots/24_die_ranks.png" alt="Die Rank Compatibility popup screen.">
+        </div>
+      </figure>
+
+      <h3>Creating New Attributes</h3>
+      <p>The <b>Attributes</b> tab is where you can create your own custom attributes for Tools. When you
+        have a tool selected, navigate to the Attributes tab. At the bottom, you can click 
+        <code>+ Add</code> to add a new attribute. This will create a new row where you can set
+        a pre-defined attribute and a value.
+      </p>
+      <p>If you don't have the attribute already defined, you can create a new one by pressing
+        <code>+ New definition</code> in the header of the attributes tab. This will open a popup
+        where you can configure a new attribute.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Parts <b>&rsaquo;</b> Tools</span></div>
+          <img src="shots/25_attribute_definition.png" alt="New Attribute Definition Popup.">
+        </div>
+      </figure>
+      <p>Here there are a few values you must configure.</p>
+      <ul>
+        <li><b>Code</b> is the internal name for the attribute.</li>
+        <li><b>Name</b> is the name of the attribute that admins and operators will read</li>
+        <li><b>Data Type</b> is the type of data that will be stored onto the attribute. </li>
+        <li><b>Required</b> sets whether the attribute itself is required or not.</li>
+      </ul>
+      <p>When you hit create, the definition you created will now be available as an option
+        for the tool. Once you are done configuring attributes, remember to click save.
+      </p>
 
     <hr class="div">
 
@@ -785,7 +915,7 @@
 
       <div class="www">
         <div><h4>What</h4><p>A flat, area-scoped list of numbered defect reasons
-          (Soldering, Flash, Short Shot, Bent Pin&hellip;), each with an
+          (Soldering, Flash, Short Shot, Bent Pin, etc.), each with an
           <b>excused</b> flag.</p></div>
         <div><h4>When</h4><p>When a new defect mode needs tracking, or an existing code's
           wording, area, or excused status changes.</p></div>
@@ -898,11 +1028,12 @@
     <!-- ============ USERS ============ -->
     <section id="users">
       <span class="eyebrow">System</span>
-      <h2>Users &amp; Operators</h2>
-      <p class="lead">This screen is the registry of shop-floor <b>operators</b> — identified by
-        initials for fast attribution at the terminal. It is deliberately not a security system:
-        protected actions still elevate through Active Directory; these records simply say
-        <em>who did it</em>.</p>
+      <h2>Users</h2>
+      <p class="lead">This is where the login for shop-floor <b>operators</b> are created and managed. Operators
+        login in at the terminal with just their initials. There is no password because it's not
+        meant to be a security system. It is simply to track who did what. Every operator has their own unique
+        initials because it is meant to be their unique identifier.
+      </p>
 
       <div class="www">
         <div><h4>What</h4><p>A list of operators, each with <b>initials</b> and a
@@ -960,16 +1091,38 @@
           is it, and it's written automatically on every save.</p></div>
       </div>
 
+      <h3>Using the Filter</h3>
+      <p>You can use the filter on the left-hand side to help find the audit log that you want to
+        find. You can sort by the <b>Entity Type</b> which how you filter from everything in the
+       Configuration Tool to just <b>Routes</b>, <b>Locations</b>, <b>Tools</b>, etc.
+      </p>
+      <p>Sorting by severity can show only <b>info</b>, <b>warning</b>, <b>error</b>, or <b>critical</b> 
+        types of logs. Info logs show when a change has been made. Warning, error, and critical logs show 
+        when there has been an error with integration. For errors with procedural changes, check the 
+        <a href="#failure-log">Failure Log</a>. You can also find logs within a specific date range using 
+        <b>Start Date</b> and <b>End Date</b>. Using the search input, it is also possible to just search 
+        for specific strings of text within the audit log.</p>
+
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">System <b>&rsaquo;</b> Audit Log</span></div>
           <img src="shots/14_audit_log.png" alt="Audit Log table with timestamp, user, entity type, event, severity, a changes diff column, and an activity description, plus entity/severity/date filters.">
         </div>
-        <figcaption>Filter by <b>Entity Type</b>, <b>Severity</b> and a <b>date range</b>, then
-          <code>Apply</code>. The <b>Changes</b> column shows the field-level diff
-          (old&nbsp;&rarr;&nbsp;new); <b>Activity</b> gives the plain-English summary. All
-          timestamps display in Eastern time.</figcaption>
+      </figure>
+      <h3>Viewing Change Details</h3>
+      <p>You can access more details about a specific change by double-clicking on its row in the table.
+        Doing this will open a popup that will allow you to compare the old and new value, as well as see
+        the full list of changes that this audit log recorded.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">System <b>&rsaquo;</b> Audit Log</span></div>
+          <img src="shots/24_audit_change_detail.png" alt="Audit Log Change Detail Popup.">
+        </div>
+        <figcaption>A new quality spec was created here. The <b>Old Value</b> is empty
+        because it did not exist yet.</figcaption>
       </figure>
     </section>
 
@@ -980,12 +1133,13 @@
       <span class="eyebrow">System</span>
       <h2>Failure Log</h2>
       <p class="lead">The Failure Log surfaces actions the system <em>rejected</em> — a move
-        blocked, a duplicate LOT name, a FIFO queue that came up short. It's the first place to
-        look when the floor reports "it wouldn't let me."</p>
+        blocked, a duplicate LOT name, a FIFO queue that came up short. Keep in mind that
+        only <em>procedural changes</em> are stored here. For errors with integration, check
+        the Audit Log.</p>
 
       <div class="www">
         <div><h4>What</h4><p>A read-only feed of rejected operations with the failing
-          procedure, the reason, and who hit it — plus 7-day summaries of the top reasons and
+          procedure, the reason, and who hit it, and plus 7-day summaries of the top reasons and
           top failing procedures.</p></div>
         <div><h4>When</h4><p>When diagnosing a shop-floor block, a recurring rejection, or a
           data problem behind a stuck LOT.</p></div>

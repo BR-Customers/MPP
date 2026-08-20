@@ -2,26 +2,26 @@
   "custom": {
     "editDraft": {
       "meta": {
+        "daysMask": 0,
+        "description": "",
+        "effectiveFrom": "",
+        "effectiveFromMillis": null,
+        "endTime": "",
         "id": null,
         "name": "",
-        "description": "",
-        "daysMask": 0,
-        "startTime": "",
-        "endTime": "",
-        "effectiveFrom": "",
-        "effectiveFromMillis": null
+        "startTime": ""
       }
     },
     "selected": {
       "meta": {
+        "daysMask": 0,
+        "description": "",
+        "effectiveFrom": "",
+        "effectiveFromMillis": null,
+        "endTime": "",
         "id": null,
         "name": "",
-        "description": "",
-        "daysMask": 0,
-        "startTime": "",
-        "endTime": "",
-        "effectiveFrom": "",
-        "effectiveFromMillis": null
+        "startTime": ""
       }
     }
   },
@@ -33,7 +33,7 @@
     "params.editId": {
       "onChange": {
         "enabled": true,
-        "script": "\tnewId = currentValue.value\n\tif newId is None:\n\t\tmeta = BlueRidge.Oee.ShiftSchedule.emptyMeta()\n\telse:\n\t\tmeta = BlueRidge.Oee.ShiftSchedule.loadMeta(newId)\n\tself.view.custom.selected = {\"meta\": meta}\n\tself.view.custom.editDraft = {\"meta\": dict(meta)}"
+        "script": "\tnewId \u003d currentValue.value\n\tif newId is None:\n\t\tmeta \u003d BlueRidge.Oee.ShiftSchedule.emptyMeta()\n\telse:\n\t\tmeta \u003d BlueRidge.Oee.ShiftSchedule.loadMeta(newId)\n\tself.view.custom.selected \u003d {\"meta\": meta}\n\tself.view.custom.editDraft \u003d {\"meta\": dict(meta)}"
       },
       "paramDirection": "input",
       "persistent": true
@@ -61,7 +61,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.params.mode} = \"create\", \"Add Shift Schedule\", \"Edit Shift Schedule\")"
+                    "expression": "if({view.params.mode} \u003d \"create\", \"Add Shift Schedule\", \"Edit Shift Schedule\")"
                   },
                   "type": "expr"
                 }
@@ -93,7 +93,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                    "expression": "if({view.custom.editDraft} !\u003d {view.custom.selected}, \"● Unsaved changes\", \"\")"
                   },
                   "type": "expr"
                 }
@@ -101,7 +101,7 @@
             },
             "props": {
               "style": {
-                "color": "var(--mpp-accent-60)",
+                "color": "var(--mpp-accent)",
                 "fontSize": "11px",
                 "fontStyle": "italic"
               }
@@ -282,7 +282,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tmeta = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] = int(meta.get(\"daysMask\") or 0) ^ (1 << 0)\n\tself.view.custom.editDraft = {\"meta\": meta}"
+                            "script": "\tmeta \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] \u003d int(meta.get(\"daysMask\") or 0) ^ (1 \u003c\u003c 0)\n\tself.view.custom.editDraft \u003d {\"meta\": meta}"
                           },
                           "scope": "G",
                           "type": "script"
@@ -299,7 +299,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 0), 'var(--mpp-accent-50)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 0), \u0027var(--mpp-accent-50)\u0027, \u0027transparent\u0027)"
                           },
                           "type": "expr"
                         }
@@ -307,7 +307,7 @@
                       "props.style.color": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 0), '#ffffff', 'var(--mpp-text-secondary)')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 0), \u0027#ffffff\u0027, \u0027var(--mpp-text-secondary)\u0027)"
                           },
                           "type": "expr"
                         }
@@ -331,7 +331,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tmeta = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] = int(meta.get(\"daysMask\") or 0) ^ (1 << 1)\n\tself.view.custom.editDraft = {\"meta\": meta}"
+                            "script": "\tmeta \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] \u003d int(meta.get(\"daysMask\") or 0) ^ (1 \u003c\u003c 1)\n\tself.view.custom.editDraft \u003d {\"meta\": meta}"
                           },
                           "scope": "G",
                           "type": "script"
@@ -348,7 +348,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 1), 'var(--mpp-accent-50)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 1), \u0027var(--mpp-accent-50)\u0027, \u0027transparent\u0027)"
                           },
                           "type": "expr"
                         }
@@ -356,7 +356,7 @@
                       "props.style.color": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 1), '#ffffff', 'var(--mpp-text-secondary)')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 1), \u0027#ffffff\u0027, \u0027var(--mpp-text-secondary)\u0027)"
                           },
                           "type": "expr"
                         }
@@ -380,7 +380,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tmeta = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] = int(meta.get(\"daysMask\") or 0) ^ (1 << 2)\n\tself.view.custom.editDraft = {\"meta\": meta}"
+                            "script": "\tmeta \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] \u003d int(meta.get(\"daysMask\") or 0) ^ (1 \u003c\u003c 2)\n\tself.view.custom.editDraft \u003d {\"meta\": meta}"
                           },
                           "scope": "G",
                           "type": "script"
@@ -397,7 +397,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 2), 'var(--mpp-accent-50)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 2), \u0027var(--mpp-accent-50)\u0027, \u0027transparent\u0027)"
                           },
                           "type": "expr"
                         }
@@ -405,7 +405,7 @@
                       "props.style.color": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 2), '#ffffff', 'var(--mpp-text-secondary)')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 2), \u0027#ffffff\u0027, \u0027var(--mpp-text-secondary)\u0027)"
                           },
                           "type": "expr"
                         }
@@ -429,7 +429,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tmeta = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] = int(meta.get(\"daysMask\") or 0) ^ (1 << 3)\n\tself.view.custom.editDraft = {\"meta\": meta}"
+                            "script": "\tmeta \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] \u003d int(meta.get(\"daysMask\") or 0) ^ (1 \u003c\u003c 3)\n\tself.view.custom.editDraft \u003d {\"meta\": meta}"
                           },
                           "scope": "G",
                           "type": "script"
@@ -446,7 +446,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 3), 'var(--mpp-accent-50)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 3), \u0027var(--mpp-accent-50)\u0027, \u0027transparent\u0027)"
                           },
                           "type": "expr"
                         }
@@ -454,7 +454,7 @@
                       "props.style.color": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 3), '#ffffff', 'var(--mpp-text-secondary)')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 3), \u0027#ffffff\u0027, \u0027var(--mpp-text-secondary)\u0027)"
                           },
                           "type": "expr"
                         }
@@ -478,7 +478,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tmeta = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] = int(meta.get(\"daysMask\") or 0) ^ (1 << 4)\n\tself.view.custom.editDraft = {\"meta\": meta}"
+                            "script": "\tmeta \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] \u003d int(meta.get(\"daysMask\") or 0) ^ (1 \u003c\u003c 4)\n\tself.view.custom.editDraft \u003d {\"meta\": meta}"
                           },
                           "scope": "G",
                           "type": "script"
@@ -495,7 +495,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 4), 'var(--mpp-accent-50)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 4), \u0027var(--mpp-accent-50)\u0027, \u0027transparent\u0027)"
                           },
                           "type": "expr"
                         }
@@ -503,7 +503,7 @@
                       "props.style.color": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 4), '#ffffff', 'var(--mpp-text-secondary)')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 4), \u0027#ffffff\u0027, \u0027var(--mpp-text-secondary)\u0027)"
                           },
                           "type": "expr"
                         }
@@ -527,7 +527,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tmeta = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] = int(meta.get(\"daysMask\") or 0) ^ (1 << 5)\n\tself.view.custom.editDraft = {\"meta\": meta}"
+                            "script": "\tmeta \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] \u003d int(meta.get(\"daysMask\") or 0) ^ (1 \u003c\u003c 5)\n\tself.view.custom.editDraft \u003d {\"meta\": meta}"
                           },
                           "scope": "G",
                           "type": "script"
@@ -544,7 +544,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 5), 'var(--mpp-accent-50)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 5), \u0027var(--mpp-accent-50)\u0027, \u0027transparent\u0027)"
                           },
                           "type": "expr"
                         }
@@ -552,7 +552,7 @@
                       "props.style.color": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 5), '#ffffff', 'var(--mpp-text-secondary)')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 5), \u0027#ffffff\u0027, \u0027var(--mpp-text-secondary)\u0027)"
                           },
                           "type": "expr"
                         }
@@ -576,7 +576,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tmeta = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] = int(meta.get(\"daysMask\") or 0) ^ (1 << 6)\n\tself.view.custom.editDraft = {\"meta\": meta}"
+                            "script": "\tmeta \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\")) or {})\n\tmeta[\"daysMask\"] \u003d int(meta.get(\"daysMask\") or 0) ^ (1 \u003c\u003c 6)\n\tself.view.custom.editDraft \u003d {\"meta\": meta}"
                           },
                           "scope": "G",
                           "type": "script"
@@ -593,7 +593,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 6), 'var(--mpp-accent-50)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 6), \u0027var(--mpp-accent-50)\u0027, \u0027transparent\u0027)"
                           },
                           "type": "expr"
                         }
@@ -601,7 +601,7 @@
                       "props.style.color": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 6), '#ffffff', 'var(--mpp-text-secondary)')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 6), \u0027#ffffff\u0027, \u0027var(--mpp-text-secondary)\u0027)"
                           },
                           "type": "expr"
                         }
@@ -626,7 +626,8 @@
                 },
                 "props": {
                   "style": {
-                    "gap": "6px"
+                    "gap": "6px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -638,7 +639,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -810,7 +812,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -839,7 +842,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tresult = BlueRidge.Oee.ShiftSchedule.deprecate(self.view.params.editId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"shiftSchedulesRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-schedule-editor\")"
+                    "script": "\tresult \u003d BlueRidge.Oee.ShiftSchedule.deprecate(self.view.params.editId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"shiftSchedulesRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-shift-schedule-editor\")"
                   },
                   "scope": "G",
                   "type": "script"
@@ -856,7 +859,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.params.mode} = \"update\""
+                    "expression": "{view.params.mode} \u003d \"update\""
                   },
                   "type": "expr"
                 }
@@ -888,6 +891,7 @@
                   "name": "CancelButton"
                 },
                 "position": {
+                  "basis": "62px",
                   "shrink": 0
                 },
                 "props": {
@@ -914,6 +918,7 @@
                   "name": "SaveButton"
                 },
                 "position": {
+                  "basis": "51px",
                   "shrink": 0
                 },
                 "props": {
@@ -931,7 +936,8 @@
             "props": {
               "alignItems": "center",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -976,12 +982,12 @@
         {
           "name": "doSave",
           "params": [],
-          "script": "\timport re\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\", {})) or {}\n\tname = (draft.get(\"name\") or \"\").strip()\n\tmask = int(draft.get(\"daysMask\") or 0)\n\tst = (draft.get(\"startTime\") or \"\").strip()\n\tet = (draft.get(\"endTime\") or \"\").strip()\n\tmillis = draft.get(\"effectiveFromMillis\")\n\tpat = re.compile(\"^([01]?[0-9]|2[0-3]):[0-5][0-9]$\")\n\tif not name or mask == 0 or not pat.match(st) or not pat.match(et) or millis is None:\n\t\tBlueRidge.Common.Notify.toast(\"Cannot save\", \"Name, at least one day, valid HH:MM start/end times, and an effective date are required.\", \"warning\")\n\t\treturn\n\tif isinstance(millis, (int, long, float)):\n\t\tmillis = system.date.fromMillis(long(millis))\n\teff = system.date.format(millis, \"yyyy-MM-dd\")\n\tmeta = {\n\t\t\"id\": draft.get(\"id\"),\n\t\t\"name\": name,\n\t\t\"description\": (draft.get(\"description\") or \"\").strip(),\n\t\t\"daysOfWeekBitmask\": mask,\n\t\t\"startTime\": st,\n\t\t\"endTime\": et,\n\t\t\"effectiveFrom\": eff\n\t}\n\tif self.view.params.mode == \"create\":\n\t\tresult = BlueRidge.Oee.ShiftSchedule.add(meta)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule created\")\n\telse:\n\t\tresult = BlueRidge.Oee.ShiftSchedule.update(meta)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"shiftSchedulesRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-schedule-editor\")"
+          "script": "\timport re\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\", {})) or {}\n\tname \u003d (draft.get(\"name\") or \"\").strip()\n\tmask \u003d int(draft.get(\"daysMask\") or 0)\n\tst \u003d (draft.get(\"startTime\") or \"\").strip()\n\tet \u003d (draft.get(\"endTime\") or \"\").strip()\n\tmillis \u003d draft.get(\"effectiveFromMillis\")\n\tpat \u003d re.compile(\"^([01]?[0-9]|2[0-3]):[0-5][0-9]$\")\n\tif not name or mask \u003d\u003d 0 or not pat.match(st) or not pat.match(et) or millis is None:\n\t\tBlueRidge.Common.Notify.toast(\"Cannot save\", \"Name, at least one day, valid HH:MM start/end times, and an effective date are required.\", \"warning\")\n\t\treturn\n\tif isinstance(millis, (int, long, float)):\n\t\tmillis \u003d system.date.fromMillis(long(millis))\n\teff \u003d system.date.format(millis, \"yyyy-MM-dd\")\n\tmeta \u003d {\n\t\t\"id\": draft.get(\"id\"),\n\t\t\"name\": name,\n\t\t\"description\": (draft.get(\"description\") or \"\").strip(),\n\t\t\"daysOfWeekBitmask\": mask,\n\t\t\"startTime\": st,\n\t\t\"endTime\": et,\n\t\t\"effectiveFrom\": eff\n\t}\n\tif self.view.params.mode \u003d\u003d \"create\":\n\t\tresult \u003d BlueRidge.Oee.ShiftSchedule.add(meta)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule created\")\n\telse:\n\t\tresult \u003d BlueRidge.Oee.ShiftSchedule.update(meta)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"shiftSchedulesRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-shift-schedule-editor\")"
         },
         {
           "name": "handleClose",
           "params": [],
-          "script": "\tif str(self.view.custom.editDraft) == str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-schedule-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid=\"mpp-confirm-unsaved\",\n\t\t\tview=\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this shift schedule. Save before closing?\"\n\t\t\t}\n\t\t)"
+          "script": "\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-shift-schedule-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this shift schedule. Save before closing?\"\n\t\t\t}\n\t\t)"
         }
       ],
       "extensionFunctions": null,
@@ -989,7 +995,7 @@
         {
           "messageType": "confirmUnsavedResult",
           "pageScope": true,
-          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"save\":\n\t\tself.doSave()\n\telif action == \"discard\":\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-schedule-editor\")",
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tself.doSave()\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-shift-schedule-editor\")",
           "sessionScope": false,
           "viewScope": false
         }

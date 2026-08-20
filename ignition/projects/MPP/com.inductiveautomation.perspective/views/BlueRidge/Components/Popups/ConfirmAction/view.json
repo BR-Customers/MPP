@@ -1,73 +1,191 @@
 {
   "custom": {},
   "params": {
-    "title": "Confirm",
-    "message": "Are you sure?",
     "confirmText": "Confirm",
     "danger": false,
+    "message": "Are you sure?",
+    "popupId": "mpp-confirm-action",
     "replyMessage": "confirmActionResult",
-    "popupId": "mpp-confirm-action"
+    "title": "Confirm"
   },
   "propConfig": {
-    "params.title": { "paramDirection": "input", "persistent": true },
-    "params.message": { "paramDirection": "input", "persistent": true },
-    "params.confirmText": { "paramDirection": "input", "persistent": true },
-    "params.danger": { "paramDirection": "input", "persistent": true },
-    "params.replyMessage": { "paramDirection": "input", "persistent": true },
-    "params.popupId": { "paramDirection": "input", "persistent": true }
+    "params.confirmText": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.danger": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.message": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.title": {
+      "paramDirection": "input",
+      "persistent": true
+    }
   },
   "props": {
-    "defaultSize": { "height": 300, "width": 560 }
+    "defaultSize": {
+      "height": 300,
+      "width": 560
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": { "direction": "column", "style": { "classes": "surface-card", "gap": "16px", "padding": "24px" } },
     "children": [
       {
-        "type": "ia.display.label",
-        "meta": { "name": "Title" },
-        "props": { "style": { "fontSize": "20px", "fontWeight": 700 } },
-        "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.params.title" } } } }
+        "meta": {
+          "name": "Title"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.title"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "20px",
+            "fontWeight": 700
+          }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.display.label",
-        "meta": { "name": "Message" },
-        "position": { "grow": 1 },
-        "props": { "style": { "classes": "pf-kpi-sub" } },
-        "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.params.message" } } } }
+        "meta": {
+          "name": "Message"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.message"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "ButtonRow" },
-        "props": { "direction": "row", "alignItems": "center", "wrap": "wrap", "style": { "gap": "10px" } },
         "children": [
           {
-            "type": "ia.input.button",
-            "meta": { "name": "CancelButton" },
-            "props": { "text": "Cancel", "style": { "classes": "pf-btn pf-btn-secondary pf-btn-large" } },
-            "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G",
-              "config": { "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"cancel\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)" } } } }
-          },
-          { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "ConfirmButton" },
-            "propConfig": {
-              "props.text": { "binding": { "type": "property", "config": { "path": "view.params.confirmText" } } },
-              "props.style.classes": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if({view.params.danger}, \"pf-btn pf-btn-danger pf-btn-large\", \"pf-btn pf-btn-primary pf-btn-large\")" }
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"cancel\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
               }
             },
-            "props": { "text": "Confirm", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
-            "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G",
-              "config": { "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"confirm\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)" } } } }
+            "meta": {
+              "name": "CancelButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary pf-btn-large"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"confirm\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ConfirmButton"
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.params.danger}, \"pf-btn pf-btn-danger pf-btn-large\", \"pf-btn pf-btn-primary pf-btn-large\")"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.confirmText"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {}
+            },
+            "type": "ia.input.button"
           }
-        ]
+        ],
+        "meta": {
+          "name": "ButtonRow"
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "10px",
+            "overflow": "visible"
+          },
+          "wrap": "wrap"
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "surface-card",
+        "gap": "16px",
+        "padding": "24px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

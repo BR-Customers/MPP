@@ -2,9 +2,8 @@
   "custom": {
     "activeCategory": "",
     "activeScreen": "BlueRidge/Views/Landing",
-    "appUserId": null,
     "navPanelOpen": false,
-    "qsIncomingSpecId": 0,
+    "qsIncomingSpecId": "",
     "toastInstances": []
   },
   "propConfig": {
@@ -70,10 +69,7 @@
     }
   },
   "props": {
-    "address": "127.0.0.1",
-    "appBar": {
-      "togglePosition": "hidden"
-    },
+    "address": "[0:0:0:0:0:0:0:1]",
     "device": {},
     "geolocation": {},
     "locale": "en-US",

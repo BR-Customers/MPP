@@ -95,7 +95,17 @@ Confirm these against the code during implementation (not assumptions to bake in
 - That `Lot_Split`'s suffix + locking pattern is transplantable as-is into `MachiningOut_Mint` (same `ROWLOCK/UPDLOCK` discipline; INSERT-EXEC safety preserved — all rejections before `BEGIN TRANSACTION`).
 
 ## 8. Open items
-- **LTT checksum rule** — Jacques to confirm the exact check-digit/checksum algorithm for the 9-digit external LTT. Until then `ufn_IsValidExternalLtt` enforces the 9-digit-numeric rule with a checksum stub; the real rule is a one-function edit.
+
+> **AMENDMENT 2026-08-19 (backlog 5.1).** The "exactly 9 digits" rule recorded throughout this
+> spec was taken from a verbal note and is **wrong** — MPP's pre-printed LTT stock is **8 digits**.
+> `Lots.ufn_IsValidExternalLtt` now accepts **8 or 9** numeric digits. 9 stays legal because every
+> LTT already minted in Dev/Test (and every SQL fixture) is 9 digits and `Lot.LotName` is the LOT's
+> permanent identity. **Still open:** whether 8 is the *only* legal length going forward — if MPP
+> confirms it is, narrowing is a one-line edit in that function plus a fixture sweep. Do not confuse
+> this with the **AIM shipper serial**, which is genuinely 9-digit zero-padded and confirmed against
+> the live service (`notes/2026-07-28_aim-interface-contract.md`).
+
+- **LTT checksum rule** — Jacques to confirm the exact check-digit/checksum algorithm for the external LTT. Until then `ufn_IsValidExternalLtt` enforces the 8-or-9-digit-numeric rule with a checksum stub; the real rule is a one-function edit.
 
 ## 9. Blast-radius reference (unchanged consumers)
 These all key on `LotName` and continue to work because the LTT *is* `LotName` — no changes required, listed to document why the single-column model is safe:

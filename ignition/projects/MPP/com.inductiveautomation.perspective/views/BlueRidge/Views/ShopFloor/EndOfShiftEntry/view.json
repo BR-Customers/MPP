@@ -1,90 +1,221 @@
 {
   "custom": {
-    "filter": { "cellLocationId": null },
-    "shift": { "Id": null, "ShiftScheduleId": null, "ScheduleName": "", "ActualStart": null, "ActualEnd": null, "Remarks": "", "CreatedAt": null },
-    "selectedBreaks": [],
-    "breakFilter": { "areaLocationId": null, "downtimeReasonTypeId": null, "includeDeprecated": false, "searchText": "" }
+    "breakFilter": {
+      "areaLocationId": null,
+      "downtimeReasonTypeId": null,
+      "includeDeprecated": false,
+      "searchText": ""
+    },
+    "filter": {
+      "cellLocationId": null
+    },
+    "selectedBreaks": []
   },
   "params": {},
   "propConfig": {
-    "custom.shift": {
-      "binding": { "config": { "expression": "runScript(\"BlueRidge.Oee.Shift.getOpenOrEmpty\", 0)" }, "type": "expr" }
-    },
-    "custom.cellOptions": {
+    "custom.breakItems": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 0, {view.custom.breakFilter})"
+        },
         "transforms": [
-          { "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]", "type": "script" }
+          {
+            "code": "\treturn [{\"breakId\": r.get(\"Id\"), \"label\": r.get(\"Code\")} for r in (value or []) if r.get(\"ReasonTypeName\") \u003d\u003d \"Break\"]",
+            "type": "script"
+          }
         ],
         "type": "expr"
       }
     },
-    "custom.breakItems": {
+    "custom.cellOptions": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 0, {view.custom.breakFilter})" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")"
+        },
         "transforms": [
-          { "code": "\treturn [{\"breakId\": r.get(\"Id\"), \"label\": r.get(\"Code\")} for r in (value or []) if r.get(\"ReasonTypeName\") == \"Break\"]", "type": "script" }
+          {
+            "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]",
+            "type": "script"
+          }
         ],
+        "type": "expr"
+      }
+    },
+    "custom.shift": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Shift.getOpenOrEmpty\", 0)"
+        },
         "type": "expr"
       }
     }
   },
   "props": {
-    "defaultSize": { "height": 800, "width": 1280 }
+    "defaultSize": {
+      "width": 1280
+    }
   },
   "root": {
     "children": [
       {
-        "meta": { "name": "Header" },
-        "position": { "shrink": 0 },
-        "props": { "text": "End of Shift", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } },
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "fontSize": "22px",
+            "fontWeight": "700",
+            "padding": "16px"
+          },
+          "text": "End of Shift"
+        },
         "type": "ia.display.label"
       },
       {
         "children": [
           {
-            "meta": { "name": "ShiftStatus" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "props.text": { "binding": { "config": { "expression": "if(isNull({view.custom.shift.Id}), 'No active shift — start a shift first', 'Active shift #' + toStr({view.custom.shift.Id}))" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if(isNull({view.custom.shift.Id}), 'var(--pf-status-warn-fg)', 'var(--mpp-text-primary)')" }, "type": "expr" } }
+            "meta": {
+              "name": "ShiftStatus"
             },
-            "props": { "style": { "fontWeight": "600" } },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.color": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({view.custom.shift.Id}), \u0027var(--pf-status-warn-fg)\u0027, \u0027var(--mpp-text-primary)\u0027)"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({view.custom.shift.Id}), \u0027No active shift — start a shift first\u0027, \u0027Active shift #\u0027 + toStr({view.custom.shift.Id}))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontWeight": "600"
+              }
+            },
             "type": "ia.display.label"
           },
           {
             "children": [
-              { "meta": { "name": "MachineLabel" }, "props": { "text": "Cell", "style": { "classes": "pf-field-label" } }, "type": "ia.display.label" },
               {
-                "meta": { "name": "CellSelect" },
-                "propConfig": {
-                  "props.options": { "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" } },
-                  "props.value": { "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" } }
+                "meta": {
+                  "name": "MachineLabel"
                 },
-                "props": { "placeholder": "Select cell", "style": { "classes": "pf-field-input" } },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Cell"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "CellSelect"
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.cellOptions"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.filter.cellLocationId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select cell",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
                 "type": "ia.input.dropdown"
               }
             ],
-            "meta": { "name": "MachineField" },
-            "position": { "basis": "320px", "shrink": 0 },
-            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
-            "type": "ia.container.flex"
-          },
-          { "meta": { "name": "BreaksLabel" }, "position": { "shrink": 0 }, "props": { "text": "Breaks taken (tap each break you took):", "style": { "classes": "pf-field-label" } }, "type": "ia.display.label" },
-          {
-            "meta": { "name": "BreakToggles" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "props.instances": { "binding": { "config": { "path": "view.custom.breakItems" }, "type": "property" } }
+            "meta": {
+              "name": "MachineField"
+            },
+            "position": {
+              "basis": "320px",
+              "shrink": 0
             },
             "props": {
-              "direction": "row",
-              "wrap": "wrap",
-              "elementPosition": { "basis": "180px", "shrink": 0 },
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "BreaksLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "Breaks taken (tap each break you took):"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "BreakToggles"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.breakItems"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "elementPosition": {
+                "basis": "180px",
+                "shrink": 0
+              },
               "path": "BlueRidge/Components/PlantFloor/EndOfShift/BreakToggle",
-              "style": { "gap": "12px" },
+              "style": {
+                "gap": "12px"
+              },
               "useDefaultViewHeight": false,
-              "useDefaultViewWidth": false
+              "useDefaultViewWidth": false,
+              "wrap": "wrap"
             },
             "type": "ia.display.flex-repeater"
           },
@@ -92,28 +223,56 @@
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
                   "config": {
-                    "script": "\tshift = self.view.custom.shift\n\tcellId = self.view.custom.filter.cellLocationId\n\tif not shift or shift.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No active shift to submit against.\"}, \"End of shift\")\n\t\treturn\n\tif cellId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell first.\"}, \"End of shift\")\n\t\treturn\n\tresult = BlueRidge.Oee.DowntimeEvent.submitEndOfShift(shift[\"Id\"], cellId, system.util.jsonEncode(self.view.custom.selectedBreaks or []))\n\tBlueRidge.Common.Ui.notifyResult(result, \"End-of-shift submitted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedBreaks = []\n\t\tsystem.perspective.sendMessage(\"breakReset\", scope=\"page\")"
-                  }
+                    "script": "\tshift \u003d self.view.custom.shift\n\tcellId \u003d self.view.custom.filter.cellLocationId\n\tif not shift or shift.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No active shift to submit against.\"}, \"End of shift\")\n\t\treturn\n\tif cellId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell first.\"}, \"End of shift\")\n\t\treturn\n\tresult \u003d BlueRidge.Oee.DowntimeEvent.submitEndOfShift(shift[\"Id\"], cellId, system.util.jsonEncode(self.view.custom.selectedBreaks or []))\n\tBlueRidge.Common.Ui.notifyResult(result, \"End-of-shift submitted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedBreaks \u003d []\n\t\tsystem.perspective.sendMessage(\"breakReset\", scope\u003d\"page\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
               }
             },
-            "meta": { "name": "SubmitButton" },
-            "position": { "shrink": 0 },
-            "props": { "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" }, "text": "Submit Shift Time Entry" },
+            "meta": {
+              "name": "SubmitButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary pf-btn-large"
+              },
+              "text": "Submit Shift Time Entry"
+            },
             "type": "ia.input.button"
           }
         ],
-        "meta": { "name": "Body" },
-        "position": { "grow": 1 },
-        "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "margin": "16px", "padding": "16px" } },
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "16px",
+            "margin": "16px",
+            "padding": "16px"
+          }
+        },
         "type": "ia.container.flex"
       }
     ],
-    "meta": { "name": "root" },
-    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas"
+      }
+    },
     "scripts": {
       "customMethods": [],
       "extensionFunctions": null,
@@ -121,7 +280,7 @@
         {
           "messageType": "breakToggled",
           "pageScope": true,
-          "script": "\tbid = payload[\"breakId\"]\n\ton = payload[\"on\"]\n\tsel = list(self.view.custom.selectedBreaks or [])\n\tif on and bid not in sel:\n\t\tsel.append(bid)\n\telif (not on) and bid in sel:\n\t\tsel.remove(bid)\n\tself.view.custom.selectedBreaks = sel",
+          "script": "\tbid \u003d payload[\"breakId\"]\n\ton \u003d payload[\"on\"]\n\tsel \u003d list(self.view.custom.selectedBreaks or [])\n\tif on and bid not in sel:\n\t\tsel.append(bid)\n\telif (not on) and bid in sel:\n\t\tsel.remove(bid)\n\tself.view.custom.selectedBreaks \u003d sel",
           "sessionScope": false,
           "viewScope": false
         }

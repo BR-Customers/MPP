@@ -1,0 +1,840 @@
+{
+  "custom": {
+    "editDraft": {
+      "meta": {
+        "baselineText": "",
+        "businessDate": "",
+        "businessDateVal": null,
+        "endTime": "",
+        "equipmentLabel": "",
+        "id": null,
+        "isDeprecated": false,
+        "locationId": null,
+        "reason": "",
+        "scheduleName": "",
+        "shiftScheduleId": null,
+        "startTime": ""
+      }
+    },
+    "equipmentOptions": [],
+    "scheduleOptions": [],
+    "scheduleRows": [],
+    "selected": {
+      "meta": {
+        "baselineText": "",
+        "businessDate": "",
+        "businessDateVal": null,
+        "endTime": "",
+        "equipmentLabel": "",
+        "id": null,
+        "isDeprecated": false,
+        "locationId": null,
+        "reason": "",
+        "scheduleName": "",
+        "shiftScheduleId": null,
+        "startTime": ""
+      }
+    }
+  },
+  "params": {
+    "editId": null,
+    "mode": "create"
+  },
+  "propConfig": {
+    "custom.equipmentOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.ShiftOverride.equipmentOptions\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.scheduleRows": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.ShiftSchedule.search\", 0, {\"searchText\": \"\", \"includeDeprecated\": false})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.scheduleOptions": {
+      "binding": {
+        "config": {
+          "path": "view.custom.scheduleRows"
+        },
+        "transforms": [
+          {
+            "code": "\treturn [\n\t\t{\"label\": \"%s  (%s - %s)\" % (r.get(\"Name\"), r.get(\"StartTimeText\"), r.get(\"EndTimeText\")),\n\t\t \"value\": r.get(\"Id\")}\n\t\tfor r in (value or [])\n\t]",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      }
+    },
+    "params.editId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Reseed both halves of the editor state from the row being edited.\n\t# NOTE on the atomic-write rule: the dirty flag here is computed ON DEMAND\n\t# inside handleClose(), not by a property binding, so there is no binding to\n\t# re-evaluate between these two writes and no dirty flag that can latch.\n\t# (The atomic single-write rule applies to the per-section editors whose\n\t# dirty state IS binding-driven and broadcast to a parent.)\n\tnewId = currentValue.value\n\tif newId is None:\n\t\tmeta = BlueRidge.Oee.ShiftOverride.emptyMeta()\n\telse:\n\t\tmeta = BlueRidge.Oee.ShiftOverride.loadMeta(newId)\n\tself.view.custom.selected = {\"meta\": meta}\n\tself.view.custom.editDraft = {\"meta\": dict(meta)}"
+      },
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.mode": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 620,
+      "width": 600
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.params.mode} = \"create\", \"Add Shift Override\", \"Edit Shift Override\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "16px",
+                "fontWeight": "600"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.root.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "HeaderClose"
+            },
+            "position": {
+              "basis": "32px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "X"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "overflow": "hidden",
+            "padding": "12px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "EquipmentLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Equipment"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "EquipmentDropdown"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.params.mode} = \"create\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.equipmentOptions"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.locationId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select a press or line…"
+                },
+                "type": "ia.input.dropdown"
+              },
+              {
+                "meta": {
+                  "name": "EquipmentReadonly"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.params.mode} != \"create\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.editDraft.meta.equipmentLabel"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontWeight": "600",
+                    "padding": "6px 0"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "EquipmentField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ScheduleLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Shift"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\t# Seed the window from the chosen schedule so the operator edits FROM the\n\t# scheduled times rather than typing both from scratch.\n\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\", {})) or {})\n\tsid = draft.get(\"shiftScheduleId\")\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scheduleRows) or []\n\tfor r in rows:\n\t\tif r.get(\"Id\") == sid:\n\t\t\tdraft[\"scheduleName\"] = r.get(\"Name\") or \"\"\n\t\t\tdraft[\"baselineText\"] = \"%s - %s\" % (r.get(\"StartTimeText\"), r.get(\"EndTimeText\"))\n\t\t\tdraft[\"startTime\"] = r.get(\"StartTimeText\") or \"\"\n\t\t\tdraft[\"endTime\"] = r.get(\"EndTimeText\") or \"\"\n\t\t\tbreak\n\tself.view.custom.editDraft = {\"meta\": draft}"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "ScheduleDropdown"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.params.mode} = \"create\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.scheduleOptions"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.shiftScheduleId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select the shift to override…"
+                },
+                "type": "ia.input.dropdown"
+              },
+              {
+                "meta": {
+                  "name": "ScheduleReadonly"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.params.mode} != \"create\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.editDraft.meta.scheduleName"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontWeight": "600",
+                    "padding": "6px 0"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ScheduleField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "DateLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Date (the day the shift STARTS on)"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "DatePicker"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.params.mode} = \"create\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.businessDateVal"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "format": "YYYY-MM-DD",
+                  "pickerType": "date"
+                },
+                "type": "ia.input.date-time-input"
+              },
+              {
+                "meta": {
+                  "name": "DateReadonly"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.params.mode} != \"create\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.editDraft.meta.businessDate"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontWeight": "600",
+                    "padding": "6px 0"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "DateField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "BaselineCaption"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"Scheduled window: \" + if(isNull({view.custom.editDraft.meta.baselineText}) || {view.custom.editDraft.meta.baselineText} = \"\", \"(pick a shift)\", {view.custom.editDraft.meta.baselineText})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "12px"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "BaselineRow"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "StartLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-label"
+                      },
+                      "text": "Start (HH:MM, 24-hour)"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "StartInput"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.editDraft.meta.startTime"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "06:00"
+                    },
+                    "type": "ia.input.text-field"
+                  }
+                ],
+                "meta": {
+                  "name": "StartField"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "EndLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-label"
+                      },
+                      "text": "End (HH:MM, 24-hour)"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "EndInput"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.editDraft.meta.endTime"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "16:00"
+                    },
+                    "type": "ia.input.text-field"
+                  }
+                ],
+                "meta": {
+                  "name": "EndField"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "TimesRow"
+            },
+            "props": {
+              "style": {
+                "gap": "12px",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "MidnightHint"
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "11px"
+              },
+              "text": "An end time earlier than the start time means the shift runs past midnight and finishes the following day."
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ReasonLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Reason"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ReasonInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.reason"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "e.g. overtime run to cover a Honda pull-ahead"
+                },
+                "type": "ia.input.text-area"
+              }
+            ],
+            "meta": {
+              "name": "ReasonField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "14px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\": \"Remove Override\",\n\t\t\t\"message\": \"Remove this override? The equipment goes back to the global shift schedule for that day. The record is kept so past OEE figures can still be explained.\",\n\t\t\t\"confirmLabel\": \"Remove\"\n\t\t}\n\t)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "RemoveButton"
+            },
+            "position": {
+              "basis": "100px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.mode} != \"create\" && !{view.custom.editDraft.meta.isDeprecated}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-danger btn-sm"
+              },
+              "text": "Remove"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "FooterSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.root.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "position": {
+              "basis": "90px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.root.doSave()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SaveButton"
+            },
+            "position": {
+              "basis": "90px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "Save"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "overflow": "hidden",
+            "padding": "12px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-raised)",
+        "height": "100%",
+        "overflow": "hidden"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "doSave",
+          "params": [],
+          "script": "\timport re\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\", {})) or {}\n\tmode = self.view.params.mode\n\tst = (draft.get(\"startTime\") or \"\").strip()\n\tet = (draft.get(\"endTime\") or \"\").strip()\n\tpat = re.compile(\"^([01]?[0-9]|2[0-3]):[0-5][0-9]$\")\n\n\tif not pat.match(st) or not pat.match(et):\n\t\tBlueRidge.Common.Notify.toast(\"Cannot save\", \"Start and end must be valid 24-hour HH:MM times.\", \"warning\")\n\t\treturn\n\tif st == et:\n\t\tBlueRidge.Common.Notify.toast(\"Cannot save\", \"End must differ from start; a zero-length window is not a shift.\", \"warning\")\n\t\treturn\n\n\tif mode == \"create\":\n\t\tlocId = draft.get(\"locationId\")\n\t\tschedId = draft.get(\"shiftScheduleId\")\n\t\tdateVal = draft.get(\"businessDateVal\")\n\t\tif locId is None or schedId is None or dateVal is None:\n\t\t\tBlueRidge.Common.Notify.toast(\"Cannot save\", \"Equipment, shift and date are all required.\", \"warning\")\n\t\t\treturn\n\t\tif isinstance(dateVal, (int, long, float)):\n\t\t\tdateVal = system.date.fromMillis(long(dateVal))\n\t\tresult = BlueRidge.Oee.ShiftOverride.add({\n\t\t\t\"locationId\": locId,\n\t\t\t\"shiftScheduleId\": schedId,\n\t\t\t\"businessDate\": system.date.format(dateVal, \"yyyy-MM-dd\"),\n\t\t\t\"startTime\": st,\n\t\t\t\"endTime\": et,\n\t\t\t\"reason\": (draft.get(\"reason\") or \"\").strip()\n\t\t})\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift override created\")\n\telse:\n\t\tresult = BlueRidge.Oee.ShiftOverride.update({\n\t\t\t\"id\": draft.get(\"id\"),\n\t\t\t\"startTime\": st,\n\t\t\t\"endTime\": et,\n\t\t\t\"reason\": (draft.get(\"reason\") or \"\").strip()\n\t\t})\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift override updated\")\n\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"shiftOverridesRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-override-editor\")"
+        },
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\t# JSON-compare BOTH sides (never a raw != on the wrapper objects, and never\n\t# str()) -- Perspective wrapper equality is unreliable.\n\ttoJson = BlueRidge.Common.Util.convertWrapperObjectToJson\n\tif toJson(self.view.custom.editDraft) == toJson(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-override-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid=\"mpp-confirm-unsaved\",\n\t\t\tview=\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this shift override. Save before closing?\"\n\t\t\t}\n\t\t)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"save\":\n\t\tself.doSave()\n\telif action == \"discard\":\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-override-editor\")",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "confirmDestructiveResult",
+          "pageScope": true,
+          "script": "\tif not (payload and payload.get(\"action\") == \"confirm\"):\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\", {})) or {}\n\toverrideId = draft.get(\"id\")\n\tif overrideId is None:\n\t\treturn\n\tresult = BlueRidge.Oee.ShiftOverride.deprecate(overrideId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Shift override removed\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"shiftOverridesRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-override-editor\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

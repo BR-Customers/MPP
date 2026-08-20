@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Oee_DowntimeEvent_RecordHistorical.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-21
--- Version:     1.0
+-- Modified:    2026-08-19
+-- Version:     1.1
 -- Description: Inserts a fully-past (both times known) CLOSED downtime event from
 --              the Downtime Manager popup (Increment 1) -- operator forgot to log
 --              it live. Logs against @ScopeLocationId (the resolved line/press).
@@ -10,6 +10,23 @@
 --              start. The one-open filtered-unique index does NOT fire (EndedAt set).
 --              Audits 'DowntimeRecordedHistorical'. Returns SELECT @Status, @Message,
 --              @NewId. All rejects before BEGIN TRANSACTION.
+--
+--              TIME BASIS -- two different clocks, deliberately:
+--                Oee.DowntimeEvent.StartedAt/EndedAt  -> UTC (converted from the
+--                    ET inputs)
+--                Oee.Shift.ActualStart/ActualEnd      -> LOCAL Eastern (OI-38)
+--              so the shift lookup compares against @StartedAtEt (local) while
+--              the INSERT stores @StartUtc/@EndUtc. See the change log.
+--
+-- Change Log:
+--   2026-07-21 - 1.0 - Initial version.
+--   2026-08-19 - 1.1 - Fix: resolve the covering shift with the LOCAL start
+--                       (@StartedAtEt), not the UTC one. Oee.Shift bounds are
+--                       local, so probing them with a UTC instant shifted the
+--                       lookup 4-5 hours forward and routinely stamped a
+--                       historical entry with the FOLLOWING shift's id (or NULL
+--                       near a boundary), mis-bucketing it in every
+--                       ShiftId-scoped report.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Oee.DowntimeEvent_RecordHistorical
     @ScopeLocationId      BIGINT,
@@ -69,10 +86,19 @@ BEGIN
         DECLARE @StartUtc DATETIME2(3) = CAST(@StartedAtEt AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
         DECLARE @EndUtc   DATETIME2(3) = CAST(@EndedAtEt   AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
 
-        -- Shift covering the start (NULL if none open/covering).
-        SELECT TOP 1 @ShiftId = Id FROM Oee.Shift
-        WHERE ActualStart <= @StartUtc AND (ActualEnd IS NULL OR ActualEnd >= @StartUtc)
-        ORDER BY ActualStart DESC;
+        -- Shift covering the start (NULL if none covering -- a real answer).
+        --
+        -- Shift-override attribution, spec sec 4.2: resolved through
+        -- Oee.ufn_ShiftIdForInstant for THIS equipment instead of scanning
+        -- Oee.Shift bounds directly. Two things that buys:
+        --   * a press extended past the plant boundary attributes a historical
+        --     entry inside the extension to the EXTENDED shift, per-equipment;
+        --   * the OI-38 local/UTC hazard is handled in exactly ONE place. The
+        --     resolver takes the UTC instant (@StartUtc) and does its own single
+        --     AT TIME ZONE conversion internally, so the "compare a UTC probe
+        --     against LOCAL Oee.Shift bounds" defect this comment used to warn
+        --     about is now structurally impossible rather than avoided by hand.
+        SELECT @ShiftId = r.ShiftId FROM Oee.ufn_ShiftIdForInstant(@ScopeLocationId, @StartUtc) r;
 
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
             @LocCode + N' ' + Audit.ufn_MidDot() + N' Downtime ' + Audit.ufn_MidDot() + N' Recorded (historical)');

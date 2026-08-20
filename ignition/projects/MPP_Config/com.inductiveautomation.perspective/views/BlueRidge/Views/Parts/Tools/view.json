@@ -303,11 +303,53 @@
             "meta": {
               "name": "BtnDieRanks"
             },
+            "position": {
+              "basis": "92px"
+            },
             "props": {
               "style": {
                 "classes": "btn"
               },
               "text": "Die Ranks"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tmeta \u003d (self.view.custom.selected or {}).get(\u0027meta\u0027) or {}\n\ttoolId \u003d meta.get(\u0027Id\u0027)\n\tif toolId is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027No die selected\u0027, \u0027Pick a die from the list to duplicate.\u0027, \u0027warning\u0027)\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-duplicate-die\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/DuplicateDie\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse,\n\t\tparams\u003d{\u0027sourceToolId\u0027: toolId}\n\t)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnDuplicateDie",
+              "tooltip": {
+                "text": "Create a new die that copies the selected die\u0027s configuration"
+              }
+            },
+            "position": {
+              "basis": "100px"
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} !\u003d \"view\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn"
+              },
+              "text": "Duplicate"
             },
             "type": "ia.input.button"
           },
@@ -325,6 +367,9 @@
             },
             "meta": {
               "name": "BtnAddDie"
+            },
+            "position": {
+              "basis": "90px"
             },
             "props": {
               "style": {
@@ -524,7 +569,7 @@
                           "props.text": {
                             "binding": {
                               "config": {
-                                "path": "view.custom.editDraft.meta.StatusCode"
+                                "path": "view.custom.editDraft.meta.StatusName"
                               },
                               "type": "property"
                             }
@@ -638,6 +683,9 @@
                         "meta": {
                           "name": "BtnSave"
                         },
+                        "position": {
+                          "basis": "51px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -671,6 +719,9 @@
                         "meta": {
                           "name": "BtnRetire"
                         },
+                        "position": {
+                          "basis": "58px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -696,7 +747,8 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "8px"
+                        "gap": "8px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -941,7 +993,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "field",
-                            "gap": "2px"
+                            "gap": "2px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1010,7 +1063,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "field",
-                            "gap": "2px"
+                            "gap": "2px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1022,7 +1076,8 @@
                     "props": {
                       "style": {
                         "classes": "field-row",
-                        "gap": "12px"
+                        "gap": "12px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"

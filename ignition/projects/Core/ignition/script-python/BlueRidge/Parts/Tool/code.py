@@ -23,6 +23,11 @@
 #   add(data)                                    -> {Status, Message, NewId}
 #   update(data)                                 -> {Status, Message}
 #   deprecate(toolId)                            -> {Status, Message}
+#   getDuplicateSummary(toolId)                  -> dict | None
+#   getDuplicateSummaryOrEmpty(toolId)           -> dict (binding-safe)
+#       Display-ready preview of what a duplicate would carry over.
+#   handleDuplicate(sourceToolId, code, name)    -> {Status, Message, NewId}
+#       Clones a die's configuration onto a new Code / Name.
 #   getAttributeInstancesForTool(toolId)         -> list[dict]
 #   getCavityInstancesForTool(toolId)            -> list[dict]
 #   getAssignmentInstancesForTool(toolId)        -> list[dict]
@@ -309,6 +314,134 @@ def deprecate(toolId):
         {
             "id":        toolId,
             "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+# -----------------------------------------------------------------------------
+# Duplicate Die
+#   Clones a die's CONFIGURATION onto a new Code / Name. What copies and what
+#   resets is decided in SQL (Tools.Tool_Duplicate) -- this layer only prompts,
+#   previews and dispatches. Keep the preview text in sync with that proc's
+#   header if the contract ever changes.
+# -----------------------------------------------------------------------------
+
+_EMPTY_DUPLICATE_SUMMARY = {
+    "SourceId":        None,
+    "SourceCode":      "",
+    "SourceName":      "",
+    "SourceLabel":     "",
+    "Description":     "",
+    "DescriptionLabel": "(none)",
+    "DieRankLabel":    "None",
+    "ShotLimitLabel":  "Not set",
+    "CavityCount":     0,
+    "AttributeCount":  0,
+    "CavityLabel":     "0 cavities",
+    "AttributeLabel":  "0 attributes",
+    "ResetLabel":      "",
+    "IsLoaded":        False,
+}
+
+
+def getDuplicateSummary(toolId):
+    """Preview of what a duplicate of `toolId` would carry over, or None when
+    the tool cannot be read.
+
+    Reuses the existing Tool_Get / ToolCavity_ListByTool / ToolAttribute_ListByTool
+    reads -- no new SQL surface. Every value is returned display-ready so the
+    popup's labels bind straight through with no expression formatting."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    if toolId is None:
+        return None
+
+    meta = getOne(toolId)
+    if meta is None:
+        return None
+
+    cavities = getCavityInstancesForTool(toolId)
+    attrs    = getAttributeInstancesForTool(toolId)
+    nCav     = len(cavities)
+    nAttr    = len(attrs)
+
+    code = meta.get("Code") or ""
+    name = meta.get("Name") or ""
+    label = ("%s - %s" % (code, name)) if code and name else (code or name)
+
+    shotLimit = meta.get("ShotLimit")
+    if shotLimit is None or shotLimit == "":
+        shotLimitLabel = "Not set"
+    else:
+        shotLimitLabel = "%s shots" % shotLimit
+
+    description = meta.get("Description") or ""
+
+    return {
+        "SourceId":        meta.get("Id"),
+        "SourceCode":      code,
+        "SourceName":      name,
+        "SourceLabel":     label,
+        "Description":     description,
+        "DescriptionLabel": description or "(none)",
+        "DieRankLabel":    meta.get("DieRankCode") or "None",
+        "ShotLimitLabel": shotLimitLabel,
+        "CavityCount":    nCav,
+        "AttributeCount": nAttr,
+        "CavityLabel":    "%d %s" % (nCav, "cavity" if nCav == 1 else "cavities"),
+        "AttributeLabel": "%d %s" % (nAttr, "attribute" if nAttr == 1 else "attributes"),
+        "ResetLabel":     "Shot count, status and mount history start clean",
+        "IsLoaded":       True,
+    }
+
+
+def getDuplicateSummaryOrEmpty(toolId, _refreshToken=None):
+    """Binding-safe variant of getDuplicateSummary: always a fully-shaped dict
+    (never None) so the popup's nested-path bindings never Component-Error
+    (pre-declare-bound-props rule). _refreshToken is ignored -- it exists so a
+    runScript binding can force a re-read (runScript caches on args)."""
+    row = getDuplicateSummary(toolId)
+    if row is None:
+        return dict(_EMPTY_DUPLICATE_SUMMARY)
+    return row
+
+
+def handleDuplicate(sourceToolId, code, name):
+    """Clone a die's configuration onto a new Code / Name.
+
+    COPIES  ToolType, Description, DieRank, ShotLimit, every non-deprecated
+            cavity WHOLE (number, description AND status), and every attribute
+            value whose definition is still active.
+    RESETS  Code / Name (operator-supplied), Status ('Active'), ShotCount (0),
+            and mount history (not copied at all).
+
+    Validation is deliberately thin here -- Tools.Tool_Duplicate is the
+    authority on Code uniqueness, blank checks and the source lookup ("rules
+    live in SQL"). These guards only spare a round-trip on obviously empty
+    input, matching add().
+
+    Returns {Status, Message, NewId}.
+    """
+    sourceToolId = _u(sourceToolId)
+    code = (_u(code) or "").strip()
+    name = (_u(name) or "").strip()
+    BlueRidge.Common.Util.log("sourceToolId=%s code=%s name=%s"
+                              % (sourceToolId, code, name))
+
+    if sourceToolId is None:
+        return {"Status": 0, "Message": "No source tool selected", "NewId": None}
+    if not code:
+        return {"Status": 0, "Message": "Code is required", "NewId": None}
+    if not name:
+        return {"Status": 0, "Message": "Name is required", "NewId": None}
+
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Tool_Duplicate",
+        {
+            "sourceToolId": sourceToolId,
+            "code":         code,
+            "name":         name,
+            "appUserId":    BlueRidge.Common.Util._currentAppUserId(),
         },
     )
 

@@ -97,7 +97,26 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
     # Report the completed container to AIM. Runs AFTER the proc committed and is fully
     # guarded: complete, print and post are three separate steps (FDS-07-005/006a/012).
     # A failure leaves the row owed; AimPostTimer retries it. NEVER lose the container.
+    #
+    # Controlled Run Tag: a container whose finished-good LOT is CRT-active is awaiting a
+    # second-person validation, so its serial stays CLAIMED but UNPOSTED. Validating it
+    # clears the flag and posts. AimShipperIdPool_ListUnposted excludes it meanwhile, so
+    # the retry sweep leaves it alone too - both halves are needed.
     if result and result.get("Status") and result.get("AimShipperId"):
+        try:
+            crtHeld = _isCrtHeld(containerId)
+        except Throwable as t:
+            BlueRidge.Common.Util.log(
+                "CRT-held check failed, defaulting to held: %s" % t, level="error")
+            crtHeld = True
+        except Exception as e:
+            BlueRidge.Common.Util.log(
+                "CRT-held check failed, defaulting to held: %s" % e, level="error")
+            crtHeld = True
+        if crtHeld:
+            result["AimPost"] = {"ok": False, "outcome": "held",
+                                 "error": "Container is pending Controlled Run Tag validation."}
+            return result
         try:
             result["AimPost"] = BlueRidge.Lots.AimPost.postOne(result.get("AimShipperId"))
         except Throwable as t:
@@ -105,6 +124,69 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
             result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(t)}
         except Exception as e:
             BlueRidge.Common.Util.log("AIM post-back failed: %s" % e, level="error")
+            result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(e)}
+    return result
+
+
+def _isCrtHeld(containerId):
+    """True when any of the container's trays carries a CRT-active finished-good LOT."""
+    containerId = BlueRidge.Common.Util.extractQualifiedValues(containerId)
+    rows = BlueRidge.Common.Db.execList(
+        "lots/Container_ListPendingValidation",
+        {"locationId": None, "containerId": containerId}) or []
+    return len(rows) > 0
+
+
+def listPendingValidation(locationId, _refreshToken=None):
+    """Containers at or under locationId awaiting CRT validation. _refreshToken is
+       ignored - it exists so a runScript binding can force a re-read (runScript
+       caches on its ARGUMENTS, so the token must be passed as one)."""
+    locationId = BlueRidge.Common.Util.extractQualifiedValues(locationId)
+    return BlueRidge.Common.Db.execList(
+        "lots/Container_ListPendingValidation",
+        {"locationId": locationId, "containerId": None}) or []
+
+
+def validateCrt(containerId, appUserId, terminalLocationId):
+    """Clear the container's Controlled Run Tag, then post its AIM serial.
+
+       appUserId is ALREADY ELEVATED - the CrtValidation popup elevates once on open
+       and both row actions reuse it, so there is no prompt here.
+
+       The post is deliberately NOT rolled back on failure: the human validation
+       decision is recorded regardless of whether AIM was reachable, and clearing the
+       flag is exactly what hands the serial to AimPost.retryTick.
+       Returns {Status, Message, AimPost (present only when the clear succeeded and
+       the container had a claimed serial)}."""
+    from java.lang import Throwable
+    containerId = BlueRidge.Common.Util.extractQualifiedValues(containerId)
+    appUserId = BlueRidge.Common.Util.extractQualifiedValues(appUserId)
+    terminalLocationId = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    BlueRidge.Common.Util.log(
+        "validateCrt containerId=%s appUserId=%s terminalLocationId=%s"
+        % (containerId, appUserId, terminalLocationId))
+
+    # Grab the pending-validation row (and its AimShipperId) BEFORE clearing -- the
+    # container drops out of Container_ListPendingValidation the instant the flag clears.
+    serial = None
+    for r in (BlueRidge.Common.Db.execList("lots/Container_ListPendingValidation",
+                                           {"locationId": None, "containerId": containerId}) or []):
+        serial = r.get("AimShipperId")
+        break
+
+    result = BlueRidge.Common.Db.execMutation(
+        "lots/Container_ValidateCrt",
+        {"containerId": containerId, "appUserId": appUserId,
+         "terminalLocationId": terminalLocationId})
+
+    if result and result.get("Status") and serial:
+        try:
+            result["AimPost"] = BlueRidge.Lots.AimPost.postOne(serial)
+        except Throwable as t:
+            BlueRidge.Common.Util.log("CRT validate post failed: %s" % t, level="error")
+            result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(t)}
+        except Exception as e:
+            BlueRidge.Common.Util.log("CRT validate post failed: %s" % e, level="error")
             result["AimPost"] = {"ok": False, "outcome": "failed", "error": str(e)}
     return result
 

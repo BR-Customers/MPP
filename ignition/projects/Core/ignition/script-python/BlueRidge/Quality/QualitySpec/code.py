@@ -121,17 +121,29 @@ def getAllForList(filter=None):
     for r in rows:
         name = (r.get("Name") or "")
         itemId = r.get("ItemId")
+        
+        # Deprecation Check
+        isDeprecated = r.get("DeprecatedAt")
+        includeDeprecated = f.get("includeDeprecated") or False
+        if isDeprecated != None and not includeDeprecated: continue
+        
+        # Filter check
         opId = r.get("OperationTemplateId")
         if typ == "Item-Linked" and not itemId: continue
         if typ == "Op-Linked" and not opId: continue
         if typ == "Unlinked" and (itemId or opId): continue
         if search and search not in name.lower(): continue
+        
         out.append({
-            "id": r.get("Id"), "name": name,
-            "itemId": itemId, "itemCode": r.get("ItemCode") or "",
-            "operationTemplateId": opId, "opCode": r.get("OperationTemplateCode") or "",
+            "id": r.get("Id"), 
+            "name": name,
+            "itemId": itemId, 
+            "itemCode": r.get("ItemCode") or "",
+            "operationTemplateId": opId, 
+            "opCode": r.get("OperationTemplateCode") or "",
             "versionCount": r.get("VersionCount") or 0,
             "activeVersionCount": r.get("ActiveVersionCount") or 0,
+            "isDeprecated": r.get("DeprecatedAt") != None
         })
     return out
 
@@ -169,6 +181,7 @@ def buildSpecListRows(specs, selectedSpecId):
             "sub": sub,
             "state": state,
             "selectedSpecId": selectedSpecId,
+            "deprecated": s.get("isDeprecated"),
         })
     return out
 
@@ -255,14 +268,18 @@ def getVersionFull(versionId):
              "effectiveFrom": None, "effectiveFromDisplay": "",
              "publishedAt": None, "deprecatedAt": None, "status": None,
              "attributes": []}
+    
     if not versionId:
         return empty
+        
     h = BlueRidge.Common.Db.execOne("quality/QualitySpecVersion_Get", {"id": versionId})
     if h is None:
         return empty
+        
     attrs = BlueRidge.Common.Db.execList("quality/QualitySpecAttribute_ListByVersion",
         {"qualitySpecVersionId": versionId}) or []
-    pub, dep = h.get("PublishedAt"), h.get("DeprecatedAt")
+    pub = h.get("PublishedAt")
+    dep = h.get("DeprecatedAt")
     status = "Deprecated" if dep is not None else ("Draft" if pub is None else "Published")
     return {
         "id": h.get("Id"), "specId": h.get("QualitySpecId"),

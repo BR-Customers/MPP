@@ -87,7 +87,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "expression": "dateFormat({view.params.CreatedAt}, \"MM/dd/YYYY hh:ss\")"
+                "expression": "dateFormat({view.params.CreatedAt}, \"MM/dd/yy HH:mm\")"
               },
               "type": "expr"
             }

@@ -1,101 +1,96 @@
 {
   "custom": {},
   "params": {
+    "IsLow": false,
     "ItemPartNumber": "",
     "OnHand": 0,
-    "ProjectedRemainingConsumption": 0,
-    "IsLow": false
+    "ProjectedRemainingConsumption": 0
   },
-  "propConfig": {},
   "props": {},
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "style": {
-        "gap": "8px"
-      }
-    },
     "children": [
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "PartNum"
         },
-        "props": {
-          "text": "",
-          "style": {
-            "fontWeight": 600
-          }
-        },
         "position": {
-          "grow": 1,
-          "basis": "0"
+          "basis": "0",
+          "grow": 1
         },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "expr",
               "config": {
                 "expression": "{view.params.ItemPartNumber}"
-              }
+              },
+              "type": "expr"
             }
           }
-        }
+        },
+        "props": {
+          "style": {
+            "fontWeight": 600
+          }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "Need"
         },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "toStr({view.params.ProjectedRemainingConsumption}) + \" needed / \" + toStr({view.params.OnHand}) + \" have\""
+              },
+              "type": "expr"
+            }
+          }
+        },
         "props": {
-          "text": "",
           "style": {
             "fontSize": "13px",
             "opacity": 0.85
           }
         },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "toStr({view.params.ProjectedRemainingConsumption}) + \" needed / \" + toStr({view.params.OnHand}) + \" have\""
-              }
-            }
-          }
-        }
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "Low"
         },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.IsLow}, \"LOW\", \"\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
         "props": {
-          "text": "",
           "style": {
             "color": "#e05a4d",
-            "fontWeight": 700,
             "fontSize": "12px",
+            "fontWeight": 700,
             "minWidth": "34px",
             "textAlign": "right"
           }
         },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "if({view.params.IsLow}, \"LOW\", \"\")"
-              }
-            }
-          }
-        }
+        "type": "ia.display.label"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "gap": "8px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

@@ -68,10 +68,15 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
 
-        -- Resolve shift: explicit @ShiftId, else the current open shift.
+        -- Resolve shift: an explicit @ShiftId still WINS (the operator picked
+        -- it). Only the FALLBACK changed -- shift-override attribution, spec
+        -- sec 4.2: Oee.ufn_ShiftIdForInstant for THIS equipment at now, instead
+        -- of "whichever shift is open plant-wide". A press extended past the
+        -- plant boundary now falls back to its OWN shift.
         SET @Shift = @ShiftId;
         IF @Shift IS NULL
-            SELECT TOP 1 @Shift = Id FROM Oee.Shift WHERE ActualEnd IS NULL ORDER BY ActualStart DESC;
+            SELECT @Shift = r.ShiftId
+            FROM Oee.ufn_ShiftIdForInstant(@ScopeLocationId, SYSUTCDATETIME()) r;
         ELSE IF NOT EXISTS (SELECT 1 FROM Oee.Shift WHERE Id = @Shift)
         BEGIN
             SET @Message = N'Shift not found.';

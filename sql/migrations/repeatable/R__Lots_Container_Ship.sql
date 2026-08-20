@@ -3,8 +3,10 @@
 -- Author:      Blue Ridge Automation
 -- Version:     1.0
 -- Description: Ships a container at the Shipping Dock (Arc 2 Phase 7). Validates the
---              container is Complete (2), has NO open hold, and the shipping label is
---              not void; flips status -> Shipped (3); audits 'ContainerShipped'.
+--              container is Complete (2), has NO open hold, is not still pending a
+--              Controlled Run Tag validation (any tray's FG LOT CrtActive = 1), and the
+--              shipping label is not void; flips status -> Shipped (3); audits
+--              'ContainerShipped'.
 --              No OUTPUT params (FDS-11-011); single terminal SELECT @Status,@Message.
 -- ============================================================
 
@@ -52,6 +54,21 @@ BEGIN
         IF EXISTS (SELECT 1 FROM Quality.HoldEvent WHERE ContainerId = @ContainerId AND ReleasedAt IS NULL)
         BEGIN
             SET @Message = N'Container is on hold (cannot ship).';
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- Controlled Run Tag: a container completed under CRT holds its AIM Shipper ID
+        -- until a second person validates it. Shipping first would send product Honda
+        -- never validated AND strand the serial: the ship moves CurrentLocationId, which
+        -- drops the container out of Container_ListPendingValidation's location scope
+        -- while ListUnposted still excludes it - invisible to the backlog, the sweep and
+        -- the alarm alike.
+        IF EXISTS (SELECT 1 FROM Lots.ContainerTray ct
+                   JOIN Lots.Lot l ON l.Id = ct.FinishedGoodLotId
+                   WHERE ct.ContainerId = @ContainerId AND l.CrtActive = 1)
+        BEGIN
+            SET @Message = N'Container is pending Controlled Run Tag validation (cannot ship).';
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
         END

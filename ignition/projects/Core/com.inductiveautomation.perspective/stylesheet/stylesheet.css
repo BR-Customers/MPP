@@ -579,10 +579,31 @@ button {
 }
 
 /* ─── Checkboxes ────────────────────────────────────────────────────── */
-.ia_checkbox--checked,
-.ia_checkbox[data-checked="true"] {
-    background-color: var(--mpp-accent-50);
-    border-color: var(--mpp-accent-50);
+/* Label text. Ignition's stock theme sets
+   `.ia_checkboxComponent { color: var(--neutral-90) }` (#323232) -- a
+   near-black picked for the light theme. Nothing here targeted it, so that
+   default leaked through and every checkbox label rendered dark grey on our
+   dark surfaces. Match `.ia_labelComponent` (text-primary) so a checkbox
+   caption reads like every other piece of body text. Same specificity as the
+   theme rule, but the project stylesheet loads after themes/light.css, so
+   this wins. Views that set their own inline colour still override it. */
+.ia_checkboxComponent {
+    color: var(--mpp-text-primary);
+}
+
+.ia_checkboxComponent--disabled,
+.ia_checkboxComponent .checkbox-input-label--disabled {
+    color: var(--mpp-text-tertiary);
+}
+
+/* Box glyph. 8.3 renders the state as an svg (`ia_checkbox__checkedIcon` /
+   `__uncheckedIcon`, `fill: currentcolor`) inside the label -- there is no
+   `.ia_checkbox--checked` class and no `data-checked` attribute, so the rule
+   that used to live here never applied. Colour the icons instead, which is
+   what that rule was reaching for. */
+.ia_checkbox .ia_checkbox__checkedIcon,
+.ia_checkbox .ia_checkbox__indeterminateIcon {
+    color: var(--mpp-accent-60);
 }
 
 /* ─── Tabs ──────────────────────────────────────────────────────────── */
@@ -2416,6 +2437,44 @@ button {
     color: var(--mpp-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.06em;
+}
+
+/* ─── CRT container-validation row + list header (Task 7) ─────────── */
+.psc-crt-row {
+    background: var(--mpp-surface-raised);
+    border-bottom: 1px solid var(--mpp-border-subtle);
+    padding: 0 var(--mpp-space-3);
+    height: 100%;
+}
+
+.psc-crt-part {
+    font-size: var(--mpp-fs-sm);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.psc-crt-meta {
+    font-size: var(--mpp-fs-xs);
+    color: var(--mpp-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.psc-crt-mono {
+    font-family: var(--mpp-font-mono);
+}
+
+.psc-crt-list-header {
+    padding: 0 var(--mpp-space-3);
+    font-size: var(--mpp-fs-xs);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .psc-pf-repeater-entity {

@@ -1,6 +1,7 @@
 {
   "custom": {},
   "params": {
+    "deprecated": false,
     "name": "",
     "selectedSpecId": 0,
     "specId": 0,
@@ -8,6 +9,10 @@
     "sub": ""
   },
   "propConfig": {
+    "params.deprecated": {
+      "paramDirection": "input",
+      "persistent": true
+    },
     "params.name": {
       "paramDirection": "input"
     },
@@ -154,6 +159,14 @@
         "binding": {
           "config": {
             "expression": "if({view.params.specId} \u003d {view.params.selectedSpecId}, \u0027tree-item tree-item-selected\u0027, \u0027tree-item\u0027)"
+          },
+          "type": "expr"
+        }
+      },
+      "props.style.opacity": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.deprecated}, 0.55, 1)"
           },
           "type": "expr"
         }

@@ -58,6 +58,42 @@
             "type": "ia.display.label"
           },
           {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "DirtyIndicator"
+            },
+            "position": {
+              "basis": "120px"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.draft} !\u003d {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
             "events": {
               "dom": {
                 "onClick": {
@@ -172,7 +208,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -233,7 +270,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -294,7 +332,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -306,7 +345,8 @@
                 "props": {
                   "style": {
                     "classes": "field-row",
-                    "gap": "10px"
+                    "gap": "10px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -321,7 +361,7 @@
                       "style": {
                         "classes": "field-label"
                       },
-                      "text": "Description *"
+                      "text": "DESCRIPTION *"
                     },
                     "type": "ia.display.label"
                   },
@@ -357,7 +397,8 @@
                   "direction": "column",
                   "style": {
                     "classes": "field",
-                    "gap": "2px"
+                    "gap": "2px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -408,7 +449,8 @@
                   "direction": "column",
                   "style": {
                     "classes": "field",
-                    "gap": "2px"
+                    "gap": "2px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -420,7 +462,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -495,7 +538,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -556,7 +600,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -568,7 +613,8 @@
                 "props": {
                   "style": {
                     "classes": "field-row",
-                    "gap": "10px"
+                    "gap": "10px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -580,7 +626,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -653,9 +700,11 @@
                     },
                     "props": {
                       "direction": "column",
+                      "justify": "flex-end",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -708,9 +757,11 @@
                     },
                     "props": {
                       "direction": "column",
+                      "justify": "flex-end",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -723,9 +774,10 @@
                         },
                         "props": {
                           "style": {
-                            "classes": "field-label"
+                            "classes": "field-label",
+                            "whiteSpace": "pre-wrap"
                           },
-                          "text": "Max Parts (per container)"
+                          "text": "Max Parts \n(per container)"
                         },
                         "type": "ia.display.label"
                       },
@@ -765,7 +817,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -777,7 +830,8 @@
                 "props": {
                   "style": {
                     "classes": "field-row",
-                    "gap": "10px"
+                    "gap": "10px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -789,7 +843,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -858,7 +913,8 @@
                   "direction": "column",
                   "style": {
                     "classes": "field",
-                    "gap": "2px"
+                    "gap": "2px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -870,7 +926,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -910,6 +967,9 @@
             "meta": {
               "name": "BtnCancel"
             },
+            "position": {
+              "basis": "73px"
+            },
             "props": {
               "style": {
                 "classes": "btn"
@@ -932,6 +992,9 @@
             },
             "meta": {
               "name": "BtnCreate"
+            },
+            "position": {
+              "basis": "103px"
             },
             "props": {
               "style": {

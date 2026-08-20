@@ -1,28 +1,17 @@
 {
-  "custom": {
-    "scopeLocationId": null,
-    "openCount": 0,
-    "idleTick": 0,
-    "shift": {
-      "ScheduleName": ""
-    }
-  },
+  "custom": {},
   "params": {},
   "propConfig": {
-    "custom.scopeLocationId": {
+    "custom.idleTick": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Oee.Downtime.resolveScope\", 0, {session.custom.cell.locationId})"
+          "expression": "now(10000)"
         },
         "type": "expr"
-      }
-    },
-    "custom.shift": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Oee.Shift.getOpenOrEmpty\", 15000)"
-        },
-        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\ttry:\n\t\tidleMs \u003d system.date.toMillis(system.date.now()) - self.session.props.lastActivity\n\t\tsecs \u003d BlueRidge.Common.Session.activeTimeoutSeconds(self.session)\n\t\tif idleMs \u003e secs * 1000:\n\t\t\tif BlueRidge.Common.Session.isElevated(self.session):\n\t\t\t\tBlueRidge.Common.Session.resetTerminal(self.session)\n\t\t\telse:\n\t\t\t\tu \u003d self.session.custom.user\n\t\t\t\tif u and u.get(\"appUserId\"):\n\t\t\t\t\tsystem.perspective.openPopup(\"mpp-idle-reconfirm\", \"BlueRidge/Components/PlantFloor/IdleReconfirmModal\", params\u003d{\"initials\": u.get(\"initials\"), \"displayName\": u.get(\"displayName\"), \"popupId\": \"mpp-idle-reconfirm\", \"replyMessage\": \"idleReconfirmResult\"}, modal\u003dTrue, showCloseIcon\u003dFalse)\n\texcept:\n\t\tpass"
       }
     },
     "custom.openCount": {
@@ -39,19 +28,28 @@
         "type": "expr"
       }
     },
-    "custom.idleTick": {
+    "custom.scopeLocationId": {
       "binding": {
-        "config": { "expression": "now(10000)" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Downtime.resolveScope\", 0, {session.custom.cell.locationId})"
+        },
         "type": "expr"
-      },
-      "onChange": {
-        "enabled": true,
-        "script": "\ttry:\n\t\tidleMs = system.date.toMillis(system.date.now()) - self.session.props.lastActivity\n\t\tsecs = BlueRidge.Common.Session.activeTimeoutSeconds(self.session)\n\t\tif idleMs > secs * 1000:\n\t\t\tif BlueRidge.Common.Session.isElevated(self.session):\n\t\t\t\tBlueRidge.Common.Session.resetTerminal(self.session)\n\t\t\telse:\n\t\t\t\tu = self.session.custom.user\n\t\t\t\tif u and u.get(\"appUserId\"):\n\t\t\t\t\tsystem.perspective.openPopup(\"mpp-idle-reconfirm\", \"BlueRidge/Components/PlantFloor/IdleReconfirmModal\", params={\"initials\": u.get(\"initials\"), \"displayName\": u.get(\"displayName\"), \"popupId\": \"mpp-idle-reconfirm\", \"replyMessage\": \"idleReconfirmResult\"}, modal=True, showCloseIcon=False)\n\texcept:\n\t\tpass"
+      }
+    },
+    "custom.shift": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Shift.getOpenOrEmpty\", 15000)"
+        },
+        "type": "expr"
       }
     }
   },
   "props": {
-    "defaultSize": { "height": 88, "width": 1920 }
+    "defaultSize": {
+      "height": 88,
+      "width": 1920
+    }
   },
   "root": {
     "children": [
@@ -60,204 +58,400 @@
           "component": {
             "onActionPerformed": {
               "config": {
-                "script": "\tsystem.perspective.openPopup(id=\"mpp-app-menu\", view=\"BlueRidge/Components/Popups/AppMenu\", modal=True, showCloseIcon=False)"
+                "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-app-menu\", view\u003d\"BlueRidge/Components/Popups/AppMenu\", modal\u003dTrue, showCloseIcon\u003dFalse)"
               },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "meta": { "name": "MenuButton", "tooltip": { "text": "Menu" } },
-        "position": { "shrink": 0 },
+        "meta": {
+          "name": "MenuButton",
+          "tooltip": {}
+        },
+        "position": {
+          "shrink": 0
+        },
         "propConfig": {
-          "props.enabled": {
-            "binding": { "config": { "expression": "!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000)" }, "type": "expr" }
-          },
           "meta.tooltip.text": {
-            "binding": { "config": { "expression": "if(!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000), \"Menu\", \"Supervisor access required\")" }, "type": "expr" }
+            "binding": {
+              "config": {
+                "expression": "if(!isNull({session.custom.elevatedUntil}) \u0026\u0026 {session.custom.elevatedUntil} \u003e now(5000), \"Menu\", \"Supervisor access required\")"
+              },
+              "type": "expr"
+            }
+          },
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "!isNull({session.custom.elevatedUntil}) \u0026\u0026 {session.custom.elevatedUntil} \u003e now(5000)"
+              },
+              "type": "expr"
+            }
           }
         },
-        "props": { "style": { "classes": "pf-btn pf-btn-secondary", "fontSize": "18px", "minWidth": "44px" }, "text": "≡" },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "18px",
+            "minWidth": "44px"
+          },
+          "text": "≡"
+        },
         "type": "ia.input.button"
       },
       {
         "children": [
           {
-            "meta": { "name": "TerminalName" },
+            "meta": {
+              "name": "TerminalName"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "config": { "expression": "if(isNull({session.custom.terminal.terminalName}) || {session.custom.terminal.terminalName} = \"\", \"Madison Facility\", {session.custom.terminal.terminalName})" },
+                  "config": {
+                    "expression": "if(isNull({session.custom.terminal.terminalName}) || {session.custom.terminal.terminalName} \u003d \"\", \"Madison Facility\", {session.custom.terminal.terminalName})"
+                  },
                   "type": "expr"
                 }
               }
             },
-            "props": { "style": { "classes": "pf-app-title", "lineHeight": "1.25", "whiteSpace": "nowrap" } },
+            "props": {
+              "style": {
+                "classes": "pf-app-title",
+                "lineHeight": "1.25",
+                "whiteSpace": "nowrap"
+              }
+            },
             "type": "ia.display.label"
           },
           {
-            "meta": { "name": "ScopeName" },
+            "meta": {
+              "name": "ScopeName"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "config": { "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"\", {session.custom.terminal.zoneName})" },
+                  "config": {
+                    "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} \u003d \"\", \"\", {session.custom.terminal.zoneName})"
+                  },
                   "type": "expr"
                 }
               }
             },
-            "props": { "style": { "classes": "pf-banner-detail", "lineHeight": "1.25", "whiteSpace": "nowrap" } },
+            "props": {
+              "style": {
+                "classes": "pf-banner-detail",
+                "lineHeight": "1.25",
+                "whiteSpace": "nowrap"
+              }
+            },
             "type": "ia.display.label"
           }
         ],
-        "meta": { "name": "BrandCol" },
-        "position": { "shrink": 0 },
-        "props": { "direction": "column", "style": { "gap": "2px", "marginLeft": "8px" } },
+        "meta": {
+          "name": "BrandCol"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px",
+            "marginLeft": "8px",
+            "overflow": "visible"
+          }
+        },
         "type": "ia.container.flex"
       },
       {
         "children": [
           {
-            "meta": { "name": "Clock" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "Clock"
+            },
+            "position": {
+              "shrink": 0
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "config": { "expression": "dateFormat(now(1000), \"EEE MMM d   h:mm:ss a\")" },
+                  "config": {
+                    "expression": "dateFormat(now(1000), \"EEE MMM d   h:mm:ss a\")"
+                  },
                   "type": "expr"
                 }
               }
             },
-            "props": { "style": { "classes": "pf-banner-detail", "fontVariantNumeric": "tabular-nums", "whiteSpace": "nowrap" } },
+            "props": {
+              "style": {
+                "classes": "pf-banner-detail",
+                "fontVariantNumeric": "tabular-nums",
+                "whiteSpace": "nowrap"
+              }
+            },
             "type": "ia.display.label"
           },
           {
-            "meta": { "name": "ShiftLabel" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "ShiftLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "config": { "expression": "\"Shift: \" + if(isNull({view.custom.shift.ScheduleName}) || {view.custom.shift.ScheduleName} = \"\", \"none\", {view.custom.shift.ScheduleName})" },
+                  "config": {
+                    "expression": "\"Shift: \" + if(isNull({view.custom.shift.ScheduleName}) || {view.custom.shift.ScheduleName} \u003d \"\", \"none\", {view.custom.shift.ScheduleName})"
+                  },
                   "type": "expr"
                 }
               }
             },
-            "props": { "style": { "classes": "pf-banner-detail", "whiteSpace": "nowrap" } },
+            "props": {
+              "style": {
+                "classes": "pf-banner-detail",
+                "whiteSpace": "nowrap"
+              }
+            },
             "type": "ia.display.label"
           },
           {
-            "meta": { "name": "Operator" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "Operator"
+            },
+            "position": {
+              "shrink": 0
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "config": { "expression": "\"Operator: \" + if(isNull({session.custom.user.initials}) || {session.custom.user.initials} = \"\", \"--\", {session.custom.user.initials})" },
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.initials}) || {session.custom.user.initials} \u003d \"\", \"--\", {session.custom.user.initials})"
+                  },
                   "type": "expr"
                 }
               }
             },
-            "props": { "style": { "classes": "pf-banner-detail", "whiteSpace": "nowrap" } },
+            "props": {
+              "style": {
+                "classes": "pf-banner-detail",
+                "whiteSpace": "nowrap"
+              }
+            },
             "type": "ia.display.label"
           }
         ],
-        "meta": { "name": "ContextCluster" },
-        "position": { "shrink": 0 },
-        "props": { "alignItems": "center", "style": { "gap": "20px", "marginLeft": "16px" } },
+        "meta": {
+          "name": "ContextCluster"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "20px",
+            "marginLeft": "16px"
+          }
+        },
         "type": "ia.container.flex"
       },
       {
-        "meta": { "name": "Spacer" },
-        "position": { "grow": 1 },
+        "meta": {
+          "name": "Spacer"
+        },
+        "position": {
+          "grow": 1
+        },
         "type": "ia.display.label"
       },
       {
         "children": [
           {
-            "meta": { "name": "LineDownPill" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "LineDownPill"
+            },
+            "position": {
+              "shrink": 0
+            },
             "propConfig": {
               "meta.visible": {
-                "binding": { "config": { "expression": "{view.custom.openCount} > 0" }, "type": "expr" }
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.openCount} \u003e 0"
+                  },
+                  "type": "expr"
+                }
               },
               "props.text": {
-                "binding": { "config": { "expression": "\"● LINE DOWN · \" + toStr({view.custom.openCount})" }, "type": "expr" }
+                "binding": {
+                  "config": {
+                    "expression": "\"● LINE DOWN · \" + toStr({view.custom.openCount})"
+                  },
+                  "type": "expr"
+                }
               }
             },
-            "props": { "style": { "classes": "dt-open-badge" } },
+            "props": {
+              "style": {
+                "classes": "dt-open-badge"
+              }
+            },
             "type": "ia.display.label"
           },
           {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "config": { "script": "\tsystem.perspective.openPopup(id=\"mpp-downtime-manager\", view=\"BlueRidge/Components/Popups/DowntimeManager\", modal=True, showCloseIcon=False, params={})" },
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-downtime-manager\", view\u003d\"BlueRidge/Components/Popups/DowntimeManager\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{})"
+                  },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
-            "meta": { "name": "DowntimeButton" },
-            "position": { "shrink": 0 },
-            "props": { "style": { "classes": "pf-btn pf-btn-primary" }, "text": "Downtime" },
+            "meta": {
+              "name": "DowntimeButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              },
+              "text": "Downtime"
+            },
             "type": "ia.input.button"
           },
           {
-            "meta": { "name": "ElevatedPill" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "ElevatedPill"
+            },
+            "position": {
+              "shrink": 0
+            },
             "propConfig": {
               "position.display": {
-                "binding": { "config": { "expression": "!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000)" }, "type": "expr" }
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({session.custom.elevatedUntil}) \u0026\u0026 {session.custom.elevatedUntil} \u003e now(5000)"
+                  },
+                  "type": "expr"
+                }
               },
               "props.text": {
-                "binding": { "config": { "expression": "\"Elevated: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", \"supervisor\", {session.custom.user.displayName})" }, "type": "expr" }
+                "binding": {
+                  "config": {
+                    "expression": "\"Elevated: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", \"supervisor\", {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
+                }
               }
             },
-            "props": { "style": { "classes": "dt-open-badge" } },
+            "props": {
+              "style": {
+                "classes": "dt-open-badge"
+              }
+            },
             "type": "ia.display.label"
           },
           {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "config": { "script": "\tsystem.perspective.openPopup(id=\"mpp-elevation-modal\", view=\"BlueRidge/Components/PlantFloor/ElevationModal\", modal=True, showCloseIcon=True, overlayDismiss=True, params={\"actionCode\": \"SupervisorAccess\", \"actionLabel\": \"Supervisor access\", \"popupId\": \"mpp-elevation-modal\", \"replyMessage\": \"elevationResult\"})" },
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-elevation-modal\", view\u003d\"BlueRidge/Components/PlantFloor/ElevationModal\", modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue, params\u003d{\"actionCode\": \"SupervisorAccess\", \"actionLabel\": \"Supervisor access\", \"popupId\": \"mpp-elevation-modal\", \"replyMessage\": \"elevationResult\"})"
+                  },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
-            "meta": { "name": "SupervisorAccessButton" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "SupervisorAccessButton"
+            },
+            "position": {
+              "shrink": 0
+            },
             "propConfig": {
               "position.display": {
-                "binding": { "config": { "expression": "isNull({session.custom.elevatedUntil}) || {session.custom.elevatedUntil} <= now(5000)" }, "type": "expr" }
+                "binding": {
+                  "config": {
+                    "expression": "isNull({session.custom.elevatedUntil}) || {session.custom.elevatedUntil} \u003c\u003d now(5000)"
+                  },
+                  "type": "expr"
+                }
               }
             },
-            "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Supervisor Access" },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Supervisor Access"
+            },
             "type": "ia.input.button"
           },
           {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "config": { "script": "\tBlueRidge.Common.Session.resetTerminal(self.session)" },
+                  "config": {
+                    "script": "\tBlueRidge.Common.Session.resetTerminal(self.session)"
+                  },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
-            "meta": { "name": "ResetTerminalButton", "tooltip": { "text": "Sign out and return to the default screen" } },
-            "position": { "shrink": 0 },
-            "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Reset Terminal" },
+            "meta": {
+              "name": "ResetTerminalButton",
+              "tooltip": {
+                "text": "Sign out and return to the default screen"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Reset Terminal"
+            },
             "type": "ia.input.button"
           }
         ],
-        "meta": { "name": "RightCluster" },
-        "position": { "shrink": 0 },
-        "props": { "alignItems": "center", "style": { "gap": "8px" } },
+        "meta": {
+          "name": "RightCluster"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "8px",
+            "overflow": "visible"
+          }
+        },
         "type": "ia.container.flex"
       }
     ],
-    "meta": { "name": "root" },
-    "props": { "alignItems": "center", "style": { "classes": "pf-header", "height": "100%" } },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-header",
+        "height": "100%"
+      }
+    },
     "scripts": {
       "customMethods": null,
       "extensionFunctions": null,
@@ -265,7 +459,7 @@
         {
           "messageType": "elevationResult",
           "pageScope": true,
-          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tif p.get(\"success\"):\n\t\tBlueRidge.Common.Session.beginElevatedWindow(self.session, p)\n\t\tpend = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.pendingElevatedAction)\n\t\tif pend:\n\t\t\tBlueRidge.Common.Session.dispatchElevatedAction(self.session, pend.get(\"code\"), pend.get(\"params\"))\n\tself.session.custom.pendingElevatedAction = None",
+          "script": "\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tif p.get(\"success\"):\n\t\tBlueRidge.Common.Session.beginElevatedWindow(self.session, p)\n\t\tpend \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.pendingElevatedAction)\n\t\tif pend:\n\t\t\tBlueRidge.Common.Session.dispatchElevatedAction(self.session, pend.get(\"code\"), pend.get(\"params\"))\n\tself.session.custom.pendingElevatedAction \u003d None",
           "sessionScope": false,
           "viewScope": false
         }

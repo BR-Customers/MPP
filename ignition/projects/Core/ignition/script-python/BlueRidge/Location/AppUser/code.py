@@ -203,36 +203,51 @@ def resolveForPresence(initials):
 
 
 # =============================================================================
-# *** DEPLOYMENT CHANGE (interim, 2026-07-21) -- REVERT AT GO-LIVE ***
-# _validateAdCredentials is wired to challenge the gateway's INTERNAL user source
-# (_DEV_USER_SOURCE) via system.security.validateUser, instead of Active
-# Directory, because AD is unavailable in the current environment. This lets
-# per-action elevation (changeover + other protected actions) work for
-# dev/testing. Attribution/audit is UNAFFECTED: validateUser only gates the
-# password; the account name still flows to AppUser_AuthenticateAd, which
-# resolves it to an AppUser and writes the ElevationGranted/Denied audit row.
-# AT DEPLOYMENT (FDS-04-007): repoint _DEV_USER_SOURCE at the real AD auth
-# profile (or restore the dedicated AD IdP challenge) and drop this banner.
+# ELEVATION CREDENTIAL SOURCE -- SINGLE DEPLOYMENT KNOB (FDS-04-007)
+#
+# _ELEVATION_USER_SOURCE names the Ignition *user source* that per-action
+# elevation challenges. Changing WHICH directory backs elevation is a one-line
+# change here plus gateway configuration -- the API below does not change:
+# system.security.validateUser is the correct call for every user source type,
+# including Active Directory / AD Hybrid / AD-to-DB (an AD-typed source performs
+# an LDAP bind against the domain controller inside the same call).
+#
+# *** CURRENT STATE (verified on the dev gateway 2026-08-19) ***
+# The gateway has exactly three user sources -- 'default', 'MPP' and
+# 'opcua-module' -- and ALL THREE are type INTERNAL. There is NO Active Directory
+# user source configured, and the only Identity Provider ('default') is internal.
+# So elevation authenticates today against the INTERNAL 'MPP' source, which is
+# what makes dev/test elevation work at all.
+#
+# AT DEPLOYMENT: MPP IT creates the Active Directory user source on the gateway
+# (Config > Security > Users, Roles -- domain, host(s), search base, binding
+# service account), then this constant is repointed at that source's NAME. No
+# other code changes. Do NOT repoint it at a name that does not exist on the
+# gateway: validateUser then throws and EVERY elevation is denied (that is the
+# exact failure mode fixed in aa2c5ded).
+#
+# Attribution/audit is independent of the source: validateUser only gates the
+# password; the account name flows on to Location.AppUser_AuthenticateAd, which
+# resolves it to an AppUser (Location.AppUser.AdAccount must match the directory
+# account name) and writes the ElevationGranted / ElevationDenied audit row.
 # =============================================================================
-_DEV_USER_SOURCE = "MPP"  # INTERIM: authProfile / user source to challenge --
-                              # MUST match a user source configured on the gateway
-                              # (Config > Security > Users, Roles). "" = project default.
+_ELEVATION_USER_SOURCE = "MPP"  # Name of a user source configured on the gateway
+                                # (Config > Security > Users, Roles).
+                                # "" = the project's default user source.
 
 
 def _validateAdCredentials(adAccount, password):
-    """DEPLOYMENT-TIME INTEGRATION SEAM (FDS-04-007).
+    """Challenge a supervisor credential against _ELEVATION_USER_SOURCE
+       (FDS-04-007).
 
-       *** INTERIM (2026-07-21): challenges the INTERNAL user source
-       (_DEV_USER_SOURCE) via system.security.validateUser, NOT Active Directory,
-       because AD is unavailable here. REVERT AT DEPLOYMENT -- see the banner
-       above. ***
+       The password is checked HERE; the stored proc (AppUser_AuthenticateAd)
+       receives only the account name and does the post-validation AppUser
+       mapping + role resolution + audit -- so the elevating identity is still
+       captured for auditing (validateUser returns only a boolean, but we pass
+       the typed account on to the proc).
 
-       Validates the credential (username + password) against the configured user
-       source. The password is checked HERE; the stored proc
-       (AppUser_AuthenticateAd) receives only the account name and does the
-       post-validation AppUser mapping + role resolution + audit -- so the
-       elevating identity is still captured for auditing (validateUser returns
-       only a boolean, but we pass the typed account on to the proc).
+       See the banner above for which directory this currently resolves to and
+       what has to change to point it at Active Directory.
 
        Returns a (validated, reason) tuple and NEVER raises -- any error degrades
        to (False, <reason>) so nothing silently authenticates."""
@@ -240,12 +255,16 @@ def _validateAdCredentials(adAccount, password):
     if not account or not password:
         return (False, "Enter both account and password.")
     try:
-        ok = system.security.validateUser(account, password, _DEV_USER_SOURCE)
+        ok = system.security.validateUser(account, password, _ELEVATION_USER_SOURCE)
     except Exception as e:
+        # Almost always a user-source NAME that does not exist on this gateway.
+        # Name it in both the log and the operator message so the misconfiguration
+        # is self-diagnosing instead of presenting as "wrong password".
         BlueRidge.Common.Util.log(
-            "validateUser error (source=%s account=%s): %s"
-            % (_DEV_USER_SOURCE, account, e), level="error")
-        return (False, "Credential validation error - check the user source name.")
+            "validateUser error (userSource=%s account=%s): %s"
+            % (_ELEVATION_USER_SOURCE, account, e), level="error")
+        return (False, "Credential validation error - user source '%s' is not "
+                       "configured on this gateway." % _ELEVATION_USER_SOURCE)
     if ok:
         return (True, "")
     return (False, "Invalid account or password.")

@@ -1,8 +1,14 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-05
--- Version:     1.3
+-- Modified:    2026-08-19
+-- Version:     1.4
+-- Change:      v1.4 -- shift-override ATTRIBUTION (OI-2 / spec sec 5): every
+--              Workorder.DieCastContribution row now carries CellLocationId --
+--              the PRESS -- taken from @CellLocationId, else from the die's
+--              currently-mounted Tools.ToolAssignment. Freezes the press against
+--              later die moves so Oee.ShiftOverride_Restamp keys on a plain
+--              equality instead of re-deriving assignment history.
 -- Change:      v1.3 -- FAT #19: new @CellLocationId BIGINT param (the die-cast
 --              MACHINE/cell location selected in the entry header). Threaded
 --              into the 'DieCastPieceContributed' audit op as @LocationId
@@ -124,6 +130,24 @@ BEGIN
         ))
         BEGIN SET @Message=N'One or more scrap/shot-loss defect codes are invalid or deprecated.'; GOTO Fail; END
 
+        -- v1.4 (shift-override attribution, OI-2 / spec sec 5): the PRESS this
+        -- output was produced on is stamped onto every DieCastContribution row.
+        -- Attribution overrides are keyed to the press (design D5), and deriving
+        -- it later through Tools.ToolAssignment history means moving the die
+        -- months from now would silently re-attribute settled production. The
+        -- screen supplies @CellLocationId (FAT #19); when an older caller does
+        -- not, fall back to the die's CURRENTLY-MOUNTED cell -- correct by
+        -- construction here, because output can only be recorded on the press
+        -- the die is on right now. Still NULLable: a die with no active
+        -- assignment leaves it NULL and that row is excluded from
+        -- equipment-scoped restamps rather than guessed at.
+        DECLARE @ResolvedCellLocationId BIGINT = @CellLocationId;
+        IF @ResolvedCellLocationId IS NULL
+            SELECT TOP 1 @ResolvedCellLocationId = a.CellLocationId
+            FROM Tools.ToolAssignment a
+            WHERE a.ToolId = @ToolId AND a.ReleasedAt IS NULL
+            ORDER BY a.AssignedAt DESC, a.Id DESC;
+
         -- ===== mutation =====
         BEGIN TRANSACTION;
         DECLARE @LotId BIGINT, @Delta INT, @Scrap NVARCHAR(MAX);
@@ -133,8 +157,8 @@ BEGIN
         BEGIN
             IF @Delta > 0
             BEGIN
-                INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt)
-                VALUES (@LotId, @ShiftId, @Delta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+                INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId)
+                VALUES (@LotId, @ShiftId, @Delta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId);
                 UPDATE Lots.Lot WITH (UPDLOCK, HOLDLOCK)
                 SET PieceCount = PieceCount + @Delta, InventoryAvailable = InventoryAvailable + @Delta,
                     UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId

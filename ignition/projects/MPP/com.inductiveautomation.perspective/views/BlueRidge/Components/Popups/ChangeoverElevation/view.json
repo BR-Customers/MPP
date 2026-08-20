@@ -1,8 +1,10 @@
 {
   "custom": {
+    "crtBaseline": false,
     "draft": {
-      "newMethod": "",
       "adAccount": "",
+      "crtEnabled": false,
+      "newMethod": "",
       "password": ""
     }
   },
@@ -22,24 +24,30 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "modal"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              },
+              "text": "Change Closure Mode"
+            },
+            "type": "ia.display.label"
+          }
+        ],
         "meta": {
           "name": "Header"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "props": {
@@ -49,98 +57,48 @@
             "gap": "10px"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "HeaderTitle"
-            },
-            "position": {
-              "basis": "auto",
-              "grow": 1
-            },
-            "props": {
-              "text": "Change Closure Mode",
-              "style": {
-                "fontSize": "18px",
-                "fontWeight": "700"
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Body"
-        },
-        "position": {
-          "basis": "0",
-          "grow": 1
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "classes": "modal-body"
-          }
-        },
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "Prompt"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "text": "Select the new closure mode and authorize with supervisor Active Directory credentials. The mode persists until the next changeover.",
               "style": {
                 "color": "var(--mpp-text-secondary)",
                 "fontSize": "13px"
-              }
-            }
+              },
+              "text": "Select the new closure mode and authorize with supervisor Active Directory credentials. The mode persists until the next changeover."
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "MethodField"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-field"
-              }
-            },
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "MethodLabel"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "props": {
-                  "text": "New closure mode",
                   "style": {
                     "classes": "pf-field-label"
-                  }
-                }
+                  },
+                  "text": "New closure mode"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
                 "meta": {
                   "name": "MethodDropdown"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -175,49 +133,104 @@
                   "style": {
                     "classes": "pf-field-input"
                   }
-                }
+                },
+                "type": "ia.input.dropdown"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
-              "name": "AccountField"
+              "name": "MethodField"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
               "direction": "column",
               "style": {
-                "classes": "pf-field"
+                "classes": "pf-field",
+                "overflow": "visible"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
+                "meta": {
+                  "name": "CrtLabel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Controlled Run Tag"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "CrtCheckbox"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.selected": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.draft.crtEnabled"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Hold containers for second-person validation"
+                },
+                "type": "ia.input.checkbox"
+              }
+            ],
+            "meta": {
+              "name": "CrtField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "8px",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
                 "meta": {
                   "name": "AccountLabel"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "props": {
-                  "text": "AD account",
                   "style": {
                     "classes": "pf-field-label"
-                  }
-                }
+                  },
+                  "text": "AD account"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
                 "meta": {
                   "name": "AccountInput"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -237,49 +250,48 @@
                   "style": {
                     "classes": "pf-field-input"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
-              "name": "PasswordField"
+              "name": "AccountField"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
               "direction": "column",
               "style": {
-                "classes": "pf-field"
+                "classes": "pf-field",
+                "overflow": "visible"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "PasswordLabel"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Password",
                   "style": {
                     "classes": "pf-field-label"
-                  }
-                }
+                  },
+                  "text": "Password"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.password-field",
                 "meta": {
                   "name": "PasswordInput"
                 },
                 "position": {
-                  "basis": "auto",
+                  "basis": "45px",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -299,38 +311,44 @@
                   "style": {
                     "classes": "pf-field-input"
                   }
-                }
+                },
+                "type": "ia.input.password-field"
               }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Footer"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "props": {
-          "alignItems": "center",
-          "justify": "flex-end",
-          "style": {
-            "classes": "modal-footer",
-            "gap": "10px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.input.button",
+            ],
             "meta": {
-              "name": "CancelButton"
+              "name": "PasswordField"
             },
             "position": {
               "shrink": 0
             },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
             "events": {
               "dom": {
                 "onClick": {
@@ -342,41 +360,84 @@
                 }
               }
             },
-            "props": {
-              "text": "Cancel",
-              "style": {
-                "classes": "pf-btn pf-btn-secondary"
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
             "meta": {
-              "name": "ConfirmButton"
+              "name": "CancelButton"
             },
             "position": {
               "shrink": 0
             },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
             "events": {
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tr = BlueRidge.Location.ClosureMode.changeover(self.view.params.terminalLocationId, self.view.custom.draft.newMethod, self.view.custom.draft.adAccount, self.view.custom.draft.password)\n\tBlueRidge.Common.Ui.notifyResult(r, \"Closure mode changed\")\n\tif r and r.get(\"Status\"):\n\t\tself.session.custom.closureMethod = self.view.custom.draft.newMethod\n\t\tsystem.perspective.closePopup(\"mpp-changeover\")"
+                    "script": "\td \u003d self.view.custom.draft\n\ttid \u003d self.view.params.terminalLocationId\n\tok \u003d True\n\tif d.newMethod:\n\t\tr \u003d BlueRidge.Location.ClosureMode.changeover(tid, d.newMethod, d.adAccount, d.password)\n\t\tBlueRidge.Common.Ui.notifyResult(r, \"Closure mode changed\")\n\t\tif r and r.get(\"Status\"):\n\t\t\tself.session.custom.closureMethod \u003d d.newMethod\n\t\tok \u003d ok and bool(r and r.get(\"Status\"))\n\tif bool(d.crtEnabled) !\u003d bool(self.view.custom.crtBaseline):\n\t\tr \u003d BlueRidge.Location.ClosureMode.setCrt(tid, d.crtEnabled, d.adAccount, d.password)\n\t\tBlueRidge.Common.Ui.notifyResult(r, \"Controlled Run Tag updated\")\n\t\tif r and r.get(\"Status\"):\n\t\t\tself.view.custom.crtBaseline \u003d d.crtEnabled\n\t\tok \u003d ok and bool(r and r.get(\"Status\"))\n\tif ok:\n\t\tsystem.perspective.closePopup(\"mpp-changeover\")"
                   },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
+            "meta": {
+              "name": "ConfirmButton"
+            },
+            "position": {
+              "shrink": 0
+            },
             "props": {
-              "text": "Confirm changeover",
               "style": {
                 "classes": "pf-btn pf-btn-primary"
-              }
-            }
+              },
+              "text": "Confirm changeover"
+            },
+            "type": "ia.input.button"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\ttid = self.view.params.terminalLocationId\n\tcur = bool(BlueRidge.Location.Terminal.getCrtEnabled(tid))\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\td[\"crtEnabled\"] = cur\n\tself.view.custom.draft = d\n\tself.view.custom.crtBaseline = cur"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

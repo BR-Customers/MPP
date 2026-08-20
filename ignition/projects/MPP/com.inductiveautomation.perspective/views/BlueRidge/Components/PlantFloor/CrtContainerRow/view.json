@@ -1,0 +1,199 @@
+{
+  "custom": {},
+  "params": {
+    "containerId": null,
+    "partNumber": "",
+    "description": "",
+    "pieceCount": 0,
+    "completedAt": "",
+    "aimShipperId": "",
+    "ageMinutes": 0,
+    "pendingLotCount": 0
+  },
+  "propConfig": {
+    "params.containerId": { "paramDirection": "input" },
+    "params.partNumber": { "paramDirection": "input" },
+    "params.description": { "paramDirection": "input" },
+    "params.pieceCount": { "paramDirection": "input" },
+    "params.completedAt": { "paramDirection": "input" },
+    "params.aimShipperId": { "paramDirection": "input" },
+    "params.ageMinutes": { "paramDirection": "input" },
+    "params.pendingLotCount": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 44, "width": 1200 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "crt-row",
+        "gap": "12px",
+        "overflow": "hidden"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "PartCell" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.partNumber} + \"  —  \" + {view.params.description}"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": { "classes": "crt-part" }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "PendingQtyCell" },
+        "position": { "basis": "120px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.pieceCount}) + \" pcs pending\""
+              }
+            }
+          }
+        },
+        "props": {
+          "style": { "classes": "crt-meta" }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "CompletedAtCell" },
+        "position": { "basis": "130px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.completedAt" }
+            }
+          }
+        },
+        "props": {
+          "style": { "classes": "crt-meta" }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "AimShipperCell" },
+        "position": { "basis": "150px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.params.aimShipperId}) || {view.params.aimShipperId} = \"\", \"AIM: —\", \"AIM \" + {view.params.aimShipperId})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": { "classes": "crt-meta crt-mono" }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "AgeCell" },
+        "position": { "basis": "70px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.ageMinutes}) + \" min\""
+              }
+            }
+          }
+        },
+        "props": {
+          "style": { "classes": "crt-meta" }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "PendingLotPill" },
+        "position": { "basis": "78px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.pendingLotCount}) + if({view.params.pendingLotCount} = 1, \" LOT\", \" LOTs\")"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": { "classes": "pf-pill pf-pill-warn" }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Actions" },
+        "position": { "basis": "184px", "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "8px", "overflow": "hidden" }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnValidate" },
+            "position": { "grow": 1 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"crtRowAction\", payload={\"action\": \"validate\", \"containerId\": self.view.params.containerId}, scope=\"page\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Validate",
+              "style": { "classes": "pf-btn pf-btn-primary pf-btn-sm" }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnHold" },
+            "position": { "grow": 1 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"crtRowAction\", payload={\"action\": \"hold\", \"containerId\": self.view.params.containerId}, scope=\"page\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Hold",
+              "style": { "classes": "pf-btn pf-btn-sm" }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

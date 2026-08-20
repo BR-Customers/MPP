@@ -1993,7 +1993,7 @@
                 {
                   "align": "center",
                   "boolean": "checkbox",
-                  "dateFormat": "MM/DD/YYYY HH:mm",
+                  "dateFormat": "MM/DD/YY HH:mm",
                   "editable": false,
                   "field": "CreatedAt",
                   "filter": {

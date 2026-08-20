@@ -1,18 +1,19 @@
 {
   "custom": {
-    "scopeLocationId": null,
-    "shiftId": null,
     "rows": [],
-    "shiftOptions": [ { "value": null, "label": "Current shift" } ]
+    "scopeLocationId": 3,
+    "shiftId": null
   },
   "params": {},
   "propConfig": {
     "custom.shiftOptions": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Oee.Shift.listRecent\", 0)" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Shift.listRecent\", 0)"
+        },
         "transforms": [
           {
-            "code": "\topts = [{\"value\": None, \"label\": \"Current shift\"}]\n\tfor r in (value or []):\n\t\tst = r.get(\"ActualStart\")\n\t\tlbl = (r.get(\"ScheduleName\") or \"Shift\")\n\t\tif st is not None:\n\t\t\tlbl = lbl + \"  \" + system.date.format(st, \"MM/dd HH:mm\")\n\t\topts.append({\"value\": r.get(\"Id\"), \"label\": lbl})\n\treturn opts",
+            "code": "\topts \u003d [{\"value\": None, \"label\": \"Current shift\"}]\n\tfor r in (value or []):\n\t\tst \u003d r.get(\"ActualStart\")\n\t\tlbl \u003d (r.get(\"ScheduleName\") or \"Shift\")\n\t\tif st is not None:\n\t\t\tlbl \u003d lbl + \"  \" + system.date.format(st, \"MM/dd HH:mm\")\n\t\topts.append({\"value\": r.get(\"Id\"), \"label\": lbl})\n\treturn opts",
             "type": "script"
           }
         ],
@@ -21,7 +22,10 @@
     }
   },
   "props": {
-    "defaultSize": { "height": 640, "width": 1000 }
+    "defaultSize": {
+      "height": 640,
+      "width": 1000
+    }
   },
   "root": {
     "children": [
@@ -29,87 +33,304 @@
         "children": [
           {
             "children": [
-              { "meta": { "name": "Title" }, "props": { "text": "Downtime Manager", "style": { "classes": "modal-title", "fontSize": "15px", "fontWeight": "600" } }, "type": "ia.display.label" },
               {
-                "meta": { "name": "ScopeLabel" },
-                "propConfig": {
-                  "props.text": { "binding": { "config": { "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"(no scope)\", {session.custom.terminal.zoneName})" }, "type": "expr" } }
+                "meta": {
+                  "name": "Title"
                 },
-                "props": { "style": { "classes": "pf-banner-detail" } },
+                "props": {
+                  "style": {
+                    "classes": "modal-title",
+                    "fontSize": "15px",
+                    "fontWeight": "600"
+                  },
+                  "text": "Downtime Manager"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ScopeLabel"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} \u003d \"\", \"(no scope)\", {session.custom.terminal.zoneName})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-banner-detail"
+                  }
+                },
                 "type": "ia.display.label"
               }
             ],
-            "meta": { "name": "TitleCol" },
-            "position": { "grow": 1 },
-            "props": { "direction": "column", "style": { "gap": "1px" } },
+            "meta": {
+              "name": "TitleCol"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "1px"
+              }
+            },
             "type": "ia.container.flex"
           },
           {
-            "meta": { "name": "ShiftSelect" },
-            "position": { "shrink": 0 },
             "events": {
               "component": {
-                "onActionPerformed": { "config": { "script": "\tself.view.rootContainer.refreshRows()" }, "scope": "G", "type": "script" }
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.refreshRows()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
               }
             },
-            "propConfig": {
-              "props.options": { "binding": { "config": { "path": "view.custom.shiftOptions" }, "type": "property" } },
-              "props.value": { "binding": { "config": { "bidirectional": true, "path": "view.custom.shiftId" }, "type": "property" } }
+            "meta": {
+              "name": "ShiftSelect"
             },
-            "props": { "style": { "width": "220px" } },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.shiftOptions"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.shiftId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "width": "220px"
+              }
+            },
             "type": "ia.input.dropdown"
           },
           {
-            "events": { "dom": { "onClick": { "config": { "script": "\tsystem.perspective.closePopup(id=\"mpp-downtime-manager\")" }, "scope": "G", "type": "script" } } },
-            "meta": { "name": "CloseIcon" },
-            "props": { "path": "mpp/cancel", "style": { "classes": "modal-close", "cursor": "pointer", "height": "18px", "width": "18px", "marginLeft": "12px" } },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003d\"mpp-downtime-manager\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "marginLeft": "12px",
+                "width": "18px"
+              }
+            },
             "type": "ia.display.icon"
           }
         ],
-        "meta": { "name": "HeaderBar" },
-        "position": { "basis": "60px", "shrink": 0 },
-        "props": { "alignItems": "center", "style": { "background": "var(--mpp-surface-raised)", "borderBottom": "1px solid var(--mpp-border-subtle)", "gap": "12px", "padding": "0 16px" } },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
-          { "meta": { "name": "ColTime" }, "position": { "basis": "180px", "shrink": 0 }, "props": { "text": "Time (ET)" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColDur" }, "position": { "basis": "50px", "shrink": 0 }, "props": { "text": "Dur" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColReason" }, "position": { "basis": "0", "grow": 1 }, "props": { "text": "Reason" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColSource" }, "position": { "basis": "68px", "shrink": 0 }, "props": { "text": "Source" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColBy" }, "position": { "basis": "44px", "shrink": 0 }, "props": { "text": "By" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColStatus" }, "position": { "basis": "76px", "shrink": 0 }, "props": { "text": "Status" }, "type": "ia.display.label" },
-          { "meta": { "name": "ColActions" }, "position": { "basis": "242px", "shrink": 0 }, "props": { "text": "" }, "type": "ia.display.label" }
-        ],
-        "meta": { "name": "TableHeader" },
-        "position": { "shrink": 0 },
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
-          "style": { "background": "var(--mpp-surface-card)", "borderBottom": "1px solid var(--mpp-border-subtle)", "color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "gap": "12px", "letterSpacing": "0.05em", "padding": "8px 12px", "textTransform": "uppercase" }
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "padding": "0 16px"
+          }
         },
         "type": "ia.container.flex"
       },
       {
         "children": [
           {
-            "meta": { "name": "EmptyState" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "meta.visible": { "binding": { "config": { "expression": "len({view.custom.rows}) = 0" }, "type": "expr" } }
+            "meta": {
+              "name": "ColTime"
             },
-            "props": { "text": "No downtime events for this scope / shift.", "style": { "color": "var(--mpp-text-secondary)", "fontStyle": "italic", "padding": "16px 12px" } },
+            "position": {
+              "basis": "180px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Time (ET)"
+            },
             "type": "ia.display.label"
           },
           {
-            "meta": { "name": "Rows" },
-            "position": { "grow": 1 },
+            "meta": {
+              "name": "ColDur"
+            },
+            "position": {
+              "basis": "50px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Dur"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ColReason"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "text": "Reason"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ColSource"
+            },
+            "position": {
+              "basis": "68px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Source"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ColBy"
+            },
+            "position": {
+              "basis": "44px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "By"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ColStatus"
+            },
+            "position": {
+              "basis": "76px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Status"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ColActions"
+            },
+            "position": {
+              "basis": "242px",
+              "shrink": 0
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "TableHeader"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-card)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "11px",
+            "fontWeight": "600",
+            "gap": "12px",
+            "letterSpacing": "0.05em",
+            "padding": "8px 12px",
+            "textTransform": "uppercase"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "EmptyState"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "config": {
+                    "expression": "len({view.custom.rows}) \u003d 0"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontStyle": "italic",
+                "padding": "16px 12px"
+              },
+              "text": "No downtime events for this scope / shift."
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Rows"
+            },
+            "position": {
+              "grow": 1
+            },
             "propConfig": {
               "props.instances": {
                 "binding": {
-                  "config": { "path": "view.custom.rows" },
+                  "config": {
+                    "path": "view.custom.rows"
+                  },
                   "transforms": [
                     {
-                      "code": "\tout = []\n\tfor r in (value or []):\n\t\tst = r.get(\"StartedAtEt\"); en = r.get(\"EndedAtEt\")\n\t\tstStr = system.date.format(st, \"MM/dd HH:mm\") if st is not None else \"\"\n\t\tenStr = system.date.format(en, \"HH:mm\") if en is not None else \"open\"\n\t\trc = r.get(\"ReasonCode\"); rd = r.get(\"ReasonDescription\")\n\t\treason = (rc + \" - \" + rd) if rc else \"\"\n\t\tout.append({\n\t\t\t\"downtimeEventId\": r.get(\"DowntimeEventId\"),\n\t\t\t\"reasonCodeId\": r.get(\"DowntimeReasonCodeId\"),\n\t\t\t\"timeRange\":       stStr + \"  ->  \" + enStr,\n\t\t\t\"durationMinutes\": r.get(\"DurationMinutes\"),\n\t\t\t\"reasonLabel\":     reason,\n\t\t\t\"sourceCode\":      r.get(\"SourceCode\") or \"\",\n\t\t\t\"initials\":        r.get(\"OperatorInitials\") or \"\",\n\t\t\t\"isOpen\":          bool(r.get(\"IsOpen\")),\n\t\t\t\"isApproximate\":   bool(r.get(\"IsApproximate\")),\n\t\t\t\"isVoided\":        bool(r.get(\"IsVoided\"))\n\t\t})\n\treturn out",
+                      "code": "\tout \u003d []\n\tfor r in (value or []):\n\t\tst \u003d r.get(\"StartedAtEt\"); en \u003d r.get(\"EndedAtEt\")\n\t\tstStr \u003d system.date.format(st, \"MM/dd HH:mm\") if st is not None else \"\"\n\t\tenStr \u003d system.date.format(en, \"HH:mm\") if en is not None else \"open\"\n\t\trc \u003d r.get(\"ReasonCode\"); rd \u003d r.get(\"ReasonDescription\")\n\t\treason \u003d (rc + \" - \" + rd) if rc else \"\"\n\t\tout.append({\n\t\t\t\"downtimeEventId\": r.get(\"DowntimeEventId\"),\n\t\t\t\"reasonCodeId\": r.get(\"DowntimeReasonCodeId\"),\n\t\t\t\"timeRange\":       stStr + \"  -\u003e  \" + enStr,\n\t\t\t\"durationMinutes\": r.get(\"DurationMinutes\"),\n\t\t\t\"reasonLabel\":     reason,\n\t\t\t\"sourceCode\":      r.get(\"SourceCode\") or \"\",\n\t\t\t\"initials\":        r.get(\"OperatorInitials\") or \"\",\n\t\t\t\"isOpen\":          bool(r.get(\"IsOpen\")),\n\t\t\t\"isApproximate\":   bool(r.get(\"IsApproximate\")),\n\t\t\t\"isVoided\":        bool(r.get(\"IsVoided\"))\n\t\t})\n\treturn out",
                       "type": "script"
                     }
                   ],
@@ -119,7 +340,11 @@
             },
             "props": {
               "direction": "column",
-              "elementPosition": { "basis": "58px", "grow": 0, "shrink": 0 },
+              "elementPosition": {
+                "basis": "58px",
+                "grow": 0,
+                "shrink": 0
+              },
               "path": "BlueRidge/Components/PlantFloor/DowntimeManager/EventRow",
               "useDefaultViewHeight": false,
               "useDefaultViewWidth": false
@@ -127,9 +352,18 @@
             "type": "ia.display.flex-repeater"
           }
         ],
-        "meta": { "name": "Body" },
-        "position": { "grow": 1 },
-        "props": { "direction": "column", "style": { "overflowY": "auto" } },
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "overflowY": "auto"
+          }
+        },
         "type": "ia.container.flex"
       },
       {
@@ -138,64 +372,137 @@
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "config": { "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tsid = self.view.custom.scopeLocationId\n\tif sid is None:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"No terminal scope - select a cell first.\"}, \"\")\n\t\treturn\n\tres = DE.start(sid)\n\tUi.notifyResult(res, \"Downtime started\")\n\tself.view.rootContainer.refreshRows()" },
+                  "config": {
+                    "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tsid \u003d self.view.custom.scopeLocationId\n\tif sid is None:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"No terminal scope - select a cell first.\"}, \"\")\n\t\treturn\n\tres \u003d DE.start(sid)\n\tUi.notifyResult(res, \"Downtime started\")\n\tself.view.rootContainer.refreshRows()"
+                  },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
-            "meta": { "name": "StartButton" },
-            "position": { "shrink": 0 },
-            "props": { "style": { "classes": "pf-btn pf-btn-primary" }, "text": "Start Downtime" },
+            "meta": {
+              "name": "StartButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              },
+              "text": "Start Downtime"
+            },
             "type": "ia.input.button"
           },
           {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "config": { "script": "\tsystem.perspective.openPopup(id=\"mpp-downtime-editor\", view=\"BlueRidge/Components/Popups/DowntimeEditor\", modal=True, showCloseIcon=False, params={\"mode\": \"create\", \"editId\": None, \"scopeLocationId\": self.view.custom.scopeLocationId})" },
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-downtime-editor\", view\u003d\"BlueRidge/Components/Popups/DowntimeEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\"mode\": \"create\", \"editId\": None, \"scopeLocationId\": self.view.custom.scopeLocationId})"
+                  },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
-            "meta": { "name": "AddPastButton" },
-            "position": { "shrink": 0 },
-            "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Add Past Event" },
+            "meta": {
+              "name": "AddPastButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Add Past Event"
+            },
             "type": "ia.input.button"
           },
-          { "meta": { "name": "FooterSpacer" }, "position": { "grow": 1 }, "type": "ia.display.label" },
           {
-            "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.closePopup(id=\"mpp-downtime-manager\")" }, "scope": "G", "type": "script" } } },
-            "meta": { "name": "CloseButton" },
-            "position": { "shrink": 0 },
-            "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Close" },
+            "meta": {
+              "name": "FooterSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003d\"mpp-downtime-manager\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
             "type": "ia.input.button"
           }
         ],
-        "meta": { "name": "FooterBar" },
-        "position": { "basis": "56px", "shrink": 0 },
-        "props": { "alignItems": "center", "style": { "background": "var(--mpp-surface-raised)", "borderTop": "1px solid var(--mpp-border-subtle)", "gap": "8px", "padding": "0 16px" } },
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "padding": "0 16px"
+          }
+        },
         "type": "ia.container.flex"
       }
     ],
-    "meta": { "name": "root" },
     "events": {
       "system": {
         "onStartup": {
-          "type": "script",
+          "config": {
+            "script": "\tself.refreshRows()"
+          },
           "scope": "G",
-          "config": { "script": "\tself.refreshRows()" }
+          "type": "script"
         }
       }
     },
-    "props": { "direction": "column", "style": { "background": "var(--mpp-surface-canvas)", "height": "100%", "width": "100%" } },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "height": "100%",
+        "width": "100%"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "refreshRows",
           "params": [],
-          "script": "\timport BlueRidge.Oee.Downtime as D\n\tc = self.session.custom.cell\n\tcellId = c.get(\"locationId\") if c else None\n\tscope = D.resolveScope(cellId)\n\tself.view.custom.scopeLocationId = scope\n\tself.view.custom.rows = D.getByScope(scope, True, self.view.custom.shiftId)"
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\tc \u003d self.session.custom.cell\n\tcellId \u003d c.get(\"locationId\") if c else None\n\tscope \u003d D.resolveScope(cellId)\n\tself.view.custom.scopeLocationId \u003d scope\n\tself.view.custom.rows \u003d D.getByScope(scope, True, self.view.custom.shiftId)"
         }
       ],
       "extensionFunctions": null,
@@ -203,28 +510,28 @@
         {
           "messageType": "dtReasonSelected",
           "pageScope": true,
-          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tres = D.updateReason(payload[\"downtimeEventId\"], payload[\"reasonCodeId\"])\n\tUi.notifyResult(res, \"Reason updated\")\n\tself.refreshRows()",
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\t# Supervisor-only (auth backlog 4.1). requireElevation stashes {code, params}\n\t# and opens the ElevationModal; on success Session.dispatchElevatedAction\n\t# re-sends THIS message and the isElevated test below passes. refreshRows on\n\t# the deferred path snaps the dropdown back to the stored reason so a\n\t# cancelled elevation leaves no phantom selection on screen.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeReason\", \"Edit downtime reason\", p)\n\t\tself.refreshRows()\n\t\treturn\n\tres \u003d D.updateReason(p.get(\"downtimeEventId\"), p.get(\"reasonCodeId\"))\n\tUi.notifyResult(res, \"Reason updated\")\n\tself.refreshRows()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "dtEndRequested",
           "pageScope": true,
-          "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tres = DE.end(payload[\"downtimeEventId\"])\n\tUi.notifyResult(res, \"Downtime ended\")\n\tself.refreshRows()",
+          "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tres \u003d DE.end(payload[\"downtimeEventId\"])\n\tUi.notifyResult(res, \"Downtime ended\")\n\tself.refreshRows()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "dtVoidRequested",
           "pageScope": true,
-          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tres = D.void(payload[\"downtimeEventId\"])\n\tUi.notifyResult(res, \"Downtime voided\")\n\tself.refreshRows()",
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\t# Supervisor-only (auth backlog 4.1) - voiding is irreversible.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeVoid\", \"Void downtime event\", p)\n\t\treturn\n\tres \u003d D.void(p.get(\"downtimeEventId\"))\n\tUi.notifyResult(res, \"Downtime voided\")\n\tself.refreshRows()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "dtEditRequested",
           "pageScope": true,
-          "script": "\teid = payload[\"downtimeEventId\"]\n\trow = None\n\tfor r in (self.view.custom.rows or []):\n\t\tif r.get(\"DowntimeEventId\") == eid:\n\t\t\trow = r; break\n\tif row is None:\n\t\treturn\n\tst = row.get(\"StartedAtEt\"); en = row.get(\"EndedAtEt\")\n\tsystem.perspective.openPopup(id=\"mpp-downtime-editor\", view=\"BlueRidge/Components/Popups/DowntimeEditor\", modal=True, showCloseIcon=False, params={\n\t\t\"mode\": \"update\", \"editId\": eid, \"scopeLocationId\": self.view.custom.scopeLocationId,\n\t\t\"reasonCodeId\": row.get(\"DowntimeReasonCodeId\"),\n\t\t\"startedAtEtStr\": system.date.format(st, \"yyyy-MM-dd HH:mm:ss\") if st is not None else None,\n\t\t\"endedAtEtStr\": system.date.format(en, \"yyyy-MM-dd HH:mm:ss\") if en is not None else None,\n\t\t\"remarks\": row.get(\"Remarks\")})",
+          "script": "\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\teid \u003d p.get(\"downtimeEventId\")\n\t# Supervisor-only (auth backlog 4.1). Gate BEFORE the editor opens; the\n\t# editor\u0027s Save re-tests as defence in depth.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeEdit\", \"Edit downtime event\", p)\n\t\treturn\n\trow \u003d None\n\tfor r in (self.view.custom.rows or []):\n\t\tif r.get(\"DowntimeEventId\") \u003d\u003d eid:\n\t\t\trow \u003d r; break\n\tif row is None:\n\t\treturn\n\tst \u003d row.get(\"StartedAtEt\"); en \u003d row.get(\"EndedAtEt\")\n\tsystem.perspective.openPopup(id\u003d\"mpp-downtime-editor\", view\u003d\"BlueRidge/Components/Popups/DowntimeEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\n\t\t\"mode\": \"update\", \"editId\": eid, \"scopeLocationId\": self.view.custom.scopeLocationId,\n\t\t\"reasonCodeId\": row.get(\"DowntimeReasonCodeId\"),\n\t\t\"startedAtEtStr\": system.date.format(st, \"yyyy-MM-dd HH:mm:ss\") if st is not None else None,\n\t\t\"endedAtEtStr\": system.date.format(en, \"yyyy-MM-dd HH:mm:ss\") if en is not None else None,\n\t\t\"remarks\": row.get(\"Remarks\")})",
           "sessionScope": false,
           "viewScope": false
         },
