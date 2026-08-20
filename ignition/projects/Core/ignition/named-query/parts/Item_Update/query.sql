@@ -9,4 +9,5 @@ EXEC Parts.Item_Update
     @WeightUomId      = :weightUomId,
     @CountryOfOrigin  = :countryOfOrigin,
     @MaxParts         = :maxParts,
-    @AppUserId        = :appUserId
+    @AppUserId        = :appUserId,
+    @CrtEnabled       = :crtEnabled

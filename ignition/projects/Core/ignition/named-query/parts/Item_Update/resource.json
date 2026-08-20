@@ -84,6 +84,11 @@
         "type": "Parameter",
         "identifier": "appUserId",
         "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "crtEnabled",
+        "sqlType": 6
       }
     ]
   }

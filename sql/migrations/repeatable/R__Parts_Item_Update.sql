@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.3
+-- Version:     2.4
 --
 -- Description:
 --   Updates mutable fields of an active Item. PartNumber and ItemTypeId
@@ -30,6 +30,18 @@
 --   @MaxParts INT NULL            - Hard cap on pieces per container. OI-12.
 --                                   Validated > 0 when supplied.
 --   @AppUserId BIGINT             - Required for audit.
+--   @CrtEnabled BIT = 0           - Part-scoped Controlled Run Tag (Task 8).
+--                                   Declared LAST with a default so pre-CRT
+--                                   callers still compile. NOTE: this proc is a
+--                                   FULL-REPLACE update (every mutable column is
+--                                   assigned unconditionally, exactly as
+--                                   @Description / @MaxParts already are), so a
+--                                   caller that omits @CrtEnabled CLEARS the flag.
+--                                   Every caller that may touch a CRT part SHALL
+--                                   pass the current value through. NULL is
+--                                   coerced to 0 (the column is BIT NOT NULL and
+--                                   an unchecked Perspective checkbox can bind
+--                                   null).
 --
 -- Result set:
 --   Single row with Status (BIT), Message (NVARCHAR).
@@ -49,6 +61,10 @@
 --                       narrative Description (changed fields only) +
 --                       resolved-FK Old/NewValue JSON (ItemType, Uom,
 --                       WeightUom). Old values captured BEFORE the UPDATE.
+--   2026-08-20 - 2.4 - Part-scoped CRT (Task 8): @CrtEnabled BIT = 0 added
+--                       (declared last, defaulted). Carried into the field-diff
+--                       Action prose and the Old/NewValue audit JSON. Result-set
+--                       shape UNCHANGED (Status, Message).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Update
     @Id               BIGINT,
@@ -61,7 +77,8 @@ CREATE OR ALTER PROCEDURE Parts.Item_Update
     @WeightUomId      BIGINT         = NULL,
     @CountryOfOrigin  NVARCHAR(2)    = NULL,
     @MaxParts         INT            = NULL,
-    @AppUserId        BIGINT
+    @AppUserId        BIGINT,
+    @CrtEnabled       BIT            = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -69,6 +86,9 @@ BEGIN
 
     DECLARE @Status  BIT           = 0;
     DECLARE @Message NVARCHAR(500) = N'Unknown error';
+
+    -- The column is BIT NOT NULL; an unchecked Perspective checkbox can bind null.
+    SET @CrtEnabled = ISNULL(@CrtEnabled, 0);
 
     DECLARE @ProcName NVARCHAR(200) = N'Parts.Item_Update';
     DECLARE @Params   NVARCHAR(MAX) =
@@ -78,7 +98,8 @@ BEGIN
                 @MaxLotSize AS MaxLotSize, @UomId AS UomId,
                 @UnitWeight AS UnitWeight, @WeightUomId AS WeightUomId,
                 @CountryOfOrigin AS CountryOfOrigin,
-                @MaxParts AS MaxParts
+                @MaxParts AS MaxParts,
+                @CrtEnabled AS CrtEnabled
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
@@ -172,6 +193,7 @@ BEGIN
         DECLARE @OldWeightUomId      BIGINT;
         DECLARE @OldCountryOfOrigin  NVARCHAR(2);
         DECLARE @OldMaxParts         INT;
+        DECLARE @OldCrtEnabled       BIT;
 
         SELECT @OldPartNumber       = PartNumber,
                @OldDescription      = Description,
@@ -182,7 +204,8 @@ BEGIN
                @OldUnitWeight       = UnitWeight,
                @OldWeightUomId      = WeightUomId,
                @OldCountryOfOrigin  = CountryOfOrigin,
-               @OldMaxParts         = MaxParts
+               @OldMaxParts         = MaxParts,
+               @OldCrtEnabled       = CrtEnabled
         FROM Parts.Item WHERE Id = @Id;
 
         -- Resolved-FK OldValue snapshot (pre-update state)
@@ -200,7 +223,8 @@ BEGIN
                             FROM Parts.Uom wu WHERE wu.Id = i.WeightUomId
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS WeightUom,
                 i.CountryOfOrigin,
-                i.MaxParts
+                i.MaxParts,
+                i.CrtEnabled
             FROM Parts.Item i
             WHERE i.Id = @Id
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
@@ -243,6 +267,9 @@ BEGIN
                  ELSE N'' END,
             CASE WHEN ISNULL(@OldMaxParts, -2147483648) <> ISNULL(@MaxParts, -2147483648)
                  THEN N', MaxParts ' + ISNULL(CAST(@OldMaxParts AS NVARCHAR(20)), N'null') + @Arrow + ISNULL(CAST(@MaxParts AS NVARCHAR(20)), N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldCrtEnabled, 0) <> @CrtEnabled
+                 THEN N', CrtEnabled ' + CAST(ISNULL(@OldCrtEnabled, 0) AS NVARCHAR(1)) + @Arrow + CAST(@CrtEnabled AS NVARCHAR(1))
                  ELSE N'' END
         ), 1, 2, N'');  -- strip leading ", "
 
@@ -267,6 +294,7 @@ BEGIN
             WeightUomId      = @WeightUomId,
             CountryOfOrigin  = @CountryOfOrigin,
             MaxParts         = @MaxParts,
+            CrtEnabled       = @CrtEnabled,
             UpdatedAt        = SYSUTCDATETIME(),
             UpdatedByUserId  = @AppUserId
         WHERE Id = @Id;
@@ -286,7 +314,8 @@ BEGIN
                             FROM Parts.Uom wu WHERE wu.Id = i.WeightUomId
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS WeightUom,
                 i.CountryOfOrigin,
-                i.MaxParts
+                i.MaxParts,
+                i.CrtEnabled
             FROM Parts.Item i
             WHERE i.Id = @Id
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER

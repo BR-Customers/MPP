@@ -391,7 +391,11 @@ CREATE TABLE #Get1 (
     UpdatedAt         DATETIME2(3),
     CreatedByUserId   BIGINT,
     UpdatedByUserId   BIGINT,
-    DeprecatedAt      DATETIME2(3)
+    DeprecatedAt      DATETIME2(3),
+    -- Part-scoped CRT (Task 8). Parts.Item_Get APPENDS new columns LAST, so this
+    -- fixed-shape capture must mirror that or the whole file aborts with Msg 213
+    -- (a runner ERROR, not a FAIL line).
+    CrtEnabled        BIT
 );
 
 INSERT INTO #Get1
