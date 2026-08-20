@@ -82,6 +82,7 @@ import inspect
 from com.inductiveautomation.ignition.common.model.values import QualifiedValue
 from java.util import Map as JavaMap
 from java.util import Collection as JavaCollection
+from java.lang import Throwable
 
 
 # Dev fallback for _currentAppUserId. Swap-in target is session.custom.appUserId
@@ -822,8 +823,34 @@ def convertWrapperObjectToJson(obj):
     Returns:
         str: JSON-encoded string. Compare two of these for type-stable
              dirty detection. Returns "null" for None.
+
+    Defensive (2026-08-20): a container re-read off a Perspective property
+    (as every dirty-state expr binding does, e.g. Plant Hierarchy's Printer
+    attribute editor) can arrive as Perspective's own ImmutableMap/
+    ImmutableList -- NOT java.util.Map/Collection, so extractQualifiedValues'
+    isinstance checks don't recognize it and any QualifiedValue leaves stay
+    wrapped. jsonEncode then either rejects the raw Java object outright or,
+    once there's enough real wrapped content (an empty/never-saved draft
+    doesn't trigger it), spirals into java.lang.StackOverflowError walking
+    it reflectively -- caught as Throwable, since Jython's `except Exception`
+    does NOT catch java.lang.Throwable. Either failure previously left the
+    bound property at BAD quality, rendering a literal "null" in every
+    dirty-state indicator built on this helper. Falling back to str() of the
+    extracted structure keeps the comparison a normal Python string diff
+    instead of corrupting the bound property.
     """
-    return system.util.jsonEncode(extractQualifiedValues(obj))
+    try:
+        return system.util.jsonEncode(extractQualifiedValues(obj))
+    except Throwable:
+        pass
+    except Exception:
+        pass
+    try:
+        return str(extractQualifiedValues(obj))
+    except Throwable:
+        return repr(obj)
+    except Exception:
+        return repr(obj)
 
 # NOTE (2026-07-07): a toPlain(obj) JSON-round-trip helper briefly lived here
 # as an attempted rescue for container props passed as runScript EXPRESSION
