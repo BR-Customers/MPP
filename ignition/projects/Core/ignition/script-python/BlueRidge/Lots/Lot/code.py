@@ -983,3 +983,24 @@ def clearCrt(lotId, appUserId=None, terminalLocationId=None):
         "terminalLocationId": _u(terminalLocationId),
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_ClearCrt", params)
+
+
+def crtNamesFor(lotIds):
+    """The LOT NAMES of the CRT-active LOTs among lotIds, in the order given.
+
+       The mint procs return {Status, Message, NewId} and do not project
+       CrtActive, so the CRT state of a just-minted LOT is read back here --
+       one cheap Lot_Get per minted LOT, only on the success path. The DB is
+       the authority for the tag; nothing re-derives the mint rule in Python
+       (that rule lives in Lots.ufn_CrtForMint alone).
+
+       Returns [] when nothing is CRT, so callers can pass the result straight
+       to BlueRidge.Common.Ui.crtNotice unconditionally."""
+    out = []
+    for lotId in (lotIds or []):
+        if lotId is None:
+            continue
+        row = get(lotId) or {}
+        if row.get("CrtActive"):
+            out.append(row.get("LotName") or ("%s" % lotId))
+    return out

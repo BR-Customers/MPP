@@ -326,9 +326,13 @@ def submitBulkOpen(rows, toolId, cellLocationId, appUserId=None, terminalLocatio
 
        Returns
          {Status, Message, Rejected, Opened, Failed,
-          Rows: {"<toolCavityId>": {state: "ok"|"error", message: str}}}
+          Rows: {"<toolCavityId>": {state: "ok"|"error", message: str}},
+          CrtLots: [lotName, ...]}
        Status is 1 when at least one basket opened. Rejected=True means a
-       batch-level gate fired and NOTHING was written."""
+       batch-level gate fired and NOTHING was written. CrtLots names the
+       baskets that opened CRT-active, in cavity submission order, so the
+       screen can raise ONE notice for the whole submit (design D9) instead
+       of one dialog per cavity."""
     rows = _u(rows) or []
     toolId = _u(toolId)
     cellLocationId = _u(cellLocationId)
@@ -371,6 +375,7 @@ def submitBulkOpen(rows, toolId, cellLocationId, appUserId=None, terminalLocatio
     # ---- per-row open. Each call is its own transaction: a failure here never
     # rolls back a sibling row that already committed.
     results = {}
+    openedLotIds = []
     opened = 0
     failed = 0
     templateCache = {}
@@ -410,6 +415,7 @@ def submitBulkOpen(rows, toolId, cellLocationId, appUserId=None, terminalLocatio
                         "message": res.get("Message") or ""}
         if ok:
             opened += 1
+            openedLotIds.append(res.get("NewId"))
         else:
             failed += 1
 
@@ -421,4 +427,5 @@ def submitBulkOpen(rows, toolId, cellLocationId, appUserId=None, terminalLocatio
         message = ("Opened %s of %s basket(s) - %s row(s) failed and were left "
                    "untouched. See each row for why." % (opened, opened + failed, failed))
     return {"Status": 1 if opened else 0, "Message": message, "Rejected": False,
-            "Opened": opened, "Failed": failed, "Rows": results}
+            "Opened": opened, "Failed": failed, "Rows": results,
+            "CrtLots": BlueRidge.Lots.Lot.crtNamesFor(openedLotIds)}
