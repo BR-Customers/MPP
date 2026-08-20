@@ -984,21 +984,7 @@
               }
             },
             "type": "ia.container.flex"
-          }
-        ],
-        "meta": {
-          "name": "FieldRow4"
-        },
-        "props": {
-          "style": {
-            "classes": "field-row",
-            "gap": "12px"
-          }
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
+          },
           {
             "children": [
               {
@@ -1013,7 +999,7 @@
                   "style": {
                     "classes": "field-label"
                   },
-                  "text": "Controlled Run Tag (CRT)"
+                  "text": "Enable CRT"
                 },
                 "type": "ia.display.label"
               },
@@ -1037,28 +1023,13 @@
                 },
                 "props": {},
                 "type": "ia.input.checkbox"
-              },
-              {
-                "meta": {
-                  "name": "Help"
-                },
-                "props": {
-                  "style": {
-                    "color": "var(--mpp-text-tertiary)",
-                    "fontSize": "11px"
-                  },
-                  "text": "Every LOT of this part minted while this is on is tagged CRT and cannot advance until Quality clears it."
-                },
-                "type": "ia.display.label"
               }
             ],
             "meta": {
               "name": "FieldCrtEnabled"
             },
             "position": {
-              "basis": "auto",
-              "grow": 1
-            },
+              },
             "props": {
               "direction": "column",
               "style": {
@@ -1070,7 +1041,7 @@
           }
         ],
         "meta": {
-          "name": "FieldRow5"
+          "name": "FieldRow4"
         },
         "props": {
           "style": {
