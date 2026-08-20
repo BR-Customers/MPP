@@ -342,6 +342,17 @@ BEGIN
             THEN @SeqPrefix + CAST(@SeqLast AS NVARCHAR(20))
             ELSE @SeqPrefix + RIGHT(REPLICATE(N'0', @SeqPad) + CAST(@SeqLast AS NVARCHAR(20)), @SeqPad) END;
 
+        -- D1/D2: CRT at mint, resolved in ONE place (Lots.ufn_CrtForMint) from the
+        -- output part's flag, the terminal's CrtEnabled attribute, and EVERY source
+        -- LOT -- one CRT source taints the blend, so the merged output cannot launder
+        -- a tagged LOT into a clean one. Mint-time only (D3): clearing a source later
+        -- leaves this output tagged.
+        DECLARE @SourceLotIdsCsv NVARCHAR(MAX) = (
+            SELECT STRING_AGG(CAST(s.LotId AS NVARCHAR(20)), N',') FROM @Sources s);
+        DECLARE @CrtActive BIT =
+            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@OutputItemId, @TerminalLocationId,
+                                                       @SourceLotIdsCsv));
+
         -- ---- 10. Inline-INSERT the output LOT -- mirrors Lots.Lot_Create's column
         -- list. Blended origin = 'Manufactured', Tool/Cavity NULL (FDS-05-030). ----
         INSERT INTO Lots.Lot (
@@ -349,14 +360,14 @@ BEGIN
             Weight, WeightUomId, ToolId, ToolCavityId, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
-            CreatedByUserId, CreatedAtTerminalId, CreatedAt
+            CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive
         )
         VALUES (
             @OutputName, @OutputItemId, @ManufacturedOriginId, @GoodStatusId, @OutPc, NULL,
             NULL, NULL, NULL, NULL, NULL,
             NULL, NULL, @OutputLocationId,
             0, @OutPc,                                -- B5 materialized: TotalInProcess / InventoryAvailable
-            @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
+            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive
         );
 
         SET @NewId = SCOPE_IDENTITY();

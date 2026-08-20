@@ -268,11 +268,20 @@ BEGIN
         IF @NextOrd > 99 RAISERROR(N'Casting already has 99 machined sublots.',16,1);
         SET @MintedName = @OldestName + N'-' + RIGHT(N'0'+CAST(@NextOrd AS NVARCHAR(2)),2);
 
+        -- D1/D2: CRT at mint, resolved in ONE place (Lots.ufn_CrtForMint) from the
+        -- produced part's flag, the minting terminal's CrtEnabled attribute, and the
+        -- consumed casting. Seeded here from the FIFO HANDLE; the FIFO walk below may
+        -- roll into further castings, so the stamp is re-resolved over the ACTUAL
+        -- consumed set once the walk finishes (see "CRT re-resolve" below).
+        DECLARE @CrtActive BIT =
+            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ProducedItemId, @TerminalLocationId,
+                                                       CAST(@SourceLotId AS NVARCHAR(20))));
+
         INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
             Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber, MinSerialNumber, MaxSerialNumber,
-            CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId)
+            CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId, CrtActive)
         VALUES (@MintedName, @ProducedItemId, @ManufacturedOriginId, @GoodStatusId, @PieceCount, (SELECT MaxLotSize FROM Parts.Item WHERE Id=@ProducedItemId),
-            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, @SrcLoc, 0, @PieceCount, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId);
+            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, @SrcLoc, 0, @PieceCount, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive);
         SET @NewId = SCOPE_IDENTITY();
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
         VALUES (@NewId, NULL, @GoodStatusId, N'SubAssembly LOT minted at Machining OUT (FIFO).', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
@@ -311,6 +320,23 @@ BEGIN
             SET @i = @i + 1;
         END
         IF @Need > 0 RAISERROR(N'FIFO queue was consumed by a concurrent mint mid-operation; reload and retry.',16,1);
+
+        -- CRT re-resolve (D2). The stamp above only saw the FIFO HANDLE, but the walk
+        -- rolls into as many castings as it needs -- a CRT casting further down the
+        -- queue would otherwise mint a CLEAN sub-assembly, which is exactly the
+        -- containment escape D2 exists to prevent. The Consumption genealogy edges
+        -- written by the walk ARE the actual consumed set, so re-resolve over them.
+        -- Only ever raises 0 -> 1 (ufn_CrtForMint is a pure OR of the same three arms).
+        IF @CrtActive = 0
+        BEGIN
+            DECLARE @ConsumedLotIdsCsv NVARCHAR(MAX) = (
+                SELECT STRING_AGG(CAST(g.ParentLotId AS NVARCHAR(20)), N',')
+                FROM Lots.LotGenealogy g WHERE g.ChildLotId = @NewId);
+            SET @CrtActive = (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ProducedItemId,
+                @TerminalLocationId, @ConsumedLotIdsCsv));
+            IF @CrtActive = 1
+                UPDATE Lots.Lot SET CrtActive = 1 WHERE Id = @NewId;
+        END
 
         -- Audit (subject = minted LOT; source castings summarized).
         SET @Activity = Audit.ufn_TruncateActivity(@MintedName+N' '+Audit.ufn_MidDot()+N' Machining OUT '+Audit.ufn_MidDot()

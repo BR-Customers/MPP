@@ -443,19 +443,26 @@ BEGIN
         DECLARE @CavityNumberToStore NVARCHAR(50) =
             CAST(CASE WHEN @ToolCavityId IS NULL THEN @CavityNote ELSE NULL END AS NVARCHAR(50));
 
+        -- D1/D2: CRT at mint. Resolved in ONE place (Lots.ufn_CrtForMint): the part's
+        -- Parts.Item.CrtEnabled flag OR the minting terminal's CrtEnabled attribute.
+        -- No input LOTs at a die-cast birth (or a loose receive), so the propagation
+        -- arm is passed NULL. Mint-time only (D3) -- nothing re-derives this later.
+        DECLARE @CrtActive BIT =
+            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ItemId, @TerminalLocationId, NULL));
+
         INSERT INTO Lots.Lot (
             LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
             Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
-            CreatedByUserId, CreatedAtTerminalId, CreatedAt
+            CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive
         )
         VALUES (
             @MintedLotName, @ItemId, @LotOriginTypeId, @GoodStatusId, @PieceCount, @MaxLotSize,
             @Weight, @WeightUomId, @ToolId, @ToolCavityId, @CavityNumberToStore, @VendorLotNumber,
             @MinSerialNumber, @MaxSerialNumber, @CurrentLocationId,
             0, @PieceCount,                          -- B5 materialized: TotalInProcess / InventoryAvailable
-            @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
+            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive
         );
 
         SET @NewId = SCOPE_IDENTITY();

@@ -320,6 +320,15 @@ BEGIN
             OR @SumChildren > @ParentPc OR @NextOrd + @ChildCount - 1 > 99
             RAISERROR(N'Parent LOT changed during split (concurrent mutation); retry.', 16, 1);
 
+        -- D1/D2: CRT at mint, resolved in ONE place (Lots.ufn_CrtForMint). A split is
+        -- a same-part division, so the parent is the only consumed input and the child
+        -- inherits its tag; the part flag / terminal switch arms still apply. Resolved
+        -- ONCE outside the child loop -- every child shares the same part, terminal and
+        -- parent. Mint-time only (D3): clearing the parent later leaves children tagged.
+        DECLARE @CrtActive BIT =
+            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ParentItem, @TerminalLocationId,
+                                                       CAST(@ParentLotId AS NVARCHAR(20))));
+
         -- ---- 9. Mint each child (numbered WHILE loop; no cursor) ----
         DECLARE @i INT = 1;
         DECLARE @ChildPc INT, @ChildLoc BIGINT, @ChildName NVARCHAR(50), @ChildId BIGINT;
@@ -339,7 +348,7 @@ BEGIN
                 Weight, WeightUomId, ToolId, ToolCavityId, VendorLotNumber,
                 MinSerialNumber, MaxSerialNumber, ParentLotId, CurrentLocationId,
                 TotalInProcess, InventoryAvailable,
-                CreatedByUserId, CreatedAtTerminalId, CreatedAt
+                CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive
             )
             VALUES (
                 @ChildName, @ParentItem, @ParentOrigin, @GoodStatusId, @ChildPc,
@@ -347,7 +356,7 @@ BEGIN
                 NULL, NULL, NULL, NULL, NULL,
                 NULL, NULL, @ParentLotId, @ChildLoc,
                 0, @ChildPc,                              -- B5 materialized: TotalInProcess / InventoryAvailable
-                @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
+                @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive
             );
 
             SET @ChildId = SCOPE_IDENTITY();

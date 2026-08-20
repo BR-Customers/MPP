@@ -270,14 +270,17 @@ BEGIN
             THEN @SeqPrefix + CAST(@SeqLast AS NVARCHAR(20))
             ELSE @SeqPrefix + RIGHT(REPLICATE(N'0', @SeqPad) + CAST(@SeqLast AS NVARCHAR(20)), @SeqPad) END;
 
-        SELECT @CrtActive = CASE WHEN la.AttributeValue = N'1' THEN 1 ELSE 0 END
-        FROM Location.LocationAttribute la
-        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
-        WHERE la.LocationId = @TerminalLocationId
-          AND ad.LocationTypeDefinitionId = 7
-          AND ad.AttributeName = N'CrtEnabled'
-          AND ad.DeprecatedAt IS NULL;
-        SET @CrtActive = ISNULL(@CrtActive, 0);
+        -- D1: the terminal-switch lookup that used to be inlined here now lives
+        -- in Lots.ufn_CrtForMint, so the CRT decision is made in ONE place (it
+        -- also honours the produced part's Parts.Item.CrtEnabled flag). The
+        -- consumed sub-assemblies/components are NOT known yet -- the BOM FIFO
+        -- consume runs in step B4, AFTER this mint -- so the D2 propagation arm
+        -- is re-resolved from the genealogy edges once B4 finishes (see "CRT
+        -- re-resolve" below).
+        SET @CrtActive =
+            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@FinishedGoodItemId,
+                                                       @TerminalLocationId,
+                                                       NULL));
 
         -- CAVEAT (2026-08-18, whole-feature review Finding 3): the FG LOT minted below is
         -- CrtActive=1 status Good the instant this tray closes, but it is NOT Closed until
@@ -409,6 +412,23 @@ BEGIN
             FETCH NEXT FROM bom_cur INTO @ChildItemId, @ChildQtyPer;
         END
         CLOSE bom_cur; DEALLOCATE bom_cur;
+
+        -- ---- B4b. CRT re-resolve (D2 propagation). The FG LOT was minted before the
+        --      consume loop ran, so its stamp above only saw the part flag + terminal
+        --      switch. The Consumption genealogy edges just written ARE the consumed
+        --      set, so re-resolve over them: a CRT sub-assembly or component must
+        --      taint the finished good it is built into. Only ever raises 0 -> 1
+        --      (ufn_CrtForMint is a pure OR of the same three arms). ----
+        IF @CrtActive = 0
+        BEGIN
+            DECLARE @ConsumedLotIdsCsv NVARCHAR(MAX) = (
+                SELECT STRING_AGG(CAST(g.ParentLotId AS NVARCHAR(20)), N',')
+                FROM Lots.LotGenealogy g WHERE g.ChildLotId = @FinishedGoodLotId);
+            SET @CrtActive = (SELECT CrtActive FROM Lots.ufn_CrtForMint(@FinishedGoodItemId,
+                @TerminalLocationId, @ConsumedLotIdsCsv));
+            IF @CrtActive = 1
+                UPDATE Lots.Lot SET CrtActive = 1 WHERE Id = @FinishedGoodLotId;
+        END
 
         -- ---- B5. Container-full flag (delegation: DO NOT complete the container here;
         --      the view calls Lots.Container_Complete when @ContainerFull = 1) ----
