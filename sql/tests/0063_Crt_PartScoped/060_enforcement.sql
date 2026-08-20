@@ -30,6 +30,12 @@
 --                 D. Workorder.MachiningOut_Mint - a CRT casting cannot be scanned
 --                                               as the consume-mint handle. A clean
 --                                               casting mints first as the control.
+--                 E. Workorder.Assembly_ScanIn - an Assembly IN scan IS a move to a
+--                                               production destination, but this
+--                                               proc INLINES its move instead of
+--                                               calling Lot_MoveTo, so it carries
+--                                               its own copy of the D5 guard. A
+--                                               clean twin scans in as the control.
 --
 --               THE MOST IMPORTANT ASSERTIONS HERE ARE THE NEGATIVE ONES. A guard
 --               that blocked everything would satisfy every "is it blocked" check;
@@ -57,7 +63,8 @@
 --                   castings.
 --                 * Every temp table matches its proc's result shape EXACTLY
 --                   (Lot_MoveTo 2 cols, Lot_MoveToValidated 2, Hold_Place 3,
---                   Lot_Create 4, MachiningIn_RecordPick 3, MachiningOut_Mint 4).
+--                   Lot_Create 4, MachiningIn_RecordPick 3, MachiningOut_Mint 4,
+--                   Assembly_ScanIn 3).
 --                   A mismatched INSERT-EXEC aborts the whole file with Msg 213 as
 --                   a runner ERROR, not as a FAIL.
 --                 * EXEC arguments are variables only (never an inline CAST / CASE),
@@ -436,6 +443,89 @@ EXEC test.Assert_IsEqual @TestName = N'[Enforce] MachiningOut_Mint: the CRT cast
 UPDATE Lots.Lot SET CrtActive = 0 WHERE Id IN (@CleanCast, @CrtCast, @CleanMinted);
 UPDATE Lots.Lot SET LotStatusId = @ClosedSt
 WHERE ItemId = @Casting AND CurrentLocationId = @Line AND LotStatusId = @GoodSt;
+GO
+
+-- =============================================
+-- E. Workorder.Assembly_ScanIn -- an Assembly IN scan IS a move to a production
+--    destination (design section 6 names it explicitly), but this proc INLINES its
+--    move instead of calling Lots.Lot_MoveTo (the INSERT-EXEC status-row rule), so
+--    it does not inherit A's guard and needs its own coverage. Without it the
+--    operator gets no signal at all: the tray propagates and only Lots.Container_Ship
+--    refuses, hours later at Shipping.
+--
+--    Fixture: sub-assembly 12270-6NA-M is a published-BOM component of the finished
+--    good produced at MA1-FP6NA (IsConsumptionPoint = 0), which is a
+--    ProductionLine -> IsProductionDestination = 1. The LOTs sit at TRIM1-STORE
+--    (an InventoryLocation, so NOT a production destination) beforehand, which is
+--    also what makes the "already at this cell" no-op branch unreachable here.
+--    The clean twin is the control: it proves the fixture really reaches the CRT
+--    guard rather than tripping the BOM-component check first.
+-- =============================================
+DECLARE @AsmItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA-M');
+DECLARE @AsmCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA');
+DECLARE @AsmFrom BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-STORE');
+DECLARE @AsmOrig BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @AsmGood BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
+
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable,
+                      CurrentLocationId, CreatedByUserId, CreatedAt, CrtActive)
+VALUES (N'CRT060-AIN-CRT', @AsmItem, @AsmOrig, @AsmGood, 6, 6, @AsmFrom, 1, SYSUTCDATETIME(), 1);
+DECLARE @AsmCrt BIGINT = SCOPE_IDENTITY();
+INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth) VALUES (@AsmCrt, @AsmCrt, 0);
+INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, MovedAt)
+VALUES (@AsmCrt, NULL, @AsmFrom, 1, SYSUTCDATETIME());
+
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable,
+                      CurrentLocationId, CreatedByUserId, CreatedAt, CrtActive)
+VALUES (N'CRT060-AIN-OK', @AsmItem, @AsmOrig, @AsmGood, 6, 6, @AsmFrom, 1, SYSUTCDATETIME(), 0);
+DECLARE @AsmOk BIGINT = SCOPE_IDENTITY();
+INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth) VALUES (@AsmOk, @AsmOk, 0);
+INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, MovedAt)
+VALUES (@AsmOk, NULL, @AsmFrom, 1, SYSUTCDATETIME());
+
+CREATE TABLE #a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+DECLARE @aMsg    NVARCHAR(500);
+DECLARE @aActual NVARCHAR(50);
+DECLARE @aExpect NVARCHAR(50);
+
+-- E1. The CRT LOT is refused...
+INSERT INTO #a EXEC Workorder.Assembly_ScanIn @LotId = @AsmCrt,
+    @CellLocationId = @AsmCell, @AppUserId = 1;
+SELECT TOP 1 @aActual = CAST(Status AS NVARCHAR(10)), @aMsg = Message FROM #a;
+EXEC test.Assert_IsEqual @TestName = N'[Enforce] Assembly_ScanIn: a CRT LOT is rejected',
+    @Expected = N'0', @Actual = @aActual;
+
+-- The literal phrase matters: BlueRidge.Common.Ui._CRT_REFUSAL_MARKERS keys on
+-- 'marked CRT' to raise the blocking popup. Different wording silently downgrades
+-- the refusal to a dismissable toast.
+EXEC test.Assert_Contains @TestName = N'[Enforce] Assembly_ScanIn: the rejection says "marked CRT"',
+    @HaystackStr = @aMsg, @NeedleStr = N'marked CRT';
+
+-- ...and the rejection wrote nothing: no movement row, LOT still at Trim Storage.
+SET @aActual = CAST((SELECT COUNT(*) FROM Lots.LotMovement WHERE LotId = @AsmCrt) AS NVARCHAR(50));
+EXEC test.Assert_IsEqual @TestName = N'[Enforce] Assembly_ScanIn: the rejection wrote no LotMovement row',
+    @Expected = N'1', @Actual = @aActual;
+
+SET @aActual = CAST((SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @AsmCrt) AS NVARCHAR(50));
+SET @aExpect = CAST(@AsmFrom AS NVARCHAR(50));
+EXEC test.Assert_IsEqual @TestName = N'[Enforce] Assembly_ScanIn: the rejected LOT did not move',
+    @Expected = @aExpect, @Actual = @aActual;
+
+-- E2. CONTROL: the clean twin scans in, proving the fixture reaches the CRT guard
+--     rather than failing the BOM-component or status check first.
+DELETE FROM #a;
+INSERT INTO #a EXEC Workorder.Assembly_ScanIn @LotId = @AsmOk,
+    @CellLocationId = @AsmCell, @AppUserId = 1;
+SELECT TOP 1 @aActual = CAST(Status AS NVARCHAR(10)), @aMsg = Message FROM #a;
+EXEC test.Assert_IsEqual @TestName = N'[Enforce] Assembly_ScanIn: the clean twin scans in',
+    @Expected = N'1', @Actual = @aActual;
+
+SET @aActual = CAST((SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @AsmOk) AS NVARCHAR(50));
+SET @aExpect = CAST(@AsmCell AS NVARCHAR(50));
+EXEC test.Assert_IsEqual @TestName = N'[Enforce] Assembly_ScanIn: the clean twin actually landed at the cell',
+    @Expected = @aExpect, @Actual = @aActual;
+
+DROP TABLE #a;
 GO
 
 -- ---- File teardown: untag and close every LOT this file created. ----

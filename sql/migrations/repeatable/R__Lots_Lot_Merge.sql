@@ -2,7 +2,12 @@
 -- Repeatable:  R__Lots_Lot_Merge.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-20
--- Version:     1.1
+-- Version:     1.2
+--
+-- v1.2 (2026-08-20): the CRT source-name list is marked with '...' when it had to be
+-- clipped to fit the NVARCHAR(500) Message, instead of ending mid-name with no sign
+-- that anything was dropped. Corrected the leading-text length in that comment
+-- (84 chars, not ~120).
 --
 -- CRT (2026-08-20, v1.1): ANY CRT source LOT REFUSES the whole merge (guard 8c, via
 -- Lots.ufn_CrtBlocksAdvance), and the rejection message NAMES the offending
@@ -331,9 +336,17 @@ BEGIN
         IF @CrtSourceNames IS NOT NULL
         BEGIN
             -- LEFT() keeps the list inside the NVARCHAR(500) Message even for a very
-            -- wide merge; the leading text is ~120 chars.
+            -- wide merge; the leading text is 84 chars, so 84 + 380 + '...' + '.'
+            -- = 468 still fits. An ellipsis is appended when the list was actually
+            -- clipped, so the operator can tell a complete list from a truncated
+            -- one instead of silently taking a half-name as the whole answer.
+            DECLARE @CrtNamesShown NVARCHAR(400) = LEFT(@CrtSourceNames, 380);
+            -- DATALENGTH/2, not LEN(): LEN ignores trailing spaces, and the list is
+            -- ', '-joined, so a clip landing on a separator would read as unclipped.
+            IF DATALENGTH(@CrtSourceNames) / 2 > 380
+                SET @CrtNamesShown = @CrtNamesShown + N'...';
             SET @Message = N'Merge refused: source LOT(s) marked CRT cannot be merged until Quality clears them: '
-                         + LEFT(@CrtSourceNames, 380) + N'.';
+                         + @CrtNamesShown + N'.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = NULL, @LogEventTypeCode = N'LotMerged',

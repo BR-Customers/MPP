@@ -107,13 +107,22 @@ Called by every minting proc:
 
 | proc | inputs passed |
 |---|---|
-| `Lots.Lot_Create` (die cast, incl. bulk open) | none |
+| `Lots.DieCastLot_Open` (the die-cast **origin** mint, incl. bulk open) | none |
+| `Lots.Lot_Create` (receiving / manual mint) | none |
 | `Workorder.MachiningOut_Mint` | the consumed casting |
 | `Workorder.Assembly_CompleteTray` | the consumed sub-assemblies and components |
 | `Lots.Lot_Split` / `Lots.Lot_Merge` | the source LOT(s) |
 
 `Assembly_CompleteTray` currently inlines the terminal-switch check; that logic **moves
 into the resolver** so this decision is made in exactly one place.
+
+> **Correction (2026-08-20).** This table originally read "`Lots.Lot_Create` (die cast,
+> incl. bulk open)", which was already stale when it was written: the press terminal
+> drives `Lots.DieCastLot_Open` (`DieCastBody` → `Lot.openDieCast` /
+> `DieCast.submitBulkOpen` → named query `lots/DieCastLot_Open`), and `Lot_Create` is now
+> only the receiving / manual-mint path. Ten tasks wired `Lot_Create` and left the die-cast
+> origin unwired, so a `CrtEnabled` **casting** — the feature's headline case — minted
+> clean baskets. Both procs now call the resolver.
 
 ### `Lots.ufn_CrtBlocksMoveTo(@LotId, @ToLocationId)` → `BIT`
 
@@ -134,7 +143,8 @@ message naming the LOT and what to do:
 
 | proc | what the operator is stopped from doing |
 |---|---|
-| `Lots.Lot_MoveTo` / `Lot_MoveToValidated` | moving it to a PRODUCTION destination — this is what a Trim IN or Assembly IN scan actually is. A move to inspection, inventory, receiving or a support area still succeeds (D5). |
+| `Lots.Lot_MoveTo` / `Lot_MoveToValidated` | moving it to a PRODUCTION destination — this is what a Trim IN scan actually is. A move to inspection, inventory, receiving or a support area still succeeds (D5). |
+| `Workorder.Assembly_ScanIn` | scanning it into an assembly cell. **Corrected 2026-08-20:** the row above originally claimed to cover "a Trim IN or Assembly IN scan", but `/shop-floor/assembly-in` drives `Assembly_ScanIn`, which **inlines its own move** (the INSERT-EXEC status-row rule forbids EXEC-ing a sibling status-row proc) and therefore never inherited `Lot_MoveTo`'s guard. It now carries its own copy. |
 | `Workorder.MachiningIn_RecordPick` | picking it into a machining cell |
 | `Workorder.MachiningOut_Mint` | **scanning it** as the mint source. The FIFO walk behind that scan is NOT blocked — see below. |
 | `Lots.Lot_Split` / `Lots.Lot_Merge` | dividing or combining it (decided 2026-08-20) |

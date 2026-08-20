@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_DieCastLot_Open.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-28
--- Version:     1.0
+-- Modified:    2026-08-20
+-- Version:     1.1
 -- Description: Die-Cast Per-Cavity Lifecycle (plan docs/superpowers/plans/
 --              2026-07-28-diecast-per-cavity-lifecycle.md), Task 2 / Phase 1.
 --              Mints ONE accumulator LOT per (Tool, ToolCavity) in status
@@ -35,6 +35,14 @@
 --              "FailureLog.AppUserId is NOT NULL + FK; only attribute the
 --              failure when we have a user" comment); mirrored here by
 --              guarding the Fail: audit call with IF @AppUserId IS NOT NULL.
+--
+-- Change Log:
+--   2026-07-28 - 1.0 - Initial version (die-cast per-cavity lifecycle, Task 2).
+--   2026-08-20 - 1.1 - Part-scoped CRT: resolve Lots.ufn_CrtForMint at the mint
+--                      and stamp Lots.Lot.CrtActive. This IS the die-cast ORIGIN
+--                      mint; the CRT design named Lot_Create for "die cast, incl.
+--                      bulk open", which is stale -- Lot_Create is the receiving
+--                      path -- so a CrtEnabled casting was minting clean baskets.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.DieCastLot_Open
     @ItemId BIGINT, @CurrentLocationId BIGINT, @ToolId BIGINT, @ToolCavityId BIGINT,
@@ -90,13 +98,24 @@ BEGIN
         SET @MaxLotSize = (SELECT MaxLotSize FROM Parts.Item WHERE Id = @ItemId);
         SET @CellCode   = (SELECT Code FROM Location.Location WHERE Id = @CurrentLocationId);
 
+        -- D1/D2: CRT at mint. This is the die-cast ORIGIN mint -- the press terminal
+        -- drives THIS proc (DieCastBody -> openDieCast / submitBulkOpen -> named query
+        -- lots/DieCastLot_Open), not Lots.Lot_Create, which is the receiving path. A
+        -- casting part flagged Parts.Item.CrtEnabled is the feature's headline case, so
+        -- the resolver has to run here or the tag never starts at the press. Resolved
+        -- in ONE place (Lots.ufn_CrtForMint): the part flag OR the minting terminal's
+        -- CrtEnabled attribute. A basket open consumes no LOTs, so the propagation arm
+        -- is passed NULL. Mint-time only (D3) -- nothing re-derives this later.
+        DECLARE @CrtActive BIT =
+            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ItemId, @TerminalLocationId, NULL));
+
         -- ===== mutation =====
         BEGIN TRANSACTION;
         INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
             ToolId, ToolCavityId, CurrentLocationId, TotalInProcess, InventoryAvailable,
-            CreatedByUserId, CreatedAtTerminalId, CreatedAt)
+            CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive)
         VALUES (@LotName, @ItemId, @ManufacturedOriginId, @OpenStatusId, 0, @MaxLotSize,
-            @ToolId, @ToolCavityId, @CurrentLocationId, 0, 0, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+            @ToolId, @ToolCavityId, @CurrentLocationId, 0, 0, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive);
         SET @NewId = SCOPE_IDENTITY();
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
         VALUES (@NewId, NULL, @OpenStatusId, N'Die-cast basket opened.', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
