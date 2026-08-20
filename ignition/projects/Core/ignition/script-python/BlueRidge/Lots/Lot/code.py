@@ -962,7 +962,7 @@ def setCrt(lotId, appUserId=None, terminalLocationId=None):
     params = {
         "lotId":              _u(lotId),
         "appUserId":          appUserId,
-        "terminalLocationId": terminalLocationId,
+        "terminalLocationId": _u(terminalLocationId),
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_SetCrt", params)
 
@@ -980,6 +980,6 @@ def clearCrt(lotId, appUserId=None, terminalLocationId=None):
     params = {
         "lotId":              _u(lotId),
         "appUserId":          appUserId,
-        "terminalLocationId": terminalLocationId,
+        "terminalLocationId": _u(terminalLocationId),
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_ClearCrt", params)
