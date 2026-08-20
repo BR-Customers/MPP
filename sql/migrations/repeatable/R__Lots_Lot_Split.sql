@@ -235,7 +235,7 @@ BEGIN
         -- ---- 6. B2 not-blocked guard (inline; mirrors Lots.Lot_AssertNotBlocked).
         -- Inlined rather than EXEC'd because Lot_AssertNotBlocked emits a result
         -- set and this proc is itself captured via INSERT-EXEC. ----
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode + N') and cannot be split; release the hold first.';
             EXEC Audit.Audit_LogFailure
@@ -316,7 +316,7 @@ BEGIN
               AND LotName LIKE @ParentName + N'-[0-9][0-9]'
         ), 0) + 1;
 
-        IF @StatusCode IS NULL OR @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @StatusCode IS NULL OR @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
             OR @SumChildren > @ParentPc OR @NextOrd + @ChildCount - 1 > 99
             RAISERROR(N'Parent LOT changed during split (concurrent mutation); retry.', 16, 1);
 

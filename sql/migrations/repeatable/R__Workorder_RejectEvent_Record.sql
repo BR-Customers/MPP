@@ -181,7 +181,7 @@ BEGIN
         -- on @CurrentStatusId = Good, so a fully-scrapped held LOT stays HELD; the
         -- hold lifecycle (release/disposition) owns the terminal transition.
         IF (@Blocks = 1 AND NOT (@AllowHeldLot = 1 AND @StatusCode = N'Hold'))
-           OR @StatusCode = N'Closed'
+           OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode + N') and cannot record a reject.';
             EXEC Audit.Audit_LogFailure

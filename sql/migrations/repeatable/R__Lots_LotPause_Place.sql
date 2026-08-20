@@ -93,7 +93,7 @@ BEGIN
         END
 
         -- ---- B2 not-blocked guard (inline; matches Lot_AssertNotBlocked) ----
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT is blocked (status ' + @StatusCode + N') and cannot be paused.';
             EXEC Audit.Audit_LogFailure

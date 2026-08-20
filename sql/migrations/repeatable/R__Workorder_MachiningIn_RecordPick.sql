@@ -94,7 +94,7 @@ BEGIN
             RETURN;
         END
 
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode
                          + N') and cannot be picked; release the hold first.';

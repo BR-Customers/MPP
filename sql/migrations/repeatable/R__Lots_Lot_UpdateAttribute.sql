@@ -107,7 +107,7 @@ BEGIN
         -- nesting INSERT-EXEC of the guard is illegal, so the block check is
         -- evaluated inline. Lot_AssertNotBlocked remains the standalone guard
         -- for the Ignition layer / other callers per the B2 contract. ----
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode + N') and is blocked; release the hold first.';
             EXEC Audit.Audit_LogFailure

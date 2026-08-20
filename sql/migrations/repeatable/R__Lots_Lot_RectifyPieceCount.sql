@@ -151,7 +151,7 @@ BEGIN
         -- ---- 5. B2 not-blocked guard (INLINED mirror of Lots.Lot_AssertNotBlocked).
         --         Inlined, not EXEC'd: nesting INSERT-EXEC of the guard is illegal and
         --         its result set would pollute this proc's single terminal row. ----
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode
                          + N') and cannot be rectified; release the hold first.';

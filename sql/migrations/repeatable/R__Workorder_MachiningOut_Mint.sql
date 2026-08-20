@@ -86,7 +86,7 @@ BEGIN
         FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@SourceLotId;
         IF @SrcItem IS NULL BEGIN SET @Message=N'Source LOT not found.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
-        IF @Blocks=1 OR @SrcStatusCode=N'Closed' BEGIN SET @Message=N'Source LOT is '+@SrcStatusCode+N' and cannot be consumed.';
+        IF @Blocks=1 OR @SrcStatusCode IN (N'Closed',N'Open') BEGIN SET @Message=N'Source LOT is '+@SrcStatusCode+N' and cannot be consumed.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
 
         -- ---- Scrap lines (pre-txn): parse + validate (mirror TrimOut_Record). One

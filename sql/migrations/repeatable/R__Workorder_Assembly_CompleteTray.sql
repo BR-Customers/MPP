@@ -203,7 +203,7 @@ BEGIN
                 SELECT ISNULL(SUM(l.InventoryAvailable), 0) AS Avail FROM Lots.Lot l
                 INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                 WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @CellLocationId
-                  AND sc.Code <> N'Closed' AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
+                  AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
             ) s
             WHERE bl.BomId = @BomId AND s.Avail < CAST(bl.QtyPer * @PieceCount AS INT));
 
@@ -369,7 +369,7 @@ BEGIN
                        @SrcPieceCount = l.PieceCount, @SrcStatus = l.LotStatusId
                 FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                 WHERE l.ItemId = @ChildItemId AND l.CurrentLocationId = @CellLocationId
-                      AND sc.Code <> N'Closed' AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
+                      AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
                       AND l.InventoryAvailable > 0
                 ORDER BY l.CreatedAt, l.Id;              -- FIFO
                 IF @SrcLotId IS NULL
