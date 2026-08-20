@@ -32,17 +32,17 @@
 --   @AppUserId BIGINT             - Required for audit.
 --   @CrtEnabled BIT = NULL        - Part-scoped Controlled Run Tag (Task 8).
 --                                   Declared LAST with a default so pre-CRT
---                                   callers still compile. NOTE: this proc is a
---                                   FULL-REPLACE update (every mutable column is
---                                   assigned unconditionally, exactly as
---                                   @Description / @MaxParts already are), so a
---                                   NULL-PRESERVING, unlike this proc's other params:
---                                   omitting it leaves the flag alone. Pass 0 to clear.
---                                   Every caller that may touch a CRT part SHALL
---                                   pass the current value through. NULL is
---                                   coerced to 0 (the column is BIT NOT NULL and
---                                   an unchecked Perspective checkbox can bind
---                                   null).
+--                                   callers still compile. NULL-PRESERVING,
+--                                   unlike this proc's other mutable params
+--                                   (@Description / @MaxParts et al, which are
+--                                   assigned unconditionally -- full replace):
+--                                   NULL resolves to the row's CURRENT value, so
+--                                   a caller that omits @CrtEnabled leaves the
+--                                   flag ALONE. Pass 0 explicitly to clear it,
+--                                   1 to set it. Deliberate deviation: CRT is a
+--                                   SAFETY flag, and silently untagging a CRT
+--                                   part would ship suspect material unmarked
+--                                   with nothing to surface it.
 --
 -- Result set:
 --   Single row with Status (BIT), Message (NVARCHAR).
