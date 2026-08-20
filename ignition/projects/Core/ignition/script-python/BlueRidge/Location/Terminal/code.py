@@ -104,6 +104,22 @@ def listForSelector(searchText=None):
     return out
 
 
+def listByLineOf(locationId):
+    """Every active Terminal Location sharing the same ancestor WorkCenter
+       ("line") as `locationId` (typically the Cell where a low-stock condition
+       was detected). Returns list[dict] (TerminalLocationId, Code, Name); always
+       a list, empty when the location has no WorkCenter ancestor or the line has
+       no terminals. Used to scope a cross-terminal warning broadcast to just the
+       terminals on the same line rather than every open session."""
+    BlueRidge.Common.Util.log("locationId=%s" % locationId)
+    if locationId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "location/Terminal_ListByLineOf",
+        {"locationId": locationId},
+    )
+
+
 def listContextCells(terminalLocationId):
     """Eligible location-context rows for a shared-flavor view at the given
        terminal: active descendant EQUIPMENT cells of the terminal's parent
@@ -234,8 +250,17 @@ def applyToSession(session, terminal):
          session.custom.plcDevices          (TerminalPlcDevice.getByTerminal)
          session.custom.closureMethod       (getClosureContext)
          session.custom.closureCapabilities (getClosureContext)
-         session.custom.cell -> CLEARED     (a cell picked at a prior terminal
-                                             must not leak into the new terminal)
+         session.custom.cell -> CLEARED, unless the new terminal shares the
+                                             current cell's line (zoneLocationId);
+                                             a cell picked at a prior terminal
+                                             must not leak into a different line,
+                                             but must survive switching between
+                                             terminals on the SAME line, since
+                                             TerminalSelector.selectTerminal's
+                                             navigate() is a same-URL no-op for
+                                             same-screen-type terminals and never
+                                             re-runs the screen's onStartup to
+                                             re-derive it (2026-08-20)
 
        Called by onStartup (IP-resolved), NavigationTree launch, and
        TerminalSelector.selectTerminal so those three entry points can never
@@ -257,8 +282,17 @@ def applyToSession(session, terminal):
         # downtime reason-code dropdown; see operationCategoryForScreen.
         "operationCategoryCode": operationCategoryForScreen(t.get("defaultScreen")),
     }
-    # Always drop any prior cell selection when the terminal changes.
-    session.custom.cell = {"locationId": None, "code": "", "name": ""}
+    # Drop a prior cell selection only when the new terminal is on a DIFFERENT
+    # line than the cell already bound -- switching between terminals on the
+    # same line (e.g. two Assembly stations under one WorkCenter) must not
+    # blank the operator's cell context.
+    try:
+        curCellLocationId = session.custom.cell.locationId
+    except:
+        curCellLocationId = None
+    newZoneLocationId = t.get("zoneLocationId")
+    if newZoneLocationId is None or newZoneLocationId != curCellLocationId:
+        session.custom.cell = {"locationId": None, "code": "", "name": ""}
     # Global session policy + elevation state (spec 2026-08-04). Seeded before the
     # tid branch so BOTH the fallback and registered-terminal paths get it.
     BlueRidge.Common.Session.loadPolicyIntoSession(session)
