@@ -9,9 +9,14 @@ decision from MPP or Hunter).
 
 ---
 
-## 1. CRT — needs a design conversation before any code
+## 1. CRT — DESIGNED 2026-08-19, not built
 
-**BLOCKED — do not implement from this note alone.** The existing CRT work on this
+**Design approved and superseding this section:**
+`docs/superpowers/specs/2026-08-19-crt-part-scoped-design.md`. Every open question
+below was answered in that conversation; the section is kept for the original wording
+of the requirement. Ready for an implementation plan.
+
+**Original capture — BLOCKED at the time of writing.** The existing CRT work on this
 branch (`Container_ValidateCrt`, the assembly-out validation button, the
 changeover-popup CRT switch) is *container*-scoped. The requirement below is
 *part*-scoped and materially larger.
