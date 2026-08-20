@@ -178,9 +178,13 @@ used until Quality clears it."* Names the LOT.
 - **"Only a Quality person can clear it" is not enforceable today.** There is no role
   system in this codebase: every existing gate resolves to *any active AppUser whose
   password validates*. `CrtToggle` behaves identically. Making it genuinely
-  Quality-only needs the AD user source (backlog 4.3, blocked on MPP IT) plus an
-  action→role map, and note the only AD-linked dev user has `IgnitionRole` NULL, so a
-  role gate added today would lock Dev out.
+  Quality-only needs an action→role map, and note the only AD-linked dev user has
+  `IgnitionRole` NULL, so a role gate added today would lock Dev out.
+- **Elevation now points at an "Active Directory" user source that does not yet exist
+  on the dev gateway** (`_ELEVATION_USER_SOURCE`, set 2026-08-19). Until MPP IT
+  provisions it, EVERY elevation is denied — including the `CrtToggle` gate this design
+  depends on. Testing the toggle locally requires creating that source or temporarily
+  repointing the constant.
 - **A label printed before clearing still says CRT.** The paper is a snapshot; the
   system is the truth. Reprint via `LotLabel_Reprint` if a clean ticket is needed.
 - **Clearing does not un-tag descendants** (D3). LOTs already minted from a cleared
