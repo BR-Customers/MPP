@@ -3,27 +3,23 @@
    Arc 2 Phase 4 (Spec 2 sec 3/4). Orchestrates:
      SQL render (Lots.LotLabel_Print/_Reprint -> ZplContent)
        -> resolve printer endpoint from session.custom.printer
-       -> synchronous raw-TCP socket write to the networked Zebra
-       -> log EVERY attempt to Audit.InterfaceLog (Audit_LogInterfaceCall)
+       -> synchronous dispatch via BlueRidge.Lots.LabelTransport.send
+          (TCP or Windows print-queue, selected by the endpoint's grammar)
+       -> log EVERY attempt to Audit.InterfaceLog via LabelTransport.logDispatch
        -> on success: Lots.LotLabel_RecordDispatch ack write-back.
 
    Print failure NEVER rolls back the LOT (mint + print are separate steps);
    the UI holds on the failed-print state and offers Reprint.
 
    NOTE: the public method is printLabel (NOT 'print' -- a Jython 2 keyword).
-   HARDWARE-GATED: raw TCP 9100 reaches NETWORKED Zebra printers only; real-print
-   certification is a deployment gate. Verify via a local socket listener / Labelary
-   until hardware is available.
+
+   2026-08-20: dispatch used to be a private raw-TCP-only _dispatchZpl here,
+   predating LabelTransport and never migrated -- any Hardwired (print-queue)
+   printer endpoint got treated as a TCP hostname and failed with
+   UnknownHostException. Now delegates to LabelTransport, the one place ZPL
+   bytes are meant to leave the Gateway (see that module's header).
 
    Wrappers route View -> here -> BlueRidge.Common.Db -> system.db.*."""
-
-
-from java.net import Socket, InetSocketAddress
-from java.lang import String as JString
-
-_SYSTEM_NAME = "Zebra"
-_DEFAULT_PORT = 9100
-_TIMEOUT_MS = 4000   # bounded connect + write timeout (spec: 3-5 s)
 
 
 def _u(value):
@@ -66,58 +62,6 @@ def _sessionPrinter():
         return {}
 
 
-def _dispatchZpl(endpoint, zpl):
-    """Pure transport: raw-TCP write of the ZPL bytes to host:port (default 9100),
-       bounded timeout. Returns {ok, error}. No business logic."""
-    s = None
-    try:
-        ep = (endpoint or "").strip()
-        if ":" in ep:
-            host, portStr = ep.rsplit(":", 1)
-            port = int(portStr)
-        else:
-            host, port = ep, _DEFAULT_PORT
-        if not host:
-            return {"ok": False, "error": "empty endpoint"}
-        s = Socket()
-        s.connect(InetSocketAddress(host, port), _TIMEOUT_MS)
-        s.setSoTimeout(_TIMEOUT_MS)
-        out = s.getOutputStream()
-        out.write(JString(zpl or "").getBytes("US-ASCII"))
-        out.flush()
-        return {"ok": True, "error": None}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-    finally:
-        try:
-            if s is not None:
-                s.close()
-        except Exception:
-            pass
-
-
-def _logDispatch(endpoint, zpl, outcome):
-    """Log one dispatch attempt to Audit.InterfaceLog (every attempt: success,
-       failure, retry). High-fidelity so endpoint + ZPL head persist."""
-    ok = bool(outcome and outcome.get("ok"))
-    head = (zpl or "")[:200]
-    params = {
-        "systemName":       _SYSTEM_NAME,
-        "direction":        "Outbound",
-        "logEventTypeCode": "LabelDispatched",
-        "description":      "LTT dispatch to %s" % (endpoint or "(none)"),
-        "requestPayload":   "%s | %s" % (endpoint or "", head),
-        "responsePayload":  "OK" if ok else None,
-        "errorCondition":   None if ok else "DispatchFailed",
-        "errorDescription": None if ok else (outcome.get("error") if outcome else "unknown"),
-        "isHighFidelity":   True,
-    }
-    try:
-        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
-    except Exception as e:
-        BlueRidge.Common.Util.log("_logDispatch failed: %s" % str(e))
-
-
 def _dispatchAfterRender(res, appUserId, terminalLocationId):
     """Shared tail for printLabel/reprint: take a render result (Status, Message,
        NewId=LotLabelId, ZplContent), dispatch the ZPL, log, ack on success, with
@@ -145,8 +89,8 @@ def _dispatchAfterRender(res, appUserId, terminalLocationId):
                 "Message": "This terminal has no printer configured.",
                 "NewId": lotLabelId}
 
-    outcome = _dispatchZpl(endpoint, zpl)
-    _logDispatch(endpoint, zpl, outcome)
+    outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
+    BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "LTT")
     if outcome.get("ok"):
         BlueRidge.Common.Db.execMutation(
             "lots/LotLabel_RecordDispatch",
@@ -158,8 +102,8 @@ def _dispatchAfterRender(res, appUserId, terminalLocationId):
     fresh = BlueRidge.Location.Terminal.getPrinter(terminalLocationId) or {}
     freshEndpoint = (fresh.get("endpoint") or "").strip()
     if freshEndpoint and freshEndpoint != endpoint:
-        outcome = _dispatchZpl(freshEndpoint, zpl)
-        _logDispatch(freshEndpoint, zpl, outcome)
+        outcome = BlueRidge.Lots.LabelTransport.send(freshEndpoint, zpl)
+        BlueRidge.Lots.LabelTransport.logDispatch(freshEndpoint, zpl, outcome, "LTT")
         if outcome.get("ok"):
             BlueRidge.Common.Db.execMutation(
                 "lots/LotLabel_RecordDispatch",
