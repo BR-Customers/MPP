@@ -153,25 +153,6 @@ def openRowsOnly(rows):
     return [r for r in rows if r and r.get("IsOpen")]
 
 
-def priorGoodSnapshot(rows):
-    """{lotId(str): PriorGoodThisShift(int)} for the rows a breakdown preview
-       was computed from -- the concurrency baseline for backlog 3.3 (two
-       terminals on ONE die cast machine). submitShiftOutput re-reads the
-       breakdown and compares against this snapshot; any difference means a
-       PEER terminal recorded output for the same (tool, shift) since the
-       preview was computed, so the preview's proposed split is stale and
-       submitting it would double-count."""
-    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
-    out = {}
-    for r in rows:
-        r = r or {}
-        if r.get("LotId") is None:
-            continue
-        out["%s" % r.get("LotId")] = BlueRidge.Common.Util.toIntOrNone(
-            r.get("PriorGoodThisShift")) or 0
-    return out
-
-
 def registerShotLoss(toolId, shiftId, defectCodeId, quantity, appUserId=None, terminalLocationId=None):
     """Record a shot-level defect (e.g. a short shot on the whole cycle) against
        EVERY currently-open basket on a tool -- builds a one-element shotLoss

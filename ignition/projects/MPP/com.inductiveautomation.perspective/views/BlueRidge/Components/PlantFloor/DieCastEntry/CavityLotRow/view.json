@@ -41,7 +41,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 116,
+      "height": 76,
       "width": 900
     }
   },
@@ -51,10 +51,10 @@
       "name": "root"
     },
     "props": {
-      "alignItems": "flex-start",
+      "alignItems": "center",
       "style": {
         "classes": "pf-inventory-row",
-        "gap": "14px",
+        "gap": "12px",
         "overflow": "hidden"
       }
     },
@@ -62,10 +62,10 @@
       {
         "type": "ia.container.flex",
         "meta": {
-          "name": "InfoBlock"
+          "name": "CavityLotBlock"
         },
         "position": {
-          "basis": "210px",
+          "basis": "150px",
           "shrink": 0
         },
         "props": {
@@ -79,7 +79,7 @@
           {
             "type": "ia.display.label",
             "meta": {
-              "name": "CavityName"
+              "name": "CavityLabel"
             },
             "propConfig": {
               "props.text": {
@@ -94,7 +94,6 @@
             "props": {
               "text": "",
               "style": {
-                "fontSize": "16px",
                 "fontWeight": 600,
                 "overflow": "hidden",
                 "textOverflow": "ellipsis",
@@ -163,61 +162,95 @@
       {
         "type": "ia.container.flex",
         "meta": {
-          "name": "GoodBlock"
+          "name": "EditableBlock"
         },
         "position": {
-          "basis": "150px",
-          "shrink": 0
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.isOpen"
+              }
+            }
+          }
         },
         "props": {
-          "direction": "column",
+          "alignItems": "center",
           "style": {
-            "gap": "2px",
+            "gap": "10px",
             "overflow": "hidden"
           }
         },
         "children": [
           {
-            "type": "ia.display.label",
+            "type": "ia.container.flex",
             "meta": {
-              "name": "GoodLabel"
+              "name": "GoodBlock"
+            },
+            "position": {
+              "basis": "120px",
+              "shrink": 0
             },
             "props": {
-              "text": "Good (pc)",
+              "direction": "column",
               "style": {
-                "classes": "pf-field-label"
+                "gap": "2px",
+                "overflow": "hidden"
               }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "GoodValue"
             },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.good"
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "GoodLabel"
+                },
+                "props": {
+                  "text": "Good (pc)",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "GoodValue"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.good"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "pf-kpi-value",
+                    "fontFamily": "var(--mpp-font-mono)",
+                    "fontSize": "22px",
+                    "fontWeight": 700
                   }
                 }
               }
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "classes": "pf-kpi-value",
-                "fontFamily": "var(--mpp-font-mono)",
-                "fontSize": "22px",
-                "fontWeight": 700
-              }
-            }
+            ]
           },
           {
             "type": "ia.display.label",
             "meta": {
               "name": "ReferenceLabel"
+            },
+            "position": {
+              "basis": "150px",
+              "shrink": 0
             },
             "propConfig": {
               "props.text": {
@@ -235,174 +268,165 @@
                 "classes": "pf-kpi-sub"
               }
             }
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "ScrapBlock"
-        },
-        "position": {
-          "basis": "0",
-          "grow": 1,
-          "shrink": 1
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "gap": "6px",
-            "overflow": "hidden"
-          }
-        },
-        "children": [
+          },
           {
-            "type": "ia.display.flex-repeater",
+            "type": "ia.container.flex",
             "meta": {
-              "name": "ScrapRepeater"
+              "name": "ScrapStack"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "gap": "8px",
+                "overflow": "hidden"
+              },
+              "wrap": "wrap"
+            },
+            "children": [
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "ScrapRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.scrapLines"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.params.defectOptions) or []\n\tlotId = self.view.params.lotId\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = r or {}\n\t\tout.append({\"lotId\": lotId, \"index\": i, \"defectCodeId\": r.get(\"defectCodeId\"), \"quantity\": r.get(\"quantity\") or \"\", \"defectOptions\": opts})\n\treturn out"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "row",
+                  "wrap": "wrap",
+                  "elementPosition": {
+                    "basis": "300px",
+                    "grow": 1,
+                    "shrink": 1
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/DieCastEntry/ScrapLineRow",
+                  "style": {
+                    "flexWrap": "wrap",
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  },
+                  "useDefaultViewHeight": true,
+                  "useDefaultViewWidth": false
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "AddScrapButton"
+            },
+            "position": {
+              "basis": "180px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Add scrap reason",
+              "image": {
+                "icon": {
+                  "path": "mpp/add_circle"
+                }
+              },
+              "style": {
+                "classes": "pf-btn pf-btn-secondary",
+                "minHeight": "44px"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.addScrapLine()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ScrapTotalLabel"
             },
             "position": {
               "shrink": 0
             },
             "propConfig": {
-              "props.instances": {
+              "position.display": {
                 "binding": {
-                  "type": "property",
+                  "type": "expr",
                   "config": {
-                    "path": "view.custom.scrapLines"
-                  },
-                  "transforms": [
-                    {
-                      "type": "script",
-                      "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.params.defectOptions) or []\n\tlotId = self.view.params.lotId\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = r or {}\n\t\tout.append({\"lotId\": lotId, \"index\": i, \"defectCodeId\": r.get(\"defectCodeId\"), \"quantity\": r.get(\"quantity\") or \"\", \"defectOptions\": opts})\n\treturn out"
-                    }
-                  ]
+                    "expression": "{view.custom.scrapTotal} > 0"
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"scrap \" + toStr({view.custom.scrapTotal}) + \" pc\""
+                  }
                 }
               }
             },
             "props": {
-              "direction": "column",
-              "elementPosition": {
-                "basis": "44px",
-                "shrink": 0
-              },
-              "path": "BlueRidge/Components/PlantFloor/DieCastEntry/ScrapLineRow",
+              "text": "",
               "style": {
-                "gap": "6px",
-                "overflow": "hidden"
-              },
-              "useDefaultViewHeight": true,
-              "useDefaultViewWidth": false
+                "classes": "pf-kpi-sub",
+                "whiteSpace": "nowrap"
+              }
             }
           },
           {
-            "type": "ia.container.flex",
+            "type": "ia.display.label",
             "meta": {
-              "name": "ScrapActions"
+              "name": "HeadroomWarning"
             },
             "position": {
               "shrink": 0
             },
-            "props": {
-              "alignItems": "center",
-              "style": {
-                "gap": "10px",
-                "overflow": "hidden"
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.overHeadroom"
+                  }
+                }
               }
             },
-            "children": [
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "AddScrapButton"
-                },
-                "position": {
-                  "shrink": 0
-                },
-                "props": {
-                  "text": "Add scrap reason",
-                  "image": {
-                    "icon": {
-                      "path": "mpp/add_circle"
-                    }
-                  },
-                  "style": {
-                    "classes": "pf-btn pf-btn-secondary",
-                    "minHeight": "44px"
-                  }
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.addScrapLine()"
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "ScrapTotalLabel"
-                },
-                "position": {
-                  "shrink": 1
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.scrapTotal} > 0"
-                      }
-                    }
-                  },
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "\"scrap \" + toStr({view.custom.scrapTotal}) + \" pc\""
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "text": "",
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "HeadroomWarning"
-                },
-                "position": {
-                  "shrink": 1
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.overHeadroom"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "text": "Over basket headroom",
-                  "style": {
-                    "color": "var(--mpp-warning, #b26a00)",
-                    "fontWeight": 600
-                  }
-                }
+            "props": {
+              "text": "Over basket headroom",
+              "style": {
+                "color": "var(--mpp-warning, #b26a00)",
+                "fontWeight": 600,
+                "whiteSpace": "nowrap"
               }
-            ]
+            }
           }
         ]
       }
