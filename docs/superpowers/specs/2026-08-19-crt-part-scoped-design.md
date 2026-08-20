@@ -136,13 +136,38 @@ message naming the LOT and what to do:
 |---|---|
 | `Lots.Lot_MoveTo` / `Lot_MoveToValidated` | moving it to a PRODUCTION destination — this is what a Trim IN or Assembly IN scan actually is. A move to inspection, inventory, receiving or a support area still succeeds (D5). |
 | `Workorder.MachiningIn_RecordPick` | picking it into a machining cell |
-| `Workorder.MachiningOut_Mint` | consuming it into a sub-assembly |
-| `Workorder.Assembly_CompleteTray` | consuming it into a finished good |
+| `Workorder.MachiningOut_Mint` | **scanning it** as the mint source. The FIFO walk behind that scan is NOT blocked — see below. |
+| `Lots.Lot_Split` / `Lots.Lot_Merge` | dividing or combining it (decided 2026-08-20) |
 | `Lots.Container_Ship` | **already blocks — unchanged** |
 
 **Does not block:** `Lots.Lot_Create`, `Lots.DieCastLot_Release`,
 `Workorder.DieCastShiftOutput_Record`, Trim OUT scrap/count on a LOT already at Trim,
-and **movement to a non-production destination** (D5).
+**`Workorder.Assembly_CompleteTray`**, and **movement to a non-production destination** (D5).
+
+### Where blocking and propagation meet (resolved 2026-08-20)
+
+An earlier draft of this section had `Assembly_CompleteTray` block a CRT consume, which
+contradicts D2 and §5 — if the consume is refused, the tag can never propagate through
+it, and the propagation path is unreachable code. Both cannot hold. Hunter's call, per
+proc:
+
+- **`Assembly_CompleteTray` propagates; it does not block.** The operator never scans
+  the consumed sub-assemblies — the BOM walk picks them from cell stock — so there is
+  no deliberate hand-off to refuse. Blocking would stop the line dead whenever a CRT
+  sub-assembly sat in stock, with no remedy available to the operator. Instead the
+  finished good mints CRT, so the tag follows the material downstream.
+- **`MachiningOut_Mint` blocks the SCAN and propagates the TAIL.** Refusing a scanned
+  CRT casting stops the deliberate hand-off (D4). But the FIFO walk rolls past the
+  scanned handle into further castings the operator never chose and cannot see, so a
+  CRT casting drawn from behind taints the sub-assembly rather than being laundered
+  into a clean one (D2). This is the only reading under which D2 and D4 are both
+  meaningful.
+- **`Lot_Split` / `Lot_Merge` block.** Maximum containment on the exception paths:
+  suspect material cannot be divided or recombined until Quality clears it.
+  Consequence, accepted knowingly: the CRT-from-source arm of the resolver is
+  unreachable in these two procs while the block stands. The wiring is kept as
+  defence in depth — it still fires from the part-flag and terminal arms, and it
+  would resume propagating if the block were ever relaxed.
 
 `Lot_MoveTo` already rejects a blocked LOT (Hold / Scrap / Closed) before anything else,
 so it has precedent for holding opinions about whether a move is allowed; the CRT check
