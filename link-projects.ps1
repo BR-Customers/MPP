@@ -12,10 +12,18 @@
 #
 # One-time use (per machine). After it succeeds, run .\scan.ps1 from a normal shell.
 
+param(
+    [string]$RepoRoot        = $PSScriptRoot,
+    [string]$GatewayProjects = "C:\Program Files\Inductive Automation\Ignition\data\projects"
+)
+
 $ErrorActionPreference = "Stop"
 
-$gw   = "C:\Program Files\Inductive Automation\Ignition\data\projects"
-$repo = "C:\Users\NoahNesbitt\Documents\Dev\MPP\ignition\projects"
+$gw   = $GatewayProjects
+# Derive the repo from this script's own location so the script works on any
+# dev machine. Override with -RepoRoot when the gateway is not on the machine
+# holding the working copy.
+$repo = Join-Path (Join-Path $RepoRoot "ignition") "projects"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 
 # Elevation check
