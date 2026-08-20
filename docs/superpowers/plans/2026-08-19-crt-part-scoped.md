@@ -626,12 +626,14 @@ tainting future mints but leaves existing descendants tagged."
 
 **Files:**
 - Modify: `sql/migrations/repeatable/R__Lots_Lot_MoveTo.sql`, `R__Lots_Lot_MoveToValidated.sql`
-- Modify: `sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql`, `R__Workorder_MachiningOut_Mint.sql`, `R__Workorder_Assembly_CompleteTray.sql`
+- Modify: `sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql`, `R__Workorder_MachiningOut_Mint.sql`, `R__Lots_Lot_Split.sql`, `R__Lots_Lot_Merge.sql`
 - Test: `sql/tests/0063_Crt_PartScoped/060_enforcement.sql`
 
 **Interfaces:**
 - Consumes: `Lots.ufn_CrtBlocksAdvance`, `Lots.ufn_CrtBlocksMoveTo` (Task 3).
-- Produces: a uniform rejection — `Status = 0`, `Message = 'LOT <name> is marked CRT and cannot be used until Quality clears it.'`
+- Produces: a rejection — `Status = 0` and a `Message` naming the LOT and the string `CRT`. Not one uniform sentence: the move, advance, split and merge cases each say what was actually refused, and the merge names WHICH source LOT is tagged so an operator merging six knows which one to take to Quality.
+
+> **Superseded by the corrected spec (2026-08-20).** `Assembly_CompleteTray` is **NOT** guarded — the operator never scans the consumed sub-assemblies, so there is no deliberate hand-off to refuse, and blocking would stop the line whenever CRT stock sat in the cell. It propagates instead. `MachiningOut_Mint` guards **only the scanned `@SourceLotId`**, never the FIFO tail, so a CRT casting drawn from behind taints the sub-assembly rather than being laundered. `Lot_Split` and `Lot_Merge` **do** block. See `docs/superpowers/specs/2026-08-19-crt-part-scoped-design.md` section 6, "Where blocking and propagation meet".
 
 - [ ] **Step 1: Write the failing test**
 
@@ -751,7 +753,7 @@ numbers before editing; they will have shifted.
 Repeat in `Lot_MoveToValidated` — **but confirm its result shape independently.** Match
 whatever that proc's own existing rejections emit; do not assume it matches `Lot_MoveTo`.
 
-In `MachiningIn_RecordPick`, `MachiningOut_Mint` and `Assembly_CompleteTray`, use the advance guard against the LOT being consumed:
+In `MachiningIn_RecordPick`, `MachiningOut_Mint` (the scanned `@SourceLotId` only), `Lot_Split` (the parent) and `Lot_Merge` (any source), use the advance guard. **Not** in `Assembly_CompleteTray` -- see the note above:
 
 ```sql
     -- D4: a CRT LOT cannot be consumed or advanced.
@@ -786,7 +788,7 @@ Confirm the only `ERROR running` entries are the four pre-existing `0022_PlantFl
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_Lot_MoveTo.sql sql/migrations/repeatable/R__Lots_Lot_MoveToValidated.sql sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql sql/tests/0063_Crt_PartScoped/060_enforcement.sql
+git add sql/migrations/repeatable/R__Lots_Lot_MoveTo.sql sql/migrations/repeatable/R__Lots_Lot_MoveToValidated.sql sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql sql/migrations/repeatable/R__Lots_Lot_Split.sql sql/migrations/repeatable/R__Lots_Lot_Merge.sql sql/tests/0063_Crt_PartScoped/060_enforcement.sql
 git commit -m "feat(crt): block advance and production moves for a CRT lot
 
 Every guard rejects BEFORE BEGIN TRANSACTION -- a ROLLBACK in a proc
