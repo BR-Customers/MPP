@@ -195,8 +195,27 @@ INSERT INTO #u EXEC Parts.Item_Update
     @AppUserId   = @App;
 
 SET @Col = (SELECT CAST(CrtEnabled AS NVARCHAR(10)) FROM Parts.Item WHERE Id = @ItemId);
+-- CRT is NULL-PRESERVING, deliberately unlike this proc's other parameters.
+-- Every sibling (@Description, @MaxParts, ...) is full-replace, so omitting it
+-- clears the column. CRT is a SAFETY flag: silently untagging a part would ship
+-- suspect material unmarked and nothing would surface it, so omission leaves the
+-- flag ALONE. Explicit 0 still clears it, which is the only path the Item Master
+-- checkbox uses -- asserted immediately below.
 EXEC test.Assert_IsEqual
-    @TestName = N'[CrtConfig] Omitting @CrtEnabled clears the flag (full-replace update)',
+    @TestName = N'[CrtConfig] Omitting @CrtEnabled PRESERVES the flag (safety flag, not full-replace)',
+    @Expected = N'1', @Actual = @Col;
+
+-- ...and an explicit 0 must still turn it off, or the flag could never be cleared.
+DELETE FROM #u;
+INSERT INTO #u EXEC Parts.Item_Update
+    @Id          = @ItemId,
+    @Description = N'Part-scoped CRT round-trip fixture',
+    @UomId       = @UomId,
+    @AppUserId   = @App,
+    @CrtEnabled  = 0;
+SET @Col = (SELECT CAST(CrtEnabled AS NVARCHAR(10)) FROM Parts.Item WHERE Id = @ItemId);
+EXEC test.Assert_IsEqual
+    @TestName = N'[CrtConfig] Explicit @CrtEnabled = 0 still clears the flag',
     @Expected = N'0', @Actual = @Col;
 
 DROP TABLE #g;

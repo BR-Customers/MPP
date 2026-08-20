@@ -266,13 +266,17 @@ This registry tracks every seed-data item the MES requires from sources **extern
 
 **CRT interaction (feature `2026-08-19-crt-part-scoped`, decision D8).** A CRT LOT's ticket is marked by a `{CrtMark}` token substituted by `Lots.LotLabel_Print` / `_Reprint`. Migration `0063_crt_label_mark_token.sql` inserts that token into the **seeded placeholder** templates only — it anchors on `0021`'s exact field string, so a real layout does not match and is skipped. The migration now PRINTs a WARNING naming how many active LTT templates were skipped, and on Dev it correctly reports 1 (the Primary).
 
-**Do NOT "fix" this with a blanket token replace.** Every active LTT template carries **two** `{LotName}` occurrences, and the Master and Void templates put one of them inside a `^BC` barcode field. Replacing the bare token would inject the mark into the barcode data and corrupt the scanned LOT number. Placing the mark in a real layout is a per-template decision and belongs to whoever owns the label design.
+**Do NOT "fix" this with a blanket token replace.** Every active LTT template carries **two** `{LotName}` occurrences, and in every one of them the second sits inside a **barcode** field. Replacing the bare token would inject the mark into the barcode data and corrupt the scanned LOT number.
+
+> Note the barcode command differs by template: the Master and Void placeholders use `^BC` (Code 128), but MPP's real Primary layout uses **`^B3`** (Code 39). An earlier check here looked only for `^BC` and wrongly reported the Primary template as barcode-free. Any future edit must match on the specific human-readable field, never on the bare token.
 
 **What is owed:**
 - MPP's production ZPL for each label type, so it can be committed as a seed and deployed rather than hand-loaded.
 - A placement decision for `{CrtMark}` on each real layout — outside any `^BC` field.
 
-**Loading procedure:** Commit the real bodies as a seed script, then re-run the CRT token migration (or fold the token straight into the seeded bodies). Until then, each environment needs `{CrtMark}` added to its live templates by hand or a CRT ticket prints with no mark.
+**Resolved 2026-08-20.** Hunter confirmed the database bodies are the production labels, so they are now captured in `sql/seeds/032_seed_label_templates_mpp.sql` and a fresh `Deploy-Prod.ps1` reproduces them. Seeds run after migrations, so that seed overwrites both `0021`'s placeholder and `0063`'s token insert -- which is why the Primary body in the seed carries `{CrtMark}` itself.
+
+**Placement chosen, and trivially movable:** `{CrtMark}` was appended to the human-readable Lot line (`^A0,64,48^FO100,100^FD{LotName} {CrtMark}^FS`), so a tagged ticket reads `L12345 CRT` on the Lot line. The `^B3` barcode field was deliberately left untouched, verified by hash. This was the minimum safe choice without knowing the physical label width -- a dedicated field at a chosen coordinate would be better if MPP has a preferred spot. Status stays 🟡 until MPP confirms the printed result.
 
 ---
 

@@ -30,13 +30,14 @@
 --   @MaxParts INT NULL            - Hard cap on pieces per container. OI-12.
 --                                   Validated > 0 when supplied.
 --   @AppUserId BIGINT             - Required for audit.
---   @CrtEnabled BIT = 0           - Part-scoped Controlled Run Tag (Task 8).
+--   @CrtEnabled BIT = NULL        - Part-scoped Controlled Run Tag (Task 8).
 --                                   Declared LAST with a default so pre-CRT
 --                                   callers still compile. NOTE: this proc is a
 --                                   FULL-REPLACE update (every mutable column is
 --                                   assigned unconditionally, exactly as
 --                                   @Description / @MaxParts already are), so a
---                                   caller that omits @CrtEnabled CLEARS the flag.
+--                                   NULL-PRESERVING, unlike this proc's other params:
+--                                   omitting it leaves the flag alone. Pass 0 to clear.
 --                                   Every caller that may touch a CRT part SHALL
 --                                   pass the current value through. NULL is
 --                                   coerced to 0 (the column is BIT NOT NULL and
@@ -61,7 +62,7 @@
 --                       narrative Description (changed fields only) +
 --                       resolved-FK Old/NewValue JSON (ItemType, Uom,
 --                       WeightUom). Old values captured BEFORE the UPDATE.
---   2026-08-20 - 2.4 - Part-scoped CRT (Task 8): @CrtEnabled BIT = 0 added
+--   2026-08-20 - 2.4 - Part-scoped CRT (Task 8): @CrtEnabled BIT = NULL added
 --                       (declared last, defaulted). Carried into the field-diff
 --                       Action prose and the Old/NewValue audit JSON. Result-set
 --                       shape UNCHANGED (Status, Message).
@@ -78,7 +79,7 @@ CREATE OR ALTER PROCEDURE Parts.Item_Update
     @CountryOfOrigin  NVARCHAR(2)    = NULL,
     @MaxParts         INT            = NULL,
     @AppUserId        BIGINT,
-    @CrtEnabled       BIT            = 0
+    @CrtEnabled       BIT            = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -88,7 +89,12 @@ BEGIN
     DECLARE @Message NVARCHAR(500) = N'Unknown error';
 
     -- The column is BIT NOT NULL; an unchecked Perspective checkbox can bind null.
-    SET @CrtEnabled = ISNULL(@CrtEnabled, 0);
+    -- CRT is a SAFETY flag, so it is NULL-preserving rather than full-replace like
+    -- @Description / @MaxParts: a caller that omits it leaves the flag ALONE instead
+    -- of silently clearing it. Passing 0 explicitly still turns it off, which is the
+    -- only path the Item Master checkbox uses. Deliberate deviation from this proc's
+    -- otherwise-uniform full-replace semantics: silently untagging a CRT part would
+    -- ship suspect material unmarked, and nothing would surface it.
 
     DECLARE @ProcName NVARCHAR(200) = N'Parts.Item_Update';
     DECLARE @Params   NVARCHAR(MAX) =
@@ -207,6 +213,12 @@ BEGIN
                @OldMaxParts         = MaxParts,
                @OldCrtEnabled       = CrtEnabled
         FROM Parts.Item WHERE Id = @Id;
+
+        -- Resolve the NULL-preserving CRT flag against the row's current value BEFORE
+        -- the audit comparison and the UPDATE below, so both see the effective value.
+        -- Omitted (NULL) means 'leave it alone'; the column is BIT NOT NULL, so writing
+        -- @CrtEnabled through unresolved would fail outright.
+        SET @CrtEnabled = ISNULL(@CrtEnabled, ISNULL(@OldCrtEnabled, 0));
 
         -- Resolved-FK OldValue snapshot (pre-update state)
         DECLARE @OldValue NVARCHAR(MAX) = (
