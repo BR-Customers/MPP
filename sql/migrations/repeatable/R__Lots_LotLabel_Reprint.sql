@@ -1,17 +1,23 @@
 -- ============================================================
 -- Repeatable:  R__Lots_LotLabel_Reprint.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-11
--- Version:     1.0
+-- Modified:    2026-08-20
+-- Version:     1.1
 -- Description: Convenience wrapper over the LotLabel print flow (FDS-05-020):
 --              re-prints a LOT's label with a caller-supplied (non-Initial)
 --              reason. Resolves the label TYPE from the LOT's most recent prior
 --              LotLabel row; if the LOT has never been labelled, defaults to
 --              Primary (LabelTypeCodeId = 1). It then performs the SAME active-
---              template resolve + five-token render + append-only insert + audit
---              as Lots.LotLabel_Print, and returns the SAME 4-column shape
---              (Status, Message, NewId, ZplContent). Original LotLabel rows are
---              never modified -- the log is append-only.
+--              template resolve + token render (including {CrtMark}) +
+--              append-only insert + audit as Lots.LotLabel_Print, and returns
+--              the SAME 4-column shape (Status, Message, NewId, ZplContent).
+--              Original LotLabel rows are never modified -- the log is
+--              append-only.
+--
+--              {CrtMark} (part-scoped CRT design D8, 2026-08-20): substituted
+--              UNCONDITIONALLY from Lots.Lot.CrtActive on every reprint too --
+--              a label printed before Quality clears the LOT still says CRT;
+--              reprint AFTER clearing is how the operator gets a clean ticket.
 --
 --              The render+insert core is INLINED here (mirrors LotLabel_Print) on
 --              purpose: this proc may be captured via INSERT-EXEC by callers/tests,
@@ -59,6 +65,7 @@ BEGIN
     DECLARE @ItemDescription  NVARCHAR(500);
     DECLARE @CurrentLocationId BIGINT;
     DECLARE @LocationName     NVARCHAR(200);
+    DECLARE @CrtActive        BIT;
 
     BEGIN TRY
         -- ---- Tier 1: required-parameter validation ----
@@ -80,7 +87,8 @@ BEGIN
                @ItemId            = l.ItemId,
                @PieceCount        = l.PieceCount,
                @LabelParentLotId  = l.ParentLotId,
-               @CurrentLocationId = l.CurrentLocationId
+               @CurrentLocationId = l.CurrentLocationId,
+               @CrtActive         = l.CrtActive
         FROM Lots.Lot l
         WHERE l.Id = @LotId;
 
@@ -161,6 +169,8 @@ BEGIN
         SET @Zpl = REPLACE(@Zpl, N'{LocationName}',    ISNULL(@LocationName, N''));
         SET @Zpl = REPLACE(@Zpl, N'{PieceCount}',      ISNULL(CAST(@PieceCount AS NVARCHAR(20)), N''));
         SET @Zpl = REPLACE(@Zpl, N'{PrintedAt}',       @PrintedAt);
+        SET @Zpl = REPLACE(@Zpl, N'{CrtMark}',
+                           CASE WHEN @CrtActive = 1 THEN N'CRT' ELSE N'' END);
 
         -- ---- Mutation (atomic) ----
         DECLARE @ActivityRaw NVARCHAR(MAX) =

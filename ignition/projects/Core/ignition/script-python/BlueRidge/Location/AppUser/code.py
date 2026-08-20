@@ -212,26 +212,28 @@ def resolveForPresence(initials):
 # including Active Directory / AD Hybrid / AD-to-DB (an AD-typed source performs
 # an LDAP bind against the domain controller inside the same call).
 #
-# *** CURRENT STATE (verified on the dev gateway 2026-08-19) ***
-# The gateway has exactly three user sources -- 'default', 'MPP' and
-# 'opcua-module' -- and ALL THREE are type INTERNAL. There is NO Active Directory
-# user source configured, and the only Identity Provider ('default') is internal.
-# So elevation authenticates today against the INTERNAL 'MPP' source, which is
-# what makes dev/test elevation work at all.
+# *** SET TO THE PRODUCTION SOURCE (Hunter, 2026-08-19) ***
+# This names the Active Directory user source MPP IT provisions on the plant
+# gateway. It is deliberately set ahead of that source existing, so deployment
+# does not depend on remembering to change a constant.
 #
-# AT DEPLOYMENT: MPP IT creates the Active Directory user source on the gateway
-# (Config > Security > Users, Roles -- domain, host(s), search base, binding
-# service account), then this constant is repointed at that source's NAME. No
-# other code changes. Do NOT repoint it at a name that does not exist on the
-# gateway: validateUser then throws and EVERY elevation is denied (that is the
-# exact failure mode fixed in aa2c5ded).
+# CONSEQUENCE ON ANY GATEWAY WITHOUT IT -- including the dev gateway as of
+# 2026-08-19, which has only 'default', 'MPP' and 'opcua-module', all type
+# INTERNAL, and no AD Identity Provider: validateUser cannot resolve the source
+# and EVERY elevation is denied. That disables Supervisor Access, Changeover,
+# MoveOverride, the sort-cage migrate, downtime edit/void and the CRT toggle.
+# The except branch below names the offending source so this is self-diagnosing
+# rather than presenting as a wrong password.
+#
+# TO WORK LOCALLY: create an AD user source of this exact name on the gateway,
+# or temporarily set this back to "MPP" -- and do not commit that revert.
 #
 # Attribution/audit is independent of the source: validateUser only gates the
 # password; the account name flows on to Location.AppUser_AuthenticateAd, which
 # resolves it to an AppUser (Location.AppUser.AdAccount must match the directory
 # account name) and writes the ElevationGranted / ElevationDenied audit row.
 # =============================================================================
-_ELEVATION_USER_SOURCE = "MPP"  # Name of a user source configured on the gateway
+_ELEVATION_USER_SOURCE = "Active Directory"  # Name of the user source on the gateway
                                 # (Config > Security > Users, Roles).
                                 # "" = the project's default user source.
 

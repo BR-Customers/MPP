@@ -18,64 +18,7 @@
       "TrayClosedAt": null,
       "TrayPosition": null
     },
-    "history": [
-      {
-        "ByUserId": 22,
-        "ByUserName": "JACQUES",
-        "Detail": "(none) -\u003e Good (SubAssembly LOT minted at Machining OUT (FIFO).)",
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858754
-          ],
-          "$ts": 1786037010851
-        },
-        "EventKind": "Status"
-      },
-      {
-        "ByUserId": 22,
-        "ByUserName": "JACQUES",
-        "Detail": "(none) -\u003e 5G0 Front (MA1-5GOF) [via Madison Facility]",
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858754
-          ],
-          "$ts": 1786037010852
-        },
-        "EventKind": "Movement"
-      },
-      {
-        "ByUserId": 22,
-        "ByUserName": "JACQUES",
-        "Detail": "Consumption \u003c- 000000024 (96 pcs)",
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858754
-          ],
-          "$ts": 1786037010852
-        },
-        "EventKind": "Genealogy"
-      },
-      {
-        "ByUserId": 22,
-        "ByUserName": "JACQUES",
-        "Detail": "Label printed: Primary Shipping Label (Initial)",
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858754
-          ],
-          "$ts": 1786037010864
-        },
-        "EventKind": "Label"
-      }
-    ],
+    "history": [],
     "hold": {
       "HoldTypeCode": null,
       "Id": null,
@@ -85,46 +28,30 @@
       "Reason": null
     },
     "lot": {
-      "BomId": 42,
-      "BomVersionNumber": 1,
-      "CreatedAt": {
-        "$": [
-          "ts",
-          192,
-          1786714858684
-        ],
-        "$ts": 1786037010851
-      },
-      "CreatedAtTerminalId": 2,
-      "CreatedByUserId": 22,
+      "BomId": null,
+      "BomVersionNumber": null,
+      "CreatedAt": null,
+      "CreatedAtTerminalId": null,
+      "CreatedByUserId": null,
       "CrtActive": false,
-      "CurrentLocationId": 81,
-      "CurrentLocationName": "5G0 Front",
-      "Id": 10274,
-      "InventoryAvailable": 96,
-      "ItemId": 149,
-      "ItemPartNumber": "5G0-SA",
-      "LotName": "000000024-04",
-      "LotOriginTypeCode": "Manufactured",
-      "LotOriginTypeId": 1,
-      "LotStatusCode": "Good",
-      "LotStatusId": 1,
-      "LotStatusName": "Good",
+      "CurrentLocationId": null,
+      "CurrentLocationName": null,
+      "Id": null,
+      "InventoryAvailable": 0,
+      "ItemId": null,
+      "ItemPartNumber": null,
+      "LotName": null,
+      "LotOriginTypeCode": null,
+      "LotOriginTypeId": null,
+      "LotStatusCode": null,
+      "LotStatusId": null,
+      "LotStatusName": null,
       "MaxPieceCount": null,
       "MaxSerialNumber": null,
       "MinSerialNumber": null,
       "ParentLotId": null,
-      "PieceCount": 96,
-      "RowVersion": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        2,
-        -96
-      ],
+      "PieceCount": 0,
+      "RowVersion": null,
       "ToolCavityId": null,
       "ToolCavityNumber": null,
       "ToolCode": null,
@@ -136,28 +63,7 @@
       "Weight": null,
       "WeightUomId": null
     },
-    "parents": [
-      {
-        "EventAt": {
-          "$": [
-            "ts",
-            192,
-            1786714858762
-          ],
-          "$ts": 1786051410852
-        },
-        "EventUserId": 22,
-        "EventUserName": "JACQUES",
-        "ItemCode": "5G0-c",
-        "ItemId": 148,
-        "ItemName": "5G0 Front Cover Casting",
-        "ParentLotId": 10267,
-        "ParentLotName": "000000024",
-        "PieceCount": 96,
-        "RelationshipTypeCode": "Consumption",
-        "RelationshipTypeName": "Consumption"
-      }
-    ],
+    "parents": [],
     "pauses": [],
     "samples": [],
     "scrapSummary": {
@@ -921,9 +827,6 @@
                 ],
                 "meta": {
                   "name": "PanelHistory"
-                },
-                "position": {
-                  "tabIndex": 0
                 },
                 "props": {
                   "direction": "column",
@@ -1758,170 +1661,72 @@
               {
                 "children": [
                   {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "SectionTitle"
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "text": "Record scrap",
-                          "style": {
-                            "classes": "pf-section-title",
-                            "overflow": "hidden"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "SectionHint"
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "text": "Removes bad parts from the LOT and charges them to a defect code. This changes inventory.",
-                          "style": {
-                            "classes": "pf-field-help"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "ScrapPanelEmbed"
-                        },
-                        "position": {
-                          "basis": "0",
-                          "grow": 1,
-                          "shrink": 1
-                        },
-                        "propConfig": {
-                          "props.params.lotId": {
-                            "binding": {
-                              "config": {
-                                "path": "view.params.lotId"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "path": "BlueRidge/Components/PlantFloor/LotDetail/ScrapPanel"
-                        },
-                        "type": "ia.display.view"
-                      }
-                    ],
                     "meta": {
-                      "name": "ScrapSection"
+                      "name": "ScrapPanelEmbed"
                     },
                     "position": {
-                      "basis": "360px",
-                      "grow": 1,
-                      "shrink": 1
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.params.lotId": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.lotId"
+                          },
+                          "type": "property"
+                        }
+                      }
                     },
                     "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-panel",
-                        "gap": "6px",
-                        "overflow": "hidden"
-                      }
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/ScrapPanel"
                     },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "SectionTitle"
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "text": "Correct count",
-                          "style": {
-                            "classes": "pf-section-title",
-                            "overflow": "hidden"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "SectionHint"
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "text": "Fixes a piece count that was keyed in wrong. No parts are removed - use Record scrap above for that.",
-                          "style": {
-                            "classes": "pf-field-help"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "CountPanelEmbed"
-                        },
-                        "position": {
-                          "basis": "0",
-                          "grow": 1,
-                          "shrink": 1
-                        },
-                        "propConfig": {
-                          "props.params.lotId": {
-                            "binding": {
-                              "config": {
-                                "path": "view.params.lotId"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "path": "BlueRidge/Components/PlantFloor/LotDetail/CountPanel"
-                        },
-                        "type": "ia.display.view"
-                      }
-                    ],
-                    "meta": {
-                      "name": "CountSection"
-                    },
-                    "position": {
-                      "basis": "250px",
-                      "grow": 0,
-                      "shrink": 0
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-panel",
-                        "gap": "6px",
-                        "overflow": "hidden"
-                      }
-                    },
-                    "type": "ia.container.flex"
+                    "type": "ia.display.view"
                   }
                 ],
                 "meta": {
-                  "name": "PanelScrapCount"
+                  "name": "PanelScrap"
                 },
                 "position": {
                   "tabIndex": 6
                 },
                 "props": {
-                  "direction": "column",
-                  "style": {
-                    "gap": "12px",
-                    "overflowY": "auto"
+                  "direction": "column"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "CountPanelEmbed"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.params.lotId": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.lotId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/CountPanel"
+                    },
+                    "type": "ia.display.view"
                   }
+                ],
+                "meta": {
+                  "name": "PanelCorrectCount"
+                },
+                "position": {
+                  "tabIndex": 7
+                },
+                "props": {
+                  "direction": "column"
                 },
                 "type": "ia.container.flex"
               }
@@ -1990,7 +1795,12 @@
                 {
                   "disabled": false,
                   "runWhileHidden": true,
-                  "text": "Scrap \u0026 Count"
+                  "text": "Scrap"
+                },
+                {
+                  "disabled": false,
+                  "runWhileHidden": true,
+                  "text": "Correct Count"
                 }
               ]
             },
@@ -2130,7 +1940,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tterm \u003d self.session.custom.terminal\n\tresult \u003d BlueRidge.Quality.Crt.setCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
+                    "script": "\tself.view.rootContainer.doCrtToggle()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -2138,7 +1948,7 @@
               }
             },
             "meta": {
-              "name": "BtnSetCrt"
+              "name": "BtnCrtToggle"
             },
             "position": {
               "shrink": 0
@@ -2147,7 +1957,15 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "!isNull({view.custom.lot.Id}) \u0026\u0026 !coalesce({view.custom.lot.CrtActive}, false)"
+                    "expression": "!isNull({view.custom.lot.Id})"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(coalesce({view.custom.lot.CrtActive}, false), \"Disable CRT\", \"Enable CRT\")"
                   },
                   "type": "expr"
                 }
@@ -2157,45 +1975,7 @@
               "style": {
                 "classes": "pf-btn pf-btn-elevated"
               },
-              "text": "Set CRT",
-              "toolTipText": "Place this LOT on a Controlled Run Tag (200% downstream inspection prompt)."
-            },
-            "type": "ia.input.button"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tterm \u003d self.session.custom.terminal\n\tresult \u003d BlueRidge.Quality.Crt.clearCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "BtnClearCrt"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "config": {
-                    "expression": "coalesce({view.custom.lot.CrtActive}, false)"
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-btn pf-btn-elevated"
-              },
-              "text": "Clear CRT",
-              "toolTipText": "Release the Controlled Run Tag (supervisor clearance per FDS-04-007)."
+              "toolTipText": "Apply or release the Controlled Run Tag on this LOT (200% downstream inspection prompt). Supervisor authorization required in both directions."
             },
             "type": "ia.input.button"
           }
@@ -2252,6 +2032,11 @@
           "name": "load",
           "params": [],
           "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      \u003d BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  \u003d BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children \u003d BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   \u003d BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container \u003d BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples \u003d BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold \u003d BlueRidge.Quality.Hold.getOpenByLotOne(lotId)\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0), \"containerId\": 0, \"allowLookup\": False}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotScrapPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotCountPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")"
+        },
+        {
+          "name": "doCrtToggle",
+          "params": [],
+          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"No LOT loaded.\", \"warning\")\n\t\treturn\n\t# The mutation targets view.params.lotId - the same id reprintLabel and\n\t# load() use - never the Id carried inside the custom.lot snapshot.\n\t# load() keeps the PREVIOUS snapshot when Lot_Get misses, so a stale one\n\t# would otherwise aim this toggle at whatever LOT was displayed last.\n\t# The snapshot is therefore only consulted once it proves it belongs to\n\t# this lotId, and then only to pick the direction and the prompt label.\n\tlot \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lot) or {}\n\ttry:\n\t\tsnapId \u003d int(lot.get(\"Id\") or 0)\n\texcept:\n\t\tsnapId \u003d 0\n\ttry:\n\t\tcurId \u003d int(lotId)\n\texcept:\n\t\tcurId \u003d -1\n\tif snapId \u003c 1 or snapId !\u003d curId:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not loaded\", \"This LOT is still loading. Reopen it and try again.\", \"warning\")\n\t\treturn\n\tactive \u003d bool(lot.get(\"CrtActive\"))\n\t# Supervisor-only in BOTH directions (design D7): applying a Controlled Run\n\t# Tag forces the 200% downstream inspection prompt, releasing one drops that\n\t# obligation - neither transition is an operator decision. Per D6 this acts on\n\t# THIS LOT only: no bulk clear, no clear-with-descendants.\n\t# requireElevation stashes the intent and opens the ElevationModal;\n\t# Session.dispatchElevatedAction replays it as the crtToggleRequested page\n\t# message, whose handler calls straight back into this method.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tif active:\n\t\t\tlabel \u003d \"Release the Controlled Run Tag\"\n\t\telse:\n\t\t\tlabel \u003d \"Apply a Controlled Run Tag\"\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"CrtToggle\", label, {})\n\t\treturn\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tif active:\n\t\tresult \u003d BlueRidge.Lots.Lot.clearCrt(lotId, appUserId, termId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"CRT released\")\n\telse:\n\t\tresult \u003d BlueRidge.Lots.Lot.setCrt(lotId, appUserId, termId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"CRT applied\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
         }
       ],
       "extensionFunctions": null,
@@ -2274,6 +2059,13 @@
           "messageType": "lotCountChanged",
           "pageScope": true,
           "script": "\tself.load()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "crtToggleRequested",
+          "pageScope": true,
+          "script": "\t# Elevation replay hook (see Session._ELEVATED_REPLAY_MESSAGES). Fired only\n\t# after a successful ElevationModal authorization, so isElevated now passes.\n\tself.doCrtToggle()",
           "sessionScope": false,
           "viewScope": false
         }

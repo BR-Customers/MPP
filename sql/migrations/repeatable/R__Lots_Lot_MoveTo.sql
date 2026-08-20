@@ -1,8 +1,13 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_MoveTo.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-09
--- Version:     1.0
+-- Modified:    2026-08-20
+-- Version:     1.1 (2026-08-20, part-scoped CRT) - D5 enforcement: a CRT LOT is
+--              refused a PRODUCTION destination (Lots.ufn_CrtBlocksMoveTo), while
+--              inspection / inventory / support destinations still succeed so
+--              suspect material can be taken to quarantine. The guard sits AFTER
+--              the existing Hold/Scrap/Closed rejection (which keeps precedence)
+--              and BEFORE BEGIN TRANSACTION.
 -- Description: Moves a LOT to a new location: updates Lots.Lot.CurrentLocationId
 --              and appends a Lots.LotMovement row (FromLocationId = prior,
 --              ToLocationId = new). Audits 'LotMoved'.
@@ -114,8 +119,32 @@ BEGIN
             RETURN;
         END
 
-        -- ===== Mutation (atomic) =====
         DECLARE @LotName  NVARCHAR(50)  = (SELECT LotName FROM Lots.Lot WHERE Id = @LotId);
+
+        -- D5 (part-scoped CRT): a CRT LOT cannot move to a PRODUCTION destination --
+        -- which is what a Trim IN or Assembly IN scan actually is. A move to
+        -- inspection, inventory or a support area still succeeds, so suspect material
+        -- can be taken to quarantine. Production-vs-not is DATA
+        -- (Location.LocationTypeDefinition.IsProductionDestination), resolved by
+        -- Lots.ufn_CrtBlocksMoveTo, which always returns exactly one row.
+        -- Placement: LAST of the rejecting validations (the Hold/Scrap/Closed guard
+        -- above keeps precedence -- a held CRT LOT is refused for the hold) but still
+        -- BEFORE BEGIN TRANSACTION, because a ROLLBACK inside a proc invoked via
+        -- INSERT-EXEC throws Msg 3915.
+        IF (SELECT Blocked FROM Lots.ufn_CrtBlocksMoveTo(@LotId, @ToLocationId)) = 1
+        BEGIN
+            SET @Message = N'LOT ' + ISNULL(@LotName, N'?')
+                         + N' is marked CRT and cannot be moved to a production location until Quality clears it.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = @LotId, @LogEventTypeCode = N'LotMoved',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- ===== Mutation (atomic) =====
         DECLARE @FromName NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @FromLocationId);
         DECLARE @ToName   NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @ToLocationId);
 

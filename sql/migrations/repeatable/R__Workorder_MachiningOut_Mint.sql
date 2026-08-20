@@ -1,6 +1,30 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
+-- Version:     2.5 (2026-08-20, part-scoped CRT enforcement) - D4: the scanned casting
+--              (@SourceLotId, the FIFO handle the operator actually presented) is
+--              refused when it is CRT (Lots.ufn_CrtBlocksAdvance). The guard sits
+--              immediately after the B2 blocked-status rejection -- so Hold/Scrap/
+--              Closed keeps precedence -- and before BEGIN TRANSACTION (Msg 3915).
+--              NOTE the deliberate scope: the guard covers the SCANNED handle only,
+--              not the rest of the FIFO queue the walk may roll into. A CRT casting
+--              deeper in the queue is still consumed, and that is exactly the
+--              containment escape the post-consume CRT re-resolve below exists to
+--              close (it taints the minted sub-assembly instead of blocking). See
+--              sql/tests/0064_Crt_PartScoped/050_mint_procs.sql section C, which
+--              asserts that behaviour.
+-- Version:     2.4 (2026-08-20, part-scoped CRT) - the minted SubAssembly LOT is now
+--              stamped with Lots.Lot.CrtActive, resolved in ONE place
+--              (Lots.ufn_CrtForMint: part flag OR terminal switch OR any consumed input
+--              LOT already CRT). The mint-site call answers the part-flag and terminal
+--              arms only and passes NULL for propagation -- @SourceLotId is just the
+--              scanned FIFO HANDLE, is absent from the @Queue predicate, and may even
+--              be Closed by inline scrap, so seeding from it could stamp a false
+--              positive. A post-consume "CRT re-resolve" after the FIFO walk is the
+--              single source of propagation truth: it resolves over the Consumption
+--              genealogy edges (RelationshipTypeId = 3) the walk actually wrote and
+--              raises the stamp 0 -> 1 only. A CRT casting anywhere in the walk --
+--              not just the scanned one -- therefore taints the sub-assembly.
 -- Version:     2.3 (2026-08-07, FAT-MACH-140) - defect/reject capture. New optional
 --              @ScrapLinesJson ([{"defectCodeId","quantity"}, ...]) writes one
 --              Workorder.RejectEvent per line (ProductionEventId NULL, LotId =
@@ -55,7 +79,7 @@ BEGIN
     DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
     DECLARE @ClosedStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed');
     DECLARE @ManufacturedOriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code=N'Manufactured');
-    DECLARE @SrcItem BIGINT, @SrcLoc BIGINT, @Blocks BIT, @SrcStatusCode NVARCHAR(20);
+    DECLARE @SrcItem BIGINT, @SrcLoc BIGINT, @Blocks BIT, @SrcStatusCode NVARCHAR(20), @SrcLotName NVARCHAR(50);
     DECLARE @SrcPieceCount INT, @SrcInvAvail INT;
     DECLARE @BomId BIGINT, @QtyPer DECIMAL(18,4), @Consumed INT, @CandCount INT, @TotalAvail INT;
     DECLARE @ScrapTotal INT = 0, @SrcEligible BIT = 0, @NetAvail INT;
@@ -82,11 +106,21 @@ BEGIN
             JOIN Parts.OperationType oty ON oty.Id=ot.OperationTypeId WHERE ot.Id=@OperationTemplateId);
         -- Source LOT = FIFO handle (cell + part); must be open/not-blocked.
         SELECT @SrcItem=l.ItemId, @SrcLoc=l.CurrentLocationId, @Blocks=sc.BlocksProduction, @SrcStatusCode=sc.Code,
-               @SrcPieceCount=l.PieceCount, @SrcInvAvail=l.InventoryAvailable
+               @SrcPieceCount=l.PieceCount, @SrcInvAvail=l.InventoryAvailable, @SrcLotName=l.LotName
         FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@SourceLotId;
         IF @SrcItem IS NULL BEGIN SET @Message=N'Source LOT not found.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
         IF @Blocks=1 OR @SrcStatusCode IN (N'Closed',N'Open') BEGIN SET @Message=N'Source LOT is '+@SrcStatusCode+N' and cannot be consumed.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
+
+        -- D4 (part-scoped CRT): the scanned casting cannot be consumed into a
+        -- sub-assembly while it is CRT. AFTER the blocked-status guard above (so
+        -- Hold/Scrap/Closed keeps precedence) and before BEGIN TRANSACTION -- a
+        -- ROLLBACK in an INSERT-EXEC-captured proc throws Msg 3915. Scope note: this
+        -- covers @SourceLotId, the handle the operator scanned, NOT the whole FIFO
+        -- queue; see the version header.
+        IF (SELECT Blocked FROM Lots.ufn_CrtBlocksAdvance(@SourceLotId)) = 1
+        BEGIN SET @Message=N'LOT '+ISNULL(@SrcLotName,N'?')+N' is marked CRT and cannot be used until Quality clears it.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
 
         -- ---- Scrap lines (pre-txn): parse + validate (mirror TrimOut_Record). One
@@ -268,11 +302,25 @@ BEGIN
         IF @NextOrd > 99 RAISERROR(N'Casting already has 99 machined sublots.',16,1);
         SET @MintedName = @OldestName + N'-' + RIGHT(N'0'+CAST(@NextOrd AS NVARCHAR(2)),2);
 
+        -- D1/D2: CRT at mint, resolved in ONE place (Lots.ufn_CrtForMint). Only the
+        -- part-flag and terminal arms can be answered HERE, so the propagation arm is
+        -- passed NULL: @SourceLotId is merely the scanned FIFO HANDLE and is NOT
+        -- necessarily consumed at all (it is absent from the @Queue predicate below,
+        -- and if inline scrap fully drained it, it is already Closed and excluded from
+        -- the queue outright) -- seeding from it could stamp a false positive that the
+        -- 0 -> 1-only re-resolve can never take back. The "CRT re-resolve" block after
+        -- the walk is therefore the SINGLE source of propagation truth in this proc,
+        -- resolving over the Consumption edges that ARE the actual consumed set.
+        -- Same shape as Assembly_CompleteTray's mint site + step B4b.
+        DECLARE @CrtActive BIT =
+            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ProducedItemId, @TerminalLocationId,
+                                                       NULL));
+
         INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
             Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber, MinSerialNumber, MaxSerialNumber,
-            CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId)
+            CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId, CrtActive)
         VALUES (@MintedName, @ProducedItemId, @ManufacturedOriginId, @GoodStatusId, @PieceCount, (SELECT MaxLotSize FROM Parts.Item WHERE Id=@ProducedItemId),
-            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, @SrcLoc, 0, @PieceCount, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId);
+            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, @SrcLoc, 0, @PieceCount, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive);
         SET @NewId = SCOPE_IDENTITY();
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
         VALUES (@NewId, NULL, @GoodStatusId, N'SubAssembly LOT minted at Machining OUT (FIFO).', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
@@ -311,6 +359,26 @@ BEGIN
             SET @i = @i + 1;
         END
         IF @Need > 0 RAISERROR(N'FIFO queue was consumed by a concurrent mint mid-operation; reload and retry.',16,1);
+
+        -- CRT re-resolve (D2). The stamp above only saw the FIFO HANDLE, but the walk
+        -- rolls into as many castings as it needs -- a CRT casting further down the
+        -- queue would otherwise mint a CLEAN sub-assembly, which is exactly the
+        -- containment escape D2 exists to prevent. The Consumption genealogy edges
+        -- written by the walk (RelationshipTypeId = 3) ARE the actual consumed set, so
+        -- re-resolve over them -- the type filter is explicit so a future Split/Rework
+        -- edge on a freshly minted LOT cannot silently widen propagation.
+        -- Only ever raises 0 -> 1 (ufn_CrtForMint is a pure OR of the same three arms).
+        IF @CrtActive = 0
+        BEGIN
+            DECLARE @ConsumedLotIdsCsv NVARCHAR(MAX) = (
+                SELECT STRING_AGG(CAST(g.ParentLotId AS NVARCHAR(20)), N',')
+                FROM Lots.LotGenealogy g
+                WHERE g.ChildLotId = @NewId AND g.RelationshipTypeId = 3);
+            SET @CrtActive = (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ProducedItemId,
+                @TerminalLocationId, @ConsumedLotIdsCsv));
+            IF @CrtActive = 1
+                UPDATE Lots.Lot SET CrtActive = 1 WHERE Id = @NewId;
+        END
 
         -- Audit (subject = minted LOT; source castings summarized).
         SET @Activity = Audit.ufn_TruncateActivity(@MintedName+N' '+Audit.ufn_MidDot()+N' Machining OUT '+Audit.ufn_MidDot()

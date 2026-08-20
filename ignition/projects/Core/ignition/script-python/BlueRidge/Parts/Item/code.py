@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-20
-# Version:          1.2
+# Version:          1.3
 #
 # Description:
 #   Read + mutation surface for the Item Master Configuration Tool
@@ -39,6 +39,8 @@
 #                      (camelCase OR PascalCase) so the AddItem popup
 #                      (camelCase draft) and the Identity embed
 #                      (PascalCase editDraft from Item_Get) both work.
+#   2026-08-20 - 1.3 - Part-scoped CRT (Task 8): CrtEnabled added to
+#                      _ITEM_SHAPE_KEYS and always sent (1/0) by update().
 # =============================================================================
 
 
@@ -115,6 +117,7 @@ _ITEM_SHAPE_KEYS = (
     "CreatedAt", "CreatedByUserId",
     "UpdatedAt", "UpdatedByUserId",
     "DeprecatedAt",
+    "CrtEnabled",
 )
 
 
@@ -350,9 +353,17 @@ def update(meta):
     PascalCase tolerated):
         Id, description, macolaPartNumber, defaultSubLotQty,
         maxLotSize, uomId, unitWeight, weightUomId,
-        countryOfOrigin, maxParts
+        countryOfOrigin, maxParts, crtEnabled
 
     Returns {Status, Message}.
+
+    crtEnabled (part-scoped CRT, Task 8) is NULL-PRESERVING, unlike every other
+    key here: an explicit True/False is coerced to 1/0, but an OMITTED key sends
+    None -> SQL NULL, and Parts.Item_Update resolves NULL to the row's CURRENT
+    value. A partial payload therefore leaves the flag ALONE instead of silently
+    untagging a CRT part (which would ship suspect material unmarked). Pass an
+    explicit falsy crtEnabled to clear it -- which is what the Item Master
+    Identity checkbox does on every save.
     """
     m = _u(meta) or {}
     BlueRidge.Common.Util.log("meta=%s" % m)
@@ -361,6 +372,10 @@ def update(meta):
         if v is None:
             v = m.get(pascal)
         return v
+    # _pick returns None when NEITHER spelling of the key is present, which is
+    # exactly the "omitted" case -- forward it as None so the proc preserves the
+    # stored flag. Only an explicitly supplied value is coerced to 1/0.
+    _crt = _pick("crtEnabled", "CrtEnabled")
     return BlueRidge.Common.Db.execMutation(
         "parts/Item_Update",
         {
@@ -375,6 +390,7 @@ def update(meta):
             "countryOfOrigin":  _pick("countryOfOrigin",  "CountryOfOrigin"),
             "maxParts":         _pick("maxParts",         "MaxParts"),
             "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
+            "crtEnabled":       None if _crt is None else (1 if _crt else 0),
         },
     )
 

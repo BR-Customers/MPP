@@ -1,0 +1,228 @@
+{
+  "custom": {},
+  "params": {
+    "title": "Marked CRT",
+    "body": "",
+    "lotNames": "",
+    "popupId": "mpp-crt-notice"
+  },
+  "propConfig": {
+    "params.title":    { "paramDirection": "input", "persistent": true },
+    "params.body":     { "paramDirection": "input", "persistent": true },
+    "params.lotNames": { "paramDirection": "input", "persistent": true },
+    "params.popupId":  { "paramDirection": "input", "persistent": true }
+  },
+  "props": {
+    "defaultSize": { "height": 320, "width": 560 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Header" },
+        "position": { "basis": "60px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "direction": "row",
+          "style": {
+            "background": "var(--pf-status-warn-bg)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "overflow": "hidden",
+            "padding": "0 20px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Badge" },
+            "position": { "shrink": 0 },
+            "props": {
+              "text": "CRT",
+              "style": {
+                "border": "1px solid var(--pf-status-warn-fg)",
+                "borderRadius": "4px",
+                "color": "var(--pf-status-warn-fg)",
+                "fontSize": "13px",
+                "fontWeight": "700",
+                "letterSpacing": "0.08em",
+                "padding": "2px 8px"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Title" },
+            "position": { "basis": "0", "grow": 1 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.params.title" }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "20px",
+                "fontWeight": "700",
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Body" },
+        "position": { "basis": "0", "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "14px",
+            "overflow": "auto",
+            "padding": "20px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "BodyText" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.params.body" }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "16px",
+                "lineHeight": "1.5",
+                "whiteSpace": "normal",
+                "wordBreak": "break-word"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "LotBlock" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.params.lotNames}) && len({view.params.lotNames}) > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-subtle)",
+                "borderRadius": "var(--mpp-radius-md, 8px)",
+                "gap": "6px",
+                "overflow": "hidden",
+                "padding": "12px 14px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "LotsCaption" },
+                "position": { "shrink": 0 },
+                "props": {
+                  "text": "LOTs",
+                  "style": { "classes": "pf-kpi-label" }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "LotNames" },
+                "position": { "shrink": 0 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "path": "view.params.lotNames" }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "crt-mono",
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "15px",
+                    "lineHeight": "1.6",
+                    "whiteSpace": "normal",
+                    "wordBreak": "break-word"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Footer" },
+        "position": { "basis": "76px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "direction": "row",
+          "justify": "flex-end",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "10px",
+            "overflow": "hidden",
+            "padding": "0 20px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "OkButton" },
+            "position": { "basis": "140px", "shrink": 0 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId or \"mpp-crt-notice\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "OK",
+              "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

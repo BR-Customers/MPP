@@ -63,7 +63,7 @@ INSERT INTO @AT EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Fg, 
 DECLARE @Fg2 BIGINT = (SELECT FinishedGoodLotId FROM @AT); DECLARE @Full BIT = (SELECT ContainerFull FROM @AT); DELETE FROM @AT;
 
 -- Sanity: both FG LOTs are Good and appear in line inventory BEFORE completion.
-DECLARE @InvBefore TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3));
+DECLARE @InvBefore TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3), LotStatusCode NVARCHAR(20));
 INSERT INTO @InvBefore EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 DECLARE @InvB NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @InvBefore WHERE LotId IN (@Fg1, @Fg2));
 EXEC test.Assert_IsEqual @TestName = N'[FGClose] both FG LOTs on-hand before complete', @Expected = N'2', @Actual = @InvB;
@@ -89,7 +89,7 @@ DECLARE @A1 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotE
 EXEC test.Assert_IsEqual @TestName = N'[FGClose] FG LOT 1 LotStatusChanged audit present', @Expected = N'1', @Actual = @A1;
 
 -- Assert: closed FG LOTs are excluded from line inventory.
-DECLARE @InvAfter TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3));
+DECLARE @InvAfter TABLE (ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3), LotStatusCode NVARCHAR(20));
 INSERT INTO @InvAfter EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 DECLARE @InvA NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @InvAfter WHERE LotId IN (@Fg1, @Fg2));
 EXEC test.Assert_IsEqual @TestName = N'[FGClose] closed FG LOTs gone from line inventory', @Expected = N'0', @Actual = @InvA;

@@ -1,8 +1,14 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Split.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-07
--- Version:     1.0
+-- Modified:    2026-08-20
+-- Version:     1.1
+--
+-- CRT (2026-08-20, v1.1): a CRT parent LOT is REFUSED (guard 8b, via
+-- Lots.ufn_CrtBlocksAdvance) -- maximum containment on this exception path, per
+-- docs/superpowers/specs/2026-08-19-crt-part-scoped-design.md section 6. The
+-- Lots.ufn_CrtForMint call further down is KEPT as defence in depth even though its
+-- source arm is now unreachable here; see the comment at that call site.
 --
 -- SCOPE (terminal-mint, 2026-07-07): EXCEPTION-ONLY. The standard Machining &
 -- Assembly flow uses consume-MINTS (Workorder.MachiningOut_Mint /
@@ -50,7 +56,8 @@
 --              reduction; LotStatusHistory row for the Close).
 --
 --              Flow: validate params -> parse @ChildrenJson -> validate >=1 child
---              + all pieceCount>0 -> BEGIN TRAN -> read parent WITH
+--              + all pieceCount>0 -> parent read + rejections (incl. the CRT guard,
+--              last so the others keep precedence) -> BEGIN TRAN -> read parent WITH
 --              (UPDLOCK,HOLDLOCK) [serializes concurrent splits of THIS parent so
 --              suffix allocation cannot collide] -> inline B2 not-blocked guard ->
 --              SUM(children) <= parent.PieceCount -> compute next '-NN' ordinal
@@ -290,6 +297,29 @@ BEGIN
             RETURN;
         END
 
+        -- ---- 8b. D4 (part-scoped CRT): a CRT LOT cannot be split. Maximum
+        -- containment on this exception path -- suspect material must not be divided
+        -- until Quality clears it (design 2026-08-19-crt-part-scoped, section 6
+        -- "Where blocking and propagation meet"). Deliberately LAST of the rejections
+        -- so every pre-existing one keeps precedence (a Held CRT LOT is refused for
+        -- the hold, which is the message the operator can act on), and BEFORE
+        -- BEGIN TRANSACTION because a ROLLBACK inside an INSERT-EXEC-captured proc
+        -- throws Msg 3915. Lots.ufn_CrtBlocksAdvance always returns exactly one row. ----
+        IF (SELECT Blocked FROM Lots.ufn_CrtBlocksAdvance(@ParentLotId)) = 1
+        BEGIN
+            SET @Message = N'LOT ' + @ParentName
+                         + N' is marked CRT and cannot be split until Quality clears it.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = @ParentLotId, @LogEventTypeCode = N'LotSplit',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message,
+                   CAST(NULL AS BIGINT) AS ChildLotId, CAST(NULL AS NVARCHAR(50)) AS ChildLotName,
+                   CAST(NULL AS INT) AS PieceCount;
+            RETURN;
+        END
+
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
 
@@ -320,6 +350,22 @@ BEGIN
             OR @SumChildren > @ParentPc OR @NextOrd + @ChildCount - 1 > 99
             RAISERROR(N'Parent LOT changed during split (concurrent mutation); retry.', 16, 1);
 
+        -- D1/D2: CRT at mint, resolved in ONE place (Lots.ufn_CrtForMint). Resolved
+        -- ONCE outside the child loop -- every child shares the same part, terminal and
+        -- parent. Mint-time only (D3): clearing the parent later leaves children tagged.
+        --
+        -- *** THE SOURCE ARM HERE IS CURRENTLY UNREACHABLE -- THIS IS NOT DEAD CODE ***
+        -- Guard 8b above refuses the split outright when the parent is CRT, so the
+        -- resolver's "propagate from a consumed input" arm can never fire in THIS proc
+        -- (2026-08-20 decision, design section 6). The call is kept deliberately as
+        -- defence in depth: the part-flag arm (Parts.Item.CrtEnabled) and the terminal
+        -- arm (@TerminalLocationId's CrtEnabled attribute) BOTH still fire here and
+        -- decide the children's tag, and the source arm would resume propagating if the
+        -- block above were ever relaxed. Do not delete it, and do not file it as a bug.
+        DECLARE @CrtActive BIT =
+            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ParentItem, @TerminalLocationId,
+                                                       CAST(@ParentLotId AS NVARCHAR(20))));
+
         -- ---- 9. Mint each child (numbered WHILE loop; no cursor) ----
         DECLARE @i INT = 1;
         DECLARE @ChildPc INT, @ChildLoc BIGINT, @ChildName NVARCHAR(50), @ChildId BIGINT;
@@ -339,7 +385,7 @@ BEGIN
                 Weight, WeightUomId, ToolId, ToolCavityId, VendorLotNumber,
                 MinSerialNumber, MaxSerialNumber, ParentLotId, CurrentLocationId,
                 TotalInProcess, InventoryAvailable,
-                CreatedByUserId, CreatedAtTerminalId, CreatedAt
+                CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive
             )
             VALUES (
                 @ChildName, @ParentItem, @ParentOrigin, @GoodStatusId, @ChildPc,
@@ -347,7 +393,7 @@ BEGIN
                 NULL, NULL, NULL, NULL, NULL,
                 NULL, NULL, @ParentLotId, @ChildLoc,
                 0, @ChildPc,                              -- B5 materialized: TotalInProcess / InventoryAvailable
-                @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
+                @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive
             );
 
             SET @ChildId = SCOPE_IDENTITY();

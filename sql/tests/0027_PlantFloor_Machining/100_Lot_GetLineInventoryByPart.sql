@@ -80,8 +80,8 @@ GO
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
 
 CREATE TABLE #inv (Seq INT IDENTITY(1,1), ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500),
-                   LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3));
-INSERT INTO #inv (ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt)
+                   LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3), LotStatusCode NVARCHAR(20));
+INSERT INTO #inv (ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt, LotStatusCode)
     EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 
 -- only the 4 open, non-zero LOTs of my two parts (Closed + zero-inv excluded)
@@ -99,6 +99,12 @@ EXEC test.Assert_IsEqual @TestName = N'[LineInv] zero-inventory LOT excluded', @
 -- InventoryAvailable carried through correctly (A1 = 30)
 DECLARE @A1Inv NVARCHAR(10) = (SELECT CAST(InventoryAvailable AS NVARCHAR(10)) FROM #inv WHERE LotName = N'I1T-A1');
 EXEC test.Assert_IsEqual @TestName = N'[LineInv] InventoryAvailable correct (A1 = 30)', @Expected = N'30', @Actual = @A1Inv;
+
+-- LotStatusCode is projected (not just joined for the WHERE filter) -- the InventoryManager
+-- popup's StatusPill reads this column; when absent from the SELECT every row renders "Hold"
+-- regardless of actual status (bug: all lot status cards showed Hold when not on hold).
+DECLARE @A1Code NVARCHAR(20) = (SELECT LotStatusCode FROM #inv WHERE LotName = N'I1T-A1');
+EXEC test.Assert_IsEqual @TestName = N'[LineInv] LotStatusCode projected as Good for an open LOT', @Expected = N'Good', @Actual = @A1Code;
 
 -- FIFO order WITHIN part A: A1 (earliest arrival) -> A2 -> A3 (CreatedAt fallback, latest)
 DECLARE @SeqA1 INT = (SELECT Seq FROM #inv WHERE LotName = N'I1T-A1');

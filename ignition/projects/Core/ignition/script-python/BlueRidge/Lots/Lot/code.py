@@ -943,3 +943,84 @@ def rectifyPieceCount(lotId, newPieceCount, reason, appUserId=None, terminalLoca
         "lots/Lot_RectifyPieceCount",
         {"lotId": lotId, "newPieceCount": newPieceCount, "reason": reason,
          "appUserId": appUserId, "terminalLocationId": _u(terminalLocationId)})
+
+
+# =============================================================================
+# LOT Detail - Controlled Run Tag toggle (Arc 2 Phase 9, FDS-10-011/012)
+# =============================================================================
+
+def setCrt(lotId, appUserId=None, terminalLocationId=None):
+    """Activate the Controlled Run Tag on a LOT (Lots.Lot_SetCrt). AD elevation
+       (FDS-04-007) is the UI's concern -- this wrapper does not gate. Returns
+       {Status, Message}."""
+    BlueRidge.Common.Util.log(
+        "setCrt lotId=%s appUserId=%s terminalLocationId=%s"
+        % (lotId, appUserId, terminalLocationId)
+    )
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "lotId":              _u(lotId),
+        "appUserId":          appUserId,
+        "terminalLocationId": _u(terminalLocationId),
+    }
+    return BlueRidge.Common.Db.execMutation("lots/Lot_SetCrt", params)
+
+
+def clearCrt(lotId, appUserId=None, terminalLocationId=None):
+    """Clear the Controlled Run Tag on a LOT (Lots.Lot_ClearCrt). Per design D3
+       this stops the LOT tainting FUTURE mints; LOTs already minted from it
+       keep their own tag. Returns {Status, Message}."""
+    BlueRidge.Common.Util.log(
+        "clearCrt lotId=%s appUserId=%s terminalLocationId=%s"
+        % (lotId, appUserId, terminalLocationId)
+    )
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "lotId":              _u(lotId),
+        "appUserId":          appUserId,
+        "terminalLocationId": _u(terminalLocationId),
+    }
+    return BlueRidge.Common.Db.execMutation("lots/Lot_ClearCrt", params)
+
+
+def crtNamesFor(lotIds):
+    """The LOT NAMES of the CRT-active LOTs among lotIds, in the order given.
+
+       The mint procs return {Status, Message, NewId} and do not project
+       CrtActive, so the CRT state of a just-minted LOT is read back here --
+       one cheap Lot_Get per minted LOT, only on the success path. The DB is
+       the authority for the tag; nothing re-derives the mint rule in Python
+       (that rule lives in Lots.ufn_CrtForMint alone).
+
+       Returns [] when nothing is CRT, so callers can pass the result straight
+       to BlueRidge.Common.Ui.crtNotice unconditionally.
+
+       FAILS OPEN, PER LOT. This is a cosmetic read that runs AFTER the mint
+       has already committed, so it must never be able to destroy the caller's
+       outcome reporting. system.db.runNamedQuery raises on a hard DB error
+       (only a business Status=0 is non-raising), so each read is guarded
+       individually: a LOT whose read fails is logged and skipped, and the
+       remaining LOTs still make it into the notice."""
+    out = []
+    for lotId in (lotIds or []):
+        if lotId is None:
+            continue
+        try:
+            row = get(lotId)
+        except Exception as e:
+            BlueRidge.Common.Util.log(
+                "crtNamesFor: read failed for lotId=%s (%s) - LOT omitted from "
+                "the CRT notice; the tag itself is unaffected." % (lotId, e),
+                level="warn")
+            continue
+        if not row:
+            BlueRidge.Common.Util.log(
+                "crtNamesFor: no row for lotId=%s - LOT omitted from the CRT "
+                "notice; the tag itself is unaffected." % lotId,
+                level="warn")
+            continue
+        if row.get("CrtActive"):
+            out.append(row.get("LotName") or ("%s" % lotId))
+    return out

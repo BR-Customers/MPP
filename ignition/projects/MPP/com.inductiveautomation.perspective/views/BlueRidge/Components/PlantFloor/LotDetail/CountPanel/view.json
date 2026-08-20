@@ -117,21 +117,6 @@
         ]
       },
       {
-        "type": "ia.display.label",
-        "meta": {
-          "name": "Hint"
-        },
-        "props": {
-          "text": "Use this only to correct a count that was keyed in wrong. The correction is logged against the LOT with your reason and shows in the History tab. To remove bad parts, record scrap in the Record scrap section above instead.",
-          "style": {
-            "classes": "pf-field-help"
-          }
-        },
-        "position": {
-          "shrink": 0
-        }
-      },
-      {
         "type": "ia.container.flex",
         "meta": {
           "name": "EntryRow"

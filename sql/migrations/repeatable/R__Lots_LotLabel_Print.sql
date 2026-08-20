@@ -1,16 +1,25 @@
 -- ============================================================
 -- Repeatable:  R__Lots_LotLabel_Print.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-11
--- Version:     1.0
+-- Modified:    2026-08-20
+-- Version:     1.1
 -- Description: Renders + records an LTT label for a LOT (FDS-05-019/024).
 --              Resolves the ACTIVE Lots.LabelTemplate.ZplBody for the requested
---              @LabelTypeCodeId, substitutes the five placeholder tokens
---              ({LotName} {ParentLotNumber} {ItemCode} {PieceCount} {PrintedAt})
---              from the LOT + its Item (+ parent LOT name when the LOT is a
---              sublot), inserts the append-only Lots.LotLabel row with the
---              rendered ZplContent, audits 'LabelPrinted', and returns
+--              @LabelTypeCodeId, substitutes the placeholder tokens
+--              ({LotName} {ParentLotNumber} {ItemCode} {PieceCount} {PrintedAt}
+--              {CrtMark}) from the LOT + its Item (+ parent LOT name when the
+--              LOT is a sublot), inserts the append-only Lots.LotLabel row with
+--              the rendered ZplContent, audits 'LabelPrinted', and returns
 --              SELECT @Status, @Message, @NewId, @Zpl AS ZplContent.
+--
+--              {CrtMark} (part-scoped CRT design D8, 2026-08-20): ONE token in
+--              the EXISTING templates rather than separate CRT template
+--              variants -- no duplication, nothing to drift. Substituted
+--              UNCONDITIONALLY from Lots.Lot.CrtActive on every print: 'CRT'
+--              when active, empty string when not. The mark is a record on the
+--              ticket, not a stop signal -- enforcement lives in the procs
+--              (Task 5), not on the label. A label printed before Quality
+--              clears the LOT still says CRT; reprint for a clean ticket.
 --
 --              SQL-side ZPL rendering (spec decision sec 2.3 / sec 4.4): label CONTENT
 --              is proc-enforced + assertable here; the gateway only DISPATCHES
@@ -67,6 +76,7 @@ BEGIN
     DECLARE @ItemDescription  NVARCHAR(500);
     DECLARE @CurrentLocationId BIGINT;
     DECLARE @LocationName     NVARCHAR(200);
+    DECLARE @CrtActive        BIT;
 
     BEGIN TRY
         -- ---- Tier 1: required-parameter validation ----
@@ -88,7 +98,8 @@ BEGIN
                @ItemId            = l.ItemId,
                @PieceCount        = l.PieceCount,
                @LabelParentLotId  = l.ParentLotId,
-               @CurrentLocationId = l.CurrentLocationId
+               @CurrentLocationId = l.CurrentLocationId,
+               @CrtActive         = l.CrtActive
         FROM Lots.Lot l
         WHERE l.Id = @LotId;
 
@@ -162,6 +173,8 @@ BEGIN
         SET @Zpl = REPLACE(@Zpl, N'{LocationName}',    ISNULL(@LocationName, N''));
         SET @Zpl = REPLACE(@Zpl, N'{PieceCount}',      ISNULL(CAST(@PieceCount AS NVARCHAR(20)), N''));
         SET @Zpl = REPLACE(@Zpl, N'{PrintedAt}',       @PrintedAt);
+        SET @Zpl = REPLACE(@Zpl, N'{CrtMark}',
+                           CASE WHEN @CrtActive = 1 THEN N'CRT' ELSE N'' END);
 
         -- ---- Mutation (atomic) ----
         DECLARE @ActivityRaw NVARCHAR(MAX) =

@@ -1,11 +1,18 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Create.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-09
--- Version:     1.0
+-- Modified:    2026-08-20
+-- Version:     1.1
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
 --              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +
 --              FDS-05-034/-035).
+--
+--              v1.1 (2026-08-20): step 6b -- consumption-point quantity cap.
+--              Parts.ItemLocation.MaxQuantity (where IsConsumptionPoint=1) now caps
+--              the RECEIVED-origin running on-hand total at a location, same shape
+--              as the existing Item.MaxParts check (6) but scoped to configured
+--              consumption points only; no configured row = unrestricted. Nearest
+--              ancestor tier wins when more than one ItemLocation row applies.
 --
 --              Flow: validate params/FKs -> validate business rules
 --              (eligibility via Parts.v_EffectiveItemLocation Direct U
@@ -386,6 +393,65 @@ BEGIN
             END
         END
 
+        -- ---- 6b. Consumption-point quantity cap (Parts.ItemLocation, RECEIVED origin only) ----
+        -- Distinct from the MaxParts cap above: MaxParts is a blanket per-item ceiling;
+        -- this is a per-(Item, consumption-point Location) cap that only applies where one
+        -- has actually been configured (data model v1.8 / OI-18). Consumption metadata
+        -- cascades the SAME hierarchy as eligibility (a row at the Area tier applies to
+        -- every Cell under that Area), so this walks @CurrentLocationId's ancestor chain
+        -- and takes the NEAREST IsConsumptionPoint=1 row's MaxQuantity (Depth ASC) --
+        -- the most specific configured tier wins when more than one ancestor has a row.
+        -- No matching row at any tier = unrestricted, same as before this check existed.
+        IF @LotOriginTypeId = @ReceivedOriginId
+        BEGIN
+            DECLARE @CpMaxQuantity  INT;
+            DECLARE @CpLocationName NVARCHAR(200);
+
+            ;WITH LocChain AS (
+                SELECT l.Id, l.ParentLocationId, 0 AS Depth
+                FROM Location.Location l
+                WHERE l.Id = @CurrentLocationId
+                UNION ALL
+                SELECT p.Id, p.ParentLocationId, c.Depth + 1
+                FROM Location.Location p
+                INNER JOIN LocChain c ON c.ParentLocationId = p.Id
+            )
+            SELECT TOP 1 @CpMaxQuantity = il.MaxQuantity, @CpLocationName = loc.Name
+            FROM LocChain lc
+            INNER JOIN Parts.ItemLocation il ON il.LocationId = lc.Id
+                                             AND il.ItemId = @ItemId
+                                             AND il.DeprecatedAt IS NULL
+                                             AND il.IsConsumptionPoint = 1
+            INNER JOIN Location.Location loc ON loc.Id = lc.Id
+            ORDER BY lc.Depth ASC;
+
+            IF @CpMaxQuantity IS NOT NULL
+            BEGIN
+                DECLARE @CpExistingParts INT = (
+                    SELECT ISNULL(SUM(l3.PieceCount), 0)
+                    FROM Lots.Lot l3
+                    INNER JOIN Lots.LotStatusCode s3 ON s3.Id = l3.LotStatusId
+                    WHERE l3.CurrentLocationId = @CurrentLocationId
+                      AND l3.ItemId = @ItemId
+                      AND s3.Code <> N'Closed');
+                IF @CpExistingParts + @PieceCount > @CpMaxQuantity
+                BEGIN
+                    SET @Message = N'Receiving ' + CAST(@PieceCount AS NVARCHAR(20))
+                        + N' would exceed the consumption-point max configured for this item at '
+                        + ISNULL(@CpLocationName, N'this location') + N' ('
+                        + CAST(@CpExistingParts AS NVARCHAR(20)) + N' present, cap '
+                        + CAST(@CpMaxQuantity AS NVARCHAR(20)) + N').';
+                    EXEC Audit.Audit_LogFailure
+                        @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                        @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                        @FailureReason = @Message, @ProcedureName = @ProcName,
+                        @AttemptedParameters = @Params;
+                    SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                    RETURN;
+                END
+            END
+        END
+
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
 
@@ -445,19 +511,26 @@ BEGIN
         DECLARE @CavityNumberToStore NVARCHAR(50) =
             CAST(CASE WHEN @ToolCavityId IS NULL THEN @CavityNote ELSE NULL END AS NVARCHAR(50));
 
+        -- D1/D2: CRT at mint. Resolved in ONE place (Lots.ufn_CrtForMint): the part's
+        -- Parts.Item.CrtEnabled flag OR the minting terminal's CrtEnabled attribute.
+        -- No input LOTs at a die-cast birth (or a loose receive), so the propagation
+        -- arm is passed NULL. Mint-time only (D3) -- nothing re-derives this later.
+        DECLARE @CrtActive BIT =
+            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ItemId, @TerminalLocationId, NULL));
+
         INSERT INTO Lots.Lot (
             LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
             Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
-            CreatedByUserId, CreatedAtTerminalId, CreatedAt
+            CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive
         )
         VALUES (
             @MintedLotName, @ItemId, @LotOriginTypeId, @GoodStatusId, @PieceCount, @MaxLotSize,
             @Weight, @WeightUomId, @ToolId, @ToolCavityId, @CavityNumberToStore, @VendorLotNumber,
             @MinSerialNumber, @MaxSerialNumber, @CurrentLocationId,
             0, @PieceCount,                          -- B5 materialized: TotalInProcess / InventoryAvailable
-            @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
+            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive
         );
 
         SET @NewId = SCOPE_IDENTITY();

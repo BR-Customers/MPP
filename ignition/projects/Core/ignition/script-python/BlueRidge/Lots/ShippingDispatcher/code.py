@@ -17,18 +17,19 @@
    Container_Complete commit and the dispatch leaves a stranded row (ZplContent already
    persisted) that PrintFailureGateway.sweepTick re-dispatches.
 
-   SIM / HARDWARE-GATED: no networked Zebra in dev, so _dispatchZpl fails fast; the worker
-   records the failure lifecycle. Real-print certification is a deployment gate.
+   SIM / HARDWARE-GATED: no networked Zebra in dev, so transport dispatch fails fast; the
+   worker records the failure lifecycle. Real-print certification is a deployment gate.
+
+   2026-08-20: the per-attempt transport used to be a private raw-TCP-only _dispatchZpl
+   here, predating BlueRidge.Lots.LabelTransport and never migrated -- a Hardwired
+   (print-queue) printer endpoint would fail every attempt with UnknownHostException
+   (same bug fixed in BlueRidge.Lots.LotLabel same day). Now delegates to LabelTransport,
+   the one place ZPL bytes are meant to leave the Gateway (see that module's header).
 """
 
-from java.net import Socket, InetSocketAddress
-from java.lang import String as JString
 import java.lang
 import time
 
-_SYSTEM_NAME  = "Zebra"
-_DEFAULT_PORT = 9100
-_TIMEOUT_MS   = 4000
 _MAX_ATTEMPTS = 3       # ENV-170/LBL-150: 3 attempts ...
 _BACKOFF_MS   = 2000    # ... with a ~2s gap
 
@@ -44,56 +45,6 @@ def _sessionPrinter():
     except Exception as e:
         BlueRidge.Common.Util.log("_sessionPrinter failed: %s" % str(e), level="debug")
         return {}
-
-
-def _dispatchZpl(endpoint, zpl):
-    """Pure transport: raw-TCP write of the ZPL bytes to host:port (default 9100),
-       bounded timeout. Returns {ok, error}. No business logic."""
-    s = None
-    try:
-        ep = (endpoint or "").strip()
-        if ":" in ep:
-            host, portStr = ep.rsplit(":", 1)
-            port = int(portStr)
-        else:
-            host, port = ep, _DEFAULT_PORT
-        if not host:
-            return {"ok": False, "error": "empty endpoint"}
-        s = Socket()
-        s.connect(InetSocketAddress(host, port), _TIMEOUT_MS)
-        s.setSoTimeout(_TIMEOUT_MS)
-        out = s.getOutputStream()
-        out.write(JString(zpl or "").getBytes("US-ASCII"))
-        out.flush()
-        return {"ok": True, "error": None}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-    finally:
-        try:
-            if s is not None:
-                s.close()
-        except Exception:
-            pass
-
-
-def _logDispatch(endpoint, zpl, outcome):
-    """Log one dispatch attempt to Audit.InterfaceLog (every attempt: success/failure)."""
-    ok = bool(outcome and outcome.get("ok"))
-    params = {
-        "systemName":       _SYSTEM_NAME,
-        "direction":        "Outbound",
-        "logEventTypeCode": "LabelDispatched",
-        "description":      "Shipping label dispatch to %s" % (endpoint or "(none)"),
-        "requestPayload":   "%s | %s" % (endpoint or "", (zpl or "")[:200]),
-        "responsePayload":  "OK" if ok else None,
-        "errorCondition":   None if ok else "DispatchFailed",
-        "errorDescription": None if ok else (outcome.get("error") if outcome else "unknown"),
-        "isHighFidelity":   True,
-    }
-    try:
-        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
-    except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("_logDispatch failed: %s" % str(e), level="debug")
 
 
 def _resolveShippingLabel(shippingLabelId):
@@ -131,8 +82,8 @@ def _dispatchWorker(shippingLabelId, endpoint, zpl):
     outcome = {"ok": False, "error": "not attempted"}
     try:
         for attempt in range(_MAX_ATTEMPTS):
-            outcome = _dispatchZpl(endpoint, zpl)
-            _logDispatch(endpoint, zpl, outcome)
+            outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
+            BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "Shipping label")
             if outcome.get("ok"):
                 break
             if attempt < _MAX_ATTEMPTS - 1:
