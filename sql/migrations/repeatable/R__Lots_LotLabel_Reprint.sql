@@ -2,22 +2,26 @@
 -- Repeatable:  R__Lots_LotLabel_Reprint.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-20
--- Version:     1.1
+-- Version:     1.2
 -- Description: Convenience wrapper over the LotLabel print flow (FDS-05-020):
 --              re-prints a LOT's label with a caller-supplied (non-Initial)
 --              reason. Resolves the label TYPE from the LOT's most recent prior
 --              LotLabel row; if the LOT has never been labelled, defaults to
 --              Primary (LabelTypeCodeId = 1). It then performs the SAME active-
---              template resolve + token render (including {CrtMark}) +
+--              template resolve + token render + CRT banner append +
 --              append-only insert + audit as Lots.LotLabel_Print, and returns
 --              the SAME 4-column shape (Status, Message, NewId, ZplContent).
 --              Original LotLabel rows are never modified -- the log is
 --              append-only.
 --
---              {CrtMark} (part-scoped CRT design D8, 2026-08-20): substituted
---              UNCONDITIONALLY from Lots.Lot.CrtActive on every reprint too --
---              a label printed before Quality clears the LOT still says CRT;
---              reprint AFTER clearing is how the operator gets a clean ticket.
+--              CRT BANNER (part-scoped CRT design D8, revised 2026-08-20): when
+--              Lots.Lot.CrtActive = 1 the ACTIVE 'CrtBanner' template body is
+--              APPENDED as a second ^XA..^XZ document, so a reprint emits the
+--              normal ticket plus a standalone large-'CRT' label -- exactly as
+--              LotLabel_Print does. A label printed before Quality clears the
+--              LOT still carries the banner; reprint AFTER clearing is how the
+--              operator gets a clean ticket. Degrades to no banner (normal
+--              label still prints) if the template is missing or deprecated.
 --
 --              The render+insert core is INLINED here (mirrors LotLabel_Print) on
 --              purpose: this proc may be captured via INSERT-EXEC by callers/tests,
@@ -66,6 +70,7 @@ BEGIN
     DECLARE @CurrentLocationId BIGINT;
     DECLARE @LocationName     NVARCHAR(200);
     DECLARE @CrtActive        BIT;
+    DECLARE @CrtBannerZpl     NVARCHAR(MAX);
 
     BEGIN TRY
         -- ---- Tier 1: required-parameter validation ----
@@ -169,8 +174,22 @@ BEGIN
         SET @Zpl = REPLACE(@Zpl, N'{LocationName}',    ISNULL(@LocationName, N''));
         SET @Zpl = REPLACE(@Zpl, N'{PieceCount}',      ISNULL(CAST(@PieceCount AS NVARCHAR(20)), N''));
         SET @Zpl = REPLACE(@Zpl, N'{PrintedAt}',       @PrintedAt);
-        SET @Zpl = REPLACE(@Zpl, N'{CrtMark}',
-                           CASE WHEN @CrtActive = 1 THEN N'CRT' ELSE N'' END);
+
+        -- ---- CRT banner: append a SECOND ^XA..^XZ document (design D8) ----
+        -- Mirrors LotLabel_Print. Resolved BY CODE, never by Id -- 'CrtBanner'
+        -- is IDENTITY-assigned by migration 0065. A missing or deprecated
+        -- banner template leaves @Zpl untouched and the normal label prints.
+        IF @CrtActive = 1
+        BEGIN
+            SET @CrtBannerZpl = (
+                SELECT TOP 1 t.ZplBody
+                FROM Lots.LabelTemplate t
+                INNER JOIN Lots.LabelTypeCode c ON c.Id = t.LabelTypeCodeId
+                WHERE c.Code = N'CrtBanner' AND t.DeprecatedAt IS NULL);
+
+            IF @CrtBannerZpl IS NOT NULL
+                SET @Zpl = @Zpl + @CrtBannerZpl;
+        END
 
         -- ---- Mutation (atomic) ----
         DECLARE @ActivityRaw NVARCHAR(MAX) =

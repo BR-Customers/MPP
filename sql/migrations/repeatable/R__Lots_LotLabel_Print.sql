@@ -2,24 +2,35 @@
 -- Repeatable:  R__Lots_LotLabel_Print.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-20
--- Version:     1.1
+-- Version:     1.2
 -- Description: Renders + records an LTT label for a LOT (FDS-05-019/024).
 --              Resolves the ACTIVE Lots.LabelTemplate.ZplBody for the requested
 --              @LabelTypeCodeId, substitutes the placeholder tokens
---              ({LotName} {ParentLotNumber} {ItemCode} {PieceCount} {PrintedAt}
---              {CrtMark}) from the LOT + its Item (+ parent LOT name when the
---              LOT is a sublot), inserts the append-only Lots.LotLabel row with
---              the rendered ZplContent, audits 'LabelPrinted', and returns
+--              ({LotName} {ParentLotNumber} {ItemCode} {ItemDescription}
+--              {LocationName} {PieceCount} {PrintedAt}) from the LOT + its Item
+--              (+ parent LOT name when the LOT is a sublot), inserts the
+--              append-only Lots.LotLabel row with the rendered ZplContent,
+--              audits 'LabelPrinted', and returns
 --              SELECT @Status, @Message, @NewId, @Zpl AS ZplContent.
 --
---              {CrtMark} (part-scoped CRT design D8, 2026-08-20): ONE token in
---              the EXISTING templates rather than separate CRT template
---              variants -- no duplication, nothing to drift. Substituted
---              UNCONDITIONALLY from Lots.Lot.CrtActive on every print: 'CRT'
---              when active, empty string when not. The mark is a record on the
---              ticket, not a stop signal -- enforcement lives in the procs
---              (Task 5), not on the label. A label printed before Quality
---              clears the LOT still says CRT; reprint for a clean ticket.
+--              CRT BANNER (part-scoped CRT design D8, revised 2026-08-20): when
+--              Lots.Lot.CrtActive = 1 the ACTIVE 'CrtBanner' template body is
+--              APPENDED to the rendered @Zpl. A ZPL stream may hold several
+--              ^XA..^XZ documents back to back and the printer emits one label
+--              per document, so the LOT gets its normal ticket -- byte for byte
+--              what a clean LOT would print -- followed by a second, standalone
+--              label carrying nothing but a large 'CRT'. One proc call, two
+--              physical labels, no UI change, and NO edit to MPP's real label
+--              layouts (which is what the superseded inline {CrtMark} token
+--              required). The banner is a flag, not a stop signal --
+--              enforcement lives in the procs, not on the label. A label
+--              printed before Quality clears the LOT still carries the banner;
+--              reprint for a clean ticket.
+--
+--              The banner DEGRADES TO NOTHING if its template is missing or
+--              deprecated: the normal label still prints. A LOT ticket that
+--              will not print stops the line, so a missing banner must never be
+--              a reason to fail the print.
 --
 --              SQL-side ZPL rendering (spec decision sec 2.3 / sec 4.4): label CONTENT
 --              is proc-enforced + assertable here; the gateway only DISPATCHES
@@ -77,6 +88,7 @@ BEGIN
     DECLARE @CurrentLocationId BIGINT;
     DECLARE @LocationName     NVARCHAR(200);
     DECLARE @CrtActive        BIT;
+    DECLARE @CrtBannerZpl     NVARCHAR(MAX);
 
     BEGIN TRY
         -- ---- Tier 1: required-parameter validation ----
@@ -173,8 +185,23 @@ BEGIN
         SET @Zpl = REPLACE(@Zpl, N'{LocationName}',    ISNULL(@LocationName, N''));
         SET @Zpl = REPLACE(@Zpl, N'{PieceCount}',      ISNULL(CAST(@PieceCount AS NVARCHAR(20)), N''));
         SET @Zpl = REPLACE(@Zpl, N'{PrintedAt}',       @PrintedAt);
-        SET @Zpl = REPLACE(@Zpl, N'{CrtMark}',
-                           CASE WHEN @CrtActive = 1 THEN N'CRT' ELSE N'' END);
+
+        -- ---- CRT banner: append a SECOND ^XA..^XZ document (design D8) ----
+        -- Resolved BY CODE, never by Id -- 'CrtBanner' is IDENTITY-assigned by
+        -- migration 0065. The template carries no tokens, so it is appended
+        -- verbatim AFTER substitution. A missing or deprecated banner template
+        -- leaves @Zpl untouched and the normal label still prints.
+        IF @CrtActive = 1
+        BEGIN
+            SET @CrtBannerZpl = (
+                SELECT TOP 1 t.ZplBody
+                FROM Lots.LabelTemplate t
+                INNER JOIN Lots.LabelTypeCode c ON c.Id = t.LabelTypeCodeId
+                WHERE c.Code = N'CrtBanner' AND t.DeprecatedAt IS NULL);
+
+            IF @CrtBannerZpl IS NOT NULL
+                SET @Zpl = @Zpl + @CrtBannerZpl;
+        END
 
         -- ---- Mutation (atomic) ----
         DECLARE @ActivityRaw NVARCHAR(MAX) =
