@@ -2,7 +2,15 @@
 -- Repeatable:  R__Lots_Lot_Merge.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-20
--- Version:     1.0
+-- Version:     1.1
+--
+-- CRT (2026-08-20, v1.1): ANY CRT source LOT REFUSES the whole merge (guard 8c, via
+-- Lots.ufn_CrtBlocksAdvance), and the rejection message NAMES the offending
+-- source(s) -- maximum containment on this exception path, per
+-- docs/superpowers/specs/2026-08-19-crt-part-scoped-design.md section 6. The
+-- Lots.ufn_CrtForMint call further down is KEPT as defence in depth even though its
+-- source arm is now unreachable here; see the comment at that call site.
+--
 -- Description: Merges N (>=2) Good source LOTs of the SAME Item into a single
 --              fresh primary output LOT (Phase 2 Task 3 / G2; spec section 4.2).
 --              The output is a NEW primary LOT (fresh MESL name from
@@ -44,7 +52,8 @@
 --              Tools.DieRankCompatibility (CanMix=1 compatible; CanMix=0
 --              OR no-row = incompatible); any incompatible pair AND
 --              @SupervisorOverride=0 -> reject; @SupervisorOverride=1 bypasses the
---              rank check entirely -> BEGIN TRAN -> inline-mint + INSERT the output
+--              rank check entirely -> CRT guard (any CRT source rejects, named)
+--              -> BEGIN TRAN -> inline-mint + INSERT the output
 --              LOT (+ 3 side effects) -> per source: insert the Merge edge + inline-
 --              Close -> closure ancestor-dedup INSERT -> Audit_LogOperation
 --              'LotMerged' -> COMMIT -> SELECT @Status, @Message, @NewId.
@@ -297,6 +306,43 @@ BEGIN
             RETURN;
         END
 
+        -- ---- 8c. D4 (part-scoped CRT): ANY CRT source refuses the whole merge.
+        -- Maximum containment on this exception path -- suspect material must not be
+        -- recombined until Quality clears it (design 2026-08-19-crt-part-scoped,
+        -- section 6 "Where blocking and propagation meet"). Deliberately LAST of the
+        -- rejections so every pre-existing one keeps precedence (a non-Good source is
+        -- refused for its status, an incompatible die-rank span for the rank matrix),
+        -- and BEFORE BEGIN TRANSACTION because a ROLLBACK inside an
+        -- INSERT-EXEC-captured proc throws Msg 3915.
+        --
+        -- The message NAMES every offending source. An operator merging six LOTs has
+        -- to know WHICH one to take to Quality; "one of them is tagged" sends them
+        -- hunting. Per-source test goes through Lots.ufn_CrtBlocksAdvance (the same
+        -- seam every other CRT guard uses) via CROSS APPLY -- it is an inline TVF, so
+        -- it folds into this one query rather than running row-by-row. ----
+        DECLARE @CrtSourceNames NVARCHAR(MAX) = (
+            SELECT STRING_AGG(CAST(l.LotName AS NVARCHAR(MAX)), N', ')
+                   WITHIN GROUP (ORDER BY l.LotName)
+            FROM @Sources s
+            INNER JOIN Lots.Lot l ON l.Id = s.LotId
+            CROSS APPLY Lots.ufn_CrtBlocksAdvance(s.LotId) b
+            WHERE b.Blocked = 1);
+
+        IF @CrtSourceNames IS NOT NULL
+        BEGIN
+            -- LEFT() keeps the list inside the NVARCHAR(500) Message even for a very
+            -- wide merge; the leading text is ~120 chars.
+            SET @Message = N'Merge refused: source LOT(s) marked CRT cannot be merged until Quality clears them: '
+                         + LEFT(@CrtSourceNames, 380) + N'.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = NULL, @LogEventTypeCode = N'LotMerged',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, CAST(NULL AS BIGINT) AS NewId;
+            RETURN;
+        END
+
         -- Output PieceCount = SUM of source PieceCounts (computed pre-tran; values
         -- are stable because sources are Good and serialized below via the inline
         -- Close. A concurrent mutation of a source between here and the txn is a
@@ -344,9 +390,18 @@ BEGIN
 
         -- D1/D2: CRT at mint, resolved in ONE place (Lots.ufn_CrtForMint) from the
         -- output part's flag, the terminal's CrtEnabled attribute, and EVERY source
-        -- LOT -- one CRT source taints the blend, so the merged output cannot launder
-        -- a tagged LOT into a clean one. Mint-time only (D3): clearing a source later
-        -- leaves this output tagged.
+        -- LOT. Mint-time only (D3): clearing a source later leaves this output tagged.
+        --
+        -- *** THE SOURCE ARM HERE IS CURRENTLY UNREACHABLE -- THIS IS NOT DEAD CODE ***
+        -- Guard 8c above refuses the merge outright when ANY source is CRT, so the
+        -- resolver's "propagate from a consumed input" arm can never fire in THIS proc
+        -- (2026-08-20 decision, design section 6: containment is achieved by refusing
+        -- to recombine rather than by tainting the blend). The call is kept
+        -- deliberately as defence in depth: the part-flag arm (Parts.Item.CrtEnabled)
+        -- and the terminal arm (@TerminalLocationId's CrtEnabled attribute) BOTH still
+        -- fire here and decide the output's tag, and the source arm would resume
+        -- propagating if the block above were ever relaxed. Do not delete it, and do
+        -- not file it as a bug.
         DECLARE @SourceLotIdsCsv NVARCHAR(MAX) = (
             SELECT STRING_AGG(CAST(s.LotId AS NVARCHAR(20)), N',') FROM @Sources s);
         DECLARE @CrtActive BIT =

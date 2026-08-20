@@ -7,11 +7,22 @@
 --               covers the resolver + Lot_Create's part arm; this file covers the
 --               four call sites nothing asserted, plus Lot_Create's TERMINAL arm:
 --
---                 A. Lots.Lot_Split            - CRT parent -> every child CRT;
---                                                clean parent -> every child clean.
---                 B. Lots.Lot_Merge            - one CRT source among N taints the
---                                                blend (the laundering guard);
---                                                all-clean sources stay clean.
+--                 A. Lots.Lot_Split            - a CRT parent LOT is REJECTED
+--                                                (2026-08-20: design section 6 makes
+--                                                Split/Merge BLOCK rather than
+--                                                propagate); clean parent still
+--                                                splits, proving the guard is
+--                                                CRT-scoped and not a blanket refusal.
+--                 B. Lots.Lot_Merge            - ANY CRT source REJECTS the merge and
+--                                                the message NAMES the offending
+--                                                source LOT; all-clean sources still
+--                                                merge to a clean output.
+--
+--               A and B no longer assert propagation THROUGH Split/Merge. Both procs
+--               still call Lots.ufn_CrtForMint (defence in depth -- the part-flag and
+--               terminal arms still fire, and the source arm resumes if the block is
+--               ever relaxed), but the block above it makes the SOURCE arm unreachable
+--               in those two procs, so such an assertion would pass vacuously.
 --                 C. Workorder.MachiningOut_Mint - a CRT casting SECOND in FIFO
 --                                                order still taints the minted
 --                                                sub-assembly. This is the exact
@@ -64,7 +75,17 @@ EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/050_mint_procs.sql';
 GO
 
 -- =============================================
--- A. Lots.Lot_Split -- CRT parent taints every child; clean parent does not.
+-- A. Lots.Lot_Split -- a CRT parent LOT is REFUSED outright (design section 6,
+--    "Where blocking and propagation meet"): maximum containment on the exception
+--    paths, so suspect material cannot be divided until Quality clears it.
+--
+--    NOTE FOR A FUTURE READER: there is deliberately NO "CRT parent taints its
+--    children" assertion here any more. Lot_Split still CALLS Lots.ufn_CrtForMint
+--    (defence in depth, and the part-flag / terminal arms still fire), but the
+--    block above it means a CRT parent never reaches the mint, so the resolver's
+--    SOURCE arm is unreachable in this proc. Asserting it would pass vacuously.
+--    The clean-parent case below stays, and is what proves the guard is CRT-scoped
+--    rather than a blanket refusal to split.
 -- =============================================
 DECLARE @ItemId BIGINT, @CellId BIGINT;
 SELECT TOP 1 @ItemId = eil.ItemId, @CellId = eil.LocationId
@@ -84,19 +105,41 @@ DECLARE @ChildJson NVARCHAR(MAX) =
     N'[{"pieceCount":10,"currentLocationId":' + CAST(@CellId AS NVARCHAR(20)) + N'},'
   + N' {"pieceCount":10,"currentLocationId":' + CAST(@CellId AS NVARCHAR(20)) + N'}]';
 
--- A1. CRT parent -> both children CRT.
+-- A1. CRT parent -> the split is REJECTED, names the LOT, and mints nothing.
 INSERT INTO @cr EXEC Lots.Lot_Create @ItemId = @ItemId, @LotOriginTypeId = @OriginRcv,
     @CurrentLocationId = @CellId, @PieceCount = 20, @AppUserId = 1;
-DECLARE @CrtParent BIGINT = (SELECT TOP 1 NewId FROM @cr);
+DECLARE @CrtParent     BIGINT       = (SELECT TOP 1 NewId FROM @cr);
+DECLARE @CrtParentName NVARCHAR(50) = (SELECT TOP 1 MintedLotName FROM @cr);
 UPDATE Lots.Lot SET CrtActive = 1 WHERE Id = @CrtParent;
 
 INSERT INTO @sp EXEC Lots.Lot_Split @ParentLotId = @CrtParent,
     @ChildrenJson = @ChildJson, @AppUserId = 1;
-DECLARE @crtKids NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
-    FROM Lots.Lot l INNER JOIN @sp s ON s.ChildLotId = l.Id WHERE l.CrtActive = 1);
+DECLARE @splitStatus NVARCHAR(10)  = (SELECT TOP 1 CAST(Status AS NVARCHAR(10)) FROM @sp);
+DECLARE @splitMsg    NVARCHAR(500) = (SELECT TOP 1 Message FROM @sp);
 EXEC test.Assert_IsEqual
-    @TestName = N'[MintCrt] Lot_Split: both children of a CRT parent are CrtActive=1',
-    @Expected = N'2', @Actual = @crtKids;
+    @TestName = N'[MintCrt] Lot_Split: a CRT parent LOT is rejected',
+    @Expected = N'0', @Actual = @splitStatus;
+EXEC test.Assert_Contains
+    @TestName = N'[MintCrt] Lot_Split: the rejection names CRT',
+    @HaystackStr = @splitMsg, @NeedleStr = N'CRT';
+EXEC test.Assert_Contains
+    @TestName = N'[MintCrt] Lot_Split: the rejection names the blocked LOT',
+    @HaystackStr = @splitMsg, @NeedleStr = @CrtParentName;
+
+-- ...and it wrote nothing: no sublot exists under the refused parent.
+DECLARE @crtKids NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
+    FROM Lots.Lot WHERE ParentLotId = @CrtParent);
+EXEC test.Assert_IsEqual
+    @TestName = N'[MintCrt] Lot_Split: the rejected split minted no children',
+    @Expected = N'0', @Actual = @crtKids;
+
+-- The parent is untouched: still 20 pcs, still open (a successful split would have
+-- reduced it to 0 and auto-Closed it).
+DECLARE @parentPc NVARCHAR(20) = (SELECT CAST(PieceCount AS NVARCHAR(20))
+    FROM Lots.Lot WHERE Id = @CrtParent);
+EXEC test.Assert_IsEqual
+    @TestName = N'[MintCrt] Lot_Split: the refused parent keeps all 20 pieces',
+    @Expected = N'20', @Actual = @parentPc;
 
 -- A2. Clean parent at a plain terminal -> both children clean.
 DELETE FROM @cr;
@@ -112,12 +155,30 @@ DECLARE @cleanKids NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
 EXEC test.Assert_IsEqual
     @TestName = N'[MintCrt] Lot_Split: both children of a clean parent are CrtActive=0',
     @Expected = N'2', @Actual = @cleanKids;
+
+-- ---- Teardown: the refused split leaves its CRT parent OPEN and TAGGED (a
+--      successful split used to close it), so untag and close it here rather than
+--      leaving a tagged LOT at a shared cell for a later file to trip over. ----
+UPDATE Lots.Lot SET CrtActive = 0 WHERE Id = @CrtParent;
+UPDATE Lots.Lot SET LotStatusId = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed')
+WHERE Id = @CrtParent;
 GO
 
 -- =============================================
--- B. Lots.Lot_Merge -- ONE CRT source among N taints the blend. This is the
---    laundering guard: without it, merging a tagged LOT with clean stock would
---    produce a clean output LOT and lose containment.
+-- B. Lots.Lot_Merge -- ONE CRT source among N REFUSES the whole merge (design
+--    section 6, "Where blocking and propagation meet"). Containment is achieved by
+--    refusing to recombine rather than by tainting the blend: suspect material
+--    cannot be laundered into clean stock because it cannot be merged at all.
+--
+--    The message must NAME the offending source. An operator merging six LOTs has
+--    to know which one to take to Quality; "one of them is tagged" sends them
+--    hunting. The middle source is the tagged one, so a first-row-only bug in the
+--    naming cannot pass.
+--
+--    NOTE FOR A FUTURE READER: as in section A, there is no "the merged output is
+--    CrtActive=1" assertion any more. Lot_Merge still calls Lots.ufn_CrtForMint
+--    (defence in depth; the part-flag and terminal arms still fire), but its SOURCE
+--    arm is unreachable while this block stands.
 -- =============================================
 DECLARE @ItemId BIGINT, @CellId BIGINT;
 SELECT TOP 1 @ItemId = eil.ItemId, @CellId = eil.LocationId
@@ -139,7 +200,8 @@ DECLARE @S1 BIGINT = (SELECT TOP 1 NewId FROM @cr);
 DELETE FROM @cr;
 INSERT INTO @cr EXEC Lots.Lot_Create @ItemId = @ItemId, @LotOriginTypeId = @OriginRcv,
     @CurrentLocationId = @CellId, @PieceCount = 15, @AppUserId = 1;
-DECLARE @S2 BIGINT = (SELECT TOP 1 NewId FROM @cr);
+DECLARE @S2     BIGINT       = (SELECT TOP 1 NewId FROM @cr);
+DECLARE @S2Name NVARCHAR(50) = (SELECT TOP 1 MintedLotName FROM @cr);
 DELETE FROM @cr;
 INSERT INTO @cr EXEC Lots.Lot_Create @ItemId = @ItemId, @LotOriginTypeId = @OriginRcv,
     @CurrentLocationId = @CellId, @PieceCount = 15, @AppUserId = 1;
@@ -151,12 +213,30 @@ DECLARE @JsonTainted NVARCHAR(MAX) = N'[' + CAST(@S1 AS NVARCHAR(20)) + N','
     + CAST(@S2 AS NVARCHAR(20)) + N',' + CAST(@S3 AS NVARCHAR(20)) + N']';
 INSERT INTO @mg EXEC Lots.Lot_Merge @SourceLotIdsJson = @JsonTainted,
     @OutputItemId = @ItemId, @OutputLocationId = @CellId, @AppUserId = 1;
-DECLARE @MergedTainted BIGINT = (SELECT TOP 1 NewId FROM @mg);
-DECLARE @mergedCrt NVARCHAR(10) = (SELECT CAST(CrtActive AS NVARCHAR(10))
-    FROM Lots.Lot WHERE Id = @MergedTainted);
+DECLARE @mergeStatus NVARCHAR(10)  = (SELECT TOP 1 CAST(Status AS NVARCHAR(10)) FROM @mg);
+DECLARE @mergeMsg    NVARCHAR(500) = (SELECT TOP 1 Message FROM @mg);
+DECLARE @mergeNewId  NVARCHAR(20)  = (SELECT TOP 1 ISNULL(CAST(NewId AS NVARCHAR(20)), N'(null)') FROM @mg);
 EXEC test.Assert_IsEqual
-    @TestName = N'[MintCrt] Lot_Merge: one CRT source among three taints the output LOT',
-    @Expected = N'1', @Actual = @mergedCrt;
+    @TestName = N'[MintCrt] Lot_Merge: one CRT source among three rejects the merge',
+    @Expected = N'0', @Actual = @mergeStatus;
+EXEC test.Assert_Contains
+    @TestName = N'[MintCrt] Lot_Merge: the rejection names CRT',
+    @HaystackStr = @mergeMsg, @NeedleStr = N'CRT';
+EXEC test.Assert_Contains
+    @TestName = N'[MintCrt] Lot_Merge: the rejection names the SPECIFIC tagged source',
+    @HaystackStr = @mergeMsg, @NeedleStr = @S2Name;
+EXEC test.Assert_IsEqual
+    @TestName = N'[MintCrt] Lot_Merge: the rejection returns no output LOT id',
+    @Expected = N'(null)', @Actual = @mergeNewId;
+
+-- ...and it wrote nothing: all three sources are still Good and open, not Closed
+-- into a merged output.
+DECLARE @srcStillGood NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
+    FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
+    WHERE l.Id IN (@S1, @S2, @S3) AND sc.Code = N'Good');
+EXEC test.Assert_IsEqual
+    @TestName = N'[MintCrt] Lot_Merge: the rejection left all three sources open',
+    @Expected = N'3', @Actual = @srcStillGood;
 
 -- B2. All-clean sources -> clean output.
 DELETE FROM @cr;
@@ -179,6 +259,12 @@ DECLARE @mergedCleanCrt NVARCHAR(10) = (SELECT CAST(CrtActive AS NVARCHAR(10))
 EXEC test.Assert_IsEqual
     @TestName = N'[MintCrt] Lot_Merge: all-clean sources yield CrtActive=0',
     @Expected = N'0', @Actual = @mergedCleanCrt;
+
+-- ---- Teardown: the refused merge leaves its three sources OPEN (a successful
+--      merge used to Close them) and the middle one TAGGED. ----
+UPDATE Lots.Lot SET CrtActive = 0 WHERE Id IN (@S1, @S2, @S3);
+UPDATE Lots.Lot SET LotStatusId = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed')
+WHERE Id IN (@S1, @S2, @S3);
 GO
 
 -- =============================================
