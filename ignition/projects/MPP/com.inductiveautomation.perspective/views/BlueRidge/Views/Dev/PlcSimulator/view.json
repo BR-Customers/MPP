@@ -28,9 +28,40 @@
     "inPartSN": "",
     "inTargetWeight": "",
     "inVisionPartNumber": "",
-    "pendingScenarios": [],
-    "selectedDevice": "",
-    "selectedDeviceType": ""
+    "pendingScenarios": [
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "front-of-queue Item.PlcId written as PartNumber (vision recipe)",
+        "index": 0,
+        "title": "TrayLocked rising edge"
+      },
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "tray added to container",
+        "index": 1,
+        "title": "InspectionComplete all-pass"
+      },
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "per-slot pass/fail recorded; only passes added",
+        "index": 2,
+        "title": "InspectionComplete some-fail"
+      },
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "line-stop",
+        "index": 3,
+        "title": "VisionPartNumber mismatches active LOT"
+      },
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "bail (rising-edge guard test)",
+        "index": 4,
+        "title": "Disposition read while InspectionComplete\u003d0"
+      }
+    ],
+    "selectedDevice": "6MA_CH",
+    "selectedDeviceType": "TrayInspectionStation"
   },
   "params": {},
   "props": {
@@ -178,7 +209,8 @@
                   },
                   "style": {
                     "classes": "pf-field-select"
-                  }
+                  },
+                  "value": "6MA_CH"
                 },
                 "type": "ia.input.dropdown"
               },
@@ -770,7 +802,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.0"
+                                "path": "view.custom.dispositions[0]"
                               },
                               "type": "property"
                             }
@@ -790,7 +822,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.1"
+                                "path": "view.custom.dispositions[1]"
                               },
                               "type": "property"
                             }
@@ -810,7 +842,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.2"
+                                "path": "view.custom.dispositions[2]"
                               },
                               "type": "property"
                             }
@@ -830,7 +862,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.3"
+                                "path": "view.custom.dispositions[3]"
                               },
                               "type": "property"
                             }
@@ -850,7 +882,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.4"
+                                "path": "view.custom.dispositions[4]"
                               },
                               "type": "property"
                             }
@@ -870,7 +902,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.5"
+                                "path": "view.custom.dispositions[5]"
                               },
                               "type": "property"
                             }
@@ -890,7 +922,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.6"
+                                "path": "view.custom.dispositions[6]"
                               },
                               "type": "property"
                             }
@@ -910,7 +942,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.7"
+                                "path": "view.custom.dispositions[7]"
                               },
                               "type": "property"
                             }
@@ -930,7 +962,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.8"
+                                "path": "view.custom.dispositions[8]"
                               },
                               "type": "property"
                             }
@@ -950,7 +982,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.9"
+                                "path": "view.custom.dispositions[9]"
                               },
                               "type": "property"
                             }
@@ -970,7 +1002,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.10"
+                                "path": "view.custom.dispositions[10]"
                               },
                               "type": "property"
                             }
@@ -990,7 +1022,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.11"
+                                "path": "view.custom.dispositions[11]"
                               },
                               "type": "property"
                             }
@@ -1010,7 +1042,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.12"
+                                "path": "view.custom.dispositions[12]"
                               },
                               "type": "property"
                             }
@@ -1030,7 +1062,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.13"
+                                "path": "view.custom.dispositions[13]"
                               },
                               "type": "property"
                             }
@@ -1050,7 +1082,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.14"
+                                "path": "view.custom.dispositions[14]"
                               },
                               "type": "property"
                             }
@@ -1070,7 +1102,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.15"
+                                "path": "view.custom.dispositions[15]"
                               },
                               "type": "property"
                             }
@@ -1090,7 +1122,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.16"
+                                "path": "view.custom.dispositions[16]"
                               },
                               "type": "property"
                             }
@@ -1110,7 +1142,7 @@
                             "binding": {
                               "config": {
                                 "bidirectional": true,
-                                "path": "view.custom.dispositions.17"
+                                "path": "view.custom.dispositions[17]"
                               },
                               "type": "property"
                             }
