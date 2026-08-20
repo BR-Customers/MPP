@@ -99,7 +99,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Schema] no non-production definition is 
     @Expected = N'0', @Actual = @n;
 GO
 
-EXEC test.EndTestFile @FileName = N'0063_Crt_PartScoped/010_schema.sql';
+EXEC test.EndTestFile;
 GO
 ```
 
@@ -223,7 +223,7 @@ EXEC test.Assert_IsEqual @TestName = N'[ForMint] one CRT among several inputs ->
 SELECT @b = CrtActive FROM Lots.ufn_CrtForMint(@ItemPlain, NULL, N'');
 EXEC test.Assert_IsEqual @TestName = N'[ForMint] empty csv is not an error -> 0', @Expected = N'0', @Actual = @b;
 GO
-EXEC test.EndTestFile @FileName = N'0063_Crt_PartScoped/020_crt_for_mint.sql';
+EXEC test.EndTestFile;
 GO
 ```
 
@@ -379,7 +379,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Blocks] CRT lot ALLOWED moving to inspec
 SELECT @b = Blocked FROM Lots.ufn_CrtBlocksMoveTo(@LotOk, @ProdLoc);
 EXEC test.Assert_IsEqual @TestName = N'[Blocks] clean lot moves to production freely', @Expected = N'0', @Actual = @b;
 GO
-EXEC test.EndTestFile @FileName = N'0063_Crt_PartScoped/030_crt_blocks.sql';
+EXEC test.EndTestFile;
 GO
 ```
 
@@ -535,7 +535,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Prop] clearing the casting later does NO
 
 DROP TABLE #r;
 GO
-EXEC test.EndTestFile @FileName = N'0063_Crt_PartScoped/040_propagation.sql';
+EXEC test.EndTestFile;
 GO
 ```
 
@@ -668,7 +668,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Enforce] clean lot moves to production',
 
 DROP TABLE #m;
 GO
-EXEC test.EndTestFile @FileName = N'0063_Crt_PartScoped/050_enforcement.sql';
+EXEC test.EndTestFile;
 GO
 ```
 
@@ -822,7 +822,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Label] clean lot carries no CRT mark',
 
 DROP TABLE #z;
 GO
-EXEC test.EndTestFile @FileName = N'0063_Crt_PartScoped/060_label_mark.sql';
+EXEC test.EndTestFile;
 GO
 ```
 
