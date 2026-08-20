@@ -1,6 +1,18 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
+-- Version:     2.4 (2026-08-20, part-scoped CRT) - the minted SubAssembly LOT is now
+--              stamped with Lots.Lot.CrtActive, resolved in ONE place
+--              (Lots.ufn_CrtForMint: part flag OR terminal switch OR any consumed input
+--              LOT already CRT). The mint-site call answers the part-flag and terminal
+--              arms only and passes NULL for propagation -- @SourceLotId is just the
+--              scanned FIFO HANDLE, is absent from the @Queue predicate, and may even
+--              be Closed by inline scrap, so seeding from it could stamp a false
+--              positive. A post-consume "CRT re-resolve" after the FIFO walk is the
+--              single source of propagation truth: it resolves over the Consumption
+--              genealogy edges (RelationshipTypeId = 3) the walk actually wrote and
+--              raises the stamp 0 -> 1 only. A CRT casting anywhere in the walk --
+--              not just the scanned one -- therefore taints the sub-assembly.
 -- Version:     2.3 (2026-08-07, FAT-MACH-140) - defect/reject capture. New optional
 --              @ScrapLinesJson ([{"defectCodeId","quantity"}, ...]) writes one
 --              Workorder.RejectEvent per line (ProductionEventId NULL, LotId =
@@ -268,14 +280,19 @@ BEGIN
         IF @NextOrd > 99 RAISERROR(N'Casting already has 99 machined sublots.',16,1);
         SET @MintedName = @OldestName + N'-' + RIGHT(N'0'+CAST(@NextOrd AS NVARCHAR(2)),2);
 
-        -- D1/D2: CRT at mint, resolved in ONE place (Lots.ufn_CrtForMint) from the
-        -- produced part's flag, the minting terminal's CrtEnabled attribute, and the
-        -- consumed casting. Seeded here from the FIFO HANDLE; the FIFO walk below may
-        -- roll into further castings, so the stamp is re-resolved over the ACTUAL
-        -- consumed set once the walk finishes (see "CRT re-resolve" below).
+        -- D1/D2: CRT at mint, resolved in ONE place (Lots.ufn_CrtForMint). Only the
+        -- part-flag and terminal arms can be answered HERE, so the propagation arm is
+        -- passed NULL: @SourceLotId is merely the scanned FIFO HANDLE and is NOT
+        -- necessarily consumed at all (it is absent from the @Queue predicate below,
+        -- and if inline scrap fully drained it, it is already Closed and excluded from
+        -- the queue outright) -- seeding from it could stamp a false positive that the
+        -- 0 -> 1-only re-resolve can never take back. The "CRT re-resolve" block after
+        -- the walk is therefore the SINGLE source of propagation truth in this proc,
+        -- resolving over the Consumption edges that ARE the actual consumed set.
+        -- Same shape as Assembly_CompleteTray's mint site + step B4b.
         DECLARE @CrtActive BIT =
             (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ProducedItemId, @TerminalLocationId,
-                                                       CAST(@SourceLotId AS NVARCHAR(20))));
+                                                       NULL));
 
         INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
             Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber, MinSerialNumber, MaxSerialNumber,
@@ -325,13 +342,16 @@ BEGIN
         -- rolls into as many castings as it needs -- a CRT casting further down the
         -- queue would otherwise mint a CLEAN sub-assembly, which is exactly the
         -- containment escape D2 exists to prevent. The Consumption genealogy edges
-        -- written by the walk ARE the actual consumed set, so re-resolve over them.
+        -- written by the walk (RelationshipTypeId = 3) ARE the actual consumed set, so
+        -- re-resolve over them -- the type filter is explicit so a future Split/Rework
+        -- edge on a freshly minted LOT cannot silently widen propagation.
         -- Only ever raises 0 -> 1 (ufn_CrtForMint is a pure OR of the same three arms).
         IF @CrtActive = 0
         BEGIN
             DECLARE @ConsumedLotIdsCsv NVARCHAR(MAX) = (
                 SELECT STRING_AGG(CAST(g.ParentLotId AS NVARCHAR(20)), N',')
-                FROM Lots.LotGenealogy g WHERE g.ChildLotId = @NewId);
+                FROM Lots.LotGenealogy g
+                WHERE g.ChildLotId = @NewId AND g.RelationshipTypeId = 3);
             SET @CrtActive = (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ProducedItemId,
                 @TerminalLocationId, @ConsumedLotIdsCsv));
             IF @CrtActive = 1

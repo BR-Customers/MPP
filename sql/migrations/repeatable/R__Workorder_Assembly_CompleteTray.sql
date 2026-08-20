@@ -1,6 +1,16 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_CompleteTray.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.2 (2026-08-20, part-scoped CRT) - the FG LOT is now stamped with
+--              Lots.Lot.CrtActive at mint. The inlined terminal-attribute lookup that
+--              used to answer this question is DELETED; the decision is resolved in
+--              ONE place (Lots.ufn_CrtForMint: part flag OR terminal switch OR any
+--              consumed input LOT already CRT). Because the FG LOT is minted in B1 but
+--              the BOM FIFO consume loop does not run until B4, the mint-site call
+--              passes NULL for the propagation arm and a new step B4b re-resolves over
+--              the Consumption genealogy edges (RelationshipTypeId = 3) the loop just
+--              wrote, raising the stamp 0 -> 1 only. A CRT sub-assembly or component
+--              therefore taints the finished good it is built into.
 -- Version:     1.1 (2026-07-24) - the component-stock reads (the §7 pre-check
 --              availability sum AND the §B4 FIFO consume walk) now exclude BLOCKED
 --              source LOTs (sc.BlocksProduction = 0, i.e. skip Hold/Scrap), matching
@@ -415,15 +425,19 @@ BEGIN
 
         -- ---- B4b. CRT re-resolve (D2 propagation). The FG LOT was minted before the
         --      consume loop ran, so its stamp above only saw the part flag + terminal
-        --      switch. The Consumption genealogy edges just written ARE the consumed
-        --      set, so re-resolve over them: a CRT sub-assembly or component must
-        --      taint the finished good it is built into. Only ever raises 0 -> 1
+        --      switch. The Consumption genealogy edges just written
+        --      (RelationshipTypeId = 3) ARE the consumed set, so re-resolve over them:
+        --      a CRT sub-assembly or component must taint the finished good it is
+        --      built into. The type filter is explicit so a future Split/Rework edge on
+        --      a freshly minted LOT cannot silently widen propagation.
+        --      Only ever raises 0 -> 1
         --      (ufn_CrtForMint is a pure OR of the same three arms). ----
         IF @CrtActive = 0
         BEGIN
             DECLARE @ConsumedLotIdsCsv NVARCHAR(MAX) = (
                 SELECT STRING_AGG(CAST(g.ParentLotId AS NVARCHAR(20)), N',')
-                FROM Lots.LotGenealogy g WHERE g.ChildLotId = @FinishedGoodLotId);
+                FROM Lots.LotGenealogy g
+                WHERE g.ChildLotId = @FinishedGoodLotId AND g.RelationshipTypeId = 3);
             SET @CrtActive = (SELECT CrtActive FROM Lots.ufn_CrtForMint(@FinishedGoodItemId,
                 @TerminalLocationId, @ConsumedLotIdsCsv));
             IF @CrtActive = 1

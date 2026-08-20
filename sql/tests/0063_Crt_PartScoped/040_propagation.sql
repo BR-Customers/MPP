@@ -82,14 +82,16 @@ DECLARE @subStillCrt BIT = (SELECT CrtActive FROM Lots.Lot WHERE Id = @SubLot);
 EXEC test.Assert_IsEqual @TestName = N'[Prop] clearing the casting later does NOT un-tag an existing sub-assembly',
     @Expected = N'1', @Actual = @subStillCrt;
 
--- 5. An UNFLAGGED part at a plain terminal still mints clean -- the stamp is a
---    resolver decision, not an unconditional 1.
+-- 5. An UNFLAGGED part with NO terminal still mints clean -- the stamp is a
+--    resolver decision, not an unconditional 1. Every Lot_Create call in this file
+--    omits @TerminalLocationId, so arm 2 is inert here rather than merely "plain":
+--    the real flagged-terminal case is 050_mint_procs.sql section E.
 DELETE FROM #mint;
 INSERT INTO #mint EXEC Lots.Lot_Create @ItemId = @SubItem, @LotOriginTypeId = @Origin,
     @CurrentLocationId = @Loc, @PieceCount = 10, @AppUserId = @App;
 DECLARE @CleanLot BIGINT = (SELECT TOP 1 NewId FROM #mint);
 DECLARE @cleanCrt BIT = (SELECT CrtActive FROM Lots.Lot WHERE Id = @CleanLot);
-EXEC test.Assert_IsEqual @TestName = N'[Prop] unflagged part at a plain terminal mints CrtActive=0',
+EXEC test.Assert_IsEqual @TestName = N'[Prop] unflagged part with no terminal mints CrtActive=0',
     @Expected = N'0', @Actual = @cleanCrt;
 
 DROP TABLE #mint;
@@ -97,6 +99,11 @@ DROP TABLE #tag;
 
 -- -- Teardown: leave the shared seeded parts unflagged for any later file ------
 UPDATE Parts.Item SET CrtEnabled = 0 WHERE Id IN (@CastItem, @SubItem);
+-- ... and leave no tagged LOT behind either. Assertion 4 hand-stamps @SubLot
+-- CrtActive = 1 to stand in for a consuming mint; without this it would sit at
+-- MA1-FP6NA permanently and seed any later file that consumes sub-assembly stock
+-- from that cell (050_mint_procs.sql section D does exactly that).
+UPDATE Lots.Lot SET CrtActive = 0 WHERE Id IN (@CastLot, @SubLot, @CleanLot);
 GO
 EXEC test.EndTestFile;
 GO

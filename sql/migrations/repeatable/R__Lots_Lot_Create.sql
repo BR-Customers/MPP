@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Create.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-09
+-- Modified:    2026-08-20
 -- Version:     1.0
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
 --              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +

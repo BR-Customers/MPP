@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Merge.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-11
+-- Modified:    2026-08-20
 -- Version:     1.0
 -- Description: Merges N (>=2) Good source LOTs of the SAME Item into a single
 --              fresh primary output LOT (Phase 2 Task 3 / G2; spec section 4.2).

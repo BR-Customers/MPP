@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Split.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-07
+-- Modified:    2026-08-20
 -- Version:     1.0
 --
 -- SCOPE (terminal-mint, 2026-07-07): EXCEPTION-ONLY. The standard Machining &
