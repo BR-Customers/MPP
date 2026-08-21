@@ -64,7 +64,8 @@ def _completeCoupledContainer(instancePath, terminalLocationId, device):
                    responsePayload=str(result), ok=ok,
                    errorDescription=None if ok else (result or {}).get("Message"))
     if not ok:
-        W.writeDisplay(instancePath, {"MESAlarmType": 1,
-                                      "MESAlarmText": (result or {}).get("Message") or "Tray close failed"})
+        msg = (result or {}).get("Message") or "Tray close failed"
+        W.writeDisplay(instancePath, {"MESAlarmType": 1, "MESAlarmText": msg})
+        W.notifyAlarm(terminalLocationId, "ByWeight tray close failed", msg)
         return None
     return result.get("ContainerId")

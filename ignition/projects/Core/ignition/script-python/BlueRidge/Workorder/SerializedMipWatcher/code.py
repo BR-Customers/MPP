@@ -32,7 +32,8 @@ def handleEdge(instancePath, terminalLocationId, member):
     front = _frontLot(terminalLocationId)
     if front is None:
         _finish(W, instancePath, device, member, False,
-                "No active LOT in the assembly queue", "PartSN=%s" % partSN)
+                "No active LOT in the assembly queue", "PartSN=%s" % partSN,
+                terminalLocationId)
         return
 
     itemId = front.get("ItemId")
@@ -47,7 +48,7 @@ def handleEdge(instancePath, terminalLocationId, member):
     _finish(W, instancePath, device, member, ok,
             None if ok else msg,
             "PartSN=%s interlock=%s lot=%s" % (partSN, interlock, lotId),
-            responsePayload=str(result))
+            terminalLocationId, responsePayload=str(result))
     if ok:
         # Live-refresh the operator terminal at this cell. This watcher only has
         # the terminal, so resolve its zone cell for the push payload (keeps the
@@ -74,9 +75,11 @@ def _frontLot(terminalLocationId):
 
 
 def _finish(W, instancePath, device, member, ok, errorReason, requestPayload,
-            responsePayload=None):
+            terminalLocationId, responsePayload=None):
     """Write PartValid, log the handshake, reset TransInProc + the trigger, and
-       surface an alarm (HMI-gated) on failure."""
+       surface an alarm on failure -- both the HMI-gated tag write (physical
+       panel, needs WriteDisplayEnabled) and an operator toast (Perspective,
+       always on; see PlcWatcher.notifyAlarm)."""
     W.writeMember(instancePath, "PartValid", ok)
     W.logInterface(device, "Serialized MIP add", requestPayload=requestPayload,
                    responsePayload=responsePayload, ok=ok, errorDescription=errorReason)
@@ -85,4 +88,5 @@ def _finish(W, instancePath, device, member, ok, errorReason, requestPayload,
             "serialized handshake rejected %s: %s" % (instancePath, errorReason),
             level="warn")
         W.writeDisplay(instancePath, {"MESAlarmType": 1, "MESAlarmText": errorReason or "Rejected"})
+        W.notifyAlarm(terminalLocationId, "Serialized part rejected", errorReason or "Rejected")
     W.writeMembers(instancePath, {member: False, "TransInProc": False})

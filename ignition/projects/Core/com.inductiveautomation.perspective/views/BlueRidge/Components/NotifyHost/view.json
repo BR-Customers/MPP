@@ -17,6 +17,13 @@
           "sessionScope": true,
           "viewScope": false,
           "script": "\tBlueRidge.Common.Notify._handle(self, payload)"
+        },
+        {
+          "messageType": "plcAlarm",
+          "pageScope": false,
+          "sessionScope": true,
+          "viewScope": false,
+          "script": "\tp = payload or {}\n\tterm = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.terminal) or {}\n\tif term.get(\"terminalLocationId\") == p.get(\"terminalLocationId\"):\n\t\tBlueRidge.Common.Notify.toast(p.get(\"title\", \"\"), p.get(\"message\", \"\"), p.get(\"level\", \"error\"), p.get(\"ttl\"))"
         }
       ]
     },

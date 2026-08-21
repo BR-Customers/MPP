@@ -69,13 +69,20 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
               "terminalLocationId": terminalLocationId}
     result = BlueRidge.Common.Db.execMutation("lots/Container_Complete", params)
     # Print the container's shipping label. Mirrors Workorder.Machining.mint: check the
-    # RETURNED Status (dispatchContainer does not raise for the common shop-floor cases)
-    # AND catch genuine exceptions -- either way NEVER lose the completed container.
+    # RETURNED Status (ShippingDispatcher.dispatch does not raise for the common shop-floor
+    # cases) AND catch genuine exceptions -- either way NEVER lose the completed container.
     # Complete and print are separate steps (FDS-07-005/006a).
+    #
+    # dispatch(), not dispatchContainer() -- that name never existed on ShippingDispatcher
+    # (its only public entrypoint is dispatch(shippingLabelId, terminalLocationId,
+    # printerLocationId), the same call PrintFailureGateway.sweepTick() uses). Every PLC
+    # ByWeight/ByVision auto-complete that reached ContainerFull hit this: the proc committed
+    # the container fine, then this call threw AttributeError on every single completion,
+    # silently swallowed below into a generic "print failed" toast (2026-08-20 finding).
     if result and result.get("Status") and result.get("ShippingLabelId") is not None:
         try:
-            printRes = BlueRidge.Lots.ShippingDispatcher.dispatchContainer(
-                containerId, terminalLocationId, result.get("ShippingLabelId"))
+            printRes = BlueRidge.Lots.ShippingDispatcher.dispatch(
+                shippingLabelId=result.get("ShippingLabelId"), terminalLocationId=terminalLocationId)
         except Throwable as t:
             printRes = {"Status": 0, "Message": "print raised: %s" % (t.getMessage() or t)}
         except Exception as e:
@@ -84,16 +91,16 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
         if not (printRes and printRes.get("Status")):
             BlueRidge.Common.Util.log(
                 "Container shipping label print failed: %s" % (printRes or {}).get("Message"))
-            try:
-                BlueRidge.Common.Notify.toast(
-                    "Label not printed",
-                    "The container was completed but its shipping label did not print. "
-                    "Reprint from the Shipping Dock.",
-                    "warning")
-            except:
-                # Gateway scope (PLC auto-complete) has no session to toast into.
-                # The container is already committed; never let a toast failure escape.
-                pass
+            # NOT Common.Notify.toast() -- that sends scope="session" with no explicit
+            # sessionId, which is a silent no-op from gateway scope (PLC auto-complete has
+            # no session of its own). This used to catch that exact failure and swallow it
+            # with a bare `except: pass` (comment literally said "no session to toast into"),
+            # so a completed-but-unlabeled container never surfaced anywhere. PlcWatcher's
+            # gateway-safe broadcast is the fix already built for this class of bug tonight.
+            BlueRidge.Workorder.PlcWatcher.notifyAlarm(
+                terminalLocationId, "Label not printed",
+                "The container was completed but its shipping label did not print. "
+                "Reprint from the Shipping Dock.", level="warning")
     # Report the completed container to AIM. Runs AFTER the proc committed and is fully
     # guarded: complete, print and post are three separate steps (FDS-07-005/006a/012).
     # A failure leaves the row owed; AimPostTimer retries it. NEVER lose the container.

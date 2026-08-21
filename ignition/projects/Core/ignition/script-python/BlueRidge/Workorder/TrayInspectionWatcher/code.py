@@ -56,12 +56,15 @@ def _onTrayLocked(instancePath, terminalLocationId):
                        errorDescription="No active LOT in the assembly queue")
         return
     if plcId is None:
+        msg = "Item.PlcId is not set"
         W.logInterface(device, "Tray locked (LOT item has no PlcId)",
                        requestPayload="lot=%s item=%s" % (front.get("Id"), front.get("ItemId")),
-                       ok=False, errorDescription="Item.PlcId is not set")
+                       ok=False, errorDescription=msg)
         BlueRidge.Common.Util.log(
             "tray %s: front LOT item %s has no PlcId -- cannot select recipe"
             % (instancePath, front.get("ItemId")), level="warn")
+        W.notifyAlarm(terminalLocationId, "Recipe select failed",
+                      "%s (item %s)" % (msg, front.get("ItemId")))
         return
     # Select the vision recipe in the PLC (control write, not display).
     W.writeMember(instancePath, "PartNumber", plcId)
@@ -92,6 +95,7 @@ def _onInspectionComplete(instancePath, terminalLocationId):
                        ok=False, errorDescription=reason, logEventTypeCode="PlcLineStop")
         W.writeDisplay(instancePath, {"MESAlarmType": 2, "MESAlarmText": reason})
         BlueRidge.Common.Util.log("tray %s LINE STOP: %s" % (instancePath, reason), level="warn")
+        W.notifyAlarm(terminalLocationId, "LINE STOP - vision mismatch", reason)
         return
 
     # Match -> release the tray (physical handshake first; the DB record follows).
@@ -111,5 +115,6 @@ def _onInspectionComplete(instancePath, terminalLocationId):
                    responsePayload=str(result), ok=ok,
                    errorDescription=None if ok else (result or {}).get("Message"))
     if not ok:
-        W.writeDisplay(instancePath, {"MESAlarmType": 1,
-                                      "MESAlarmText": (result or {}).get("Message") or "Tray close failed"})
+        msg = (result or {}).get("Message") or "Tray close failed"
+        W.writeDisplay(instancePath, {"MESAlarmType": 1, "MESAlarmText": msg})
+        W.notifyAlarm(terminalLocationId, "ByVision tray close failed", msg)
