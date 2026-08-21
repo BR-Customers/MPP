@@ -1171,7 +1171,7 @@
                           "display": false
                         },
                         "propConfig": {
-                          "meta.visible": {
+                          "position.display": {
                             "binding": {
                               "config": {
                                 "expression": "{view.custom.specHeader.selected.deprecatedAt} \u003d null"

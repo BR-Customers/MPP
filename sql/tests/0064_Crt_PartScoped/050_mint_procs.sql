@@ -2,10 +2,10 @@
 -- File:         0064_Crt_PartScoped/050_mint_procs.sql
 -- Author:       Blue Ridge Automation
 -- Created:      2026-08-20
--- Description:  End-to-end CrtActive assertions THROUGH the five mint procs that
---               commit 5b2b4e97 wired to Lots.ufn_CrtForMint. 040_propagation.sql
---               covers the resolver + Lot_Create's part arm; this file covers the
---               four call sites nothing asserted, plus Lot_Create's TERMINAL arm:
+-- Description:  End-to-end CrtActive assertions THROUGH every mint proc wired to
+--               Lots.ufn_CrtForMint. 040_propagation.sql covers the resolver +
+--               Lot_Create's part arm; this file covers the call sites nothing
+--               asserted, plus Lot_Create's TERMINAL arm and the die-cast origin:
 --
 --                 A. Lots.Lot_Split            - a CRT parent LOT is REJECTED
 --                                                (2026-08-20: design section 6 makes
@@ -41,6 +41,11 @@
 --                                                040_propagation.sql omits
 --                                                @TerminalLocationId, so arm 2 is
 --                                                never exercised through the proc.
+--                 F. Lots.DieCastLot_Open      - the real die-cast ORIGIN mint (the
+--                                                press terminal drives THIS, not
+--                                                Lot_Create): a CrtEnabled casting
+--                                                mints a CRT basket, and an
+--                                                unflagged one does not.
 --
 --               Fixture notes:
 --                 * A and B reuse the 020_Lot_Split / 030_Lot_Merge selector: an
@@ -469,6 +474,128 @@ DELETE FROM @tg;
 INSERT INTO @tg EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = @Term,
     @Enabled = 0, @AppUserId = 1;
 UPDATE Lots.Lot SET CrtActive = 0 WHERE ItemId = @SubIt AND CurrentLocationId = @Cell;
+GO
+
+-- =============================================
+-- F. Lots.DieCastLot_Open -- the die-cast ORIGIN mint. This is the proc the
+--    press terminal actually drives (DieCastBody -> BlueRidge.Lots.Lot.openDieCast
+--    / BlueRidge.Workorder.DieCast.submitBulkOpen -> named query
+--    lots/DieCastLot_Open); Lots.Lot_Create is the RECEIVING path, not die cast.
+--    Flagging a CASTING part CrtEnabled is the feature's headline use case, so
+--    the basket a press opens for such a part must be born CrtActive = 1.
+--
+--    Fixture mirrors 0045/020's recipe (a clean Run-Tests reset seeds no
+--    Tools.ToolAssignment rows, so one is built inline): resolve a (Cell, Item)
+--    pair by the ancestor-cascade eligibility rule where the Item has a
+--    published route with a DieCast step and the Cell has no active mount,
+--    then build Tool + two Active cavities + an assignment on that Cell. Two
+--    cavities because the proc enforces one-open-basket-per-(Tool, Cavity):
+--    the positive and the negative control each need their own.
+--
+--    @TerminalLocationId is NULL throughout, so arm 2 (the terminal switch)
+--    stays inert and the part flag is the only thing that can raise the stamp.
+--    Everything runs in ONE batch so the fixture variables stay in scope.
+-- =============================================
+
+-- ---- cleanup (FK-safe, reverse order) ----
+DELETE cl FROM Lots.LotGenealogyClosure cl INNER JOIN Lots.Lot l ON l.Id IN (cl.AncestorLotId, cl.DescendantLotId) WHERE l.LotName IN (N'200006301', N'200006302');
+DELETE m  FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName IN (N'200006301', N'200006302');
+DELETE h  FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName IN (N'200006301', N'200006302');
+DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName IN (N'200006301', N'200006302');
+DELETE FROM Lots.Lot WHERE LotName IN (N'200006301', N'200006302');
+DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code = N'TEST-CRTDC-TOOL';
+DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-CRTDC-TOOL');
+DELETE FROM Tools.Tool WHERE Code = N'TEST-CRTDC-TOOL';
+GO
+
+DECLARE @DcCell BIGINT, @DcItem BIGINT;
+SELECT TOP 1 @DcCell = x.CellId, @DcItem = x.ItemId
+FROM (
+    SELECT c.Id AS CellId, rt.ItemId AS ItemId
+    FROM Location.Location c
+    INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = c.LocationTypeDefinitionId
+    INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
+    CROSS APPLY Location.ufn_AncestorLocationIds(c.Id) anc
+    INNER JOIN Parts.v_EffectiveItemLocation eil ON eil.LocationId = anc.LocationId
+    INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = eil.ItemId AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+    INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+    INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+    INNER JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+    WHERE lt.Code = N'Cell' AND oty.Code = N'DieCast' AND c.DeprecatedAt IS NULL
+      AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta WHERE ta.CellLocationId = c.Id AND ta.ReleasedAt IS NULL)
+) x
+ORDER BY x.CellId, x.ItemId;
+
+IF @DcCell IS NULL OR @DcItem IS NULL
+    RAISERROR(N'0063/050 section F fixture: no (Cell, ItemId) pair with a published DieCast route and no active ToolAssignment -- BLOCKED.', 16, 1);
+
+DECLARE @DcOrigCrt BIT = (SELECT CrtEnabled FROM Parts.Item WHERE Id = @DcItem);
+
+INSERT INTO Tools.Tool (ToolTypeId, Code, Name, StatusCodeId, CreatedAt, CreatedByUserId)
+SELECT (SELECT Id FROM Tools.ToolType WHERE Code = N'Die'), N'TEST-CRTDC-TOOL', N'CRT die-cast open test die',
+       (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active'), SYSUTCDATETIME(), 1;
+DECLARE @DcTool BIGINT = SCOPE_IDENTITY();
+
+DECLARE @DcCavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
+INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@DcTool, 1, @DcCavActive, SYSUTCDATETIME(), 1);
+DECLARE @DcCav1 BIGINT = SCOPE_IDENTITY();
+INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@DcTool, 2, @DcCavActive, SYSUTCDATETIME(), 1);
+DECLARE @DcCav2 BIGINT = SCOPE_IDENTITY();
+
+INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
+VALUES (@DcTool, @DcCell, SYSUTCDATETIME(), 1);
+
+-- F1. CrtEnabled casting -> the opened basket is born CRT.
+UPDATE Parts.Item SET CrtEnabled = 1 WHERE Id = @DcItem;
+
+DECLARE @dc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @dc EXEC Lots.DieCastLot_Open @ItemId = @DcItem, @CurrentLocationId = @DcCell,
+    @ToolId = @DcTool, @ToolCavityId = @DcCav1, @LotName = N'200006301', @AppUserId = 1,
+    @TerminalLocationId = NULL;
+DECLARE @dcStatus NVARCHAR(10) = (SELECT TOP 1 CAST(Status AS NVARCHAR(10)) FROM @dc);
+EXEC test.Assert_IsEqual
+    @TestName = N'[MintCrt] DieCastLot_Open: basket opens for a CrtEnabled casting',
+    @Expected = N'1', @Actual = @dcStatus;
+
+DECLARE @DcCrtLot BIGINT = (SELECT TOP 1 NewId FROM @dc);
+DECLARE @dcCrt NVARCHAR(10) = (SELECT CAST(CrtActive AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @DcCrtLot);
+EXEC test.Assert_IsEqual
+    @TestName = N'[MintCrt] DieCastLot_Open: a CrtEnabled casting mints CrtActive=1',
+    @Expected = N'1', @Actual = @dcCrt;
+
+-- F2. Negative control -- same fixture, flag cleared, second cavity.
+UPDATE Parts.Item SET CrtEnabled = 0 WHERE Id = @DcItem;
+
+DELETE FROM @dc;
+INSERT INTO @dc EXEC Lots.DieCastLot_Open @ItemId = @DcItem, @CurrentLocationId = @DcCell,
+    @ToolId = @DcTool, @ToolCavityId = @DcCav2, @LotName = N'200006302', @AppUserId = 1,
+    @TerminalLocationId = NULL;
+DECLARE @dcCleanStatus NVARCHAR(10) = (SELECT TOP 1 CAST(Status AS NVARCHAR(10)) FROM @dc);
+EXEC test.Assert_IsEqual
+    @TestName = N'[MintCrt] DieCastLot_Open: basket opens for an unflagged casting',
+    @Expected = N'1', @Actual = @dcCleanStatus;
+
+DECLARE @DcCleanLot BIGINT = (SELECT TOP 1 NewId FROM @dc);
+DECLARE @dcCleanCrt NVARCHAR(10) = (SELECT CAST(CrtActive AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @DcCleanLot);
+EXEC test.Assert_IsEqual
+    @TestName = N'[MintCrt] DieCastLot_Open: an unflagged casting mints CrtActive=0',
+    @Expected = N'0', @Actual = @dcCleanCrt;
+
+-- ---- Teardown: restore the part flag to whatever it was before this section ----
+UPDATE Parts.Item SET CrtEnabled = @DcOrigCrt WHERE Id = @DcItem;
+GO
+
+-- ---- cleanup (repeat block from the top of section F) ----
+DELETE cl FROM Lots.LotGenealogyClosure cl INNER JOIN Lots.Lot l ON l.Id IN (cl.AncestorLotId, cl.DescendantLotId) WHERE l.LotName IN (N'200006301', N'200006302');
+DELETE m  FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName IN (N'200006301', N'200006302');
+DELETE h  FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName IN (N'200006301', N'200006302');
+DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName IN (N'200006301', N'200006302');
+DELETE FROM Lots.Lot WHERE LotName IN (N'200006301', N'200006302');
+DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code = N'TEST-CRTDC-TOOL';
+DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-CRTDC-TOOL');
+DELETE FROM Tools.Tool WHERE Code = N'TEST-CRTDC-TOOL';
 GO
 
 EXEC test.EndTestFile;

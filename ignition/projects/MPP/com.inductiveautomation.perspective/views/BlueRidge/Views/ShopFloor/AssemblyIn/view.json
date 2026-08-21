@@ -255,7 +255,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tcell \u003d self.session.custom.cell.locationId\n\tname \u003d self.view.custom.scanInput\n\tif cell is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No cell is bound to this terminal.\"}, \"Assembly IN\")\n\t\treturn\n\tif not name:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Scan or enter a LOT LTT.\"}, \"Assembly IN\")\n\t\treturn\n\tresult \u003d BlueRidge.Workorder.Assembly.scanIn(cell, lotName\u003dname)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Assembly IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.scanInput \u003d \"\"\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\tcell \u003d self.session.custom.cell.locationId\n\tname \u003d self.view.custom.scanInput\n\tif cell is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No cell is bound to this terminal.\"}, \"Assembly IN\")\n\t\treturn\n\tif not name:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Scan or enter a LOT LTT.\"}, \"Assembly IN\")\n\t\treturn\n\tresult \u003d BlueRidge.Workorder.Assembly.scanIn(cell, lotName\u003dname)\n\tBlueRidge.Common.Ui.notifyResultCrtAware(result, \"Assembly IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.scanInput \u003d \"\"\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                       },
                       "scope": "G",
                       "type": "script"

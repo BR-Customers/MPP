@@ -50,7 +50,7 @@ Nothing in this design replaces working machinery.
 | **D5a** | **Production-vs-not is a flag on `Location.LocationTypeDefinition`**, not a hardcoded list of definition codes in a proc. | The polymorphic location model already classifies every location by definition. A column there is one migration, is visible in the Config Tool, and lets a new definition declare itself rather than requiring a proc edit. |
 | **D6** | **Clearing is PER-LOT ONLY**, via a toggle button on Lot Detail. No bulk clear, no clear-with-descendants. | Hunter's call. Keeps the audit trail one row per decision and the UI to one control. If a long run proves painful in practice, a bulk action can be added later without reshaping anything. |
 | **D7** | **The toggle is elevation-gated** with a new `CrtToggle` action code, both directions. | Consistent with every other protected action (Changeover, MoveOverride, SupervisorAccess). See §8 for the limitation this carries. |
-| **D8** | **A `{CrtMark}` token in the EXISTING label templates**, not separate CRT template variants. | Labels are ZPL with `{Token}` substitution. One template per label type, no duplication and no drift. The mark is a record on the ticket, not a visual stop signal — enforcement lives in the procs. |
+| **D8** | **A SEPARATE CRT BANNER LABEL printed after the normal ticket**, not a mark inside the existing templates. The normal LOT ticket prints byte-identically to a clean LOT's; when `CrtActive = 1` the procs append the active `CrtBanner` template as a second `^XA..^XZ` document, so one print call yields two physical labels. | A whole extra ticket is far more visible on the floor than a small mark on one line. Decisively, it means the CRT feature never edits MPP's real label layouts: no per-layout placement decision, no risk of landing inside a `^BC`/`^B3` barcode field, and nothing to redo when MPP supplies a revised layout. The banner is a flag, not a stop signal — enforcement lives in the procs. Supersedes the original `{CrtMark}` inline token (migration `0065`), which migration `0066` removes. |
 | **D9** | **One creation popup per SUBMIT**, listing the CRT LOTs minted. | Bulk basket open mints one LOT per cavity in a single press. One dialog per LOT would train operators to dismiss dialogs reflexively, which defeats the point. Degrades naturally to a single LOT at Trim or Machining. |
 
 ### Deliberately not built
@@ -107,13 +107,22 @@ Called by every minting proc:
 
 | proc | inputs passed |
 |---|---|
-| `Lots.Lot_Create` (die cast, incl. bulk open) | none |
+| `Lots.DieCastLot_Open` (the die-cast **origin** mint, incl. bulk open) | none |
+| `Lots.Lot_Create` (receiving / manual mint) | none |
 | `Workorder.MachiningOut_Mint` | the consumed casting |
 | `Workorder.Assembly_CompleteTray` | the consumed sub-assemblies and components |
 | `Lots.Lot_Split` / `Lots.Lot_Merge` | the source LOT(s) |
 
 `Assembly_CompleteTray` currently inlines the terminal-switch check; that logic **moves
 into the resolver** so this decision is made in exactly one place.
+
+> **Correction (2026-08-20).** This table originally read "`Lots.Lot_Create` (die cast,
+> incl. bulk open)", which was already stale when it was written: the press terminal
+> drives `Lots.DieCastLot_Open` (`DieCastBody` → `Lot.openDieCast` /
+> `DieCast.submitBulkOpen` → named query `lots/DieCastLot_Open`), and `Lot_Create` is now
+> only the receiving / manual-mint path. Ten tasks wired `Lot_Create` and left the die-cast
+> origin unwired, so a `CrtEnabled` **casting** — the feature's headline case — minted
+> clean baskets. Both procs now call the resolver.
 
 ### `Lots.ufn_CrtBlocksMoveTo(@LotId, @ToLocationId)` → `BIT`
 
@@ -134,7 +143,8 @@ message naming the LOT and what to do:
 
 | proc | what the operator is stopped from doing |
 |---|---|
-| `Lots.Lot_MoveTo` / `Lot_MoveToValidated` | moving it to a PRODUCTION destination — this is what a Trim IN or Assembly IN scan actually is. A move to inspection, inventory, receiving or a support area still succeeds (D5). |
+| `Lots.Lot_MoveTo` / `Lot_MoveToValidated` | moving it to a PRODUCTION destination — this is what a Trim IN scan actually is. A move to inspection, inventory, receiving or a support area still succeeds (D5). |
+| `Workorder.Assembly_ScanIn` | scanning it into an assembly cell. **Corrected 2026-08-20:** the row above originally claimed to cover "a Trim IN or Assembly IN scan", but `/shop-floor/assembly-in` drives `Assembly_ScanIn`, which **inlines its own move** (the INSERT-EXEC status-row rule forbids EXEC-ing a sibling status-row proc) and therefore never inherited `Lot_MoveTo`'s guard. It now carries its own copy. |
 | `Workorder.MachiningIn_RecordPick` | picking it into a machining cell |
 | `Workorder.MachiningOut_Mint` | **scanning it** as the mint source. The FIFO walk behind that scan is NOT blocked — see below. |
 | `Lots.Lot_Split` / `Lots.Lot_Merge` | dividing or combining it (decided 2026-08-20) |
@@ -210,8 +220,10 @@ used until Quality clears it."* Names the LOT.
   provisions it, EVERY elevation is denied — including the `CrtToggle` gate this design
   depends on. Testing the toggle locally requires creating that source or temporarily
   repointing the constant.
-- **A label printed before clearing still says CRT.** The paper is a snapshot; the
-  system is the truth. Reprint via `LotLabel_Reprint` if a clean ticket is needed.
+- **A CRT banner printed before clearing is still on the basket.** The paper is a
+  snapshot; the system is the truth. Reprint via `LotLabel_Reprint` after clearing to get
+  a ticket with no banner — and physically pull the old banner label, since it is a
+  separate piece of stock and will not be replaced by the reprint.
 - **Clearing does not un-tag descendants** (D3). LOTs already minted from a cleared
   parent keep their own tag and must be judged individually.
 - **Turning the part flag on is not retroactive.** Existing LOTs of that part are
@@ -252,8 +264,13 @@ production destination normally; and the existing Hold / Scrap / Closed rejectio
 **Toggle** — set then clear round-trips `CrtActive`; both write audit rows; clearing an
 already-clear LOT and setting an already-set LOT are both no-ops rather than errors.
 
-**Labels** — `{CrtMark}` resolves to `CRT` when active and to empty when not; the
-non-CRT label is otherwise byte-identical to today's output.
+**Labels** — a CRT LOT's print returns TWO `^XA..^XZ` documents (the normal ticket plus
+the `CrtBanner` body); a clean LOT's returns one, with no `CRT` anywhere. The normal-label
+portion of a CRT print is byte-identical to what a clean LOT of the same part renders,
+modulo only the LOT name and the print timestamp — that is the assertion that proves CRT
+injects nothing into MPP's real layout. Reprint behaves identically, and neither path may
+leave an unsubstituted `{Token}`. A missing or deprecated `CrtBanner` template degrades to
+no banner: the normal label still prints, because a ticket that will not print stops the line.
 
 **Regression** — the existing assembly-out terminal-switch path still mints CRT finished
 goods, and `Container_Ship` still refuses them. This design must not disturb the working

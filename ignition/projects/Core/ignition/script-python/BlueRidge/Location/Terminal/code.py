@@ -104,6 +104,22 @@ def listForSelector(searchText=None):
     return out
 
 
+def listByLineOf(locationId):
+    """Every active Terminal Location sharing the same ancestor WorkCenter
+       ("line") as `locationId` (typically the Cell where a low-stock condition
+       was detected). Returns list[dict] (TerminalLocationId, Code, Name); always
+       a list, empty when the location has no WorkCenter ancestor or the line has
+       no terminals. Used to scope a cross-terminal warning broadcast to just the
+       terminals on the same line rather than every open session."""
+    BlueRidge.Common.Util.log("locationId=%s" % locationId)
+    if locationId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "location/Terminal_ListByLineOf",
+        {"locationId": locationId},
+    )
+
+
 def listContextCells(terminalLocationId):
     """Eligible location-context rows for a shared-flavor view at the given
        terminal: active descendant EQUIPMENT cells of the terminal's parent
@@ -298,6 +314,9 @@ def applyToSession(session, terminal):
     # cleared: its view binds the cell in onStartup, which does NOT re-fire when
     # the terminal switch navigates to the route the page is already on (two
     # terminals on one line share a DefaultScreen). See bindsCellToZone.
+    # (TerminalSelector.selectTerminal and NavigationTree both call this
+    # then navigate(); for two same-screen-type terminals the target URL
+    # is identical, so navigate() is a no-op -- 2026-08-20.)
     if t.get("zoneLocationId") is not None and bindsCellToZone(term["defaultScreen"]):
         session.custom.cell = {
             "locationId": t.get("zoneLocationId"),

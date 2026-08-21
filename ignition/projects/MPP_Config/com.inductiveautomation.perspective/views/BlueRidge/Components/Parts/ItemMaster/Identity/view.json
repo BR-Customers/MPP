@@ -2,42 +2,42 @@
   "custom": {
     "state": {
       "editDraft": {
-        "CountryOfOrigin": "US",
+        "CountryOfOrigin": "",
         "CrtEnabled": false,
-        "DefaultSubLotQty": 24,
-        "Description": "5G0 Front Cover Assembly",
-        "Id": 1,
-        "ItemTypeId": 4,
-        "ItemTypeName": "Finished Good",
-        "MacolaPartNumber": "5G0-FC-001",
-        "MaxLotSize": null,
-        "MaxParts": 500,
-        "PartNumber": "5G0",
+        "DefaultSubLotQty": "",
+        "Description": "",
+        "Id": null,
+        "ItemTypeId": null,
+        "ItemTypeName": "",
+        "MacolaPartNumber": "",
+        "MaxLotSize": "",
+        "MaxParts": "",
+        "PartNumber": "",
         "PlcId": null,
-        "UnitWeight": 3.25,
-        "UomCode": "EA",
-        "UomId": 1,
-        "WeightUomCode": "LB",
-        "WeightUomId": 2
+        "UnitWeight": "",
+        "UomCode": "",
+        "UomId": null,
+        "WeightUomCode": "",
+        "WeightUomId": null
       },
       "selected": {
-        "CountryOfOrigin": "US",
+        "CountryOfOrigin": "",
         "CrtEnabled": false,
-        "DefaultSubLotQty": 24,
-        "Description": "5G0 Front Cover Assembly",
-        "Id": 1,
-        "ItemTypeId": 4,
-        "ItemTypeName": "Finished Good",
-        "MacolaPartNumber": "5G0-FC-001",
-        "MaxLotSize": null,
-        "MaxParts": 500,
-        "PartNumber": "5G0",
+        "DefaultSubLotQty": "",
+        "Description": "",
+        "Id": null,
+        "ItemTypeId": null,
+        "ItemTypeName": "",
+        "MacolaPartNumber": "",
+        "MaxLotSize": "",
+        "MaxParts": "",
+        "PartNumber": "",
         "PlcId": null,
-        "UnitWeight": 3.25,
-        "UomCode": "EA",
-        "UomId": 1,
-        "WeightUomCode": "LB",
-        "WeightUomId": 2
+        "UnitWeight": "",
+        "UomCode": "",
+        "UomId": null,
+        "WeightUomCode": "",
+        "WeightUomId": null
       }
     }
   },
@@ -984,21 +984,7 @@
               }
             },
             "type": "ia.container.flex"
-          }
-        ],
-        "meta": {
-          "name": "FieldRow4"
-        },
-        "props": {
-          "style": {
-            "classes": "field-row",
-            "gap": "12px"
-          }
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
+          },
           {
             "children": [
               {
@@ -1013,7 +999,7 @@
                   "style": {
                     "classes": "field-label"
                   },
-                  "text": "Controlled Run Tag (CRT)"
+                  "text": "Enable CRT"
                 },
                 "type": "ia.display.label"
               },
@@ -1037,28 +1023,13 @@
                 },
                 "props": {},
                 "type": "ia.input.checkbox"
-              },
-              {
-                "meta": {
-                  "name": "Help"
-                },
-                "props": {
-                  "style": {
-                    "color": "var(--mpp-text-tertiary)",
-                    "fontSize": "11px"
-                  },
-                  "text": "Every LOT of this part minted while this is on is tagged CRT and cannot advance until Quality clears it."
-                },
-                "type": "ia.display.label"
               }
             ],
             "meta": {
               "name": "FieldCrtEnabled"
             },
             "position": {
-              "basis": "auto",
-              "grow": 1
-            },
+              },
             "props": {
               "direction": "column",
               "style": {
@@ -1070,7 +1041,7 @@
           }
         ],
         "meta": {
-          "name": "FieldRow5"
+          "name": "FieldRow4"
         },
         "props": {
           "style": {
