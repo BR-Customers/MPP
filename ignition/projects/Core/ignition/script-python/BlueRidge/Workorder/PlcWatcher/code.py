@@ -87,6 +87,27 @@ def writeDisplay(udtInstancePath, valuesByMember):
     return writeMembers(udtInstancePath, valuesByMember)
 
 
+# ---- terminal -> cell resolution --------------------------------------------
+def zoneCellId(terminalLocationId):
+    """The cell a terminal's LOTs actually live at: its ZONE (the parent line).
+
+       M&A LOTs are line-resident -- they sit at the WorkCenter/line and the
+       terminals hang off it -- so a queue read scoped to the TERMINAL's own
+       Location always comes back empty and the watcher bails with
+       'no active LOT' while the line is full of WIP. Every watcher that reads
+       the FIFO queue must resolve the zone first. Mirrors the cell resolution in
+       Assembly.resolvePlcCloseContext (Terminal_List.ZoneId).
+
+       Returns the zone LocationId, or None when the terminal is unknown or has
+       no zone (caller bails + logs, same as an empty queue)."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return None
+    term = BlueRidge.Location.Terminal.findById(
+        BlueRidge.Location.Terminal.listAll(), tid)
+    return (term or {}).get("ZoneId")
+
+
 # ---- edge guard -------------------------------------------------------------
 def _val(qvOrVal):
     """Unwrap a QualifiedValue (tag-change payload) or pass a plain value."""

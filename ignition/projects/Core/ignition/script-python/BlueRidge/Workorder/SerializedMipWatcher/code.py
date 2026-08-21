@@ -52,8 +52,10 @@ def handleEdge(instancePath, terminalLocationId, member):
         # Live-refresh the operator terminal at this cell. This watcher only has
         # the terminal, so resolve its zone cell for the push payload (keeps the
         # handler filter keyed on cellLocationId, same as every other path).
-        cc = BlueRidge.Location.Terminal.getClosureContext(terminalLocationId) or {}
-        cell = cc.get("zoneLocationId")
+        # NOT from getClosureContext -- that proc returns only CurrentClosureMethod
+        # / VisionAppUrl / ClosureCapabilities, so the old .get("zoneLocationId")
+        # read was always None and this push never fired.
+        cell = W.zoneCellId(terminalLocationId)
         if cell:
             BlueRidge.Workorder.Assembly.notifyInventoryChanged(cell, terminalLocationId)
     # ContainerCount write-back + container close on the configured limit are
@@ -61,7 +63,13 @@ def handleEdge(instancePath, terminalLocationId, member):
 
 
 def _frontLot(terminalLocationId):
-    q = BlueRidge.Lots.Lot.getWipQueueByLocation(terminalLocationId, includeDescendants=True)
+    """FIFO front at the terminal's ZONE cell (the line) -- LOTs are line-resident,
+       so a read scoped to the terminal's own Location is always empty. See
+       PlcWatcher.zoneCellId."""
+    cell = BlueRidge.Workorder.PlcWatcher.zoneCellId(terminalLocationId)
+    if cell is None:
+        return None
+    q = BlueRidge.Lots.Lot.getWipQueueByLocation(cell, includeDescendants=True)
     return q[0] if q else None
 
 

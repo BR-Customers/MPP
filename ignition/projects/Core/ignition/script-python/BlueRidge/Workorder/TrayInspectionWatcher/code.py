@@ -28,8 +28,16 @@ def handleEdge(instancePath, terminalLocationId, member):
 
 
 def _expectedPlcId(terminalLocationId):
-    """(frontLot, expectedPlcId) for the assembly-out FIFO front, or (None, None)."""
-    q = BlueRidge.Lots.Lot.getWipQueueByLocation(terminalLocationId, includeDescendants=True)
+    """(frontLot, expectedPlcId) for the assembly-out FIFO front, or (None, None).
+
+       The queue is read at the terminal's ZONE cell (the line), never at the
+       terminal's own Location -- M&A LOTs are line-resident, so a terminal-scoped
+       read is always empty and every edge bails with 'no active LOT'. See
+       PlcWatcher.zoneCellId."""
+    cell = BlueRidge.Workorder.PlcWatcher.zoneCellId(terminalLocationId)
+    if cell is None:
+        return (None, None)
+    q = BlueRidge.Lots.Lot.getWipQueueByLocation(cell, includeDescendants=True)
     if not q:
         return (None, None)
     front = q[0]
