@@ -14,13 +14,31 @@ _INSTANCE_ROOT = "[MPP]PlcDevices"
 
 
 def getTerminalsForDropdown(searchText=None):
-    """[{label, value}] of terminals for the mapping editor's terminal picker."""
+    """[{label, value}] of terminals for the mapping editor's terminal picker.
+
+       value: Terminal_List's TerminalId (the actual row key -- was previously
+       r.get("TerminalLocationId") or r.get("Id"), neither of which Terminal_List
+       returns, so every option silently carried value=None; picking ANY terminal
+       left selectedTerminalId empty and Save failed "Required parameter missing"
+       regardless of which terminal was chosen. 2026-08-20 incident.
+
+       label: includes the ZoneName (line) alongside Code/Name. This options
+       binding is a one-shot fetch (runScript(fn, 0), no searchText arg passed) --
+       filtering as the operator types is entirely CLIENT-SIDE against this label
+       text, Terminal.listForSelector's server-side ZoneName search is never
+       exercised from here. MPP's terminal Codes spell the 5G0 lines with a
+       letter O ('MA1-5GOF'/'MA1-5GOR'), but the line's own Name -- and how
+       everyone says it -- uses a zero ('5G0 Front'/'5G0 Rear'), so a Code/Name-only
+       label made that terminal unfindable by typing '5G0'. Same 2026-08-20
+       incident."""
     rows = BlueRidge.Location.Terminal.listForSelector(searchText) or []
     out = []
     for r in rows:
         r = r or {}
-        tid = r.get("TerminalLocationId") or r.get("Id")
-        label = ("%s - %s" % (r.get("TerminalCode") or "", r.get("TerminalName") or "")).strip(" -")
+        tid = r.get("TerminalId")
+        base = ("%s - %s" % (r.get("TerminalCode") or "", r.get("TerminalName") or "")).strip(" -")
+        zone = r.get("ZoneName") or ""
+        label = ("%s (%s)" % (base, zone)) if zone else base
         out.append({"label": label or ("%s" % tid), "value": tid})
     return out
 
@@ -89,7 +107,19 @@ def getByInstancePath(udtInstancePath):
 
 
 def save(data, appUserId=None):
-    """Insert (Id None) or update a mapping row. Returns {Status, Message, NewId}."""
+    """Insert (Id None) or update a mapping row. Returns {Status, Message, NewId}.
+
+       Guards terminalLocationId client-side before the NQ round-trip: the editor
+       cannot submit without one selected (the "+ Add mapping" button is disabled
+       until then), but a stale/blank selection previously fell through to
+       Location.TerminalPlcDevice_Save, whose @TerminalLocationId param has no
+       default -- Ignition surfaced that as the raw JDBC "Required parameter
+       missing.", not a message an operator could act on. Same shape as every
+       other status-row proc's rejection (Status 0 + a plain-English Message),
+       so the view's existing notifyResult(result) call renders it as a normal
+       toast with no view-side changes needed. 2026-08-20 incident."""
+    if not data.get("terminalLocationId"):
+        return {"Status": 0, "Message": "Select a terminal first."}
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     params = {
