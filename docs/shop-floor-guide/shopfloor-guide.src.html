@@ -29,6 +29,10 @@
         <div class="toc-grp">Miscellaneous</div>
         <a href="#downtime">Downtime</a>
         <a href="#holds">Holds</a>
+        <div class="toc-grp">Operator Guides</div>
+        <a href="#die-cast-guide">Die Cast Guide</a>
+        <a href="#trim-station-guide">Trim Station Guide</a>
+        <a href="#machining-guide">Machining Guide</a>
       </div>
     </details>
   </nav>
@@ -520,9 +524,457 @@
       </ol>
       <h3>Bulk Hold</h3>
       <p>You can also place multiple holds at once in the <code>Bulk Hold</code> area. The method is similar to placing a single hold. 
-        Just enter as many LOTs as you need, give a hold type, and then give a reason.</p>
+        Just enter as many lots as you need, give a hold type, and then give a reason.</p>
       <h3>Release Hold</h3>
       <p>In the <code>Release Hold</code> area, you can take a hold off of a LOT.</p>
+    </section>
+
+    <!-- ============ Die Cast Operator Guide ============ -->
+    <section id="die-cast-guide">
+      <h2>Die Cast Operator Guide</h2>
+      <p>The goal of this guide is to teach die cast operators how to properly use the terminal
+        to log die cast data. It is important that you follow every step correctly so that all data gets properly 
+        logged into the system.
+      </p>
+      
+      <h3>Login</h3>
+      <p>When using the terminal for the first time, you will be prompted to log in. Logging in 
+        requires just your initials. The account system isn't meant for security, so there is no 
+        password. Instead, it's meant to track which operator performed which actions.
+      </p>
+      <p> Enter your initials using either the on-screen keyboard or by typing it into the 
+        <code>scan or type initials...</code> field. If you don't have your initials stored 
+        already, you will be prompted to create a new user. If you do this, you will also need to
+        enter a display name.
+      </p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Screen</span></div>
+          <img src="shots/17_initial_entry.png" alt="Initials Entry">
+        </div>
+        <figcaption>This is the login screen. This will show up when your login expires or upon beginning your shift.
+        </figcaption>
+      </figure>
+
+      <h2>Die Cast Screen</h2>
+      <p class="lead">There are <b>3</b> tabs on this screen: Open Basket, Record Shift Output, and Lot release.
+      Clicking on them allows you to switch tabs. This guide will go over how to use all 3 of the tabs.</p>
+      <h3>Creating a basket in the Open Basket tab</h3>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Open Basket</span></div>
+          <img src="shots/02_die_cast_entry.png" alt="Die Cast Open Basket entry screen">
+        </div>
+        <figcaption>Open a basket on this screen.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>Pick a machine using the <b>Active Cell</b> dropdown.</li>
+        <li>Scan/Enter the LTT barcode.
+        </li>
+        <li>Set the item. The available items are based on the chosen machine.</li>
+        <li>Choose the cavity that the basket will be put into.
+        </li>
+        <li>Press <code>Open</code> to move the part into the cavity, or press <code>Clear</code> if you would like to start over.</li>
+      </ol>
+      
+
+      <h3>Recording Shots in the Record Shift Output tab</h3>
+      <p>Shots are recorded based on what shift they were made in. It is important to record any defects and how many 
+        have defects, if applicable. The total amount of shots this shift as well as scrapped shots are shown on the 
+        right-hand side.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Record Shift Output</span></div>
+          <img src="shots/03_die_cast_record.png" alt="Die Cast Record Shift Output Screen">
+        </div>
+        <figcaption>Example output being recorded. 12 shots are made, with 2 of them being recorded as faulty.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>Select your shift in the <code>Recording Shift</code> dropdown menu.</li>
+        <li>Enter the amount of shots that you want to record (applies to the whole die-cast).</li>
+        <li>Press <code>Compute/Preview</code>, which will then open a list with all of the cavities. You
+          may also see previous baskets that have gone through in this list (this is just for reference
+          and will not be affected).</li>
+        <li>For each cavity, record the amount of scrapped shots, including the reason for scrapping it.
+          You can have up to 6 reasons per cavity.
+        </li>
+        <li>Press <code>Submit Shift Output</code>, and you should see the right side update with the
+          correct shot amount.</li>
+      </ol>
+
+      <h3>Releasing LOTs from cavities in the LOT release tab</h3>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Lot Release</span></div>
+          <img src="shots/19_lot_release.png" alt="Die Cast Lot Release">
+        </div>
+        <figcaption>Open a basket on this screen.</figcaption>
+      </figure>
+      <p>Once the basket has been filled, you can release them in the lot Release tab. Here, all lots
+        will show up in a list. There are 2 options that can be pressed for each lot.</p>
+      <ul>
+        <li><code>Release</code>: Frees the lot from its cavity. This opens up the cavity again.
+        <li><code>Void</code>: Only shows up for empty lots. This will destroy the lot and stop it
+        from moving through its route</li>
+      </ul>
+
+      <h3>Downtime</h3>
+      <p class="lead">The <b>Downtimes</b> popup is where you can manage downtime for machines. You can start new downtimes, edit
+        downtimes, and add past downtimes. The Downtime menu can be accessed by pressing the blue <code>Downtime</code> button in the 
+        header. </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Screen</span></div>
+          <img src="shots/15_downtime.png" alt="Downtime">
+        </div>
+        <figcaption>
+        </figcaption>
+      </figure>
+      <p>Downtimes have 4 properties:</p>
+      <ul>
+        <li>Reason - Used to categorize the downtimes.
+        </li>
+        <li>Start Date &amp; End Date - Determines when the downtime will be effective. These can be set manually, or will 
+          automatically be set when the start/end buttons are pressed.
+        </li>
+        <li>Remarks - Optional extra information that can be added to explain the downtime.
+        </li>
+      </ul>
+      <p>Clicking <code>Start Downtime</code> will create a new downtime with the start date set to the current date. You 
+      can set a reason for the downtime later. On the list of downtimes, you can press <code>End</code> to end the downtime.
+      This will appear on the active downtime, and it will set the end date to the current date. </p>
+      
+      <p>Selecting <code>Edit</code> will allow you to edit the properties manually. Pressing <code>Void</code> will 
+        deprecate the downtime event.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Editor</span></div>
+          <img src="shots/21_downtime_edit.png" alt="Downtime Editor">
+        </div>
+        <figcaption>Edit the 4 properties of a downtime (reason, start date, end date, and remarks) here.
+        </figcaption>
+      </figure>
+      <p>Downtimes are also organized by shifts. At the top of the Downtime popup there is a dropdown where you can change 
+        the shift. If you want to record a previous downtime event on an earlier shift, that can be achieved by selecting the 
+        shift you want to record downtime for and pressing <code>Add Past Event</code>.
+      </p>
+
+      <h3>Changing who is logged in</h3>
+      <p>Pressing your display name near the header will prompt the login screen again if you would like to switch 
+        users.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Login change button</span></div>
+          <img src="shots/18_login_change.png" alt="Login Change">
+        </div>
+        <figcaption>
+        </figcaption>
+      </figure>
+      <p>You can also press the <code>Reset Terminal</code> button in the top-right corner to log out the current 
+      user.</p>
+    </section>
+
+    <!-- ============ TRIM STATION GUIDE ============ -->
+    <section id="trim-station-guide">
+      <h2>Trim Station Guide</h2>
+      <p class="lead">This guide is meant for operators who will use the Trim Station screen.
+        It is important that you follow every step correctly so that all data gets properly 
+        logged into the system.
+      </p>
+
+      <h3>Login</h3>
+      <p>When using the terminal for the first time, you will be prompted to log in. Logging in 
+        requires just your initials. The account system isn't meant for security, so there is no 
+        password. Instead, it's meant to track which operator performed which actions.
+      </p>
+      <p> Enter your initials using either the on-screen keyboard or by typing it into the 
+        <code>scan or type initials...</code> field. If you don't have your initials stored 
+        already, you will be prompted to create a new user. If you do this, you will also need to
+        enter a display name.
+      </p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Screen</span></div>
+          <img src="shots/17_initial_entry.png" alt="Initials Entry">
+        </div>
+        <figcaption>This is the login screen. This will show up when your login expires or upon beginning your shift.
+        </figcaption>
+      </figure>
+
+      <h3>How to navigate the Trim Station Screen</h3>
+      <p>Using the Trim Station screen is simple. You scan in a lot, and then move it 
+        into Trim. Once it's ready to move out of trim, you record that in the Trim OUT tab.
+      </p>
+      
+      <p>Start by scanning/typing in the LTT Barcode found on the LOT. Once this
+        has been done, you should see the info for the box pop up. The lot will display whether or not
+        it is eligbile for Trim.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Trim Check IN screen</span></div>
+          <img src="shots/04_trim.png" alt="Trim Check IN screen">
+        </div>
+        <figcaption>Switch between <b>Check IN</b> and <b>Trim OUT</b> by pressing
+          the 2 buttons near the top of the screen.</figcaption>
+      </figure>
+      <p>In the <code>Trim OUT</code> tab, you will see all lots that are in Trim.</p>
+
+      <h3>Checking a lot out of Trim</h3>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Trim Check IN screen</span></div>
+          <img src="shots/20_trim_out.png" alt="Trim OUT screen">
+        </div>
+        <figcaption></figcaption>
+      </figure>
+      <ol class="steps">
+        <li>Select a lot from the list or enter one with the barcode.</li>
+        <li>add scrap reasons, if applicable. Press a scrap reason to increment it by one. 
+          Press <code>More Reasons</code> to show all available reasons for scrapping.
+        </li>
+        <li>This is the list of all the scrapped parts and reasons. You can delete them here by
+          pressing the X button, or increment/decrement them if needed.
+        </li>
+        <li>Press <code>Trim OUT</code> to move the lot out of Trim.</li>
+      </ol>
+
+      <h3>Downtime</h3>
+      <p class="lead">The <b>Downtimes</b> popup is where you can manage downtime for machines. You can start new downtimes, edit
+        downtimes, and add past downtimes. The Downtime menu can be accessed by pressing the blue <code>Downtime</code> button in the 
+        header. </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Screen</span></div>
+          <img src="shots/15_downtime.png" alt="Downtime">
+        </div>
+        <figcaption>
+        </figcaption>
+      </figure>
+      <p>Downtimes have 4 properties:</p>
+      <ul>
+        <li>Reason - Used to categorize the downtimes.
+        </li>
+        <li>Start Date &amp; End Date - Determines when the downtime will be effective. These can be set manually, or will 
+          automatically be set when the start/end buttons are pressed.
+        </li>
+        <li>Remarks - Optional extra information that can be added to explain the downtime.
+        </li>
+      </ul>
+      <p>Clicking <code>Start Downtime</code> will create a new downtime with the start date set to the current date. You 
+      can set a reason for the downtime later. On the list of downtimes, you can press <code>End</code> to end the downtime.
+      This will appear on the active downtime, and it will set the end date to the current date. </p>
+      
+      <p>Selecting <code>Edit</code> will allow you to edit the properties manually. Pressing <code>Void</code> will 
+        deprecate the downtime event.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Editor</span></div>
+          <img src="shots/21_downtime_edit.png" alt="Downtime Editor">
+        </div>
+        <figcaption>Edit the 4 properties of a downtime (reason, start date, end date, and remarks) here.
+        </figcaption>
+      </figure>
+      <p>Downtimes are also organized by shifts. At the top of the Downtime popup there is a dropdown where you can change 
+        the shift. If you want to record a previous downtime event on an earlier shift, that can be achieved by selecting the 
+        shift you want to record downtime for and pressing <code>Add Past Event</code>.
+      </p>
+
+      <h3>Changing who is logged in</h3>
+      <p>Pressing your display name near the header will prompt the login screen again if you would like to switch 
+        users.
+      </p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Login change button</span></div>
+          <img src="shots/18_login_change.png" alt="Login Change">
+        </div>
+        <figcaption>
+        </figcaption>
+      </figure>
+      <p>You can also press the <code>Reset Terminal</code> button in the top-right corner to log out the current 
+      user.</p>
+    </section>
+
+    <section id="machining-guide">
+      <h2>Machining &amp; Assemby Screen Guide</h2>
+      <p class="lead">This guide is meant for operators who will use any of the Machining or 
+        Assembly terminals. It is important that you follow every step correctly so that all 
+        data gets properly logged into the system. Below will show the login information, which 
+        is applicable to all terminals.</p>
+
+      <h3>Login</h3>
+      <p>When using the terminal for the first time, you will be prompted to log in. Logging in 
+        requires just your initials. The account system isn't meant for security, so there is no 
+        password. Instead, it's meant to track which operator performed which actions.
+      </p>
+      <p> Enter your initials using either the on-screen keyboard or by typing it into the 
+        <code>scan or type initials...</code> field. If you don't have your initials stored 
+        already, you will be prompted to create a new user. If you do this, you will also need to
+        enter a display name.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Screen</span></div>
+          <img src="shots/17_initial_entry.png" alt="Initials Entry">
+        </div>
+        <figcaption>This is the login screen. This will show up when your login expires or upon beginning your shift.
+        </figcaption>
+      </figure>
+
+      <h3>Screen hyperlinks (press the one that you would like to go to)</h3>
+      <ul>
+        <li><a href="#guide-machining-in">Machining IN</a></li>
+        <li><a href="#guide-machining-out">Machining OUT</a></li>
+        <li><a href="#guide-assembly-in">Assembly IN</a></li>
+        <li><a href="#guide-assembly-nonser">Assembly Non-Serialized Line</a></li>
+        <li><a href="#guide-assembly-ser">Assembly Serialized Line</a></li>
+      </ul>
+
+      <h2 id="guide-machining-in">Machining IN</h3>
+      <p class="lead">Lots here are in a FIFO queue, meaning they are sorted from oldest to newest.
+        However, you can pick any of them to go into Machining In. Just pick the lot, and confirm that
+        you would like to start machining it.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Machining IN screen</span></div>
+          <img src="shots/05_machining_in.png" alt="Machining IN screen">
+        </div>
+        <figcaption></figcaption>
+      </figure>
+      <p>Lots that are finished machining will move into the <b>Inventory</b>. You can view the inventory by 
+        pressing the <code>Inventory</code> button. All active machined LOTs will be visible here.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Inventory</span></div>
+          <img src="shots/22_inventory.png" alt="Inventory screen">
+        </div>
+        <figcaption></figcaption>
+      </figure>
+      <p>Lots can also be added to Machining from here if they are not available from the FIFO queue.
+        You can also add loose parts that are not part of a lot.
+      </p>
+      <p>To learn about how to create/edit downtimes, go to <a href="#guide-downtime">Downtimes</a></p>
+
+
+      <h2 id="guide-machining-out">Machining OUT</h2>
+      <p class="lead">Lots come here after going through Machining IN. Like Machining IN, this screen also uses a FIFO queue.</p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Machining OUT screen</span></div>
+          <img src="shots/06_machining_out.png" alt="Machining OUT screen">
+        </div>
+        <figcaption></figcaption>
+      </figure>
+
+      <p>Start by selecting the lot you want to extract from. You can extract less than the total amount of pieces to create 
+        a sub-lot. If extract more from the lot than what the lot has, it will take from the next available lot. 
+        You can continue to do this until the amount of parents in the original LOT goes to 0. Any empty lots will automatically
+        be removed from the list.
+      </p>
+      <p>To learn about how to create/edit downtimes, go to <a href="#guide-downtime">Downtimes</a></p>
+
+      <h2 id="guide-assembly-in">Assembly IN</h2>
+      <p class="lead">Lots can be scanned in here to be moved into assembly. The list will populate with any available lots.</p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Assembly IN Screen</span></div>
+          <img src="shots/16_assembly_in.png" alt="Assembly IN screen">
+        </div>
+        <figcaption></figcaption>
+      </figure>
+    </section>
+
+      <h3 id="guide-downtime">Downtime</h3>
+      <p class="lead">The <b>Downtimes</b> popup is where you can manage downtime for machines. You can start new downtimes, edit
+        downtimes, and add past downtimes. The Downtime menu can be accessed by pressing the blue <code>Downtime</code> button in the 
+        header.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Screen</span></div>
+          <img src="shots/15_downtime.png" alt="Downtime">
+        </div>
+        <figcaption>
+        </figcaption>
+      </figure>
+      <p>Downtimes have 4 properties:</p>
+      <ul>
+        <li>Reason - Used to categorize the downtimes.
+        </li>
+        <li>Start Date &amp; End Date - Determines when the downtime will be effective. These can be set manually, or will 
+          automatically be set when the start/end buttons are pressed.
+        </li>
+        <li>Remarks - Optional extra information that can be added to explain the downtime.
+        </li>
+      </ul>
+      <p>Clicking <code>Start Downtime</code> will create a new downtime with the start date set to the current date. You 
+        can set a reason for the downtime later. On the list of downtimes, you can press <code>End</code> to end the downtime.
+        This will appear on the active downtime, and it will set the end date to the current date.
+      </p>
+      
+      <p>Selecting <code>Edit</code> will allow you to edit the properties manually. Pressing <code>Void</code> will 
+        deprecate the downtime event.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Editor</span></div>
+          <img src="shots/21_downtime_edit.png" alt="Downtime Editor">
+        </div>
+        <figcaption>Edit the 4 properties of a downtime (reason, start date, end date, and remarks) here.
+        </figcaption>
+      </figure>
+      <p>Downtimes are also organized by shifts. At the top of the Downtime popup there is a dropdown where you can change 
+        the shift. If you want to record a previous downtime event on an earlier shift, that can be achieved by selecting the 
+        shift you want to record downtime for and pressing <code>Add Past Event</code>.
+      </p>
+
+      <h3>Changing who is logged in</h3>
+      <p>Pressing your display name near the header will prompt the login screen again if you would like to switch 
+        users.
+      </p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Login change button</span></div>
+          <img src="shots/18_login_change.png" alt="Login Change">
+        </div>
+        <figcaption>
+        </figcaption>
+      </figure>
+      <p>You can also press the <code>Reset Terminal</code> button in the top-right corner to log out the current 
+      user.</p>
+
     </section>
 
     <div class="footer">
