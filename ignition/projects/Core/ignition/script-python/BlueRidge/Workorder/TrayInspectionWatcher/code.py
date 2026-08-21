@@ -28,8 +28,17 @@ def handleEdge(instancePath, terminalLocationId, member):
 
 
 def _expectedPlcId(terminalLocationId):
-    """(frontLot, expectedPlcId) for the assembly-out FIFO front, or (None, None)."""
-    q = BlueRidge.Lots.Lot.getWipQueueByLocation(terminalLocationId, includeDescendants=True)
+    """(frontLot, expectedPlcId) for the assembly-out FIFO front, or (None, None).
+       LOTs physically reside at the terminal's ZONE cell (Terminal_List.ZoneId),
+       never at the Terminal Location itself -- resolve that first (mirrors
+       Assembly.resolvePlcCloseContext) before querying the WIP queue. Querying by
+       the raw terminalLocationId always returned empty (the zone is the
+       terminal's PARENT, not a descendant), so no tray ever closed."""
+    term = BlueRidge.Location.Terminal.findById(BlueRidge.Location.Terminal.listAll(), terminalLocationId)
+    cellLocationId = (term or {}).get("ZoneId")
+    if cellLocationId is None:
+        return (None, None)
+    q = BlueRidge.Lots.Lot.getWipQueueByLocation(cellLocationId, includeDescendants=True)
     if not q:
         return (None, None)
     front = q[0]
@@ -41,6 +50,14 @@ def _expectedPlcId(terminalLocationId):
 def _onTrayLocked(instancePath, terminalLocationId):
     W = BlueRidge.Workorder.PlcWatcher
     device = instancePath.rsplit("/", 1)[-1]
+    # Ack the trigger immediately (mirrors ScaleWatcher/NonSerializedMipWatcher/
+    # SerializedMipWatcher -- every other watcher resets its trigger member back
+    # to False as part of handling the edge). This watcher never did, so the
+    # member latched True after the FIRST tray/inspection and every subsequent
+    # pulse (write True again) was never seen as a rising edge again -- a
+    # one-shot-then-permanently-silent device, easy to mistake for "nothing
+    # happened" on click N+1 (2026-08-20, found practicing ByVision closures).
+    W.writeMember(instancePath, "TrayLocked", False)
     front, plcId = _expectedPlcId(terminalLocationId)
     if front is None:
         W.logInterface(device, "Tray locked (no active LOT)",
@@ -65,6 +82,8 @@ def _onTrayLocked(instancePath, terminalLocationId):
 def _onInspectionComplete(instancePath, terminalLocationId):
     W = BlueRidge.Workorder.PlcWatcher
     device = instancePath.rsplit("/", 1)[-1]
+    # Ack the trigger immediately (see _onTrayLocked) -- same one-shot latch bug.
+    W.writeMember(instancePath, "InspectionComplete", False)
     front, expected = _expectedPlcId(terminalLocationId)
     vision = W.readMember(instancePath, "VisionPartNumber")
 
