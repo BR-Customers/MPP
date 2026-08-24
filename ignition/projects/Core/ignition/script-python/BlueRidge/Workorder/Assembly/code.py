@@ -53,7 +53,19 @@ def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocatio
        the FG LOT via completeTray. closureMethod is the terminal's active mode
        (session.custom.closureMethod) - it selects the part's per-method ContainerConfig
        and is REQUIRED by the proc. Returns the completeTray result dict, or a Status-0
-       dict on a validation miss (surfaced by notifyResult)."""
+       dict on a validation miss (surfaced by notifyResult).
+
+       Backlog: "for a by-count completion, if the tray count is one tray per
+       container it should also complete the container so they don't have to
+       complete the tray and then the container." When ContainerFull and
+       TraysPerContainer == 1 there is no ambiguity -- the tray the operator just
+       closed IS the whole container, so this auto-chains into
+       Lots.Container.complete the same way plcCompleteTray already does for
+       ByWeight/ByVision (operatorConfirmed=True: the operator DID just take an
+       explicit action, unlike the PLC path's plcCompletionConfirmed). Any
+       TraysPerContainer > 1 still requires the separate manual Complete button
+       (the container-24 incident this proc's header documents is exactly why a
+       multi-tray container is never auto-completed here)."""
     cnt = BlueRidge.Common.Util.toIntOrNone(draft.get("partsCount")) if draft else None
     closureMethod = BlueRidge.Common.Util.extractQualifiedValues(closureMethod)
     if container and container.get("Id") is not None:
@@ -66,8 +78,15 @@ def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocatio
         return {"Status": False, "Message": "Enter the parts count for the tray."}
     if not closureMethod:
         return {"Status": False, "Message": "No closure mode set for this terminal."}
-    return completeTray(fgItem, cnt, cellLocationId, closureMethod=closureMethod,
-                        terminalLocationId=cellLocationId)
+    result = completeTray(fgItem, cnt, cellLocationId, closureMethod=closureMethod,
+                          terminalLocationId=cellLocationId)
+    if (result and result.get("Status") and result.get("ContainerFull")
+            and result.get("ContainerId") is not None and result.get("TraysPerContainer") == 1):
+        result["ContainerComplete"] = BlueRidge.Lots.Container.complete(
+            result.get("ContainerId"), operatorConfirmed=True, terminalLocationId=cellLocationId)
+    if result and result.get("Status"):
+        warnLowInventory(cellLocationId, fgItem, closureMethod)
+    return result
 
 
 def resolvePlcCloseContext(terminalLocationId, closureMethod):
@@ -139,6 +158,52 @@ def notifyInventoryChanged(cellLocationId, terminalLocationId):
     BlueRidge.Workorder.PlcWatcher.broadcastPageMessage("inventoryChanged", payload)
 
 
+def warnLowInventory(cellLocationId, finishedGoodItemId, closureMethod):
+    """Backlog: "when an inventory is low, all terminals on the line should get a
+       warning." Called after a tray close (both the operator ByCount path and
+       plcCompleteTray) to re-check the SAME IsLow flag already computed for the
+       Assembly OUT sidebar (Workorder.Assembly_GetComponentProjection -- on-hand
+       vs what is still needed to finish the CURRENT container), and if anything
+       is low, broadcast a 'lowInventoryWarning' toast to every terminal on the
+       same line (Location.Terminal_ListByLineOf: every Terminal sharing the
+       triggering cell's ancestor WorkCenter), not just the terminal that
+       happened to close the tray.
+
+       v1 fires every time IsLow is true after a close, not only on the
+       false->true transition -- simple, and a repeated non-blocking toast while
+       genuinely low is a lesser risk than a missed one; revisit with session-level
+       dedup if it proves noisy in practice.
+
+       Best-effort, mirrors notifyInventoryChanged: never raises into the
+       completion path, enumerates every open session/page (GATEWAY-scope
+       sendMessage has no "current session" to default to), and terminals with no
+       'lowInventoryWarning' handler simply ignore it."""
+    try:
+        rows = getComponentProjection(cellLocationId, finishedGoodItemId, closureMethod) or []
+        low = [r for r in rows if r.get("IsLow")]
+        if not low:
+            return
+        terminalIds = [t.get("TerminalLocationId") for t in
+                      (BlueRidge.Location.Terminal.listByLineOf(cellLocationId) or [])]
+        if not terminalIds:
+            return
+        parts = [r.get("PartNumber") or r.get("ItemPartNumber") or "?" for r in low]
+        payload = {"terminalIds": terminalIds, "cellLocationId": cellLocationId, "parts": parts}
+        for s in (system.perspective.getSessionInfo() or []):
+            sid = s["id"]
+            for pid in (s["pageIds"] or []):
+                try:
+                    system.perspective.sendMessage(
+                        "lowInventoryWarning", payload=payload,
+                        scope="page", sessionId=sid, pageId=pid)
+                except (Exception, java.lang.Exception) as e:
+                    BlueRidge.Common.Util.log(
+                        "warnLowInventory send failed sid=%s pid=%s: %s"
+                        % (sid, pid, e), level="warn")
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("warnLowInventory failed: %s" % e, level="warn")
+
+
 def plcCompleteTray(terminalLocationId, closureMethod):
     """Shared PLC-triggered tray close for ByWeight / ByVision. Resolves the close
        context headlessly, then mints the FG LOT + consumes BOM via the SAME
@@ -163,6 +228,7 @@ def plcCompleteTray(terminalLocationId, closureMethod):
     # unless we push). Best-effort; only fires on a real close.
     if result and result.get("Status"):
         notifyInventoryChanged(ctx.get("cellLocationId"), terminalLocationId)
+        warnLowInventory(ctx.get("cellLocationId"), ctx.get("finishedGoodItemId"), closureMethod)
     return result
 
 

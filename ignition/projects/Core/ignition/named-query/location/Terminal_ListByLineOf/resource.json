@@ -3,7 +3,9 @@
   "version": 2,
   "restricted": false,
   "overridable": true,
-  "files": [ "query.sql" ],
+  "files": [
+    "query.sql"
+  ],
   "attributes": {
     "useMaxReturnSize": false,
     "autoBatchEnabled": false,
@@ -17,12 +19,18 @@
     "database": "MPP",
     "fallbackEnabled": false,
     "lastModificationSignature": "",
-    "permissions": [ { "zone": "", "role": "" } ],
-    "lastModification": { "actor": "claude", "timestamp": "2026-08-20T22:00:00Z" },
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-08-20T15:00:00Z"
+    },
     "parameters": [
-      { "type": "Parameter", "identifier": "locationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "finishedGoodItemId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "closureMethod", "sqlType": 7 }
+      { "type": "Parameter", "identifier": "locationId", "sqlType": 3 }
     ]
   }
 }

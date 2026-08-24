@@ -462,6 +462,13 @@
           "script": "\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tif p.get(\"success\"):\n\t\tBlueRidge.Common.Session.beginElevatedWindow(self.session, p)\n\t\tpend \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.pendingElevatedAction)\n\t\tif pend:\n\t\t\tBlueRidge.Common.Session.dispatchElevatedAction(self.session, pend.get(\"code\"), pend.get(\"params\"))\n\tself.session.custom.pendingElevatedAction \u003d None",
           "sessionScope": false,
           "viewScope": false
+        },
+        {
+          "messageType": "lowInventoryWarning",
+          "pageScope": true,
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tmyTid = None\n\ttry:\n\t\tmyTid = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tmyTid = None\n\tif myTid is not None and myTid in (p.get(\"terminalIds\") or []):\n\t\tparts = p.get(\"parts\") or []\n\t\tpartsStr = \", \".join([str(x) for x in parts]) if parts else \"components\"\n\t\tBlueRidge.Common.Notify.toast(\"Low inventory\", partsStr + \" running low on this line.\", \"warning\")",
+          "sessionScope": false,
+          "viewScope": false
         }
       ]
     },

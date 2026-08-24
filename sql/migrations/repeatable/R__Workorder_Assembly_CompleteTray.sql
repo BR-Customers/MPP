@@ -1,6 +1,14 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_CompleteTray.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.3 (2026-08-20) - result set now also returns @TraysPerContainer.
+--              Additive only (no behavior change here): lets the ByCount caller
+--              (BlueRidge.Workorder.Assembly.handleTrayComplete) decide whether a
+--              1-tray-per-container config should auto-chain into
+--              Lots.Container.complete the same way plcCompleteTray already does
+--              for ByWeight/ByVision, without a second manual "Complete" click --
+--              this proc still does NOT complete the container itself (unchanged
+--              delegation, see "WHY EVERY SUB-MUTATION IS INLINED" below).
 -- Version:     1.2 (2026-08-20, part-scoped CRT) - the FG LOT is now stamped with
 --              Lots.Lot.CrtActive at mint. The inlined terminal-attribute lookup that
 --              used to answer this question is DELETED; the decision is resolved in
@@ -494,13 +502,15 @@ BEGIN
         END CATCH
 
         SELECT @Status AS Status, @Message AS Message, @FinishedGoodLotId AS FinishedGoodLotId,
-               @ContainerId AS ContainerId, @ContainerTrayId AS ContainerTrayId, @ContainerFull AS ContainerFull;
+               @ContainerId AS ContainerId, @ContainerTrayId AS ContainerTrayId, @ContainerFull AS ContainerFull,
+               @TraysPerContainer AS TraysPerContainer;
         RAISERROR(@ErrMsg, @ErrSev, @ErrState);
         RETURN;
     END CATCH
 
 Reply:
     SELECT @Status AS Status, @Message AS Message, @FinishedGoodLotId AS FinishedGoodLotId,
-           @ContainerId AS ContainerId, @ContainerTrayId AS ContainerTrayId, @ContainerFull AS ContainerFull;
+           @ContainerId AS ContainerId, @ContainerTrayId AS ContainerTrayId, @ContainerFull AS ContainerFull,
+           @TraysPerContainer AS TraysPerContainer;
 END;
 GO
