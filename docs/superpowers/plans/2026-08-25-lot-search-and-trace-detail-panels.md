@@ -1157,6 +1157,14 @@ powershell -File scan.ps1
 
 Expected: completes without error. A 403 means the POST is missing `Content-Type: application/json` or `X-Ignition-API-Token`; a 401 means a bad token.
 
+- [ ] **Step 3b: Apply the new procs to the `MPP` connection's database**
+
+**The plan originally omitted this and it is required.** Named queries execute against the `MPP` connection (`MPP_MES_Dev`), not the throwaway test database, so a scan alone leaves every new NQ pointing at a proc that does not exist there. `R__` files are `CREATE OR ALTER`, so applying them is non-destructive — do **not** reset Dev (it carries hand-built parts data):
+
+```bash
+cd sql/migrations/repeatable && for f in R__Lots_Lot_SearchAdvanced.sql R__Lots_SerializedPart_GetTraceDetail.sql R__Lots_Container_GetTraceDetail.sql R__Lots_Container_ListSerials.sql R__Quality_Hold_ListByContainer.sql; do sqlcmd -S localhost -d MPP_MES_Dev -C -b -I -i "$f"; done
+```
+
 - [ ] **Step 4: Verify each query resolves**
 
 In the Designer script console:
