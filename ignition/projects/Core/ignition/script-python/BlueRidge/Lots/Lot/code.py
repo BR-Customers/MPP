@@ -1103,3 +1103,101 @@ def exportCsv(rows):
     BlueRidge.Common.Util.log("exportCsv rows=%d" % len(rows))
     ds = system.dataset.toDataSet(rows)
     system.perspective.download("lot-search.csv", system.dataset.toCSV(ds))
+
+
+# ---------------------------------------------------------------------------
+# FDS-12-004 filter-bar option sources
+#
+# Sited here beside getStatusOptions / getOriginOptions, which already back this
+# same view's filter bar. Every one returns STRICT [{label, value}] -- the
+# dropdown component silently misbehaves when option dicts carry extra keys, so
+# helpers that return richer rows (e.g. Location.getCellsForDropdown, which adds
+# code/name) are re-shaped here rather than bound directly.
+# ---------------------------------------------------------------------------
+
+def _labelValue(rows, labelKey, valueKey="Id", fallbackKey=None):
+    """Re-shape read rows into strict [{label, value}] dropdown options."""
+    out = []
+    for r in (rows or []):
+        label = r.get(labelKey)
+        if not label and fallbackKey:
+            label = r.get(fallbackKey)
+        value = r.get(valueKey)
+        if value is None:
+            continue
+        out.append({"label": ("%s" % (label if label is not None else value)), "value": value})
+    return out
+
+
+def getPartOptions(_refreshToken=None):
+    """[{label: PartNumber, value: ItemId}] for the Part filter."""
+    return BlueRidge.Parts.Item.getForDropdown() or []
+
+
+def getDieOptions(_refreshToken=None):
+    """[{label: Tool Code, value: ToolId}] for the Die filter. Built off the
+       Tool list read; deprecated tools are dropped."""
+    rows = BlueRidge.Parts.Tool.getAllForList("", "All") or []
+    return [{"label": r.get("code"), "value": r.get("id")}
+            for r in rows if not r.get("deprecated") and r.get("id") is not None]
+
+
+def getCavityOptions(toolId=None, _refreshToken=None):
+    """[{label, value}] cavities for the selected Die. Empty until a Die is
+       chosen -- cavity is only meaningful within a tool."""
+    toolId = _u(toolId)
+    if toolId is None:
+        return []
+    return BlueRidge.Parts.Tool.getCavitiesForDropdown(toolId) or []
+
+
+def getLocationOptions(_refreshToken=None):
+    """[{label: '<Code> - <Name>', value: LocationId}] across the Area,
+       WorkCenter and Cell tiers -- the LOT-location filter is descendant
+       inclusive, so an Area selection is meaningful, not just a Cell."""
+    out = []
+    for tier in ("Area", "WorkCenter", "Cell"):
+        for r in (BlueRidge.Location.Location.listByTier(tier) or []):
+            if r.get("DeprecatedAt") is not None or r.get("Id") is None:
+                continue
+            code = r.get("Code") or ""
+            name = r.get("Name") or ""
+            label = ("%s - %s" % (code, name)) if code and name else (code or name)
+            out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
+def getMachineOptions(_refreshToken=None):
+    """[{label, value}] Cell-tier locations for the origin-machine (press)
+       filter. Machine resolves through DieCastContribution.CellLocationId, so
+       the candidate set is Cells."""
+    rows = BlueRidge.Location.Location.listByTier("Cell") or []
+    out = []
+    for r in rows:
+        if r.get("DeprecatedAt") is not None or r.get("Id") is None:
+            continue
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        label = ("%s - %s" % (code, name)) if code and name else (code or name)
+        out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
+def getShiftOptions(_refreshToken=None):
+    """[{label: 'ScheduleName - MM/dd', value: ShiftId}] for the Shift filter.
+
+       Broader than Oee.Shift.getRecentOptions, which caps at the three most
+       recent instances for die-cast entry -- a search filter needs history."""
+    rows = BlueRidge.Oee.Shift.listRecent() or []
+    out = []
+    for r in rows:
+        sid = r.get("Id")
+        if sid is None:
+            continue
+        start = r.get("ActualStart")
+        try:
+            day = system.date.format(start, "MM/dd") if start is not None else "?"
+        except (Exception,):
+            day = ("%s" % start)[:10]
+        out.append({"label": "%s - %s" % (r.get("ScheduleName") or "Shift", day), "value": sid})
+    return out
