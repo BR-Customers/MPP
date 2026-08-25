@@ -220,6 +220,7 @@
         <div class="toc-grp">Operations</div>
         <a href="#downtime-codes">Downtime Codes</a>
         <a href="#shift-schedules">Shift Schedules</a>
+        <a href="#shift-overrides">Shift Overrides</a>
         <div class="toc-grp">System</div>
         <a href="#users">Users</a>
         <a href="#audit-log">Audit Log</a>
@@ -240,7 +241,7 @@
       <div class="meta">
         <span class="tag">Prepared by <b>Blue Ridge Automation</b></span>
         <span class="tag"><b>14</b> configuration screens</span>
-        <span class="tag">Draft <b>v0.2</b> · 2026-07-29</span>
+        <span class="tag">Draft <b>v0.3</b> · 2026-08-25</span>
       </div>
     </header>
 
@@ -249,8 +250,8 @@
       <h2>How to navigate the Configuration Tool</h2>
       <p class="lead">Every screen in the Configuration Tool is reached from the five
         category tabs in the far-left rail. Those are the <b>Plant</b>, <b>Parts</b>, <b>Quality</b>,
-        <b>Ops</b>, and <b>System</b> tabs. Selecting a category brings up its sub-header. These items tabs
-        in the sub-header are pages that you can select.</p>
+        <b>Ops</b>, and <b>System</b> tabs. Selecting a category expands its list of pages
+        beneath the rail; clicking one of those opens the page.</p>
 
       <div class="cards">
         <div class="card">
@@ -263,7 +264,7 @@
           <h4><span class="k">2</span>Parts</h4>
           <p>Contains <b>Item Master</b>, <b>Operation Templates</b>, 
           and <b>Tools</b>. This is where parts and their routes are managed. Operation Templates are where you configure
-          a step of a route. Tools & Dies and their attributes are defined here. </p>
+          a step of a route. Tools and dies and their attributes are defined here.</p>
         </div>
         <div class="card">
           <h4><span class="k">3</span>Quality</h4>
@@ -273,7 +274,8 @@
         <div class="card">
           <h4><span class="k">4</span>Ops</h4>
           <p>Contains <b>Downtime Codes</b> and <b>Shift Schedules</b>. Downtime Codes are for classifying why a machine
-          or line stopped. Shift Schedules are the shifts that operators take when running the plant.</p>
+          or line stopped. Shift Schedules are the shifts that operators work when running the plant.
+          <b>Shift Overrides</b> adjust a single shift on a single day for one piece of equipment.</p>
         </div>
         <div class="card">
           <h4><span class="k">5</span>System</h4>
@@ -283,7 +285,7 @@
         </div>
       </div>
 
-      <div class="note"><span class="ic">i</span><div>On the top-right of the screeb, there is the <code>Sign In</code> button,
+      <div class="note"><span class="ic">i</span><div>At the top right of the screen is the <code>Sign In</code> button,
         which elevates you for protected actions via Active Directory. Routine configuration is done as the signed-in operator.</div></div>
     </section>
 
@@ -318,18 +320,17 @@
         <figcaption>The UI has been divided into numbered rectangles. The description for each part of the UI can be found below.</figcaption>
       </figure>
 
-      <h4>1. The Location Tree</h3>
+      <h4>1. The Location Tree</h4>
       <p>This is how all of the locations are organized. Some locations have a right-pointing arrow to the right of them. This can be clicked on to expand
-      the location and reveal its children. The arrow can be clicked again to collapse it. Whenever the text of the location is selected, it becomes 
-      selected and its information is shown on the right. Above the tree is the <b>search input</b>, which filters the locations to the text that input there.
-      When the tree is being filtered, the locations will not show its children.
+      the location and reveal its children. The arrow can be clicked again to collapse it. Clicking a location’s name selects it, and its
+      information is shown on the right. Above the tree is the <b>search input</b>, which filters the tree to locations matching the text you type.
+      While a filter is active, the matching locations are listed flat — their children are not shown.
       </p>
       <h4>2. Add Location Button</h4>
-      <p>Clicking this button will create a new location. It will be place in the hierarchy as a child of whatever location you currently have selected
-      when pressing the button. Keep in mind that while it's sort order can be moved around, it's parent cannot be changed.</p>
+      <p>Clicking this button will create a new location. It is placed in the hierarchy as a child of whichever location is selected
+      when you press the button. Keep in mind that while its sort order can be changed, its parent cannot.</p>
       <h4>3. Location Details</h4>
-      <p>This is the main substance of the page. The location details will be filled in based on what location is selected in the tree. By selected a detail,
-      it can be changed. At the top there are the <b>Cancel</b>, <b>Save</b>, and <b>Deprecate</b> buttons. </p>
+      <p>This is the main substance of the page. The details shown are those of the location selected in the tree. Click a field to edit it. At the top there are the <b>Cancel</b>, <b>Save</b>, and <b>Deprecate</b> buttons. </p>
       <ul>
         <li>The <b>Cancel</b> button will discard all changes that have been made before the last save. </li>
         <li>The <b>Save</b> button will save all of the changes that have been made, allowing you to freely change locations again.</li>
@@ -356,8 +357,8 @@
           Cast area to add a machine, or a line to add a terminal).</li>
         <li>Click <code>+ Add Location</code>. A <b>(new Location)</b> node appears under the
           parent and the editor switches to a blank form.</li>
-        <li>Pick a <b>Type</b>, then a <b>Definition</b>. Selecting a Type changes the available
-        Definition. The definition will provide the attributes below.
+        <li>Pick a <b>Type</b>, then a <b>Definition</b>. The Type you choose determines which
+          Definitions are available, and the Definition supplies the attributes listed below.</li>
         <li>Enter <b>Name</b> and <b>Code</b>. Names carry meaning in this system (they drive
           role and default screen), so name deliberately; the Code is the stable identifier.</li>
         <li>Set <b>Sort Order</b> to position it among its siblings, fill any required
@@ -367,7 +368,7 @@
       <h3>Configuring a terminal</h3>
       <p>A terminal is a shop-floor station. Its <b>Attributes</b> (the Terminal schema) are what
         make the physical station behave correctly. It controls which screen it boots into, which printer and
-        scanner it uses, and how it closes out work. Getting these right is essential; An
+        scanner it uses, and how it closes out work. Getting these right is essential: an
         unconfigured terminal falls back to plant-wide defaults and misbehaves on the floor.</p>
 
       <figure class="shot">
@@ -494,10 +495,10 @@
           or click <code>+ Add</code> to create a new definition.</li>
         <li>Set the <b>Name</b>, an <b>Icon</b> (<code>Pick…</code>) and an optional description.
           The <b>Code</b> is the stable identifier and can't be changed later.</li>
-        <li>If needed <b>Attribute Definitions</b>, click <code>+ Add Attribute</code> and set the
+        <li>Under <b>Attribute Definitions</b>, click <code>+ Add Attribute</code> and set the
           attribute's <b>name</b>, <b>data type</b> (NVARCHAR / BIT / INT / DECIMAL), <b>required</b>
-          flag, <b>default</b> and <b>UOM</b>. Reorder with the arrows.</li> These are the attributes
-          that show up when creating a location under this code.
+          flag, <b>default</b> and <b>UOM</b>. Reorder with the arrows. These are the attributes that
+          appear when you create a location under this definition.</li>
         <li>Click <code>Save</code>. Every existing and future location of this type immediately
           exposes the field in its Attributes grid.</li>
       </ol>
@@ -566,17 +567,22 @@
       <p>Contains some generic configurable details of the item.</p>
       <ul>
         <li><b>Part Number</b> and <b>Item Type</b> categorize the part. They are set when the part is created and can't be changed later.</li>
-        <li><b>UOM</b>, or <b>Unit of Measurement</b>, defines the measurement used to test with Quality Specs.</li>
+        <li><b>UOM</b>, or <b>Unit of Measure</b>, is the counting unit for the part (for example <span class="mono">EA</span>).
+          It is what piece counts and BOM quantities are expressed in. Measurement units for quality checks are set per
+          attribute on the <a href="#quality-specs">Quality Spec</a>, not here.</li>
         <li><b>Description</b> gives the user more detail on the part to better identify it.</li>
         <li><b>Macola Part #</b> is used for integration with Macola. It is optional.</li>
-        <li><b>PLC / Version Recipe ID</b> is used for integration with PLCs. It is also optional.</li>
-        <li><b>Unit Weight</b> and <b>Weight UOM</b> defines the weight and measurement of an individual unit in a part. This is used only for
-        some items when get measured out of production to make sure they fit standards.</li>
-        <li><b>Parts Per Basket</b> defines how many individual parts are in an item when it first gets created. This only relevant in
-        components created at a <b>die cast</b>.</li>
+        <li><b>PLC / Vision Recipe ID</b> is the recipe identifier handed to the PLC and vision systems for this part.
+          It is optional, and only needed on parts that run at a machine-integrated station.</li>
+        <li><b>Unit Weight</b> and <b>Weight UOM</b> give the weight of a single piece and the unit that weight is in.
+          They are used by weight-based pack-out, where the scale divides total weight by unit weight to derive a count.</li>
+        <li><b>Parts Per Basket</b> is the capacity of one basket — one LOT is one basket carrying one LTT label, so this is
+          effectively the maximum piece count for a LOT of this part. It applies at Die Cast, Trim, and intermediate
+          Machining. Exceeding it at Die Cast raises the over-headroom warning rather than blocking the entry.</li>
         <li><b>Country of Origin</b> sets which country the item is from if the item was imported.</li>
-        <li><b>Max Parts (Per Location)</b> sets the limit on how many parts can be in a single item. This is only needed if more parts are 
-        added to the item after it is created.</li>
+        <li><b>Max Parts (Per Location)</b> caps how many pieces of this part may sit at any one location at a time,
+          summed across every open LOT there. Leave it blank for no cap. It is enforced when loose stock is
+          <b>received</b>; LOTs minted by production are not subject to it.</li>
       </ul>
       <h4>3. Tabs</h4>
       <p>There are 5 tabs here that allow for more configuration. Some tabs may not be required to configure depending on the type of part that is being edited. See below
@@ -591,7 +597,7 @@
       <h3>Add a part</h3>
       
       <ol class="steps">
-        <li>Click the <code>+ Add Item</code> in the top-right corner, then set <b>Part Number</b>, <b>Item Type</b> and
+        <li>Click <code>+ Add Item</code> in the top-right corner, then set <b>Part Number</b>, <b>Item Type</b> and
           <b>UOM</b> — Item Type gates which routes and areas the part may later use.</li>
         <li>Fill the identity fields (description, weights, Macola part #, recipe ID,
           packaging) and then click <code>Create Item</code>.</li>
@@ -612,8 +618,8 @@
         configure the method that applies; a part with none configured shows the "not
         configured" placeholder. This is what the pack-out station enforces at run time.
         Make sure to save changes using the save button at the top right of the section.</p>
-      <div class="note"><span class="ic">i</span><div>Items classified as <b>Sub-assembly</b> or <b>Component</b> do not need Container
-        Config to be configured</div></div>
+      <div class="note"><span class="ic">i</span><div>Items classified as <b>Sub-Assembly</b> or <b>Component</b> do not need
+        Container Config.</div></div>
 
       <h3>Routes <span class="chip chip-draft">Draft</span> <span class="chip chip-pub">Published</span></h3>
       <p>The route is the ordered list of operation steps a part travels — and, in this
@@ -626,14 +632,18 @@
         <b>name</b> and <b>effective from</b> date if needed. </p>
       <p>If you want to delete the current draft, click <code>Discard Draft</code>. Click the <code>Save Draft</code> button to save changes
         to the draft if you need to come back to it later. Once the draft is finished, click <code>Publish</code> to finalize the draft. From
-        here, this draft won't be editable and any new changes wil require creating a new draft again.</p>
-      <div class="note"><span class="ic">i</span><div>Items classified as <b>Finished Goods</b> do not need Routes to be configured.</div></div>
+        here, this draft won't be editable and any new changes will require creating a new draft again.</p>
+      <div class="note"><span class="ic">i</span><div><b>Every produced part needs a route</b>, including finished goods.
+        A casting's route runs the full path (Die Cast &rarr; Trim IN &rarr; Trim OUT &rarr; Machining IN &rarr; its
+        consuming step). A part that the system mints — a sub-assembly or a finished good — carries a
+        <b>single-step</b> route: one <span class="mono">Assembly Out</span> step. Only purchased items that are never
+        produced on site go without one.</div></div>
 
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Parts <b>&rsaquo;</b> Item Master <b>&rsaquo;</b> Routes</span></div>
-          <img src="shots/04_item_master_routes.png" alt="Routes tab showing a published route version v1 with one step: Machining & Assembly using the Assembly Out Standard operation template, marked required.">
+          <img src="shots/04_item_master_routes.png" alt="Routes tab showing a published route version v1 with one step: Machining &amp; Assembly using the Assembly Out Standard operation template, marked required.">
         </div>
         <figcaption>Pick a version in the dropdown; the <span class="chip chip-pub">Published</span>
           badge marks the live one. Add steps to the <b>Draft</b>, then <code>Publish</code>.
@@ -648,11 +658,11 @@
       <p>To create a new BOMs draft, click <code>+ New Version</code>.
         From here, you can click <code>+ Add Component</code> to add a new component to the BOMs. The <b>Component</b>, 
         <b>Qty Per</b>, and <b>UOM</b> attributes of each component can also be configured.
-        Pressing the arrows on each element in the list will reorder the steps of the route. You can also change the 
-        <b>effective from</b> date if needed. </p>
+        Pressing the arrows on each row reorders the component list. You can also change the
+        <b>effective from</b> date if needed.</p>
       <p>If you want to delete the current draft, click <code>Discard Draft</code>. Click the <code>Save Draft</code> button to save changes
         to the draft if you need to come back to it later. Once the draft is finished, click <code>Publish</code> to finalize the draft. From
-        here, this draft won't be editable and any new changes wil require creating a new draft again.</p>
+        here, this draft won't be editable and any new changes will require creating a new draft again.</p>
       <div class="note"><span class="ic">i</span><div>Items classified as <b>Component</b> do not need BOMs to be configured.</div></div>
       
       <figure class="shot">
@@ -671,7 +681,7 @@
       for this item. Quality Specs are not created on this tab. Instead, they are defined at the <a href="#quality-specs">Quality Specs</a> screen and linked
       to the item from there.</p>
 
-      <h4>Eligbility</h4>
+      <h3>Eligibility</h3>
       <p>The <b>Eligibility</b> tab controls <em>where</em> the part may run. This tab does not use a draft/published system like Routes and BOMs.
         You can add a new eligible location by clicking <code>+ Add Location</code> at the bottom. Doing this will add a new row where you can set the
         Location to one of the terminals. These terminals are defined in <a href="#plant-hierarchy">Plant Hierarchy</a>. You can also toggle
@@ -734,8 +744,10 @@
         <li>Under <b>Data Collection Fields</b>, use <code>+ Add field</code> to add each
           reading the operator must capture, mark it required if needed, and
           <code>Save fields</code>.</li>
-        <li>Use <code>New Version</code> to change a template that's already in use; publish
-          the draft when ready. <code>Deprecate</code> retires a template.</li>
+        <li>Use <code>+ New Version</code> to change a template that's already in use: it opens an
+          editable <b>Draft</b> copy, and <code>Publish</code> makes it live. A published version is
+          read-only. <code>Deprecate</code> retires a template, and <code>Show deprecated</code>
+          brings retired ones back into the list.</li>
       </ol>
       <div class="note warn"><span class="ic">!</span><div>Templates are resolved by their
         <b>operation-type role</b>, not by their code. That's why a route step "just works"
@@ -748,7 +760,7 @@
     <section id="tools">
       <span class="eyebrow">Parts</span>
       <h2>Tools &amp; Dies</h2>
-      <p class="lead">The Tools screen is the registry of dies and cutting tools — their rank,
+      <p class="lead">Listed in the sidebar simply as <b>Tools</b>, this screen is the registry of dies and cutting tools — their rank,
         status, cavities, per-tool attributes, and where they're assigned or mounted. It feeds
         the mounted-tool selection back in the Plant Hierarchy and, ultimately, die-cast
         traceability.</p>
@@ -781,15 +793,15 @@
         for more details.
       </p>
       <h4>3. Status Badges</h4>
-      <p>These status badges give a quick overview of the tool. The first badge shows it's current status (Active, Under
-        Repair, Scrapped, or Retired). The second badge shows its tool type. The 3rd badge shows the machine it is mounted
-        to. Use these badges to get info of a tool at a glance without having to dig through it's configuration.
+      <p>These badges give a quick read on the tool. The first shows its current status (Active, Under
+        Repair, Scrapped, or Retired). The second shows its tool type. The third shows the machine it is mounted
+        to. Together they tell you where a tool stands without opening its configuration.
       </p>
       <h4>4. General Details</h4>
-      <p>Configure General Details here</p>
+      <p>The tool's core identity fields.</p>
       <ul>
-        <li><b>Code</b> is the identiier of the tool</li>
-        <li><b>Name</b> gives the tool a more human-readable name</li>
+        <li><b>Code</b> is the tool's stable identifier.</li>
+        <li><b>Name</b> is the human-readable name for the tool.</li>
         <li><b>Tool Type</b> is for when you want to track your tooling. It is currently always set to Die Cast Die. 
           It will later have support for more types of tools, like CNC machining.</li>
         <li><b>Die Rank</b> is for setting merge compatibility with other tools. This can be configured on the
@@ -815,15 +827,13 @@
       </ol>
 
       <h3 id="configuring-die-ranks">Configuring Die Ranks</h3>
-      <p>By Clicking the <code>Die Ranks</code> button in the top-right corner, you can access the <b>Die Ranks</b> popup which allows
-      you to create Die Ranks and configure Merge Compatibility. Create a new Die Rank by clicking <code>+ Add Rank</code> and give it
-      a code (must be unique) and a name.</p>
+      <p>Clicking the <code>Die Ranks</code> button in the top-right corner opens the popup where you create die ranks and configure merge compatibility. Add a rank with
+      <code>+ Add Rank</code>, then give it a code (which must be unique) and a name.</p>
       <p>When there are multiple Die Ranks, you can configure how they merge with each other using the table in the center. Clicking
-        on a cell switches its compatibility. The gray squares are uneditable because they mirror the top half of the grid.
+        on a cell switches its compatibility. The grey squares are not editable because they mirror the top half of the grid.
       </p>
-    </section>
 
-    <figure class="shot">
+      <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Parts <b>&rsaquo;</b> Tools</span></div>
@@ -851,13 +861,14 @@
       <p>Here there are a few values you must configure.</p>
       <ul>
         <li><b>Code</b> is the internal name for the attribute.</li>
-        <li><b>Name</b> is the name of the attribute that admins and operators will read</li>
-        <li><b>Data Type</b> is the type of data that will be stored onto the attribute. </li>
-        <li><b>Required</b> sets whether the attribute itself is required or not.</li>
+        <li><b>Name</b> is the label admins and operators see.</li>
+        <li><b>Data Type</b> is the type of value the attribute stores.</li>
+        <li><b>Required</b> sets whether a value must be supplied for the attribute.</li>
       </ul>
-      <p>When you hit create, the definition you created will now be available as an option
-        for the tool. Once you are done configuring attributes, remember to click save.
+      <p>Once you click create, the new definition is available as an attribute option for any tool.
+        When you have finished configuring attributes, remember to click <code>Save</code>.
       </p>
+    </section>
 
     <hr class="div">
 
@@ -1025,14 +1036,62 @@
 
     <hr class="div">
 
+    <!-- ============ SHIFT OVERRIDES ============ -->
+    <section id="shift-overrides">
+      <span class="eyebrow">Operations</span>
+      <h2>Shift Overrides</h2>
+      <p class="lead">A shift override extends or shortens <em>one</em> shift on <em>one</em> day for
+        <em>one</em> piece of equipment. Anything without an override runs the global
+        <a href="#shift-schedules">shift schedule</a>. Use it for the exception — an overtime run, an
+        early stop — rather than editing the schedule everyone else follows.</p>
+
+      <div class="www">
+        <div><h4>What</h4><p>A dated, per-equipment replacement for a shift's start and end times,
+          with a reason.</p></div>
+        <div><h4>When</h4><p>When one press or line works different hours than its schedule says on a
+          particular day.</p></div>
+        <div><h4>Why</h4><p>Production and downtime are attributed to whichever shift was actually
+          running. Without an override, an overtime hour lands in the wrong shift's numbers.</p></div>
+      </div>
+
+      <div class="note warn"><span class="ic">!</span><div><b>Not currently in the sidebar.</b> This
+        screen has no navigation entry yet — reach it directly at
+        <span class="mono">/shift-overrides</span>. Flagged to Blue Ridge; a nav item is expected in a
+        later revision.</div></div>
+
+      <h3>Add an override</h3>
+      <ol class="steps">
+        <li>Click <code>+ Add Override</code>.</li>
+        <li>Choose the <b>Equipment</b> (a press or a line) and the <b>Shift</b> to override.</li>
+        <li>Set the <b>Date</b> — this is the day the shift <em>starts</em> on, which matters for an
+          overnight shift that runs past midnight.</li>
+        <li>Enter <b>Start</b> and <b>End</b> in 24-hour <span class="mono">HH:MM</span>. An end time
+          earlier than the start time means the shift crosses midnight.</li>
+        <li>Type a <b>Reason</b> (for example, an overtime run to cover a Honda pull) and click
+          <code>Save</code>.</li>
+      </ol>
+
+      <p>The list can be narrowed with the equipment dropdown and the search box, and
+        <b>Include removed</b> brings back overrides that were deleted. <code>Edit</code> on a row
+        reopens the editor, where <code>Remove</code> deletes the override and returns that day to the
+        global schedule.</p>
+
+      <div class="note"><span class="ic">i</span><div>Saving an override <b>restamps the attribution</b>
+        of production and downtime already recorded in that window, so the numbers move to the shift that
+        was really running. Adding an override after the fact corrects history rather than only affecting
+        what comes next.</div></div>
+    </section>
+
+    <hr class="div">
+
     <!-- ============ USERS ============ -->
     <section id="users">
       <span class="eyebrow">System</span>
       <h2>Users</h2>
-      <p class="lead">This is where the login for shop-floor <b>operators</b> are created and managed. Operators
-        login in at the terminal with just their initials. There is no password because it's not
-        meant to be a security system. It is simply to track who did what. Every operator has their own unique
-        initials because it is meant to be their unique identifier.
+      <p class="lead">This is where shop-floor <b>operator</b> logins are created and managed. Operators
+        sign in at the terminal with just their initials. There is no password, because this is not
+        a security boundary — it exists to record who did what. Initials must be unique, since they are
+        the identifier every action is stamped with.
       </p>
 
       <div class="www">
@@ -1070,6 +1129,20 @@
         </div>
         <figcaption>Creating an operator takes just two fields.</figcaption>
       </figure>
+
+      <h3>Session timeouts</h3>
+      <p>The <b>Session timeouts (global)</b> panel at the top of the screen sets two plant-wide
+        inactivity windows. They apply to every terminal, not to individual operators.</p>
+      <div class="tbl-scroll"><table class="fields">
+        <thead><tr><th>Setting</th><th>What it controls</th></tr></thead>
+        <tbody>
+          <tr><td>Operator presence (min)</td><td>How long a signed-in operator stays signed in at a
+            terminal without activity before the terminal drops back to the sign-in prompt.</td></tr>
+          <tr><td>Elevation (min)</td><td>How long an AD-elevated supervisor session stays elevated
+            without activity before it reverts to ordinary operator access.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Both are entered in <b>minutes</b>. Change them and click <code>Save timeouts</code>.</p>
     </section>
 
     <hr class="div">
@@ -1092,16 +1165,16 @@
       </div>
 
       <h3>Using the Filter</h3>
-      <p>You can use the filter on the left-hand side to help find the audit log that you want to
-        find. You can sort by the <b>Entity Type</b> which how you filter from everything in the
-       Configuration Tool to just <b>Routes</b>, <b>Locations</b>, <b>Tools</b>, etc.
+      <p>Use the filters on the left-hand side to narrow the feed down to the entries you want.
+        <b>Entity Type</b> narrows it from everything in the Configuration Tool to just
+        <b>Routes</b>, <b>Locations</b>, <b>Tools</b>, and so on.
       </p>
-      <p>Sorting by severity can show only <b>info</b>, <b>warning</b>, <b>error</b>, or <b>critical</b> 
-        types of logs. Info logs show when a change has been made. Warning, error, and critical logs show 
-        when there has been an error with integration. For errors with procedural changes, check the 
-        <a href="#failure-log">Failure Log</a>. You can also find logs within a specific date range using 
-        <b>Start Date</b> and <b>End Date</b>. Using the search input, it is also possible to just search 
-        for specific strings of text within the audit log.</p>
+      <p><b>Severity</b> restricts the feed to <b>info</b>, <b>warning</b>, <b>error</b>, or <b>critical</b>
+        entries. Info entries record a change being made; warning, error, and critical entries record a
+        problem with an external integration. Actions the system <em>rejected</em> are not here — those are in
+        the <a href="#failure-log">Failure Log</a>. <b>Start Date</b> and <b>End Date</b> bound the feed to a
+        date range, and <b>Search</b> matches text anywhere in the entry. Click <code>Apply</code> to run the
+        filters, or <code>Reset</code> to clear them.</p>
 
       <figure class="shot">
         <div class="frame">
@@ -1139,7 +1212,7 @@
 
       <div class="www">
         <div><h4>What</h4><p>A read-only feed of rejected operations with the failing
-          procedure, the reason, and who hit it, and plus 7-day summaries of the top reasons and
+          procedure, the reason, and who hit it, plus 7-day summaries of the top reasons and
           top failing procedures.</p></div>
         <div><h4>When</h4><p>When diagnosing a shop-floor block, a recurring rejection, or a
           data problem behind a stuck LOT.</p></div>
@@ -1176,18 +1249,37 @@
         <div><h4>Why</h4><p>The machine-integration layer resolves device addresses through
           these mappings, per terminal.</p></div>
       </div>
-      <div class="note warn"><span class="ic">!</span><div><b>Screenshot pending.</b> This
-        screen is under active development (styling in progress), so it isn't captured here yet.
-        Functionally: choose a terminal from the <b>Select a terminal…</b> dropdown, then use
-        <code>+ Add mapping</code> to bind each device the terminal uses. This section will be
-        updated once the UI is finalized.</div></div>
+      <h3>Map a terminal's devices</h3>
+      <ol class="steps">
+        <li>Pick the station from the <b>Select a terminal…</b> dropdown. The panel below then reads
+          <b>Mappings for the selected terminal</b>.</li>
+        <li>Click <code>+ Add mapping</code> to add a row.</li>
+        <li>Fill the row in and click <code>Save</code>, or <code>Cancel</code> to drop it.</li>
+      </ol>
+
+      <div class="tbl-scroll"><table class="fields">
+        <thead><tr><th>Mapping field</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Device Type</td><td>What kind of device this is — scale, assembly PLC, or vision
+            system. It decides which gateway watcher handles the tags.</td></tr>
+          <tr><td>Device Code</td><td>The identifier the terminal uses to refer to this device.</td></tr>
+          <tr><td>UDT Instance Path</td><td>The tag path of the device's UDT instance. This is the
+            actual address the integration layer reads and writes.</td></tr>
+          <tr><td>Sort Order</td><td>Position among the terminal's mappings when more than one device
+            of a kind is bound.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="note warn"><span class="ic">!</span><div><b>Screenshot pending.</b> The screen's
+        styling is still being finalized, so it isn't captured here yet. The fields and flow above are
+        current; the illustration will follow.</div></div>
     </section>
 
     <div class="footer">
-      <b>MPP MES Configuration Tool — Configuration Guide.</b>
+      <b>MPP MES — Configuration Tool Guide.</b>
       Prepared by Blue Ridge Automation for Madison Precision Products, Inc.
-      Draft v0.1, 2026-07-29. Screenshots are drawn from the development environment and use
-      sample data; PLC Devices is omitted pending finalization of that screen. This document
+      Draft v0.3, 2026-08-25. Screenshots are drawn from the development environment and use
+      sample data; the PLC Devices screenshot is pending finalization of that screen. This document
       will be revised as the system is completed.
     </div>
   </main>

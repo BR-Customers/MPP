@@ -163,12 +163,16 @@ The `href` must match the section's `id`. The active-link highlight is automatic
 
 ## 7. What's left to do (roadmap)
 
-- **PLC Devices** — currently a placeholder note in the *System* section (its UI styling was
-  still in progress). Capture it and write the section once the screen is finalized.
+- **PLC Devices** — the fields and flow are written up, but the section still carries a
+  "screenshot pending" callout because the screen's styling was in progress. Capture it and
+  drop the callout once the screen is finalized.
+- **Shift Overrides** — documented, but the app has no sidebar entry for it; the section says
+  so in a warning callout. Remove that callout once the nav item lands.
 - **Item Master** — updates are coming from Jacques; fold them into that section.
-- **Before customer release:** remove the `Draft v0.1` tag in the masthead meta and the
+- **Before customer release:** remove the `Draft v0.3` tag in the masthead meta and the
   dev-environment / sample-data caveat in the footer, and re-check the
-  “**N** configuration screens” count in the masthead.
+  “**N** configuration screens” count in the masthead (currently 14, matching the 14
+  non-overview sections).
 
 ---
 
