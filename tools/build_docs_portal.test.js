@@ -363,6 +363,45 @@ test('buildSearchIndex extracts section-level entries with doc + scope + body', 
   assert.strictEqual(first.requirementId, 'FDS-05-009');
 });
 
+test('buildSearchIndex decodes HTML entities in stored title + body', () => {
+  const renderedDocs = [
+    {
+      key: 'fds',
+      title: 'FDS',
+      html:
+        '<h2 id="s1">LOT Lifecycle &amp; Genealogy</h2>' +
+        '<p>Compare a &lt;tag&gt; and Honda&#39;s &quot;pull&quot; &mdash; 5&nbsp;pieces.</p>',
+    },
+  ];
+  const { docs } = buildSearchIndex(renderedDocs);
+  const d = docs[0];
+
+  // Stored fields are plain text. portal.js escapes them at render time, so an
+  // entity left here would be double-escaped and shown to the reader literally.
+  assert.strictEqual(d.title, 'LOT Lifecycle & Genealogy');
+  assert.ok(!/&(amp|lt|gt|quot|#39|nbsp|mdash);/.test(d.title), 'title still holds entities');
+  assert.ok(!/&(amp|lt|gt|quot|#39|nbsp|mdash);/.test(d.body), 'body still holds entities');
+  assert.match(d.body, /Compare a <tag> and Honda's "pull" — 5 pieces\./);
+});
+
+test('buildSearchIndex indexes the decoded word, not the entity name', () => {
+  const renderedDocs = [
+    { key: 'fds', title: 'FDS', html: '<h2 id="s1">Trim &amp; Machining</h2><p>Body.</p>' },
+  ];
+  const { payload } = buildSearchIndex(renderedDocs);
+  const blob = JSON.stringify(payload.docs);
+  assert.ok(!blob.includes('&amp;'), 'search payload still carries &amp;');
+  assert.ok(blob.includes('Trim & Machining'), 'decoded title missing from payload');
+});
+
+test('buildSearchIndex leaves unknown or malformed entities alone', () => {
+  const renderedDocs = [
+    { key: 'fds', title: 'FDS', html: '<h2 id="s1">A &notreal; B &amp C</h2><p>x</p>' },
+  ];
+  const { docs } = buildSearchIndex(renderedDocs);
+  assert.strictEqual(docs[0].title, 'A &notreal; B &amp C');
+});
+
 test('build_docs_portal emits search-index.json with >= 200 entries', () => {
   execSync('node tools/build_docs_portal.js', { cwd: REPO_ROOT, stdio: 'pipe' });
   const raw = JSON.parse(fs.readFileSync(path.join(PORTAL_DIR, 'search-index.json'), 'utf8'));

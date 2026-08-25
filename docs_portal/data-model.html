@@ -13,10 +13,10 @@
   <button id="search-trigger" class="search-trigger" aria-label="Search">🔍</button>
 </header>
 <div class="portal-body">
-  <aside class="portal-toc" aria-label="Section navigation"><ul><li><a href="#revision-history">Revision History</a></li><li><a href="#conventions">Conventions</a></li><li><a href="#1-location-schema-mvp">1. Location Schema —</a><ul><li><a href="#design-overview">Design Overview</a></li><li><a href="#location-locationtype">LocationType</a></li><li><a href="#location-locationtypedefinition">LocationTypeDefinition</a></li><li><a href="#location-locationattributedefinition">LocationAttributeDefinition</a></li><li><a href="#location-location">Location</a></li><li><a href="#location-locationattribute">LocationAttribute</a></li><li><a href="#terminals-in-the-new-model">Terminals in the New Model</a></li><li><a href="#location-appuser">AppUser</a></li></ul></li><li><a href="#2-parts-schema-mvp">2. Parts Schema —</a><ul><li><a href="#parts-itemtype">ItemType</a></li><li><a href="#parts-uom">Uom</a></li><li><a href="#parts-item">Item</a></li><li><a href="#parts-bom">Bom</a></li><li><a href="#parts-bomline">BomLine</a></li><li><a href="#parts-routetemplate">RouteTemplate</a></li><li><a href="#parts-routestep">RouteStep</a></li><li><a href="#parts-operationtemplate">OperationTemplate</a></li><li><a href="#parts-datacollectionfield">DataCollectionField</a></li><li><a href="#parts-operationtemplatefield">OperationTemplateField</a></li><li><a href="#parts-itemlocation">ItemLocation</a></li><li><a href="#parts-containerconfig">ContainerConfig</a></li><li><a href="#resolved-v1-8-rev-fds-05-033-v0-11m-trim-machining-part-identity-change-1-line-bom">✅ Resolved (v1.8 rev / FDS-05-033 v0.11m): Trim → Machining Part Identity Change → 1-line BOM</a></li><li><a href="#resolved-v1-7-tool-life-tracking-7-tools-schema">✅ Resolved (v1.7): Tool Life Tracking → §7 Tools Schema</a></li></ul></li><li><a href="#3-lots-schema-mvp">3. Lots Schema —</a><ul><li><a href="#lots-lotorigintype">LotOriginType</a></li><li><a href="#lots-lotstatuscode">LotStatusCode</a></li><li><a href="#lots-genealogyrelationshiptype">GenealogyRelationshipType</a></li><li><a href="#lots-lot">Lot</a></li><li><a href="#lots-lotgenealogy">LotGenealogy</a></li><li><a href="#lots-lotstatushistory">LotStatusHistory</a></li><li><a href="#lots-lotmovement">LotMovement</a></li><li><a href="#lots-lotattributechange">LotAttributeChange</a></li><li><a href="#lots-printreasoncode">PrintReasonCode</a></li><li><a href="#lots-labeltypecode">LabelTypeCode</a></li><li><a href="#lots-identifiersequence">IdentifierSequence</a></li><li><a href="#lots-lotlabel">LotLabel</a></li><li><a href="#lots-containerstatuscode">ContainerStatusCode</a></li><li><a href="#lots-container">Container</a></li><li><a href="#lots-containertray">ContainerTray</a></li><li><a href="#lots-serializedpart">SerializedPart</a></li><li><a href="#lots-containerserial">ContainerSerial</a></li><li><a href="#lots-shippinglabel">ShippingLabel</a></li><li><a href="#lots-pauseevent">PauseEvent</a></li><li><a href="#lots-aimshipperidpool">AimShipperIdPool</a></li><li><a href="#lots-aimpoolconfig">AimPoolConfig</a></li></ul></li><li><a href="#4-workorder-schema-mixed-scope">4. Workorder Schema — MIXED SCOPE</a><ul><li><a href="#workorder-workorderstatus">WorkOrderStatus</a></li><li><a href="#workorder-scrapsource">ScrapSource</a></li><li><a href="#workorder-operationstatus">OperationStatus</a></li><li><a href="#workorder-workordertype">WorkOrderType</a></li><li><a href="#workorder-workorder">WorkOrder</a></li><li><a href="#workorder-workorderoperation">WorkOrderOperation</a></li><li><a href="#workorder-productionevent">ProductionEvent</a></li><li><a href="#workorder-productioneventvalue">ProductionEventValue</a></li><li><a href="#workorder-consumptionevent">ConsumptionEvent</a></li><li><a href="#workorder-rejectevent">RejectEvent</a></li></ul></li><li><a href="#5-quality-schema-mixed-scope">5. Quality Schema — MIXED SCOPE</a><ul><li><a href="#quality-defectcode">DefectCode</a></li><li><a href="#quality-qualityspec">QualitySpec</a></li><li><a href="#quality-qualityspecversion">QualitySpecVersion</a></li><li><a href="#quality-qualityspecattribute">QualitySpecAttribute</a></li><li><a href="#quality-qualitysample">QualitySample</a></li><li><a href="#quality-qualityresult">QualityResult</a></li><li><a href="#quality-qualityattachment">QualityAttachment</a></li><li><a href="#quality-inspectionresultcode">InspectionResultCode</a></li><li><a href="#quality-sampletriggercode">SampleTriggerCode</a></li><li><a href="#quality-holdtypecode">HoldTypeCode</a></li><li><a href="#quality-dispositioncode">DispositionCode</a></li><li><a href="#quality-nonconformance">NonConformance</a></li><li><a href="#quality-holdevent">HoldEvent</a></li></ul></li><li><a href="#6-oee-schema-mixed-scope">6. OEE Schema — MIXED SCOPE</a><ul><li><a href="#oee-downtimereasontype">DowntimeReasonType</a></li><li><a href="#oee-downtimereasoncode">DowntimeReasonCode</a></li><li><a href="#oee-shiftschedule">ShiftSchedule</a></li><li><a href="#oee-shift">Shift</a></li><li><a href="#oee-downtimesourcecode">DowntimeSourceCode</a></li><li><a href="#oee-downtimeevent">DowntimeEvent</a></li><li><a href="#oee-oeesnapshot">OeeSnapshot</a></li></ul></li><li><a href="#7-tools-schema-mixed-scope">7. Tools Schema — MIXED SCOPE</a><ul><li><a href="#design-overview-polymorphic-pattern-mirrors-location">Design Overview — polymorphic pattern (mirrors Location)</a></li><li><a href="#tools-tooltype">ToolType</a></li><li><a href="#tools-toolattributedefinition">ToolAttributeDefinition</a></li><li><a href="#tools-tool">Tool</a></li><li><a href="#tools-toolattribute">ToolAttribute</a></li><li><a href="#tools-toolcavity">ToolCavity</a></li><li><a href="#tools-toolassignment">ToolAssignment</a></li><li><a href="#tools-toolstatuscode">ToolStatusCode</a></li><li><a href="#tools-toolcavitystatuscode">ToolCavityStatusCode</a></li><li><a href="#tools-dierank">DieRank</a></li><li><a href="#tools-dierankcompatibility">DieRankCompatibility</a></li><li><a href="#cross-references">Cross-references</a></li></ul></li><li><a href="#8-audit-schema-mvp">8. Audit Schema —</a><ul><li><a href="#audit-logseverity">LogSeverity</a></li><li><a href="#audit-logeventtype">LogEventType</a></li><li><a href="#audit-logentitytype">LogEntityType</a></li><li><a href="#audit-operationlog">OperationLog</a></li><li><a href="#audit-configlog">ConfigLog</a></li><li><a href="#audit-interfacelog">InterfaceLog</a></li><li><a href="#audit-failurelog">FailureLog</a></li></ul></li></ul></aside>
+  <aside class="portal-toc" aria-label="Section navigation"><ul><li><a href="#revision-history">Revision History</a></li><li><a href="#scaling-decisions-oi-35-signed-off-2026-06-08">Scaling Decisions (OI-35) — signed off 2026-06-08</a></li><li><a href="#conventions">Conventions</a></li><li><a href="#1-location-schema-mvp">1. Location Schema —</a><ul><li><a href="#design-overview">Design Overview</a></li><li><a href="#location-locationtype">LocationType</a></li><li><a href="#location-locationtypedefinition">LocationTypeDefinition</a></li><li><a href="#location-locationattributedefinition">LocationAttributeDefinition</a></li><li><a href="#location-location">Location</a></li><li><a href="#location-locationattribute">LocationAttribute</a></li><li><a href="#terminals-in-the-new-model">Terminals in the New Model</a></li><li><a href="#location-appuser">AppUser</a></li></ul></li><li><a href="#2-parts-schema-mvp">2. Parts Schema —</a><ul><li><a href="#parts-itemtype">ItemType</a></li><li><a href="#parts-uom">Uom</a></li><li><a href="#parts-item">Item</a></li><li><a href="#parts-bom">Bom</a></li><li><a href="#parts-bomline">BomLine</a></li><li><a href="#parts-routetemplate">RouteTemplate</a></li><li><a href="#parts-routestep">RouteStep</a></li><li><a href="#parts-operationcategory">OperationCategory</a></li><li><a href="#parts-operationtype">OperationType</a></li><li><a href="#parts-operationrolekind">OperationRoleKind</a></li><li><a href="#parts-operationtemplate">OperationTemplate</a></li><li><a href="#parts-datacollectionfield">DataCollectionField</a></li><li><a href="#parts-operationtemplatefield">OperationTemplateField</a></li><li><a href="#parts-itemlocation">ItemLocation</a></li><li><a href="#parts-containerconfig">ContainerConfig</a></li><li><a href="#resolved-v1-8-rev-fds-05-033-v0-11m-trim-machining-part-identity-change-1-line-bom">✅ Resolved (v1.8 rev / FDS-05-033 v0.11m): Trim → Machining Part Identity Change → 1-line BOM</a></li><li><a href="#resolved-v1-7-tool-life-tracking-7-tools-schema">✅ Resolved (v1.7): Tool Life Tracking → §7 Tools Schema</a></li></ul></li><li><a href="#3-lots-schema-mvp">3. Lots Schema —</a><ul><li><a href="#lots-lotorigintype">LotOriginType</a></li><li><a href="#lots-lotstatuscode">LotStatusCode</a></li><li><a href="#lots-genealogyrelationshiptype">GenealogyRelationshipType</a></li><li><a href="#lots-lot">Lot</a></li><li><a href="#lots-lotgenealogy">LotGenealogy</a></li><li><a href="#lots-lotstatushistory">LotStatusHistory</a></li><li><a href="#lots-lotmovement">LotMovement</a></li><li><a href="#lots-lotattributechange">LotAttributeChange</a></li><li><a href="#lots-printreasoncode">PrintReasonCode</a></li><li><a href="#lots-labeltypecode">LabelTypeCode</a></li><li><a href="#lots-identifiersequence">IdentifierSequence</a></li><li><a href="#lots-lotlabel">LotLabel</a></li><li><a href="#lots-containerstatuscode">ContainerStatusCode</a></li><li><a href="#lots-container">Container</a></li><li><a href="#lots-containertray">ContainerTray</a></li><li><a href="#lots-serializedpart">SerializedPart</a></li><li><a href="#lots-containerserial">ContainerSerial</a></li><li><a href="#lots-shippinglabel">ShippingLabel</a></li><li><a href="#lots-pauseevent">PauseEvent</a></li><li><a href="#lots-aimshipperidpool">AimShipperIdPool</a></li><li><a href="#lots-aimpoolconfig">AimPoolConfig</a></li></ul></li><li><a href="#4-workorder-schema-mixed-scope">4. Workorder Schema — MIXED SCOPE</a><ul><li><a href="#workorder-workorderstatus">WorkOrderStatus</a></li><li><a href="#workorder-scrapsource">ScrapSource</a></li><li><a href="#workorder-operationstatus">OperationStatus</a></li><li><a href="#workorder-workordertype">WorkOrderType</a></li><li><a href="#workorder-workorder">WorkOrder</a></li><li><a href="#workorder-workorderoperation">WorkOrderOperation</a></li><li><a href="#workorder-productionevent">ProductionEvent</a></li><li><a href="#workorder-productioneventvalue">ProductionEventValue</a></li><li><a href="#workorder-consumptionevent">ConsumptionEvent</a></li><li><a href="#workorder-rejectevent">RejectEvent</a></li><li><a href="#workorder-diecastcontribution">DieCastContribution</a></li></ul></li><li><a href="#5-quality-schema-mixed-scope">5. Quality Schema — MIXED SCOPE</a><ul><li><a href="#quality-defectcode">DefectCode</a></li><li><a href="#quality-qualityspec">QualitySpec</a></li><li><a href="#quality-qualityspecversion">QualitySpecVersion</a></li><li><a href="#quality-qualityspecattribute">QualitySpecAttribute</a></li><li><a href="#quality-qualitysample">QualitySample</a></li><li><a href="#quality-qualityresult">QualityResult</a></li><li><a href="#quality-qualityattachment">QualityAttachment</a></li><li><a href="#quality-inspectionresultcode">InspectionResultCode</a></li><li><a href="#quality-sampletriggercode">SampleTriggerCode</a></li><li><a href="#quality-holdtypecode">HoldTypeCode</a></li><li><a href="#quality-dispositioncode">DispositionCode</a></li><li><a href="#quality-nonconformance">NonConformance</a></li><li><a href="#quality-holdevent">HoldEvent</a></li></ul></li><li><a href="#6-oee-schema-mixed-scope">6. OEE Schema — MIXED SCOPE</a><ul><li><a href="#oee-downtimereasontype">DowntimeReasonType</a></li><li><a href="#oee-downtimereasoncode">DowntimeReasonCode</a></li><li><a href="#oee-shiftschedule">ShiftSchedule</a></li><li><a href="#oee-shift">Shift</a></li><li><a href="#oee-downtimesourcecode">DowntimeSourceCode</a></li><li><a href="#oee-downtimeevent">DowntimeEvent</a></li><li><a href="#oee-oeesnapshot">OeeSnapshot</a></li></ul></li><li><a href="#7-tools-schema-mixed-scope">7. Tools Schema — MIXED SCOPE</a><ul><li><a href="#design-overview-polymorphic-pattern-mirrors-location">Design Overview — polymorphic pattern (mirrors Location)</a></li><li><a href="#tools-tooltype">ToolType</a></li><li><a href="#tools-toolattributedefinition">ToolAttributeDefinition</a></li><li><a href="#tools-tool">Tool</a></li><li><a href="#tools-toolattribute">ToolAttribute</a></li><li><a href="#tools-toolcavity">ToolCavity</a></li><li><a href="#tools-toolassignment">ToolAssignment</a></li><li><a href="#tools-toolstatuscode">ToolStatusCode</a></li><li><a href="#tools-toolcavitystatuscode">ToolCavityStatusCode</a></li><li><a href="#tools-dierank">DieRank</a></li><li><a href="#tools-dierankcompatibility">DieRankCompatibility</a></li><li><a href="#cross-references">Cross-references</a></li></ul></li><li><a href="#8-audit-schema-mvp">8. Audit Schema —</a><ul><li><a href="#audit-logseverity">LogSeverity</a></li><li><a href="#audit-logeventtype">LogEventType</a></li><li><a href="#audit-logentitytype">LogEntityType</a></li><li><a href="#audit-operationlog">OperationLog</a></li><li><a href="#audit-configlog">ConfigLog</a></li><li><a href="#audit-interfacelog">InterfaceLog</a></li><li><a href="#audit-failurelog">FailureLog</a></li></ul></li></ul></aside>
   <main class="portal-main"><h1>MPP MES — Data Model Reference</h1>
-<p><strong>Version:</strong> v1.9 working draft (rev 2026-04-29m — <code>Parts.OperationTemplate.RequiresSubLotSplit BIT NOT NULL DEFAULT 0</code> added; controls the Trim OUT outbound flow per <a class="xref" href="fds.html#fds-05-009">FDS-05-009</a> / Phased Plan v1.0 Phase 4. v1.9l (earlier 2026-04-29) was the FDS v0.11m reconciliation pass. See revision history.)
-<strong>Schemas:</strong> 8 | <strong>Tables:</strong> ~73
+<p><strong>Version:</strong> v2.1 working draft (rev 2026-07-29 — <strong>die-cast per-cavity Open → accumulate → release lifecycle: new <code>Open</code> <code>Lots.LotStatusCode</code> + new <code>Workorder.DieCastContribution</code> per-shift net-good ledger (migration <code>0045</code>)</strong>; rev 2026-07-06u — <strong>assembly finished-good LOT: <code>Lots.ContainerTray.FinishedGoodLotId</code> added (BIGINT NULL FK → Lot.Id, filtered-unique; tray = LOT, 1:1); assembly-out consumption now targets the finished-good LOT via <code>Workorder.ConsumptionEvent.ProducedLotId</code></strong>; rev 2026-07-02t — <strong>operation-type restructure: <code>OperationTemplate.AreaLocationId</code> dropped, <code>OperationTypeId</code> FK added; new <code>Parts.OperationType</code> + <code>Parts.OperationCategory</code> code tables (migrations 0032/0033)</strong>; rev 2026-06-09s — <strong>Scaling Decisions (<a class="xref" href="oir.html#oi-35">OI-35</a>)</strong> section added; <a class="xref" href="oir.html#oi-35">OI-35</a> architecture gate signed off 2026-06-08 (B2 monthly partitioning + TRUNCATE sliding-window, B4 closure, B5 materialized qty, B6 row-locked sequence, B7 OperationLog split, B8 filtered indexes; B1 retention → FDS §11); rev 2026-06-08q - <strong>section 3 <code>Lot.CrtActive BIT</code></strong> added (<a class="xref" href="fds.html#fds-10-012">FDS-10-012</a> Controlled Run Tag hook, MVP-ratified 2026-06-08); rev 2026-06-08p - Location <code>CoupledDownstreamCellLocationId</code> typed-FK promotion + <code>QualityResult.NumericValue</code>; rev 2026-06-05o — <strong>§7 <code>Tools.ToolType.CompatibleLocationTypeDefinitionId</code></strong> added (migration <code>0018</code>) for the Mount-to-Cell tool-type→cell-kind dropdown filter; <code>Die → DieCastMachine</code> seeded. Earlier: rev 2026-06-04n — sub-LOT split relocated from Trim OUT to <strong>Machining OUT</strong> per FDS v1.3 / Phased Plan v1.1; <code>Parts.OperationTemplate.RequiresSubLotSplit</code> now controls the Machining OUT outbound flow (<a class="xref" href="fds.html#fds-05-009">FDS-05-009</a>), and the ALTER lands in Phase 5 migration <code>0018</code> rather than Phase 4 <code>0017</code>. v1.9m (2026-04-29) had added the column under the prior Trim-OUT design. See revision history.)
+<strong>Schemas:</strong> 8 | <strong>Tables:</strong> ~75
 <strong>Target:</strong> Microsoft SQL Server 2022 Standard Edition</p>
 <hr>
 <h2 id="revision-history">Revision History <a class="heading-permalink" href="#revision-history" aria-label="Permalink">#</a></h2>
@@ -30,6 +30,66 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>2.1</td>
+<td>2026-07-29</td>
+<td>Blue Ridge Automation</td>
+<td><strong>Die Cast per-cavity Open → accumulate → release lifecycle.</strong> (spec <code>docs/superpowers/specs/2026-07-28-diecast-per-cavity-lifecycle-design.md</code>, migration <code>0045_diecast_per_cavity_lifecycle</code>) Die-cast entry is redesigned from a one-basket-per-create origin mint into a per-cavity accumulator: each <code>(Tool, ToolCavity)</code> owns one independent <code>Open</code> basket that fills across operators/shifts and is released to storage only when the operator closes it. <strong>(1)</strong> New fifth <code>Lots.LotStatusCode</code> row <strong><code>Open</code></strong> (<code>BlocksProduction = 0</code>, appended <code>Id</code> — statuses 1-4 unchanged): the LOT exists and accumulates at the press but is not yet on its route. <code>Lot_GetWipQueueByLocation</code> excludes it (<code>NOT IN ('Closed','Open')</code>). <strong>(2)</strong> New <strong><code>Workorder.DieCastContribution</code></strong> table (§4) — an append-only per-shift net-good ledger, one row per shift-output submission per LOT. <strong>(3)</strong> New procs <code>Lots.DieCastLot_Open</code> (mint the per-cavity Open basket, <code>PieceCount = 0</code>), <code>Workorder.DieCast_GetShiftOutputBreakdown</code> (splits a die-wide gross shot count across a cavity's LOTs — a closed LOT keeps its credited good, the open LOT gets the remainder floored at 0), <code>Workorder.DieCastShiftOutput_Record</code> (per-cavity net-good contribution + additive scrap + shot-loss fan-out), <code>Lots.DieCastLot_Release</code> (<code>Open → Good</code> + move to WHSE storage — the LOT's first route movement), <code>Lots.DieCastLot_Void</code> (empty basket <code>Open → Scrap</code>), <code>Lots.Lot_GetOpenByTool</code> (running open-basket list). <strong>(4)</strong> Reworked <code>Lot_GetShiftCavityTally</code> to be additive-correct (<code>PieceSum = SUM(PieceCount)</code> good-only, no scrap add-back — die-cast scrap has been additive since migration <code>0042</code>, the old add-back was double-counting) and <code>Lot_GetAttributeHistory</code> (new <code>Contribution</code> stream over <code>DieCastContribution</code>). <strong>Locked decisions:</strong> basket holds GOOD only (scrap is a separate additive metric, never decrements <code>PieceCount</code>); operator enters GROSS shots, system computes good = gross − scrap − shot-losses; accumulation is shift-scoped via <code>Oee.Shift</code>; <code>Item.MaxLotSize</code> is a <strong>soft</strong> basket ceiling (warns, never blocks); <code>Lots.v_LotDerivedQuantities.TotalInProcess = 0</code> throughout accumulation (not on-route yet). Full <code>MPP_MES_Test</code> suite 2225/0; deployed to <code>MPP_MES_Dev</code>; <code>DieCastBody</code> view rebuilt on the new lifecycle (first cut, pending live smoke — see <code>PROJECT_STATUS.md</code> 2026-07-29).</td>
+</tr>
+<tr>
+<td>1.9u</td>
+<td>2026-07-06</td>
+<td>Blue Ridge Automation</td>
+<td><strong>Assembly finished-good LOT (Spec 2).</strong> <code>Lots.ContainerTray</code> gains <strong><code>FinishedGoodLotId BIGINT NULL FK → Lots.Lot.Id</code></strong> with a filtered UNIQUE index (non-NULL) - <code>tray = LOT</code>, 1:1. Non-serialized AND serialized assembly-out now mint a finished-good LOT and consume <code>BomLine.QtyPer x PieceCount</code> FIFO (oldest-first by <code>Lot.CreatedAt</code>, tie-broken by <code>Id</code>) from eligible component LOTs at the line; each <code>Workorder.ConsumptionEvent</code> sets <strong><code>ProducedLotId</code> = the finished-good LOT</strong> (the primary consumption target), with <code>ProducedContainerId</code> demoted to secondary/denormalized - the Container is retained as the wrapper. Genealogy resolves <code>Container -&gt; ContainerTray -&gt; FinishedGoodLot -&gt; component LOTs</code>. Column nullable during transition; tightened to NOT NULL once all trays route through <code>Workorder.Assembly_CompleteTray</code>. Migration <code>0032</code> (number confirmed at build). Companion to FDS v1.6 (<a class="xref" href="fds.html#fds-06-013">FDS-06-013</a> / -06-020 / -06-021). No other shipped table changed.</td>
+</tr>
+<tr>
+<td>2.0</td>
+<td>2026-07-07</td>
+<td>Blue Ridge Automation</td>
+<td><strong>Terminal-mint model — rename-BOM thread unwound; route becomes the single source of truth for terminal FIFO + part identity.</strong> (spec <code>docs/superpowers/specs/2026-07-07-terminal-mint-model-and-rename-bom-removal-design.md</code>) (1) <strong>New <code>Parts.OperationRoleKind</code> code table</strong> (Advance / OriginMint / ConsumeMint) + <code>Parts.OperationType.OperationRoleKindId NOT NULL FK</code> (migration <code>0035</code>) — drives the route-driven WIP queue's per-step &quot;pending&quot; rule (documented in §2). (2) <strong><code>Location.CoupledDownstreamCellLocationId</code> DROPPED</strong> (+FK) and <code>Workorder.MachiningOut_AutoComplete</code> retired (migration <code>0036</code>) — cell-coupling is gone; mints are line-resident (no cell→cell auto-move). The §1 Location column + its two callouts (below) are <strong>now stale and pending prose reconciliation.</strong> (3) <strong>Machining OUT is a consume-MINT, not a split</strong>: <code>Workorder.MachiningOut_RecordSplit</code> → <code>Workorder.MachiningOut_Mint</code> (consumes the casting per the SubAssembly's BOM, <code>Consumption</code> genealogy cast→machined, flexible operator qty). <code>Lots.Lot_Split</code> + <code>Split</code> genealogy demoted to <strong>exception-only</strong> (holds/quality/logistics). <code>Lots.Lot_GetWipQueueByLocation</code> v3.0 is route-driven (<code>@OperationTypeCode</code> role param; dropped <code>HasRenameBom</code>/<code>HasLineEvent</code>). New <code>Parts.Item_ListEligibleFinishedGoodsRanked</code> for the ranked Assembly-OUT default. (4) <strong><code>Item.DefaultSubLotQty</code> reinterpreted</strong> as the default <em>mint</em> quantity (operator-overridable; input LOT size irrelevant) and <strong><code>OperationTemplate.RequiresSubLotSplit</code></strong> no longer gates a Machining-OUT split — both descriptions (§2) are pending prose reconciliation. All SQL landed + validated (full suite 1887/1887). <strong>Pending doc prose reconciliation:</strong> the §1 Location <code>CoupledDownstreamCellLocationId</code> rows, <code>DefaultSubLotQty</code>, and <code>RequiresSubLotSplit</code> descriptions still describe the old split/coupling model.</td>
+</tr>
+<tr>
+<td>1.9t</td>
+<td>2026-07-02</td>
+<td>Blue Ridge Automation</td>
+<td><strong>Operation-type model restructure (Spec 1).</strong> <code>Parts.OperationTemplate.AreaLocationId</code> (per-area FK) <strong>dropped</strong>; new <code>OperationTypeId BIGINT NOT NULL FK → Parts.OperationType</code> added — templates are now area-agnostic and reusable across all areas of a kind, resolved by operation role at the terminal. Two new read-only code tables: <strong><code>Parts.OperationCategory</code></strong> (3 rows: Die Cast / Trim / Machining &amp; Assembly) and <strong><code>Parts.OperationType</code></strong> (8 roles: DieCast, TrimIn/Out, MachiningIn/Out, AssemblyIn/Out, CNC). Migrations <code>0032</code> (expand) + <code>0033</code> (contract). <code>RequiresSubLotSplit</code> now correlates to <code>OperationType.Code='MachiningOut'</code>. Defect/downtime area filtering is unaffected (those tables keep their own <code>AreaLocationId</code>; screens filter by the terminal's runtime area, not the template).</td>
+</tr>
+<tr>
+<td>1.9s</td>
+<td>2026-06-09</td>
+<td>Blue Ridge Automation</td>
+<td><strong>Scaling Decisions (<a class="xref" href="oir.html#oi-35">OI-35</a>) section added — Phase 0 architecture gate signed off.</strong> New top-level &quot;Scaling Decisions (<a class="xref" href="oir.html#oi-35">OI-35</a>)&quot; section captures the ratified Track-B architecture decisions governing migration <code>0020_arc2_phase1_shop_floor_foundation.sql</code>: B2 monthly RANGE-RIGHT partitioning + <strong><code>TRUNCATE</code>-based sliding-window</strong> (singleton <code>Id</code> PK preserved — see design spec <code>docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md</code>); B3 columnstore deferred (partition-compatible); B4 <code>LotGenealogyClosure</code> table; B5 materialized <code>TotalInProcess</code>/<code>InventoryAvailable</code> + <code>v_LotDerivedQuantities</code> fallback; B6 row-locked <code>IdentifierSequence_Next</code> (seed ≈3,000,000, MESL/MESI); B7 <code>OperationLog</code>→<code>LotEventLog</code> split; B8 known filtered indexes; B1 retention per FDS §11. Spec-only (governs the unbuilt <code>0020</code>); no shipped table changed.</td>
+</tr>
+<tr>
+<td>1.9r</td>
+<td>2026-06-08</td>
+<td>Blue Ridge Automation</td>
+<td><strong>§5 Quality doc-sync — three migration-<code>0017</code> columns back-filled into the spec (were live in the DB but missing from this doc and the ERD).</strong> <code>Quality.QualitySpec</code> gains <code>DeprecatedAt DATETIME2(3) NULL</code> + <code>DeprecatedByUserId BIGINT NULL FK → AppUser.Id</code> (header-level soft-delete). <code>Quality.QualitySpecAttribute</code> gains <code>UomId BIGINT NULL FK → Parts.Uom.Id</code> (replaces free-text <code>Uom</code> usage by the Config Tool QualitySpec editor; legacy <code>Uom NVARCHAR(20)</code> retained for back-compat). All three shipped in versioned migration <code>0017_qualityspec_attribute_uom_fk</code> (applied) but were never reflected in the data model §5 or <code>MPP_MES_ERD.html</code> — surfaced by the 2026-06-08 ERD-vs-DM parallel audit. No SQL change (migration already live); spec + ERD Quality tab updated to match the built schema.</td>
+</tr>
+<tr>
+<td>1.9q</td>
+<td>2026-06-08</td>
+<td>Blue Ridge Automation</td>
+<td><strong>section 3 Lot - <code>CrtActive BIT NOT NULL DEFAULT 0</code> added (<a class="xref" href="fds.html#fds-10-012">FDS-10-012</a> Controlled Run Tag).</strong> CRT workflow ratified for MVP 2026-06-08: a CRT-active LOT forces 200% downstream inspection (via <code>Quality.QualitySample</code>) with a supervisor-elevated release path and a <code>MissedCrtInspect</code> re-run rule. The column lands in the Arc 2 Phase 1 <code>Lots.Lot</code> CREATE; the workflow procs + audit event types build in the Arc 2 Quality phase. No other shipped table affected.</td>
+</tr>
+<tr>
+<td>1.9p</td>
+<td>2026-06-08</td>
+<td>Blue Ridge Automation</td>
+<td><strong>EAV-at-scale review follow-up — two structural changes + scaling-plan fold-in.</strong> (1) <strong>§1 Location — <code>CoupledDownstreamCellLocationId</code> promoted from a <code>CNCMachine</code> LocationAttribute (EAV, NVARCHAR(255)) to a typed self-FK column <code>BIGINT NULL FK → Location.Location.Id</code></strong> (migration <code>0019_location_coupled_downstream_cell</code>). It is a <code>Location → Location</code> relationship read on the hot path of every coupled Machining-OUT completion (<a class="xref" href="fds.html#fds-06-008">FDS-06-008</a>) — EAV gave it no referential integrity and forced a string→Id pivot per event. It was spec'd in v1.9k but <strong>never seeded</strong>, so this is pure-forward (no value backfill, no <code>0002</code> seed to remove). The self-FK enforces integrity; the &quot;target must be a Cell-tier Assembly Location&quot; rule stays in the Arc 2 write proc (mirrors <code>Tools.ToolType.CompatibleLocationTypeDefinitionId</code>, migration <code>0018</code>). The CNCMachine attribute-example block is removed; <a class="xref" href="fds.html#fds-06-008">FDS-06-008</a> already referenced it as a location property, so no FDS change. Surfacing it in <code>Location_Get</code> + a Config Tool Cell-picker is Arc 2 wiring — the column + constraint exist now. (2) <strong>§5 QualityResult — <code>NumericValue DECIMAL(18,4) NULL</code> added</strong>, a numeric shadow of <code>MeasuredValue</code> enabling indexable range / SPC / Cpk queries without string parsing. Mirrors the existing <code>Workorder.ProductionEventValue.NumericValue</code>. QualityResult is Arc 2-deferred (unbuilt) so this is a spec-only change — the column lands when the Arc 2 Quality CREATE migration writes the table; cheap now, painful to retrofit onto a 20M+ row table. (3) <strong>Scaling plan (<a class="xref" href="oir.html#oi-35">OI-35</a>) folded in the two runtime-EAV children</strong> <code>Workorder.ProductionEventValue</code> and <code>Quality.QualityResult</code> — they grow as multiples of their parents (events × extension-fields; samples × attrs-per-spec) but were absent from the <a class="xref" href="oir.html#oi-35">OI-35</a> row-estimate table and the 2026-04-28 indexing-review gap table. Both now carry index commitments and partition-alignment notes so the Arc 2 Phase 1 CREATE doesn't miss them. No change to any currently-shipped table beyond the additive Location column. Source: 2026-06-08 EAV-at-scale review session.</td>
+</tr>
+<tr>
+<td>1.9o</td>
+<td>2026-06-05</td>
+<td>Blue Ridge Automation</td>
+<td><strong>§7 ToolType — <code>CompatibleLocationTypeDefinitionId BIGINT NULL FK → Location.LocationTypeDefinition</code> added (migration <code>0018_tooltype_compatible_celldef</code>).</strong> Gives each tool type a one-to-one mapping to the <code>Cell</code>-kind it mounts on, so the Configuration Tool's Mount-to-Cell dropdown filters Cell-tier Locations down to the relevant kind (a Die Cast Die lists only Die Cast Machine cells, not CNC machines / terminals / printers / scales — the seeded Cell tier had 146 Locations, only 22 of them presses). NON-NULL restricts the dropdown; NULL = no restriction (all <code>Cell</code>-tier Locations). Seeded <code>Die → DieCastMachine</code> by Code; all other tool types NULL until their flows activate. Consumed by new repeatable proc <code>Tools.Tool_ListCompatibleCells @ToolId</code> (rule lives in SQL, not the Jython layer per the no-business-logic-in-Python convention); <code>ToolType_List</code> / <code>ToolType_Get</code> extended to surface the column. Frontend: <code>BlueRidge.Parts.Tool.getCellsForDropdown(toolId)</code> + <code>MountToCell</code> popup binding pass the tool id. <strong>Migration-number note:</strong> this took the next free versioned number <code>0018</code>; the doc header / Arc 2 plan had earmarked a <em>planned</em> Phase 5 <code>0018</code> for the OperationTemplate sub-LOT-split ALTER — that future Arc 2 migration re-numbers to <code>0019+</code> when it actually builds (Arc 2 is <a class="xref" href="oir.html#oi-35">OI-35</a>-gated and unbuilt). No change to currently-shipped tables beyond the additive column.</td>
+</tr>
+<tr>
+<td>1.9n</td>
+<td>2026-06-04</td>
+<td>Blue Ridge Automation</td>
+<td><strong>Sub-LOT split relocated Trim OUT → Machining OUT</strong> (per MPP, confirmed 2026-06; mirrors FDS v1.3 + Phased Plan v1.1). <code>Parts.OperationTemplate.RequiresSubLotSplit</code> (§2) now controls the <strong>Machining OUT</strong> outbound flow, not Trim OUT — when <code>1</code> the line splits the machined LOT into N sub-LOTs at Machining OUT (<code>MachiningOut_RecordSplit</code>); Trim OUT is a 1:1 whole-LOT move. The ALTER moves from Phase 4 migration <code>0017</code> to <strong>Phase 5 <code>0018</code></strong>. <code>Parts.Item.DefaultSubLotQty</code> description corrected (split at Machining OUT). <strong>No schema change</strong> — <code>Lot.ParentLotId</code> / <code>LotGenealogy</code> already model machining-origin sub-LOTs; the column definition is unchanged, only its consuming operation moved. Also: <strong>§3 ContainerConfig.ClosureMethod</strong> description aligned to <a class="xref" href="fds.html#fds-06-014">FDS-06-014</a> tray-level semantics (camera validates the full tray as one image — one event per tray, not per piece; prior text said &quot;per piece&quot;) and annotated with the customer-dependent-completion decision (2026-06-04): <code>ClosureMethod</code> is per-Item/per-customer (one line runs both <code>ByCount</code> and <code>ByVision</code> parts for different customers), and the binding to a camera/MIP-capable Cell is <strong>routing-trusted, not proc-enforced</strong>.</td>
+</tr>
 <tr>
 <td>1.9m</td>
 <td>2026-04-29</td>
@@ -236,6 +296,19 @@
 </tr>
 </tbody>
 </table>
+<hr>
+<h2 id="scaling-decisions-oi-35-signed-off-2026-06-08">Scaling Decisions (<a class="xref" href="oir.html#oi-35">OI-35</a>) — signed off 2026-06-08 <a class="heading-permalink" href="#scaling-decisions-oi-35-signed-off-2026-06-08" aria-label="Permalink">#</a></h2>
+<p>Normative for all Arc-2 event-table DDL; governs <code>0020_arc2_phase1_shop_floor_foundation.sql</code>. Full design + rationale: <code>docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md</code>; decision provenance: <code>Meeting_Notes/2026-06-08_Phase0_Decision_Log.md</code>.</p>
+<ul>
+<li><strong>B2 Partitioning:</strong> ~14 high-volume Arc-2 event tables use <strong>monthly <code>RANGE RIGHT</code> partitioning</strong> + sliding-window retention. Partition function (<code>pf_MonthlyUtc</code>) + scheme (<code>ps_MonthlyUtc</code>, single <code>PRIMARY</code> filegroup) created in <code>0020</code> — cannot retrofit to populated tables. <strong>Sliding-window mechanism is <code>TRUNCATE TABLE … WITH (PARTITIONS(…))</code></strong> (destructive age-out, no archive-to-coldstore in MVP), which imposes <strong>no aligned-unique-index requirement</strong> — so the project's singleton <code>BIGINT IDENTITY Id</code> PK convention is preserved (clustered index is the partition-aligned hot path, e.g. <code>(LotId, EventAt)</code>; <code>Id</code> stays a <code>NONCLUSTERED</code> PK). Excludes <code>Oee.DowntimeEvent</code> (Phase 8) and <code>Quality.HoldEvent</code> (Phase 7) — each is partitioned in its owning phase's migration.</li>
+<li><strong>B3 Columnstore:</strong> <strong>Deferred, partition-compatible</strong> — columnstore may be added to aged (&gt;90-day) partitions later with no restructure; not built in MVP.</li>
+<li><strong>B4 Genealogy closure:</strong> <code>Lots.LotGenealogy</code> materialized as a <strong>closure table</strong> (<code>LotGenealogyClosure</code>: ancestor/descendant/depth) maintained by genealogy procs — O(1) Honda trace. Created in <code>0020</code>; <code>Lot_Create</code> writes the self-row (<code>Depth=0</code>); split/merge maintenance is Phase 2.</li>
+<li><strong>B5 Materialized quantities:</strong> <code>Lots.Lot</code> carries materialized <code>TotalInProcess</code> + <code>InventoryAvailable</code> (proc-maintained); <code>Lots.v_LotDerivedQuantities</code> ships as a <strong>diagnostic fallback view</strong> only.</li>
+<li><strong>B6 Identifier sequence:</strong> <code>Lots.IdentifierSequence_Next</code> is a <strong>row-locked table</strong> (not SQL <code>SEQUENCE</code>) — gap-free, format-controlled, reseedable, 9,999,999 rollover. <strong>Cutover seed ≥ ~3,000,000</strong> (integration constraint); <strong>MESL/MESI</strong> format retained; exact per-sequence seeds set at cutover (owed from Ben — a cutover gate, not a build gate).</li>
+<li><strong>B7 OperationLog split:</strong> <code>Audit.OperationLog</code> → 7-yr general <code>OperationLog</code> + 20-yr <code>Lots.LotEventLog</code> (both created/repartitioned in <code>0020</code>; lot-relevant events route to <code>LotEventLog</code> via <code>Audit_LogOperation</code>).</li>
+<li><strong>B8 Filtered indexes:</strong> known hot-subset filtered indexes (active/non-deprecated, open holds, in-process lots) created in <code>0020</code>; others added reactively.</li>
+<li><strong>B1 Retention:</strong> per the FDS §11 retention table (20-yr Honda traceability vs 7-yr general operational/audit), enforced via the B2 sliding-window. Subject to MPP IT confirmation.</li>
+</ul>
 <hr>
 <h2 id="conventions">Conventions <a class="heading-permalink" href="#conventions" aria-label="Permalink">#</a></h2>
 <ul>
@@ -698,27 +771,9 @@
 </tr>
 </tbody>
 </table>
-<p><em>For <code>Cell</code> → <code>CNCMachine</code> definition (machining cells — coupled-downstream auto-move per <a class="xref" href="fds.html#fds-06-008">FDS-06-008</a>):</em></p>
-<table>
-<thead>
-<tr>
-<th>AttributeName</th>
-<th>DataType</th>
-<th>Required</th>
-<th>Uom</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>CoupledDownstreamCellLocationId</td>
-<td>Integer</td>
-<td>No</td>
-<td>—</td>
-<td><strong>Added v1.9k.</strong> <code>Location.Location.Id</code> of the Cell that machined LOTs auto-move to on Machining OUT. When non-NULL, PLC-signalled machining completion writes a <code>Workorder.ProductionEvent</code> and a <code>Lots.LotMovement</code> from this Machining Cell to the referenced downstream Cell (typically the paired Assembly Cell within the same WorkCenter), and updates the LOT's <code>CurrentLocationId</code> to the downstream Cell — no operator scan needed. NULL = legacy / uncoupled path: completion writes the <code>ProductionEvent</code> only; LOT stays at the Machining Cell awaiting an explicit operator-driven movement. Configured at deployment via the Configuration Tool's Location admin screens. (<a class="xref" href="fds.html#fds-06-008">FDS-06-008</a>)</td>
-</tr>
-</tbody>
-</table>
+<blockquote>
+<p>The <code>CNCMachine</code> definition's machining→assembly auto-move pairing is <strong>not</strong> an EAV attribute — <code>CoupledDownstreamCellLocationId</code> is a typed self-FK column on <code>Location.Location</code> (see the Location table below). Promoted out of the attribute model in v1.9p because it is a <code>Location → Location</code> relationship read on the hot path of every coupled Machining OUT (<a class="xref" href="fds.html#fds-06-008">FDS-06-008</a>).</p>
+</blockquote>
 <h3 id="location-location">Location <a class="heading-permalink" href="#location-location" aria-label="Permalink">#</a></h3>
 <p>Every node in the plant model — self-referential hierarchy. Each location references a single <code>LocationTypeDefinition</code>, which determines both its ISA-95 tier and its attribute schema.</p>
 <table>
@@ -785,10 +840,19 @@
 <td>NULL</td>
 <td></td>
 </tr>
+<tr>
+<td>CoupledDownstreamCellLocationId</td>
+<td>BIGINT</td>
+<td>FK → Location.Id (self), NULL</td>
+<td><strong>Typed column (was a <code>CNCMachine</code> LocationAttribute pre-v1.9p).</strong> On a Machining Cell, the <code>Location.Id</code> of the Cell that machined LOTs auto-move to on Machining OUT (<a class="xref" href="fds.html#fds-06-008">FDS-06-008</a>) — typically the paired Assembly Cell in the same WorkCenter. When non-NULL, PLC-signalled machining completion writes a <code>Workorder.ProductionEvent</code> + a <code>Lots.LotMovement</code> from this Cell to the referenced Cell and updates the LOT's <code>CurrentLocationId</code> — no operator scan. NULL = uncoupled/legacy path: completion writes the <code>ProductionEvent</code> only and the LOT stays put awaiting operator-driven movement. The self-FK gives referential integrity; the &quot;target must be a Cell-tier (Assembly) Location&quot; rule is enforced by the Arc 2 write/config-save proc, not a CHECK (mirrors <code>Tools.ToolType.CompatibleLocationTypeDefinitionId</code>). Migration <code>0019_location_coupled_downstream_cell</code>.</td>
+</tr>
 </tbody>
 </table>
 <blockquote>
 <p>Note: <code>LocationType</code> is not stored directly on <code>Location</code>; it's derivable via <code>LocationTypeDefinition.LocationTypeId</code>. Hierarchy queries use <code>ParentLocationId</code> (adjacency list) and join through <code>LocationTypeDefinition</code> when tier-based filtering is needed.</p>
+</blockquote>
+<blockquote>
+<p><strong>Why <code>CoupledDownstreamCellLocationId</code> is a typed self-FK, not a <code>LocationAttribute</code> (v1.9p):</strong> it is a <code>Location → Location</code> relationship read on the hot path of every coupled Machining-OUT completion. As an EAV <code>LocationAttribute.AttributeValue NVARCHAR(255)</code> it carried no referential integrity (could dangle to a deprecated / non-Cell row) and forced a string→Id pivot per event. Promoted to a typed column <strong>before</strong> the Arc 2 auto-move flow consumes it (cheapest moment — it was spec'd but never seeded, so no value backfill). The generic LocationAttribute editor no longer manages it; surfacing it in <code>Location_Get</code> + a Config Tool Cell-picker dropdown is Arc 2 wiring — the column exists and is integrity-checked now.</p>
 </blockquote>
 <h3 id="location-locationattribute">LocationAttribute <a class="heading-permalink" href="#location-locationattribute" aria-label="Permalink">#</a></h3>
 <p>Actual attribute values per location, constrained by the location's definition.</p>
@@ -1034,7 +1098,7 @@
 <td>DefaultSubLotQty</td>
 <td>INT</td>
 <td>NULL</td>
-<td>Default pieces per sub-LOT split. Used at <strong>Trim OUT</strong> when the parent LOT distributes across N Machining Cells (per <a class="xref" href="fds.html#fds-05-009">FDS-05-009</a>).</td>
+<td>Default pieces per sub-LOT split. Used at <strong>Machining OUT</strong> when a machined LOT is split across N downstream destinations on a sublotting line (per <a class="xref" href="fds.html#fds-05-009">FDS-05-009</a>).</td>
 </tr>
 <tr>
 <td>MaxLotSize</td>
@@ -1334,8 +1398,176 @@
 </tr>
 </tbody>
 </table>
+<h3 id="parts-operationcategory">OperationCategory <a class="heading-permalink" href="#parts-operationcategory" aria-label="Permalink">#</a></h3>
+<p>Read-only code table grouping operation roles for Config-Tool display. Seeded (3 rows): <code>DieCast</code> (Die Cast), <code>Trim</code> (Trim), <code>MachiningAssembly</code> (Machining &amp; Assembly). Added 2026-07-02 (operation-type restructure, migration <code>0032</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Constraints</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Id</td>
+<td>BIGINT</td>
+<td>PK</td>
+<td></td>
+</tr>
+<tr>
+<td>Code</td>
+<td>NVARCHAR(20)</td>
+<td>NOT NULL, UNIQUE</td>
+<td>DieCast, Trim, MachiningAssembly</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>NVARCHAR(100)</td>
+<td>NOT NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>Description</td>
+<td>NVARCHAR(500)</td>
+<td>NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>CreatedAt</td>
+<td>DATETIME2(3)</td>
+<td>NOT NULL, DEFAULT SYSUTCDATETIME()</td>
+<td></td>
+</tr>
+<tr>
+<td>DeprecatedAt</td>
+<td>DATETIME2(3)</td>
+<td>NULL</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="parts-operationtype">OperationType <a class="heading-permalink" href="#parts-operationtype" aria-label="Permalink">#</a></h3>
+<p>Read-only code table of operation <strong>roles</strong> — the stable identity a terminal binds to (via its default view / tab focus) so the scanned LOT's route resolves the right <code>OperationTemplate</code>, and the axis that lets one template be reused across all areas of a kind (e.g. one die-cast template for DC1–DC4). Seeded (8 rows). Added 2026-07-02 (migration <code>0032</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Constraints</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Id</td>
+<td>BIGINT</td>
+<td>PK</td>
+<td></td>
+</tr>
+<tr>
+<td>Code</td>
+<td>NVARCHAR(20)</td>
+<td>NOT NULL, UNIQUE</td>
+<td>DieCast, TrimIn, TrimOut, MachiningIn, MachiningOut, AssemblyIn, AssemblyOut, CNC</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>NVARCHAR(100)</td>
+<td>NOT NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>OperationCategoryId</td>
+<td>BIGINT</td>
+<td>FK → <a class="xref" href="#parts-operationcategory">Parts.OperationCategory</a>.Id, NOT NULL</td>
+<td>Grouping category</td>
+</tr>
+<tr>
+<td>OperationRoleKindId</td>
+<td>BIGINT</td>
+<td>FK → <a class="xref" href="#parts-operationrolekind">Parts.OperationRoleKind</a>.Id, NOT NULL</td>
+<td>Advance / OriginMint / ConsumeMint (see below). Added 2026-07-07 (migration <code>0035</code>, terminal-mint model).</td>
+</tr>
+<tr>
+<td>Description</td>
+<td>NVARCHAR(500)</td>
+<td>NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>CreatedAt</td>
+<td>DATETIME2(3)</td>
+<td>NOT NULL, DEFAULT SYSUTCDATETIME()</td>
+<td></td>
+</tr>
+<tr>
+<td>DeprecatedAt</td>
+<td>DATETIME2(3)</td>
+<td>NULL</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="parts-operationrolekind">OperationRoleKind <a class="heading-permalink" href="#parts-operationrolekind" aria-label="Permalink">#</a></h3>
+<p>Read-only code table classifying each <code>OperationType</code> role by how the route-driven WIP queue treats a LOT sitting on a step of that role (terminal-mint model, spec <code>2026-07-07-terminal-mint-model-and-rename-bom-removal-design.md</code> §3.2/§4.1). Seeded 3 rows (migration <code>0035</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Constraints</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Id</td>
+<td>BIGINT</td>
+<td>PK</td>
+<td></td>
+</tr>
+<tr>
+<td>Code</td>
+<td>NVARCHAR(20)</td>
+<td>NOT NULL, UNIQUE</td>
+<td><code>Advance</code> / <code>OriginMint</code> / <code>ConsumeMint</code></td>
+</tr>
+<tr>
+<td>Name</td>
+<td>NVARCHAR(100)</td>
+<td>NOT NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>Description</td>
+<td>NVARCHAR(500)</td>
+<td>NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>CreatedAt</td>
+<td>DATETIME2(3)</td>
+<td>NOT NULL, DEFAULT SYSUTCDATETIME()</td>
+<td></td>
+</tr>
+<tr>
+<td>DeprecatedAt</td>
+<td>DATETIME2(3)</td>
+<td>NULL</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Semantics (drives <code>Lots.Lot_GetWipQueueByLocation</code> &quot;next pending step&quot; resolution):</p>
+<ul>
+<li><strong><code>Advance</code></strong> (Trim, MachiningIn, AssemblyIn, CNC) — the step is satisfied once a <code>Workorder.ProductionEvent</code> exists for the LOT on that step's <code>OperationTemplateId</code>; the LOT then advances to its next route step.</li>
+<li><strong><code>OriginMint</code></strong> (DieCast) — produces this part; always satisfied for an existing LOT (it was minted there).</li>
+<li><strong><code>ConsumeMint</code></strong> (MachiningOut, AssemblyOut) — the LOT's terminal step; it stays in that terminal's queue until it is fully consumed (<code>Closed</code>). A consume-mint mints a <strong>new</strong> part-number LOT by consuming input(s) per the produced part's BOM (<code>Consumption</code> genealogy). Machining OUT: <code>Workorder.MachiningOut_Mint</code>; Assembly OUT: <code>Workorder.Assembly_CompleteTray</code>.</li>
+</ul>
 <h3 id="parts-operationtemplate">OperationTemplate <a class="heading-permalink" href="#parts-operationtemplate" aria-label="Permalink">#</a></h3>
-<p>Defines what data to collect at a type of operation. Reusable across products. <strong>Versioned</strong> via <code>Code</code> + <code>VersionNumber</code> — multiple rows share a Code to represent the evolution of one operation over time. See the clone-to-modify workflow in the Phase 5 <code>_CreateNewVersion</code> proc.</p>
+<p>Defines what data to collect at a type of operation. <strong>Area-agnostic and reusable across products and areas</strong> — classified by <code>OperationTypeId</code> (operation role); a terminal resolves the right template by role, so one die-cast template serves all four die-cast areas (2026-07-02 restructure; the former per-area <code>AreaLocationId</code> was dropped). <strong>Versioned</strong> via <code>Code</code> + <code>VersionNumber</code> — multiple rows share a Code to represent the evolution of one operation over time. See the clone-to-modify workflow in the Phase 5 <code>_CreateNewVersion</code> proc.</p>
 <table>
 <thead>
 <tr>
@@ -1371,10 +1603,10 @@
 <td></td>
 </tr>
 <tr>
-<td>AreaLocationId</td>
+<td>OperationTypeId</td>
 <td>BIGINT</td>
-<td>FK → Location.Id, NOT NULL</td>
-<td>Area (ISA-95 Area, organizational grouping)</td>
+<td>FK → <a class="xref" href="#parts-operationtype">Parts.OperationType</a>.Id, NOT NULL</td>
+<td>Operation role (see OperationType). Replaces the former <code>AreaLocationId</code> — templates are area-agnostic as of the 2026-07-02 restructure; the executing terminal supplies the area at runtime. <code>RequiresSubLotSplit</code> now correlates to <code>OperationType.Code = 'MachiningOut'</code>.</td>
 </tr>
 <tr>
 <td>Description</td>
@@ -1386,7 +1618,7 @@
 <td>RequiresSubLotSplit</td>
 <td>BIT</td>
 <td>NOT NULL, DEFAULT 0</td>
-<td><strong>Added v1.9m.</strong> Control flag for outbound flows that distribute a LOT across multiple downstream Cells (currently used at Trim OUT per <a class="xref" href="fds.html#fds-05-009">FDS-05-009</a>). When <code>1</code>, the operator-facing screen for this operation presents a multi-destination split UX (one sub-LOT per destination Cell, N sub-LOTs total); the closing proc calls <code>Lot_Split</code> and <code>Lot_MoveTo</code> per child. When <code>0</code> (default), the screen presents a single-destination move UX (no split — the parent LOT moves whole); the closing proc calls only <code>Lot_MoveTo</code>. Engineering authors per Item per Cell via the Configuration Tool. Versioned with the rest of the row per the clone-to-modify pattern. Not all <code>OperationTemplate</code> codes consume this flag — operations that have no outbound-distribution branch (Die Cast, Receiving, Machining IN, Assembly) ignore the column.</td>
+<td><strong>Added v1.9m; relocated to Machining OUT in v1.9n.</strong> Control flag for outbound flows that split a LOT across multiple downstream destinations (used at <strong>Machining OUT</strong> per <a class="xref" href="fds.html#fds-05-009">FDS-05-009</a> — the physical correlate is a line with a dedicated Machining OUT terminal). When <code>1</code>, the Machining OUT screen presents a multi-destination split UX (one sub-LOT per destination, N total); the closing proc (<code>MachiningOut_RecordSplit</code>) calls <code>Lot_Split</code> and <code>Lot_MoveTo</code> per child. When <code>0</code> (default), Machining OUT is the PLC-driven auto-move (coupled) or a manual whole-move (uncoupled) — no split. Engineering authors per Item per Cell via the Configuration Tool. Versioned with the rest of the row per the clone-to-modify pattern. Operations with no outbound-split branch — Die Cast, Receiving, <strong>Trim OUT</strong> (now a 1:1 whole-LOT move), Machining IN, Assembly — ignore the column. The ALTER lands in Phase 5 migration <code>0018</code>.</td>
 </tr>
 <tr>
 <td>CreatedAt</td>
@@ -1606,7 +1838,7 @@
 <td>ClosureMethod</td>
 <td>NVARCHAR(20)</td>
 <td>NULL</td>
-<td>One of <code>ByCount</code>, <code>ByWeight</code>, or <code>ByVision</code> (NULL when not yet configured). Selects the <strong>tray-level</strong> closure trigger per <a class="xref" href="fds.html#fds-06-014">FDS-06-014</a>. <code>ByCount</code> = operator-entered count per tray; <code>ByWeight</code> = scale feedback via OmniServer (target on <code>TargetWeight</code>, PLC asserts <code>TrayFullFlag</code> at threshold); <code>ByVision</code> = camera validates each part (pass/fail per piece), PLC accumulates the validated count and asserts <code>TrayFullFlag</code> at <code>PartsPerTray</code>. Container fill is derived in MES from accumulated tray closes — no separate <code>ContainerFullFlag</code> PLC tag is required.</td>
+<td>One of <code>ByCount</code>, <code>ByWeight</code>, or <code>ByVision</code> (NULL when not yet configured). Selects the <strong>tray-level</strong> closure trigger per <a class="xref" href="fds.html#fds-06-014">FDS-06-014</a>. <code>ByCount</code> = operator-entered count per tray; <code>ByWeight</code> = scale feedback via OmniServer (target on <code>TargetWeight</code>, PLC asserts <code>TrayFullFlag</code> at threshold); <code>ByVision</code> = camera validates the <strong>full tray as a single image</strong> (one validation event per tray, not per piece), PLC asserts <code>TrayFullFlag</code> on pass. Container fill is derived in MES from accumulated tray closes — no separate <code>ContainerFullFlag</code> PLC tag is required. <strong><code>ClosureMethod</code> is a per-Item / per-customer attribute</strong> — a <code>ByVision</code> part and a <code>ByCount</code> part may run on the same physical line for different customers, each with its own <code>ContainerConfig</code>. The binding to a camera/MIP-capable Cell is <strong>routing-trusted, not proc-enforced</strong> (decided 2026-06-04): Engineering routes a <code>ByVision</code> part to a vision-equipped Cell; a mis-route simply never receives <code>TrayFullFlag</code>. Distinct from the per-Cell <code>ConfirmationMethod</code> LocationAttribute (part-identity verification, <a class="xref" href="fds.html#fds-10-013">FDS-10-013</a>) — they may use the same physical Cognex but are separate concerns.</td>
 </tr>
 <tr>
 <td>TargetWeight</td>
@@ -1726,7 +1958,7 @@
 <td>Code</td>
 <td>NVARCHAR(20)</td>
 <td>NOT NULL, UNIQUE</td>
-<td>Good, Hold, Scrap, Closed</td>
+<td>Good, Hold, Scrap, Closed, Open</td>
 </tr>
 <tr>
 <td>Name</td>
@@ -1742,6 +1974,7 @@
 </tr>
 </tbody>
 </table>
+<p><strong><code>Open</code> (added migration <code>0045</code>, 2026-07-29 — Die Cast per-cavity lifecycle).</strong> <code>BlocksProduction = 0</code>; appended <code>Id</code> (the original 1-4 rows are unchanged). Represents a die-cast accumulator basket — the LOT exists (has a scanned LTT, a <code>ToolId</code> + <code>ToolCavityId</code>) and is accumulating good pieces at the press, but is <strong>not yet on its route</strong>: <code>Lots.v_LotDerivedQuantities.TotalInProcess = 0</code> for an <code>Open</code> LOT, and <code>Lot_GetWipQueueByLocation</code> explicitly excludes it (<code>sc.Code NOT IN ('Closed','Open')</code>) so it never surfaces to the Trim IN queue prematurely. <code>Lots.DieCastLot_Open</code> mints it; <code>Lots.DieCastLot_Release</code> transitions <code>Open → Good</code> and performs the LOT's first <code>LotMovement</code> (cell → warehouse storage), the moment it first becomes route-visible; <code>Lots.DieCastLot_Void</code> transitions an empty <code>Open</code> basket straight to <code>Scrap</code>. See <code>Workorder.DieCastContribution</code> below for how good pieces accumulate on an <code>Open</code> LOT.</p>
 <h3 id="lots-genealogyrelationshiptype">GenealogyRelationshipType <a class="heading-permalink" href="#lots-genealogyrelationshiptype" aria-label="Permalink">#</a></h3>
 <table>
 <thead>
@@ -1777,6 +2010,7 @@
 <p>The central tracking entity.</p>
 <blockquote>
 <p><strong>v1.9 changes:</strong> Added <code>ToolId</code> + <code>ToolCavityId</code> FKs (Tool/Cavity is system of record on the LOT, not on <code>ProductionEvent</code>). Required at <code>Lot_Create</code> for die-cast-origin LOTs; NULL elsewhere; NULL after <code>Lot_Merge</code> on blended-origin LOTs. Codifies <a class="xref" href="oir.html#oi-09">OI-09</a>: a die-cast machine with N active cavities produces <strong>N parallel independent LOTs (not sublots)</strong> — each LOT has fixed Tool + Cavity at creation, fills at its own rate, closes independently via explicit operator action. Pre-v1.9 <code>DieNumber</code> + <code>CavityNumber</code> NVARCHAR columns are now legacy (retained for cutover transition; slated for removal once all writers use the FKs).</p>
+<p><strong>v2.1 changes (2026-07-29) — per-cavity Open → accumulate → release lifecycle.</strong> Die-cast LOT creation is no longer a single <code>Good</code>-status origin mint. <code>Lots.DieCastLot_Open</code> mints one <code>Open</code>-status basket LOT per <code>(ToolId, ToolCavityId)</code> at <code>PieceCount = 0</code> when the operator scans a fresh pre-printed LTT — at most one <code>Open</code> LOT per (tool, cavity) at a time. The basket then <strong>accumulates</strong>: each shift, <code>Workorder.DieCastShiftOutput_Record</code> credits net-good pieces onto the LOT (raising <code>PieceCount</code>) via a <code>Workorder.DieCastContribution</code> row, while scrap posts additively to <code>Workorder.RejectEvent</code> and never touches <code>PieceCount</code>. While <code>Open</code>, the LOT is deliberately <strong>not on its route</strong> — <code>Lots.v_LotDerivedQuantities.TotalInProcess = 0</code> and <code>Lot_GetWipQueueByLocation</code> excludes it. The operator <strong>releases</strong> the basket (<code>Lots.DieCastLot_Release</code>) when it's full: <code>LotStatusId</code> transitions <code>Open → Good</code> and the LOT gets its first <code>LotMovement</code> (cell → warehouse storage), which is what makes it appear in the Trim IN queue for the first time. An empty <code>Open</code> basket may instead be <strong>voided</strong> (<code>Lots.DieCastLot_Void</code>, <code>Open → Scrap</code>), freeing the cavity/LTT. <code>Item.MaxLotSize</code> (<code>PartsPerBasket</code>) governs this basket exactly as before, but as a <strong>soft</strong> ceiling — the release/accumulate procs warn on overflow, they never reject it.</p>
 </blockquote>
 <table>
 <thead>
@@ -1895,6 +2129,12 @@
 <td>BIGINT</td>
 <td>FK → Location.Id, NOT NULL</td>
 <td>Where this LOT is now</td>
+</tr>
+<tr>
+<td>CrtActive</td>
+<td>BIT</td>
+<td>NOT NULL, DEFAULT 0</td>
+<td>Added v1.9q (<a class="xref" href="fds.html#fds-10-012">FDS-10-012</a>). Controlled Run Tag flag. When 1, downstream operations require 200% inspection (every part, captured via <code>Quality.QualitySample</code>) until cleared by a supervisor-elevated release. Missed CRT inspections (<code>MissedCrtInspect</code>) are detected against the per-operation inspection record. Set / cleared by the Arc 2 CRT workflow; MVP-ratified 2026-06-08.</td>
 </tr>
 <tr>
 <td>CreatedByUserId</td>
@@ -2396,6 +2636,12 @@
 <td>NOT NULL</td>
 <td></td>
 </tr>
+<tr>
+<td>RfidTag</td>
+<td>NVARCHAR(100)</td>
+<td>NULL</td>
+<td>Reserved placeholder for a future RFID-encoding phase (migration 0067). Not populated or read anywhere yet.</td>
+</tr>
 </tbody>
 </table>
 <h3 id="lots-containerstatuscode">ContainerStatusCode <a class="heading-permalink" href="#lots-containerstatuscode" aria-label="Permalink">#</a></h3>
@@ -2544,8 +2790,15 @@
 <td>NOT NULL</td>
 <td></td>
 </tr>
+<tr>
+<td>FinishedGoodLotId</td>
+<td>BIGINT</td>
+<td>FK → Lot.Id, NULL, UNIQUE (filtered on non-NULL)</td>
+<td>Finished-good LOT minted at tray closure - <code>tray = LOT</code>, 1:1. Assembly-out consumption targets this LOT via <code>ConsumptionEvent.ProducedLotId</code> (see below), and container genealogy resolves <code>Container -&gt; ContainerTray -&gt; FinishedGoodLot -&gt; component LOTs</code>. Nullable during transition; tightened to NOT NULL once all trays route through <code>Workorder.Assembly_CompleteTray</code>.</td>
+</tr>
 </tbody>
 </table>
+<p><strong>Assembly consumption targets the finished-good LOT (v-bump 2026-07-06).</strong> Non-serialized AND serialized assembly-out mint a finished-good LOT (<code>tray = LOT</code>) and consume <code>BomLine.QtyPer x PieceCount</code> FIFO (oldest-first by <code>Lot.CreatedAt</code>, tie-broken by <code>Id</code>) from eligible component LOTs at the line. Each draw's <code>Workorder.ConsumptionEvent</code> sets <strong><code>ProducedLotId</code> = the finished-good LOT</strong> (the primary consumption target), not only <code>ProducedContainerId</code>; the Container is retained as the wrapper. See <a class="xref" href="fds.html#fds-06-013">FDS-06-013</a> / <a class="xref" href="fds.html#fds-06-020">FDS-06-020</a> / <a class="xref" href="fds.html#fds-06-021">FDS-06-021</a>.</p>
 <h3 id="lots-serializedpart">SerializedPart <a class="heading-permalink" href="#lots-serializedpart" aria-label="Permalink">#</a></h3>
 <p>Individual laser-etched serial numbers.</p>
 <table>
@@ -2749,6 +3002,12 @@
 <td>DATETIME2(3)</td>
 <td>NULL</td>
 <td><strong>Added v1.9k.</strong> Non-NULL when the operator at <code>TerminalLocationId</code> dismissed the print-failure banner via the Acknowledge action (FDS-07-006b). Independent of <code>PrintFailedAt</code> — the row stays in failed state for the safety-sweep alarm even after acknowledgement; this column only suppresses the banner UI. NULL while the banner is active.</td>
+</tr>
+<tr>
+<td>RfidTag</td>
+<td>NVARCHAR(100)</td>
+<td>NULL</td>
+<td>Reserved placeholder for a future RFID-encoding phase (migration 0067). Not populated or read anywhere yet.</td>
 </tr>
 </tbody>
 </table>
@@ -2981,7 +3240,7 @@
 <p><strong>Scope:</strong></p>
 <ul>
 <li><code>WorkOrder</code>, <code>WorkOrderStatus</code>, <code>WorkOrderOperation</code>, <code>OperationStatus</code>, <code>WorkOrderType</code> — <strong>MVP-LITE</strong> (auto-generated, invisible to operators, no WO screens — per <a class="xref" href="oir.html#oi-07">OI-07</a> resolution)</li>
-<li><code>ProductionEvent</code>, <code>ProductionEventValue</code>, <code>ConsumptionEvent</code>, <code>RejectEvent</code>, <code>ScrapSource</code> — <strong>MVP</strong> (Production Data Acquisition is included and expanded)</li>
+<li><code>ProductionEvent</code>, <code>ProductionEventValue</code>, <code>ConsumptionEvent</code>, <code>RejectEvent</code>, <code>ScrapSource</code>, <code>DieCastContribution</code> — <strong>MVP</strong> (Production Data Acquisition is included and expanded)</li>
 <li>Demand (planned PM) and Maintenance (emergency) WO flows — <strong>FUTURE</strong> (separate project scope; this system only provides the code-table hook via <code>WorkOrderType</code> and the nullable <code>ToolId</code> on <code>WorkOrder</code>)</li>
 </ul>
 <p><strong><a class="xref" href="oir.html#oi-07">OI-07</a> status (2026-04-24 correction of 2026-04-20):</strong> MVP ships with <strong>one</strong> active WO type — <code>Production</code> — preserving the pre-existing MVP-LITE bookkeeping (auto-generated on LOT start, invisible to operators). The 2026-04-20 meeting note was mis-recorded; the &quot;Recipe&quot; line was describing this same Production flow. No separate Recipe concept exists. <code>Demand</code> (planned preventative maintenance) and <code>Maintenance</code> (emergency) are genuinely separate future WO types under MPP's taxonomy — they are NOT built in this project; the <code>WorkOrderType</code> code table exists as a future hook so new rows can be INSERTed without schema change when MPP scopes the maintenance engine. Operators never see or interact with any WO in MVP. Production events function independently via nullable <code>WorkOrderOperationId</code> FKs.</p>
@@ -3530,13 +3789,13 @@ ORDER BY pe.EventAt;
 <td>ProducedLotId</td>
 <td>BIGINT</td>
 <td>FK → Lot.Id, NULL</td>
-<td>Output LOT (if applicable)</td>
+<td>Output LOT - the <strong>primary consumption target</strong> for machining renames and assembly-out (the minted finished-good LOT).</td>
 </tr>
 <tr>
 <td>ProducedContainerId</td>
 <td>BIGINT</td>
 <td>FK → Container.Id, NULL</td>
-<td>Output container (if applicable)</td>
+<td>Output container (secondary/denormalized; the Container is retained as the wrapper but consumption targets <code>ProducedLotId</code>).</td>
 </tr>
 <tr>
 <td>ConsumedItemId</td>
@@ -3662,6 +3921,64 @@ ORDER BY pe.EventAt;
 </tr>
 </tbody>
 </table>
+<h3 id="workorder-diecastcontribution">DieCastContribution <a class="heading-permalink" href="#workorder-diecastcontribution" aria-label="Permalink">#</a></h3>
+<p><strong>Added migration <code>0045</code> (2026-07-29) — Die Cast per-cavity Open → accumulate → release lifecycle.</strong> Per-shift net-good ledger for an <code>Open</code> die-cast basket LOT. Each row is one shift-output submission at a die-cast press: the operator enters a die-wide gross shot count, the system computes per-cavity good (gross − scrap − shot-losses, see <code>Workorder.DieCast_GetShiftOutputBreakdown</code>), and <code>Workorder.DieCastShiftOutput_Record</code> writes one <code>DieCastContribution</code> row per contributing LOT with the net-good delta. <strong>Append-only</strong> — never updated or deleted; <code>Lots.Lot.PieceCount</code> is the running total, <code>DieCastContribution</code> is the audit trail of how it got there (also the source of the <code>Contribution</code> stream on <code>Lot_GetAttributeHistory</code>). Scrap is recorded separately and additively in <code>Workorder.RejectEvent</code> (die-cast <code>ScrapIsAdditive = 1</code>, migration <code>0042</code>) — it is never written to this table and never decrements <code>PieceCount</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Constraints</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Id</td>
+<td>BIGINT</td>
+<td>PK IDENTITY</td>
+<td></td>
+</tr>
+<tr>
+<td>LotId</td>
+<td>BIGINT</td>
+<td>FK → <a class="xref" href="#lots-lot">Lots.Lot</a>.Id, NOT NULL</td>
+<td>The <code>Open</code> (or since-released) die-cast basket LOT this contribution was credited to.</td>
+</tr>
+<tr>
+<td>ShiftId</td>
+<td>BIGINT</td>
+<td>FK → <a class="xref" href="#oee-shift">Oee.Shift</a>.Id, NULL</td>
+<td>The shift the output is reported against. Nullable — a contribution recorded outside a resolvable shift window still posts (time-decoupled entry per the design spec §3).</td>
+</tr>
+<tr>
+<td>PieceDelta</td>
+<td>INT</td>
+<td>NOT NULL, CHECK (PieceDelta &gt;= 0)</td>
+<td>Net-good pieces added to the LOT by this submission. Never negative — corrections are a new contribution row, not an update.</td>
+</tr>
+<tr>
+<td>AppUserId</td>
+<td>BIGINT</td>
+<td>FK → <a class="xref" href="#location-appuser">Location.AppUser</a>.Id, NOT NULL</td>
+<td>Operator who submitted the shift output.</td>
+</tr>
+<tr>
+<td>TerminalLocationId</td>
+<td>BIGINT</td>
+<td>FK → <a class="xref" href="#location-location">Location.Location</a>.Id (Terminal), NULL</td>
+<td>Terminal where the submission was made.</td>
+</tr>
+<tr>
+<td>EventAt</td>
+<td>DATETIME2(3)</td>
+<td>NOT NULL, DEFAULT SYSUTCDATETIME()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Indexes:</strong> <code>IX_DieCastContribution_Lot (LotId)</code>; <code>IX_DieCastContribution_Shift (ShiftId, LotId)</code> (per-shift-per-cavity reads for the tally + breakdown procs).</p>
+<p><strong>Not the same table as <code>ProductionEvent</code>.</strong> The 2026-07-23 draft of this design considered extending <code>Workorder.ProductionEvent</code> with delta columns; the shipped design (v2, 2026-07-28) instead uses this dedicated table — a contribution is a shift-output ledger entry, not a route/production checkpoint event, and a purpose-built table keeps the shared <code>ProductionEvent</code> table untouched.</p>
 <hr>
 <h2 id="5-quality-schema-mixed-scope">5. Quality Schema — MIXED SCOPE <a class="heading-permalink" href="#5-quality-schema-mixed-scope" aria-label="Permalink">#</a></h2>
 <blockquote>
@@ -3779,6 +4096,18 @@ ORDER BY pe.EventAt;
 <td>NOT NULL, DEFAULT GETDATE()</td>
 <td></td>
 </tr>
+<tr>
+<td>DeprecatedAt</td>
+<td>DATETIME2(3)</td>
+<td>NULL</td>
+<td>Header-level soft-delete — lets a spec be deprecated at the header level. Added migration <code>0017</code>.</td>
+</tr>
+<tr>
+<td>DeprecatedByUserId</td>
+<td>BIGINT</td>
+<td>FK → AppUser.Id, NULL</td>
+<td>Who deprecated the spec. Added migration <code>0017</code>.</td>
+</tr>
 </tbody>
 </table>
 <h3 id="quality-qualityspecversion">QualitySpecVersion <a class="heading-permalink" href="#quality-qualityspecversion" aria-label="Permalink">#</a></h3>
@@ -3875,7 +4204,13 @@ ORDER BY pe.EventAt;
 <td>Uom</td>
 <td>NVARCHAR(20)</td>
 <td>NULL</td>
-<td></td>
+<td>Legacy free-text UoM. Superseded by <code>UomId</code> for Config Tool editing; retained for back-compat.</td>
+</tr>
+<tr>
+<td>UomId</td>
+<td>BIGINT</td>
+<td>FK → <a class="xref" href="#parts-uom">Parts.Uom</a>.Id, NULL</td>
+<td>Added migration <code>0017</code> — replaces free-text <code>Uom</code> usage by the Config Tool QualitySpec editor.</td>
 </tr>
 <tr>
 <td>TargetValue</td>
@@ -4009,7 +4344,13 @@ ORDER BY pe.EventAt;
 <td>MeasuredValue</td>
 <td>NVARCHAR(255)</td>
 <td>NOT NULL</td>
-<td></td>
+<td>Canonical string storage of the measured value, parsed per <code>QualitySpecAttribute.DataType</code>.</td>
+</tr>
+<tr>
+<td>NumericValue</td>
+<td>DECIMAL(18,4)</td>
+<td>NULL</td>
+<td><strong>Added v1.9p.</strong> Numeric shadow of <code>MeasuredValue</code>, populated when the attribute is numeric — enables indexable range / SPC / Cpk queries over measured results without parsing <code>MeasuredValue</code>. Mirrors <code>Workorder.ProductionEventValue.NumericValue</code>. NULL for non-numeric (string / boolean) attributes; the Arc 2 write proc sets it when <code>QualitySpecAttribute.DataType</code> ∈ {Integer, Decimal}. Cheap to add now (table is Arc 2-deferred, unbuilt); painful to retrofit onto a 20M+ row table later.</td>
 </tr>
 <tr>
 <td>Uom</td>
@@ -4926,6 +5267,12 @@ Tools.ToolAssignment             -- check-in/out history against Cells
 <td><code>ToolCavity</code> rows are only valid for Tools whose type has this flag set</td>
 </tr>
 <tr>
+<td>CompatibleLocationTypeDefinitionId</td>
+<td>BIGINT</td>
+<td>FK → <a class="xref" href="#location-locationtypedefinition">Location.LocationTypeDefinition</a>.Id, NULL</td>
+<td>Added v1.9o (migration <code>0018</code>). The <code>Cell</code>-kind a tool of this type may mount on — drives the Mount-to-Cell dropdown filter (<code>Tools.Tool_ListCompatibleCells</code>). NON-NULL restricts the dropdown to that single cell kind; NULL = no restriction (all <code>Cell</code>-tier Locations). One-to-one by design — a tool type maps to at most one cell kind. Seeded <code>Die → DieCastMachine</code>; all other types NULL until their flows activate.</td>
+</tr>
+<tr>
 <td>SortOrder</td>
 <td>INT</td>
 <td>NOT NULL, DEFAULT 0</td>
@@ -4960,7 +5307,7 @@ Tools.ToolAssignment             -- check-in/out history against Cells
 <td>Die</td>
 <td>Die Cast Die</td>
 <td>1</td>
-<td>Dies used on die cast machines</td>
+<td>Dies used on die cast machines. <code>CompatibleLocationTypeDefinitionId → DieCastMachine</code> (seeded v1.9o).</td>
 </tr>
 <tr>
 <td>Cutter</td>
@@ -6063,7 +6410,7 @@ Tools.ToolAssignment             -- check-in/out history against Cells
 </div>
 <footer class="portal-footer">
   <span>Source: <code>MPP_MES_DATA_MODEL.md</code></span>
-  <span>Generated: <time datetime="2026-05-12T13:03:46.272Z">2026-05-12T13:03:46.272Z</time></span>
+  <span>Generated: <time datetime="2026-08-25T18:03:00.150Z">2026-08-25T18:03:00.150Z</time></span>
 </footer>
 <div id="search-modal" class="search-modal" hidden></div>
 <script src="assets/minisearch.min.js"></script>
