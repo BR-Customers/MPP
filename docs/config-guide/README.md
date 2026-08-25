@@ -43,9 +43,6 @@ This rewrites `MPP_MES_Configuration_Guide.html`.
 
 - **PLC Devices** — the fields and flow are documented, but the screen has no screenshot yet.
   Capture it once its UI styling is finalized.
-- **Shift Overrides** — documented, but the screen currently has no sidebar entry in the app
-  (reachable only at `/shift-overrides`). The section carries a warning callout saying so;
-  remove that callout once a nav item is added.
 - Before final customer release, review the dev-environment / sample-data caveat in the
   footer and the `Draft v0.3` tag in the masthead.
 
