@@ -8,9 +8,16 @@ original report"), not an assertion of it. It:
   2. Runs the checked-in generator's build() in-memory to get the rebuilt bytes.
   3. Runs verify_lot_detail_report.compare() between the two.
 
-The only difference the task intentionally introduced is the dead `Genealogy`
-data source, dropped during the refactor. That is asserted explicitly; any other
-difference fails the test with the specific diff line(s) printed.
+Two differences are intentionally introduced and asserted explicitly here; any
+OTHER difference fails the test with the specific diff line(s) printed:
+
+  1. The dead `Genealogy` data source, dropped during the source refactor
+     (Task 1).
+  2. The `AncestorSteps` nested child added under `GenealogyAncestors`
+     (Task 3) -- runs `Lots.Lot_GetLifecycle` once per ancestor row, bound to
+     that row's `RelatedLotId` column. Data-only change; the report layout does
+     not reference it yet, so this diff is expected on every rebuild from here
+     on, not just once.
 
 Run from the repo root:
 
@@ -33,6 +40,8 @@ ORIGINAL_COMMIT = "f4f71b95"
 ORIGINAL_PATH = ("ignition/projects/MPP/com.inductiveautomation.reporting/"
                   "reports/Lot Detail/data.bin")
 EXPECTED_ONLY_A_DIFF = "<root>: source key 'Genealogy' present only in A"
+EXPECTED_ONLY_B_DIFF = ("[key=GenealogyAncestors].children: source key "
+                        "'AncestorSteps' present only in B")
 
 
 def _git_show_binary(commit, path):
@@ -58,8 +67,10 @@ def main():
 
     diffs = compare(original_path, rebuilt_path)
 
-    unexpected = [d for d in diffs if not d.startswith(EXPECTED_ONLY_A_DIFF)]
+    expected_prefixes = (EXPECTED_ONLY_A_DIFF, EXPECTED_ONLY_B_DIFF)
+    unexpected = [d for d in diffs if not d.startswith(expected_prefixes)]
     saw_expected_drop = any(d.startswith(EXPECTED_ONLY_A_DIFF) for d in diffs)
+    saw_expected_nest = any(d.startswith(EXPECTED_ONLY_B_DIFF) for d in diffs)
 
     if unexpected:
         print("FAIL -- unexpected structural differences between original and rebuild:")
@@ -67,12 +78,17 @@ def main():
             print("  -", d)
         return 1
 
+    notes = []
     if saw_expected_drop:
-        print("PASS -- rebuild matches original exactly, except the "
-              "deliberately-dropped dead 'Genealogy' data source.")
+        notes.append("the deliberately-dropped dead 'Genealogy' data source")
+    if saw_expected_nest:
+        notes.append("the deliberately-added 'AncestorSteps' nested child "
+                     "under 'GenealogyAncestors'")
+    if notes:
+        print("PASS -- rebuild matches original exactly, except %s." % " and ".join(notes))
     else:
-        print("PASS -- rebuild matches original exactly (no 'Genealogy' source "
-              "was present in the original to drop).")
+        print("PASS -- rebuild matches original exactly (neither expected "
+              "difference was present).")
     return 0
 
 

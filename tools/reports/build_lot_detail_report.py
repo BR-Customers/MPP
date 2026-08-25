@@ -15,7 +15,8 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(os.path.expanduser("~"), ".claude", "skills",
                                 "ignition-reporting", "tools"))
 
-from report_builder import ReportBuilder, RESOURCE_JSON   # noqa: E402
+from nesting_builder import NestingReportBuilder          # noqa: E402
+from report_builder import RESOURCE_JSON                  # noqa: E402
 from lot_detail import queries                            # noqa: E402
 
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -33,11 +34,12 @@ def build():
     # gateway surfaces only as a generic "invalid report". Fail here instead.
     xml.dom.minidom.parseString(layout_xml.encode("utf-8"))
 
-    rb = ReportBuilder(DONOR)
+    rb = NestingReportBuilder(DONOR)
     rb.set_title(TITLE)
     rb.set_parameters(queries.PARAMETERS)
     for src in queries.DATA_SOURCES:
-        rb.add_query(src["key"], src["sql"], src["tokens"])
+        rb.add_nested_query(src["key"], src["sql"], src["tokens"],
+                            src.get("children") or [])
     rb.set_layout(layout_xml)
     rb.clear_snapshot()
     return rb.build()

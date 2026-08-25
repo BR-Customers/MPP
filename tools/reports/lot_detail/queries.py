@@ -43,7 +43,15 @@ DATA_SOURCES = [
     {"key": "Summary", "sql": SUMMARY_SQL, "tokens": ["{LotId}"], "children": []},
     {"key": "GenealogyAncestors",
      "sql": "EXEC Lots.Lot_GetGenealogyEdgeTree ?, N'Ancestors'",
-     "tokens": ["{LotId}"], "children": []},
+     "tokens": ["{LotId}"],
+     # Runs once per ancestor row. {RelatedLotId} is a COLUMN of the parent row,
+     # not a report parameter -- this is what gives each ancestor its own history.
+     "children": [
+         {"key": "AncestorSteps",
+          "sql": "EXEC Lots.Lot_GetLifecycle ?",
+          "tokens": ["{RelatedLotId}"],
+          "children": []},
+     ]},
     {"key": "GenealogyDescendants",
      "sql": "EXEC Lots.Lot_GetGenealogyEdgeTree ?, N'Descendants'",
      "tokens": ["{LotId}"], "children": []},
