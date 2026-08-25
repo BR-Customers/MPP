@@ -75,9 +75,9 @@ GO
 DECLARE @Out BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-KPI-OUT');
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
 
-DECLARE @M1 TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+DECLARE @M1 TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT, TraysPerContainer INT);
 INSERT INTO @M1 EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Out, @PieceCount = 24, @CellLocationId = @Cell, @ClosureMethod = N'ByCount', @AppUserId = 1;
-DECLARE @M2 TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+DECLARE @M2 TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT, TraysPerContainer INT);
 INSERT INTO @M2 EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Out, @PieceCount = 24, @CellLocationId = @Cell, @ClosureMethod = N'ByCount', @AppUserId = 1;
 
 -- both mints succeeded

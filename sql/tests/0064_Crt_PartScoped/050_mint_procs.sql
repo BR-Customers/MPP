@@ -425,7 +425,7 @@ FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
 WHERE l.ItemId = @CompA AND l.CurrentLocationId = @Cell AND sc.Code <> N'Closed';
 
 DECLARE @tray TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT,
-                     ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+                     ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT, TraysPerContainer INT);
 INSERT INTO @tray EXEC Workorder.Assembly_CompleteTray
     @FinishedGoodItemId = @Fg, @PieceCount = 6, @CellLocationId = @Cell,
     @ClosureMethod = N'ByVision', @AppUserId = 1, @TerminalLocationId = @Term;

@@ -76,7 +76,7 @@ INSERT INTO @On EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = @Term
 
 -- close all 4 trays (ByVision, 6 parts each = 24-part target) so the container reaches FULL
 DECLARE @AT TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT,
-                   ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+                   ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT, TraysPerContainer INT);
 DECLARE @t INT = 1;
 DECLARE @Con BIGINT;
 DECLARE @Lot BIGINT;
