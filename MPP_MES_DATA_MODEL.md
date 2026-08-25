@@ -725,7 +725,7 @@ LTT barcode label print/reprint tracking.
 | PrintedByUserId | BIGINT | FK → AppUser.Id, NOT NULL | |
 | TerminalLocationId | BIGINT | FK → Location.Id (Terminal), NULL | Terminal where action was performed |
 | PrintedAt | DATETIME2(3) | NOT NULL | |
-| RfidTag | NVARCHAR(100) | NULL | Reserved placeholder for a future RFID-encoding phase (migration 0064). Not populated or read anywhere yet. |
+| RfidTag | NVARCHAR(100) | NULL | Reserved placeholder for a future RFID-encoding phase (migration 0067). Not populated or read anywhere yet. |
 
 ### ContainerStatusCode
 
@@ -820,7 +820,7 @@ State derivation:
 | PrintFailedAt | DATETIME2(3) | NULL | **Added v1.9i.** Non-NULL = retries exhausted (3 attempts × 2s gap). Drives the banner shown at `TerminalLocationId`. |
 | TerminalLocationId | BIGINT | FK → Location.Location.Id, NULL | **Added v1.9i.** The Terminal where the closing operator was — drives both the printer pick (resolved via `LocationAttribute` on parent Cell) and the banner routing (banner shows only at this Terminal). |
 | BannerAcknowledgedAt | DATETIME2(3) | NULL | **Added v1.9k.** Non-NULL when the operator at `TerminalLocationId` dismissed the print-failure banner via the Acknowledge action (FDS-07-006b). Independent of `PrintFailedAt` — the row stays in failed state for the safety-sweep alarm even after acknowledgement; this column only suppresses the banner UI. NULL while the banner is active. |
-| RfidTag | NVARCHAR(100) | NULL | Reserved placeholder for a future RFID-encoding phase (migration 0064). Not populated or read anywhere yet. |
+| RfidTag | NVARCHAR(100) | NULL | Reserved placeholder for a future RFID-encoding phase (migration 0067). Not populated or read anywhere yet. |
 
 ### PauseEvent
 

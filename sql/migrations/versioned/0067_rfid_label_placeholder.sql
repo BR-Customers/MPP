@@ -1,5 +1,5 @@
 -- =============================================
--- Migration:   0064_rfid_label_placeholder.sql
+-- Migration:   0067_rfid_label_placeholder.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-08-20
 -- Description: Backlog item - "Add RFID column to label data for future phase."
@@ -24,11 +24,11 @@ IF COL_LENGTH(N'Lots.ShippingLabel', N'RfidTag') IS NULL
     ALTER TABLE Lots.ShippingLabel ADD RfidTag NVARCHAR(100) NULL;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0064_rfid_label_placeholder')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0067_rfid_label_placeholder')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0064_rfid_label_placeholder',
+    VALUES (N'0067_rfid_label_placeholder',
         N'Add RfidTag (NVARCHAR(100) NULL) to Lots.LotLabel and Lots.ShippingLabel - unpopulated placeholder for a future RFID-encoding phase.');
 GO
 
-PRINT 'Migration 0064 (rfid_label_placeholder) applied.';
+PRINT 'Migration 0067 (rfid_label_placeholder) applied.';
 GO
