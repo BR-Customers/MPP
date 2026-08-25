@@ -37,91 +37,97 @@
   <main>
     <header class="mast">
       <span class="eyebrow">Blue Ridge Automation · Prepared for Madison Precision Products</span>
-
-    <!-- ============ OVERVIEW ============ -->
-    <section id="overview">
       <h1>About this Guide</h1>
-      <p class="lead">The Shop Floor App is where operators will manage LOT creation and movement at the terminals.
-        Terminals are given a different screen depending on what machine is assigned to it. This guide will go over
-        how to navigate all of the screens and show you what everything does.
+      <p class="lead">The Shop Floor App is where operators create and move LOTs at the terminals.
+        Each terminal shows a different screen depending on the location it is assigned to. This guide
+        walks through every screen and explains what each one does.
       </p>
       <div class="meta">
         <span class="tag">Prepared by <b>Blue Ridge Automation</b></span>
-        <span class="tag">Draft <b>v0.1</b> · 2026-08-14</span>
+        <span class="tag">Draft <b>v0.2</b> · 2026-08-25</span>
       </div>
     </header>
 
-      <h3>How the LOTs move</h3>
-      <p class="lead">Most LOTs that isn't recieved from the <b>Recieving Dock</b> will start in <b>Die Cast</b>. It will
-        be placed in a cavity and filled with items. Afterwards, where it goes is dependent on its <b>Route</b>. Its route
-        is defined by an administrator/supervisor. While some LOTs can be finished after
-        moving through die cast, most will either move to <b>Trim</b> or <b>Machining &amp; Assembly</b>. Some LOTs will
-        move through all three. While moving between machines, LOTs will be placed in storage. 
+    <!-- ============ OVERVIEW ============ -->
+    <section id="overview">
+      <h3>How LOTs move</h3>
+      <p class="lead">Every LOT that is not received at the <b>Receiving Dock</b> starts at <b>Die Cast</b>,
+        where it is opened into a cavity and filled with parts. Where it goes next depends on its
+        <b>Route</b>, which an administrator or supervisor defines in the Configuration Tool. A few LOTs are
+        finished as soon as they leave Die Cast, but most move on to <b>Trim</b> or to
+        <b>Machining &amp; Assembly</b>, and some pass through all three. Between machines, LOTs wait in storage.
       </p>
-      
-      <h4>The three main steps of a lot.</h4>
+
+      <h3>The three main stages of a LOT</h3>
       <div class="cards">
         <div class="card">
           <h4><span class="k">1</span>Die Cast</h4>
-          <p>This is where all the items in lots are first created. It starts by scanning/entering a barcode (this is what
-            tracks the lot as it moves through its route). Its item then must be chosen and it also must be assigned a
-            cavity. As its items gets casted, it will be recorded based on what shift it was created on. Once the lot has
-            been filled, it will be released from the cavity.
+          <p>Where the parts in a LOT are first created. You scan the LTT barcode from the basket (this is
+            what tracks the LOT along its route), pick the part, and assign the basket to a cavity. As parts
+            are cast, output is recorded against the shift that produced it. Once the basket is full, it is
+            released from its cavity.
           </p>
         </div>
         <div class="card">
           <h4><span class="k">2</span>Trim</h4>
-          <p>Some items go through here. On the Trim screen, the lot is first let in by scanning/entering its barcode. 
-            Once it has moved through trim, it can simply be selected and released from Trim.
+          <p>Some parts pass through here. On the Trim screen the LOT is checked in by scanning its LTT
+            barcode. Once trimming is finished, the LOT is selected on the Trim OUT tab and released.
           </p>
         </div>
         <div class="card">
           <h4><span class="k">3</span>Machining &amp; Assembly</h4>
-          <p>This step actually has 4 different screens: <b>Machining In</b>, <b>Machining Out</b>, <b>Assembly In</b>,
-          and <b>Assembly Out</b>. The screen that a lot will be moved through is dependent on its route. The lot
-          will be moved to a queue after moving out of Trim, and can be selected to move it into Machining &amp;
-          Assembly.</p>
+          <p>This stage has four screens: <b>Machining IN</b>, <b>Machining OUT</b>, <b>Assembly IN</b>,
+            and <b>Assembly OUT</b>. Which of them a LOT passes through depends on its route. After leaving
+            Trim, a LOT waits in the line's storage until it is picked into Machining &amp; Assembly.</p>
         </div>
       </div>
+
+      <div class="note"><span class="ic">i</span><div><b>About LTT barcodes.</b> An LTT barcode is
+        <b>8 or 9 numeric digits</b>. MPP's pre-printed label stock is 8 digits; 9-digit codes remain valid
+        for LTTs that were already issued. LOTs that the system mints itself — machined sub-LOTs and
+        finished goods, for example — get a generated name such as <code>MESL1710935</code> instead.
+      </div></div>
+
       <h3>Audits</h3>
-      <p class="lead">Practically every action and event, from Die Cast production to LOT movement to downtime event creation,
-        is recorded and stored in a database. Every log contains the operator who did it, where and when it happened, as well as 
-        the data that was changed. This is important to note as operators will be required to log in with their initials in order
-        to use the terminals and it helps track what operators did during their shift.
+      <p class="lead">Practically every action and event — Die Cast production, LOT movement, downtime entry —
+        is recorded and stored in the database. Each log entry captures the operator who performed it, where
+        and when it happened, and the data that changed. This is why operators sign in with their initials
+        before using a terminal: it is what makes each action traceable to a person and a shift.
       </p>
+
       <h3>Other features</h3>
-      <p class="lead">Besides being how LOTs and machines are managed, the Plant Floor app also has a lot of other important features. 
-        Operators are able to enter their shift times, and also start, end, and edit <a href="#downtime">Downtimes</a>. Supervisors can get elevated 
-        access at a terminal in order to <a href="#track-and-trace">track LOTS</a>, manage <a href="#holds">holds</a>, and search <a href="#lot-search">LOT details</a>.
+      <p class="lead">Beyond managing LOTs and machines, the Shop Floor App covers several other areas.
+        Operators can enter their shift times and can start, end, and edit
+        <a href="#downtime">downtime events</a>. Supervisors can obtain elevated access at a terminal in
+        order to <a href="#track-and-trace">trace LOTs</a>, manage <a href="#holds">holds</a>, and search
+        <a href="#lot-search">LOT details</a>.
       </p>
     </section>
+
     <!-- ============ LOGIN ============ -->
     <section id="login">
       <h2>Login &amp; Setup</h2>
-      <p class="lead">When using the terminal for the first time, you will be prompted to log in. Logging in 
-        requires just your initials. The account system isn't meant for security, so there is no 
-        password. Instead, it's meant to track which operator performed which actions. 
-        Everything operators do will be audited and stored permanently (accessible via the 
-        Audit Log in the <b>Tool Config</b>). This is to prevent confusion on what has been done. If 
-        you don't have your initials stored already, you will be prompted to create a new user. 
-        You will also need to input a <b>Display Name</b>. This also means that every user will have 
-        unique initials. The initials are how each user is identified, not the display name.
+      <p class="lead">The first time you use a terminal you are prompted to sign in. Signing in requires only
+        your initials — the account system is not a security boundary, so there is no password. Its purpose is
+        to record which operator performed which action. Everything operators do is audited and stored
+        permanently, and can be reviewed later in the Audit Log in the <b>Configuration Tool</b>. If your
+        initials are not on file yet, you are prompted to create a new user and to supply a
+        <b>Display Name</b>. Initials must be unique, because initials — not the display name — are how each
+        user is identified.
       </p>
-      <p class="lead">After loggin in, you will be on the <b>Terminal Entry Page</b>. Here, you can scan/select the 
-        location that you want to set your terminal to. If you don't have a barcode to scan, you 
-        can use the menu tree below to select the location that you want. The tree is divided 
-        into sub-trees to help keep it organized. The format is: Enterprise &rarr; Site &rarr; Area &rarr; 
+      <p class="lead">After signing in you land on the <b>Terminal Entry</b> page. Here you scan or select the
+        location the terminal should be set to. If you do not have a barcode to scan, use the location tree
+        below to find it. The tree follows the plant hierarchy: Enterprise &rarr; Site &rarr; Area &rarr;
         Line/Cell &rarr; Terminal.
       </p>
-      <p class="lead">To expand on the tree, click on one of the arrows to the right of the name that you want 
-        to expand. You can continue to do this until you find the terminal that you want. Simply 
-        clicking on that terminal's name will set it your terminal to that location.
+      <p class="lead">Click the arrow to the right of any name to expand that branch, and keep going until you
+        reach the terminal you want. Clicking the terminal's name sets your terminal to that location.
       </p>
 
-      <div class="note"><span class="ic">i</span><div><b>It's important that you set your location correctly.</b>
-        Setting your location to a <code>Die Cast</code>, <code>Trim</code>, or <code>Machining &amp; Assembly</code> 
-        terminal will send you to a different screen. The different die cast locations will only allow you to cast
-        the parts that they are elligble for.</div></div>
+      <div class="note"><span class="ic">i</span><div><b>It is important to set your location correctly.</b>
+        Setting the terminal to a <code>Die Cast</code>, <code>Trim</code>, or
+        <code>Machining &amp; Assembly</code> location sends you to a different screen, and each Die Cast
+        location only offers the parts that are eligible to be cast there.</div></div>
 
       <figure class="shot">
         <div class="frame">
@@ -132,61 +138,75 @@
         <figcaption>Set your terminal's location here.</figcaption>
       </figure>
 
-      <p>The next few sections of this guide will go over the different locations and their screens.</p>
+      <p>The next few sections of this guide cover the individual locations and their screens.</p>
     </section>
 
     <!-- ============ DIE CAST ============ -->
     <section id="die-cast">
       <h2>Die Cast</h2>
-      <p class="lead">This is the first step of lot movement. It is where the lot is created. You start with an open 
-        basket and put it in the die cast by chosing the item and cavity. In the Record shift Output tab, 
-        you can record the amount of pieces created in the lots in the cavities. You select your shift 
-        and it will record all of the pieces that were created during that shift. You can also record all 
-        scrapped pieces and provide the reason.
+      <p class="lead">Die Cast is the first stage of a LOT's life, and where the LOT is created. The screen has
+        three tabs. On <b>Open Basket</b> you open an empty basket into each cavity of the mounted die. On
+        <b>Record Shift Output</b> you record the shots produced during a shift and any scrap. On
+        <b>Lot Release</b> you release a filled basket so it can move on to its next route step.
       </p>
-    
-      <h3>Putting an open basket into a die cast</h3>
+
+      <h3>Opening baskets into a die</h3>
+      <p>The Open Basket tab is a grid with <b>one row per cavity</b> of the die that is mounted on the cell.
+        You fill in the rows you want to open and then open them all in one action.
+      </p>
       <ol class="steps">
-        <li>Choose an <b>Active Cell</b>.</li>
-        <li>Scan/Enter the LTT barcode. This barcode can be found on the basket and is used to identify and track the
-          basket as it moves through its route.
-        </li>
-        <li>Set the item. This is the part that will be created in the basket. The available items are based on the active cell.</li>
-        <li>Choose the cavity that the basket will be put into. If you choose a cavity that is already filled by another basket,
-          then there will be an error.
-        </li>
-        <li>Press <code>Open</code> to move the part into the cavity, or press <code>Clear</code> if you would like to start over.</li>
+        <li>On a shared Die Cast terminal, pick the <b>Active Cell</b> first. Dedicated terminals already know
+          their cell and do not show the picker.</li>
+        <li>Check the <b>Die</b> shown above the grid. It is the tool currently mounted on the cell, and it
+          determines which cavity rows appear.</li>
+        <li>For each cavity you want to fill, choose the <b>Part</b>. Only parts that are eligible at this cell
+          are offered. On a single-part die, fill in the first row and press
+          <code>Copy part to empty rows</code> to apply it to every remaining empty row — each row stays
+          editable afterwards.</li>
+        <li>Scan the <b>LTT Barcode</b> into that cavity's row. The barcode is printed on the basket and is
+          what identifies and tracks it along its route.</li>
+        <li>Press <code>OPEN BASKETS</code> to open every completed row at once, or <code>Clear</code> to start
+          over. Each row's <b>Result</b> column reports whether that basket opened successfully.</li>
       </ol>
+      <div class="note"><span class="ic">i</span><div>A cavity that already holds an open basket shows an
+        <b>Open</b> pill with that basket's LOT name instead of an empty input. Release it on the
+        <b>Lot Release</b> tab before opening another basket into the same cavity.</div></div>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Open Basket</span></div>
           <img src="shots/02_die_cast_entry.png" alt="Die Cast Open Basket entry screen">
         </div>
-        <figcaption>Open a basket on this screen.</figcaption>
+        <figcaption>Open baskets on this screen — one row per cavity.</figcaption>
       </figure>
 
-      <h3>Recording Shot Output</h3>
-      <p>Shots are recorded based on what shift they were made in. It is important to record any defects and how many 
-        have defects, if applicable. The total amount of shots this shift as well as scrapped shots are shown on the 
-        right-hand side.
+      <h3>Recording shift output</h3>
+      <p>Output is recorded against the shift that produced it. You enter one die-wide shot count and the
+        system proposes how those shots divide across the open cavities; you then correct the good count and
+        record any scrap per cavity. Shots this shift, good parts, and scrap are summarised on the right-hand
+        side of the screen.
       </p>
       <ol class="steps">
-        <li>Select your shift in the <code>Recording Shift</code> dropdown menu.</li>
-        <li>Enter the amount of shots that you want to record (applies to the whole die-cast).</li>
-        <li>Press <code>Compute/Preview</code>, which will then open a list with all of the cavities. You
-          may also see previous baskets that have gone through in this list (this is just for reference
-          and will not be affected).</li>
-        <li>For each cavity, record the amount of scrapped shots, including the reason for scrapping it.
-          You can have up to 6 reasons per cavity.
-        </li>
-        <li>Press <code>Submit Shift Output</code>, and you should see the right side update with the
-          correct shot amount.</li>
+        <li>Choose the shift in the <code>Reporting shift</code> dropdown.</li>
+        <li>Enter the number of shots in <code>Shots this entry (die-wide)</code>. This is the count for the
+          whole die, not for one cavity.</li>
+        <li>Press <code>Compute / Preview</code>. A breakdown row appears for each cavity. Rows for baskets
+          that have already been released may also be listed for reference; those are not affected.</li>
+        <li>Adjust the <b>Good (pc)</b> figure on any row that needs it, and press
+          <code>Add scrap reason</code> to record scrap against that cavity. Each scrap line takes a defect
+          code and a quantity, and you can add as many lines per cavity as you need.</li>
+        <li>Press <code>SUBMIT SHIFT OUTPUT</code>. The tallies on the right update to match.</li>
       </ol>
-      <div class="note"><span class="ic">i</span><div>You <b>can</b> overfill LOTs with pieces. It will give
-        a warning, but you will still be able to continue. (the basket headroom shown on the cavity row 
-        is the soft limit). Attempting to submit shift output with an overfilled lot will ask you to confirm
-        if you are sure.
+      <p>Scrap that cannot be attributed to a single cavity is recorded separately in the
+        <b>Shot loss (all cavities)</b> row at the top of the tab: choose a <b>Defect reason</b>, enter the
+        quantity, and press <code>Register shot loss</code>.
+      </p>
+      <div class="note"><span class="ic">i</span><div>If a cavity's good count would push a basket past its
+        capacity, the row shows an <b>Over basket headroom</b> warning and submitting opens a confirmation
+        popup. For each over-filled basket you can either <b>fill</b> it — top it up to capacity, release it,
+        scan a new LTT to open a replacement basket, and carry the remainder over automatically — or
+        <b>overfill</b> it and continue past the limit. The headroom shown on a cavity row is a soft limit,
+        not a hard stop.
       </div></div>
       <figure class="shot">
         <div class="frame">
@@ -194,26 +214,27 @@
             <span class="path">Record Shift Output</span></div>
           <img src="shots/03_die_cast_record.png" alt="Die Cast Record Shift Output Screen">
         </div>
-        <figcaption>Example output being recorded. 12 shots are made, with 2 of them being recorded as faulty.</figcaption>
+        <figcaption>Example output being recorded: 12 shots made, 2 of them recorded as scrap.</figcaption>
       </figure>
-      <h3>Lot Release</h3>
-      <p>Once the basket has been filled, you can release them in the <b>Lot Release</b> tab. Here, all lots
-        will show up in a list. There are 2 options that can be pressed.</p>
-        <ul>
-          <li><code>Release</code>: Frees the lot from its cavity. This moves the lot onto its next step
-            in its route and opens up the cavity again. You may get a prompt to move it to <b>Trim Storage</b>.
-            This is where it will go after being released while it waits to move into Trim. You may also get
-            a warning if the LOT is underfilled. This can be ignored if the under-filled LOT is intentional.</li>
-          <li><code>Void</code>: Only shows up for empty lots. This will destroy the lot and stop it
-          from moving through its route</li>
-        </ul>
+
+      <h3>Lot release</h3>
+      <p>Once a basket is filled, release it on the <b>Lot Release</b> tab, which lists every basket currently
+        open on this die. Each row offers two actions:</p>
+      <ul>
+        <li><code>Release</code> — frees the LOT from its cavity, moves it to the next step on its route, and
+          opens the cavity back up. You may be prompted to deposit it into <b>Trim Storage</b>, where it waits
+          until it is checked in to Trim. An under-filled LOT raises a warning, which you can accept if the
+          short basket is intentional.</li>
+        <li><code>Void</code> — shown only for empty baskets. This discards the LOT and stops it from moving
+          along its route.</li>
+      </ul>
     </section>
 
     <!-- ============ TRIM ============ -->
     <section id="trim">
       <h2>Trim</h2>
-      <p class="lead">The workflow for the Trim screen is very simple, You scan in a LOT, and then move it 
-        into Trim. Once it's ready, you move it to <b>Trim OUT</b>, and record any scrapped pieces.
+      <p class="lead">The Trim workflow is straightforward: you check a LOT in, and when trimming is finished
+        you move it out and record any scrap.
       </p>
       <figure class="shot">
         <div class="frame">
@@ -221,23 +242,24 @@
             <span class="path">Trim Check IN screen</span></div>
           <img src="shots/04_trim.png" alt="Trim Check IN screen">
         </div>
-        <figcaption>Switch between <b>Check IN</b> and <b>Trim OUT</b> by pressing
-        the 2 buttons near the top of the screen.</figcaption>
+        <figcaption>Switch between <b>Check IN</b> and <b>Trim OUT</b> using the two buttons near the top of
+          the screen.</figcaption>
       </figure>
-      <p>Start by scanning/typing in the 9-digit LTT Barcode found on the LOT. Once this
-        has been done, you should see the info for the box pop up. The LOT will display whether or not
-        it is eligbile for Trim.
+      <p>On a shared Trim terminal, pick the press in the <b>Active Cell</b> dropdown first. On
+        <b>Check IN</b>, scan or type the LTT barcode from the LOT. The LOT's details appear, along with
+        whether it is eligible for Trim; the scan also enforces the cell's maximum-parts cap. LOTs already
+        checked in at the press are listed under <b>Currently in Trim</b>.
       </p>
-      <p>In the <code>Trim OUT</code> tab, you will see all LOTs that are in Trim. You 
-      can move them out of Trim by either selecting them or scanning/entering their barcode. Any 
-      scrapped pieces should also be reported here.</p>
+      <p>The <b>Trim OUT</b> tab shows the same Trim inventory. Select a LOT by tapping its card, or scan its
+        barcode, then record the good and scrap counts and release it. Released LOTs are deposited into the
+        line's Trim Storage, where Machining IN picks them up.</p>
     </section>
 
     <!-- ============ MACHINING ============ -->
     <section id="machining">
       <h2>Machining IN</h2>
-      <p class="lead">Some LOTs go to Machining IN as part of their route. LOTs here are queued here from oldest
-        to newest. There is no barcode scanning.
+      <p class="lead">Machining IN is where a LOT is claimed from Trim Storage and started at the line.
+        You start a LOT by scanning its LTT.
       </p>
       <figure class="shot">
         <div class="frame">
@@ -245,48 +267,89 @@
             <span class="path">Machining IN screen</span></div>
           <img src="shots/05_machining_in.png" alt="Machining IN screen">
         </div>
-        <figcaption>There is one LOT waiting in the queue here. Pressing <code>Pick</code> will start machining it.</figcaption>
+        <figcaption>Scan an LTT to start machining the LOT at this line.</figcaption>
       </figure>
-      <p>LOTS that are finished machining will move into the <b>Inventory</b>. You can view the inventory by 
-        pressing the <code>Inventory</code> button. All active machined LOTs will be visible below the FIFO queue.</p>
+      <ol class="steps">
+        <li>Scan or type the LTT into <code>Scan LTT to start machining</code>.</li>
+        <li>Check the LOT name, part, and piece count shown in the review panel.</li>
+        <li>Press <code>Start Machining</code>. The LOT moves from Trim Storage to this line and becomes the
+          <b>active machined LOT</b>.</li>
+      </ol>
+      <p>Press <code>Inventory</code> in the header to see what is currently held at the line, and
+        <code>Scrap</code> to record rejects against a LOT.</p>
+
       <h2>Machining OUT</h2>
-      <p class="lead">LOTs come here after going through Machining IN. Like Machining IN, this screen also uses a FIFO queue.</p>
+      <p class="lead">Machining OUT is where finished castings leave the machining line. It works from a FIFO
+        queue of the castings pending at this cell, oldest first.</p>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Machining OUT screen</span></div>
           <img src="shots/06_machining_out.png" alt="Machining OUT screen">
         </div>
-        <figcaption></figcaption>
+        <figcaption>The queue on the left lists castings pending Machining OUT, oldest first.</figcaption>
       </figure>
 
-      <p>Start by selecting the LOT you want to extract. You can extract less than the total amount of pieces to create 
-        a sub-LOT. The sub-LOT will be seperated from its parent LOT, but will still be connected in <a href="#genealogy">Genealogy</a>
-        (supervisor only). You can continue to do this until the amount of parents in the original LOT goes to 0, where it will then
-        be removed from Machining OUT and into <b>storage</b>.
+      <p>Select the parent LOT you want to extract from, then enter a piece count up to the parent's remaining
+        count and choose a destination. Extracting fewer than the full count creates a <b>sub-LOT</b>: it is
+        separated from its parent but stays linked to it in <a href="#genealogy">Genealogy</a> (supervisor
+        only). LTT labels print showing both the child and the parent LOT name. The parent stays open with its
+        reduced count and can be extracted again until its remaining pieces reach zero, at which point it
+        leaves the Machining OUT queue and its output moves into <b>storage</b>.
       </p>
     </section>
 
-    <!-- ============ Assembly ============ -->
+    <!-- ============ ASSEMBLY ============ -->
     <section id="assembly">
       <h2>Assembly IN</h2>
-      <p class="lead">LOTs can be scanned in here to be moved into assembly. The list will populate with available LOTs.</p>
+      <p class="lead">Assembly IN is where component LOTs are brought to an assembly cell. Scan a LOT's LTT to
+        check it in; the list shows the components currently at the cell.</p>
+      <ol class="steps">
+        <li>Scan or type the LTT into the <code>Scan / enter LTT (LotName)</code> field.</li>
+        <li>Press <code>Scan In</code>. The LOT moves to this cell and joins
+          <b>Components at this cell</b>.</li>
+      </ol>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Assembly IN Screen</span></div>
           <img src="shots/16_assembly_in.png" alt="Assembly IN screen">
         </div>
-        <figcaption></figcaption>
+        <figcaption>Components checked in and waiting at the assembly cell.</figcaption>
+      </figure>
+
+      <h2>Assembly OUT</h2>
+      <p class="lead">Assembly OUT is where the finished good is built. It consumes the components standing at
+        the cell and produces a finished-good LOT packed into a tray and container. There are two variants,
+        and the terminal's configuration decides which one you see.</p>
+      <ul>
+        <li><b>Non-serialized line</b> — trays close by count, by weight from the line scale, or by the line
+          camera, depending on the closure method configured for the part. Press <code>Complete Tray</code> to
+          close the tray, then <code>Complete</code> on the <b>Container Completion Gate</b> to finish the
+          container.</li>
+        <li><b>Serialized line</b> — the same flow, with the vision station embedded in the screen and the PLC
+          closing the container once the target weight is reached.</li>
+      </ul>
+      <p>Both variants show the part being produced, the components available at the cell, and a live
+        projection of how many finished goods the standing components can support — components running low are
+        flagged. <code>CRT Validation</code> in the header opens the container-validation queue for parts that
+        require it.</p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Assembly OUT — Serialized Line</span></div>
+          <img src="shots/07_assembly_ser.png" alt="Assembly OUT serialized line screen">
+        </div>
+        <figcaption>The serialized assembly line, with the vision station embedded.</figcaption>
       </figure>
     </section>
 
-    <!-- ============ Supervisor Access ============ -->
+    <!-- ============ SUPERVISOR ACCESS ============ -->
     <section id="supervisor-access">
       <h2>Obtaining Supervisor Access (Elevated Status)</h2>
-      <p class="lead">Supervisors who wish to track LOTs, manage holds or do inspections will need to log in with
-        their credentials in order to access these things. In the header of any page, press <code>Supervisor Access</code>
-        and it will prompt you to enter your AD credentials
+      <p class="lead">Supervisors who need to trace LOTs, manage holds, or run inspections must sign in with
+        their own credentials. Press <code>Supervisor Access</code> in the header of any page and enter your
+        Active Directory credentials when prompted.
       </p>
 
       <figure class="shot">
@@ -295,30 +358,30 @@
             <span class="path">Supervisor Access Prompt</span></div>
           <img src="shots/12_supervisor_access_prompt.png" alt="Supervisor Access Prompt">
         </div>
-        <figcaption></figcaption>
+        <figcaption>Elevation is granted per terminal and expires on its own.</figcaption>
       </figure>
 
-      <p>If you aren't able to log in, and know you are entering the correct username and passowrd, then you
-        might not be registered as a user in the <b>Active Directory</b>.
+      <p>If you cannot sign in and you are certain the username and password are correct, you may not be
+        registered as a user in <b>Active Directory</b>.
       </p>
-      <h3>Supervisor Menu</h3>
-      <p>Clicking on the menu button on the top-left of the header will take you to the <b>Supervisor Menu</b>.
-        Here, you can access all of the screens of the project, and easily switch terminals using the location tree on the 
-        left. Many of these screens are exclusive to users with elevated status.</p>
+      <h3>Supervisor menu</h3>
+      <p>The menu button at the top left of the header opens the <b>Supervisor Menu</b>. From here you can
+        reach every screen in the project and switch terminals using the location tree on the left. Many of
+        these screens are available only to users with elevated status.</p>
 
-      <div class="note warn"><span class="ic">!</span><div>Selecting a terminal in the location tree will <b>remove your elevated
-        status</b>. You must log in again if you want to continue accessing the Supervisor menu. You will also lose your elevated 
-        status after being inactive for a while.
+      <div class="note warn"><span class="ic">!</span><div>Selecting a terminal in the location tree
+        <b>removes your elevated status</b>. You must sign in again to keep using the Supervisor Menu. Elevated
+        status also expires after a period of inactivity.
       </div></div>
     </section>
 
     <!-- ============ LOT SEARCH ============ -->
     <section id="lot-search">
       <h2>LOT Search</h2>
-      <div class="note"><span class="ic">i</span><div>LOT Traceability features can only be accessed by users with <b>elevated access</b>.</div></div>
-      <p class="lead">The LOT search screen keeps track of all of the lots in the system. You can find
-        the LOT you want by sorting by name, status, and origin. Clicking on a LOT in the table gives
-        details on that LOT.
+      <div class="note"><span class="ic">i</span><div>LOT traceability features are available only to users
+        with <b>elevated access</b>.</div></div>
+      <p class="lead">LOT Search is a cross-area lookup over every LOT in the system. Narrow the list by
+        query, status, and origin, then click a row to open that LOT's details.
       </p>
       <figure class="shot">
         <div class="frame">
@@ -326,77 +389,99 @@
             <span class="path">LOT Search</span></div>
           <img src="shots/08_lot_search.png" alt="LOT Search">
         </div>
-        <figcaption>There are 4 LOTs in this table. The table shows important details of the LOT, such
-          as its 9-digit code, part number, status, and current location.</figcaption>
+        <figcaption>Four LOTs in this table. The columns show the key details: LOT name, part number,
+          status, and current location.</figcaption>
       </figure>
       <h3>Filtering</h3>
       <div class="tbl-scroll"><table class="fields">
-        <thead><tr><th>Filter Option</th><th>Input Type/How to use it</th></tr></thead>
-        <tr><td>Query</td><td>Input Field - Type in the Lot name (9-digit code) of the LOT, the Vendor LOT, or the Part Number</td></tr>
-        <tr><td>Status Filter</td><td>Dropdown - Current Status of the LOT. (Good, Closed, Hold, etc.)</td></tr>
-        <tr><td>Origin</td><td>Dropdown - Where the LOT came from. It's either manufactured onsite or recieved.</td></tr>
+        <thead><tr><th>Filter option</th><th>Input type / how to use it</th></tr></thead>
+        <tbody>
+        <tr><td>Query</td><td>Text field — the LOT name (LTT barcode or minted name), the vendor LOT, or the part number.</td></tr>
+        <tr><td>Status filter</td><td>Dropdown — the LOT's current status: Good, Open, Hold, Scrap, or Closed. Leave it on <b>Any</b> to include all of them.</td></tr>
+        <tr><td>Origin</td><td>Dropdown — where the LOT came from: manufactured on site, or received. Leave it on <b>Any</b> to include both.</td></tr>
+        </tbody>
       </table></div>
-      <p>Press <code>Search</code> to filter the table with the filter options you have selected.</p>
+      <p>Press <code>Search</code> to apply the filters, or <code>Reset</code> to clear them and start over.</p>
 
       <h3>LOT Details</h3>
-      <p>When clicking on a LOT in the table, it will take you to the <b>LOT Details</b> page. You can view more details of the 
-      LOT that you can find within the 5 tabs here.</p>
+      <p>Clicking a row opens the <b>LOT Detail</b> page. A strip across the top shows the LOT name, item,
+        piece count, current location, tool, cavity, and total scrap, along with status, hold, and CRT
+        indicators. Eight tabs below it cover the rest.</p>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">LOT Details</span></div>
           <img src="shots/09_lot_detail.png" alt="LOT Details">
         </div>
-        <figcaption></figcaption>
+        <figcaption>The LOT Detail page, with the KPI strip above the tabs.</figcaption>
       </figure>
-      <h4>Tab Overview</h4>
+      <h4>Tab overview</h4>
 
       <div class="cards">
         <div class="card">
           <h4>History</h4>
-          <p>History is where you can trace back where this LOT has been. Each row has a timestamp of when the action 
-            took place, as well as the operator who did it. It will log all movements (such as going from Die Cast to
-            Trim), status changes (changing from an open LOT to closed), contributions (pieces being added), and more.
+          <p>Traces everywhere this LOT has been. Each row carries a timestamp and the operator responsible.
+            It logs movements (Die Cast to Trim, for example), status changes (open to closed), contributions
+            (pieces added), and more.
           </p>
         </div>
         <div class="card">
           <h4>Genealogy</h4>
-          <p>Genealogy shows the <b>parents</b> and <b>children</b> of this LOT. An example of a child would be a
-            sub-LOT of a machined good. The machined good would be the parent in this example.
+          <p>Shows this LOT's <b>parents</b> and <b>children</b>. A sub-LOT extracted at Machining OUT is a
+            child; the casting it came from is the parent.
           </p>
         </div>
         <div class="card">
-          <h4>Paused at</h4>
-          <p>WIP
+          <h4>Paused-at</h4>
+          <p>Lists any open pause rows against this LOT — points where it was stopped part-way through a step
+            and is waiting to resume. A LOT that was never paused shows an empty state here.
           </p>
         </div>
         <div class="card">
-          <h4>Linked Containers</h4>
-          <p>WIP
+          <h4>Linked Container</h4>
+          <p>For a finished good, shows the container and tray it is packed into and the AIM Shipper ID it
+            shipped under. A LOT that is not packed into a container says so; finished goods link to their
+            container at Assembly OUT.
           </p>
         </div>
         <div class="card">
           <h4>Inspections</h4>
-          <p>All inspections that have occurred for this LOT will show here. Inspection can be logged in the 
-            <a href="#inspections">Inspections Tab</a>. You can click the <code>Inspections</code> button at
-            the bottom of the screen for quick access. You will also need to configure <b>Quality Specs</b>
-            for the part itself to be used as the basis for what to inspect. This can be configured in 
-            the <b>Config Tool</b>.
+          <p>Every inspection recorded against this LOT. Inspections are captured at the Inspection terminal —
+            the <code>Inspections</code> button in the action bar goes straight there. The part also needs
+            <b>Quality Specs</b> configured in the Configuration Tool, since those define what is inspected.
+          </p>
+        </div>
+        <div class="card">
+          <h4>Hold</h4>
+          <p>Place a hold on this LOT, or release the hold that is on it, without leaving the detail page.
+            This is the same panel used on the <a href="#holds">Hold Management</a> screen.
+          </p>
+        </div>
+        <div class="card">
+          <h4>Scrap</h4>
+          <p>Record scrap directly against this LOT, with a defect code, a quantity, and optional remarks.
+          </p>
+        </div>
+        <div class="card">
+          <h4>Correct Count</h4>
+          <p>Adjust the LOT's piece count when the recorded quantity does not match what is physically in the
+            basket. The correction is audited like any other change.
           </p>
         </div>
       </div>
-      <p>At the bottom of the screen, there are some buttons for some extra utility. You can place or release a <a href="#holds">hold</a>,
-        set/clear the CRT, and also quickly access the <b>Inspections</b>, <b>LOT Search</b>, and <b>Home</b> screens.</p>
+      <p>The action bar at the bottom of the screen holds <code>Back to Home</code>, <code>LOT Search</code>,
+        <code>Reprint LTT</code>, <code>Inspections</code>, and a button that sets or clears the LOT's CRT
+        flag.</p>
     </section>
 
     <!-- ============ GENEALOGY ============ -->
     <section id="genealogy">
       <h2>Genealogy Lookup</h2>
-      <div class="note"><span class="ic">i</span><div>LOT Traceability features can only be accessed by users with <b>elevated access</b>.</div></div>
-      <p class="lead">Genealogy is the relationship between LOTs. This screen shows the tree of
-        LOTs in a way that is easy to understand. The tree will show which sub-LOTs are descendants of the entered 
-        LOT, and also all of the LOTs/sub-LOTs that the entered LOT is a child of. Genealogy is useful for finding what
-        LOTs are related.
+      <div class="note"><span class="ic">i</span><div>LOT traceability features are available only to users
+        with <b>elevated access</b>.</div></div>
+      <p class="lead">Genealogy is the parent–child relationship between LOTs. This screen renders it as a
+        tree: the <b>ancestors</b> the searched LOT descends from, and the <b>descendants</b> that came out of
+        it. It is the query surface used to answer Honda traceability questions.
       </p>
 
       <figure class="shot">
@@ -405,23 +490,25 @@
             <span class="path">Genealogy</span></div>
           <img src="shots/10_genealogy.png" alt="Genealogy">
         </div>
-        <figcaption>This LOT has 5 sub-LOTs. They were created at Machining OUT. One sub-LOT has its own
-          child, giving it a depth of 2.
+        <figcaption>This LOT has five sub-LOTs, created at Machining OUT. One of them has a child of its own,
+          giving that branch a depth of two.
         </figcaption>
       </figure>
 
-      <p>Enter the 9-digit LOT code into the <code>LOTNAME</code> input field, and then press
-      <code>Walk Tree</code>. If the LOT has any parents or children, then they will display. The original
-      LOT that you entered in will be highlighted blue.</p>
+      <p>Enter the LOT name in the <code>LotName</code> field, choose whether to walk up, down, or both in the
+        <code>Direction</code> dropdown, and press <code>Walk Tree</code>. Ancestors are listed above the
+        searched LOT and descendants below it, with the LOT you searched for highlighted between them.</p>
     </section>
 
     <!-- ============ TRACK AND TRACE ============ -->
     <section id="track-and-trace">
       <h2>Track &amp; Trace</h2>
-      <div class="note"><span class="ic">i</span><div>LOT Traceability features can only be accessed by users with <b>elevated access</b>.</div></div>
+      <div class="note"><span class="ic">i</span><div>LOT traceability features are available only to users
+        with <b>elevated access</b>.</div></div>
 
-      <p class="lead">Track &amp; Trace is another way to view LOT details. It focuses on the path that the
-        LOT has taken. Use this to see the past production events of a LOT (and who caused them).
+      <p class="lead">Track &amp; Trace is a global lookup that resolves almost any identifier back to a LOT
+        and then shows the path that LOT has taken. Use it to review the production events behind a LOT and
+        who recorded them.
       </p>
 
       <figure class="shot">
@@ -430,58 +517,61 @@
             <span class="path">Track &amp; Trace</span></div>
           <img src="shots/11_track_and_trace.png" alt="Track and Trace">
         </div>
-        <figcaption> This LOT has gone through <b>Die Cast</b> into <b>Trim</b>
+        <figcaption>This LOT has gone through <b>Die Cast</b> and into <b>Trim</b>.
         </figcaption>
       </figure>
-      <p>Enter the 9-digit LOT code into the <code>IDENTIFIER</code> input field to view its details. If there are
-        multiple LOTs that contain that code, then you will need to select the correct one from a list. You will be able to see 
-        that LOTs <b>History Timeline</b>, <b>Production Events</b>, and <b>Genealogy</b>. For more a detailed view of Genealogy, 
-        look at the <a href="#genealogy">Genealogy Tab</a>.</p>
+      <p>Scan or type any LOT name, serial number, or container identifier into the <code>Identifier</code>
+        field and press <code>Search</code>. If the identifier resolves to more than one LOT, pick the right
+        one from the candidate list. You then get that LOT's <b>summary</b>, its <b>history timeline</b>, and
+        its <b>production events</b>. For a fuller view of parent and child relationships, use the
+        <a href="#genealogy">Genealogy Lookup</a>.</p>
     </section>
 
-    <!-- ============ Downtime ============ -->
+    <!-- ============ DOWNTIME ============ -->
     <section id="downtime">
       <h2>Downtime</h2>
-      <p class="lead">The <b>Downtimes</b> popup is where you can manage downtime for machines. You can start new downtimes, edit
-        downtimes, and even add past downtimes. The Downtime menu can be accessed by pressing the blue <code>Downtime</code> button in the 
-        header. </p>
+      <p class="lead">The <b>Downtime</b> popup is where machine downtime is managed. You can start a new
+        downtime, edit an existing one, and add downtime that has already happened. Open it with the blue
+        <code>Downtime</code> button in the header.</p>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Downtime Screen</span></div>
           <img src="shots/15_downtime.png" alt="Downtime">
         </div>
-        <figcaption>
-        </figcaption>
+        <figcaption>Downtime events for the selected shift.</figcaption>
       </figure>
-      <p>Downtimes have 4 properties:</p>
+      <p>A downtime event has the following properties:</p>
       <ul>
-        <li>Reason - Used to categorize the downtimes. It makes sorting past downtimes easier. New reasons are created by 
-          supervisors in the <b>Tool Config</b>.
+        <li><b>Reason</b> — categorises the downtime, which makes past events easier to sort and report on.
+          Supervisors create new reasons in the Configuration Tool.
         </li>
-        <li>Start Date &amp; End Date - Determines when the downtime will be effective. These can be set manually, or will 
-          automatically be set when the start/end buttons are pressed.
+        <li><b>Start date</b> and <b>End date</b> — when the downtime ran. Both can be set by hand, or filled
+          in automatically when you press the start and end buttons.
         </li>
-        <li>Remarks - Optional. This is just extra information that can be added to explain the downtime. It's useful for 
-          when looking back at past downtimes.
+        <li><b>Duration</b> — for downtime that has already happened and whose exact start and end are not
+          known, switch the editor to <b>Duration only</b> and enter how long the machine was down. Events
+          entered this way are flagged as approximate.
+        </li>
+        <li><b>Remarks</b> — optional. Extra context explaining the downtime, which is useful when reviewing
+          past events.
         </li>
       </ul>
-      <p>Clicking <code>Start Downtime</code> will create a new downtime with the start date set to the current date. You 
-      can set a reason for the downtime later. On the list of downtimes, you can press <code>End</code> to end the downtime.
-      This will appear on the active downtime, and it will set the end date to the current date. Selecting <code>Edit</code>
-      will allow you to edit the properties manually. Pressing <code>Void</code> will deprecate the downtime event. (not
-      fully deleted, the data will still exist. It will just be unable to be interacted with).</p>
-      <p>Downtimes are also organized by shifts. At the top of the Downtime popup there is a dropdown where you can change 
-        the shift. If you want to record a previous downtime event on an earlier shift, that can be achieved by doing this.
+      <p>Pressing <code>Start Downtime</code> creates a new event with the start time set to now; you can set
+        the reason afterwards. In the list, <code>End</code> appears on the active event and sets its end time
+        to now. <code>Edit</code> lets you change the properties by hand. <code>Void</code> deprecates the
+        event — the data is not deleted, but the event no longer counts and cannot be edited further.</p>
+      <p>Downtime is organised by shift. Use the dropdown at the top of the popup to change shift, which is
+        also how you record a downtime event against an earlier shift.
       </p>
     </section>
 
-    <!-- ============ Holds ============ -->
+    <!-- ============ HOLDS ============ -->
     <section id="holds">
       <h2>Holds</h2>
-      <p class="lead">Holds prevent operators from moving and interacting with LOTs. They are set by supervisors in the 
-        <b>Hold Management</b> screen. When a hold is placed on a LOT, their <b>Status Badge</b> will update to show it,
-        and they will be uninteractable.
+      <p class="lead">A hold stops a LOT from being moved or consumed. When a hold is placed, the LOT's
+        <b>status badge</b> updates to show it and the terminals refuse to act on it until the hold is
+        released.
       </p>
       <figure class="shot">
         <div class="frame">
@@ -489,49 +579,66 @@
             <span class="path">Hold Example</span></div>
           <img src="shots/13_hold_example.png" alt="Hold Example">
         </div>
-        <figcaption>This is a hold placed on a LOT in Machining OUT.
+        <figcaption>A hold placed on a LOT at Machining OUT.
         </figcaption>
       </figure>
 
-      <p><b>Holds</b> can be placed on a LOT at any location. Reasons for holds include failed quality 
-      inspection or a customer complaint. The hold will be kept on the LOT until manually removed by a supervisor.</p>
+      <p>A hold can be placed on a LOT at any location. Common reasons include a failed quality inspection or
+        a customer complaint. The hold stays on the LOT until a supervisor releases it.</p>
 
       <h3>Hold Management</h3>
-      <div class="note"><span class="ic">i</span><div>This feature can only be accessed by users with <b>elevated access</b>.</div></div>
-      <p>The <b>Hold Management</b> screen is where supervisors can view, place, and release holds.</p>
+      <div class="note"><span class="ic">i</span><div>This screen is available only to users with
+        <b>elevated access</b>.</div></div>
+      <p>The <b>Hold Management</b> screen is where supervisors view, place, and release holds on LOTs and
+        containers. It has two tabs: <b>Open Holds</b> and <b>Bulk &amp; Scrap</b>.</p>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
             <span class="path">Hold Management Screen</span></div>
           <img src="shots/14_hold_management.png" alt="Hold Management">
         </div>
-        <figcaption>
-        </figcaption>
+        <figcaption>The Open Holds tab: the list of open holds on the left, the selected hold on the right.</figcaption>
       </figure>
-      <h3>Placing a hold</h3>
+
+      <h4>Open Holds</h4>
+      <p>The left column lists every open hold. Narrow it with the <b>Filter</b> field, which matches LOT
+        name, AIM Shipper ID, item, or location, and with the <b>Hold Type</b> dropdown. Select a row to load
+        it into the panel on the right, or press <code>New hold</code> to start from an empty panel.</p>
+
+      <h4>Placing a hold</h4>
       <ol class="steps">
-        <li>In the <code>Place Hold</code> area, enter either a LOT name (9-digit code) or Container Id to identify the LOT</li>
-        <li>Enter a <b>Hold Type</b> (places the Hold in a broad category to organize all of the holds, useful for viewing holds later
-          as you can sort by Hold Type)
-        </li>
-        <li>Type in a <b>Reason</b> for the hold. This is important because it gives better details on the hold that people
-          can read later.</li>
-        <li>Press the <code>Place Hold</code> button.</li>
+        <li>Identify the target: enter a <b>LOT name</b> (scan the LTT) or a <b>Container Id</b>, then press
+          <code>Load</code>.</li>
+        <li>Choose a <b>Hold type</b>. This is the broad category the hold falls under, and it is what the
+          Hold Type filter sorts on later.</li>
+        <li>Type a <b>Reason</b>. Be specific — this is what the next person reads when deciding whether the
+          hold can come off.</li>
+        <li>Press <code>Place hold</code>.</li>
       </ol>
-      <h3>Bulk Hold</h3>
-      <p>You can also place multiple holds at once in the <code>Bulk Hold</code> area. The method is similar to placing a single hold. 
-        Just enter as many LOTs as you need, give a hold type, and then give a reason.</p>
-      <h3>Release Hold</h3>
-      <p>In the <code>Release Hold</code> area, you can take a hold off of a LOT.</p>
+
+      <h4>Releasing a hold</h4>
+      <p>With a held LOT or container loaded, the <b>Release hold</b> group shows a summary of the current
+        hold. Enter <b>Release remarks</b> explaining why it is being released, then press
+        <code>Release hold</code>. A LOT on hold can also be released from the <b>Hold</b> tab of its
+        <a href="#lot-search">LOT Detail</a> page.</p>
+
+      <h4>Bulk hold</h4>
+      <p>On the <b>Bulk &amp; Scrap</b> tab, <b>Bulk Hold</b> places one hold across several LOTs at once.
+        Search for LOTs by name or part, select the ones you want, choose a hold type, add an optional reason,
+        and place the hold on all of them together.</p>
+
+      <h4>Scrapping a held LOT</h4>
+      <p>The same tab has a <b>Scrap Held LOT</b> panel for recording scrap directly against a LOT that is on
+        hold — no split, and the hold stays in place. Enter the LOT name, the reject quantity, a defect code,
+        and any remarks, then press <code>Record Scrap</code>.</p>
     </section>
 
     <div class="footer">
-      <b>MPP MES Configuration Tool — Configuration Guide.</b>
+      <b>MPP MES — Shop Floor Guide.</b>
       Prepared by Blue Ridge Automation for Madison Precision Products, Inc.
-      Draft v0.1, 2026-07-29. Screenshots are drawn from the development environment and use
-      sample data;
+      Draft v0.2, 2026-08-25. Screenshots are drawn from the development environment and use sample data.
     </div>
-    
+
   </main>
 </div>
 

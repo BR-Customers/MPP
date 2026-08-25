@@ -1,15 +1,16 @@
 <#
-  Builds the self-contained MPP MES Configuration Guide.
+  Builds the self-contained MPP MES Shop Floor Guide.
 
-  Reads config-guide.src.html (which references shots/*.png by relative path) and
-  produces MPP_MES_Configuration_Guide.html with every screenshot inlined as a
-  base64 data URI, so the deliverable is a single portable file that opens offline
-  in any browser with no external assets.
+  Reads shopfloor-guide.src.html (which links styles.css and references shots/*.png
+  by relative path) and produces MPP_MES_ShopFloor_Guide.html with the stylesheet
+  inlined as a <style> block and every screenshot inlined as a base64 data URI, so
+  the deliverable is a single portable file that opens offline in any browser with
+  no external assets.
 
   Usage (from this folder):
       powershell -ExecutionPolicy Bypass -File .\build.ps1
 
-  To flesh out the guide, edit config-guide.src.html (and add screenshots under
+  To flesh out the guide, edit shopfloor-guide.src.html (and add screenshots under
   shots\), then re-run this script. Note: read with [IO.File]::ReadAllText so the
   UTF-8 em-dashes survive — Get-Content on Windows PowerShell 5.1 defaults to ANSI
   and would mangle them.
@@ -17,10 +18,22 @@
 param(
   [string]$Src = (Join-Path $PSScriptRoot "shopfloor-guide.src.html"),
   [string]$Shots = (Join-Path $PSScriptRoot "shots"),
+  [string]$Css = (Join-Path $PSScriptRoot "styles.css"),
   [string]$Out = (Join-Path $PSScriptRoot "MPP_MES_ShopFloor_Guide.html")
 )
 
 $html = [IO.File]::ReadAllText($Src, [Text.Encoding]::UTF8)
+
+# 1. Inline the stylesheet so the deliverable needs no sibling files.
+$cssLink = '<link rel="stylesheet" href="styles.css" />'
+if ($html -like "*$cssLink*") {
+  $cssText = [IO.File]::ReadAllText($Css, [Text.Encoding]::UTF8)
+  $html = $html.Replace($cssLink, "<style>`n$cssText`n</style>")
+} else {
+  Write-Warning "Stylesheet link not found in source - expected exactly: $cssLink"
+}
+
+# 2. Inline every screenshot as a data URI.
 $missing = @()
 Get-ChildItem $Shots -Filter *.png | Sort-Object Name | ForEach-Object {
   $needle = 'src="shots/' + $_.Name + '"'
@@ -28,11 +41,15 @@ Get-ChildItem $Shots -Filter *.png | Sort-Object Name | ForEach-Object {
   $b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($_.FullName))
   $html = $html.Replace($needle, 'src="data:image/png;base64,' + $b64 + '"')
 }
+
 [IO.File]::WriteAllText($Out, $html, (New-Object Text.UTF8Encoding($false)))
 
 $remaining = ([regex]::Matches($html, 'src="shots/')).Count
+$cssRefs = ([regex]::Matches($html, 'rel="stylesheet"')).Count
 $kb = [math]::Round((Get-Item $Out).Length / 1KB)
 Write-Output "Built: $Out ($kb KB)"
 Write-Output "Un-inlined shots/ refs remaining: $remaining"
+Write-Output "External stylesheet refs remaining: $cssRefs"
 if ($missing.Count) { Write-Warning ("Shots with no matching <img> in source: " + ($missing -join ', ')) }
 if ($remaining -gt 0) { Write-Warning "Some shots/ image references were not inlined (missing PNG in shots\)." }
+if ($cssRefs -gt 0) { Write-Warning "The deliverable still links an external stylesheet - it is NOT self-contained." }
