@@ -48,12 +48,6 @@
 </thead>
 <tbody>
 <tr>
-<td>1.7a</td>
-<td>2026-08-25</td>
-<td>Blue Ridge Automation</td>
-<td><strong>Correction — dangling cross-reference in §5.4.</strong> The sublot-permanence requirement cited &quot;per-cavity sublots (<code>FDS-05-023</code>)&quot;, but <code>FDS-05-023</code> (&quot;Per-Cavity Sublots at Die Cast&quot;, added v0.9) had its heading removed in the v0.11m renumbering pass while this one citation was left behind — it has pointed at a non-existent requirement ever since, and rendered as a broken link in the docs portal. The reference is <strong>removed rather than repointed</strong>: the concept it described (one parent LOT per die run with one child sublot per cavity) was superseded by the 2026-07-29 per-cavity lifecycle, in which each cavity accumulates its own <strong>independent</strong> LOT (<a class="xref" href="#fds-05-039">FDS-05-039</a>) with no parent, so Die Cast creates no parent→child genealogy edge at all. Text-only correction; no requirement added, removed, or renumbered.</td>
-</tr>
-<tr>
 <td>1.7</td>
 <td>2026-07-29</td>
 <td>Blue Ridge Automation</td>
@@ -1754,7 +1748,7 @@ OPTION (MAXRECURSION 100);
 <h4 id="fds-05-010"><a class="xref" href="#fds-05-010">FDS-05-010</a> — Partial-Remainder Handling <a class="heading-permalink" href="#fds-05-010" aria-label="Permalink">#</a></h4>
 <p>Under extract-one there is no even-split proposal. The operator enters each extracted sub-LOT quantity directly (<a class="xref" href="#fds-05-009">FDS-05-009</a> step 2); the system SHALL validate only that the extracted total is less than or equal to the parent's remaining piece count, and SHALL reject an over-extraction with a clear message. Any un-extracted balance remains on the open parent LOT (<a class="xref" href="#fds-05-022">FDS-05-022</a>) and is available for a subsequent extraction, a coupled auto-feed, or eventual close at zero. The system SHALL NOT force an even or symmetric division.</p>
 <h4 id="fds-05-011"><a class="xref" href="#fds-05-011">FDS-05-011</a> — Split Genealogy Permanence <a class="heading-permalink" href="#fds-05-011" aria-label="Permalink">#</a></h4>
-<p>The parent→child relationship created by a split SHALL be permanent and immutable. Child sublots SHALL carry a <code>ParentLotId</code> FK for direct adjacency queries, and <code>LotGenealogy</code> records for graph traversal. Both directions (parent→children, child→parent) SHALL be queryable. This applies equally to auto-split sublots (<a class="xref" href="#fds-05-009">FDS-05-009</a>) and to basket-level sublots created ad-hoc at container close. It does <strong>not</strong> apply to Die Cast per-cavity baskets: since the 2026-07-29 per-cavity redesign each cavity accumulates its own independent LOT (<a class="xref" href="#fds-05-039">FDS-05-039</a>), not a sublot of a shared parent, so no parent→child edge is created there.</p>
+<p>The parent→child relationship created by a split SHALL be permanent and immutable. Child sublots SHALL carry a <code>ParentLotId</code> FK for direct adjacency queries, and <code>LotGenealogy</code> records for graph traversal. Both directions (parent→children, child→parent) SHALL be queryable. This applies equally to auto-split sublots (<a class="xref" href="#fds-05-009">FDS-05-009</a>), per-cavity sublots (<a class="xref" href="#fds-05-023">FDS-05-023</a>), and basket-level sublots created ad-hoc at container close.</p>
 <h3 id="5-5-lot-merging-mvp">5.5 LOT Merging — <span class="scope-pill scope-mvp">MVP</span> <a class="heading-permalink" href="#5-5-lot-merging-mvp" aria-label="Permalink">#</a></h3>
 <p>LOT merge rules are concrete and enforced at the proc layer (see <a class="xref" href="#fds-05-025">FDS-05-025</a> through <a class="xref" href="#fds-05-030">FDS-05-030</a> below for the per-rule requirements):</p>
 <ul>
@@ -3233,7 +3227,7 @@ c. If the AIM call fails, log the failure to <code>Audit.InterfaceLog</code>, ab
 </div>
 <footer class="portal-footer">
   <span>Source: <code>MPP_MES_FDS.md</code></span>
-  <span>Generated: <time datetime="2026-08-25T18:03:00.150Z">2026-08-25T18:03:00.150Z</time></span>
+  <span>Generated: <time datetime="2026-08-25T18:06:23.694Z">2026-08-25T18:06:23.694Z</time></span>
 </footer>
 <div id="search-modal" class="search-modal" hidden></div>
 <script src="assets/minisearch.min.js"></script>

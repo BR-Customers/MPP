@@ -151,7 +151,7 @@
 <td>2.7</td>
 <td>2026-04-24</td>
 <td>Blue Ridge Automation</td>
-<td><strong>Arc 2 model revisions (2026-04-23 session) landed.</strong> <a class="xref" href="#oi-09">OI-09</a> ✅ Closed — Die Cast cavity-parallel LOTs codified into Data Model v1.9 via <code>Lot.ToolId</code> + <code>Lot.ToolCavityId</code> (N active cavities → N parallel independent LOTs, not sublots). Machining sub-LOT split remains a separate concept in FDS §5.4. <strong><code>OI-26</code> DELETED</strong> (not Resolved, not Superseded — removed entirely). Flexware's <code>UserInterfaceScript</code> DB-stored-runtime-code pattern is not reproduced: LocationAttribute on Terminal/Workstation tier + Perspective session-scoped scripts cover every legitimate use case; runtime code lives in Ignition project files, version-controlled. <strong><a class="xref" href="#oi-31">OI-31</a> NEW / ⬜ Open</strong> — <code>Lots.IdentifierSequence</code> table (Flexware <code>IdentifierFormat</code> equivalent, carries <code>MESL{0:D7}</code> Lot and <code>MESI{0:D7}</code> SerializedItem counters). Schema locked; seed values pending Flexware cutover snapshot. <a class="xref" href="#oi-05">OI-05</a> confirmed — post-merge LOT has NULL Tool / Cavity (blended-origin can't denormalize). Source decisions: <code>docs/superpowers/specs/2026-04-23-arc2-model-revisions.md</code>. Downstream commits in the same refresh pass: Data Model v1.9, FDS v0.11, User Journeys v0.8, Arc 2 phased plan refresh.</td>
+<td><strong>Arc 2 model revisions (2026-04-23 session) landed.</strong> <a class="xref" href="#oi-09">OI-09</a> ✅ Closed — Die Cast cavity-parallel LOTs codified into Data Model v1.9 via <code>Lot.ToolId</code> + <code>Lot.ToolCavityId</code> (N active cavities → N parallel independent LOTs, not sublots). Machining sub-LOT split remains a separate concept in FDS §5.4. <strong><a class="xref" href="#oi-26">OI-26</a> DELETED</strong> (not Resolved, not Superseded — removed entirely). Flexware's <code>UserInterfaceScript</code> DB-stored-runtime-code pattern is not reproduced: LocationAttribute on Terminal/Workstation tier + Perspective session-scoped scripts cover every legitimate use case; runtime code lives in Ignition project files, version-controlled. <strong><a class="xref" href="#oi-31">OI-31</a> NEW / ⬜ Open</strong> — <code>Lots.IdentifierSequence</code> table (Flexware <code>IdentifierFormat</code> equivalent, carries <code>MESL{0:D7}</code> Lot and <code>MESI{0:D7}</code> SerializedItem counters). Schema locked; seed values pending Flexware cutover snapshot. <a class="xref" href="#oi-05">OI-05</a> confirmed — post-merge LOT has NULL Tool / Cavity (blended-origin can't denormalize). Source decisions: <code>docs/superpowers/specs/2026-04-23-arc2-model-revisions.md</code>. Downstream commits in the same refresh pass: Data Model v1.9, FDS v0.11, User Journeys v0.8, Arc 2 phased plan refresh.</td>
 </tr>
 </tbody>
 </table>
@@ -1684,7 +1684,7 @@ recipe work orders to not be operator visible
 </div>
 <footer class="portal-footer">
   <span>Source: <code>MPP_MES_Open_Issues_Register.md</code></span>
-  <span>Generated: <time datetime="2026-08-25T18:03:00.150Z">2026-08-25T18:03:00.150Z</time></span>
+  <span>Generated: <time datetime="2026-08-25T18:06:23.694Z">2026-08-25T18:06:23.694Z</time></span>
 </footer>
 <div id="search-modal" class="search-modal" hidden></div>
 <script src="assets/minisearch.min.js"></script>
