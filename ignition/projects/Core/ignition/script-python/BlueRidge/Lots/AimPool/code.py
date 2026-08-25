@@ -50,30 +50,6 @@ def getDepth():
         raise
 
 
-def getDepthOrZero(_refreshToken=None):
-    """Pool depth as a plain int for the Supervisor Dashboard tile. ALWAYS an int.
-
-       getDepth() deliberately re-raises so the AIM Pool Config screen's poll shows
-       bad quality on a read failure. That is right for the screen that manages the
-       pool, but wrong for a dashboard tile -- one failing read should not take the
-       tile Quality-Bad. This swallows and reports 0 instead.
-
-       _refreshToken is accepted and ignored: runScript caches on its argument list,
-       so a caller wanting a re-read passes a changing token as an ARG."""
-    from java.lang import Throwable
-    try:
-        rows = getDepth()
-    except Throwable, t:
-        BlueRidge.Common.Util.log("getDepthOrZero failed: %s" % t, level="error")
-        return 0
-    except Exception, e:
-        BlueRidge.Common.Util.log("getDepthOrZero failed: %s" % e, level="error")
-        return 0
-    if not rows:
-        return 0
-    return int(rows[0].get("Depth") or 0)
-
-
 def getForPost(aimShipperId):
     """Read one pool row's AIM post-back payload. Returns list[dict] (empty = not found).
        CustomerPartNumber is COALESCEd against the live item, so a row completed before

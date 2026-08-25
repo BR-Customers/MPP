@@ -7,27 +7,6 @@ def getCountByLocation(locationId):
     return BlueRidge.Common.Db.execOne("lots/LotPause_GetCountsByLocation", {"locationId": locationId})
 
 
-def getOpenCount(locationId=None, _refreshToken=None):
-    """Open-pause COUNT as a plain int. locationId None -> PLANT-WIDE, which is what
-       the Supervisor Dashboard's Paused-LOTs tile needs (the per-Cell indicator badge
-       keeps using getCountByLocation).
-
-       Binding-safe: always an int, never None, so a label expression can render it
-       without a coalesce and a read failure shows 0 rather than a Quality-Bad tile.
-       _refreshToken is accepted and ignored -- runScript caches on its argument list,
-       so a caller that wants a re-read must pass a changing token as an ARG."""
-    BlueRidge.Common.Util.log("locationId=%s" % locationId)
-    try:
-        row = BlueRidge.Common.Db.execOne(
-            "lots/LotPause_GetCountsByLocation", {"locationId": locationId})
-    except Exception, e:
-        BlueRidge.Common.Util.log("getOpenCount failed: %s" % e, level="error")
-        return 0
-    if not row:
-        return 0
-    return int(row.get("OpenPauseCount") or 0)
-
-
 def getByLocation(locationId):
     """Open pauses at a Cell, oldest-first (indicator detail list). list[dict]."""
     BlueRidge.Common.Util.log("locationId=%s" % locationId)
