@@ -146,26 +146,16 @@ def notifyInventoryChanged(cellLocationId, terminalLocationId):
        none), so there is no true broadcast: enumerate every open session/page via
        getSessionInfo() and target each. Non-terminal pages simply have no
        'inventoryChanged' handler and ignore it. Never raises into the completion
-       path -- a failed UI nudge must not undo a committed tray close. Catches
-       java.lang.Exception too (Jython's `except Exception` does not catch Java
-       throwables)."""
+       path -- a failed UI nudge must not undo a committed tray close.
+
+       Routes through PlcWatcher.broadcastPageMessage -- the shared, hardened
+       enumeration (skips non-UUID-shaped session/page entries; one such entry
+       threw java.lang.IllegalArgumentException on every single call before this
+       was factored out, 2026-08-20)."""
     payload = {"cellLocationId": cellLocationId,
                "terminalLocationId": terminalLocationId,
                "source": "plc"}
-    try:
-        for s in (system.perspective.getSessionInfo() or []):
-            sid = s["id"]
-            for pid in (s["pageIds"] or []):
-                try:
-                    system.perspective.sendMessage(
-                        "inventoryChanged", payload=payload,
-                        scope="page", sessionId=sid, pageId=pid)
-                except (Exception, java.lang.Exception) as e:
-                    BlueRidge.Common.Util.log(
-                        "notifyInventoryChanged send failed sid=%s pid=%s: %s"
-                        % (sid, pid, e), level="warn")
-    except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("notifyInventoryChanged enumerate failed: %s" % e, level="warn")
+    BlueRidge.Workorder.PlcWatcher.broadcastPageMessage("inventoryChanged", payload)
 
 
 def warnLowInventory(cellLocationId, finishedGoodItemId, closureMethod):

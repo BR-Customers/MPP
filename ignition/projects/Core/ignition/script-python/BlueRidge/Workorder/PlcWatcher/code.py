@@ -87,6 +87,112 @@ def writeDisplay(udtInstancePath, valuesByMember):
     return writeMembers(udtInstancePath, valuesByMember)
 
 
+# ---- terminal -> cell resolution --------------------------------------------
+def zoneCellId(terminalLocationId):
+    """The cell a terminal's LOTs actually live at: its ZONE (the parent line).
+
+       M&A LOTs are line-resident -- they sit at the WorkCenter/line and the
+       terminals hang off it -- so a queue read scoped to the TERMINAL's own
+       Location always comes back empty and the watcher bails with
+       'no active LOT' while the line is full of WIP. Every watcher that reads
+       the FIFO queue must resolve the zone first. Mirrors the cell resolution in
+       Assembly.resolvePlcCloseContext (Terminal_List.ZoneId).
+
+       Returns the zone LocationId, or None when the terminal is unknown or has
+       no zone (caller bails + logs, same as an empty queue)."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return None
+    term = BlueRidge.Location.Terminal.findById(
+        BlueRidge.Location.Terminal.listAll(), tid)
+    return (term or {}).get("ZoneId")
+
+
+# ---- operator notification (gateway-scope safe) ------------------------------
+def _looksLikeUuid(value):
+    """True if value has UUID shape (36 chars, 4 hyphens). Cheap guard against
+       malformed/pseudo entries in getSessionInfo()'s gateway-scope enumeration --
+       2026-08-20: one entry (sid an 8-hex-char string, pid the literal string
+       'session-props', neither a real UUID) threw java.lang.IllegalArgumentException
+       on EVERY PLC completion, logged as a warn on every single call. The real
+       operator session in the same enumeration sent fine (confirmed live: its
+       terminal's view visibly refreshed right after) -- this just silences the
+       noise from whatever the bogus entry is (unconfirmed source; a stale gateway
+       web-status pseudo-session is the leading guess, not a real Perspective
+       client), by skipping it before the exception rather than after."""
+    s = "%s" % (value or "")
+    return len(s) == 36 and s.count("-") == 4
+
+
+def broadcastPageMessage(messageType, payload):
+    """Send a page-scoped message to every open Perspective session/page.
+       GATEWAY-scope system.perspective.sendMessage has no broadcast form -- a
+       bare scope='page' call with no sessionId/pageId delivers to nothing
+       (project rule: feedback_ignition_gateway_sendmessage_needs_session_page).
+       So enumerate system.perspective.getSessionInfo() and target each; pages
+       with no handler for messageType just ignore it. Skips non-UUID-shaped
+       session/page entries (see _looksLikeUuid) instead of eating an exception
+       per bad entry. Shared by Assembly.notifyInventoryChanged,
+       PrintFailureGateway._pushToAllSessions, and notifyAlarm below -- one
+       hardened enumeration instead of three copies. Never raises; best-effort."""
+    try:
+        for s in (system.perspective.getSessionInfo() or []):
+            sid = s["id"]
+            if not _looksLikeUuid(sid):
+                continue
+            for pid in (s["pageIds"] or []):
+                if not _looksLikeUuid(pid):
+                    continue
+                try:
+                    system.perspective.sendMessage(
+                        messageType, payload=payload, scope="page",
+                        sessionId=sid, pageId=pid)
+                except (Exception, java.lang.Exception) as e:
+                    BlueRidge.Common.Util.log(
+                        "broadcastPageMessage %s send failed sid=%s pid=%s: %s"
+                        % (messageType, sid, pid, e), level="warn")
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log(
+            "broadcastPageMessage %s enumerate failed: %s" % (messageType, e),
+            level="warn")
+
+
+def notifyAlarm(terminalLocationId, title, message, level="error"):
+    """Best-effort operator toast for a PLC-triggered rejection, scoped to the
+       ONE session actually sitting at the failing terminal.
+
+       Every watcher's failure branch previously only wrote MESAlarmText/Type
+       onto the UDT instance -- an HMI-facing tag, gated behind
+       WriteDisplayEnabled (off by default per spec), that Perspective never
+       binds to anywhere (checked: AssemblySerialized has zero bindings to
+       either member). So a PLC-triggered rejection was completely invisible in
+       the MES UI, sim or real hardware alike -- confirmed nothing fired for a
+       failed ByWeight tray close, a rejected serial, etc. (2026-08-20 finding).
+
+       Broadcasts a 'plcAlarm' message (via the shared hardened enumeration) to
+       every open session/page carrying terminalLocationId in the payload --
+       same broadcast-and-let-the-receiver-filter shape as
+       Assembly.notifyInventoryChanged (cellLocationId) and
+       PrintFailureGateway._pushToAllSessions (terminalLocationId), both of
+       which already rely on the RECEIVING view/handler to match before acting,
+       not a server-side gateway-scope filter (an earlier draft of this tried
+       to filter here on getSessionInfo()'s per-session 'custom' shape, which
+       is unconfirmed in gateway scope -- moved the filter to where the
+       shape IS confirmed: BlueRidge/Components/NotifyHost's new 'plcAlarm'
+       handler compares payload.terminalLocationId against
+       self.session.custom.terminal.terminalLocationId and only then calls
+       Common.Notify.toast() -- so only the operator actually standing at that
+       terminal sees it, not every open session plant-wide."""
+    payload = {
+        "title": title,
+        "message": message,
+        "level": level if level in ("success", "info", "warning", "error") else "error",
+        "ttl": None if level == "error" else 8,
+        "terminalLocationId": terminalLocationId,
+    }
+    broadcastPageMessage("plcAlarm", payload)
+
+
 # ---- edge guard -------------------------------------------------------------
 def _val(qvOrVal):
     """Unwrap a QualifiedValue (tag-change payload) or pass a plain value."""

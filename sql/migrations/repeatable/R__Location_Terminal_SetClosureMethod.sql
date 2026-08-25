@@ -59,7 +59,7 @@ BEGIN
         IF @TerminalLocationId IS NULL OR @NewMethod IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (TerminalLocationId, NewMethod, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'Location',
                     @EntityId = @TerminalLocationId, @LogEventTypeCode = N'ClosureModeChanged',
                     @FailureReason = @Message, @ProcedureName = @ProcName, @AttemptedParameters = @Params;

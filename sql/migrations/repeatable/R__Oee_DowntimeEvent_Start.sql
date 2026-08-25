@@ -47,7 +47,7 @@ BEGIN
         IF @LocationId IS NULL OR @DowntimeSourceCodeId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (LocationId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'DowntimeEvent', @EntityId = NULL,
                     @LogEventTypeCode = N'DowntimeStarted', @FailureReason = @Message,

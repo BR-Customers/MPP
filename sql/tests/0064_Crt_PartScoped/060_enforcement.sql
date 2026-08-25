@@ -1,5 +1,5 @@
 -- =============================================
--- File:         0063_Crt_PartScoped/060_enforcement.sql
+-- File:         0064_Crt_PartScoped/060_enforcement.sql
 -- Author:       Blue Ridge Automation
 -- Created:      2026-08-20
 -- Description:  CRT ENFORCEMENT (design D4 + D5, part-scoped CRT Task 5). The
@@ -56,7 +56,7 @@
 --                   5G0-c, line MA1-5GOF, store TRIM1-STORE, terminal
 --                   MA1-5GOF-MIN) with the pre-machining route steps pre-stamped so
 --                   the next pending step is MachiningIn.
---                 * Section D mirrors 0027/070 + 0063/050 section C (casting
+--                 * Section D mirrors 0027/070 + 0064/050 section C (casting
 --                   12270-6NA -> sub-assembly 12270-6NA-M at MA1-FP6NA-MOUT, BOM
 --                   auto-created if absent) and CLOSES whatever earlier files left
 --                   open at that line so the FIFO queue holds exactly this file's
@@ -75,7 +75,7 @@
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/060_enforcement.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/060_enforcement.sql';
 GO
 
 -- =============================================
@@ -340,7 +340,7 @@ GO
 
 -- =============================================
 -- D. Workorder.MachiningOut_Mint -- a CRT casting cannot be scanned as the
---    consume-mint handle. Fixture mirrors 0027/070 + 0063/050 section C.
+--    consume-mint handle. Fixture mirrors 0027/070 + 0064/050 section C.
 -- =============================================
 DECLARE @Casting  BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
 DECLARE @Machined BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA-M');

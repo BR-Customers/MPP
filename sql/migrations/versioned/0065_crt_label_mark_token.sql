@@ -1,5 +1,5 @@
 -- =============================================
--- Migration:   0063_crt_label_mark_token.sql
+-- Migration:   0065_crt_label_mark_token.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-08-20
 -- Description: Part-scoped CRT (design 2026-08-19 section 4, decision D8),
@@ -35,8 +35,8 @@
 --              convention).
 -- =============================================
 
-IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0063_crt_label_mark_token')
-BEGIN PRINT 'Migration 0063 already applied -- skipping.'; RETURN; END
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0065_crt_label_mark_token')
+BEGIN PRINT 'Migration 0065 already applied -- skipping.'; RETURN; END
 GO
 
 -- Insert a {CrtMark} field immediately after the LOT-number field, on the
@@ -80,10 +80,10 @@ ELSE
 GO
 
 -- ---- Record migration ----
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0063_crt_label_mark_token')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0065_crt_label_mark_token')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0063_crt_label_mark_token',
+    VALUES (N'0065_crt_label_mark_token',
             N'Add {CrtMark} placeholder to the active Primary/Master/Void LabelTemplate ZplBody rows (D8).');
 GO
-PRINT 'Migration 0063 (CRT label mark token) applied.';
+PRINT 'Migration 0065 (CRT label mark token) applied.';
 GO

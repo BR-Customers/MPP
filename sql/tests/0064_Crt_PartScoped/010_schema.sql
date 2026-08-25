@@ -1,12 +1,12 @@
 -- =============================================
--- File:         0063_Crt_PartScoped/010_schema.sql
+-- File:         0064_Crt_PartScoped/010_schema.sql
 -- Author:       Blue Ridge Automation
 -- Description:  Schema for part-scoped CRT (design 2026-08-19, section 4).
 --               Parts.Item.CrtEnabled and
 --               Location.LocationTypeDefinition.IsProductionDestination,
 --               plus the production-vs-not seed that D5 depends on.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/010_schema.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/010_schema.sql';
 GO
 
 DECLARE @n INT;

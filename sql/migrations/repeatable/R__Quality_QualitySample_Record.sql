@@ -68,7 +68,7 @@ BEGIN
         IF @LotId IS NULL OR @QualitySpecVersionId IS NULL OR @ResultsJson IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (LotId, QualitySpecVersionId, ResultsJson, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'QualitySample',
                     @EntityId = NULL, @LogEventTypeCode = N'InspectionRecorded',

@@ -1,5 +1,5 @@
 -- =============================================
--- Migration:   0062_crt_part_scoped.sql
+-- Migration:   0064_crt_part_scoped.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-08-19
 -- Description: Part-scoped CRT (Controlled Run Tag), design 2026-08-19 section 4.
@@ -23,8 +23,8 @@
 --              Idempotent-guarded; no explicit transaction (repo convention).
 -- =============================================
 
-IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0062_crt_part_scoped')
-BEGIN PRINT 'Migration 0062 already applied -- skipping.'; RETURN; END
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0064_crt_part_scoped')
+BEGIN PRINT 'Migration 0064 already applied -- skipping.'; RETURN; END
 GO
 
 -- ---- 1. Parts.Item.CrtEnabled ----
@@ -57,11 +57,11 @@ UPDATE Location.LocationTypeDefinition
 GO
 
 -- ---- 3. Record migration ----
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0062_crt_part_scoped')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0064_crt_part_scoped')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0062_crt_part_scoped',
+    VALUES (N'0064_crt_part_scoped',
         N'Part-scoped CRT: Parts.Item.CrtEnabled and Location.LocationTypeDefinition.IsProductionDestination (+ seed).');
 GO
 
-PRINT 'Migration 0062 (crt_part_scoped) applied.';
+PRINT 'Migration 0064 (crt_part_scoped) applied.';
 GO

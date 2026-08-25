@@ -28,9 +28,40 @@
     "inPartSN": "",
     "inTargetWeight": "",
     "inVisionPartNumber": "",
-    "pendingScenarios": [],
-    "selectedDevice": "",
-    "selectedDeviceType": ""
+    "pendingScenarios": [
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "front-of-queue Item.PlcId written as PartNumber (vision recipe)",
+        "index": 0,
+        "title": "TrayLocked rising edge"
+      },
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "tray added to container",
+        "index": 1,
+        "title": "InspectionComplete all-pass"
+      },
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "per-slot pass/fail recorded; only passes added",
+        "index": 2,
+        "title": "InspectionComplete some-fail"
+      },
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "line-stop",
+        "index": 3,
+        "title": "VisionPartNumber mismatches active LOT"
+      },
+      {
+        "deviceType": "TrayInspectionStation",
+        "expectedOutcome": "bail (rising-edge guard test)",
+        "index": 4,
+        "title": "Disposition read while InspectionComplete\u003d0"
+      }
+    ],
+    "selectedDevice": "6MA_CH",
+    "selectedDeviceType": "TrayInspectionStation"
   },
   "params": {},
   "props": {
@@ -178,7 +209,8 @@
                   },
                   "style": {
                     "classes": "pf-field-select"
-                  }
+                  },
+                  "value": "6MA_CH"
                 },
                 "type": "ia.input.dropdown"
               },

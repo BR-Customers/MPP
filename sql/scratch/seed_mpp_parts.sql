@@ -891,6 +891,14 @@ DECLARE @Dev BIGINT = (SELECT TOP 1 Id FROM Location.AppUser WHERE Initials = N'
 -- Parts.RouteTemplate + Parts.RouteStep -- published v1.
 -- Steps bind the OperationTemplate BY OperationType ROLE (never by template
 -- code), exactly as 029_seed_item_routes.sql does.
+--
+-- SubAssembly ('-M') routes end at AssemblyOut, NOT MachiningOut (2026-08-24).
+-- A ConsumeMint step is the step where the part is CONSUMED, and Lot_GetWipQueueByLocation
+-- treats ConsumeMint as pending for as long as the LOT is open. A machined SubAssembly is
+-- consumed at ASSEMBLY OUT (Assembly_CompleteTray -> FG); giving it a MachiningOut step made
+-- it re-enter the very Machining OUT queue that minted it, where mapMachiningOutQueue offered
+-- it back to the operator as a selectable mint SOURCE. Matches the two hand-authored
+-- SubAssemblies (5G0-SA, 12270-6NA-M), which were corrected to A-Out-A in the Config Tool.
 -- ============================================================
 DECLARE @S TABLE (Pn NVARCHAR(50), Nm NVARCHAR(120), Seq INT, Role NVARCHAR(30), Descr NVARCHAR(120));
 INSERT INTO @S (Pn, Nm, Seq, Role, Descr) VALUES
@@ -1246,32 +1254,32 @@ INSERT INTO @S (Pn, Nm, Seq, Role, Descr) VALUES
  (N'19410-6MD -A000', N'19410-6MD -A000 Route v1', 1, N'AssemblyOut', N'Assembly out'),
  (N'12230-P8A -A000', N'12230-P8A -A000 Route v1', 1, N'AssemblyOut', N'Assembly out'),
  (N'19321-66V-A100', N'19321-66V-A100 Route v1', 1, N'AssemblyOut', N'Assembly out'),
- (N'12231-RPY -G000-M', N'12231-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12232-RPY -G000-M', N'12232-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12233-RPY -G000-M', N'12233-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12234-RPY -G000-M', N'12234-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12235-RPY -G000-M', N'12235-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12241-RPY -G000-M', N'12241-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12242-RPY -G000-M', N'12242-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12243-RPY -G000-M', N'12243-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12244-RPY -G000-M', N'12244-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12245-RPY -G000-M', N'12245-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12246-RPY -G000-M', N'12246-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12261-RPY -G000-M', N'12261-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12262-RPY -G000-M', N'12262-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12263-RPY -G000-M', N'12263-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12264-RPY -G000-M', N'12264-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12265-RPY -G000-M', N'12265-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12271-RPY -G000-M', N'12271-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12272-RPY -G000-M', N'12272-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12273-RPY -G000-M', N'12273-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12274-RPY -G000-M', N'12274-RPY -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12265-5BA -G000-M', N'12265-5BA -G000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12265-6B2 -A000-M', N'12265-6B2 -A000-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12270-6NAA-M', N'12270-6NAA-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12270-6VJA-M', N'12270-6VJA-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12270-5PAA-M', N'12270-5PAA-M Route v1', 1, N'MachiningOut', N'Machining out'),
- (N'12270-6B2A-M', N'12270-6B2A-M Route v1', 1, N'MachiningOut', N'Machining out');
+ (N'12231-RPY -G000-M', N'12231-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12232-RPY -G000-M', N'12232-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12233-RPY -G000-M', N'12233-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12234-RPY -G000-M', N'12234-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12235-RPY -G000-M', N'12235-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12241-RPY -G000-M', N'12241-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12242-RPY -G000-M', N'12242-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12243-RPY -G000-M', N'12243-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12244-RPY -G000-M', N'12244-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12245-RPY -G000-M', N'12245-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12246-RPY -G000-M', N'12246-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12261-RPY -G000-M', N'12261-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12262-RPY -G000-M', N'12262-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12263-RPY -G000-M', N'12263-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12264-RPY -G000-M', N'12264-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12265-RPY -G000-M', N'12265-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12271-RPY -G000-M', N'12271-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12272-RPY -G000-M', N'12272-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12273-RPY -G000-M', N'12273-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12274-RPY -G000-M', N'12274-RPY -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12265-5BA -G000-M', N'12265-5BA -G000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12265-6B2 -A000-M', N'12265-6B2 -A000-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12270-6NAA-M', N'12270-6NAA-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12270-6VJA-M', N'12270-6VJA-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12270-5PAA-M', N'12270-5PAA-M Route v1', 1, N'AssemblyOut', N'Assembly out'),
+ (N'12270-6B2A-M', N'12270-6B2A-M Route v1', 1, N'AssemblyOut', N'Assembly out');
 INSERT INTO Parts.RouteTemplate (ItemId, VersionNumber, Name, EffectiveFrom, PublishedAt,
                                  DeprecatedAt, CreatedByUserId, CreatedAt)
 SELECT DISTINCT i.Id, 1, s.Nm, '2026-01-15', '2026-01-14', NULL, @Dev, SYSUTCDATETIME()

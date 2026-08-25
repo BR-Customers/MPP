@@ -1,0 +1,344 @@
+Customer,StatusCode,Status,PartCode6,ModelIdentifier,PartDescription,Die,TotalShots,GoodShots,ShotLifePlanned
+Aisin,B,Backup,472,CIVIC,CIVIC RNA WATER PUMP,7,232450,217440,170000
+American Honda,C,Current,157,5K8,5K8 Oil Pan,C,132560,118570,135000
+Astemo,W,Waiting for Approval,680,Case,Case comp Intermediate Dual,A,1633,1270,0
+Astemo,W,Waiting for Approval,679,CASE,CASE COMP INTERMEDIATE SINGLE,A,10070,8864,0
+Astemo,W,Waiting for Approval,682,Cover,Cover Inverter Dual,A,1962,1598,0
+Astemo,W,Waiting for Approval,681,Cover,Cover Inverter Single,A,5051,4607,0
+Astemo,W,Waiting for Approval,683,Inner,Inner Housing,A,19844,17493,0
+Elesys,B,Backup,545,HEAT,HEAT SINK (ELESYS),II/JJ,161044,149637,150000
+Elesys,C,Current,545,HEAT,HEAT SINK (ELESYS),UU/VV,97756,87569,150000
+EMP,C,Current,150,B,B Adaptor DC,1,129895,24216,150000
+EMP,C,Current,151,C,C Adaptor DC,1,159435,78477,150000
+FPI,B,Backup,450,5MH,5MH Oil Pan DC,A,112426,102769,100000
+FPI,C,Current,450,5MH,5MH Oil Pan DC,B,126752,118066,135000
+Honda,C,Current,152,59B,59B Base Comp Fuel Pump,N,25493,24553,200000
+Honda,C,Current,152,59B,59B Base Comp Fuel Pump,P,23758,22792,200000
+Honda,C,Current,152,59B,59B Base Comp Fuel Pump,Q,25227,24374,200000
+Honda,C,Current,152,59B,59B Base Comp Fuel Pump,R,11188,10598,200000
+Honda,C,Current,152,59B,59B Base Comp Fuel Pump,S,87352,83923,200000
+Honda,W,Waiting for Approval,152,59B,59B Base Comp Fuel Pump,T,54917,52698,200000
+Honda,W,Waiting for Approval,152,59B,59B Base Comp Fuel Pump,U,16766,15776,200000
+Honda,W,Waiting for Approval,152,59B,59B Base Comp Fuel Pump,V,0,0,0
+Honda,B,Backup,154,5BA,5BA Side Cover,G,137606,130325,200000
+Honda,C,Current,154,5BA,5BA Side Cover,H,323584,309252,200000
+Honda,W,Waiting for Approval,154,5BA,5BA Side Cover,I,113322,107702,0
+Honda,B,Backup,140,5BAA,5BAA Holder Comp #5 R/S,H,180963,171698,150000
+Honda,B,Backup,140,5BAA,5BAA Holder Comp #5 R/S,I,191368,185127,150000
+Honda,W,Waiting for Approval,140,5BAA,5BAA Holder Comp #5 R/S,J,229282,214480,150000
+Honda,W,Waiting for Approval,140,5BAA,5BAA Holder Comp #5 R/S,K,329191,314930,0
+Honda,W,Waiting for Approval,140,5BAA,5BAA Holder Comp #5 R/S,L,171864,166218,0
+Honda,W,Waiting for Approval,140,5BAA,5BAA Holder Comp #5 R/S,M,192332,186005,0
+Honda,W,Waiting for Approval,140,5BAA,5BAA Holder Comp #5 R/S,N,131329,125543,0
+Honda,W,Waiting for Approval,140,5BAA,5BAA Holder Comp #5 R/S,O,82664,78280,0
+Honda,C,Current,156,5J6-A000,5J6-A000 Oil Pan,C,12839,11192,135000
+Honda,C,Current,510,5LA,5LA Oil Pan,D,222392,200655,135000
+Honda,B,Backup,510,5LA,5LA Oil Pan,H,212540,186382,135000
+Honda,C,Current,143,5PA,5PA Fuel Pump,N,179658,173723,200000
+Honda,C,Current,143,5PA,5PA Fuel Pump,P,194861,186188,200000
+Honda,C,Current,143,5PA,5PA Fuel Pump,Q,165833,160253,200000
+Honda,C,Current,143,5PA,5PA Fuel Pump,R,142055,137995,200000
+Honda,C,Current,143,5PA,5PA Fuel Pump,S,282319,271647,200000
+Honda,W,Waiting for Approval,143,5PA,5PA Fuel Pump,T,224856,215002,200000
+Honda,W,Waiting for Approval,143,5PA,5PA Fuel Pump,U,187121,179205,200000
+Honda,W,Waiting for Approval,143,5PA,5PA Fuel Pump,V,89420,84873,0
+Honda,B,Backup,624,5PA,5PA Oil Pan,G,288695,264507,200000
+Honda,C,Current,624,5PA,5PA Oil Pan,H,209377,188327,200000
+Honda,B,Backup,624,5PA,5PA Oil Pan,I,246824,221468,200000
+Honda,C,Current,624,5PA,5PA Oil Pan,J,136922,124753,200000
+Honda,C,Current,624,5PA,5PA Oil Pan,K,42055,38134,200000
+Honda,C,Current,648,64A,64A Oil Pan,A,139908,129722,100000
+Honda,C,Current,648,64A,64A Oil Pan,B,228060,207924,175000
+Honda,W,Waiting for Approval,648,64A,64A Oil Pan,C,216911,202868,175000
+Honda,W,Waiting for Approval,648,64A,64A Oil Pan,D,320673,294869,0
+Honda,W,Waiting for Approval,648,64A,64A Oil Pan,E,270959,250249,100000
+Honda,W,Waiting for Approval,648,64A,64A Oil Pan,F,256899,238859,0
+Honda,W,Waiting for Approval,648,64A,64A Oil Pan,G,120825,109956,0
+Honda,W,Waiting for Approval,648,64A,64A Oil Pan,H,248,168,0
+Honda,B,Backup,631,6B2,6B2 BASE COMP FUEL PUMP (DC),B,265923,242042,150000
+Honda,C,Current,631,6B2,6B2 BASE COMP FUEL PUMP (DC),D,239473,214623,175000
+Honda,W,Waiting for Approval,631,6B2,6B2 BASE COMP FUEL PUMP (DC),E,174789,158312,175000
+Honda,B,Backup,629,6B2,6B2 HOLDER COMP NO5 R/S (DC),C,196132,181610,150000
+Honda,C,Current,629,6B2,6B2 HOLDER COMP NO5 R/S (DC),D,163200,148345,150000
+Honda,C,Current,629,6B2,6B2 HOLDER COMP NO5 R/S (DC),E,168332,155697,150000
+Honda,W,Waiting for Approval,629,6B2,6B2 HOLDER COMP NO5 R/S (DC),F,112977,104705,0
+Honda,C,Current,646,6FB,6FB Oil Pan,A,237745,218190,100000
+Honda,W,Waiting for Approval,646,6FB,6FB Oil Pan,B,182644,166667,100000
+Honda,W,Waiting for Approval,646,6FB,6FB Oil Pan,C,303716,282063,0
+Honda,W,Waiting for Approval,646,6FB,6FB Oil Pan,D,17152,15785,0
+Honda,W,Waiting for Approval,646,6FB,6FB Oil Pan,E,116,66,0
+Honda,W,Waiting for Approval,638,6VJ,6VJ Fuel Pump,A,200790,190464,0
+Honda,W,Waiting for Approval,638,6VJ,6VJ Fuel Pump,B,145846,139218,0
+Honda,W,Waiting for Approval,638,6VJ,6VJ Fuel Pump,C,82602,78057,0
+Honda,W,Waiting for Approval,638,6VJ,6VJ Fuel Pump,D,2269,2084,0
+Honda,B,Backup,643,RPY,RPY COMPRESSOR BRACKET MPP,D,161026,152020,150000
+Honda,C,Current,643,RPY,RPY COMPRESSOR BRACKET MPP,E,243415,232657,150000
+Honda,W,Waiting for Approval,643,RPY,RPY COMPRESSOR BRACKET MPP,F,197056,187901,0
+Honda,W,Waiting for Approval,643,RPY,RPY COMPRESSOR BRACKET MPP,G,180,123,0
+Honda,B,Backup,153,RPY,RPY Fuel Pump,B,135778,126903,150000
+Honda,C,Current,153,RPY,RPY Fuel Pump,C,101635,94742,150000
+Honda,B,Backup,125,RPY,RPY Holder Comp No 1 Ex Cam,D,179412,168193,150000
+Honda,C,Current,125,RPY,RPY Holder Comp No 1 Ex Cam,F,241586,233855,200000
+Honda,W,Waiting for Approval,125,RPY,RPY Holder Comp No 1 Ex Cam,G,314214,301495,200000
+Honda,W,Waiting for Approval,125,RPY,RPY Holder Comp No 1 Ex Cam,H,72446,68624,0
+Honda,B,Backup,131,RPY,RPY Holder Comp No 1 Exh Cam Lwr,D,183492,172760,150000
+Honda,C,Current,131,RPY,RPY Holder Comp No 1 Exh Cam Lwr,F,326537,313906,200000
+Honda,W,Waiting for Approval,131,RPY,RPY Holder Comp No 1 Exh Cam Lwr,G,210034,196235,0
+Honda,W,Waiting for Approval,131,RPY,RPY Holder Comp No 1 Exh Cam Lwr,H,94664,87530,0
+Honda,B,Backup,120,RPY,RPY Holder Comp No 1 In Cam,D,255461,243714,200000
+Honda,C,Current,120,RPY,RPY Holder Comp No 1 In Cam,F,361554,348529,200000
+Honda,W,Waiting for Approval,120,RPY,RPY Holder Comp No 1 In Cam,G,179554,168938,0
+Honda,B,Backup,135,RPY,RPY Holder Comp No 1 Rkr Shaft,G,294205,282872,175000
+Honda,C,Current,135,RPY,RPY Holder Comp No 1 Rkr Shaft,H,244419,237290,175000
+Honda,W,Waiting for Approval,135,RPY,RPY Holder Comp No 1 Rkr Shaft,I,188272,181091,0
+Honda,W,Waiting for Approval,135,RPY,RPY Holder Comp No 1 Rkr Shaft,J,143576,137274,0
+Honda,W,Waiting for Approval,135,RPY,RPY Holder Comp No 1 Rkr Shaft,K,47061,43895,0
+Honda,B,Backup,126,RPY,RPY Holder Comp No 2 Ex Cam,D,179529,168313,150000
+Honda,C,Current,126,RPY,RPY Holder Comp No 2 Ex Cam,F,240303,232645,200000
+Honda,W,Waiting for Approval,126,RPY,RPY Holder Comp No 2 Ex Cam,G,315020,302288,200000
+Honda,W,Waiting for Approval,126,RPY,RPY Holder Comp No 2 Ex Cam,H,72446,68624,0
+Honda,B,Backup,132,RPY,RPY Holder Comp No 2 Exh Cam Lwr,D,184098,172729,150000
+Honda,C,Current,132,RPY,RPY Holder Comp No 2 Exh Cam Lwr,F,326537,313906,200000
+Honda,W,Waiting for Approval,132,RPY,RPY Holder Comp No 2 Exh Cam Lwr,G,210034,196235,0
+Honda,W,Waiting for Approval,132,RPY,RPY Holder Comp No 2 Exh Cam Lwr,H,94664,87530,0
+Honda,B,Backup,121,RPY,RPY Holder Comp No 2 In Cam,D,255146,243417,200000
+Honda,C,Current,121,RPY,RPY Holder Comp No 2 In Cam,F,361247,348229,200000
+Honda,W,Waiting for Approval,121,RPY,RPY Holder Comp No 2 In Cam,G,179554,168938,0
+Honda,B,Backup,136,RPY,RPY Holder Comp No 2 Rkr Shaft,G,210216,204584,175000
+Honda,C,Current,136,RPY,RPY Holder Comp No 2 Rkr Shaft,H,342175,332069,175000
+Honda,W,Waiting for Approval,136,RPY,RPY Holder Comp No 2 Rkr Shaft,I,199013,189457,0
+Honda,W,Waiting for Approval,136,RPY,RPY Holder Comp No 2 Rkr Shaft,J,159358,152488,0
+Honda,W,Waiting for Approval,136,RPY,RPY Holder Comp No 2 Rkr Shaft,K,7722,7178,0
+Honda,B,Backup,127,RPY,RPY Holder Comp No 3 Ex Cam,D,179844,168610,150000
+Honda,C,Current,127,RPY,RPY Holder Comp No 3 Ex Cam,F,240303,232645,200000
+Honda,W,Waiting for Approval,127,RPY,RPY Holder Comp No 3 Ex Cam,G,315020,302288,200000
+Honda,W,Waiting for Approval,127,RPY,RPY Holder Comp No 3 Ex Cam,H,72446,68624,0
+Honda,B,Backup,133,RPY,RPY Holder Comp No 3 Exh Cam Lwr,D,183448,172759,150000
+Honda,C,Current,133,RPY,RPY Holder Comp No 3 Exh Cam Lwr,F,326537,313906,200000
+Honda,W,Waiting for Approval,133,RPY,RPY Holder Comp No 3 Exh Cam Lwr,G,210034,196235,0
+Honda,W,Waiting for Approval,133,RPY,RPY Holder Comp No 3 Exh Cam Lwr,H,94664,87530,0
+Honda,B,Backup,122,RPY,RPY Holder Comp No 3 In Cam,D,255146,243417,200000
+Honda,C,Current,122,RPY,RPY Holder Comp No 3 In Cam,F,361248,348229,200000
+Honda,W,Waiting for Approval,122,RPY,RPY Holder Comp No 3 In Cam,G,179557,168938,0
+Honda,B,Backup,137,RPY,RPY Holder Comp No 3 Rkr Shaft,G,210216,204584,175000
+Honda,C,Current,137,RPY,RPY Holder Comp No 3 Rkr Shaft,H,342175,332069,175000
+Honda,W,Waiting for Approval,137,RPY,RPY Holder Comp No 3 Rkr Shaft,I,199013,189457,0
+Honda,W,Waiting for Approval,137,RPY,RPY Holder Comp No 3 Rkr Shaft,J,159358,152488,0
+Honda,W,Waiting for Approval,137,RPY,RPY Holder Comp No 3 Rkr Shaft,K,7722,7178,0
+Honda,B,Backup,128,RPY,RPY Holder Comp No 4 Ex Cam,D,179844,168610,150000
+Honda,C,Current,128,RPY,RPY Holder Comp No 4 Ex Cam,F,240303,232645,200000
+Honda,W,Waiting for Approval,128,RPY,RPY Holder Comp No 4 Ex Cam,G,315020,302288,200000
+Honda,W,Waiting for Approval,128,RPY,RPY Holder Comp No 4 Ex Cam,H,72446,68624,0
+Honda,B,Backup,134,RPY,RPY Holder Comp No 4 Exh Cam Lwr,D,183445,172760,150000
+Honda,C,Current,134,RPY,RPY Holder Comp No 4 Exh Cam Lwr,F,326537,313906,200000
+Honda,W,Waiting for Approval,134,RPY,RPY Holder Comp No 4 Exh Cam Lwr,G,209834,196035,0
+Honda,W,Waiting for Approval,134,RPY,RPY Holder Comp No 4 Exh Cam Lwr,H,94664,87530,0
+Honda,B,Backup,123,RPY,RPY Holder Comp No 4 In Cam,D,255146,243417,200000
+Honda,C,Current,123,RPY,RPY Holder Comp No 4 In Cam,F,361245,348229,200000
+Honda,W,Waiting for Approval,123,RPY,RPY Holder Comp No 4 In Cam,G,179554,168938,0
+Honda,B,Backup,138,RPY,RPY Holder Comp No 4 Rkr Shaft,G,210216,204584,175000
+Honda,C,Current,138,RPY,RPY Holder Comp No 4 Rkr Shaft,H,342175,332069,175000
+Honda,W,Waiting for Approval,138,RPY,RPY Holder Comp No 4 Rkr Shaft,I,199013,189457,0
+Honda,W,Waiting for Approval,138,RPY,RPY Holder Comp No 4 Rkr Shaft,J,159358,152488,0
+Honda,W,Waiting for Approval,138,RPY,RPY Holder Comp No 4 Rkr Shaft,K,7722,7178,0
+Honda,B,Backup,129,RPY,RPY Holder Comp No 5 Ex Cam,D,194455,184442,200000
+Honda,C,Current,129,RPY,RPY Holder Comp No 5 Ex Cam,F,246488,230892,200000
+Honda,W,Waiting for Approval,129,RPY,RPY Holder Comp No 5 Ex Cam,G,157302,144824,0
+Honda,B,Backup,124,RPY,RPY Holder Comp No 5 in Cam,D,194505,184442,200000
+Honda,C,Current,124,RPY,RPY Holder Comp No 5 in Cam,F,246488,230872,200000
+Honda,W,Waiting for Approval,124,RPY,RPY Holder Comp No 5 in Cam,G,157302,144824,0
+Honda,C,Current,139,RPY,RPY Holder Comp No 5 Rkr Shaft,B,290149,260134,150000
+Honda,W,Waiting for Approval,139,RPY,RPY Holder Comp No 5 Rkr Shaft,C,10089,9184,0
+Honda,B,Backup,130,RPY,RPY Holder Comp No 6 Ex Cam,D,194455,184442,200000
+Honda,C,Current,130,RPY,RPY Holder Comp No 6 Ex Cam,F,246488,230892,200000
+Honda,W,Waiting for Approval,130,RPY,RPY Holder Comp No 6 Ex Cam,G,157301,144824,0
+Honda Alabama,C,Current,155,5J6-1,5J6-1 OIL PAN DC,H,196600,185266,200000
+Honda Alabama,C,Current,155,5J6-1,5J6-1 OIL PAN DC,I,212189,193778,200000
+Honda Alabama,C,Current,155,5J6-1,5J6-1 OIL PAN DC,J,290719,265852,200000
+Honda Alabama,C,Current,155,5J6-1,5J6-1 OIL PAN DC,K,195915,179247,200000
+Honda Alabama,W,Waiting for Approval,155,5J6-1,5J6-1 OIL PAN DC,L,239130,220181,0
+Honda Alabama,W,Waiting for Approval,155,5J6-1,5J6-1 OIL PAN DC,M,91763,85106,0
+Honda Alabama,W,Waiting for Approval,155,5J6-1,5J6-1 OIL PAN DC,N,49822,45598,0
+Honda Anna Eng Plnt,B,Backup,192,59B,59B In Cam Ex 1 MPP,H,225459,220773,150000
+Honda Anna Eng Plnt,B,Backup,192,59B,59B In Cam Ex 1 MPP,J,269450,261620,150000
+Honda Anna Eng Plnt,C,Current,192,59B,59B In Cam Ex 1 MPP,K,389349,379874,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,192,59B,59B In Cam Ex 1 MPP,L,327066,316657,0
+Honda Anna Eng Plnt,W,Waiting for Approval,192,59B,59B In Cam Ex 1 MPP,M,124409,117744,0
+Honda Anna Eng Plnt,W,Waiting for Approval,192,59B,59B In Cam Ex 1 MPP,N,64418,61377,0
+Honda Anna Eng Plnt,B,Backup,193,59B,59B In Cam Ex 2 MPP,H,216057,211461,150000
+Honda Anna Eng Plnt,B,Backup,193,59B,59B In Cam Ex 2 MPP,J,280124,273207,150000
+Honda Anna Eng Plnt,C,Current,193,59B,59B In Cam Ex 2 MPP,K,369908,360334,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,193,59B,59B In Cam Ex 2 MPP,L,334196,323325,0
+Honda Anna Eng Plnt,W,Waiting for Approval,193,59B,59B In Cam Ex 2 MPP,M,92236,87891,0
+Honda Anna Eng Plnt,W,Waiting for Approval,193,59B,59B In Cam Ex 2 MPP,N,78163,74409,0
+Honda Anna Eng Plnt,B,Backup,194,59B,59B In Cam Ex 3 MPP,H,216057,211461,150000
+Honda Anna Eng Plnt,B,Backup,194,59B,59B In Cam Ex 3 MPP,J,280124,273207,150000
+Honda Anna Eng Plnt,C,Current,194,59B,59B In Cam Ex 3 MPP,K,369908,360334,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,194,59B,59B In Cam Ex 3 MPP,L,334196,323325,0
+Honda Anna Eng Plnt,W,Waiting for Approval,194,59B,59B In Cam Ex 3 MPP,M,92236,87891,0
+Honda Anna Eng Plnt,W,Waiting for Approval,194,59B,59B In Cam Ex 3 MPP,N,78163,74409,0
+Honda Anna Eng Plnt,B,Backup,195,59B,59B In Cam Ex 4 MPP,H,216057,211461,150000
+Honda Anna Eng Plnt,B,Backup,195,59B,59B In Cam Ex 4 MPP,J,280124,273207,150000
+Honda Anna Eng Plnt,C,Current,195,59B,59B In Cam Ex 4 MPP,K,369908,360334,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,195,59B,59B In Cam Ex 4 MPP,L,334196,323325,0
+Honda Anna Eng Plnt,W,Waiting for Approval,195,59B,59B In Cam Ex 4 MPP,M,92236,87891,0
+Honda Anna Eng Plnt,W,Waiting for Approval,195,59B,59B In Cam Ex 4 MPP,N,78163,74409,0
+Honda Anna Eng Plnt,B,Backup,196,59B,59B In Cam Ex 5 MPP,H,225459,220772,150000
+Honda Anna Eng Plnt,B,Backup,196,59B,59B In Cam Ex 5 MPP,J,269450,261620,150000
+Honda Anna Eng Plnt,C,Current,196,59B,59B In Cam Ex 5 MPP,K,389349,379874,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,196,59B,59B In Cam Ex 5 MPP,L,327066,316657,0
+Honda Anna Eng Plnt,W,Waiting for Approval,196,59B,59B In Cam Ex 5 MPP,M,124409,117744,0
+Honda Anna Eng Plnt,W,Waiting for Approval,196,59B,59B In Cam Ex 5 MPP,N,64418,61377,0
+Honda Anna Eng Plnt,B,Backup,187,59B,59B In Cam No 1 MPP,H,225459,220773,150000
+Honda Anna Eng Plnt,B,Backup,187,59B,59B In Cam No 1 MPP,J,269450,261620,150000
+Honda Anna Eng Plnt,C,Current,187,59B,59B In Cam No 1 MPP,K,389349,379874,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,187,59B,59B In Cam No 1 MPP,L,327061,316652,0
+Honda Anna Eng Plnt,W,Waiting for Approval,187,59B,59B In Cam No 1 MPP,M,124409,117744,0
+Honda Anna Eng Plnt,W,Waiting for Approval,187,59B,59B In Cam No 1 MPP,N,64418,61377,0
+Honda Anna Eng Plnt,B,Backup,188,59B,59B In Cam No 2 MPP,H,216057,211461,150000
+Honda Anna Eng Plnt,B,Backup,188,59B,59B In Cam No 2 MPP,J,280124,273207,150000
+Honda Anna Eng Plnt,C,Current,188,59B,59B In Cam No 2 MPP,K,369908,360334,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,188,59B,59B In Cam No 2 MPP,L,334196,323325,0
+Honda Anna Eng Plnt,W,Waiting for Approval,188,59B,59B In Cam No 2 MPP,M,92236,87891,0
+Honda Anna Eng Plnt,W,Waiting for Approval,188,59B,59B In Cam No 2 MPP,N,78163,74409,0
+Honda Anna Eng Plnt,B,Backup,189,59B,59B In Cam No 3 MPP,H,216434,211824,150000
+Honda Anna Eng Plnt,B,Backup,189,59B,59B In Cam No 3 MPP,J,279747,272844,150000
+Honda Anna Eng Plnt,C,Current,189,59B,59B In Cam No 3 MPP,K,369908,360333,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,189,59B,59B In Cam No 3 MPP,L,334196,323325,0
+Honda Anna Eng Plnt,W,Waiting for Approval,189,59B,59B In Cam No 3 MPP,M,92236,87891,0
+Honda Anna Eng Plnt,W,Waiting for Approval,189,59B,59B In Cam No 3 MPP,N,78163,74409,0
+Honda Anna Eng Plnt,B,Backup,190,59B,59B In Cam No 4 MPP,H,216057,211461,150000
+Honda Anna Eng Plnt,B,Backup,190,59B,59B In Cam No 4 MPP,J,280124,273207,150000
+Honda Anna Eng Plnt,C,Current,190,59B,59B In Cam No 4 MPP,K,369908,360334,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,190,59B,59B In Cam No 4 MPP,L,334196,323325,0
+Honda Anna Eng Plnt,W,Waiting for Approval,190,59B,59B In Cam No 4 MPP,M,92236,87891,0
+Honda Anna Eng Plnt,W,Waiting for Approval,190,59B,59B In Cam No 4 MPP,N,78163,74409,0
+Honda Anna Eng Plnt,B,Backup,191,59B,59B In Cam No 5 MPP,H,225459,220773,150000
+Honda Anna Eng Plnt,B,Backup,191,59B,59B In Cam No 5 MPP,J,269450,261620,150000
+Honda Anna Eng Plnt,C,Current,191,59B,59B In Cam No 5 MPP,K,389349,379874,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,191,59B,59B In Cam No 5 MPP,L,327066,316657,0
+Honda Anna Eng Plnt,W,Waiting for Approval,191,59B,59B In Cam No 5 MPP,M,123509,117744,0
+Honda Anna Eng Plnt,W,Waiting for Approval,191,59B,59B In Cam No 5 MPP,N,64418,61377,0
+Honda Anna Eng Plnt,B,Backup,567,5A2,5A2 Fuel Pump,S,212644,199361,150000
+Honda Anna Eng Plnt,C,Current,567,5A2,5A2 Fuel Pump,T,171684,156552,150000
+Honda Anna Eng Plnt,B,Backup,583,5A2,5A2 HOLDER COMP NO 1 IN CAM DC,D,230349,213816,200000
+Honda Anna Eng Plnt,C,Current,583,5A2,5A2 HOLDER COMP NO 1 IN CAM DC,E,236927,219748,200000
+Honda Anna Eng Plnt,B,Backup,588,5A2,5A2 HOLDER COMP NO 1-2 EX CAM,D,164931,154587,150000
+Honda Anna Eng Plnt,C,Current,588,5A2,5A2 HOLDER COMP NO 1-2 EX CAM,E,155177,146269,150000
+Honda Anna Eng Plnt,C,Current,584,5A2,5A2 HOLDER COMP NO 2 IN CAM DC,G,256905,245895,200000
+Honda Anna Eng Plnt,B,Backup,589,5A2,5A2 HOLDER COMP NO 3 EX CAM DC,D,230339,213816,200000
+Honda Anna Eng Plnt,C,Current,589,5A2,5A2 HOLDER COMP NO 3 EX CAM DC,E,236785,219748,200000
+Honda Anna Eng Plnt,C,Current,585,5A2,5A2 HOLDER COMP NO 3 IN CAM DC,G,256892,245895,200000
+Honda Anna Eng Plnt,C,Current,590,5A2,5A2 HOLDER COMP NO 4 EX CAM DC,E,114394,107324,200000
+Honda Anna Eng Plnt,C,Current,586,5A2,5A2 HOLDER COMP NO 4 IN CAM DC,G,256897,245895,200000
+Honda Anna Eng Plnt,C,Current,591,5A2,5A2 HOLDER COMP NO 5 EX CAM DC,E,114394,107324,200000
+Honda Anna Eng Plnt,C,Current,587,5A2,5A2 HOLDER COMP NO 5 IN CAM DC,G,256882,245895,200000
+Honda Anna Eng Plnt,C,Current,592,5A2,5A2 HOLDER COMP NO 6 EX CAM DC,C,19663,18462,200000
+Honda Anna Eng Plnt,C,Current,593,5A2,5A2 R/S #1 DC,R,108080,104813,150000
+Honda Anna Eng Plnt,B,Backup,593,5A2,5A2 R/S #1 DC,S,173744,165990,150000
+Honda Anna Eng Plnt,B,Backup,594,5A2,5A2 R/S #2 DC,I,207472,197516,150000
+Honda Anna Eng Plnt,C,Current,594,5A2,5A2 R/S #2 DC,J,148696,138591,150000
+Honda Anna Eng Plnt,B,Backup,595,5A2,5A2 R/S #3 DC,I,164402,157183,150000
+Honda Anna Eng Plnt,C,Current,595,5A2,5A2 R/S #3 DC,J,138824,129216,150000
+Honda Anna Eng Plnt,B,Backup,596,5A2,5A2 R/S #4 DC,I,141883,134751,150000
+Honda Anna Eng Plnt,C,Current,596,5A2,5A2 R/S #4 DC,J,158284,149521,150000
+Honda Anna Eng Plnt,B,Backup,597,5A2,5A2 R/S #5 DC,Q,254943,231133,150000
+Honda Anna Eng Plnt,C,Current,597,5A2,5A2 R/S #5 DC,R,91249,84357,150000
+Honda Anna Eng Plnt,B,Backup,578,5GO,5GO R/S #1 DC,I,198469,182545,150000
+Honda Anna Eng Plnt,C,Current,578,5GO,5GO R/S #1 DC,J,306485,283801,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,578,5GO,5GO R/S #1 DC,K,216470,201446,0
+Honda Anna Eng Plnt,W,Waiting for Approval,578,5GO,5GO R/S #1 DC,L,264497,255213,0
+Honda Anna Eng Plnt,W,Waiting for Approval,578,5GO,5GO R/S #1 DC,M,110,79,0
+Honda Anna Eng Plnt,B,Backup,579,5GO,5GO R/S #2 DC,I,198002,182444,150000
+Honda Anna Eng Plnt,C,Current,579,5GO,5GO R/S #2 DC,J,306637,283902,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,579,5GO,5GO R/S #2 DC,K,216672,201627,0
+Honda Anna Eng Plnt,W,Waiting for Approval,579,5GO,5GO R/S #2 DC,L,264497,255213,0
+Honda Anna Eng Plnt,W,Waiting for Approval,579,5GO,5GO R/S #2 DC,M,110,79,0
+Honda Anna Eng Plnt,B,Backup,580,5GO,5GO R/S #3 DC,I,198002,182444,150000
+Honda Anna Eng Plnt,C,Current,580,5GO,5GO R/S #3 DC,J,306637,283905,150000
+Honda Anna Eng Plnt,W,Waiting for Approval,580,5GO,5GO R/S #3 DC,K,216467,201447,0
+Honda Anna Eng Plnt,W,Waiting for Approval,580,5GO,5GO R/S #3 DC,L,264497,255213,0
+Honda Anna Eng Plnt,W,Waiting for Approval,580,5GO,5GO R/S #3 DC,M,110,79,0
+Honda Anna Eng Plnt,W,Waiting for Approval,686,66V,66V Fuel Pump,A,7028,6545,0
+Honda Anna Eng Plnt,C,Current,569,6AT,6AT (RT4) Cooler RTN,7A/7B,118911,113412,175000
+Honda Anna Eng Plnt,C,Current,566,6AT,6AT (RV2) CAP A L SIDE,6A/6B,144031,137777,175000
+Honda Anna Eng Plnt,C,Current,644,6FB,"6FB Holder Comp, No 1 Cam R",A & B,278147,266640,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,644,6FB,"6FB Holder Comp, No 1 Cam R",B,80103,75963,0
+Honda Anna Eng Plnt,W,Waiting for Approval,644,6FB,"6FB Holder Comp, No 1 Cam R",C,16759,15546,0
+Honda Anna Eng Plnt,C,Current,645,6FB,"6FB Holder Comp, Oil Pass FRDC",A,99126,92760,100000
+Honda Anna Eng Plnt,B,Backup,664,6MA,6MA Oil Pan (69F Finished),A,261059,240436,100000
+Honda Anna Eng Plnt,C,Current,664,6MA,6MA Oil Pan (69F Finished),B,317503,292670,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,664,6MA,6MA Oil Pan (69F Finished),C,90613,79791,0
+Honda Anna Eng Plnt,W,Waiting for Approval,664,6MA,6MA Oil Pan (69F Finished),D,353157,319330,0
+Honda Anna Eng Plnt,W,Waiting for Approval,664,6MA,6MA Oil Pan (69F Finished),E,190333,175715,0
+Honda Anna Eng Plnt,W,Waiting for Approval,664,6MA,6MA Oil Pan (69F Finished),F,643,335,0
+Honda Anna Eng Plnt,W,Waiting for Approval,664,6MA,6MA Oil Pan (69F Finished),G,249,140,0
+Honda Anna Eng Plnt,C,Current,657,6MAA,6MAA HOLDCOMP NO1 EXHAUST (DC),A,201390,195508,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,657,6MAA,6MAA HOLDCOMP NO1 EXHAUST (DC),B,202325,195141,0
+Honda Anna Eng Plnt,W,Waiting for Approval,657,6MAA,6MAA HOLDCOMP NO1 EXHAUST (DC),C,226673,216975,0
+Honda Anna Eng Plnt,W,Waiting for Approval,657,6MAA,6MAA HOLDCOMP NO1 EXHAUST (DC),D,145098,137762,0
+Honda Anna Eng Plnt,W,Waiting for Approval,657,6MAA,6MAA HOLDCOMP NO1 EXHAUST (DC),F,110,78,0
+Honda Anna Eng Plnt,C,Current,652,6MAA,6MAA HOLDCOMP NO1 INTAKE (DC),A,201390,195519,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,652,6MAA,6MAA HOLDCOMP NO1 INTAKE (DC),B,202325,195141,0
+Honda Anna Eng Plnt,W,Waiting for Approval,652,6MAA,6MAA HOLDCOMP NO1 INTAKE (DC),C,226670,216975,0
+Honda Anna Eng Plnt,W,Waiting for Approval,652,6MAA,6MAA HOLDCOMP NO1 INTAKE (DC),D,145098,137762,0
+Honda Anna Eng Plnt,W,Waiting for Approval,652,6MAA,6MAA HOLDCOMP NO1 INTAKE (DC),F,110,78,0
+Honda Anna Eng Plnt,C,Current,658,6MAA,6MAA HOLDCOMP NO2 EXHAUST (DC),A,312598,305641,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,658,6MAA,6MAA HOLDCOMP NO2 EXHAUST (DC),B,307622,300853,0
+Honda Anna Eng Plnt,W,Waiting for Approval,658,6MAA,6MAA HOLDCOMP NO2 EXHAUST (DC),C,276459,267692,0
+Honda Anna Eng Plnt,W,Waiting for Approval,658,6MAA,6MAA HOLDCOMP NO2 EXHAUST (DC),D,202638,194941,0
+Honda Anna Eng Plnt,W,Waiting for Approval,658,6MAA,6MAA HOLDCOMP NO2 EXHAUST (DC),F,100,78,0
+Honda Anna Eng Plnt,C,Current,653,6MAA,6MAA HOLDCOMP NO2 INTAKE (DC),A,312598,305641,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,653,6MAA,6MAA HOLDCOMP NO2 INTAKE (DC),B,307622,300853,0
+Honda Anna Eng Plnt,W,Waiting for Approval,653,6MAA,6MAA HOLDCOMP NO2 INTAKE (DC),C,275338,266600,0
+Honda Anna Eng Plnt,W,Waiting for Approval,653,6MAA,6MAA HOLDCOMP NO2 INTAKE (DC),D,202639,194941,0
+Honda Anna Eng Plnt,W,Waiting for Approval,653,6MAA,6MAA HOLDCOMP NO2 INTAKE (DC),F,100,78,0
+Honda Anna Eng Plnt,C,Current,659,6MAA,6MAA HOLDCOMP NO3 EXHAUST (DC),A,312598,305641,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,659,6MAA,6MAA HOLDCOMP NO3 EXHAUST (DC),B,307622,300853,0
+Honda Anna Eng Plnt,W,Waiting for Approval,659,6MAA,6MAA HOLDCOMP NO3 EXHAUST (DC),C,276459,267692,0
+Honda Anna Eng Plnt,W,Waiting for Approval,659,6MAA,6MAA HOLDCOMP NO3 EXHAUST (DC),D,202638,194941,0
+Honda Anna Eng Plnt,W,Waiting for Approval,659,6MAA,6MAA HOLDCOMP NO3 EXHAUST (DC),F,100,78,0
+Honda Anna Eng Plnt,C,Current,654,6MAA,6MAA HOLDCOMP NO3 INTAKE (DC),A,312598,305641,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,654,6MAA,6MAA HOLDCOMP NO3 INTAKE (DC),B,307622,300853,0
+Honda Anna Eng Plnt,W,Waiting for Approval,654,6MAA,6MAA HOLDCOMP NO3 INTAKE (DC),C,276461,267692,0
+Honda Anna Eng Plnt,W,Waiting for Approval,654,6MAA,6MAA HOLDCOMP NO3 INTAKE (DC),D,202639,194941,0
+Honda Anna Eng Plnt,W,Waiting for Approval,654,6MAA,6MAA HOLDCOMP NO3 INTAKE (DC),F,100,78,0
+Honda Anna Eng Plnt,C,Current,660,6MAA,6MAA HOLDCOMP NO4 EXHAUST (DC),A,312598,305641,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,660,6MAA,6MAA HOLDCOMP NO4 EXHAUST (DC),B,307621,300853,0
+Honda Anna Eng Plnt,W,Waiting for Approval,660,6MAA,6MAA HOLDCOMP NO4 EXHAUST (DC),C,276459,267692,0
+Honda Anna Eng Plnt,W,Waiting for Approval,660,6MAA,6MAA HOLDCOMP NO4 EXHAUST (DC),D,202637,194941,0
+Honda Anna Eng Plnt,W,Waiting for Approval,660,6MAA,6MAA HOLDCOMP NO4 EXHAUST (DC),F,100,78,0
+Honda Anna Eng Plnt,C,Current,655,6MAA,6MAA HOLDCOMP NO4 INTAKE (DC),A,312598,305641,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,655,6MAA,6MAA HOLDCOMP NO4 INTAKE (DC),B,307622,300853,0
+Honda Anna Eng Plnt,W,Waiting for Approval,655,6MAA,6MAA HOLDCOMP NO4 INTAKE (DC),C,276459,267692,0
+Honda Anna Eng Plnt,W,Waiting for Approval,655,6MAA,6MAA HOLDCOMP NO4 INTAKE (DC),D,202638,194941,0
+Honda Anna Eng Plnt,W,Waiting for Approval,655,6MAA,6MAA HOLDCOMP NO4 INTAKE (DC),F,100,78,0
+Honda Anna Eng Plnt,C,Current,661,6MAA,6MAA HOLDCOMP NO5 EXHAUST (DC),A,201390,195519,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,661,6MAA,6MAA HOLDCOMP NO5 EXHAUST (DC),B,202325,195141,0
+Honda Anna Eng Plnt,W,Waiting for Approval,661,6MAA,6MAA HOLDCOMP NO5 EXHAUST (DC),C,226670,216975,0
+Honda Anna Eng Plnt,W,Waiting for Approval,661,6MAA,6MAA HOLDCOMP NO5 EXHAUST (DC),D,145098,137762,0
+Honda Anna Eng Plnt,W,Waiting for Approval,661,6MAA,6MAA HOLDCOMP NO5 EXHAUST (DC),F,110,78,0
+Honda Anna Eng Plnt,C,Current,656,6MAA,6MAA HOLDCOMP NO5 INTAKE (DC),A,201390,195519,100000
+Honda Anna Eng Plnt,A,Approved,656,6MAA,6MAA HOLDCOMP NO5 INTAKE (DC),B,202325,195141,0
+Honda Anna Eng Plnt,W,Waiting for Approval,656,6MAA,6MAA HOLDCOMP NO5 INTAKE (DC),C,226670,216975,0
+Honda Anna Eng Plnt,W,Waiting for Approval,656,6MAA,6MAA HOLDCOMP NO5 INTAKE (DC),D,145098,137762,0
+Honda Anna Eng Plnt,W,Waiting for Approval,656,6MAA,6MAA HOLDCOMP NO5 INTAKE (DC),F,110,78,0
+Honda Anna Eng Plnt,W,Waiting for Approval,674,6MD,6MD Intake Manifold,A,412914,384258,0
+Honda Anna Eng Plnt,W,Waiting for Approval,674,6MD,6MD Intake Manifold,B,1221,716,0
+Honda Anna Eng Plnt,C,Current,637,6NA,6NA FUEL PUMP,A,163037,155860,100000
+Honda Anna Eng Plnt,W,Waiting for Approval,637,6NA,6NA FUEL PUMP,B,165489,155272,0
+Honda Anna Eng Plnt,W,Waiting for Approval,637,6NA,6NA FUEL PUMP,C,134894,127442,0
+Honda Anna Eng Plnt,W,Waiting for Approval,637,6NA,6NA FUEL PUMP,D,80,53,0
+Honda Anna Eng Plnt,B,Backup,540,Housing,Housing Half Shaft Support,K/L,166748,160685,150000
+Honda Anna Eng Plnt,C,Current,540,Housing,Housing Half Shaft Support,M/N,343018,331108,150000
+Honda Anna Eng Plnt,B,Backup,118,P8A,P8A Oil Pan DC,M,19505,17120,125000
+Honda Anna Eng Plnt,B,Backup,111,PGE,PGE Oil Pan DC,E,159798,147492,125000
+Honda Anna Eng Plnt,C,Current,560,R1A,R1A OIL PAN DC,E,50961,46810,135000
+Honda Anna Eng Plnt,C,Current,561,R5A,R5A (CRV) OIL PAN,H,74907,69419,135000
+Honda Anna Eng Plnt,B,Backup,518,R70,R70 Thermo Cover,Q/R,244974,226652,150000
+Honda Anna Eng Plnt,B,Backup,423,RDJ,RDJ Oil Pan DC,I,199009,188715,125000
+Honda Anna Eng Plnt,B,Backup,470,RNA,RNA Oil Pan,M,188279,172215,125000
+Honda Anna Eng Plnt,B,Backup,573,RNO,RNO (RNOX) OIL PAN DC,P,147194,136237,135000
+Honda Anna Eng Plnt,C,Current,559,RXO,RXO oil pan,A,109116,101150,135000
+Honda Anna Eng Plnt,B,Backup,574,SZAX,SZAX BASE SUPPORT HALF SHAFT,M,154310,147874,125000
+Honda Anna Eng Plnt,C,Current,574,SZAX,SZAX BASE SUPPORT HALF SHAFT,N,320406,303285,125000

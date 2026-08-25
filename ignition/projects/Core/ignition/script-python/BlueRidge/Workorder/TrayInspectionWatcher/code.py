@@ -29,16 +29,15 @@ def handleEdge(instancePath, terminalLocationId, member):
 
 def _expectedPlcId(terminalLocationId):
     """(frontLot, expectedPlcId) for the assembly-out FIFO front, or (None, None).
-       LOTs physically reside at the terminal's ZONE cell (Terminal_List.ZoneId),
-       never at the Terminal Location itself -- resolve that first (mirrors
-       Assembly.resolvePlcCloseContext) before querying the WIP queue. Querying by
-       the raw terminalLocationId always returned empty (the zone is the
-       terminal's PARENT, not a descendant), so no tray ever closed."""
-    term = BlueRidge.Location.Terminal.findById(BlueRidge.Location.Terminal.listAll(), terminalLocationId)
-    cellLocationId = (term or {}).get("ZoneId")
-    if cellLocationId is None:
+
+       The queue is read at the terminal's ZONE cell (the line), never at the
+       terminal's own Location -- M&A LOTs are line-resident, so a terminal-scoped
+       read is always empty and every edge bails with 'no active LOT'. See
+       PlcWatcher.zoneCellId."""
+    cell = BlueRidge.Workorder.PlcWatcher.zoneCellId(terminalLocationId)
+    if cell is None:
         return (None, None)
-    q = BlueRidge.Lots.Lot.getWipQueueByLocation(cellLocationId, includeDescendants=True)
+    q = BlueRidge.Lots.Lot.getWipQueueByLocation(cell, includeDescendants=True)
     if not q:
         return (None, None)
     front = q[0]
@@ -65,12 +64,15 @@ def _onTrayLocked(instancePath, terminalLocationId):
                        errorDescription="No active LOT in the assembly queue")
         return
     if plcId is None:
+        msg = "Item.PlcId is not set"
         W.logInterface(device, "Tray locked (LOT item has no PlcId)",
                        requestPayload="lot=%s item=%s" % (front.get("Id"), front.get("ItemId")),
-                       ok=False, errorDescription="Item.PlcId is not set")
+                       ok=False, errorDescription=msg)
         BlueRidge.Common.Util.log(
             "tray %s: front LOT item %s has no PlcId -- cannot select recipe"
             % (instancePath, front.get("ItemId")), level="warn")
+        W.notifyAlarm(terminalLocationId, "Recipe select failed",
+                      "%s (item %s)" % (msg, front.get("ItemId")))
         return
     # Select the vision recipe in the PLC (control write, not display).
     W.writeMember(instancePath, "PartNumber", plcId)
@@ -103,6 +105,7 @@ def _onInspectionComplete(instancePath, terminalLocationId):
                        ok=False, errorDescription=reason, logEventTypeCode="PlcLineStop")
         W.writeDisplay(instancePath, {"MESAlarmType": 2, "MESAlarmText": reason})
         BlueRidge.Common.Util.log("tray %s LINE STOP: %s" % (instancePath, reason), level="warn")
+        W.notifyAlarm(terminalLocationId, "LINE STOP - vision mismatch", reason)
         return
 
     # Match -> release the tray (physical handshake first; the DB record follows).
@@ -122,5 +125,6 @@ def _onInspectionComplete(instancePath, terminalLocationId):
                    responsePayload=str(result), ok=ok,
                    errorDescription=None if ok else (result or {}).get("Message"))
     if not ok:
-        W.writeDisplay(instancePath, {"MESAlarmType": 1,
-                                      "MESAlarmText": (result or {}).get("Message") or "Tray close failed"})
+        msg = (result or {}).get("Message") or "Tray close failed"
+        W.writeDisplay(instancePath, {"MESAlarmType": 1, "MESAlarmText": msg})
+        W.notifyAlarm(terminalLocationId, "ByVision tray close failed", msg)

@@ -32,7 +32,8 @@ def handleEdge(instancePath, terminalLocationId, member):
     front = _frontLot(terminalLocationId)
     if front is None:
         _finish(W, instancePath, device, member, False,
-                "No active LOT in the assembly queue", "PartSN=%s" % partSN)
+                "No active LOT in the assembly queue", "PartSN=%s" % partSN,
+                terminalLocationId)
         return
 
     itemId = front.get("ItemId")
@@ -47,13 +48,15 @@ def handleEdge(instancePath, terminalLocationId, member):
     _finish(W, instancePath, device, member, ok,
             None if ok else msg,
             "PartSN=%s interlock=%s lot=%s" % (partSN, interlock, lotId),
-            responsePayload=str(result))
+            terminalLocationId, responsePayload=str(result))
     if ok:
         # Live-refresh the operator terminal at this cell. This watcher only has
         # the terminal, so resolve its zone cell for the push payload (keeps the
         # handler filter keyed on cellLocationId, same as every other path).
-        cc = BlueRidge.Location.Terminal.getClosureContext(terminalLocationId) or {}
-        cell = cc.get("zoneLocationId")
+        # NOT from getClosureContext -- that proc returns only CurrentClosureMethod
+        # / VisionAppUrl / ClosureCapabilities, so the old .get("zoneLocationId")
+        # read was always None and this push never fired.
+        cell = W.zoneCellId(terminalLocationId)
         if cell:
             BlueRidge.Workorder.Assembly.notifyInventoryChanged(cell, terminalLocationId)
     # ContainerCount write-back + container close on the configured limit are
@@ -61,14 +64,22 @@ def handleEdge(instancePath, terminalLocationId, member):
 
 
 def _frontLot(terminalLocationId):
-    q = BlueRidge.Lots.Lot.getWipQueueByLocation(terminalLocationId, includeDescendants=True)
+    """FIFO front at the terminal's ZONE cell (the line) -- LOTs are line-resident,
+       so a read scoped to the terminal's own Location is always empty. See
+       PlcWatcher.zoneCellId."""
+    cell = BlueRidge.Workorder.PlcWatcher.zoneCellId(terminalLocationId)
+    if cell is None:
+        return None
+    q = BlueRidge.Lots.Lot.getWipQueueByLocation(cell, includeDescendants=True)
     return q[0] if q else None
 
 
 def _finish(W, instancePath, device, member, ok, errorReason, requestPayload,
-            responsePayload=None):
+            terminalLocationId, responsePayload=None):
     """Write PartValid, log the handshake, reset TransInProc + the trigger, and
-       surface an alarm (HMI-gated) on failure."""
+       surface an alarm on failure -- both the HMI-gated tag write (physical
+       panel, needs WriteDisplayEnabled) and an operator toast (Perspective,
+       always on; see PlcWatcher.notifyAlarm)."""
     W.writeMember(instancePath, "PartValid", ok)
     W.logInterface(device, "Serialized MIP add", requestPayload=requestPayload,
                    responsePayload=responsePayload, ok=ok, errorDescription=errorReason)
@@ -77,4 +88,5 @@ def _finish(W, instancePath, device, member, ok, errorReason, requestPayload,
             "serialized handshake rejected %s: %s" % (instancePath, errorReason),
             level="warn")
         W.writeDisplay(instancePath, {"MESAlarmType": 1, "MESAlarmText": errorReason or "Rejected"})
+        W.notifyAlarm(terminalLocationId, "Serialized part rejected", errorReason or "Rejected")
     W.writeMembers(instancePath, {member: False, "TransInProc": False})

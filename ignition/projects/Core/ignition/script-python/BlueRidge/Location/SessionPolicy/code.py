@@ -14,14 +14,15 @@
 
 def getPolicy():
     """Single global row: {OperatorPresenceTimeoutSeconds, ElevationTimeoutSeconds, ...}.
-    Returns a shaped fallback (180/300) if the row is missing so callers never see None."""
+    Returns a shaped fallback (1800/300 s = 30 min / 5 min) if the row is missing so
+    callers never see None."""
     try:
         row = BlueRidge.Common.Db.execOne("location/SessionPolicy_Get", {})
         if row:
             return row
     except Exception as e:
         BlueRidge.Common.Util.log("getPolicy failed: %s" % str(e))
-    return {"OperatorPresenceTimeoutSeconds": 180, "ElevationTimeoutSeconds": 300}
+    return {"OperatorPresenceTimeoutSeconds": 1800, "ElevationTimeoutSeconds": 300}
 
 
 def updatePolicy(data, appUserId=None):

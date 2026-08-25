@@ -1,5 +1,5 @@
 -- =============================================
--- File:         0063_Crt_PartScoped/080_config_roundtrip.sql
+-- File:         0064_Crt_PartScoped/080_config_roundtrip.sql
 -- Author:       Blue Ridge Automation
 -- Created:      2026-08-20
 -- Description:  Parts.Item.CrtEnabled round-trips through the Configuration
@@ -7,7 +7,7 @@
 --               is useless to Quality unless BOTH halves of the surface carry
 --               it: Parts.Item_Update must WRITE it and Parts.Item_Get must
 --               READ IT BACK. A test that only proves the column exists proves
---               nothing about the surface -- migration 0062 already guarantees
+--               nothing about the surface -- migration 0064 already guarantees
 --               the column.
 --
 --               So every assertion here goes THROUGH THE PROCS, and both
@@ -37,7 +37,7 @@
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/080_config_roundtrip.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/080_config_roundtrip.sql';
 GO
 
 DECLARE @App        BIGINT = 1;

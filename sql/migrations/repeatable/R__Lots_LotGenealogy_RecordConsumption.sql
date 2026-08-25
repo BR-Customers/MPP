@@ -92,7 +92,7 @@ BEGIN
         IF @SourceLotId IS NULL OR @ConsumedPieceCount IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (SourceLotId, ConsumedPieceCount, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                     @EntityId = @SourceLotId, @LogEventTypeCode = N'LotConsumed',
@@ -167,7 +167,7 @@ BEGIN
         -- Lots.Lot_AssertNotBlocked). Inlined rather than EXEC'd because
         -- Lot_AssertNotBlocked emits a result set and this proc is itself
         -- captured via INSERT-EXEC. ----
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'Source LOT is ' + @StatusName + N' (status ' + @StatusCode
                          + N') and cannot be consumed; release the hold first.';

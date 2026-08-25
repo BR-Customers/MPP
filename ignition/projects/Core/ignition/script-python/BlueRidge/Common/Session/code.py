@@ -61,7 +61,7 @@ def loadPolicyIntoSession(session):
     """Seed session.custom.policy from the global SessionPolicy row."""
     p = BlueRidge.Location.SessionPolicy.getPolicy() or {}
     session.custom.policy = {
-        "operatorPresenceTimeoutSeconds": p.get("OperatorPresenceTimeoutSeconds") or 180,
+        "operatorPresenceTimeoutSeconds": p.get("OperatorPresenceTimeoutSeconds") or 1800,
         "elevationTimeoutSeconds":        p.get("ElevationTimeoutSeconds") or 300,
     }
 
@@ -109,7 +109,7 @@ def activeTimeoutSeconds(session):
     pol = session.custom.policy or {}
     if isElevated(session):
         return pol.get("elevationTimeoutSeconds") or 300
-    return pol.get("operatorPresenceTimeoutSeconds") or 180
+    return pol.get("operatorPresenceTimeoutSeconds") or 1800
 
 
 def resetTerminal(session):

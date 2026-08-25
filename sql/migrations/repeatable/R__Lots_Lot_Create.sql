@@ -86,9 +86,11 @@ BEGIN
         BEGIN
             SET @Message = N'Required parameter missing (ItemId, LotOriginTypeId, CurrentLocationId, PieceCount, AppUserId).';
             -- FailureLog.AppUserId is NOT NULL + FK; only attribute the failure
+            -- when the actor EXISTS -- a non-NULL but unknown id (stale session)
+            -- would otherwise violate the FK inside the logger itself.
             -- when we have a user. A NULL @AppUserId rejection cannot be logged
             -- (no actor) - return cleanly without a FailureLog row.
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                     @EntityId = NULL, @LogEventTypeCode = N'LotCreated',

@@ -16,7 +16,7 @@
 --                              layouts. NOT touched here.
 --                * Container - a verbatim copy of migration 0054's ported Honda
 --                              ZPL, already reproduced by 0054. NOT touched here.
---                * CrtBanner - migration 0065's CRT banner. Owned by that
+--                * CrtBanner - migration 0066's CRT banner. Owned by that
 --                              migration. NOT touched here.
 --
 --              Seeding the other types would put this file's copy AHEAD of the
@@ -27,11 +27,11 @@
 --
 --              CRT (design D8, revised 2026-08-20): the body below is MPP's
 --              layout UNMODIFIED. A CRT LOT is marked by a SEPARATE banner label
---              printed after the normal ticket (migration 0065), not by anything
+--              printed after the normal ticket (migration 0066), not by anything
 --              spliced into this template -- so nothing here has to change when
 --              MPP supplies a revised layout, and the barcode hazard noted below
 --              never arises for CRT. The earlier design appended a {CrtMark}
---              token to the Lot line; migration 0065 removes it, and this seed
+--              token to the Lot line; migration 0066 removes it, and this seed
 --              carries the restored original line
 --              (^A0,64,48^FO100,100^FD{LotName}^FS). Seeds run AFTER migrations,
 --              so leaving the token here would put it straight back.
@@ -75,7 +75,7 @@ GO
 -- Asserts a POSITIVE expected count: counting rows that LACK something would
 -- report success for a type whose active template is missing entirely.
 -- Primary comes from this seed; Master and Void from migration 0021.
--- {CrtMark} is no longer substituted by anything (migration 0065 replaced it
+-- {CrtMark} is no longer substituted by anything (migration 0066 replaced it
 -- with the CrtBanner label), so a surviving token would print LITERALLY.
 DECLARE @Expected INT = 3;
 DECLARE @Active INT = (

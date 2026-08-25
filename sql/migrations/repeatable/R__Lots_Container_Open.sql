@@ -39,7 +39,7 @@ BEGIN
         IF @ItemId IS NULL OR @ContainerConfigId IS NULL OR @CellLocationId IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (ItemId, ContainerConfigId, CellLocationId, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'Container', @EntityId = NULL,
                     @LogEventTypeCode = N'ContainerOpened', @FailureReason = @Message,

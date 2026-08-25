@@ -1,5 +1,5 @@
 -- =============================================
--- File:         0063_Crt_PartScoped/070_label_mark.sql
+-- File:         0064_Crt_PartScoped/070_label_mark.sql
 -- Author:       Blue Ridge Automation
 -- Created:      2026-08-20
 -- Description:  The CRT BANNER label (design D8, part-scoped CRT Task 6).
@@ -31,7 +31,7 @@
 --                   assertion pass or fail on the NAME rather than on the
 --                   banner under test.
 --                 * Code-table Ids are resolved BY CODE, never hardcoded --
---                   'CrtBanner' is IDENTITY-assigned by migration 0065.
+--                   'CrtBanner' is IDENTITY-assigned by migration 0066.
 --                 * Lots.LotLabel_Print / _Reprint both return the FOUR-column
 --                   status row (Status, Message, NewId, ZplContent); the
 --                   INSERT-EXEC temp table matches that shape exactly. A wrong
@@ -51,7 +51,7 @@
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/070_label_mark.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/070_label_mark.sql';
 GO
 
 DECLARE @Item     BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
@@ -64,7 +64,7 @@ DECLARE @Initial  BIGINT = (SELECT Id FROM Lots.PrintReasonCode WHERE Code = N'I
 DECLARE @Damaged  BIGINT = (SELECT Id FROM Lots.PrintReasonCode WHERE Code = N'ReprintDamaged');
 
 -- The banner body is read from the table, not hardcoded here: the template is
--- DATA (migration 0065), so the test asserts the proc appends THE ACTIVE
+-- DATA (migration 0066), so the test asserts the proc appends THE ACTIVE
 -- TEMPLATE rather than re-stating a ZPL string that would drift from it.
 DECLARE @Banner NVARCHAR(MAX) = (
     SELECT TOP 1 t.ZplBody

@@ -238,6 +238,39 @@ def operationCategoryForScreen(defaultScreen):
     return ""
 
 
+def bindsCellToZone(defaultScreen):
+    """True when a terminal's DefaultScreen is a DEDICATED-flavor screen -- one
+       bound to exactly one line/cell (the terminal's parent zone), which never
+       asks the operator to pick a location context.
+
+       applyToSession uses this to RE-SEED session.custom.cell from the new
+       terminal's zone instead of leaving it cleared. Without it, switching
+       between two terminals that share a route (METTs Assembly Out A -> B, both
+       /shop-floor/assembly-nonserialized) leaves the screen with no cell:
+       Perspective does not remount a view on a navigate to the URL it is already
+       on, so the view's own onStartup -- the only other place the cell is bound --
+       never re-fires. Symptom: 'No cell bound', empty components-at-this-cell,
+       empty finished-good pick.
+
+       SHARED-flavor routes (/shop-floor/die-cast, /shop-floor/trim) are absent on
+       purpose: there the operator picks the cell from a dropdown and it must start
+       cleared. Same for non-cell screens (supervisor / search / inspection).
+
+       This is UI routing metadata (which screen binds its own cell), not a domain
+       rule -- same class as operationCategoryForScreen above."""
+    s = (BlueRidge.Common.Util.extractQualifiedValues(defaultScreen) or "").strip().lower().rstrip("/")
+    return s in (
+        "/shop-floor/assembly-in",
+        "/shop-floor/assembly-nonserialized",
+        "/shop-floor/assembly-serialized",
+        "/shop-floor/die-cast/dedicated",
+        "/shop-floor/machining-in",
+        "/shop-floor/machining-out",
+        "/shop-floor/receiving",
+        "/shop-floor/trim/dedicated",
+    )
+
+
 def applyToSession(session, terminal):
     """Single source of truth for binding a terminal's FULL context onto a
        Perspective session. `terminal` is the 7-key session-terminal dict
@@ -250,17 +283,11 @@ def applyToSession(session, terminal):
          session.custom.plcDevices          (TerminalPlcDevice.getByTerminal)
          session.custom.closureMethod       (getClosureContext)
          session.custom.closureCapabilities (getClosureContext)
-         session.custom.cell -> CLEARED, unless the new terminal shares the
-                                             current cell's line (zoneLocationId);
-                                             a cell picked at a prior terminal
-                                             must not leak into a different line,
-                                             but must survive switching between
-                                             terminals on the SAME line, since
-                                             TerminalSelector.selectTerminal's
-                                             navigate() is a same-URL no-op for
-                                             same-screen-type terminals and never
-                                             re-runs the screen's onStartup to
-                                             re-derive it (2026-08-20)
+         session.custom.cell                (dedicated-flavor screens: re-seeded
+                                             from the new terminal's zone; every
+                                             other screen: CLEARED, so a cell
+                                             picked at a prior terminal cannot
+                                             leak into the new terminal)
 
        Called by onStartup (IP-resolved), NavigationTree launch, and
        TerminalSelector.selectTerminal so those three entry points can never
@@ -282,16 +309,21 @@ def applyToSession(session, terminal):
         # downtime reason-code dropdown; see operationCategoryForScreen.
         "operationCategoryCode": operationCategoryForScreen(t.get("defaultScreen")),
     }
-    # Drop a prior cell selection only when the new terminal is on a DIFFERENT
-    # line than the cell already bound -- switching between terminals on the
-    # same line (e.g. two Assembly stations under one WorkCenter) must not
-    # blank the operator's cell context.
-    try:
-        curCellLocationId = session.custom.cell.locationId
-    except:
-        curCellLocationId = None
-    newZoneLocationId = t.get("zoneLocationId")
-    if newZoneLocationId is None or newZoneLocationId != curCellLocationId:
+    # Drop any prior cell selection when the terminal changes. A dedicated-flavor
+    # screen is re-seeded HERE from the new terminal's zone rather than left
+    # cleared: its view binds the cell in onStartup, which does NOT re-fire when
+    # the terminal switch navigates to the route the page is already on (two
+    # terminals on one line share a DefaultScreen). See bindsCellToZone.
+    # (TerminalSelector.selectTerminal and NavigationTree both call this
+    # then navigate(); for two same-screen-type terminals the target URL
+    # is identical, so navigate() is a no-op -- 2026-08-20.)
+    if t.get("zoneLocationId") is not None and bindsCellToZone(term["defaultScreen"]):
+        session.custom.cell = {
+            "locationId": t.get("zoneLocationId"),
+            "code":       t.get("zoneName") or "",
+            "name":       t.get("zoneName") or "",
+        }
+    else:
         session.custom.cell = {"locationId": None, "code": "", "name": ""}
     # Global session policy + elevation state (spec 2026-08-04). Seeded before the
     # tid branch so BOTH the fallback and registered-terminal paths get it.

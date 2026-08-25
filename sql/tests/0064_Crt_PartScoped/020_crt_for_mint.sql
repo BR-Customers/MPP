@@ -1,11 +1,11 @@
 -- =============================================
--- File:         0063_Crt_PartScoped/020_crt_for_mint.sql
+-- File:         0064_Crt_PartScoped/020_crt_for_mint.sql
 -- Author:       Blue Ridge Automation
 -- Description:  Lots.ufn_CrtForMint -- the single mint-time CRT decision
 --               (design D1: part flag OR terminal switch OR CRT input LOT,
 --               D2 propagation, D3 evaluated at mint time only).
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/020_crt_for_mint.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/020_crt_for_mint.sql';
 GO
 
 -- -- Fixture --------------------------------------------------------------

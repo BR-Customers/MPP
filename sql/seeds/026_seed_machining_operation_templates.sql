@@ -33,16 +33,16 @@ DECLARE @OpTypeMachIn  BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code =
 DECLARE @OpTypeMachOut BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'MachiningOut' AND DeprecatedAt IS NULL);
 
 IF @OpTypeMachIn IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'MachiningIn')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, RequiresSubLotSplit, CreatedAt)
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, RequiresSubLotSplit, CreatedAt, PublishedAt)
     VALUES (N'MachiningIn', 1, N'Machining In', @OpTypeMachIn,
             N'Machining-line IN checkpoint template (Arc 2 Phase 5). FIFO pick of a whole cast/trim LOT + BOM-driven part-identity rename (FDS-05-033); written by MachiningIn_PickAndConsume.',
-            0, @Now);
+            0, @Now, @Now);
 
 IF @OpTypeMachOut IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'MachiningOut')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, RequiresSubLotSplit, CreatedAt)
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, RequiresSubLotSplit, CreatedAt, PublishedAt)
     VALUES (N'MachiningOut', 1, N'Machining Out', @OpTypeMachOut,
             N'Machining-line OUT template (Arc 2 Phase 5). Closing checkpoint for either the operator sub-LOT split (RequiresSubLotSplit=1, FDS-05-009) or the PLC auto-complete/auto-move (FDS-06-008).',
-            1, @Now);
+            1, @Now, @Now);
 GO
 PRINT 'Seed 026 (MachiningIn/MachiningOut OperationTemplates) loaded.';
 GO

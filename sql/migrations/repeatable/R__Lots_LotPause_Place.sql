@@ -50,7 +50,7 @@ BEGIN
         IF @LotId IS NULL OR @LocationId IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (LotId, LocationId, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'PauseEvent',
                     @EntityId = NULL, @LogEventTypeCode = N'LotPaused',
@@ -93,7 +93,7 @@ BEGIN
         END
 
         -- ---- B2 not-blocked guard (inline; matches Lot_AssertNotBlocked) ----
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT is blocked (status ' + @StatusCode + N') and cannot be paused.';
             EXEC Audit.Audit_LogFailure

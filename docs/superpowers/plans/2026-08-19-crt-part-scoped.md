@@ -40,7 +40,7 @@
 | `.../MPP_Config/.../Parts/ItemMaster/Identity/view.json` | **Modify.** `CrtEnabled` checkbox. |
 | `.../MPP/.../Views/ShopFloor/LotDetail/view.json` | **Modify.** CRT badge + Enable/Disable toggle. |
 | `.../Core/ignition/script-python/BlueRidge/Lots/Lot/code.py` | **Modify.** `setCrt` / `clearCrt` wrappers. |
-| `sql/tests/0063_Crt_PartScoped/010..070_*.sql` | **Create.** One file per behavioural area: schema, resolver, guards, propagation, enforcement, label. |
+| `sql/tests/0064_Crt_PartScoped/010..070_*.sql` | **Create.** One file per behavioural area: schema, resolver, guards, propagation, enforcement, label. |
 
 ---
 
@@ -48,7 +48,7 @@
 
 **Files:**
 - Create: `sql/migrations/versioned/00NN_crt_part_scoped.sql` — **determine NN at build time**: run `ls sql/migrations/versioned/ | tail -3`. `0061` is taken on this branch; `main` carries others (`0058_session_policy_operator_30min`, `0059_vision_app_ip`). Pick the next free ordinal higher than every file present.
-- Test: `sql/tests/0063_Crt_PartScoped/010_schema.sql`
+- Test: `sql/tests/0064_Crt_PartScoped/010_schema.sql`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -56,18 +56,18 @@
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0063_Crt_PartScoped/010_schema.sql`:
+Create `sql/tests/0064_Crt_PartScoped/010_schema.sql`:
 
 ```sql
 -- =============================================
--- File:         0063_Crt_PartScoped/010_schema.sql
+-- File:         0064_Crt_PartScoped/010_schema.sql
 -- Author:       Blue Ridge Automation
 -- Description:  Schema for part-scoped CRT (design 2026-08-19, section 4).
 --               Parts.Item.CrtEnabled and
 --               Location.LocationTypeDefinition.IsProductionDestination,
 --               plus the production-vs-not seed that D5 depends on.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/010_schema.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/010_schema.sql';
 GO
 
 DECLARE @n INT;
@@ -106,7 +106,7 @@ GO
 - [ ] **Step 2: Run it and watch it fail**
 
 ```bash
-cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0063"
+cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0064"
 ```
 
 Expected: FAIL on `Parts.Item.CrtEnabled exists` (Expected 1, Actual 0).
@@ -159,7 +159,7 @@ Replace `00NN` with the ordinal chosen in Step 1, in **both** the filename and t
 - [ ] **Step 4: Run the test and watch it pass**
 
 ```bash
-cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0063"
+cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0064"
 ```
 
 Expected: 5 passed, 0 failed. Grep the output for both `FAIL` and `ERROR running`.
@@ -167,7 +167,7 @@ Expected: 5 passed, 0 failed. Grep the output for both `FAIL` and `ERROR running
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/versioned/00NN_crt_part_scoped.sql sql/tests/0063_Crt_PartScoped/010_schema.sql
+git add sql/migrations/versioned/00NN_crt_part_scoped.sql sql/tests/0064_Crt_PartScoped/010_schema.sql
 git commit -m "feat(crt): part flag and production-destination classification
 
 Parts.Item.CrtEnabled drives part-scoped CRT (design D1).
@@ -182,7 +182,7 @@ definition codes in a proc -- a new definition declares itself."
 
 **Files:**
 - Create: `sql/migrations/repeatable/R__Lots_ufn_zz_CrtForMint.sql`
-- Test: `sql/tests/0063_Crt_PartScoped/020_crt_for_mint.sql`
+- Test: `sql/tests/0064_Crt_PartScoped/020_crt_for_mint.sql`
 
 **Interfaces:**
 - Consumes: `Parts.Item.CrtEnabled` (Task 1).
@@ -192,10 +192,10 @@ The `zz_` infix is a **deploy-order marker**, not part of the object name: funct
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0063_Crt_PartScoped/020_crt_for_mint.sql`. Fixture: one item with `CrtEnabled = 0` (`@ItemPlain`), one with `CrtEnabled = 1` (`@ItemCrt`), one Terminal location carrying the `CrtEnabled` attribute (`@TermCrt`), one without (`@TermPlain`), and two LOTs — one `CrtActive = 1` (`@LotCrt`), one `0` (`@LotPlain`).
+Create `sql/tests/0064_Crt_PartScoped/020_crt_for_mint.sql`. Fixture: one item with `CrtEnabled = 0` (`@ItemPlain`), one with `CrtEnabled = 1` (`@ItemCrt`), one Terminal location carrying the `CrtEnabled` attribute (`@TermCrt`), one without (`@TermPlain`), and two LOTs — one `CrtActive = 1` (`@LotCrt`), one `0` (`@LotPlain`).
 
 ```sql
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/020_crt_for_mint.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/020_crt_for_mint.sql';
 GO
 -- ... fixture setup omitted here for brevity in this step ONLY because the
 -- implementer must write it against live ids; see the fixture block below.
@@ -257,7 +257,7 @@ UPDATE Lots.Lot SET CrtActive = 1 WHERE Id = @LotCrt;
 - [ ] **Step 2: Run it and watch it fail**
 
 ```bash
-cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0063"
+cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0064"
 ```
 
 Expected: `ERROR running 020_crt_for_mint.sql` — *Invalid object name 'Lots.ufn_CrtForMint'*.
@@ -313,7 +313,7 @@ RETURN
 - [ ] **Step 4: Run the test and watch it pass**
 
 ```bash
-cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0063"
+cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0064"
 ```
 
 Expected: 12 passed (5 from Task 1 + 7 here), 0 failed.
@@ -321,7 +321,7 @@ Expected: 12 passed (5 from Task 1 + 7 here), 0 failed.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_ufn_zz_CrtForMint.sql sql/tests/0063_Crt_PartScoped/020_crt_for_mint.sql
+git add sql/migrations/repeatable/R__Lots_ufn_zz_CrtForMint.sql sql/tests/0064_Crt_PartScoped/020_crt_for_mint.sql
 git commit -m "feat(crt): ufn_CrtForMint - the single CRT-at-mint decision
 
 Three-way OR of design D1: part flag, terminal switch, or a CRT input
@@ -336,7 +336,7 @@ resolution), not part of the object name."
 
 **Files:**
 - Create: `sql/migrations/repeatable/R__Lots_ufn_zz_CrtBlocks.sql`
-- Test: `sql/tests/0063_Crt_PartScoped/030_crt_blocks.sql`
+- Test: `sql/tests/0064_Crt_PartScoped/030_crt_blocks.sql`
 
 **Interfaces:**
 - Consumes: `Location.LocationTypeDefinition.IsProductionDestination` (Task 1).
@@ -344,10 +344,10 @@ resolution), not part of the object name."
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0063_Crt_PartScoped/030_crt_blocks.sql`:
+Create `sql/tests/0064_Crt_PartScoped/030_crt_blocks.sql`:
 
 ```sql
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/030_crt_blocks.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/030_crt_blocks.sql';
 GO
 -- Run-Tests.ps1 resets with -SkipDemoSeed, so Lots.Lot starts EMPTY and is then
 -- filled by whatever earlier test files happened to create. Never grab an
@@ -398,7 +398,7 @@ GO
 - [ ] **Step 2: Run it and watch it fail**
 
 ```bash
-cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0063"
+cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "0064"
 ```
 
 Expected: `ERROR running 030_crt_blocks.sql` — *Invalid object name 'Lots.ufn_CrtBlocksAdvance'*.
@@ -458,7 +458,7 @@ Expected: 17 passed, 0 failed.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_ufn_zz_CrtBlocks.sql sql/tests/0063_Crt_PartScoped/030_crt_blocks.sql
+git add sql/migrations/repeatable/R__Lots_ufn_zz_CrtBlocks.sql sql/tests/0064_Crt_PartScoped/030_crt_blocks.sql
 git commit -m "feat(crt): the advance and move-to guards
 
 ufn_CrtBlocksAdvance is the seam for D4; ufn_CrtBlocksMoveTo implements
@@ -474,7 +474,7 @@ D5's destination rule so a CRT lot can still be taken to quarantine."
 - Modify: `sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql`
 - Modify: `sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql` (**lines 271–280** currently inline the terminal-attribute lookup — that block is DELETED and replaced by the resolver call)
 - Modify: `sql/migrations/repeatable/R__Lots_Lot_Split.sql`, `R__Lots_Lot_Merge.sql`
-- Test: `sql/tests/0063_Crt_PartScoped/040_propagation.sql`
+- Test: `sql/tests/0064_Crt_PartScoped/040_propagation.sql`
 
 **Interfaces:**
 - Consumes: `Lots.ufn_CrtForMint` (Task 2).
@@ -482,10 +482,10 @@ D5's destination rule so a CRT lot can still be taken to quarantine."
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0063_Crt_PartScoped/040_propagation.sql`. This is the heart of D2/D3 — write these four assertions:
+Create `sql/tests/0064_Crt_PartScoped/040_propagation.sql`. This is the heart of D2/D3 — write these four assertions:
 
 ```sql
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/040_propagation.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/040_propagation.sql';
 GO
 -- Fixture: flag a casting part, leave the sub-assembly part UNFLAGGED. The point
 -- of assertion 2 is that the sub-assembly inherits CRT from its INPUT, not from
@@ -610,7 +610,7 @@ cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt" -Filter "DieCas
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_Lot_Create.sql sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql sql/migrations/repeatable/R__Lots_Lot_Split.sql sql/migrations/repeatable/R__Lots_Lot_Merge.sql sql/tests/0063_Crt_PartScoped/040_propagation.sql
+git add sql/migrations/repeatable/R__Lots_Lot_Create.sql sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql sql/migrations/repeatable/R__Lots_Lot_Split.sql sql/migrations/repeatable/R__Lots_Lot_Merge.sql sql/tests/0064_Crt_PartScoped/040_propagation.sql
 git commit -m "feat(crt): stamp CrtActive at every mint point
 
 Lot_Create, MachiningOut_Mint, Assembly_CompleteTray, Lot_Split and
@@ -627,7 +627,7 @@ tainting future mints but leaves existing descendants tagged."
 **Files:**
 - Modify: `sql/migrations/repeatable/R__Lots_Lot_MoveTo.sql`, `R__Lots_Lot_MoveToValidated.sql`
 - Modify: `sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql`, `R__Workorder_MachiningOut_Mint.sql`, `R__Lots_Lot_Split.sql`, `R__Lots_Lot_Merge.sql`
-- Test: `sql/tests/0063_Crt_PartScoped/060_enforcement.sql`
+- Test: `sql/tests/0064_Crt_PartScoped/060_enforcement.sql`
 
 **Interfaces:**
 - Consumes: `Lots.ufn_CrtBlocksAdvance`, `Lots.ufn_CrtBlocksMoveTo` (Task 3).
@@ -637,10 +637,10 @@ tainting future mints but leaves existing descendants tagged."
 
 - [ ] **Step 1: Write the failing test**
 
-Create `sql/tests/0063_Crt_PartScoped/060_enforcement.sql` asserting, for a CRT LOT:
+Create `sql/tests/0064_Crt_PartScoped/060_enforcement.sql` asserting, for a CRT LOT:
 
 ```sql
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/060_enforcement.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/060_enforcement.sql';
 GO
 -- Run-Tests.ps1 resets with -SkipDemoSeed, so Lots.Lot starts EMPTY and is then
 -- filled by whatever earlier test files happened to create. Never grab an
@@ -777,7 +777,7 @@ not set it.
 
 - [ ] **Step 4: Run the test and watch it pass**
 
-Expected: 0063 fully green. **Then run the whole suite** — you have changed five widely-used procs:
+Expected: 0064 fully green. **Then run the whole suite** — you have changed five widely-used procs:
 
 ```bash
 cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Crt"
@@ -788,7 +788,7 @@ Confirm the only `ERROR running` entries are the four pre-existing `0022_PlantFl
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_Lot_MoveTo.sql sql/migrations/repeatable/R__Lots_Lot_MoveToValidated.sql sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql sql/migrations/repeatable/R__Lots_Lot_Split.sql sql/migrations/repeatable/R__Lots_Lot_Merge.sql sql/tests/0063_Crt_PartScoped/060_enforcement.sql
+git add sql/migrations/repeatable/R__Lots_Lot_MoveTo.sql sql/migrations/repeatable/R__Lots_Lot_MoveToValidated.sql sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql sql/migrations/repeatable/R__Lots_Lot_Split.sql sql/migrations/repeatable/R__Lots_Lot_Merge.sql sql/tests/0064_Crt_PartScoped/060_enforcement.sql
 git commit -m "feat(crt): block advance and production moves for a CRT lot
 
 Every guard rejects BEFORE BEGIN TRANSACTION -- a ROLLBACK in a proc
@@ -803,7 +803,7 @@ Hold/Scrap/Closed rejections keep precedence."
 
 **Files:**
 - Modify: `sql/migrations/repeatable/R__Lots_LotLabel_Print.sql`, `R__Lots_LotLabel_Reprint.sql`
-- Test: `sql/tests/0063_Crt_PartScoped/070_label_mark.sql`
+- Test: `sql/tests/0064_Crt_PartScoped/070_label_mark.sql`
 
 **Interfaces:**
 - Consumes: `Lots.Lot.CrtActive`.
@@ -812,7 +812,7 @@ Hold/Scrap/Closed rejections keep precedence."
 - [ ] **Step 1: Write the failing test**
 
 ```sql
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/070_label_mark.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/070_label_mark.sql';
 GO
 -- Run-Tests.ps1 resets with -SkipDemoSeed, so Lots.Lot starts EMPTY and is then
 -- filled by whatever earlier test files happened to create. Never grab an
@@ -884,7 +884,7 @@ Wherever the print proc does its `REPLACE(@Zpl, N'{LotName}', …)` chain, add:
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Lots_LotLabel_Print.sql sql/migrations/repeatable/R__Lots_LotLabel_Reprint.sql sql/tests/0063_Crt_PartScoped/070_label_mark.sql
+git add sql/migrations/repeatable/R__Lots_LotLabel_Print.sql sql/migrations/repeatable/R__Lots_LotLabel_Reprint.sql sql/tests/0064_Crt_PartScoped/070_label_mark.sql
 git commit -m "feat(crt): {CrtMark} label token
 
 One token in the existing templates rather than CRT template variants

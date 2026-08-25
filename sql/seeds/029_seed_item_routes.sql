@@ -2,18 +2,27 @@
 -- Seed:        029_seed_item_routes.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-13 (rewritten from the correct DB configuration)
+-- Modified:    2026-08-24 - a minted SubAssembly's post-birth route ends at
+--              AssemblyOut, NOT MachiningOut. ConsumeMint marks the step where the
+--              part is CONSUMED and Lot_GetWipQueueByLocation holds a ConsumeMint step
+--              pending for as long as the LOT is open; a MachiningOut step therefore put
+--              the freshly minted SubAssembly straight back into the Machining OUT queue
+--              that produced it, selectable as a mint SOURCE. A SubAssembly is consumed at
+--              Assembly OUT (Assembly_CompleteTray -> FG). This matches what MPP_MES_Dev
+--              already carried for both parts (route steps re-pointed to A-Out-A via the
+--              Config Tool); the seed had drifted from it.
 -- Description: Published RouteTemplate + RouteStep rows for the 13-part Honda
 --              matrix (020_seed_items.sql), matching the Config-Tool setup in
 --              MPP_MES_Dev. Terminal-mint model: a casting's route carries the
 --              chain THROUGH its consume-mint step; a machined SubAssembly/FG
 --              picks up its route after birth.
 --                * 5G0-c   : DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut
---                * 5G0-SA  : MachiningOut
+--                * 5G0-SA  : AssemblyOut
 --                * 5G0-FG  : AssemblyOut
 --                * 12231/12232/12241-59B-0000 : DieCast -> TrimIn -> TrimOut -> MachiningIn -> AssemblyOut
 --                * 1223A-59B -A0002 : AssemblyOut
 --                * 12270-6NA   : DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut
---                * 12270-6NA-M : MachiningOut
+--                * 12270-6NA-M : AssemblyOut
 --                * 12270-6NA -0001 : AssemblyOut
 --
 --              Steps resolve the OperationTemplate BY OperationType ROLE (via
@@ -35,28 +44,28 @@ DECLARE @Dev BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @R TABLE (Pn NVARCHAR(60), Name NVARCHAR(120));
 INSERT INTO @R (Pn, Name) VALUES
  (N'5G0-c',            N'5G0-c Cast->Trim->Machine Route v1'),
- (N'5G0-SA',           N'5G0-SA Machining-Out Route v1'),
+ (N'5G0-SA',           N'5G0-SA Assembly-Out Route v1'),
  (N'5G0-FG',           N'5G0-FG Assembly-Out Route v1'),
  (N'12231-59B-0000',   N'12231 Cast->Machine->Assembly Route v1'),
  (N'12232-59B-0000',   N'12232 Cast->Machine->Assembly Route v1'),
  (N'12241-59B-0000',   N'12241 Cast->Machine->Assembly Route v1'),
  (N'1223A-59B -A0002', N'1223A Assembly-Out Route v1'),
  (N'12270-6NA',        N'12270-6NA Cast->Trim->Machine Route v1'),
- (N'12270-6NA-M',      N'12270-6NA-M Machining-Out Route v1'),
+ (N'12270-6NA-M',      N'12270-6NA-M Assembly-Out Route v1'),
  (N'12270-6NA -0001',  N'12270-6NA-0001 Assembly-Out Route v1');
 
 -- ordered route steps, keyed by OperationType role
 DECLARE @S TABLE (Pn NVARCHAR(60), Seq INT, Role NVARCHAR(30), Descr NVARCHAR(120));
 INSERT INTO @S (Pn, Seq, Role, Descr) VALUES
  (N'5G0-c',1,N'DieCast',N'Die cast'),(N'5G0-c',2,N'TrimIn',N'Trim in'),(N'5G0-c',3,N'TrimOut',N'Trim out'),(N'5G0-c',4,N'MachiningIn',N'Machining in'),(N'5G0-c',5,N'MachiningOut',N'Machining out (mints 5G0-SA)'),
- (N'5G0-SA',1,N'MachiningOut',N'Machining out'),
+ (N'5G0-SA',1,N'AssemblyOut',N'Assembly out'),
  (N'5G0-FG',1,N'AssemblyOut',N'Assembly out'),
  (N'12231-59B-0000',1,N'DieCast',N'Die cast'),(N'12231-59B-0000',2,N'TrimIn',N'Trim in'),(N'12231-59B-0000',3,N'TrimOut',N'Trim out'),(N'12231-59B-0000',4,N'MachiningIn',N'Machining in'),(N'12231-59B-0000',5,N'AssemblyOut',N'Assembly out'),
  (N'12232-59B-0000',1,N'DieCast',N'Die cast'),(N'12232-59B-0000',2,N'TrimIn',N'Trim in'),(N'12232-59B-0000',3,N'TrimOut',N'Trim out'),(N'12232-59B-0000',4,N'MachiningIn',N'Machining in'),(N'12232-59B-0000',5,N'AssemblyOut',N'Assembly out'),
  (N'12241-59B-0000',1,N'DieCast',N'Die cast'),(N'12241-59B-0000',2,N'TrimIn',N'Trim in'),(N'12241-59B-0000',3,N'TrimOut',N'Trim out'),(N'12241-59B-0000',4,N'MachiningIn',N'Machining in'),(N'12241-59B-0000',5,N'AssemblyOut',N'Assembly out'),
  (N'1223A-59B -A0002',1,N'AssemblyOut',N'Assembly out'),
  (N'12270-6NA',1,N'DieCast',N'Die cast'),(N'12270-6NA',2,N'TrimIn',N'Trim in'),(N'12270-6NA',3,N'TrimOut',N'Trim out'),(N'12270-6NA',4,N'MachiningIn',N'Machining in'),(N'12270-6NA',5,N'MachiningOut',N'Machining out (mints 12270-6NA-M)'),
- (N'12270-6NA-M',1,N'MachiningOut',N'Machining out'),
+ (N'12270-6NA-M',1,N'AssemblyOut',N'Assembly out'),
  (N'12270-6NA -0001',1,N'AssemblyOut',N'Assembly out');
 
 -- 1) RouteTemplate (published v1) per item

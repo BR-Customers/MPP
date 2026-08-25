@@ -68,7 +68,14 @@
 --              which would throw inside the audit call instead of returning
 --              the clean Status=0 row. Lot_Create and Lots.DieCastLot_Open
 --              (Task 2) hit and fixed this identical case; mirrored here by
---              guarding the Fail: audit call with IF @AppUserId IS NOT NULL.
+--              guarding the Fail: audit call with an EXISTS check on
+--              Location.AppUser. NOTE (2026-08-18): the guard was originally
+--              IF @AppUserId IS NOT NULL, which only covers a NULL actor. A
+--              non-NULL but NON-EXISTENT id -- exactly what the 'AppUser not
+--              found' validation detects, e.g. a session cached against a
+--              different database -- passed that guard and violated the FK
+--              inside the logger, turning a clean rejection into an unhandled
+--              JDBC exception on the operator's screen. Hardened to EXISTS.
 --              The brief's RejectEvent INSERT column list (ProductionEventId,
 --              LotId, DefectCodeId, Quantity, ChargeToArea, Remarks,
 --              AppUserId, RecordedAt) was verified against
@@ -207,7 +214,7 @@ Fail:
     -- above can reach here with @AppUserId itself NULL -- guard the audit call
     -- so that case returns cleanly instead of throwing (mirrors Lot_Create /
     -- Lots.DieCastLot_Open's identical guard).
-    IF @AppUserId IS NOT NULL
+    IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
         EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=NULL,
             @LogEventTypeCode=N'DieCastPieceContributed', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
     SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;

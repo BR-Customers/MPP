@@ -77,7 +77,7 @@ BEGIN
         IF @LotId IS NULL OR @PrintReasonCodeId IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (LotId, PrintReasonCodeId, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'LotLabel',
                     @EntityId = NULL, @LogEventTypeCode = N'LabelPrinted',
@@ -177,7 +177,7 @@ BEGIN
 
         -- ---- CRT banner: append a SECOND ^XA..^XZ document (design D8) ----
         -- Mirrors LotLabel_Print. Resolved BY CODE, never by Id -- 'CrtBanner'
-        -- is IDENTITY-assigned by migration 0065. A missing or deprecated
+        -- is IDENTITY-assigned by migration 0066. A missing or deprecated
         -- banner template leaves @Zpl untouched and the normal label prints.
         IF @CrtActive = 1
         BEGIN

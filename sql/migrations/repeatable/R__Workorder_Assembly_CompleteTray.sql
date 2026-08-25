@@ -123,7 +123,7 @@ BEGIN
         IF @FinishedGoodItemId IS NULL OR @PieceCount IS NULL OR @CellLocationId IS NULL OR @ClosureMethod IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (FinishedGoodItemId, PieceCount, CellLocationId, ClosureMethod, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
                     @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
                     @ProcedureName = @ProcName, @AttemptedParameters = @Params;
@@ -221,7 +221,7 @@ BEGIN
                 SELECT ISNULL(SUM(l.InventoryAvailable), 0) AS Avail FROM Lots.Lot l
                 INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                 WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @CellLocationId
-                  AND sc.Code <> N'Closed' AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
+                  AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
             ) s
             WHERE bl.BomId = @BomId AND s.Avail < CAST(bl.QtyPer * @PieceCount AS INT));
 
@@ -390,7 +390,7 @@ BEGIN
                        @SrcPieceCount = l.PieceCount, @SrcStatus = l.LotStatusId
                 FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                 WHERE l.ItemId = @ChildItemId AND l.CurrentLocationId = @CellLocationId
-                      AND sc.Code <> N'Closed' AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
+                      AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
                       AND l.InventoryAvailable > 0
                 ORDER BY l.CreatedAt, l.Id;              -- FIFO
                 IF @SrcLotId IS NULL

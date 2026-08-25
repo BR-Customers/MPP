@@ -1,5 +1,5 @@
 -- =============================================
--- Migration:   0065_crt_banner_label.sql
+-- Migration:   0066_crt_banner_label.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-08-20
 -- Description: Part-scoped CRT (design 2026-08-19, decision D8 REVISED):
@@ -14,14 +14,14 @@
 --              template's ZplBody to the rendered label when Lot.CrtActive = 1.
 --              One proc call, two physical labels, no UI change.
 --
---              Why this supersedes the {CrtMark} token (migration 0063): a whole
+--              Why this supersedes the {CrtMark} token (migration 0065): a whole
 --              extra ticket is far more visible on the floor than a small mark
 --              on one line, and -- decisively -- the banner requires NO edit to
---              MPP's real label layouts. 0063 had to splice a field into each
+--              MPP's real label layouts. 0065 had to splice a field into each
 --              LTT template, could not patch a layout it did not recognise
 --              (it PRINTed a WARNING when it skipped one), and had to be kept
 --              clear of the ^BC / ^B3 barcode fields that carry the scanned LOT
---              number. None of that applies to a separate document. 0063's
+--              number. None of that applies to a separate document. 0065's
 --              WARNING block is therefore obsolete and is NOT carried forward.
 --
 --              This migration:
@@ -65,8 +65,8 @@
 --              convention).
 -- =============================================
 
-IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0065_crt_banner_label')
-BEGIN PRINT 'Migration 0065 already applied -- skipping.'; RETURN; END
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0066_crt_banner_label')
+BEGIN PRINT 'Migration 0066 already applied -- skipping.'; RETURN; END
 GO
 
 -- ---- 1. The CrtBanner label type (IDENTITY-assigned Id; resolved by Code) ----
@@ -93,7 +93,7 @@ GO
 -- left behind, then a catch-all for anything hand-placed. Nothing substitutes
 -- {CrtMark} any more, so a surviving token prints literally on a real ticket.
 
--- 3a. Migration 0063's inserted field, on 0021's placeholder layout.
+-- 3a. Migration 0065's inserted field, on 0021's placeholder layout.
 UPDATE Lots.LabelTemplate
    SET ZplBody = REPLACE(ZplBody,
            N'^FO40,40^A0N,40,40^FDLOT {LotName}^FS^FO300,45^A0N,30,30^FD{CrtMark}^FS',
@@ -139,10 +139,10 @@ ELSE
 GO
 
 -- ---- Record migration ----
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0065_crt_banner_label')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0066_crt_banner_label')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0065_crt_banner_label',
+    VALUES (N'0066_crt_banner_label',
             N'CRT banner label: add the CrtBanner LabelTypeCode + LabelTemplate printed as a second ZPL document for a CRT LOT, and remove the {CrtMark} token from the active LTT templates (D8 revised).');
 GO
-PRINT 'Migration 0065 (CRT banner label) applied.';
+PRINT 'Migration 0066 (CRT banner label) applied.';
 GO

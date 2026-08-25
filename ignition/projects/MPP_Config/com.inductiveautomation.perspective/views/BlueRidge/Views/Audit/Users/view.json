@@ -1,8 +1,8 @@
 {
   "custom": {
     "policy": {
-      "operatorPresenceTimeoutSeconds": 180,
-      "elevationTimeoutSeconds": 300
+      "operatorPresenceTimeoutMinutes": 30,
+      "elevationTimeoutMinutes": 5
     },
     "filter": {
       "includeDeprecated": false,
@@ -220,14 +220,14 @@
           {
             "meta": { "name": "PolicyEyebrow" },
             "position": { "shrink": 0 },
-            "props": { "style": { "classes": "label-eyebrow", "paddingBottom": "6px" }, "text": "Session timeouts (global, seconds)" },
+            "props": { "style": { "classes": "label-eyebrow", "paddingBottom": "6px" }, "text": "Session timeouts (global)" },
             "type": "ia.display.label"
           },
           {
             "children": [
-              { "meta": { "name": "OpLabel" }, "props": { "style": { "classes": "label-eyebrow" }, "text": "Operator presence" }, "type": "ia.display.label" },
+              { "meta": { "name": "OpLabel" }, "props": { "style": { "classes": "label-eyebrow" }, "text": "Operator presence (min)" }, "type": "ia.display.label" },
               { "meta": { "name": "OpInput" },
-                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.policy.operatorPresenceTimeoutSeconds" }, "type": "property" } } },
+                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.policy.operatorPresenceTimeoutMinutes" }, "type": "property" } } },
                 "props": { "style": { "classes": "search-input", "width": "110px" } },
                 "type": "ia.input.text-field" }
             ],
@@ -238,9 +238,9 @@
           },
           {
             "children": [
-              { "meta": { "name": "ElevLabel" }, "props": { "style": { "classes": "label-eyebrow" }, "text": "Elevation" }, "type": "ia.display.label" },
+              { "meta": { "name": "ElevLabel" }, "props": { "style": { "classes": "label-eyebrow" }, "text": "Elevation (min)" }, "type": "ia.display.label" },
               { "meta": { "name": "ElevInput" },
-                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.policy.elevationTimeoutSeconds" }, "type": "property" } } },
+                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.policy.elevationTimeoutMinutes" }, "type": "property" } } },
                 "props": { "style": { "classes": "search-input", "width": "110px" } },
                 "type": "ia.input.text-field" }
             ],
@@ -564,7 +564,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tp = BlueRidge.Location.SessionPolicy.getPolicy() or {}\n\tself.view.custom.policy = {\"operatorPresenceTimeoutSeconds\": p.get(\"OperatorPresenceTimeoutSeconds\") or 180, \"elevationTimeoutSeconds\": p.get(\"ElevationTimeoutSeconds\") or 300}"
+            "script": "\t# Storage is SECONDS; the editor presents whole MINUTES (FAT day-1 item 6).\n\tp = BlueRidge.Location.SessionPolicy.getPolicy() or {}\n\tself.view.custom.policy = {\"operatorPresenceTimeoutMinutes\": int(round((p.get(\"OperatorPresenceTimeoutSeconds\") or 1800) / 60.0)), \"elevationTimeoutMinutes\": int(round((p.get(\"ElevationTimeoutSeconds\") or 300) / 60.0))}"
           }
         }
       }
@@ -574,7 +574,7 @@
         {
           "name": "handleSavePolicy",
           "params": [],
-          "script": "\tres = BlueRidge.Location.SessionPolicy.updatePolicy(self.view.custom.policy)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session timeouts saved\")"
+          "script": "\t# The editor holds MINUTES; the proc + column are SECONDS. Convert at the boundary.\n\tpol = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.policy) or {}\n\top = BlueRidge.Common.Util.toIntOrNone(pol.get(\"operatorPresenceTimeoutMinutes\"))\n\tel = BlueRidge.Common.Util.toIntOrNone(pol.get(\"elevationTimeoutMinutes\"))\n\tif op is None or el is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": 0, \"Message\": \"Enter whole minutes for both timeouts.\"}, \"Session timeouts saved\")\n\t\treturn\n\tres = BlueRidge.Location.SessionPolicy.updatePolicy({\"operatorPresenceTimeoutSeconds\": op * 60, \"elevationTimeoutSeconds\": el * 60})\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session timeouts saved\")"
         }
       ],
       "extensionFunctions": null,

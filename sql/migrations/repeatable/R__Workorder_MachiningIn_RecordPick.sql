@@ -63,7 +63,7 @@ BEGIN
         IF @LotId IS NULL OR @LineLocationId IS NULL OR @AppUserId IS NULL OR @TerminalLocationId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (LotId, LineLocationId, AppUserId, TerminalLocationId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                     @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
@@ -97,7 +97,7 @@ BEGIN
             RETURN;
         END
 
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode
                          + N') and cannot be picked; release the hold first.';

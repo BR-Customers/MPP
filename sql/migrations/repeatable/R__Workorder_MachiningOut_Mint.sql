@@ -11,7 +11,7 @@
 --              deeper in the queue is still consumed, and that is exactly the
 --              containment escape the post-consume CRT re-resolve below exists to
 --              close (it taints the minted sub-assembly instead of blocking). See
---              sql/tests/0063_Crt_PartScoped/050_mint_procs.sql section C, which
+--              sql/tests/0064_Crt_PartScoped/050_mint_procs.sql section C, which
 --              asserts that behaviour.
 -- Version:     2.4 (2026-08-20, part-scoped CRT) - the minted SubAssembly LOT is now
 --              stamped with Lots.Lot.CrtActive, resolved in ONE place
@@ -91,7 +91,7 @@ BEGIN
         -- ===== Pre-transaction validations =====
         IF @SourceLotId IS NULL OR @OperationTemplateId IS NULL OR @PieceCount IS NULL OR @AppUserId IS NULL
         BEGIN SET @Message=N'Required parameter missing.';
-            IF @AppUserId IS NOT NULL EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId) EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             GOTO Reply; END
         IF @PieceCount <= 0 BEGIN SET @Message=N'PieceCount must be positive.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
@@ -110,7 +110,7 @@ BEGIN
         FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@SourceLotId;
         IF @SrcItem IS NULL BEGIN SET @Message=N'Source LOT not found.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
-        IF @Blocks=1 OR @SrcStatusCode=N'Closed' BEGIN SET @Message=N'Source LOT is '+@SrcStatusCode+N' and cannot be consumed.';
+        IF @Blocks=1 OR @SrcStatusCode IN (N'Closed',N'Open') BEGIN SET @Message=N'Source LOT is '+@SrcStatusCode+N' and cannot be consumed.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
 
         -- D4 (part-scoped CRT): the scanned casting cannot be consumed into a

@@ -74,7 +74,7 @@ BEGIN
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
         DECLARE @ErrMsg NVARCHAR(4000)=ERROR_MESSAGE(), @ErrSev INT=ERROR_SEVERITY(), @ErrState INT=ERROR_STATE();
         SET @Status=0; SET @NewId=NULL; SET @Message=N'Unexpected error: ' + LEFT(@ErrMsg,400);
-        IF @AppUserId IS NOT NULL
+        IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
         BEGIN TRY EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@LotId,
             @LogEventTypeCode=N'DieCastLotVoided', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; END TRY BEGIN CATCH END CATCH
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RAISERROR(@ErrMsg,@ErrSev,@ErrState); RETURN;
@@ -84,7 +84,7 @@ Fail:
     -- above can reach here with @AppUserId itself NULL -- guard the audit call
     -- so that case returns cleanly instead of throwing (mirrors Lot_Create /
     -- Lots.DieCastLot_Open's identical guard).
-    IF @AppUserId IS NOT NULL
+    IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
         EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@LotId,
             @LogEventTypeCode=N'DieCastLotVoided', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
     SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;

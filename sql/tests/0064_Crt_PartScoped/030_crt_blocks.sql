@@ -1,11 +1,11 @@
 -- =============================================
--- File:         0063_Crt_PartScoped/030_crt_blocks.sql
+-- File:         0064_Crt_PartScoped/030_crt_blocks.sql
 -- Author:       Blue Ridge Automation
 -- Description:  Lots.ufn_CrtBlocksAdvance / Lots.ufn_CrtBlocksMoveTo -- the
 --               CRT enforcement guards (design D4, D5). Task 3 of the
 --               part-scoped CRT feature.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/030_crt_blocks.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/030_crt_blocks.sql';
 GO
 
 -- -- Fixture --------------------------------------------------------------

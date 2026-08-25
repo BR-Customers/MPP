@@ -17,14 +17,14 @@ DECLARE @OpTypeTrimIn  BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code =
 DECLARE @OpTypeTrimOut BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'TrimOut' AND DeprecatedAt IS NULL);
 
 IF @OpTypeTrimIn IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'TrimIn')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt, PublishedAt)
     VALUES (N'TrimIn', 1, N'Trim In', @OpTypeTrimIn,
-            N'Trim-station IN checkpoint template (Arc 2 Phase 4). Carried-forward cumulative shot/scrap counters; yield-loss only, no rename.', @Now);
+            N'Trim-station IN checkpoint template (Arc 2 Phase 4). Carried-forward cumulative shot/scrap counters; yield-loss only, no rename.', @Now, @Now);
 
 IF @OpTypeTrimOut IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'TrimOut')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt, PublishedAt)
     VALUES (N'TrimOut', 1, N'Trim Out', @OpTypeTrimOut,
-            N'Trim-station OUT template (Arc 2 Phase 4). Closing checkpoint for a 1:1 whole-LOT move into a Machining-line FIFO queue.', @Now);
+            N'Trim-station OUT template (Arc 2 Phase 4). Closing checkpoint for a 1:1 whole-LOT move into a Machining-line FIFO queue.', @Now, @Now);
 GO
 PRINT 'Seed 024 (Trim IN/OUT OperationTemplates) loaded.';
 GO

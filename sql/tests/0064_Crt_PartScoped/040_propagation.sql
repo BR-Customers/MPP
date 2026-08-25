@@ -1,5 +1,5 @@
 -- =============================================
--- File:         0063_Crt_PartScoped/040_propagation.sql
+-- File:         0064_Crt_PartScoped/040_propagation.sql
 -- Author:       Blue Ridge Automation
 -- Description:  CRT is stamped at every mint point and propagates from the
 --               consumed inputs (design D2), evaluated at MINT TIME ONLY (D3).
@@ -28,7 +28,7 @@
 --               from its INPUT, not from its own part -- 12270-6NA-M is left
 --               UNFLAGGED throughout.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/040_propagation.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/040_propagation.sql';
 GO
 
 -- -- Fixture --------------------------------------------------------------

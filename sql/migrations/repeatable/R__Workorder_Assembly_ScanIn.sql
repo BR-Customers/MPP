@@ -61,7 +61,7 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
-        IF @Blocks = 1 OR @StatusCode = N'Closed'
+        IF @Blocks = 1 OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT ' + @LotName + N' is ' + @StatusCode + N' and cannot be scanned in.';
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;

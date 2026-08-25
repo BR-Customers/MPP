@@ -94,7 +94,7 @@ BEGIN
         IF @LotId IS NULL OR @DefectCodeId IS NULL OR @Quantity IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (LotId, DefectCodeId, Quantity, AppUserId).';
-            IF @AppUserId IS NOT NULL
+            IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
                     @EntityId = NULL, @LogEventTypeCode = N'RejectEventRecorded',
@@ -181,7 +181,7 @@ BEGIN
         -- on @CurrentStatusId = Good, so a fully-scrapped held LOT stays HELD; the
         -- hold lifecycle (release/disposition) owns the terminal transition.
         IF (@Blocks = 1 AND NOT (@AllowHeldLot = 1 AND @StatusCode = N'Hold'))
-           OR @StatusCode = N'Closed'
+           OR @StatusCode IN (N'Closed', N'Open')
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode + N') and cannot record a reject.';
             EXEC Audit.Audit_LogFailure

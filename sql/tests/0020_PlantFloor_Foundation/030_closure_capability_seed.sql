@@ -18,7 +18,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Cap] SerializedMipStation -> NULL', @Exp
 
 -- terminal attribute definitions
 DECLARE @A NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Location.LocationAttributeDefinition
-    WHERE LocationTypeDefinitionId = 7 AND AttributeName IN (N'CurrentClosureMethod', N'VisionAppUrl') AND DeprecatedAt IS NULL);
+    WHERE LocationTypeDefinitionId = 7 AND AttributeName IN (N'CurrentClosureMethod', N'VisionAppIp') AND DeprecatedAt IS NULL);
 EXEC test.Assert_IsEqual @TestName = N'[Cap] two terminal closure attrs defined', @Expected = N'2', @Actual = @A;
 
 -- Changeover hold type

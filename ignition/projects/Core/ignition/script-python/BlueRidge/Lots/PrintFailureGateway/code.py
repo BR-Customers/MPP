@@ -27,19 +27,12 @@ def _pushToAllSessions(payload):
        scope='session'/'page' call with no sessionId/pageId delivers to nothing (project
        rule: feedback_ignition_gateway_sendmessage_needs_session_page). So enumerate every
        session + page and target each explicitly; the PrintFailureBanner's session-scoped
-       handler filters by terminalLocationId. Never throws."""
-    try:
-        for s in (system.perspective.getSessionInfo() or []):
-            sid = s["id"] if "id" in s else s.get("id")
-            for pid in (s.get("pageIds") or []):
-                try:
-                    system.perspective.sendMessage(
-                        "print-failure-alert", payload=payload,
-                        scope="page", sessionId=sid, pageId=pid)
-                except (Exception, java.lang.Exception):
-                    pass
-    except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("_pushToAllSessions failed: %s" % str(e), level="debug")
+       handler filters by terminalLocationId.
+
+       Routes through PlcWatcher.broadcastPageMessage -- the shared, hardened enumeration
+       (skips non-UUID-shaped session/page entries rather than eating an exception per bad
+       one; see its docstring, 2026-08-20)."""
+    BlueRidge.Workorder.PlcWatcher.broadcastPageMessage("print-failure-alert", payload)
 
 
 def sweepTick():

@@ -1,5 +1,5 @@
 -- =============================================
--- File:         0063_Crt_PartScoped/050_mint_procs.sql
+-- File:         0064_Crt_PartScoped/050_mint_procs.sql
 -- Author:       Blue Ridge Automation
 -- Created:      2026-08-20
 -- Description:  End-to-end CrtActive assertions THROUGH every mint proc wired to
@@ -76,7 +76,7 @@
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
-EXEC test.BeginTestFile @FileName = N'0063_Crt_PartScoped/050_mint_procs.sql';
+EXEC test.BeginTestFile @FileName = N'0064_Crt_PartScoped/050_mint_procs.sql';
 GO
 
 -- =============================================

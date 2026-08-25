@@ -36,6 +36,8 @@ def handleEdge(instancePath, terminalLocationId, member):
         BlueRidge.Common.Util.log(
             "non-serialized line config missing for terminal %s -- ack only"
             % terminalLocationId, level="warn")
+        W.notifyAlarm(terminalLocationId, "Tray complete skipped",
+                      "No FG/PieceCount line config (commissioning)")
         W.writeMembers(instancePath, {member: False, "TransInProc": False})
         return
 
@@ -61,8 +63,9 @@ def handleEdge(instancePath, terminalLocationId, member):
         BlueRidge.Workorder.Assembly.notifyInventoryChanged(
             line["cellLocationId"], terminalLocationId)
     else:
-        W.writeDisplay(instancePath, {"MESAlarmType": 1,
-                                      "MESAlarmText": (result or {}).get("Message") or "Tray complete failed"})
+        msg = (result or {}).get("Message") or "Tray complete failed"
+        W.writeDisplay(instancePath, {"MESAlarmType": 1, "MESAlarmText": msg})
+        W.notifyAlarm(terminalLocationId, "Tray complete failed", msg)
     W.writeMembers(instancePath, {member: False, "TransInProc": False})
 
 
