@@ -27,10 +27,14 @@
 
 ## Test LOTs (already characterised against `MPP_MES_Dev`)
 
-| LOT | Id | Shape | Exercises |
+| LOT | Id | Ancestors / Descendants / Containers / Events | Exercises |
 |---|---|---|---|
-| `000000001` (`12231-59B-0000`) | 254 | 0 ancestors, 5 descendants, 5 containers, 6 lifecycle rows, 3 production events | "Ancestors — none" subtitle; populated descendants + containers |
-| `000000024-04` (`5G0-SA`) | 10274 | 1 ancestor (`000000024`, itself 6 lifecycle rows), 0 descendants, 0 containers, 0 production events | the nested step block; three "none" subtitles |
+| `000000001` (`12231-59B-0000`) | 254 | 0 / 5 / 5 / 3 | "Ancestors: 0" subtitle; populated descendants + containers |
+| `MESL3000146` | 10270 | **4** / 0 / 1 / 0 | **the primary nested-block test** — four ancestors, each with its own step table, and the best chance of a page break |
+| `000000024-04` (`5G0-SA`) | 10274 | 1 / 0 / 0 / 0 | single nested block; three zero subtitles |
+
+Counts verified against `MPP_MES_Dev` on 2026-08-25 via `Lots.LotGenealogyClosure`.
+Render **10270 and 254** at minimum; 10274 is a useful single-ancestor sanity check.
 
 ## File Structure
 
@@ -725,7 +729,7 @@ def handleTimerEvent():
 	out = "C:\\Temp\\report_render"
 	if not os.path.isdir(out):
 		os.makedirs(out)
-	for lotId in (254, 10274):
+	for lotId in (254, 10270, 10274):
 		try:
 			png = system.report.executeReport("Lot Detail", "MPP", {"LotId": lotId}, "png")
 			f = open(os.path.join(out, "lot_detail_%d.png" % lotId), "wb")
@@ -763,15 +767,15 @@ Set `"enabled": true`, then:
 ./scan.ps1
 ```
 
-Wait ~25s, then read both PNGs to confirm the report still renders as it did
-before (5 pages, ancestors table lot-level, no visual change yet):
+Wait ~25s, then read all three PNGs to confirm the report still renders as it
+did before (5 pages, ancestors table lot-level, no visual change yet):
 
 ```bash
 ls -la /c/Temp/report_render/
 ```
 
-Open `C:\Temp\report_render\lot_detail_254.png` and `lot_detail_10274.png` with the
-Read tool and **look at them**. Expected: unchanged from today's report. If a page
+Open each `C:\Temp\report_render\lot_detail_*.png` with the Read tool and
+**look at them**. Expected: unchanged from today's report. If a page
 is blank that was not blank before, the nested data source broke rendering — stop
 and fix before Task 4.
 
@@ -849,12 +853,17 @@ failure.
 
 - [ ] **Step 4: Render and LOOK**
 
-Set `DevRenderReport` `"enabled": true`, `./scan.ps1`, wait ~25s, then Read both
+Set `DevRenderReport` `"enabled": true`, `./scan.ps1`, wait ~25s, then Read the
 PNGs.
 
-Expected for `lot_detail_10274.png`: page 1 shows a part-number band
-`5G0-c`, one ancestor row `000000024`, and beneath it an indented step table with
-that casting's six lifecycle rows (Die Cast LOT Opened → Machining IN Picked).
+Expected for `lot_detail_10270.png` (the primary test — four ancestors): four
+part-number bands, each with its ancestor LOT row and an indented step table of
+that LOT's own lifecycle rows beneath it. This is the render that proves the
+feature works.
+
+Expected for `lot_detail_10274.png`: page 1 shows one part-number band `5G0-c`,
+one ancestor row `000000024`, and beneath it an indented step table with that
+casting's six lifecycle rows (Die Cast LOT Opened → Machining IN Picked).
 
 Expected for `lot_detail_254.png`: page 1's ancestors area is empty (LOT 254 is a
 die-cast origin), and pages 2–3 are unchanged.
@@ -897,36 +906,30 @@ recursive CTEs mirror the section procs' own walks (`Lots.LotGenealogy` edges,
 path-string cycle guard) so a count can never disagree with its table.
 
 ```sql
-  ,(SELECT COUNT(*) FROM (
-      WITH Up AS (
-        SELECT g.ParentLotId AS Id, CAST(N'/' + CAST(g.ParentLotId AS NVARCHAR(20)) + N'/' AS NVARCHAR(MAX)) AS P
-        FROM Lots.LotGenealogy g WHERE g.ChildLotId = l.Id
-        UNION ALL
-        SELECT g.ParentLotId, CAST(u.P + CAST(g.ParentLotId AS NVARCHAR(20)) + N'/' AS NVARCHAR(MAX))
-        FROM Lots.LotGenealogy g JOIN Up u ON g.ChildLotId = u.Id
-        WHERE u.P NOT LIKE N'%/' + CAST(g.ParentLotId AS NVARCHAR(20)) + N'/%')
-      SELECT Id FROM Up) a) AS ancestor_count
-  ,(SELECT COUNT(*) FROM (
-      WITH Dn AS (
-        SELECT g.ChildLotId AS Id, CAST(N'/' + CAST(g.ChildLotId AS NVARCHAR(20)) + N'/' AS NVARCHAR(MAX)) AS P
-        FROM Lots.LotGenealogy g WHERE g.ParentLotId = l.Id
-        UNION ALL
-        SELECT g.ChildLotId, CAST(d.P + CAST(g.ChildLotId AS NVARCHAR(20)) + N'/' AS NVARCHAR(MAX))
-        FROM Lots.LotGenealogy g JOIN Dn d ON g.ParentLotId = d.Id
-        WHERE d.P NOT LIKE N'%/' + CAST(g.ChildLotId AS NVARCHAR(20)) + N'/%')
-      SELECT Id FROM Dn) d2) AS descendant_count
+  ,(SELECT COUNT(*) FROM Lots.LotGenealogyClosure c
+      WHERE c.DescendantLotId = l.Id AND c.Depth > 0) AS ancestor_count
+  ,(SELECT COUNT(*) FROM Lots.LotGenealogyClosure c
+      WHERE c.AncestorLotId = l.Id AND c.Depth > 0) AS descendant_count
   ,(SELECT COUNT(*) FROM Lots.ContainerTray ct
-      JOIN Lots.Lot fg ON fg.Id = ct.FinishedGoodLotId
       WHERE ct.FinishedGoodLotId = l.Id
          OR ct.FinishedGoodLotId IN (
-              SELECT g.ChildLotId FROM Lots.LotGenealogy g WHERE g.ParentLotId = l.Id)) AS container_count
+              SELECT c.DescendantLotId FROM Lots.LotGenealogyClosure c
+              WHERE c.AncestorLotId = l.Id AND c.Depth > 0)) AS container_count
   ,(SELECT COUNT(*) FROM Workorder.ProductionEvent pe WHERE pe.LotId = l.Id) AS event_count
 ```
 
-Note `container_count` deliberately walks only one level down rather than the full
-closure — it is a subtitle hint, and a full recursive walk here would triple the
-Summary query's cost for a number the page-3 table itself proves. If it ever
-disagrees with that table it is under-counting, never over-counting.
+`Lots.LotGenealogyClosure` (`AncestorLotId`, `DescendantLotId`, `Depth`) is the
+maintained transitive closure, with a `Depth = 0` self-row per LOT — hence the
+`Depth > 0` filter on every count. Using it keeps these as cheap index lookups
+instead of four recursive walks, and gives the exact full-depth answer.
+
+**These counts are DISTINCT LOTS; the ancestors/descendants tables list PATHS.**
+`Lot_GetGenealogyEdgeTree` emits one row per distinct path from the subject, so on
+a diamond/merge topology a LOT reachable by two paths appears twice in the table
+while the closure counts it once. That is deliberate — "Ancestors: 3 LOTs" is the
+more meaningful headline — and it is why the subtitles below say "LOTs" explicitly.
+Never SUM the consumed/contributed column to derive a total; per-path rows
+double-count shared upstream edges.
 
 - [ ] **Step 2: Verify the SQL runs before building anything**
 
@@ -935,8 +938,8 @@ sqlcmd -S localhost -d MPP_MES_Dev -b -I -C -W -s "|" -Q "<paste the full new SU
 ```
 
 Expected: one row, with `ancestor_count=0`, `descendant_count=5`,
-`container_count=5`, `event_count=3` for LOT 254. If those do not match the values
-in this plan's test-LOT table, stop — the counts disagree with the tables.
+`container_count=5`, `event_count=3` for LOT 254, and `4 / 0 / 1 / 0` for LOT 10270. If those do not match the
+test-LOT table above, stop — the counts disagree with the tables.
 
 - [ ] **Step 3: Append counts to each page subtitle in `layout.xml`**
 
@@ -960,10 +963,12 @@ Page 4 (Lifecycle) is the subject LOT's own history and needs no count. Use
 python tools/reports/build_lot_detail_report.py
 ```
 
-Enable `DevRenderReport`, `./scan.ps1`, wait ~25s, Read both PNGs.
+Enable `DevRenderReport`, `./scan.ps1`, wait ~25s, Read the PNGs.
 
 Expected `lot_detail_254.png`: page 1 subtitle `000000001 · Ancestors: 0`, page 2
 `… Used in: 5 LOTs`, page 3 `… Containers: 5`.
+Expected `lot_detail_10270.png`: page 1 `… Ancestors: 4`, page 2 `… Used in: 0
+LOTs`, page 3 `… Containers: 1`.
 Expected `lot_detail_10274.png`: page 1 `… Ancestors: 1`, page 2 `… Used in: 0
 LOTs`, page 3 `… Containers: 0`.
 
@@ -1136,7 +1141,8 @@ unresolvable name instead of rendering an empty report."
 
 - [ ] **Step 1: Final render of both test LOTs**
 
-Enable `DevRenderReport`, `./scan.ps1`, wait ~25s, Read both PNGs one last time and
+Enable `DevRenderReport`, `./scan.ps1`, wait ~25s, Read all three PNGs one last
+time and
 confirm against the spec's verification list: nested step block present and
 readable, part-number band present, counts correct, pages 2–5 unchanged.
 
