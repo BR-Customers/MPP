@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-24
 **Trigger:** MPP supplied six legacy Productivity-DB report exports (`reference/*.pdf`, 2026-08-24) — the first concrete evidence behind **UJ-19**. Reviewing them against FDS §12 showed the six unbuilt reporting requirements split into two unrelated shapes, and that three of them were already substantially backed in SQL.
-**Status:** Draft for review. Design settled for this spec; two items deferred to the companion spec (§8).
+**Status:** Draft for review. Schema-validated 2026-08-25 against migrations `0001`–`0066` and the seeds (§11) — three corrections applied. No open questions in this spec; three items handed to the companion spec (§8).
 **Scope:** FDS-12-002, FDS-12-003, FDS-12-004. **Not** FDS-12-006 / 12-010 / 12-011 — see §8.
 
 ---
@@ -57,7 +57,23 @@ Current signature is `@Query, @LotStatusId, @LotOriginTypeId, @LimitRows` — fr
 
 FDS-12-003 says *"given a container name or AIM shipper ID"*. `Lots.Container` is `Id BIGINT IDENTITY` plus `ItemId`, `ContainerConfigId`, `CurrentLocationId`, `ContainerStatusCodeId`, `OpenedAt`, `CompletedAt`, `CreatedByUserId`, `RowVersion`. There is no name column and no piece-count column.
 
-**Decision: do not add `ContainerName`.** The container's real-world identity is the AIM `ShipperId` printed on its Honda label, which the resolver already matches. A second identifier would create a labelling problem on the floor with no offsetting benefit. FDS-12-003's wording is amended to *"container ID or AIM shipper ID"*, and piece count is derived in the read.
+**Decision: do not add `ContainerName`.** The container's real-world identity is the AIM `ShipperId` printed on its Honda label, which the resolver already matches (`Lots.ShippingLabel.AimShipperId NVARCHAR(50) NOT NULL`). A second identifier would create a labelling problem on the floor with no offsetting benefit. FDS-12-003's wording is amended to *"container ID or AIM shipper ID"*, and piece count is derived in the read from `Lots.ContainerTray.PartsClosedCount` and `Lots.ContainerSerial`.
+
+### 2.5 There is no ship date anywhere in the schema
+
+FDS-12-002 and FDS-12-003 both list **ship date** in their required output. No such column exists:
+
+- `Lots.Container` — `OpenedAt`, `CompletedAt`. No `ShippedAt`.
+- `Lots.ShippingLabel` — `CreatedAt`, `PrintedAt`, `VoidedAt`, `LastPrintAttemptAt`, `PrintFailedAt`, `BannerAcknowledgedAt`. None is a ship time.
+- `Lots.Container_Ship` flips `ContainerStatusCodeId` to `3` (Shipped) and writes an `Audit.OperationLog` row with `LogEventTypeCode = 'ContainerShipped'`. **It persists no timestamp on the entity.** A repo-wide search for `ShippedAt` returns nothing.
+
+So the only record of when a container shipped is an audit row. That is recoverable but wrong to depend on: audit is a log, not a queryable business dimension, and it is subject to the 20-year retention and partitioning regime rather than to entity reads.
+
+This is the same failure shape as the `RejectEvent` location gap in §8 — the proc knows the fact at write time and discards it. It is **more** consequential there, because FDS-12-011 Shipping History is defined as *"shipped containers **by date range**"* and the companion spec's headline report currently has no date column to range over.
+
+**Recommendation (companion spec, since `Container_Ship` is its territory):** add `Lots.Container.ShippedAt DATETIME2(3) NULL`, set it in `Container_Ship` alongside the status flip, and backfill from the `ContainerShipped` audit rows.
+
+**Effect on this spec:** FDS-12-002 and FDS-12-003 ship-date fields are specified as reading `Container.ShippedAt`. Until that column lands, both detail panels render ship date as empty rather than falling back to the audit log or to `CompletedAt` — `CompletedAt` means "container closed", not "container shipped", and silently substituting it would misreport Honda traceability data.
 
 ---
 
@@ -90,10 +106,16 @@ Date parameters are **UTC** and named so. `CreatedAt` is already converted to Ea
 
 ### 3.2 Machine and Shift derivation
 
-Both come from the legacy report, which has one Machine column and one Shift column per LOT. Neither is a column on `Lots.Lot`, so both are derived, and both are defined narrowly to stay deterministic:
+Both come from the legacy report, which has one Machine column and one Shift column per LOT. Neither is a column on `Lots.Lot`, so both are derived. **Both resolve from `Workorder.DieCastContribution` — one source, not two.**
 
-- **Origin machine** = `ToLocationId` of the LOT's earliest `Lots.LotMovement` row — the `(none) -> Machine 01 (DC1-M01)` edge visible in LOT Detail history. One value per LOT. Surfaced as a result column `OriginMachineName`; filtered by `@MachineLocationId`.
-- **Shift** = `EXISTS` a `Workorder.DieCastContribution` row for the LOT with `ShiftId = @ShiftId`. A LOT spanning shifts matches every shift it contributed in. Filter only — not a result column, because it is not single-valued.
+- **Origin machine** = `Workorder.DieCastContribution.CellLocationId` (the press). Filter by `EXISTS` on `@MachineLocationId`; display the press from the LOT's earliest contribution (`MIN(EventAt)`) as `OriginMachineName`.
+- **Shift** = `EXISTS` a `Workorder.DieCastContribution` row with `ShiftId = @ShiftId`. A LOT spanning shifts matches every shift it contributed in. Filter only — not a result column, because it is not single-valued.
+
+**Do not derive the machine from `LotMovement`.** An earlier draft used the `ToLocationId` of the LOT's earliest movement — the `(none) -> Machine 01 (DC1-M01)` edge visible in LOT Detail history. Migration `0061_diecast_contribution_cell.sql` (2026-08-19) exists precisely to retire that class of derivation: before it, the press was re-derived live through `Lot.ToolId -> Tools.ToolAssignment active at EventAt -> CellLocationId`, so moving a die to another press months later silently rewrote which press a past contribution belonged to. `CellLocationId` is stamped at write time to make settled attribution immutable. Deriving the machine from movement history would reintroduce a weaker version of the same drift.
+
+`CellLocationId` is nullable — a contribution whose die had no active assignment at `EventAt` has no honest answer and stays NULL rather than being guessed. Such rows are excluded from a machine-filtered search, consistent with §3.3.
+
+Note also that `Lots.Lot` carries legacy `DieNumber` and `CavityNumber` **NVARCHAR** columns, superseded by `ToolId` / `ToolCavityId`. Filter and display the FK-backed columns; the legacy pair is not maintained.
 
 ### 3.3 Origin-conditional filters
 
@@ -195,7 +217,11 @@ Deriving at read time was rejected. `Lot.CurrentLocationId` is mutable and drift
 
 **Departmental scrap derives from `DefectCodeId`.** Migration `0048` (2026-08-04) dropped `DefectCode.AreaLocationId` and replaced it with `OperationCategoryId` (DieCast / Trim / MachiningAssembly, NULL = plant-wide). The legacy Departmental Scrap block maps onto it directly: Die Cast 59 codes, Machine Shop 75, Trim Shop 6. `RejectEvent.ChargeToArea` is derived rather than entered — in every row of `Search Reject.pdf` the ChargeTo equals the defect code's home department, with no override observed.
 
-**Open question for that spec:** the legacy splits the remaining 13 plant-wide codes into *Non-Specific Supplier* (the 6 HSP codes) and *Non-Specific MPP* (Prod. Control + Quality Control), a distinction migration `0048` collapsed into a single NULL bucket. Three options were tabled — a `ChargeToParty` code table FK'd from `DefectCode` (recommended), non-process rows on `Parts.OperationCategory`, or reporting one merged Non-Specific row. **Not yet decided.**
+**`ChargeToParty` code table — decided 2026-08-25.** The legacy splits the remaining 13 plant-wide codes into *Non-Specific Supplier* (the 6 HSP codes) and *Non-Specific MPP* (Prod. Control + Quality Control), a distinction migration `0048` collapsed into a single NULL bucket. Resolution: add a `ChargeToParty` code table FK'd from `Quality.DefectCode`, seeded `DieCast`, `TrimShop`, `MachineShop`, `DieMaintenance`, `MppNonSpecific`, `SupplierNonSpecific`, backfilled from the `DeptDesc` column still present in `reference/seed_data/defect_codes.csv`.
+
+This keeps responsibility (who is charged) orthogonal to process (`OperationCategory`, which drives reject-screen filtering — a different job), and gives the supplier-chargeback row a real home. The alternatives — non-process rows on `Parts.OperationCategory`, or one merged Non-Specific row — were rejected: the first pollutes a taxonomy that is load-bearing for routes and the Production Line Performance report, and the second discards the only bucket with money attached.
+
+**Add `Lots.Container.ShippedAt`** per §2.5 — set in `Container_Ship`, backfilled from `ContainerShipped` audit rows.
 
 ---
 
@@ -215,3 +241,30 @@ Deriving at read time was rejected. `Lot.CurrentLocationId` is mutable and drift
 4. **`notes/2026-07-09_fds-gap-audit.md`** claims the trace resolver handles only LOTs. Superseded by the 2026-07-10 proc revision — annotate rather than delete.
 5. **FDS-12-003** wording: *"container name"* to *"container ID"* per §2.4.
 6. **UJ-19 / OI-30.** These six exports are the first real evidence. UJ-19's recommended direction still cites *"UJ-11's recommended phased rollout"*, but UJ-11 closed 2026-04-27 as **Option A, all-at-once hard cutover**. The recommendation is stale and the transition-shape half of UJ-19 is answered; only enumeration remains open.
+
+---
+
+## 11. Schema validation record
+
+Validated 2026-08-25 against the reset path (`sql/migrations/versioned/0001`–`0066` plus `sql/seeds/`), not the data-model document. `MPP_MES_DATA_MODEL.md` was found stale in three places (§10) and was not used as a source.
+
+**Confirmed as specified:**
+
+| Claim | Source |
+|---|---|
+| `Lots.Lot` — `LotName`, `ItemId`, `LotOriginTypeId`, `LotStatusId`, `PieceCount`, `VendorLotNumber`, `ToolId`, `ToolCavityId`, `CurrentLocationId`, `CreatedAt` | `0020` |
+| `Lots.LotMovement` — `FromLocationId` NULL on first placement, `ToLocationId`, `MovedAt` | `0020` |
+| `Tools.ToolCavity.CavityNumber INT`; `Tools.Tool.Code` | `0010` |
+| `Quality.HoldEvent.ContainerId` with `CK_HoldEvent_LotXorContainer` — container holds are modelled | `0029` |
+| `Lots.ShippingLabel.AimShipperId NVARCHAR(50) NOT NULL` | `0029` |
+| `Lots.ContainerTray.PartsClosedCount`, `Lots.ContainerSerial.SerializedPartId` — piece-count sources | `0028` |
+| `Lots.ContainerTray.FinishedGoodLotId` added by ALTER; used by `GlobalTrace_Resolve` expansion | `0034` |
+| Descendant walk = recursive CTE on `Location.Location.ParentLocationId` | `R__Lots_Lot_GetWipQueueByLocation` |
+| `Workorder.RejectEvent` has no location column; `RejectEvent_Record` takes `@TerminalLocationId` marked audit-only | `0020`, `R__Workorder_RejectEvent_Record` |
+| `Quality.DefectCode.OperationCategoryId` replaced `AreaLocationId` | `0048` |
+
+**Corrected during validation:**
+
+1. **Origin machine** moved from `LotMovement` derivation to `DieCastContribution.CellLocationId` (§3.2) — migration `0061` added that column expressly to stop live re-derivation of the press.
+2. **Ship date** has no column anywhere (§2.5). New finding; drives a `Container.ShippedAt` recommendation into the companion spec and constrains FDS-12-002/003 output.
+3. **Legacy `Lot.DieNumber` / `Lot.CavityNumber`** NVARCHAR columns exist and are superseded; the spec now states explicitly that the FK-backed pair is filtered and displayed (§3.2).
