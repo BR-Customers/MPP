@@ -115,3 +115,45 @@ and Expanded"): **Rejects Report, Die Shot Report, Downtime Report, Production R
 Traceability/Honda **genealogy + shipping-history exports** (FAT-TRC-100/280/310) are the
 Spec H cluster this skill unblocks — TRC-310's Honda format is pending an example from MPP
 (`notes/2026-08-07_mpp-email-honda-trace-export.md`).
+
+## The format element uses `pattern=`, not `format=` (cost hours, 2026-08-25)
+
+Building the five aggregate reports, all five failed to render with the generic
+*"Enter a valid report in the source property"* — the same symptom as a title
+mismatch, but the titles were correct.
+
+**Cause:** the ReportMill `<format>` element's attribute is **`pattern`**, not
+`format`. An unrecognised attribute invalidates the element and takes the whole
+report down. Nothing in the gateway log points at it: the only reporting entries
+were `Error executing query parameter expression "{StartDate}"`, which is
+**benign noise the working reports emit too** — chasing it is a dead end.
+
+```xml
+<!-- WRONG: renders nothing, no useful log line -->
+<format type="date"   format="MM/dd/yy HH:mm" />
+<format type="number" format="#,##0" />
+
+<!-- RIGHT: copied from the working Downtime by Date Range report -->
+<format type="date"   pattern="MMM d, yyyy" null-string="&lt;N/A&gt;" />
+<format type="date"   pattern="MMM d  HH:mm" null-string="&lt;N/A&gt;" />
+<format type="number" pattern="#,##0"        null-string="&lt;N/A&gt;" />
+```
+
+**The technique that found it** — bisect from a KNOWN-GOOD report, not from the
+broken one. Build your report with the working report's layout XML verbatim: if
+it renders, the fault is entirely in your layout, and you can halve it from
+there (title block only, then table). Guessing at title/snapshot/param-type/SQL
+form burned far longer and eliminated nothing.
+
+**Two red herrings encountered on the way, both disproved by checking a WORKING
+report rather than assuming:**
+
+- *Row cells wider than the table.* Real in one of ours (588pt of cells in a
+  540pt table) — but `Downtime by Date Range` overflows too (550 in 540) and
+  renders fine. Not fatal.
+- *`logical_name="Times New Roman"`* (the layout helper's default) vs the
+  `Helvetica` every MPP report uses. Cosmetic; not the cause.
+
+Also worth knowing: a blank date picker does NOT render an unfiltered report —
+the module fails the parameter expression and the viewer shows nothing with no
+explanation. `BlueRidge.Reports.composeParams` now defaults a 14-day window.

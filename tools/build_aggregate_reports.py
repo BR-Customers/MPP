@@ -40,10 +40,15 @@ RESOURCE_JSON = ('{\n  "scope": "A",\n  "version": 1,\n  "restricted": false,\n'
                  '  "overridable": true,\n  "files": [\n    "data.bin"\n  ],\n'
                  '  "attributes": {}\n}\n')
 
-DATE_FMT = '<format type="date" format="MM/dd/yy" />'
-DTM_FMT  = '<format type="date" format="MM/dd/yy HH:mm" />'
-NUM_FMT  = '<format type="number" format="#,##0" />'
-PCT_FMT  = '<format type="number" format="#,##0.00" />'
+# ReportMill's format element uses pattern=, NOT format=. An unrecognised
+# attribute invalidates the element and the whole report then fails to render
+# with the generic "Enter a valid report in the source property" -- no error in
+# the log pointing at the format. Shape copied verbatim from the working
+# Downtime by Date Range report, null-string included.
+DATE_FMT = '<format type="date" pattern="MMM d, yyyy" null-string="&lt;N/A&gt;" />'
+DTM_FMT  = '<format type="date" pattern="MMM d  HH:mm" null-string="&lt;N/A&gt;" />'
+NUM_FMT  = '<format type="number" pattern="#,##0" null-string="&lt;N/A&gt;" />'
+PCT_FMT  = '<format type="number" pattern="#,##0.00" null-string="&lt;N/A&gt;" />'
 
 
 def title_block(title, subtitle_tokens):
