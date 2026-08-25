@@ -103,3 +103,47 @@ def genealogyRows(lotId, _refreshToken=None):
             "Depth":    r.get("Depth"),
         })
     return out
+
+
+def loadDetail(matchType, matchedEntityId, serialNumber=None):
+    """Dispatch a resolver hit to its entity-specific detail payload
+       (FDS-12-002 / FDS-12-003).
+
+       resolve() above returns MatchType + MatchedEntityId; this turns one of
+       those hits into the four blocks the Global Trace panels bind. Every block
+       is ALWAYS fully shaped, so the caller can assign each in one property
+       write -- a None would replace the view's shaped default and error on the
+       first nested read.
+
+       'Shipper' routes to the container panel via the label's container:
+       MatchedEntityId is the ShippingLabel row for that match type."""
+    matchType = _u(matchType)
+    matchedEntityId = _u(matchedEntityId)
+    BlueRidge.Common.Util.log(
+        "loadDetail matchType=%s matchedEntityId=%s" % (matchType, matchedEntityId))
+
+    out = {
+        "serialDetail": dict(BlueRidge.Lots.SerializedPart._EMPTY_TRACE_DETAIL),
+        "containerDetail": dict(BlueRidge.Lots.Container._EMPTY_TRACE_DETAIL),
+        "containerSerials": [],
+        "containerHolds": [],
+    }
+
+    containerId = None
+
+    if matchType == "Serial":
+        out["serialDetail"] = BlueRidge.Lots.SerializedPart.getTraceDetailOrEmpty(
+            _u(serialNumber))
+        containerId = out["serialDetail"].get("ContainerId")
+    elif matchType == "Container":
+        containerId = matchedEntityId
+    elif matchType == "Shipper":
+        row = BlueRidge.Common.Db.execOne(
+            "lots/ShippingLabel_GetContainerId", {"shippingLabelId": matchedEntityId})
+        containerId = row.get("ContainerId") if row else None
+
+    if containerId:
+        out["containerDetail"] = BlueRidge.Lots.Container.getTraceDetailOrEmpty(containerId)
+        out["containerSerials"] = BlueRidge.Lots.Container.listSerials(containerId)
+        out["containerHolds"] = BlueRidge.Lots.Container.listHolds(containerId)
+    return out

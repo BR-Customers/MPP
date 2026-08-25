@@ -205,3 +205,50 @@ def getOpenByCell(cellLocationId, _refreshToken=None):
     BlueRidge.Common.Util.log("getOpenByCell cellLocationId=%s" % cellLocationId)
     params = {"cellLocationId": cellLocationId}
     return BlueRidge.Common.Db.execList("lots/Container_GetOpenByCell", params)
+
+
+# ---------------------------------------------------------------------------
+# FDS-12-003 Container Search -- Global Trace detail panel
+# ---------------------------------------------------------------------------
+
+_EMPTY_TRACE_DETAIL = {
+    "ContainerId": None, "ItemId": None, "ItemPartNumber": None,
+    "ContainerStatusCode": None, "PieceCount": 0, "SerialCount": 0,
+    "SourceLotCount": 0, "OpenedAt": None, "CompletedAt": None,
+    "AimShipperId": None, "OpenHoldCount": 0, "TotalHoldCount": 0,
+}
+
+
+def getTraceDetail(containerId):
+    """FDS-12-003 payload for one container: item, piece count, serial count,
+       source-LOT count, status, AIM shipper id and hold counts. Returns dict,
+       or None when the container is unknown.
+
+       Containers have no name -- identity is the container Id and the AIM
+       shipper id on the Honda label (design spec 2.4). CompletedAt is container
+       CLOSE time, NOT ship time (spec 2.5); the view labels it "Completed"."""
+    BlueRidge.Common.Util.log("getTraceDetail containerId=%s" % containerId)
+    return BlueRidge.Common.Db.execOne(
+        "lots/Container_GetTraceDetail", {"containerId": containerId})
+
+
+def getTraceDetailOrEmpty(containerId):
+    """Binding-safe variant: ALWAYS the fully-shaped dict."""
+    return getTraceDetail(containerId) or dict(_EMPTY_TRACE_DETAIL)
+
+
+def listSerials(containerId):
+    """The container's serialized parts, tray-position order. [] when none.
+       Sibling read -- one proc returns one result set (FDS-11-011)."""
+    return BlueRidge.Common.Db.execList(
+        "lots/Container_ListSerials", {"containerId": containerId}) or []
+
+
+def listHolds(containerId):
+    """Full hold HISTORY (open AND released), newest first. [] when none.
+
+       Distinct from the open-only Quality.Hold_GetOpenByContainer, which
+       filters ReleasedAt IS NULL and so cannot serve FDS-12-003's hold
+       history."""
+    return BlueRidge.Common.Db.execList(
+        "quality/Hold_ListByContainer", {"containerId": containerId}) or []
