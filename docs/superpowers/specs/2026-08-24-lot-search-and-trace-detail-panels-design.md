@@ -89,8 +89,8 @@ Stays a standalone screen at `/shop-floor/lot-search`. It is a **filtered browse
 CREATE OR ALTER PROCEDURE Lots.Lot_Search
     @Query              NVARCHAR(100) = NULL,  -- LotName / VendorLotNumber / PartNumber, LIKE (retained)
     @ItemId             BIGINT        = NULL,  -- exact part
-    @CreatedFromUtc     DATETIME2(3)  = NULL,
-    @CreatedToUtc       DATETIME2(3)  = NULL,
+    @CreatedFromEt      DATE          = NULL,  -- Eastern calendar day, inclusive
+    @CreatedToEt        DATE          = NULL,  -- Eastern calendar day, inclusive
     @ToolId             BIGINT        = NULL,  -- Die
     @ToolCavityId       BIGINT        = NULL,  -- Cavity
     @LocationId         BIGINT        = NULL,  -- current location
@@ -104,7 +104,16 @@ CREATE OR ALTER PROCEDURE Lots.Lot_Search
 
 Every filter is null-tolerant (`@X IS NULL OR ...`), matching the existing body's idiom. One result set, `COUNT(*) OVER() AS TotalCount`, `TOP (@LimitRows)`.
 
-Date parameters are **UTC** and named so. `CreatedAt` is already converted to Eastern at the boundary in the SELECT via `AT TIME ZONE`; the view converts operator-entered dates to UTC before the call so the filter and the displayed column agree.
+**Date filtering is Eastern calendar days, converted to UTC inside the proc.** The operator picks whole days, exactly as the legacy report reads (*"from 8/18/2026 thru 8/18/2026"*), so the parameters are `DATE` and both bounds are inclusive. The proc converts to a half-open UTC instant range:
+
+```sql
+AND (@CreatedFromEt IS NULL OR l.CreatedAt >= CAST(CAST(@CreatedFromEt AS DATETIME2(3))
+        AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)))
+AND (@CreatedToEt   IS NULL OR l.CreatedAt <  CAST(CAST(DATEADD(DAY, 1, @CreatedToEt) AS DATETIME2(3))
+        AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)))
+```
+
+Converting in SQL rather than in the view keeps the rule out of Python and makes it directly testable. It also avoids the bug pattern in `Audit.ConfigLog_List`, which displays `LoggedAt` in Eastern via `AT TIME ZONE` but compares `@StartDate` against the raw UTC column — so near midnight its filter and its displayed column disagree by the UTC offset. `Lot_Search` must not inherit that: the displayed `CreatedAt` is Eastern, so the filter is Eastern too.
 
 ### 3.2 Machine and Shift derivation
 
