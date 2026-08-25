@@ -36,17 +36,23 @@ def resolve(searchText, _refreshToken=None):
 def resolveForTable(searchText, _refreshToken=None):
     """Binding-safe candidate list for the Global Trace CandidateRow repeater -
        always a list, one flat param dict per candidate:
-       {matchType, lotId, lotName, part, detail}."""
+       {matchType, matchedEntityId, lotId, lotName, part, detail}.
+
+       matchedEntityId is what the match resolved TO, and it differs per
+       matchType: SerializedPart.Id for 'Serial', Container.Id for 'Container',
+       ShippingLabel.Id for 'Shipper', Lot.Id for 'Lot'. The detail panels
+       (loadDetail) dispatch on the pair."""
     rows = resolve(searchText, _refreshToken) or []
     out = []
     for r in rows:
         r = r or {}
         out.append({
-            "matchType": r.get("MatchType") or "",
-            "lotId":     r.get("LotId"),
-            "lotName":   r.get("LotName") or "",
-            "part":      r.get("ItemPartNumber") or "",
-            "detail":    r.get("Detail") or "",
+            "matchType":       r.get("MatchType") or "",
+            "matchedEntityId": r.get("MatchedEntityId"),
+            "lotId":           r.get("LotId"),
+            "lotName":         r.get("LotName") or "",
+            "part":            r.get("ItemPartNumber") or "",
+            "detail":          r.get("Detail") or "",
         })
     return out
 

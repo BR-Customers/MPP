@@ -1,5 +1,22 @@
 {
   "custom": {
+    "activeMatchType": "",
+    "containerDetail": {
+      "AimShipperId": null,
+      "CompletedAt": null,
+      "ContainerId": null,
+      "ContainerStatusCode": null,
+      "ItemId": null,
+      "ItemPartNumber": null,
+      "OpenHoldCount": 0,
+      "OpenedAt": null,
+      "PieceCount": 0,
+      "SerialCount": 0,
+      "SourceLotCount": 0,
+      "TotalHoldCount": 0
+    },
+    "containerHolds": [],
+    "containerSerials": [],
     "events": [],
     "genealogy": [],
     "history": [],
@@ -25,7 +42,22 @@
     },
     "searchInput": "",
     "searchText": "",
-    "selectedLotId": null
+    "selectedLotId": null,
+    "serialDetail": {
+      "AimShipperId": null,
+      "CompletedAt": null,
+      "ContainerId": null,
+      "ContainerStatusCode": null,
+      "EtchedAt": null,
+      "ItemId": null,
+      "ItemPartNumber": null,
+      "MachineName": null,
+      "OperatorName": null,
+      "ProducedAt": null,
+      "ProducingLotId": null,
+      "ProducingLotName": null,
+      "SerialNumber": null
+    }
   },
   "params": {},
   "propConfig": {
@@ -449,6 +481,2255 @@
                 "children": [
                   {
                     "meta": {
+                      "name": "SerialDetailHeaderTitle"
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "14px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.06em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "Serialized Item"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "SerialDetailHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialNumberCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Serial"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialNumberCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.serialDetail.SerialNumber}"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialNumberCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialPartCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Part"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialPartCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.serialDetail.ItemPartNumber}"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialPartCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialLotCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Producing LOT"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialLotCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.serialDetail.ProducingLotName}"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialLotCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialEtchedCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Etched"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialEtchedCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.serialDetail.EtchedAt}), \"-\", dateFormat({view.custom.serialDetail.EtchedAt}, \"MM/dd/yy HH:mm\"))"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialEtchedCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialProducedCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Produced"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialProducedCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.serialDetail.ProducedAt}), \"-\", dateFormat({view.custom.serialDetail.ProducedAt}, \"MM/dd/yy HH:mm\"))"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialProducedCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialOperatorCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Operator"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialOperatorCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.serialDetail.OperatorName}), \"-\", {view.custom.serialDetail.OperatorName})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialOperatorCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialMachineCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Machine"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialMachineCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.serialDetail.MachineName}), \"-\", {view.custom.serialDetail.MachineName})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialMachineCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialContainerCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Container"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialContainerCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.serialDetail.ContainerId}), \"-\", toStr({view.custom.serialDetail.ContainerId}))"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialContainerCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialContainerStatusCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Container status"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialContainerStatusCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.serialDetail.ContainerStatusCode}), \"-\", {view.custom.serialDetail.ContainerStatusCode})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialContainerStatusCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialShipperCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "AIM Shipper ID"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialShipperCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.serialDetail.AimShipperId}), \"-\", {view.custom.serialDetail.AimShipperId})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialShipperCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SerialCompletedCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Completed"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SerialCompletedCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.serialDetail.CompletedAt}), \"-\", dateFormat({view.custom.serialDetail.CompletedAt}, \"MM/dd/yy HH:mm\"))"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SerialCompletedCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "SerialDetailGrid"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "flexWrap": "wrap",
+                    "gap": "18px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "SerialDetailPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.activeMatchType} \u003d \"Serial\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px",
+                "padding": "14px 16px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ContainerDetailHeaderTitle"
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "14px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.06em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "Container"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "ContainerDetailHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ContainerIdCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Container ID"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ContainerIdCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.containerDetail.ContainerId}), \"-\", toStr({view.custom.containerDetail.ContainerId}))"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ContainerIdCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ContainerPartCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Part"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ContainerPartCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.containerDetail.ItemPartNumber}"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ContainerPartCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ContainerStatusCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Status"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ContainerStatusCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.containerDetail.ContainerStatusCode}"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ContainerStatusCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ContainerPiecesCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Pieces"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ContainerPiecesCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "toStr({view.custom.containerDetail.PieceCount})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ContainerPiecesCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ContainerSerialsCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Serials"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ContainerSerialsCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "toStr({view.custom.containerDetail.SerialCount})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ContainerSerialsCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ContainerSourceLotsCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Source LOTs"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ContainerSourceLotsCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "toStr({view.custom.containerDetail.SourceLotCount})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ContainerSourceLotsCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ContainerOpenedCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Opened"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ContainerOpenedCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.containerDetail.OpenedAt}), \"-\", dateFormat({view.custom.containerDetail.OpenedAt}, \"MM/dd/yy HH:mm\"))"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ContainerOpenedCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ContainerCompletedCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Completed"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ContainerCompletedCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.containerDetail.CompletedAt}), \"-\", dateFormat({view.custom.containerDetail.CompletedAt}, \"MM/dd/yy HH:mm\"))"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ContainerCompletedCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ContainerShipperCellKey"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "AIM Shipper ID"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ContainerShipperCellVal"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.containerDetail.AimShipperId}), \"-\", {view.custom.containerDetail.AimShipperId})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ContainerShipperCell"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "2px",
+                        "minWidth": "150px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ContainerDetailGrid"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "flexWrap": "wrap",
+                    "gap": "18px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "ContainerHoldChip"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.containerDetail.TotalHoldCount} \u003e 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr({view.custom.containerDetail.OpenHoldCount}) + \" open of \" + toStr({view.custom.containerDetail.TotalHoldCount}) + \" hold(s)\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "backgroundColor": "var(--mpp-warning-bg, #4a3a12)",
+                    "borderRadius": "4px",
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "12px",
+                    "fontWeight": "600",
+                    "padding": "4px 10px"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ContainerSerialsTitle"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Serials"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "SerialListTable"
+                },
+                "position": {
+                  "basis": "220px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.data": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.containerSerials"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "columns": [
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "SerialNumber",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "Serial"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 200
+                    },
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "TrayPosition",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "Tray"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 80
+                    },
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "ProducingLotName",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "Producing LOT"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 200
+                    }
+                  ],
+                  "style": {
+                    "classes": "pf-table"
+                  }
+                },
+                "type": "ia.display.table"
+              },
+              {
+                "meta": {
+                  "name": "ContainerHoldsTitle"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Hold history"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "HoldHistoryTable"
+                },
+                "position": {
+                  "basis": "220px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.data": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.containerHolds"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "columns": [
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "HoldTypeName",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "Hold type"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 150
+                    },
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "Reason",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "Reason"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 220
+                    },
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "PlacedByName",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "Placed by"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 140
+                    },
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "PlacedAt",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "Placed at"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 150
+                    },
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "ReleasedByName",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "Released by"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 140
+                    },
+                    {
+                      "align": "center",
+                      "boolean": "checkbox",
+                      "dateFormat": "MM/DD/YYYY h:mm A",
+                      "editable": false,
+                      "field": "ReleasedAt",
+                      "filter": {
+                        "boolean": {
+                          "condition": ""
+                        },
+                        "date": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "enabled": false,
+                        "number": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "string": {
+                          "condition": "",
+                          "value": ""
+                        },
+                        "visible": "on-hover"
+                      },
+                      "footer": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": ""
+                      },
+                      "header": {
+                        "align": "center",
+                        "justify": "left",
+                        "style": {
+                          "classes": ""
+                        },
+                        "title": "Released at"
+                      },
+                      "justify": "auto",
+                      "nullFormat": {
+                        "includeNullStrings": false,
+                        "nullFormatValue": "",
+                        "strict": false
+                      },
+                      "number": "value",
+                      "numberFormat": "0,0.##",
+                      "progressBar": {
+                        "bar": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "max": 100,
+                        "min": 0,
+                        "track": {
+                          "color": "",
+                          "style": {
+                            "classes": ""
+                          }
+                        },
+                        "value": {
+                          "enabled": true,
+                          "format": "0,0.##",
+                          "justify": "center",
+                          "style": {
+                            "classes": ""
+                          }
+                        }
+                      },
+                      "render": "auto",
+                      "resizable": true,
+                      "sort": "none",
+                      "sortable": true,
+                      "strictWidth": false,
+                      "style": {
+                        "classes": ""
+                      },
+                      "toggleSwitch": {
+                        "color": {
+                          "selected": "",
+                          "unselected": ""
+                        }
+                      },
+                      "viewParams": {},
+                      "viewPath": "",
+                      "visible": true,
+                      "width": 150
+                    }
+                  ],
+                  "style": {
+                    "classes": "pf-table"
+                  }
+                },
+                "type": "ia.display.table"
+              }
+            ],
+            "meta": {
+              "name": "ContainerDetailPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.activeMatchType} \u003d \"Container\" || {view.custom.activeMatchType} \u003d \"Shipper\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px",
+                "padding": "14px 16px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
                       "name": "SummaryTitle"
                     },
                     "props": {
@@ -581,7 +2862,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "{view.custom.lot.ItemPartNumber} + \"  ·  \" + toStr({view.custom.lot.PieceCount}) + \" pcs  ·  \" + {view.custom.lot.LotOriginTypeCode} + \"  ·  at \" + {view.custom.lot.CurrentLocationName}"
+                        "expression": "{view.custom.lot.ItemPartNumber} + \"  \u00b7  \" + toStr({view.custom.lot.PieceCount}) + \" pcs  \u00b7  \" + {view.custom.lot.LotOriginTypeCode} + \"  \u00b7  at \" + {view.custom.lot.CurrentLocationName}"
                       },
                       "type": "expr"
                     }
@@ -1150,6 +3431,14 @@
             "lotId"
           ],
           "script": "\tif not lotId:\n\t\treturn\n\tself.view.custom.selectedLotId \u003d lotId\n\tself.view.custom.lot \u003d BlueRidge.Lots.Lot.getOrEmpty(lotId\u003dlotId)\n\tself.view.custom.history \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.scrap \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.events \u003d BlueRidge.Lots.GlobalTrace.productionEventRows(lotId)\n\tself.view.custom.genealogy \u003d BlueRidge.Lots.GlobalTrace.genealogyRows(lotId)"
+        },
+        {
+          "name": "loadDetail",
+          "params": [
+            "matchType",
+            "matchedEntityId"
+          ],
+          "script": "\tself.view.custom.activeMatchType \u003d matchType or \"\"\n\td \u003d BlueRidge.Lots.GlobalTrace.loadDetail(\n\t\tmatchType, matchedEntityId, self.view.custom.searchText)\n\tself.view.custom.serialDetail \u003d d[\"serialDetail\"]\n\tself.view.custom.containerDetail \u003d d[\"containerDetail\"]\n\tself.view.custom.containerSerials \u003d d[\"containerSerials\"]\n\tself.view.custom.containerHolds \u003d d[\"containerHolds\"]"
         }
       ],
       "extensionFunctions": null,
@@ -1157,7 +3446,7 @@
         {
           "messageType": "traceCandidatePicked",
           "pageScope": true,
-          "script": "\tself.view.rootContainer.loadTrace(payload.get(\"lotId\"))",
+          "script": "\tself.view.rootContainer.loadTrace(payload.get(\"lotId\"))\n\tself.view.rootContainer.loadDetail(\n\t\tpayload.get(\"matchType\"), payload.get(\"matchedEntityId\"))",
           "sessionScope": false,
           "viewScope": false
         }
