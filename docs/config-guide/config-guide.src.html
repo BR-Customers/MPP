@@ -614,9 +614,12 @@
 
       <h3>Container Config</h3>
       <p>Defines how finished parts are packed out — <b>By Count</b>, <b>By Weight</b>, or
-        <b>By Vision</b>. Use <code>Add By Count / By Weight / By Vision pack-out</code> to
-        configure the method that applies; a part with none configured shows the "not
-        configured" placeholder. This is what the pack-out station enforces at run time.
+        <b>By Vision</b>. Each method has its own button —
+        <code>Add By Count pack-out</code>, <code>Add By Weight pack-out</code>,
+        <code>Add By Vision pack-out</code> — so configure whichever applies to the part. A method that
+        has not been set up says so, for example <b>No By Count pack-out configured for this part.</b>
+        Each pack-out carries its own <b>Parts Per Tray</b>, trays-per-container, <b>Dunnage Code</b> and
+        <b>Serialized</b> flag. This is what the pack-out station enforces at run time.
         Make sure to save changes using the save button at the top right of the section.</p>
       <div class="note"><span class="ic">i</span><div>Items classified as <b>Sub-Assembly</b> or <b>Component</b> do not need
         Container Config.</div></div>
@@ -1054,6 +1057,15 @@
           running. Without an override, an overtime hour lands in the wrong shift's numbers.</p></div>
       </div>
 
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Operations <b>&rsaquo;</b> Shift Overrides</span></div>
+          <img src="shots/26_shift_overrides.png" alt="Shift Overrides screen: equipment filter, search box, Include-removed checkbox and Add Override button above a table of equipment, date, shift, scheduled and override times, hours, change and reason.">
+        </div>
+        <figcaption>With no overrides in place, every machine runs its global shift schedule.</figcaption>
+      </figure>
+
       <h3>Add an override</h3>
       <ol class="steps">
         <li>Click <code>+ Add Override</code>.</li>
@@ -1265,9 +1277,14 @@
         </tbody>
       </table></div>
 
-      <div class="note warn"><span class="ic">!</span><div><b>Screenshot pending.</b> The screen's
-        styling is still being finalized, so it isn't captured here yet. The fields and flow above are
-        current; the illustration will follow.</div></div>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">System <b>&rsaquo;</b> PLC Devices</span></div>
+          <img src="shots/27_plc_devices.png" alt="PLC Device Mapping screen with the terminal selector in the top right and the mappings panel with an Add mapping button beneath it.">
+        </div>
+        <figcaption>Pick a terminal first — the mappings panel stays empty until one is selected.</figcaption>
+      </figure>
     </section>
 
     <div class="footer">
