@@ -1196,7 +1196,7 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Locatio
     INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
     SELECT (SELECT Id FROM Location.Location WHERE Code = N'INSP-SORT-T1'),
            (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'DefaultScreen' AND LocationTypeDefinitionId = 7 ORDER BY Id),
-           N'/shop-floor/third-party-inspection', SYSUTCDATETIME();
+           N'/shop-floor/sort-cage', SYSUTCDATETIME();
 
 -- === Closure method (normalized enum; vision-through-scale -> ByVision) ===
 

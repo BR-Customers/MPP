@@ -1,10 +1,5 @@
 {
   "custom": {
-    "pending": {
-      "lotName": "",
-      "sourceItem": "",
-      "sourceLotId": null
-    },
     "refreshToken": 0
   },
   "params": {},
@@ -12,7 +7,7 @@
     "custom.activeMachined": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -271,6 +266,35 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-scrap-entry\", \"BlueRidge/Components/Popups/ScrapEntry\", params={\"cellLocationId\": self.session.custom.cell.locationId, \"operationTypeCode\": \"MachiningIn\", \"popupId\": \"mpp-scrap-entry\"}, modal=True, showCloseIcon=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ScrapButton",
+              "tooltip": {
+                "text": "Record scrap against a LOT at this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Scrap"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tsystem.perspective.navigate(\"/\")"
                   },
                   "scope": "G",
@@ -310,16 +334,6 @@
                 "meta": {
                   "name": "QueueTitle"
                 },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "expression": "\u0027FIFO Queue - \u0027 + toStr(len({view.custom.queue})) + \u0027 LOTs awaiting\u0027"
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
                 "props": {
                   "style": {
                     "color": "var(--mpp-text-secondary)",
@@ -327,7 +341,8 @@
                     "fontWeight": "600",
                     "letterSpacing": "0.06em",
                     "textTransform": "uppercase"
-                  }
+                  },
+                  "text": "Start Machining"
                 },
                 "type": "ia.display.label"
               },
@@ -339,7 +354,7 @@
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "Whole cast/trim LOTs moved here at Trim OUT (1:1). No scan-to-receive - pick from queue; BOM-driven rename fires on pick."
+                  "text": "Scan the LTT to start machining at this line."
                 },
                 "type": "ia.display.label"
               }
@@ -362,83 +377,36 @@
           },
           {
             "meta": {
-              "name": "EmptyHint"
+              "name": "PickScan"
             },
             "position": {
               "shrink": 0
             },
             "propConfig": {
-              "position.display": {
+              "props.params.cellLocationId": {
                 "binding": {
                   "config": {
-                    "expression": "len({view.custom.queue}) \u003d 0"
+                    "path": "session.custom.cell.locationId"
                   },
-                  "type": "expr"
+                  "type": "property"
                 }
               },
-              "props.text": {
+              "props.params.terminalLocationId": {
                 "binding": {
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.locationId}), \u0027No cell is bound to this terminal.\u0027, \u0027This cell has no LOTs queued.\u0027)"
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-kpi-sub"
-              }
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "QueueRepeater"
-            },
-            "position": {
-              "basis": "0",
-              "grow": 1
-            },
-            "propConfig": {
-              "props.instances": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.queue"
+                    "path": "session.custom.terminal.terminalLocationId"
                   },
                   "type": "property"
                 }
               }
             },
             "props": {
-              "direction": "column",
-              "elementPosition": {
-                "basis": "92px",
-                "shrink": 0
+              "params": {
+                "replyMessage": "machiningPicked"
               },
-              "path": "BlueRidge/Components/PlantFloor/Machining/QueueRow",
-              "style": {
-                "gap": "8px",
-                "overflowY": "auto"
-              },
-              "useDefaultViewWidth": false
+              "path": "BlueRidge/Components/PlantFloor/MachiningPickScan"
             },
-            "type": "ia.display.flex-repeater"
-          },
-          {
-            "meta": {
-              "name": "QueueFootnote"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "classes": "pf-kpi-sub"
-              },
-              "text": "Override-FIFO selection prompts for an optional reason (recorded). Held LOTs cannot be picked until the hold is released."
-            },
-            "type": "ia.display.label"
+            "type": "ia.display.view"
           }
         ],
         "meta": {
@@ -505,7 +473,7 @@
                     "maxWidth": "480px",
                     "textAlign": "center"
                   },
-                  "text": "No LOT picked yet. Pick a LOT above to fire the BOM-Driven Rename Confirmation. On confirm, a new machined LOT is created from this whole LOT."
+                  "text": "No LOT picked yet. Scan an LTT above to start machining at this line."
                 },
                 "type": "ia.display.label"
               }
@@ -659,16 +627,9 @@
       "extensionFunctions": null,
       "messageHandlers": [
         {
-          "messageType": "machiningPick",
+          "messageType": "machiningPicked",
           "pageScope": true,
-          "script": "\tself.view.custom.pending \u003d {\"sourceLotId\": payload.get(\"sourceLotId\"), \"lotName\": payload.get(\"lotName\") or \"\", \"sourceItem\": payload.get(\"sourceItem\") or \"\"}\n\tmsg \u003d \"Start machining LOT \" + (payload.get(\"lotName\") or \"\") + \" (\" + (payload.get(\"sourceItem\") or \"\") + \")?\"\n\tsystem.perspective.openPopup(\"mpp-bom-rename\", \"BlueRidge/Components/Popups/BomRenameConfirm\", params\u003d{\"title\": \"Machining IN - Start Machining\", \"message\": msg, \"replyMessage\": \"bomRenameResult\", \"popupId\": \"mpp-bom-rename\"}, modal\u003dTrue)",
-          "sessionScope": false,
-          "viewScope": false
-        },
-        {
-          "messageType": "bomRenameResult",
-          "pageScope": true,
-          "script": "\tif payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tp \u003d self.view.custom.pending\n\tcellId \u003d self.session.custom.cell.locationId\n\tterminalId \u003d self.session.custom.terminal.terminalLocationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Workorder.Machining.recordPick(p.get(\"sourceLotId\"), cellId, self.session.custom.appUserId, terminalId)\n\tBlueRidge.Common.Ui.notifyResultCrtAware(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending \u003d {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },

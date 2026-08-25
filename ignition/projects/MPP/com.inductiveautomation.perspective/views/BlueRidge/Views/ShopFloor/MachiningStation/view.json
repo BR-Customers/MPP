@@ -7,7 +7,6 @@
       {
         "children": [
           {
-            "type": "ia.display.view",
             "meta": { "name": "TabMachiningIn" },
             "position": { "grow": 1, "tabIndex": 0 },
             "props": {
@@ -16,7 +15,6 @@
             "type": "ia.display.view"
           },
           {
-            "type": "ia.display.view",
             "meta": { "name": "TabMachiningOut" },
             "position": { "grow": 1, "tabIndex": 1 },
             "props": {

@@ -256,6 +256,35 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-scrap-entry\", \"BlueRidge/Components/Popups/ScrapEntry\", params={\"cellLocationId\": self.session.custom.cell.locationId, \"operationTypeCode\": \"MachiningOut\", \"popupId\": \"mpp-scrap-entry\"}, modal=True, showCloseIcon=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ScrapButton",
+              "tooltip": {
+                "text": "Record scrap against a LOT at this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Scrap"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tsystem.perspective.navigate(\"/\")"
                   },
                   "scope": "G",

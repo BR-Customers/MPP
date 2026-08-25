@@ -26,7 +26,8 @@
     "triggerCodeId": null
   },
   "params": {
-    "lotName": null
+    "lotName": null,
+    "returnRoute": null
   },
   "propConfig": {
     "custom.samples": {
@@ -72,6 +73,9 @@
       }
     },
     "params.lotName": {
+      "paramDirection": "input"
+    },
+    "params.returnRoute": {
       "paramDirection": "input"
     }
   },
@@ -202,7 +206,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.navigate(\"/\")"
+                    "script": "\treturnRoute = self.view.params.returnRoute\n\tsystem.perspective.navigate(returnRoute if returnRoute else \"/\")"
                   },
                   "scope": "G",
                   "type": "script"
@@ -309,6 +313,17 @@
                         },
                         "position": {
                           "grow": 1
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.lotQuery"
+                              },
+                              "type": "property"
+                            }
+                          }
                         },
                         "props": {
                           "placeholder": "Scan or type a LOT name",

@@ -77,52 +77,7 @@
             },
             "type": "ia.display.view"
           }
-        ],
-        "meta": {
-          "name": "TabContainer"
-        },
-        "position": {
-          "basis": "0",
-          "grow": 1
-        },
-        "props": {
-          "contentStyle": {
-            "classes": "tab-content-fill"
-          },
-          "menuStyle": {
-            "classes": "tab-strip"
-          },
-          "menuType": "modern",
-          "tabStyle": {
-            "active": {
-              "classes": "tab-item tab-item-active"
-            },
-            "disabled": {
-              "classes": "tab-item"
-            },
-            "inactive": {
-              "classes": "tab-item"
-            }
-          },
-          "tabs": [
-            {
-              "disabled": false,
-              "runWhileHidden": true,
-              "text": "Check In"
-            },
-            {
-              "disabled": false,
-              "runWhileHidden": true,
-              "text": "Inspect"
-            },
-            {
-              "disabled": false,
-              "runWhileHidden": true,
-              "text": "Check Out"
-            }
-          ]
-        },
-        "type": "ia.container.tab"
+        ]
       }
     ],
     "meta": {

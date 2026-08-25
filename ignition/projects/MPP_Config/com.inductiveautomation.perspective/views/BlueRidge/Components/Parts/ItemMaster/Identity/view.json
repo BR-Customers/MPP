@@ -989,23 +989,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label",
+                  "name": "Input",
                   "tooltip": {
                     "enabled": true,
-                    "text": "Every LOT of this part minted while this is on is tagged CRT and cannot advance until Quality clears it."
+                    "text": "Enable CRT - every LOT of this part minted while this is on is tagged CRT and cannot advance until Quality clears it."
                   }
-                },
-                "props": {
-                  "style": {
-                    "classes": "field-label"
-                  },
-                  "text": "Enable CRT"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "Input"
                 },
                 "position": {
                   "basis": "auto"

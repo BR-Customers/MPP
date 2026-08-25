@@ -85,6 +85,14 @@ def listOpen(filterText=None, filterTypeId=None, _refreshToken=None):
     return BlueRidge.Common.Db.execList("quality/Hold_ListOpen", params)
 
 
+def listOpenLots(_refreshToken=None):
+    """List every open LOT hold, unfiltered (excludes container-only holds) --
+       Sort Cage's Held Lots panel. _refreshToken lets a view binding force a
+       re-read."""
+    rows = listOpen(None, None, _refreshToken) or []
+    return [r for r in rows if r.get("LotId")]
+
+
 def listAssociatedContainers(lotId):
     """FAT-QH-170 advisory: containers associated with a LOT (via a finished-good
        tray or a serialized part it produced), so the Hold Management view can warn

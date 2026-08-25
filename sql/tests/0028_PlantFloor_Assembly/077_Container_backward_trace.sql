@@ -65,7 +65,7 @@ INSERT INTO Workorder.ConsumptionEvent (SourceLotId, ProducedLotId, ConsumedItem
 VALUES (@CastLot, @MachLot, @Cast, @Mach, 48, @MachCell, 1, @Now);
 
 -- assembly edge: Assembly_CompleteTray mints the FG LOT, consuming the machined LOT into it
-DECLARE @CT TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+DECLARE @CT TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT, TraysPerContainer INT);
 INSERT INTO @CT EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Asm, @PieceCount = 24, @CellLocationId = @AsmCell, @ClosureMethod = N'ByCount', @AppUserId = 1;
 DECLARE @S NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @CT);
 EXEC test.Assert_IsEqual @TestName = N'[Trace] assembly tray completion Status 1', @Expected = N'1', @Actual = @S;

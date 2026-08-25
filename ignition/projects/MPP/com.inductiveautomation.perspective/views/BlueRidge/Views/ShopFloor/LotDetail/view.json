@@ -1913,7 +1913,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.navigate(\"/shop-floor/inspection\", params\u003d{\"lotName\": self.view.custom.lot.LotName})"
+                    "script": "\tsystem.perspective.navigate(\"/shop-floor/inspection\", params\u003d{\"lotName\": self.view.custom.lot.LotName, \"returnRoute\": \"/shop-floor/lot-detail/\" + str(self.view.custom.lot.Id)})"
                   },
                   "scope": "G",
                   "type": "script"

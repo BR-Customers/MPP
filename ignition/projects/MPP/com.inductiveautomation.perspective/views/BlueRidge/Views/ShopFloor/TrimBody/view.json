@@ -1138,21 +1138,6 @@
                     "type": "ia.container.flex"
                   },
                   {
-                    "meta": {
-                      "name": "CountsHelp"
-                    },
-                    "position": {
-                      "shrink": 0
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-field-help"
-                      },
-                      "text": "Tap a reason to add 1, tap again to count up. Use -/+ or type a quantity to adjust. Scrap is deducted from the LOT count."
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
                     "children": [
                       {
                         "events": {
@@ -1213,14 +1198,14 @@
                   "name": "OutFormCol"
                 },
                 "position": {
-                  "basis": "50%",
+                  "basis": "60%",
                   "shrink": 0
                 },
                 "props": {
                   "direction": "column",
                   "style": {
                     "gap": "12px",
-                    "overflow": "visible"
+                    "overflow": "hidden"
                   }
                 },
                 "type": "ia.container.flex"
@@ -1236,7 +1221,7 @@
               "direction": "row-reverse",
               "style": {
                 "gap": "16px",
-                "overflow": "visible"
+                "overflow": "hidden"
               }
             },
             "type": "ia.container.flex"
@@ -1262,7 +1247,8 @@
           "direction": "column",
           "style": {
             "classes": "pf-panel",
-            "gap": "12px"
+            "gap": "12px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -1287,6 +1273,7 @@
       "style": {
         "classes": "canvas",
         "gap": "16px",
+        "overflow": "hidden",
         "padding": "24px"
       }
     },

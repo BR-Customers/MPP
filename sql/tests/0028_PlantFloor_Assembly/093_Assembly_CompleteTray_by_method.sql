@@ -26,7 +26,7 @@ DECLARE @Fg BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CT-MET
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
 
 -- ByWeight requested, but only a ByCount config exists -> blocked, message names the method.
-CREATE TABLE #RW (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+CREATE TABLE #RW (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT, TraysPerContainer INT);
 INSERT INTO #RW EXEC Workorder.Assembly_CompleteTray
     @FinishedGoodItemId = @Fg, @PieceCount = 24, @CellLocationId = @Cell, @ClosureMethod = N'ByWeight', @AppUserId = 1;
 DECLARE @WStat NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #RW);
@@ -36,7 +36,7 @@ EXEC test.Assert_IsEqual @TestName = N'[ByMethod] message names the missing meth
 DROP TABLE #RW;
 
 -- invalid method code -> rejected by the validity guard.
-CREATE TABLE #RN (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+CREATE TABLE #RN (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT, TraysPerContainer INT);
 INSERT INTO #RN EXEC Workorder.Assembly_CompleteTray
     @FinishedGoodItemId = @Fg, @PieceCount = 24, @CellLocationId = @Cell, @ClosureMethod = N'Nope', @AppUserId = 1;
 DECLARE @NStat NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #RN);

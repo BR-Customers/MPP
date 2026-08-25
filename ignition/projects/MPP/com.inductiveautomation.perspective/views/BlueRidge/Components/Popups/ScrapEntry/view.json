@@ -1,0 +1,428 @@
+{
+  "custom": {
+    "draft": {
+      "defectCodeId": null,
+      "lotId": null,
+      "quantity": 0,
+      "remarks": null
+    }
+  },
+  "params": {
+    "cellLocationId": null,
+    "operationTypeCode": null,
+    "popupId": "mpp-scrap-entry",
+    "replyMessage": "inventoryChanged"
+  },
+  "propConfig": {
+    "params.cellLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.operationTypeCode": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.defectOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0, {view.params.operationTypeCode})"
+        }
+      }
+    },
+    "custom.lotOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "if(isNull({view.params.cellLocationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getLineInventoryByPart\", 0, {view.params.cellLocationId}))"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\trows = value or []\n\treturn [{\"label\": (r.get(\"LotName\") or \"?\") + \" - \" + (r.get(\"PartNumber\") or \"?\") + \" (\" + str(r.get(\"InventoryAvailable\") or 0) + \" pcs)\", \"value\": r.get(\"LotId\")} for r in rows]"
+          }
+        ]
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 480
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "PanelHeader"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-panel-header",
+            "fontSize": "20px",
+            "fontWeight": 700
+          },
+          "text": "Record Scrap"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "NoLotsHint"
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "len({view.custom.lotOptions}) = 0"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          },
+          "text": "No LOTs are currently at this line."
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "LotLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "LOT"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "LotDropdown"
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.lotOptions"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.draft.lotId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Select the LOT to charge"
+              },
+              "style": {
+                "classes": "pf-field-select",
+                "fontSize": "16px"
+              }
+            },
+            "type": "ia.input.dropdown"
+          }
+        ],
+        "meta": {
+          "name": "LotField"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-field",
+            "gap": "4px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "DefectLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "Defect Code"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "DefectDropdown"
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.defectOptions"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.draft.defectCodeId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Select a defect code"
+              },
+              "style": {
+                "classes": "pf-field-select",
+                "fontSize": "16px"
+              }
+            },
+            "type": "ia.input.dropdown"
+          }
+        ],
+        "meta": {
+          "name": "DefectField"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-field",
+            "gap": "4px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "QuantityLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "Quantity"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "QuantityInput"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.draft.quantity"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-input"
+              }
+            },
+            "type": "ia.input.text-field"
+          }
+        ],
+        "meta": {
+          "name": "QuantityField"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-field",
+            "gap": "4px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "RemarksLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "Remarks (optional)"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "RemarksInput"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.draft.remarks"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": "Optional",
+              "style": {
+                "classes": "pf-field-input"
+              }
+            },
+            "type": "ia.input.text-field"
+          }
+        ],
+        "meta": {
+          "name": "RemarksField"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-field",
+            "gap": "4px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary",
+                "fontSize": "16px",
+                "minHeight": "48px",
+                "minWidth": "110px"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.submitScrap()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SubmitButton"
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.draft.lotId}) && !isNull({view.custom.draft.defectCodeId}) && {view.custom.draft.quantity} > 0"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary",
+                "fontSize": "16px",
+                "minHeight": "48px",
+                "minWidth": "150px"
+              },
+              "text": "Record Scrap"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "ButtonRow"
+        },
+        "props": {
+          "justify": "flex-end",
+          "style": {
+            "gap": "8px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-panel",
+        "gap": "12px",
+        "overflow": "hidden",
+        "padding": "16px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "submitScrap",
+          "params": [],
+          "script": "\tdraft = dict(self.view.custom.draft)\n\tif draft.get(\"lotId\") is None:\n\t\tBlueRidge.Common.Notify.toast(\"LOT required\", \"Select which LOT to charge the scrap to.\", \"warning\")\n\t\treturn\n\tdraft[\"quantity\"] = BlueRidge.Common.Util.toIntOrNone(draft.get(\"quantity\"))\n\tdraft[\"operationTypeCode\"] = self.view.params.operationTypeCode\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.record(draft, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Scrap recorded\")\n\tif result and result.get(\"Status\"):\n\t\tlotId = draft.get(\"lotId\")\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lotId, \"cellLocationId\": self.view.params.cellLocationId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
+    },
+    "type": "ia.container.flex"
+  }
+}

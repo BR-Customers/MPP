@@ -68,7 +68,7 @@ INSERT INTO @Stock EXEC Lots.Lot_Create @ItemId = @CompC, @LotOriginTypeId = 2, 
 
 -- CRT OFF -> CrtActive 0
 DECLARE @Off TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT,
-                    ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+                    ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT, TraysPerContainer INT);
 DECLARE @R0 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @R0 EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = @Term, @Enabled = 0, @AppUserId = 1;
 
@@ -85,7 +85,7 @@ DECLARE @R1 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @R1 EXEC Location.Terminal_SetCrtEnabled @TerminalLocationId = @Term, @Enabled = 1, @AppUserId = 1;
 
 DECLARE @On TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT,
-                   ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+                   ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT, TraysPerContainer INT);
 INSERT INTO @On EXEC Workorder.Assembly_CompleteTray
     @FinishedGoodItemId = @Fg, @PieceCount = 6, @CellLocationId = @Cell,
     @ClosureMethod = N'ByVision', @AppUserId = 1, @TerminalLocationId = @Term;

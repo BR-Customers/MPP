@@ -3796,27 +3796,23 @@
     "state": {
       "editDraft": {
         "attributes": [],
-        "meta": {
-          "code": "",
-          "description": "",
-          "id": null,
-          "locationTypeDefinitionId": null,
-          "name": "",
-          "parentLocationId": null,
-          "sortOrder": null
-        }
+        "code": "",
+        "description": "",
+        "id": null,
+        "locationTypeDefinitionId": null,
+        "name": "",
+        "parentLocationId": null,
+        "sortOrder": null
       },
       "selected": {
         "attributes": [],
-        "meta": {
-          "code": "",
-          "description": "",
-          "id": null,
-          "locationTypeDefinitionId": null,
-          "name": "",
-          "parentLocationId": null,
-          "sortOrder": null
-        }
+        "code": "",
+        "description": "",
+        "id": null,
+        "locationTypeDefinitionId": null,
+        "name": "",
+        "parentLocationId": null,
+        "sortOrder": null
       }
     },
     "tree": []
@@ -4429,7 +4425,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tsel \u003d self.view.custom.selected or {}\n\tlocId \u003d sel.get(\"id\")\n\tif locId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Location.Location.handleDeprecate(locId)\n\tif not result:\n\t\treturn\n\t# Order matters: clear the old selection state before swapping items.\n\t# Tree component caches its selected path internally; if the new items\n\t# arrive first, that cached path no longer resolves -- Component Error.\n\tempty \u003d BlueRidge.Location.Location.emptyMeta(None)\n\tself.view.custom.selected \u003d None\n\tself.view.custom.selectedPath \u003d None\n\t# ATOMIC.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  {\"meta\": dict(empty), \"attributes\": []},\n\t\t\"editDraft\": {\"meta\": dict(empty), \"attributes\": []},\n\t}\n\tself.view.custom.mode \u003d \"view\"\n\tself.view.custom.draftPath \u003d None\n\t# Apply the refreshed tree (handleDeprecate re-anchors on the parent\n\t# of the deprecated row).\n\tself.view.custom.tree \u003d result[\"tree\"]\n\t# Now land selection on the parent so the operator keeps context. The row\n\t# being edited is gone, so there is nothing to prompt about -- stamp\n\t# guardIgnoreId so the selection guard stays out of the way.\n\tnewParent \u003d result.get(\"selected\")\n\tif newParent and newParent.get(\"id\") is not None:\n\t\tself.view.custom.guardIgnoreId \u003d newParent.get(\"id\")\n\t\tself.view.custom.selectedPath \u003d result.get(\"selectedPath\")\n\t\tself.view.custom.selected \u003d newParent\n\t\tself.view.rootContainer.handleLocationChange(newParent.get(\"id\"))"
+                                "script": "\tsel \u003d self.view.custom.selected or {}\n\tlocId \u003d sel.get(\"id\")\n\tif locId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Location.Location.handleDeprecate(locId)\n\tif not result:\n\t\treturn\n\t# Order matters: clear the old selection state before swapping items.\n\t# Tree component caches its selected path internally; if the new items\n\t# arrive first, that cached path no longer resolves -- Component Error.\n\tempty \u003d BlueRidge.Location.Location.emptyMeta(None)\n\tself.view.custom.selected \u003d None\n\tself.view.custom.selectedPath \u003d None\n\t# ATOMIC.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  dict(empty, attributes\u003d[]),\n\t\t\"editDraft\": dict(empty, attributes\u003d[]),\n\t}\n\tself.view.custom.mode \u003d \"view\"\n\tself.view.custom.draftPath \u003d None\n\t# Apply the refreshed tree (handleDeprecate re-anchors on the parent\n\t# of the deprecated row).\n\tself.view.custom.tree \u003d result[\"tree\"]\n\t# Now land selection on the parent so the operator keeps context. The row\n\t# being edited is gone, so there is nothing to prompt about -- stamp\n\t# guardIgnoreId so the selection guard stays out of the way.\n\tnewParent \u003d result.get(\"selected\")\n\tif newParent and newParent.get(\"id\") is not None:\n\t\tself.view.custom.guardIgnoreId \u003d newParent.get(\"id\")\n\t\tself.view.custom.selectedPath \u003d result.get(\"selectedPath\")\n\t\tself.view.custom.selected \u003d newParent\n\t\tself.view.rootContainer.handleLocationChange(newParent.get(\"id\"))"
                               },
                               "scope": "G",
                               "type": "script"
@@ -4496,7 +4492,7 @@
                                   "component": {
                                     "onActionPerformed": {
                                       "config": {
-                                        "script": "\t# Reset locationTypeDefinitionId when Type changes\n\tstate \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\tdraft \u003d state.get(\"editDraft\") or {}\n\tmeta \u003d dict(draft.get(\"meta\") or {})\n\tmeta[\"locationTypeDefinitionId\"] \u003d None\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  state.get(\"selected\") or {},\n\t\t\"editDraft\": {\"meta\": meta, \"attributes\": []},\n\t}\n\t# Stash the selected Type Id in a transient view custom so DefinitionDropdown can read it.\n\tself.view.custom.draftTypeId \u003d event.newValue if hasattr(event, \"newValue\") else self.props.value"
+                                        "script": "\t# Reset locationTypeDefinitionId when Type changes\n\tstate \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\tdraft \u003d dict(state.get(\"editDraft\") or {})\n\tdraft[\"locationTypeDefinitionId\"] \u003d None\n\tdraft[\"attributes\"] \u003d []\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  state.get(\"selected\") or {},\n\t\t\"editDraft\": draft,\n\t}\n\t# Stash the selected Type Id in a transient view custom so DefinitionDropdown can read it.\n\tself.view.custom.draftTypeId \u003d event.newValue if hasattr(event, \"newValue\") else self.props.value"
                                       },
                                       "scope": "G",
                                       "type": "script"
@@ -4563,7 +4559,7 @@
                                   "component": {
                                     "onActionPerformed": {
                                       "config": {
-                                        "script": "\tstate \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\tdraft \u003d state.get(\"editDraft\") or {}\n\tmeta \u003d draft.get(\"meta\") or {}\n\tbaseline \u003d state.get(\"selected\") or {}\n\tdefId \u003d meta.get(\"locationTypeDefinitionId\")\n\tif defId is None:\n\t\tself.view.custom.state \u003d {\"selected\": baseline, \"editDraft\": {\"meta\": meta, \"attributes\": []}}\n\t\treturn\n\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(defId, None)\n\tself.view.custom.state \u003d {\"selected\": baseline, \"editDraft\": {\"meta\": meta, \"attributes\": attrs}}"
+                                        "script": "\tstate \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\tdraft \u003d dict(state.get(\"editDraft\") or {})\n\tbaseline \u003d state.get(\"selected\") or {}\n\tdefId \u003d draft.get(\"locationTypeDefinitionId\")\n\tif defId is None:\n\t\tdraft[\"attributes\"] \u003d []\n\t\tself.view.custom.state \u003d {\"selected\": baseline, \"editDraft\": draft}\n\t\treturn\n\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(defId, None)\n\tdraft[\"attributes\"] \u003d attrs\n\tself.view.custom.state \u003d {\"selected\": baseline, \"editDraft\": draft}"
                                       },
                                       "scope": "G",
                                       "type": "script"
@@ -4592,7 +4588,7 @@
                                     "binding": {
                                       "config": {
                                         "bidirectional": true,
-                                        "path": "view.custom.state.editDraft.meta.locationTypeDefinitionId"
+                                        "path": "view.custom.state.editDraft.locationTypeDefinitionId"
                                       },
                                       "type": "property"
                                     }
@@ -4678,7 +4674,7 @@
                                     "binding": {
                                       "config": {
                                         "bidirectional": true,
-                                        "path": "view.custom.state.editDraft.meta.name"
+                                        "path": "view.custom.state.editDraft.name"
                                       },
                                       "type": "property"
                                     }
@@ -4744,7 +4740,7 @@
                                     "binding": {
                                       "config": {
                                         "bidirectional": true,
-                                        "path": "view.custom.state.editDraft.meta.code"
+                                        "path": "view.custom.state.editDraft.code"
                                       },
                                       "type": "property"
                                     }
@@ -4824,7 +4820,7 @@
                                     "binding": {
                                       "config": {
                                         "bidirectional": true,
-                                        "path": "view.custom.state.editDraft.meta.description"
+                                        "path": "view.custom.state.editDraft.description"
                                       },
                                       "type": "property"
                                     }
@@ -4892,7 +4888,7 @@
                                         "binding": {
                                           "config": {
                                             "bidirectional": true,
-                                            "path": "view.custom.state.editDraft.meta.sortOrder"
+                                            "path": "view.custom.state.editDraft.sortOrder"
                                           },
                                           "type": "property"
                                         }
@@ -5419,7 +5415,7 @@
           "params": [
             "currId"
           ],
-          "script": "\tloc \u003d BlueRidge.Location.Location.getOne(currId)\n\tif not loc:\n\t\tempty \u003d BlueRidge.Location.Location.emptyMeta(None)\n\t\t# ATOMIC: baseline + draft land in ONE write. Two sequential writes\n\t\t# let the JSON-compare dirty binding re-evaluate mid-load, latch true,\n\t\t# and block every later switch behind a phantom prompt.\n\t\tself.view.custom.state \u003d {\n\t\t\t\"selected\":  {\"meta\": dict(empty), \"attributes\": []},\n\t\t\t\"editDraft\": {\"meta\": dict(empty), \"attributes\": []},\n\t\t}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\treturn\n\tmeta \u003d BlueRidge.Location.Location.metaFromLocation(loc)\n\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\t# ATOMIC -- see note above.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  {\"meta\": dict(meta), \"attributes\": [dict(a) for a in (attrs or [])]},\n\t\t\"editDraft\": {\"meta\": dict(meta), \"attributes\": [dict(a) for a in (attrs or [])]},\n\t}\n\tself.view.custom.mode \u003d \"update\"\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.oldSelectedPath \u003d self.view.custom.selectedPath"
+          "script": "\tloc \u003d BlueRidge.Location.Location.getOne(currId)\n\tif not loc:\n\t\tempty \u003d BlueRidge.Location.Location.emptyMeta(None)\n\t\t# ATOMIC: baseline + draft land in ONE write. Two sequential writes\n\t\t# let the JSON-compare dirty binding re-evaluate mid-load, latch true,\n\t\t# and block every later switch behind a phantom prompt.\n\t\tself.view.custom.state \u003d {\n\t\t\t\"selected\":  dict(empty, attributes\u003d[]),\n\t\t\t\"editDraft\": dict(empty, attributes\u003d[]),\n\t\t}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\treturn\n\tmeta \u003d BlueRidge.Location.Location.metaFromLocation(loc)\n\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\t# ATOMIC -- see note above.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  dict(meta, attributes\u003d[dict(a) for a in (attrs or [])]),\n\t\t\"editDraft\": dict(meta, attributes\u003d[dict(a) for a in (attrs or [])]),\n\t}\n\tself.view.custom.mode \u003d \"update\"\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.oldSelectedPath \u003d self.view.custom.selectedPath"
         },
         {
           "name": "touchEditDraft",
@@ -5429,7 +5425,7 @@
         {
           "name": "handleSave",
           "params": [],
-          "script": "\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\tresult \u003d BlueRidge.Location.Location.handleSaveAll(draft.get(\"meta\") or {}, draft.get(\"attributes\") or [])\n\tif not result:\n\t\treturn False\n\tself.view.custom.tree \u003d result[\"tree\"]\n\tself.view.custom.guardIgnoreId \u003d (result[\"selected\"] or {}).get(\"id\")\n\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\tself.view.custom.selected \u003d result[\"selected\"]\n\tsaved \u003d result[\"editDraft\"]\n\tsavedMeta \u003d saved.get(\"meta\") or {}\n\tsavedAttrs \u003d saved.get(\"attributes\") or []\n\t# ATOMIC: one write reseeds baseline + draft together.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  {\"meta\": dict(savedMeta), \"attributes\": [dict(a) for a in savedAttrs]},\n\t\t\"editDraft\": {\"meta\": dict(savedMeta), \"attributes\": [dict(a) for a in savedAttrs]},\n\t}\n\tself.view.custom.mode \u003d result[\"mode\"]\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.oldSelectedPath \u003d result[\"selectedPath\"]\n\treturn True"
+          "script": "\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\tresult \u003d BlueRidge.Location.Location.handleSaveAll(draft, draft.get(\"attributes\") or [])\n\tif not result:\n\t\treturn False\n\tself.view.custom.tree \u003d result[\"tree\"]\n\tself.view.custom.guardIgnoreId \u003d (result[\"selected\"] or {}).get(\"id\")\n\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\tself.view.custom.selected \u003d result[\"selected\"]\n\tsavedMeta \u003d result[\"editDraft\"] or {}\n\t# ATOMIC: one write reseeds baseline + draft together.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  dict(savedMeta),\n\t\t\"editDraft\": dict(savedMeta),\n\t}\n\tself.view.custom.mode \u003d result[\"mode\"]\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.oldSelectedPath \u003d result[\"selectedPath\"]\n\treturn True"
         },
         {
           "name": "requestLocationSwitch",
@@ -5450,7 +5446,7 @@
             "parentId",
             "parentLevel"
           ],
-          "script": "\tinit \u003d BlueRidge.Location.Location.beginCreate(parentId, parentLevel, self.view.custom.tree)\n\tif not init:\n\t\treturn\n\tnewMeta \u003d init[\"meta\"]\n\tself.view.custom.tree \u003d init[\"tree\"]\n\tself.view.custom.draftPath \u003d init[\"draftPath\"]\n\tself.view.custom.selectedPath \u003d init[\"draftPath\"]\n\tself.view.custom.oldSelectedPath \u003d init[\"draftPath\"]\n\t# id is None here, and the selection guard early-returns on a null id,\n\t# so this write needs no guardIgnoreId stamp.\n\tself.view.custom.selected \u003d {\"id\": None, \"name\": \"(new Location)\", \"hierarchyLevel\": parentLevel}\n\t# ATOMIC, and baseline \u003d\u003d draft: a brand-new blank draft starts CLEAN and\n\t# only goes dirty once the operator actually types something.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  {\"meta\": dict(newMeta), \"attributes\": []},\n\t\t\"editDraft\": {\"meta\": dict(newMeta), \"attributes\": []},\n\t}\n\tself.view.custom.mode \u003d \"create\""
+          "script": "\tinit \u003d BlueRidge.Location.Location.beginCreate(parentId, parentLevel, self.view.custom.tree)\n\tif not init:\n\t\treturn\n\tnewMeta \u003d init[\"meta\"]\n\tself.view.custom.tree \u003d init[\"tree\"]\n\tself.view.custom.draftPath \u003d init[\"draftPath\"]\n\tself.view.custom.selectedPath \u003d init[\"draftPath\"]\n\tself.view.custom.oldSelectedPath \u003d init[\"draftPath\"]\n\t# id is None here, and the selection guard early-returns on a null id,\n\t# so this write needs no guardIgnoreId stamp.\n\tself.view.custom.selected \u003d {\"id\": None, \"name\": \"(new Location)\", \"hierarchyLevel\": parentLevel}\n\t# ATOMIC, and baseline \u003d\u003d draft: a brand-new blank draft starts CLEAN and\n\t# only goes dirty once the operator actually types something.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  dict(newMeta, attributes\u003d[]),\n\t\t\"editDraft\": dict(newMeta, attributes\u003d[]),\n\t}\n\tself.view.custom.mode \u003d \"create\""
         },
         {
           "name": "requestMove",
@@ -5469,7 +5465,7 @@
         {
           "name": "handleCancel",
           "params": [],
-          "script": "\tif self.view.custom.mode \u003d\u003d \"create\":\n\t\t# Drop the synthetic draft node and rebuild the tree from the DB.\n\t\tempty \u003d BlueRidge.Location.Location.emptyMeta(None)\n\t\tself.view.custom.tree \u003d BlueRidge.Location.Tree.buildTree(1, 2, \"mpp/factory\")\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.guardIgnoreId \u003d None\n\t\tself.view.custom.selected \u003d None\n\t\tself.view.custom.selectedPath \u003d \"0\"\n\t\tself.view.custom.oldSelectedPath \u003d \"0\"\n\t\t# ATOMIC.\n\t\tself.view.custom.state \u003d {\n\t\t\t\"selected\":  {\"meta\": dict(empty), \"attributes\": []},\n\t\t\t\"editDraft\": {\"meta\": dict(empty), \"attributes\": []},\n\t\t}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\treturn\n\tsel \u003d self.view.custom.selected\n\tif sel and sel.get(\"id\") is not None:\n\t\tself.handleLocationChange(sel.get(\"id\"))"
+          "script": "\tif self.view.custom.mode \u003d\u003d \"create\":\n\t\t# Drop the synthetic draft node and rebuild the tree from the DB.\n\t\tempty \u003d BlueRidge.Location.Location.emptyMeta(None)\n\t\tself.view.custom.tree \u003d BlueRidge.Location.Tree.buildTree(1, 2, \"mpp/factory\")\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.guardIgnoreId \u003d None\n\t\tself.view.custom.selected \u003d None\n\t\tself.view.custom.selectedPath \u003d \"0\"\n\t\tself.view.custom.oldSelectedPath \u003d \"0\"\n\t\t# ATOMIC.\n\t\tself.view.custom.state \u003d {\n\t\t\t\"selected\":  dict(empty, attributes\u003d[]),\n\t\t\t\"editDraft\": dict(empty, attributes\u003d[]),\n\t\t}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\treturn\n\tsel \u003d self.view.custom.selected\n\tif sel and sel.get(\"id\") is not None:\n\t\tself.handleLocationChange(sel.get(\"id\"))"
         },
         {
           "name": "openUnsavedPrompt",
@@ -5494,7 +5490,7 @@
         {
           "messageType": "locAttrValueUpdate",
           "pageScope": true,
-          "script": "\tidx \u003d payload.get(\"index\") if payload else None\n\tval \u003d payload.get(\"value\") if payload else None\n\tif idx is None:\n\t\treturn\n\tstate \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\tdraft \u003d state.get(\"editDraft\") or {}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(attrs):\n\t\treturn\n\trow \u003d dict(attrs[idx])\n\trow[\"value\"] \u003d val if val is not None else \"\"\n\tattrs[idx] \u003d row\n\t# Whole-state write: the baseline half is carried through untouched so the\n\t# JSON-compare dirty binding stays honest.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  state.get(\"selected\") or {},\n\t\t\"editDraft\": {\"meta\": draft.get(\"meta\"), \"attributes\": attrs},\n\t}",
+          "script": "\tidx \u003d payload.get(\"index\") if payload else None\n\tval \u003d payload.get(\"value\") if payload else None\n\tif idx is None:\n\t\treturn\n\tstate \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\tdraft \u003d dict(state.get(\"editDraft\") or {})\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(attrs):\n\t\treturn\n\trow \u003d dict(attrs[idx])\n\trow[\"value\"] \u003d val if val is not None else \"\"\n\tattrs[idx] \u003d row\n\tdraft[\"attributes\"] \u003d attrs\n\t# Whole-state write: the baseline half is carried through untouched so the\n\t# JSON-compare dirty binding stays honest.\n\tself.view.custom.state \u003d {\n\t\t\"selected\":  state.get(\"selected\") or {},\n\t\t\"editDraft\": draft,\n\t}",
           "sessionScope": false,
           "viewScope": false
         },

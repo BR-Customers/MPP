@@ -42,7 +42,10 @@ logger = system.util.getLogger("BlueRidge.Common.Notify")
 DEFAULT_TTL_SEC = 8        # non-error auto-dismiss (matches toast() docstring)
 MAX_VISIBLE     = 5
 STACK_TOP_START = 10        # px from top of viewport for first toast
-STACK_TOP_STEP  = 110       # px between stacked toasts
+STACK_GAP       = 12        # px between stacked toasts (height now varies per toast)
+TOAST_WIDTH     = 500
+TOAST_MIN_HEIGHT = 96       # single-line title + single-line message + padding
+TOAST_MAX_HEIGHT = 320      # cap so one very long message can't dominate the stack
 TOAST_VIEW_PATH = "BlueRidge/Components/Popups/Toast"
 MSG_HANDLER     = "mpp-toast"
 SESSION_LIST    = "toastInstances"
@@ -85,6 +88,32 @@ def toast(title, message, level="info", ttl=None):
 
 # ---- Internal helpers (called from host view + toast popup) ---------------
 
+def _estimateHeight(title, message):
+    """
+    Rough px height for THIS toast's content, so the popup (and the next
+    toast's stack offset) scale with how much text is actually in it instead
+    of assuming every toast is one line. Perspective popups don't auto-size to
+    content, so this is the only lever -- an approximation from character
+    count, not a real text-layout measurement.
+
+    Tuned against the Toast view's own CSS (.psc-toast padding
+    var(--mpp-space-4/5) = 16/24px, .psc-toast-title fs-md ~22px/1.2 line,
+    .psc-toast-msg fs-base ~20px/1.3 line) and its content column width
+    (TOAST_WIDTH minus icon/padding/close-icon, ~360px at 500px total).
+    """
+    title_chars_per_line   = 28
+    message_chars_per_line = 46
+    title_line_px          = 28
+    message_line_px        = 26
+    vertical_padding_px    = 40   # top+bottom padding + icon/content top offset
+
+    title_lines = max(1, -(-len(title or "") // title_chars_per_line))      # ceil div
+    message_lines = max(1, -(-len(message or "") // message_chars_per_line))
+
+    height = vertical_padding_px + (title_lines * title_line_px) + (message_lines * message_line_px)
+    return max(TOAST_MIN_HEIGHT, min(TOAST_MAX_HEIGHT, height))
+
+
 def _handle(view, payload):
     """
     Message-handler entry from the host view (e.g., Header dock).
@@ -94,11 +123,15 @@ def _handle(view, payload):
     instances = _cleanupStale(instances)
     instances = _enforceFifo(instances)
 
+    title = payload.get("title", "")
+    message = payload.get("message", "")
+    height = _estimateHeight(title, message)
     new_top, new_id = _nextSlot(instances)
     new_entry = {
-        "id":  new_id,
-        "top": new_top,
-        "ts":  system.date.now(),
+        "id":     new_id,
+        "top":    new_top,
+        "height": height,
+        "ts":     system.date.now(),
     }
     instances.append(new_entry)
     _writeInstances(view, instances)
@@ -106,11 +139,11 @@ def _handle(view, payload):
     system.perspective.openPopup(
         id=new_id,
         view=TOAST_VIEW_PATH,
-        position={"right": 10, "top": new_top},
+        position={"right": 10, "top": new_top, "width": TOAST_WIDTH, "height": height},
         params={
             "id":      new_id,
-            "title":   payload.get("title", ""),
-            "message": payload.get("message", ""),
+            "title":   title,
+            "message": message,
             "level":   payload.get("level", "info"),
             "ttl":     payload.get("ttl"),
         },
@@ -187,16 +220,19 @@ def _enforceFifo(instances, max_visible=MAX_VISIBLE):
 
 def _nextSlot(instances):
     """
-    Compute the smallest available top offset (px) plus a unique instance id.
-    Slots are STACK_TOP_START, +STACK_TOP_STEP, +2*STACK_TOP_STEP, ...
+    Compute this toast's top offset (px) plus a unique instance id.
+
+    Toasts now vary in height (see _estimateHeight), so a fixed step would
+    either waste space under short toasts or -- the bug this replaces --
+    undershoot under long ones and let the next toast overlap it. Stack
+    strictly bottom-of-the-last-one instead: sum every currently-visible
+    instance's own height + STACK_GAP, in list order. Simplification versus
+    the old slot-reuse scheme: a toast that closes early leaves a gap that
+    later arrivals don't backfill (they still just append past the current
+    bottom) -- acceptable; avoiding overlap matters more than avoiding a gap.
     """
-    used = {int(i.get("top", 0)) for i in instances}
-    candidates = range(
-        STACK_TOP_START,
-        STACK_TOP_START + STACK_TOP_STEP * (len(used) + 2),
-        STACK_TOP_STEP
-    )
-    available = [c for c in candidates if c not in used]
-    new_top = available[0] if available else STACK_TOP_START
-    new_id  = "mpp-toast-{0}-{1}".format(new_top, system.date.toMillis(system.date.now()))
-    return new_top, new_id
+    top = STACK_TOP_START
+    for i in instances:
+        top += int(i.get("height") or TOAST_MIN_HEIGHT) + STACK_GAP
+    new_id = "mpp-toast-{0}-{1}".format(top, system.date.toMillis(system.date.now()))
+    return top, new_id

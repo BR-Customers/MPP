@@ -294,6 +294,35 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-scrap-entry\", \"BlueRidge/Components/Popups/ScrapEntry\", params={\"cellLocationId\": self.session.custom.cell.locationId, \"operationTypeCode\": \"AssemblyOut\", \"popupId\": \"mpp-scrap-entry\"}, modal=True, showCloseIcon=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ScrapButton",
+              "tooltip": {
+                "text": "Record scrap against a LOT at this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Scrap"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tsystem.perspective.openPopup(\"mpp-crt-validation\", \"BlueRidge/Components/Popups/CrtValidation\", params={\"terminalLocationId\": self.session.custom.terminal.terminalLocationId, \"lineLocationId\": self.session.custom.cell.locationId}, modal=True, showCloseIcon=True)"
                   },
                   "scope": "G",
@@ -532,78 +561,6 @@
                 ],
                 "meta": {
                   "name": "KpiItem"
-                },
-                "position": {
-                  "basis": "240px",
-                  "grow": 1
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "pf-kpi"
-                  }
-                },
-                "type": "ia.container.flex"
-              },
-              {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "L"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-label"
-                      },
-                      "text": "Container Fill"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "V"
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "expression": "toStr({view.custom.container.AccumulatedParts}) + \u0027 of \u0027 + toStr({view.custom.container.TargetParts})"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-value"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "S"
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "expression": "toStr({view.custom.container.ClosedTrays}) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer}) + \u0027 trays closed - parts accumulated\u0027"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-sub"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  }
-                ],
-                "meta": {
-                  "name": "KpiFill"
                 },
                 "position": {
                   "basis": "240px",
@@ -945,27 +902,6 @@
                   }
                 },
                 "type": "ia.container.flex"
-              },
-              {
-                "meta": {
-                  "name": "CountStatus"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "expression": "\u0027Accumulated \u0027 + toStr({view.custom.container.AccumulatedParts}) + \u0027 / \u0027 + toStr({view.custom.container.TargetParts}) + \u0027 parts - trays close by operator count.\u0027"
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  }
-                },
-                "type": "ia.display.label"
               }
             ],
             "meta": {

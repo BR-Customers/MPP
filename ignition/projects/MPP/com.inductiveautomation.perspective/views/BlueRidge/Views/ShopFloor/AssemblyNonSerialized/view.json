@@ -83,7 +83,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\t# Closure method changed via the Change Closure Mode changeover: RESET the\n\t# parts-in-tray field to the newly-selected config default PartsPerTray\n\t# (overwrites any prior/stale value; fgConfig.onChange only prefills empty).\n\tmethod \u003d self.session.custom.closureMethod\n\tif not method:\n\t\treturn\n\tcontainer \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.container) or {}\n\titemId \u003d container.get(\"ItemId\") or self.view.custom.selectedFinishedGoodItemId\n\tif not itemId:\n\t\treturn\n\tcfg \u003d BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty(itemId, method) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tself.view.custom.draft \u003d {\"partsCount\": ppt if ppt else \"\", \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
+        "script": "\t# Closure method changed via the Change Closure Mode changeover: RESET the\n\t# parts-in-tray field to the newly-selected config default PartsPerTray\n\t# (overwrites any prior/stale value; fgConfig.onChange only prefills empty).\n\tmethod \u003d self.session.custom.closureMethod\n\tif not method:\n\t\treturn\n\tcontainer \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.container) or {}\n\titemId \u003d container.get(\"ItemId\") or self.view.custom.selectedFinishedGoodItemId\n\tif not itemId:\n\t\treturn\n\tcfg \u003d BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty(itemId, method) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tself.view.custom.draft \u003d {\"partsCount\": ppt if ppt else \"\", \"trayPosition\": d.get(\"trayPosition\") or \"\"}\n\t# Bump refreshToken too -- container.TraysPerContainer/ClosedTrays (the tray-of-tray\n\t# label numbers) would otherwise stay on the pre-switch query result until some other\n\t# event happens to refresh it.\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
       }
     },
     "custom.closureRaw": {
@@ -402,6 +402,35 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-scrap-entry\", \"BlueRidge/Components/Popups/ScrapEntry\", params={\"cellLocationId\": self.session.custom.cell.locationId, \"operationTypeCode\": \"AssemblyOut\", \"popupId\": \"mpp-scrap-entry\"}, modal=True, showCloseIcon=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ScrapButton",
+              "tooltip": {
+                "text": "Record scrap against a LOT at this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Scrap"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tsystem.perspective.openPopup(\"mpp-crt-validation\", \"BlueRidge/Components/Popups/CrtValidation\", params={\"terminalLocationId\": self.session.custom.terminal.terminalLocationId, \"lineLocationId\": self.session.custom.cell.locationId}, modal=True, showCloseIcon=True)"
                   },
                   "scope": "G",
@@ -579,73 +608,6 @@
           {
             "children": [
               {
-                "meta": {
-                  "name": "ComponentsLabel"
-                },
-                "position": {
-                  "shrink": 0
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-field-label"
-                  },
-                  "text": "Components at this cell"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "ComponentsValue"
-                },
-                "position": {
-                  "grow": 1
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "path": "view.custom.queueByPartText"
-                      },
-                      "type": "property"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-field-input-mono"
-                  }
-                },
-                "type": "ia.display.label"
-              }
-            ],
-            "meta": {
-              "name": "ComponentsPanel"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "config": {
-                    "expression": "{session.custom.closureMethod} \u003d \"ByVision\""
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "alignItems": "center",
-              "gap": "10px",
-              "style": {
-                "classes": "pf-panel"
-              }
-            },
-            "type": "ia.container.flex"
-          },
-          {
-            "children": [
-              {
                 "children": [
                   {
                     "meta": {
@@ -740,150 +702,6 @@
                         ],
                         "meta": {
                           "name": "KpiItem"
-                        },
-                        "position": {
-                          "basis": "240px",
-                          "grow": 1
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "pf-kpi"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "L"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-label"
-                              },
-                              "text": "Container Fill"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "V"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "toStr({view.custom.container.AccumulatedParts}) + \u0027 of \u0027 + toStr({view.custom.container.TargetParts})"
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-value"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "S"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "toStr({view.custom.container.ClosedTrays}) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer}) + \u0027 trays closed - parts accumulated\u0027"
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-sub"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
-                        "meta": {
-                          "name": "KpiFill"
-                        },
-                        "position": {
-                          "basis": "240px",
-                          "grow": 1
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "pf-kpi"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "L"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-label"
-                              },
-                              "text": "Trays Validated"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "V"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "toStr({view.custom.container.ClosedTrays}) + \u0027 / \u0027 + toStr({view.custom.container.TraysPerContainer})"
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-value pf-kpi-value-good"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "S"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "\u0027PartsPerTray \u003d \u0027 + toStr({view.custom.container.PartsPerTray})"
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-sub"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
-                        "meta": {
-                          "name": "KpiTray"
                         },
                         "position": {
                           "basis": "240px",
@@ -1314,7 +1132,7 @@
                                   "component": {
                                     "onActionPerformed": {
                                       "config": {
-                                        "script": "\tresult \u003d BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId, self.session.custom.closureMethod)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part\u0027s config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft \u003d {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")\n\t\t# D9 notice LAST. The tray has already committed in its own transaction,\n\t\t# so this cosmetic read-back must not be able to cost the operator the\n\t\t# next-tray re-prime, the refresh, or the container-full prompt.\n\t\tBlueRidge.Common.Ui.crtNotice(BlueRidge.Lots.Lot.crtNamesFor([result.get(\"FinishedGoodLotId\")]))"
+                                        "script": "\tresult \u003d BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId, self.session.custom.closureMethod)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part\u0027s config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft \u003d {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerComplete\") is not None:\n\t\t\tcc \u003d result.get(\"ContainerComplete\")\n\t\t\tif cc and cc.get(\"Status\"):\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container complete\", \"Single-tray container shipped automatically.\", \"success\")\n\t\t\telse:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container complete failed\", (cc.get(\"Message\") if cc else \"Unknown error\"), \"error\")\n\t\telif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")\n\t\t# D9 notice LAST. The tray has already committed in its own transaction,\n\t\t# so this cosmetic read-back must not be able to cost the operator the\n\t\t# next-tray re-prime, the refresh, or the container-full prompt.\n\t\tBlueRidge.Common.Ui.crtNotice(BlueRidge.Lots.Lot.crtNamesFor([result.get(\"FinishedGoodLotId\")]))"
                                       },
                                       "scope": "G",
                                       "type": "script"
@@ -1475,7 +1293,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "!isNull({view.custom.container.Id})"
+                            "expression": "!isNull({view.custom.container.Id}) && {session.custom.closureMethod} = \"ByCount\""
                           },
                           "type": "expr"
                         }
@@ -1600,7 +1418,7 @@
                   "position.display": {
                     "binding": {
                       "config": {
-                        "expression": "{session.custom.closureMethod} \u003d \"ByWeight\" || {session.custom.closureMethod} \u003d \"ByCount\""
+                        "expression": "{session.custom.closureMethod} \u003d \"ByWeight\" || {session.custom.closureMethod} \u003d \"ByCount\" || {session.custom.closureMethod} \u003d \"ByVision\""
                       },
                       "type": "expr"
                     }

@@ -4,9 +4,43 @@
       "containerSerialId": "",
       "newContainerId": "",
       "newTrayPosition": ""
-    }
+    },
+    "sourceHold": {
+      "IsHeld": false,
+      "Id": null,
+      "HoldTypeCode": null,
+      "Reason": null,
+      "PlacedByInitials": null,
+      "PlacedAt": null
+    },
+    "refreshToken": 0,
+    "selectedHoldEventId": 0,
+    "selectedLotId": null,
+    "selectedLotName": "",
+    "heldLots": []
   },
   "params": {},
+  "propConfig": {
+    "custom.sourceHold": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.SortCage.getSourceHold\", 0, {view.custom.draft.containerSerialId})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.heldLots": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Quality.Hold.listOpenLots\", 0, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          { "code": "\treturn value or []", "type": "script" }
+        ],
+        "type": "expr"
+      }
+    }
+  },
   "props": {
     "defaultSize": {
       "width": 1280
@@ -60,7 +94,26 @@
               "name": "HoldPill"
             },
             "position": {
-              "shrink": 0
+              "shrink": 0,
+              "display": false
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.sourceHold.IsHeld} = true"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.sourceHold.IsHeld} = true, \"Source Container on Hold (\" + {view.custom.sourceHold.HoldTypeCode} + \")\", \"\")"
+                  },
+                  "type": "expr"
+                }
+              }
             },
             "props": {
               "style": {
@@ -740,6 +793,195 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "HeldLotsPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "16px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "HeldLotsHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "baseline",
+                  "style": {
+                    "classes": "pf-panel-header",
+                    "gap": "12px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "H"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Held Lots",
+                      "style": {
+                        "fontSize": "18px",
+                        "fontWeight": "700"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "PlaceHoldButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "+ Place Hold",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.selectedHoldEventId = 0\n\tself.view.custom.selectedLotId = None\n\tself.view.custom.selectedLotName = \"\"\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload={\"lotId\": 0, \"containerId\": 0, \"allowLookup\": True}, scope=\"page\")"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "InspectButton",
+                      "tooltip": {
+                        "text": "Open the Inspection terminal for the selected held LOT."
+                      }
+                    },
+                    "position": {
+                      "shrink": 0,
+                      "display": false
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.selectedLotId} > 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Inspect",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tlotName = self.view.custom.selectedLotName\n\tif not lotName:\n\t\treturn\n\tsystem.perspective.navigate(\"/shop-floor/inspection\", params={\"lotName\": lotName, \"returnRoute\": \"/shop-floor/sort-cage\"})"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "HeldLotsBody"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "wrap": "wrap",
+                  "style": {
+                    "gap": "16px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "HeldLotsRepeater"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.selectedHoldEventId} >= 0, {view.custom.heldLots}, {view.custom.heldLots})"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\tsel = int(self.view.custom.selectedHoldEventId or 0)\n\trows = []\n\tfor r in (value or []):\n\t\trows.append({\"holdEventId\": r.get(\"HoldEventId\"), \"lotId\": r.get(\"LotId\") or 0, \"containerId\": 0, \"label\": r.get(\"LotName\") or (\"LOT #\" + str(r.get(\"LotId\"))), \"holdTypeCode\": r.get(\"HoldTypeCode\") or \"\", \"reason\": r.get(\"Reason\") or \"\", \"placedByInitials\": r.get(\"PlacedByInitials\") or \"\", \"placedAt\": (str(r.get(\"PlacedAt\")) if r.get(\"PlacedAt\") else \"\"), \"selectedHoldEventId\": sel})\n\treturn rows"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "72px",
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/Quality/HoldListRow"
+                    }
+                  },
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "HoldPanelEmbed"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/Quality/HoldPanel",
+                      "params": {
+                        "lotId": 0,
+                        "containerId": 0,
+                        "allowLookup": true
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
           }
         ],
         "meta": {
@@ -785,6 +1027,20 @@
           "messageType": "sortCageMigrateAuthorized",
           "pageScope": true,
           "script": "\t# Elevation replay hook (see Session._ELEVATED_REPLAY_MESSAGES). Fired only\n\t# after a successful ElevationModal authorization, so isElevated now passes.\n\tself.doMigrate()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "holdRowSelected",
+          "pageScope": true,
+          "script": "\the = payload.get(\"holdEventId\")\n\tself.view.custom.selectedHoldEventId = int(he) if he else 0\n\tlid = payload.get(\"lotId\") or 0\n\tself.view.custom.selectedLotId = int(lid) if lid else None\n\tname = \"\"\n\tfor r in (self.view.custom.heldLots or []):\n\t\tif r.get(\"LotId\") == lid:\n\t\t\tname = r.get(\"LotName\") or \"\"\n\t\t\tbreak\n\tself.view.custom.selectedLotName = name\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload={\"lotId\": lid, \"containerId\": 0, \"allowLookup\": False}, scope=\"page\")",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "holdChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedHoldEventId = 0\n\tself.view.custom.selectedLotId = None\n\tself.view.custom.selectedLotName = \"\"\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload={\"lotId\": 0, \"containerId\": 0, \"allowLookup\": True}, scope=\"page\")",
           "sessionScope": false,
           "viewScope": false
         }

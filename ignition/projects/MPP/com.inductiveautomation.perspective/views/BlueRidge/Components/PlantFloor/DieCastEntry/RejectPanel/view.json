@@ -13,22 +13,6 @@
     "toolId": null
   },
   "propConfig": {
-    "custom.defectOptions": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0)"
-        },
-        "type": "expr"
-      }
-    },
-    "custom.targetLot": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Lots.Lot.getLatestForToolCavityOrEmpty\", 0, {view.params.toolId}, {view.params.toolCavityId}, {view.params.refreshToken})"
-        },
-        "type": "expr"
-      }
-    },
     "params.refreshToken": {
       "paramDirection": "input",
       "persistent": true

@@ -712,13 +712,12 @@ def beginCreate(parentLocationId, parentHierarchyLevel, currentTree,
        selected parent, returns the path to it plus a blank editDraft.
 
        The view applies the returned dict's keys atomically:
-           view.custom.tree         = result['tree']
-           view.custom.draftPath    = result['draftPath']
-           view.custom.selectedPath = result['draftPath']
-           view.custom.selected     = {'meta': None, 'attributes': []}
-           view.custom.editDraft    = {'meta': result['meta'],
-                                       'attributes': []}
-           view.custom.mode         = 'create'
+           view.custom.tree           = result['tree']
+           view.custom.draftPath      = result['draftPath']
+           view.custom.selectedPath   = result['draftPath']
+           view.custom.state.selected = dict(result['meta'], attributes=[])
+           view.custom.state.editDraft = dict(result['meta'], attributes=[])
+           view.custom.mode           = 'create'
 
        Note: parentHierarchyLevel is captured up front so the Type
        dropdown can filter without an extra DB round-trip.
@@ -787,11 +786,12 @@ def handleSaveAll(meta, attributes, userId=None,
        for the view to apply.
 
        Args:
-           meta (dict): editDraft.meta (see emptyMeta / metaFromLocation
-                        for the shape). On create, id is None and
-                        locationTypeDefinitionId + parentLocationId must
-                        be set by the operator.
-           attributes (list[dict]): editDraft.attributes shape from
+           meta (dict): the flat editDraft dict (see emptyMeta / metaFromLocation
+                        for the field shape; the view's editDraft carries an extra
+                        'attributes' key too, harmlessly ignored here). On create,
+                        id is None and locationTypeDefinitionId + parentLocationId
+                        must be set by the operator.
+           attributes (list[dict]): editDraft['attributes'] shape from
                         buildAttributesForType. Only id/definitionId/value
                         are forwarded to the proc; the rest are display.
            userId (long): Override; defaults to Common.Util._currentAppUserId().
@@ -868,7 +868,8 @@ def handleSaveAll(meta, attributes, userId=None,
     if refresh.get("selected"):
         newMeta["sortOrder"] = refresh["selected"].get("sortOrder")
     newAttrs = buildAttributesForType(newMeta.get("locationTypeDefinitionId"), newId)
-    refresh["editDraft"] = {"meta": newMeta, "attributes": newAttrs}
+    newMeta["attributes"] = newAttrs
+    refresh["editDraft"]  = newMeta
     refresh["mode"]      = "update"
     refresh["draftPath"] = None
     refresh["dirty"]     = False

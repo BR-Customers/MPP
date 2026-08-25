@@ -1,0 +1,253 @@
+{
+  "custom": {
+    "lot": {},
+    "phase": "scan",
+    "scanCode": ""
+  },
+  "params": {
+    "cellLocationId": null,
+    "terminalLocationId": null,
+    "replyMessage": "machiningPicked"
+  },
+  "propConfig": {
+    "params.cellLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.terminalLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 320,
+      "width": 420
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "ScanLabel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-label",
+            "marginBottom": "0px"
+          },
+          "text": "Scan LTT to start machining"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tself.view.rootContainer.applyScan()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ScanInput"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.scanCode"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "placeholder": "Scan LTT barcode",
+          "style": {
+            "classes": "pf-field-input-mono",
+            "fontSize": "18px",
+            "minHeight": "44px",
+            "textTransform": "uppercase"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "LotNameLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"LOT: \" + if(isNull({view.custom.lot.LotName}), \"\", {view.custom.lot.LotName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "20px",
+                "fontWeight": 600
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ItemLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Item: \" + if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "16px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "PiecesLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Pieces: \" + if(isNull({view.custom.lot.PieceCount}), \"-\", toStr({view.custom.lot.PieceCount}))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "16px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.commitPick()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ConfirmButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-primary-button",
+                "fontSize": "18px",
+                "marginTop": "8px",
+                "minHeight": "48px"
+              },
+              "text": "Start Machining"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "ReviewPanel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.phase} != \"scan\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-review-panel",
+            "gap": "8px",
+            "padding": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-field-col",
+        "gap": "12px",
+        "padding": "16px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applyScan",
+          "params": [],
+          "script": "\tcode = self.view.custom.scanCode\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.lot = r\n\t\tself.view.custom.phase = \"review\"\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
+        },
+        {
+          "name": "commitPick",
+          "params": [],
+          "script": "\tlotId = self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tres = BlueRidge.Workorder.Machining.recordPick(\n\t\tlotId, self.view.params.cellLocationId, None, self.view.params.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResultCrtAware(res, \"Machining IN\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lotId}, scope=\"page\")\n\t\tself.view.custom.scanCode = \"\"\n\t\tself.view.custom.lot = {}\n\t\tself.view.custom.phase = \"scan\""
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    },
+    "type": "ia.container.flex"
+  }
+}
