@@ -59,9 +59,15 @@ Adding a report is therefore: a read proc, a `data.bin` authored via the global 
 
 No such data exists. `Parts.Item` has no customer column. The only `CustomerCode` in the schema is on `Parts.ContainerConfig`, and in Dev it is **NULL on 37 of 39 configs and empty string on the other 2** — it has never been populated. (Migration `0057` is unrelated: it dropped `Item.AimCustomerPartNumber`, an AIM-posting field, after proving that value is derivable from `PartNumber`.)
 
-**Decision: build the Plant Summary without the customer block, and record the gap rather than invent a dimension.** The departmental scrap and non-reject scrap blocks — the other two thirds of that report — are fully buildable. Closing the customer block needs a customer dimension on `Parts.Item` plus the per-part customer mapping from MPP; that is a **seed-data item**, not a design decision, and belongs in the Seeding Registry.
+**Decision (Jacques, 2026-08-25): build the Plant Summary without the customer block, and print an explicit note where that block would sit.** The departmental scrap and non-reject scrap blocks — the other two thirds of that report — are fully buildable. No customer dimension is invented, and nothing is silently missing: the note names what is needed, which makes the printed report itself the prompt to MPP for the data.
 
-This is the one place where a legacy report section is knowingly not reproduced. It is stated on the report itself, not silently omitted.
+Closing the block later needs a customer dimension on `Parts.Item` plus the per-part customer mapping from MPP. That is a **seed-data item**, not a design decision, and belongs in the Seeding Registry.
+
+Note text to render in place of the block:
+
+> **Customer scrap percentage — not available.** This section requires a per-part customer assignment, which the MES does not yet hold. Supply the part-to-customer mapping to enable it.
+
+This is the one place where a legacy report section is knowingly not reproduced.
 
 ### 3.3 `Quality.Hold_ListOpen` is load-bearing and lacks duration
 
@@ -107,7 +113,11 @@ Every one: one result set, no OUTPUT params, Eastern-converted timestamps at the
 
 **The proc returns long rows** — one row per `(part, charge-to party)` and one per `(part, defect code)` — and the **ReportMill layout pivots** them, one part-group per block, parts flowing down the page rather than across it.
 
-This is a deliberate departure from the legacy shape. Reading fifteen landscape pages of eight-column cross-tab is an artifact of the tool that produced it, not a requirement; a per-part block carries the same numbers and prints legibly. **Flagged for Jacques** — if MPP specifically wants the columns-across form, it is achievable with a fixed part-per-page count and a different layout, at meaningfully more effort.
+This is a deliberate departure from the legacy shape. Reading fifteen landscape pages of eight-column cross-tab is an artifact of the tool that produced it, not a requirement; a per-part block carries the same numbers and prints legibly.
+
+**Confirmed by Jacques 2026-08-25** — long rows with per-part blocks, with the caveat that the data may need massaging or subqueries to nest correctly. Jacques is supplying **two worked examples of table nesting in Reporting-Module reports from another project**; the Part Matrix layout waits on those.
+
+**Sequencing consequence:** the Part Matrix is the only report whose layout depends on the nesting examples. The migration, all read procs, and the other four reports proceed now. There is an in-project precedent to draw on meanwhile — the existing **Downtime by Shift** report already renders machine-grouped nested detail.
 
 ---
 
