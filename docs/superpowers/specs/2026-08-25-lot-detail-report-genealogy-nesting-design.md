@@ -187,8 +187,14 @@ No SQL changes, so the automated suite is unaffected. Verification is by render:
      "Ancestors — none" subtitle and a populated descendants/containers pair.
    - A SubAssembly such as `000000024-04` (id 10274) — 1 ancestor with a real lifecycle,
      0 descendants. Exercises the nested step block and three "none" subtitles.
-4. Confirm a nested block that splits across a page break still renders its part-number
-   band and column headers on the continuation page.
+4. Confirm what a nested block does when it splits across a page break. Neither customer
+   report demonstrated this, and Jacques's expectation (2026-08-25) is that the band and
+   column headers do **not** repeat on the continuation page. **Design accordingly: assume
+   they do not.** Each ancestor's step block therefore has to be readable without a
+   repeated header — the ancestor's LOT name and part number are restated on its own row
+   rather than living only in the group band above it, so a continuation page is never a
+   column of orphaned timestamps with no idea which LOT they belong to. If the headers turn
+   out to repeat, that restatement is mild redundancy rather than a rewrite.
 5. Picker: scan/type a LOT name older than the newest 100 and confirm it resolves.
 
 ## Rejected alternatives
