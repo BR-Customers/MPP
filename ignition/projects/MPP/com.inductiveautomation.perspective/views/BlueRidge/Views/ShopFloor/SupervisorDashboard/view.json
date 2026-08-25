@@ -1,11 +1,48 @@
 {
-  "custom": {},
+  "custom": {
+    "aimDepth": 0,
+    "pausedCount": 0,
+    "plantAvail": {
+      "AvailabilityPct": "",
+      "DowntimeMinutes": 0,
+      "EquipmentCount": 0,
+      "HasData": false,
+      "PlannedMinutes": 0,
+      "RunMinutes": 0,
+      "ScheduleName": "",
+      "ShiftId": null
+    }
+  },
   "params": {},
   "propConfig": {
+    "custom.aimDepth": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.AimPool.getDepthOrZero\", 0)"
+        },
+        "type": "expr"
+      }
+    },
     "custom.openSummary": {
       "binding": {
         "config": {
           "expression": "runScript(\"BlueRidge.Oee.DowntimeEvent.getOpenSummary\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.pausedCount": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.LotPause.getOpenCount\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.plantAvail": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.ShiftOverride.plantAvailabilityOrEmpty\", 0)"
         },
         "type": "expr"
       }
@@ -195,11 +232,20 @@
                 "meta": {
                   "name": "V"
                 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr(coalesce({view.custom.pausedCount}, 0))"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "pf-kpi-value"
-                  },
-                  "text": "—"
+                  }
                 },
                 "type": "ia.display.label"
               },
@@ -211,7 +257,7 @@
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "aggregate read pending"
+                  "text": "open pauses plant-wide"
                 },
                 "type": "ia.display.label"
               }
@@ -252,11 +298,20 @@
                 "meta": {
                   "name": "V"
                 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.custom.plantAvail.HasData}, {view.custom.plantAvail.AvailabilityPct}, \"—\")"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "pf-kpi-value"
-                  },
-                  "text": "—"
+                  }
                 },
                 "type": "ia.display.label"
               },
@@ -264,11 +319,20 @@
                 "meta": {
                   "name": "S"
                 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.custom.plantAvail.HasData}, toStr({view.custom.plantAvail.EquipmentCount}) + \" machines · \" + toStr({view.custom.plantAvail.DowntimeMinutes}) + \" min down\", \"no open shift\")"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "pf-kpi-sub"
-                  },
-                  "text": "derived metric pending"
+                  }
                 },
                 "type": "ia.display.label"
               }
@@ -309,11 +373,20 @@
                 "meta": {
                   "name": "V"
                 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr(coalesce({view.custom.aimDepth}, 0))"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "pf-kpi-value"
-                  },
-                  "text": "Phase 7"
+                  }
                 },
                 "type": "ia.display.label"
               },
@@ -325,7 +398,7 @@
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "wired when Phase 7 lands"
+                  "text": "serials available in the pool"
                 },
                 "type": "ia.display.label"
               }

@@ -136,6 +136,47 @@ EXEC test.Assert_RowCount @TestName = N'[Indicator] empty Cell detail list is em
     @ExpectedCount = 0, @ActualCount = @n0;
 GO
 
+-- =============================================
+-- Test 4: @LocationId NULL (and omitted) = PLANT-WIDE open-pause count
+--   v1.1 behaviour, backing the Supervisor Dashboard's Paused-LOTs tile. After
+--   Test 2 both fixture LOTs are paused at the same Cell, so the plant-wide
+--   count must equal the true total across every location and must be >= the
+--   single-Cell count.
+-- =============================================
+DECLARE @LotA BIGINT = (SELECT LotId FROM #IndFix WHERE Tag = N'A');
+DECLARE @Cell BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @LotA);
+
+DECLARE @TrueTotal INT = (SELECT COUNT(*) FROM Lots.PauseEvent WHERE ResumedAt IS NULL);
+
+-- explicit NULL
+CREATE TABLE #cntNull (OpenPauseCount INT);
+INSERT INTO #cntNull EXEC Lots.LotPause_GetCountsByLocation @LocationId = NULL;
+DECLARE @cntNull INT = (SELECT OpenPauseCount FROM #cntNull);
+DROP TABLE #cntNull;
+DECLARE @cntNullStr NVARCHAR(10) = CAST(@cntNull AS NVARCHAR(10));
+DECLARE @trueStr NVARCHAR(10) = CAST(@TrueTotal AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Indicator] @LocationId NULL = plant-wide open-pause total',
+    @Expected = @trueStr, @Actual = @cntNullStr;
+
+-- omitted parameter must default to the same plant-wide behaviour
+CREATE TABLE #cntDef (OpenPauseCount INT);
+INSERT INTO #cntDef EXEC Lots.LotPause_GetCountsByLocation;
+DECLARE @cntDef INT = (SELECT OpenPauseCount FROM #cntDef);
+DROP TABLE #cntDef;
+DECLARE @cntDefStr NVARCHAR(10) = CAST(@cntDef AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Indicator] omitted @LocationId defaults to plant-wide',
+    @Expected = @trueStr, @Actual = @cntDefStr;
+
+-- and the Cell-scoped count is still a subset (regression guard on the old path)
+CREATE TABLE #cntCell (OpenPauseCount INT);
+INSERT INTO #cntCell EXEC Lots.LotPause_GetCountsByLocation @LocationId = @Cell;
+DECLARE @cntCell INT = (SELECT OpenPauseCount FROM #cntCell);
+DROP TABLE #cntCell;
+DECLARE @subsetOk NVARCHAR(10) = CASE WHEN @cntCell <= @cntNull AND @cntCell = 2 THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Indicator] Cell-scoped count unchanged (2) and <= plant-wide',
+    @Expected = N'1', @Actual = @subsetOk;
+GO
+
 -- ---- cleanup (FK-safe) ----
 DECLARE @ids TABLE (Id BIGINT);
 INSERT INTO @ids SELECT LotId FROM #IndFix WHERE LotId IS NOT NULL;
