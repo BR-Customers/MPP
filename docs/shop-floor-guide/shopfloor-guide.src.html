@@ -543,12 +543,13 @@
             <span class="path">Sort Cage Workflow</span></div>
           <img src="shots/20_sort_cage.png" alt="Sort Cage screen: the source container summary across the top, the migrate-serial form in the middle, held LOTs and the camera panel.">
         </div>
-        <figcaption>Scan a Container Serial Id and the source container's details load across the top.</figcaption>
+        <figcaption>The migrate-serial form is live; the summary strip above it is not yet reading.</figcaption>
       </figure>
       <ol class="steps">
-        <li>Scan the <b>Container Serial Id</b>. The <b>Source Container</b> strip fills in with the
-          container it currently sits in, the <b>AIM Shipper ID</b> that container was allocated, the
-          <b>Item</b>, and how many serials the container holds.</li>
+        <li>Scan the <b>Container Serial Id</b>. The <b>Source Container</b> strip above is intended to
+          show the container it sits in, that container's <b>AIM Shipper ID</b>, the <b>Item</b> and its
+          serial count — but it is <em>not wired yet</em> and stays blank, so confirm the serial from the
+          physical label before migrating it.</li>
         <li>Enter the <b>New Container Id</b> and, if the destination tracks tray positions, the
           <b>New Tray Position</b>.</li>
         <li>Press <code>Migrate Serial</code>.</li>
@@ -559,9 +560,8 @@
       <p>If the source container is on hold, a <b>Container on Hold</b> pill appears in the header and the
         <b>Held Lots</b> list shows what is affected — from there you can jump straight to the
         <a href="#inspection">Inspection</a> terminal for a held LOT, or place a further hold.</p>
-      <p>The <b>Sort Cage Camera</b> panel embeds the station's live vision feed. A terminal with no camera
-        configured says <b>No camera configured</b> instead; the feed is set per terminal through the
-        <code>VisionAppUrl</code> attribute in the Configuration Tool.</p>
+      <p>The <b>Sort Cage Camera</b> panel is where the station's live vision feed will appear. It is
+        <em>not wired yet</em> and shows <b>No live feed in dev</b>.</p>
     </section>
 
     <!-- ============ SHIPPING DOCK ============ -->
@@ -881,25 +881,22 @@
             <span class="path">Supervisor Dashboard</span></div>
           <img src="shots/24_supervisor_dashboard.png" alt="Supervisor Dashboard showing tiles for open downtime, classified downtime, paused LOTs, shift availability, AIM pool depth, and print failures.">
         </div>
-        <figcaption>Plant-wide counts. The AIM Pool tile is reading a real depth here.</figcaption>
+        <figcaption>Only the two downtime tiles are live; the rest still show placeholders.</figcaption>
       </figure>
       <div class="tbl-scroll"><table class="fields">
         <thead><tr><th>Tile</th><th>What it tells you</th></tr></thead>
         <tbody>
           <tr><td>Open Downtime</td><td>Downtime events currently running, and how many of them still have no reason set. An event with no reason cannot be reported on, so this is the number to drive to zero.</td></tr>
           <tr><td>Classified</td><td>How many of those open events do have a reason.</td></tr>
-          <tr><td>Paused LOTs</td><td>Open pauses across every location — LOTs stopped part-way through a step.</td></tr>
-          <tr><td>Shift Availability</td><td>Availability for the shift that is currently open, rolled up across every piece of equipment. It reads <b>no open shift</b> when none is running rather than showing a misleading 0%.</td></tr>
-          <tr><td>AIM Pool</td><td>How many Honda shipper serials are left in the pool. If this runs dry, containers cannot be allocated a shipper ID and shipping stops.</td></tr>
+          <tr><td>Paused LOTs</td><td><em>Not wired yet.</em> Intended to show open pauses across every location — LOTs stopped part-way through a step.</td></tr>
+          <tr><td>Shift Availability</td><td><em>Not wired yet.</em> Intended to show availability for the currently-open shift, rolled up across every piece of equipment.</td></tr>
+          <tr><td>AIM Pool</td><td><em>Not wired yet.</em> Intended to show how many Honda shipper serials are left in the pool. Until it is, read the depth on the <a href="#aim-pool">AIM Pool Configuration</a> screen, which does show it live.</td></tr>
           <tr><td>Print Failures</td><td><em>Not wired yet.</em> Still shows a placeholder.</td></tr>
         </tbody>
       </table></div>
-      <div class="note"><span class="ic">i</span><div><b>How Shift Availability is calculated.</b> It is a
-        minutes-weighted roll-up — total running minutes divided by total planned minutes across all
-        equipment — not an average of each machine's percentage. A press that ran ten minutes therefore
-        cannot swing the plant figure as hard as one that ran the whole shift. Any
-        <b>Shift Override</b> on a machine is already reflected, because that machine's planned minutes move
-        with the override.</div></div>
+      <div class="note warn"><span class="ic">!</span><div><b>Four of the six tiles are placeholders.</b>
+        Only <b>Open Downtime</b> and <b>Classified</b> read live data today. Do not treat a blank or
+        placeholder tile as "nothing to report" — it means the figure is not being read at all.</div></div>
     </section>
 
     <!-- ============ DIE CAST PRODUCTION ============ -->

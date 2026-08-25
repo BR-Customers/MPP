@@ -1,22 +1,5 @@
 {
   "custom": {
-    "source": {
-      "AimShipperId": "",
-      "ContainerId": null,
-      "ContainerSerialId": null,
-      "ContainerStatusCode": "",
-      "ContainerTrayId": null,
-      "CurrentLocationId": null,
-      "CurrentLocationName": "",
-      "HasSource": false,
-      "ItemDescription": "",
-      "ItemId": null,
-      "PartNumber": "",
-      "SerialCount": 0,
-      "SerialNumber": "",
-      "TrayCount": 0,
-      "TrayPosition": null
-    },
     "draft": {
       "containerSerialId": "",
       "newContainerId": "",
@@ -38,14 +21,6 @@
   },
   "params": {},
   "propConfig": {
-    "custom.source": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Lots.SortCage.getSourceSummaryOrEmpty\", 0, {view.custom.draft.containerSerialId}, {view.custom.refreshToken})"
-        },
-        "type": "expr"
-      }
-    },
     "custom.sourceHold": {
       "binding": {
         "config": {
@@ -210,20 +185,11 @@
                     "meta": {
                       "name": "Meta"
                     },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "expression": "if({view.custom.source.HasSource}, {view.custom.source.ItemDescription} + \" · tray \" + toStr(coalesce({view.custom.source.TrayPosition}, 0)) + \" · \" + {view.custom.source.ContainerStatusCode}, \"Scan a Container Serial Id to load its source container.\")"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
                     "props": {
                       "style": {
                         "classes": "pf-kpi-sub"
-                      }
+                      },
+                      "text": "Source container summary - no read proc in dev"
                     },
                     "type": "ia.display.label"
                   }
@@ -263,20 +229,11 @@
                         "meta": {
                           "name": "V"
                         },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "if({view.custom.source.HasSource}, toStr({view.custom.source.ContainerId}), \"-\")"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
                         "props": {
                           "style": {
                             "classes": "pf-kpi-value-mono"
-                          }
+                          },
+                          "text": "-"
                         },
                         "type": "ia.display.label"
                       }
@@ -311,20 +268,11 @@
                         "meta": {
                           "name": "V"
                         },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "if({view.custom.source.AimShipperId} != \"\", {view.custom.source.AimShipperId}, \"-\")"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
                         "props": {
                           "style": {
                             "classes": "pf-kpi-value-mono"
-                          }
+                          },
+                          "text": "-"
                         },
                         "type": "ia.display.label"
                       }
@@ -359,20 +307,11 @@
                         "meta": {
                           "name": "V"
                         },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "if({view.custom.source.HasSource}, {view.custom.source.PartNumber}, \"-\")"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
                         "props": {
                           "style": {
                             "classes": "pf-kpi-value-mono"
-                          }
+                          },
+                          "text": "-"
                         },
                         "type": "ia.display.label"
                       }
@@ -407,20 +346,11 @@
                         "meta": {
                           "name": "V"
                         },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "if({view.custom.source.HasSource}, toStr({view.custom.source.SerialCount}), \"-\")"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
                         "props": {
                           "style": {
                             "classes": "pf-kpi-value"
-                          }
+                          },
+                          "text": "-"
                         },
                         "type": "ia.display.label"
                       }
@@ -799,51 +729,7 @@
                 "children": [
                   {
                     "meta": {
-                      "name": "CameraFrame"
-                    },
-                    "position": {
-                      "grow": 1
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "{session.custom.terminal.visionAppUrl} != \"\""
-                          },
-                          "type": "expr"
-                        }
-                      },
-                      "props.url": {
-                        "binding": {
-                          "config": {
-                            "expression": "{session.custom.terminal.visionAppUrl}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "border": "2px solid var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-lg)",
-                        "minHeight": "320px"
-                      }
-                    },
-                    "type": "ia.display.inline-frame"
-                  },
-                  {
-                    "meta": {
                       "name": "Placeholder"
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "{session.custom.terminal.visionAppUrl} = \"\""
-                          },
-                          "type": "expr"
-                        }
-                      }
                     },
                     "props": {
                       "style": {
@@ -851,7 +737,7 @@
                         "fontSize": "20px",
                         "fontWeight": "700"
                       },
-                      "text": "No camera configured"
+                      "text": "No live feed in dev"
                     },
                     "type": "ia.display.label"
                   },
@@ -859,23 +745,13 @@
                     "meta": {
                       "name": "PlaceholderSub"
                     },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "{session.custom.terminal.visionAppUrl} = \"\""
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
                     "props": {
                       "style": {
                         "classes": "pf-kpi-sub",
                         "color": "var(--mpp-neutral-80)",
                         "textAlign": "center"
                       },
-                      "text": "Set this terminal's VisionAppUrl attribute in the Configuration Tool (Plant Hierarchy → the terminal) to embed its camera here."
+                      "text": "Camera Pass/Fail overlay renders here when the ByVision feed is wired (no backing read in dev)."
                     },
                     "type": "ia.display.label"
                   }
