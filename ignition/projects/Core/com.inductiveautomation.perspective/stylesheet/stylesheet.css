@@ -2231,14 +2231,14 @@ button {
 }
 
 .psc-pf-breadcrumb {
-    display: none;
+    display: flex;
     align-items: center;
     gap: 6px;
     font-size: var(--mpp-fs-sm);
     color: var(--mpp-text-secondary);
-    max-width: 320px;
+    min-width: 0;
+    max-width: 520px;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -2832,6 +2832,30 @@ button {
     color: var(--mpp-text-primary);
     font-weight: var(--mpp-fw-medium);
     padding: 4px 6px;
+}
+
+/* Individual crumb chip (LotDetail/CrumbChip instance view). The trail's last
+   entry is the LOT on screen and carries pf-current above; every earlier entry
+   is a pf-crumb-link back to that LOT. */
+.psc-pf-crumb {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.psc-pf-crumb-link {
+    color: var(--mpp-accent-60);
+    padding: 4px 6px;
+    border-radius: var(--mpp-radius-sm);
+    cursor: pointer;
+}
+.psc-pf-crumb-link:hover {
+    color: var(--mpp-accent-70);
+    background: var(--mpp-accent-tint-10);
+}
+.psc-pf-crumb-elision {
+    color: var(--mpp-text-tertiary);
+    padding: 4px 2px;
 }
 
 

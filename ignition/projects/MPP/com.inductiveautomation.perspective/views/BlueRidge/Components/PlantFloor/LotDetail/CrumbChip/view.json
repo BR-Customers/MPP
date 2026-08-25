@@ -1,0 +1,124 @@
+{
+  "custom": {},
+  "params": {
+    "lotId": 0,
+    "label": "",
+    "isCurrent": false,
+    "isFirst": false,
+    "isClickable": false
+  },
+  "propConfig": {
+    "params.lotId": {
+      "paramDirection": "input"
+    },
+    "params.label": {
+      "paramDirection": "input"
+    },
+    "params.isCurrent": {
+      "paramDirection": "input"
+    },
+    "params.isFirst": {
+      "paramDirection": "input"
+    },
+    "params.isClickable": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 28,
+      "width": 150
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "direction": "row",
+      "justify": "flex-start",
+      "wrap": "nowrap",
+      "style": {
+        "gap": "4px",
+        "overflow": "hidden"
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tBlueRidge.Lots.LotTrail.jump(self.session, self.view.params.lotId, self.view.params.isClickable)"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Separator"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!{view.params.isFirst}"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "\u203a",
+          "style": {
+            "classes": "pf-sep",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "CrumbLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.label"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.isCurrent}, \"pf-crumb pf-current\", if({view.params.isClickable}, \"pf-crumb pf-crumb-link\", \"pf-crumb pf-crumb-elision\"))"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-crumb",
+            "fontFamily": "monospace",
+            "fontSize": "13px"
+          }
+        }
+      }
+    ]
+  }
+}
