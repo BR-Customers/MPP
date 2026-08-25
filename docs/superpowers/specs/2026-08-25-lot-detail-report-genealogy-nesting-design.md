@@ -1,7 +1,9 @@
 # LOT Detail report — nested ancestor process history + reachable LOT picker
 
 **Date:** 2026-08-25
-**Status:** Design approved, not yet implemented
+**Status:** Partially implemented 2026-08-25 — data layer done and reviewed; the
+ancestors **layout is committed in a broken state** (`80f87484`). Resume from
+`notes/2026-08-25_lot-detail-report-handoff.md`.
 **Scope:** Reporting Module report + one Core NQ + the Reports landing-page picker. No schema change, no new stored procedure, no test-suite impact.
 
 ---

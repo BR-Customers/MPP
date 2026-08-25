@@ -796,6 +796,22 @@ visually. Adds a disabled one-shot render harness (removed once verified)."
 
 ### Task 4: Ancestors page — part-number band + nested step table
 
+> ## ⚠️ STOP — DO NOT EXECUTE THIS TASK AS WRITTEN (2026-08-25)
+>
+> The XML below was authored from ~10 minutes of reading two sample reports and
+> written here as verbatim code to transcribe. **It was never rendered before being
+> put in this plan, and it does not work.** Executing it produced commit `80f87484`,
+> which renders LOT 10270 as **19 of 23 pages** (a page break before every step row,
+> from `startrowbreak="true"` on the nested table) with the part-number band frozen
+> on ancestor 1's value.
+>
+> Report layout against ReportMill is **not a delegable transcription task** — it
+> needs interactive render → look → adjust cycles. Treat the XML below as a rough
+> starting point only.
+>
+> Read `notes/2026-08-25_lot-detail-report-handoff.md` before touching this.
+> Ruled out already: the frozen band is **not** an input-ordering problem.
+
 **Files:**
 - Modify: `tools/reports/lot_detail/layout.xml`
 
