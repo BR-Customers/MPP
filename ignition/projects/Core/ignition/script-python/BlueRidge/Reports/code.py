@@ -50,6 +50,33 @@ def registry():
         {"key": "inventory", "title": "Current Inventory",
          "desc": "Plantwide WIP snapshot by item and location.", "available": True,
          "project": "MPP", "reportPath": "Inventory", "params": []},
+
+        # ---- FDS-12-006 / 010 / 011 aggregate reports ----
+        # FDS-12-006 is ONE requirement but the legacy PD delivers rejects at
+        # three altitudes and MPP uses all three, so it lands as three reports.
+        {"key": "rejects_detail", "title": "Rejects - Transaction Detail",
+         "desc": "Every reject record in the window, with defect and charge-to.",
+         "available": False, "project": "MPP", "reportPath": "Rejects Transaction Detail",
+         "params": [{"id": "StartDate", "label": "Start", "kind": "dateRange"},
+                    {"id": "EndDate", "label": "End", "kind": "dateRange"}]},
+        {"key": "rejects_summary", "title": "Rejects - Plant Summary",
+         "desc": "Departmental scrap and reject % across the plant.",
+         "available": False, "project": "MPP", "reportPath": "Rejects Plant Summary",
+         "params": [{"id": "StartDate", "label": "Start", "kind": "dateRange"},
+                    {"id": "EndDate", "label": "End", "kind": "dateRange"}]},
+        {"key": "rejects_matrix", "title": "Rejects - Part Matrix",
+         "desc": "Per part: department split and defect detail.",
+         "available": False, "project": "MPP", "reportPath": "Rejects Part Matrix",
+         "params": [{"id": "StartDate", "label": "Start", "kind": "dateRange"},
+                    {"id": "EndDate", "label": "End", "kind": "dateRange"}]},
+        {"key": "hold_status", "title": "Hold Status",
+         "desc": "Every LOT and container currently on hold, oldest first.",
+         "available": False, "project": "MPP", "reportPath": "Hold Status", "params": []},
+        {"key": "shipping_history", "title": "Shipping History",
+         "desc": "Shipped containers, dated by container closure.",
+         "available": False, "project": "MPP", "reportPath": "Shipping History",
+         "params": [{"id": "StartDate", "label": "Start", "kind": "dateRange"},
+                    {"id": "EndDate", "label": "End", "kind": "dateRange"}]},
     ]
 
 
@@ -113,6 +140,22 @@ def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None):
             return {"LotId": lotId}
         if selectedKey == "line_perf":
             return {"WeeksBack": 8}
+        # The date-ranged aggregate reports. These MUST be listed explicitly:
+        # the fallback below hands back a ShiftId, which none of them declares.
+        if selectedKey in ("rejects_detail", "rejects_summary", "rejects_matrix",
+                           "shipping_history"):
+            # Fall back to a 14-day window when the pickers are empty. A blank
+            # date does NOT render an unfiltered report -- the Reporting module
+            # fails the parameter expression outright ("Error executing query
+            # parameter expression {StartDate}"), so the viewer shows nothing
+            # and the operator gets no clue why.
+            e = endDate or system.date.now()
+            s = startDate or system.date.addDays(e, -14)
+            return {"StartDate": s, "EndDate": e}
+        if selectedKey == "hold_status":
+            # Current holds -- no window. Declares one harmless parameter because
+            # the Report Viewer rejects an empty params dict.
+            return {"MinHours": 0}
         return {"ShiftId": shiftId if shiftId is not None else ""}
     except (Exception, _JavaThrowable) as e:
         logger.warn("composeParams failed for '%s': %s" % (selectedKey, str(e)))
