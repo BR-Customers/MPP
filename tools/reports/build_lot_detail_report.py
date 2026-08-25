@@ -8,7 +8,7 @@ The binary is an OUTPUT, never edited by hand. Run from the repo root:
 Clones the validated donor envelope (version-correct class/method signatures for
 this gateway) and swaps in our title, parameters, data sources and layout.
 """
-import io, os, sys, xml.dom.minidom
+import io, json, os, sys, xml.dom.minidom
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -43,13 +43,29 @@ def build():
     return rb.build()
 
 
+def _resource_json_needs_write(path, desired_text):
+    """True unless `path` already holds JSON content equal to `desired_text`.
+
+    Compares parsed JSON, not raw bytes, so line-ending differences alone (the
+    only variance this file should ever see) don't trigger a rewrite.
+    """
+    if not os.path.isfile(path):
+        return True
+    try:
+        existing = json.loads(io.open(path, "r", encoding="utf-8").read())
+    except ValueError:
+        return True
+    return existing != json.loads(desired_text)
+
+
 def main():
     data = build()
     if not os.path.isdir(OUT_DIR):
         os.makedirs(OUT_DIR)
     open(os.path.join(OUT_DIR, "data.bin"), "wb").write(data)
-    io.open(os.path.join(OUT_DIR, "resource.json"), "w",
-            encoding="utf-8", newline="\n").write(RESOURCE_JSON)
+    resource_path = os.path.join(OUT_DIR, "resource.json")
+    if _resource_json_needs_write(resource_path, RESOURCE_JSON):
+        io.open(resource_path, "w", encoding="utf-8", newline="\n").write(RESOURCE_JSON)
     print("wrote %s (%d bytes)" % (os.path.join(OUT_DIR, "data.bin"), len(data)))
     return 0
 
