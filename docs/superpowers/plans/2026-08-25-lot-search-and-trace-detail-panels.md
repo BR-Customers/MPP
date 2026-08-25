@@ -22,7 +22,8 @@
 - **All named queries live in `Core`.** `resource.json` must be `version: 2` — Designer 8.3.5 NPEs on `version: 1`.
 - **`sqlType` is Designer's own enum, not `java.sql.Types`:** `3` = BIGINT, `7` = String, `8` = DateTime, `2` = Int4, `6` = Boolean. Never `-5` / `-9`.
 - **Tests run against a private throwaway database.** `cd sql/tests && ./Run-Tests.ps1 -DatabaseName "MPP_MES_Test_Search" -Filter "<yours>"`. **Never** bare `MPP_MES_Test` (concurrent work drops it) and **never** `MPP_MES_Dev`. Grep output for **BOTH** `FAIL` and `ERROR running` — a sqlcmd error surfaces as runner exit-1 with green assertion counts.
-- Existing views are edited in **Designer**, never by file edit. New named queries and Python are file-edited, then `.\scan.ps1`.
+- **Every SQL test builds its own fixture.** `Run-Tests.ps1` resets to a schema-only database: `Lots.Lot`, `Lots.Container`, `Lots.SerializedPart`, `Tools.Tool` and `Oee.Shift` are all **empty**. Only code/reference tables are seeded (`ContainerConfig` 3, `AppUser` 2, `HoldTypeCode` 4, `ToolType` 6, `ToolStatusCode` 4). Sourcing a fixture with `SELECT TOP 1 ... FROM Lots.Lot` yields NULL and the test silently asserts nothing. Create fixtures via the procs (`Lots.Lot_Create`, `Tools.Tool_Create`, `Tools.ToolCavity_Create`) — or a direct `INSERT` when a column like `CreatedAt` must be pinned — source item/location from `Parts.v_EffectiveItemLocation`, scope every assertion to a distinctive fixture key, and tear down with closure rows **before** the LOTs.
+- **Views:** per Jacques (2026-08-25) Designer is closed for this session, so existing views may be **file-edited**. The other half of that rule still bites: Designer's GSON writer stores `=`, `'`, `<`, `>`, `&` as six-character unicode escapes, so anchor edits on escape-free text, write the escape form when authoring, and validate the JSON parses before `.\scan.ps1`.
 - Commit to `jacques/working`. Stage explicit paths — never `git add -u` / `-A`. No `Co-Authored-By` trailer.
 
 ---
@@ -39,7 +40,7 @@
 | `sql/tests/0067_Lot_SearchAdvanced/010_filters.sql` | Per-filter coverage. |
 | `sql/tests/0067_Lot_SearchAdvanced/020_date_boundary.sql` | Eastern-day conversion. |
 | `sql/tests/0067_Lot_SearchAdvanced/030_origin_conditional.sql` | NULL-Tool LOTs excluded by Die filter. |
-| `sql/tests/0067_Lot_SearchAdvanced/040_total_count.sql` | `TotalCount` across a pager boundary. |
+| ~~`sql/tests/0067_Lot_SearchAdvanced/040_total_count.sql`~~ | **Dropped during execution** — `TotalCount` is covered deterministically inside `010_filters.sql` now that it builds a known-size fixture. A separate file asserting against global row counts was both redundant and non-deterministic. |
 | `sql/tests/0067_Lot_SearchAdvanced/050_signature_parity.sql` | Proc parameter list == the 12 canonical names; `Lot_Search` still frozen at 4. |
 | `sql/tests/0068_Trace_Detail_Reads/010_serial_detail.sql` | Serial payload. |
 | `sql/tests/0068_Trace_Detail_Reads/020_container_detail.sql` | Container payload + both siblings. |
@@ -1368,7 +1369,7 @@ def loadDetail(matchType, matchedEntityId, serialNumber=None):
         containerId = matchedEntityId
     elif matchType == "Shipper":
         row = BlueRidge.Common.Db.execOne(
-            "lots/ShippingLabel_GetById", {"shippingLabelId": matchedEntityId})
+            "lots/ShippingLabel_GetContainerId", {"shippingLabelId": matchedEntityId})
         containerId = row.get("ContainerId") if row else None
 
     if containerId:
@@ -1378,7 +1379,7 @@ def loadDetail(matchType, matchedEntityId, serialNumber=None):
     return out
 ```
 
-> **Verify before relying on it:** the proc `Lots.ShippingLabel_GetById` exists. Confirm the named query `lots/ShippingLabel_GetById` also exists and returns a `ContainerId` column (`ls ignition/projects/Core/ignition/named-query/lots/ShippingLabel_GetById`). If the NQ is missing, create it in Task 5's exact `resource.json` shape with a single `shippingLabelId` parameter (`sqlType: 3`) and `query.sql` of `EXEC Lots.ShippingLabel_GetById @Id = :shippingLabelId` — matching the proc's actual parameter name.
+> **Verified 2026-08-25.** `lots/ShippingLabel_GetContainerId` already exists and is purpose-built for exactly this: proc `Lots.ShippingLabel_GetContainerId @ShippingLabelId BIGINT` selects `sl.ContainerId AS ContainerId`, and the NQ declares one `shippingLabelId` parameter at `sqlType: 3`. No new named query is needed for the Shipper branch.
 
 - [ ] **Step 5: Scan and smoke-test from the script console**
 
