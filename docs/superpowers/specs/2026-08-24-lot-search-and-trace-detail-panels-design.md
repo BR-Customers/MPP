@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-24
 **Trigger:** MPP supplied six legacy Productivity-DB report exports (`reference/*.pdf`, 2026-08-24) — the first concrete evidence behind **UJ-19**. Reviewing them against FDS §12 showed the six unbuilt reporting requirements split into two unrelated shapes, and that three of them were already substantially backed in SQL.
-**Status:** Draft for review. Schema-validated 2026-08-25 against migrations `0001`–`0066` and the seeds (§11) — three corrections applied. No open questions in this spec; three items handed to the companion spec (§8).
+**Status:** Draft for review. Schema-validated 2026-08-25 against migrations `0001`–`0066` and the seeds (§11) — three corrections applied. No open questions and no schema changes in this spec; three items handed to the companion spec (§8). One requirement element is knowingly unmet — the literal *ship date* of FDS-12-002/003, see §2.5.
 **Scope:** FDS-12-002, FDS-12-003, FDS-12-004. **Not** FDS-12-006 / 12-010 / 12-011 — see §8.
 
 ---
@@ -67,13 +67,15 @@ FDS-12-002 and FDS-12-003 both list **ship date** in their required output. No s
 - `Lots.ShippingLabel` — `CreatedAt`, `PrintedAt`, `VoidedAt`, `LastPrintAttemptAt`, `PrintFailedAt`, `BannerAcknowledgedAt`. None is a ship time.
 - `Lots.Container_Ship` flips `ContainerStatusCodeId` to `3` (Shipped) and writes an `Audit.OperationLog` row with `LogEventTypeCode = 'ContainerShipped'`. **It persists no timestamp on the entity.** A repo-wide search for `ShippedAt` returns nothing.
 
-So the only record of when a container shipped is an audit row. That is recoverable but wrong to depend on: audit is a log, not a queryable business dimension, and it is subject to the 20-year retention and partitioning regime rather than to entity reads.
+So the only record of when a container shipped is an audit row — recoverable, but audit is a log rather than a queryable business dimension, and it falls under the 20-year retention and partitioning regime.
 
-This is the same failure shape as the `RejectEvent` location gap in §8 — the proc knows the fact at write time and discards it. It is **more** consequential there, because FDS-12-011 Shipping History is defined as *"shipped containers **by date range**"* and the companion spec's headline report currently has no date column to range over.
+**Decision (2026-08-25): use `Lots.Container.CompletedAt`, surfaced as "Completed".** No new column, no dependency on the companion spec, and this spec ships complete.
 
-**Recommendation (companion spec, since `Container_Ship` is its territory):** add `Lots.Container.ShippedAt DATETIME2(3) NULL`, set it in `Container_Ship` alongside the status flip, and backfill from the `ContainerShipped` audit rows.
+The field is **labelled "Completed", not "Ship date"**, and that labelling is normative. `CompletedAt` is the moment the container was closed and its Honda label generated, which is a real and useful traceability fact — it is simply not the moment the truck left. Displaying it under its own name is accurate; displaying it under a "Ship date" heading would not be, and Honda traceability output is the wrong place to blur that.
 
-**Effect on this spec:** FDS-12-002 and FDS-12-003 ship-date fields are specified as reading `Container.ShippedAt`. Until that column lands, both detail panels render ship date as empty rather than falling back to the audit log or to `CompletedAt` — `CompletedAt` means "container closed", not "container shipped", and silently substituting it would misreport Honda traceability data.
+**Consequence, recorded rather than hidden:** the literal *ship date* element of FDS-12-002 and FDS-12-003 is therefore **not met by this spec** and stays open. Container status still distinguishes shipped from complete (`ContainerStatusCodeId = 3`), so the panels show *whether* a container shipped; they do not show *when*. If MPP or Honda later require the actual ship timestamp, the fix is `Lots.Container.ShippedAt DATETIME2(3) NULL` set in `Container_Ship` and backfilled from the `ContainerShipped` audit rows.
+
+**Note for the companion spec:** FDS-12-011 Shipping History is defined as *"shipped containers **by date range**"*. Ranging over `CompletedAt` means ranging over container-close time, not ship time — the two diverge whenever a completed container waits for a truck. That spec should decide explicitly whether that is acceptable for Honda ASN reconciliation or whether it needs `ShippedAt`.
 
 ---
 
@@ -154,13 +156,13 @@ Implementation: two new read procs, dispatched off the `MatchType` the resolver 
 
 ### 4.1 `Lots.SerializedPart_GetTraceDetail @SerialNumber`
 
-One row satisfying FDS-12-002: serial, item, producing LOT, production date/time, operator, machine, container, AIM shipper ID, ship date. Sourced from `SerializedPart` joined through `ProducingLotId` to the LOT's production events, and through `ContainerSerial` to `Container` and `ShippingLabel`.
+One row satisfying FDS-12-002: serial, item, producing LOT, production date/time, operator, machine, container, AIM shipper ID, container status, and **Completed** (`Container.CompletedAt`, per §2.5). Sourced from `SerializedPart` joined through `ProducingLotId` to the LOT's production events, and through `ContainerSerial` to `Container` and `ShippingLabel`.
 
 `Lots.SerializedPart_GetBySerial` is retained unchanged — it has existing callers and a narrower contract.
 
 ### 4.2 `Lots.Container_GetTraceDetail @ContainerId`
 
-FDS-12-003: item, piece count, source LOTs, serials, container status, ship date, hold history. Piece count is derived from `ContainerTray` and `ContainerSerial`. Hold history reads `Quality.HoldEvent` for the container.
+FDS-12-003: item, piece count, source LOTs, serials, container status, **Completed** (`Container.CompletedAt`, per §2.5), hold history. Piece count is derived from `ContainerTray.PartsClosedCount` and `ContainerSerial`. Hold history reads `Quality.HoldEvent` filtered on `ContainerId`.
 
 **One result set only** (FDS-11-011). The serial list and hold history are separate sibling reads called by the panel, not a second result set.
 
@@ -221,7 +223,7 @@ Deriving at read time was rejected. `Lot.CurrentLocationId` is mutable and drift
 
 This keeps responsibility (who is charged) orthogonal to process (`OperationCategory`, which drives reject-screen filtering — a different job), and gives the supplier-chargeback row a real home. The alternatives — non-process rows on `Parts.OperationCategory`, or one merged Non-Specific row — were rejected: the first pollutes a taxonomy that is load-bearing for routes and the Production Line Performance report, and the second discards the only bucket with money attached.
 
-**Add `Lots.Container.ShippedAt`** per §2.5 — set in `Container_Ship`, backfilled from `ContainerShipped` audit rows.
+**Decide the Shipping History date basis** per §2.5. This spec uses `Container.CompletedAt` and needs no new column. FDS-12-011 ranges over *shipped* containers by date, so the companion spec must decide whether close-time is an acceptable proxy for Honda ASN reconciliation or whether it needs `Lots.Container.ShippedAt` (set in `Container_Ship`, backfilled from `ContainerShipped` audit rows).
 
 ---
 
@@ -266,5 +268,5 @@ Validated 2026-08-25 against the reset path (`sql/migrations/versioned/0001`–`
 **Corrected during validation:**
 
 1. **Origin machine** moved from `LotMovement` derivation to `DieCastContribution.CellLocationId` (§3.2) — migration `0061` added that column expressly to stop live re-derivation of the press.
-2. **Ship date** has no column anywhere (§2.5). New finding; drives a `Container.ShippedAt` recommendation into the companion spec and constrains FDS-12-002/003 output.
+2. **Ship date** has no column anywhere (§2.5). New finding. Resolved 2026-08-25 by using `Container.CompletedAt` labelled "Completed"; the literal ship-date element of FDS-12-002/003 stays open, and the date basis for FDS-12-011 is handed to the companion spec.
 3. **Legacy `Lot.DieNumber` / `Lot.CavityNumber`** NVARCHAR columns exist and are superseded; the spec now states explicitly that the FK-backed pair is filtered and displayed (§3.2).
