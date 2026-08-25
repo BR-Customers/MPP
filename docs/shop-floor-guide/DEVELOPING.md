@@ -179,13 +179,32 @@ guide. When you touch a section:
 
 ## 8. What's left to do (roadmap)
 
-- **Screens with no section yet:** Receiving Dock, Shipping Dock, Sort Cage, Inspection Entry,
-  Third-Party Inspection, Reports, End of Shift / Shift Summary, Supervisor Dashboard, and
-  AIM Pool Config.
-- **Assembly OUT** is documented from the view definitions but has no screenshot of the
-  non-serialized line — only the serialized one.
-- **Before customer release:** remove the `Draft v0.2` tag in the masthead meta and the
+- **Every shop-floor route now has a section.** What is left is accuracy, not coverage.
+- **Assembly OUT** has no screenshot of the non-serialized line — only the serialized one.
+- **Two things the guide flags as unfinished in the app**, both with warning callouts to remove
+  once they land: Shipping Dock's Active Manifest (no data model behind it) and the Supervisor
+  Dashboard's Print Failures tile.
+- **Screenshots are captured headlessly** — see `scripts/` note below. They all come from a
+  session bound to the **Receiving** terminal, because the gateway host's loopback address maps
+  there, so terminal-scoped screens show that station in the header. Re-capture from the correct
+  terminal before customer release.
+- **Before customer release:** remove the `Draft v0.3` tag in the masthead meta and the
   dev-environment / sample-data caveat in the footer.
+
+## 9. Capturing screenshots headlessly
+
+The screenshots in this guide were taken by driving headless Edge over the Chrome DevTools
+Protocol rather than by hand. Two things make that non-obvious, and both will bite anyone who
+retries it:
+
+- **`msedge --headless --screenshot` hangs.** Perspective holds a websocket open, so
+  `--virtual-time-budget` never drains. Drive CDP and call `Page.captureScreenshot` yourself once
+  the page has painted.
+- **Every shop-floor screen sits behind the "Enter your initials" keypad.** An unauthenticated
+  headless session screenshots the keypad, not the screen. Sign an operator in first by clicking
+  the on-screen keys, then `Enter`.
+
+Capture at `deviceScaleFactor: 2` so the images stay sharp at the width the guide renders them.
 
 ---
 

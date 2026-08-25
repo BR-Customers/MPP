@@ -47,13 +47,17 @@ This rewrites `MPP_MES_ShopFloor_Guide.html`.
 
 ## Still to flesh out
 
-- **Screens not yet covered:** Receiving Dock, Shipping Dock, Sort Cage, Inspection Entry,
-  Third-Party Inspection, Reports, End of Shift / Shift Summary, Supervisor Dashboard, and
-  AIM Pool Config. Each needs a capture and a section.
-- **Assembly OUT** is written from the view definitions but has no dedicated screenshot of the
-  non-serialized line; only the serialized line is shown.
+- **Assembly OUT** has no dedicated screenshot of the non-serialized line; only the serialized
+  line is shown.
+- **Shipping Dock's Active Manifest** is documented with a warning callout because the manifest
+  has no data model behind it yet. Remove the callout once that lands.
+- **Supervisor Dashboard's Print Failures tile** is still a placeholder in the app; the section
+  says so. Update it when the tile is wired.
+- Every screenshot is captured from a session bound to the **Receiving** terminal (the gateway
+  host's loopback address maps there), so terminal-scoped screens show that name in the header.
+  Re-capture from the right station before customer release.
 - Before final customer release, review the dev-environment / sample-data caveat in the footer
-  and the `Draft v0.2` tag in the masthead.
+  and the `Draft v0.3` tag in the masthead.
 
 ## Re-capturing screenshots
 

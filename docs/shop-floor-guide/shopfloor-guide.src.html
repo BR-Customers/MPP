@@ -16,19 +16,32 @@
         <div class="toc-grp">Start here</div>
         <a href="#overview">Overview</a>
         <a href="#login">Logging In</a>
-        <div class="toc-grp">Screens</div>
+        <div class="toc-grp">Production</div>
+        <a href="#receiving">Receiving Dock</a>
         <a href="#die-cast">Die Cast</a>
         <a href="#trim">Trim</a>
         <a href="#machining">Machining</a>
         <a href="#assembly">Assembly</a>
+        <div class="toc-grp">Quality &amp; Logistics</div>
+        <a href="#inspection">Inspection</a>
+        <a href="#third-party-inspection">Third-Party Inspection</a>
+        <a href="#holds">Holds</a>
+        <a href="#sort-cage">Sort Cage</a>
+        <a href="#shipping">Shipping Dock</a>
+        <div class="toc-grp">Shift</div>
+        <a href="#downtime">Downtime</a>
+        <a href="#end-of-shift">End of Shift</a>
+        <a href="#shift-summary">Shift-End Summary</a>
         <div class="toc-grp">Elevated Access</div>
         <a href="#supervisor-access">Obtaining Supervisor Access</a>
         <a href="#lot-search">LOT Search</a>
         <a href="#genealogy">Genealogy</a>
         <a href="#track-and-trace">Track &amp; Trace</a>
-        <div class="toc-grp">Miscellaneous</div>
-        <a href="#downtime">Downtime</a>
-        <a href="#holds">Holds</a>
+        <div class="toc-grp">Supervisor Tools</div>
+        <a href="#supervisor-dashboard">Supervisor Dashboard</a>
+        <a href="#die-cast-production">Die Cast Production</a>
+        <a href="#reports">Reports</a>
+        <a href="#aim-pool">AIM Pool Configuration</a>
       </div>
     </details>
   </nav>
@@ -44,7 +57,8 @@
       </p>
       <div class="meta">
         <span class="tag">Prepared by <b>Blue Ridge Automation</b></span>
-        <span class="tag">Draft <b>v0.2</b> · 2026-08-25</span>
+        <span class="tag"><b>21</b> screens</span>
+        <span class="tag">Draft <b>v0.3</b> · 2026-08-25</span>
       </div>
     </header>
 
@@ -139,6 +153,39 @@
       </figure>
 
       <p>The next few sections of this guide cover the individual locations and their screens.</p>
+    </section>
+
+    <!-- ============ RECEIVING DOCK ============ -->
+    <section id="receiving">
+      <h2>Receiving Dock</h2>
+      <p class="lead">The Receiving Dock is the other way a LOT enters the plant. Parts that MPP buys in
+        rather than casts — purchased components, and pass-through parts that are inspected and shipped on
+        without processing — are booked in here against the vendor's own LOT number.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Receiving Dock</span></div>
+          <img src="shots/17_receiving_dock.png" alt="Receiving Dock screen with the Receive New LOT form: part number dropdown, vendor LOT number, piece count, optional min and max serial, and a Create LOT button.">
+        </div>
+        <figcaption>The Receive New LOT form. Part Number is required — it is outlined in red until picked.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>Scan or pick the <b>Part Number</b>. Only parts eligible at this station are offered.</li>
+        <li>Scan or type the <b>Vendor LOT Number</b> — the supplier's own identifier for the material,
+          which is what ties our LOT back to theirs if the part is ever recalled.</li>
+        <li>Enter the <b>Piece Count</b>.</li>
+        <li>For serialized parts, enter <b>Min Serial</b> and <b>Max Serial</b>. Both are optional and only
+          apply where the vendor supplies a contiguous serial range.</li>
+        <li>Press <code>Create LOT</code>. The LOT is created and its LTT label prints.</li>
+      </ol>
+      <div class="note"><span class="ic">i</span><div>Receiving is the one place the <b>Max Parts</b> cap is
+        enforced. If booking this quantity in would put more pieces of the part at this location than its
+        Max Parts allows, the create is rejected — LOTs minted by production are not subject to that cap.
+      </div></div>
+      <p>If the label does not come out, the form shows <b>Last LTT did not print</b>; fix the printer and
+        press <code>Reprint LTT</code> rather than creating the LOT again. <b>On hand at this station</b>
+        lists what is already booked in and still sitting at the dock.</p>
     </section>
 
     <!-- ============ DIE CAST ============ -->
@@ -278,6 +325,18 @@
       <p>Press <code>Inventory</code> in the header to see what is currently held at the line, and
         <code>Scrap</code> to record rejects against a LOT.</p>
 
+      <div class="note"><span class="ic">i</span><div><b>Combined stations.</b> A line whose terminal covers
+        both ends of machining shows <b>Machining IN</b> and <b>Machining OUT</b> as two tabs on one screen
+        rather than as separate terminals. The tabs are the same screens described here.
+        <figure class="shot">
+          <div class="frame">
+            <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+              <span class="path">Machining Station</span></div>
+            <img src="shots/28_machining_station.png" alt="Machining Station screen showing the Machining IN and Machining OUT tabs on a single terminal.">
+          </div>
+        </figure>
+      </div></div>
+
       <h2>Machining OUT</h2>
       <p class="lead">Machining OUT is where finished castings leave the machining line. It works from a FIFO
         queue of the castings pending at this cell, oldest first.</p>
@@ -342,6 +401,287 @@
         </div>
         <figcaption>The serialized assembly line, with the vision station embedded.</figcaption>
       </figure>
+    </section>
+
+    <!-- ============ INSPECTION ============ -->
+    <section id="inspection">
+      <h2>Inspection</h2>
+      <p class="lead">The Inspection terminal records a quality check against a LOT. What it asks you to
+        measure is not fixed — it is generated from the <b>Quality Spec</b> published for that part, so each
+        part presents its own set of attributes and tolerances.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Inspection</span></div>
+          <img src="shots/18_inspection.png" alt="Inspection screen with the LOT lookup field on the left, the spec-driven capture form beneath it, and the sample history panel on the right.">
+        </div>
+        <figcaption>Scan a LOT on the left; its spec form loads beneath. Past samples are listed on the right.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>Scan or type the LTT into <b>LOT / LTT</b>. The LOT's summary appears; an unknown code gives
+          <b>LOT not found — check the LTT and try again.</b></li>
+        <li>Pick the <b>Trigger</b> — why this inspection is being done (first-off, in-process, a reaction to
+          a problem, and so on).</li>
+        <li>Fill in each attribute the form lists. Attributes marked <b>*</b> are required, and the record is
+          rejected if one is left empty.</li>
+        <li>Press <code>RECORD INSPECTION</code>.</li>
+      </ol>
+      <p>If the part has no published spec the form says <b>No published quality spec for this part</b> —
+        the spec has to be authored and published in the Configuration Tool before the part can be inspected.
+        A failed check can be escalated immediately with <code>PLACE HOLD</code>, which puts the LOT on hold
+        without leaving the screen.</p>
+      <div class="note"><span class="ic">i</span><div>Inspections recorded here appear on the LOT's
+        <b>Inspections</b> tab in <a href="#lot-search">LOT Detail</a>, and the action bar there has an
+        <code>Inspections</code> button that brings you straight to this terminal.</div></div>
+    </section>
+
+    <!-- ============ THIRD-PARTY INSPECTION ============ -->
+    <section id="third-party-inspection">
+      <h2>Third-Party Inspection</h2>
+      <p class="lead">The third-party inspection station handles bought-in parts that MPP inspects and ships
+        on without manufacturing. It is a two-tab wrapper around screens documented elsewhere in this guide,
+        because the workflow is deliberately the same one used everywhere else.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Third-Party Inspection</span></div>
+          <img src="shots/19_third_party_inspection.png" alt="Third-Party Inspection screen showing the Inventory and Assembly tabs.">
+        </div>
+        <figcaption>Two tabs: <b>Inventory</b> to book parts in, <b>Assembly</b> to check them back out.</figcaption>
+      </figure>
+      <ul>
+        <li><b>Inventory</b> — the <a href="#receiving">Receiving Dock</a> screen. Book the incoming parts in
+          against the vendor LOT.</li>
+        <li><b>Assembly</b> — the non-serialized <a href="#assembly">Assembly OUT</a> screen. Checking a
+          pass-through part out <em>is</em> an assembly-out: the bought-in part is consumed as a component by
+          a newly minted finished good, packed one LOT to one tray to one container.</li>
+      </ul>
+      <div class="note"><span class="ic">i</span><div>Record the inspection itself at the
+        <a href="#inspection">Inspection</a> terminal between checking in and checking out. This station does
+        not carry its own capture form.</div></div>
+    </section>
+
+    <!-- ============ HOLDS ============ -->
+    <section id="holds">
+      <h2>Holds</h2>
+      <p class="lead">A hold stops a LOT from being moved or consumed. When a hold is placed, the LOT's
+        <b>status badge</b> updates to show it and the terminals refuse to act on it until the hold is
+        released.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Hold Example</span></div>
+          <img src="shots/13_hold_example.png" alt="Hold Example">
+        </div>
+        <figcaption>A hold placed on a LOT at Machining OUT.
+        </figcaption>
+      </figure>
+
+      <p>A hold can be placed on a LOT at any location. Common reasons include a failed quality inspection or
+        a customer complaint. The hold stays on the LOT until a supervisor releases it.</p>
+
+      <h3>Hold Management</h3>
+      <div class="note"><span class="ic">i</span><div>This screen is available only to users with
+        <b>elevated access</b>.</div></div>
+      <p>The <b>Hold Management</b> screen is where supervisors view, place, and release holds on LOTs and
+        containers. It has two tabs: <b>Open Holds</b> and <b>Bulk &amp; Scrap</b>.</p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Hold Management Screen</span></div>
+          <img src="shots/14_hold_management.png" alt="Hold Management">
+        </div>
+        <figcaption>The Open Holds tab: the list of open holds on the left, the selected hold on the right.</figcaption>
+      </figure>
+
+      <h4>Open Holds</h4>
+      <p>The left column lists every open hold. Narrow it with the <b>Filter</b> field, which matches LOT
+        name, AIM Shipper ID, item, or location, and with the <b>Hold Type</b> dropdown. Select a row to load
+        it into the panel on the right, or press <code>New hold</code> to start from an empty panel.</p>
+
+      <h4>Placing a hold</h4>
+      <ol class="steps">
+        <li>Identify the target: enter a <b>LOT name</b> (scan the LTT) or a <b>Container Id</b>, then press
+          <code>Load</code>.</li>
+        <li>Choose a <b>Hold type</b>. This is the broad category the hold falls under, and it is what the
+          Hold Type filter sorts on later.</li>
+        <li>Type a <b>Reason</b>. Be specific — this is what the next person reads when deciding whether the
+          hold can come off.</li>
+        <li>Press <code>Place hold</code>.</li>
+      </ol>
+
+      <h4>Releasing a hold</h4>
+      <p>With a held LOT or container loaded, the <b>Release hold</b> group shows a summary of the current
+        hold. Enter <b>Release remarks</b> explaining why it is being released, then press
+        <code>Release hold</code>. A LOT on hold can also be released from the <b>Hold</b> tab of its
+        <a href="#lot-search">LOT Detail</a> page.</p>
+
+      <h4>Bulk hold</h4>
+      <p>On the <b>Bulk &amp; Scrap</b> tab, <b>Bulk Hold</b> places one hold across several LOTs at once.
+        Search for LOTs by name or part, select the ones you want, choose a hold type, add an optional reason,
+        and place the hold on all of them together.</p>
+
+      <h4>Scrapping a held LOT</h4>
+      <p>The same tab has a <b>Scrap Held LOT</b> panel for recording scrap directly against a LOT that is on
+        hold — no split, and the hold stays in place. Enter the LOT name, the reject quantity, a defect code,
+        and any remarks, then press <code>Record Scrap</code>.</p>
+    </section>
+
+    <!-- ============ SORT CAGE ============ -->
+    <section id="sort-cage">
+      <h2>Sort Cage</h2>
+      <p class="lead">The Sort Cage is where a serialized part is moved out of one container and into
+        another — re-containerization. It works one serial at a time and updates the part in place, so the
+        serial keeps its identity and history and simply changes which container it belongs to.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Sort Cage Workflow</span></div>
+          <img src="shots/20_sort_cage.png" alt="Sort Cage screen: the source container summary across the top, the migrate-serial form in the middle, held LOTs and the camera panel.">
+        </div>
+        <figcaption>Scan a Container Serial Id and the source container's details load across the top.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>Scan the <b>Container Serial Id</b>. The <b>Source Container</b> strip fills in with the
+          container it currently sits in, the <b>AIM Shipper ID</b> that container was allocated, the
+          <b>Item</b>, and how many serials the container holds.</li>
+        <li>Enter the <b>New Container Id</b> and, if the destination tracks tray positions, the
+          <b>New Tray Position</b>.</li>
+        <li>Press <code>Migrate Serial</code>.</li>
+      </ol>
+      <div class="note warn"><span class="ic">!</span><div>The destination container must be <b>open</b>. A
+        completed or shipped container is rejected, because moving a part into a container that has already
+        been closed out would break the shipping record that went to Honda.</div></div>
+      <p>If the source container is on hold, a <b>Container on Hold</b> pill appears in the header and the
+        <b>Held Lots</b> list shows what is affected — from there you can jump straight to the
+        <a href="#inspection">Inspection</a> terminal for a held LOT, or place a further hold.</p>
+      <p>The <b>Sort Cage Camera</b> panel embeds the station's live vision feed. A terminal with no camera
+        configured says <b>No camera configured</b> instead; the feed is set per terminal through the
+        <code>VisionAppUrl</code> attribute in the Configuration Tool.</p>
+    </section>
+
+    <!-- ============ SHIPPING DOCK ============ -->
+    <section id="shipping">
+      <h2>Shipping Dock</h2>
+      <p class="lead">The Shipping Dock is scan-to-ship. Each finished container is scanned by its shipping
+        label as it goes on the truck, and the scan validates the container before it is allowed out.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Shipping Dock</span></div>
+          <img src="shots/21_shipping_dock.png" alt="Shipping Dock screen with the scan field, Ship Container and Reprint Label buttons, a result card, recent scans, and the pending containers rail.">
+        </div>
+        <figcaption>One scan per container. The result card reports whether it shipped, and why not if it did not.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>Scan the container's <b>shipping label</b> into <b>Scan Container Shipping Label</b>.</li>
+        <li>Press <code>Ship Container</code>. The scan checks that the container is complete, is not on
+          hold, and has not already gone out.</li>
+        <li>Read the <b>result card</b>: it shows <b>Shipped</b>, or the reason the container was refused.</li>
+      </ol>
+      <p><code>Reprint Label</code> reissues a shipping label that is damaged or missing. <b>Recent Scans</b>
+        keeps the last few results on screen so you can see what has just gone out, and the rail on the right
+        lists the containers still pending.</p>
+      <div class="note warn"><span class="ic">!</span><div><b>The Active Manifest panel is not live yet.</b>
+        Its <b>Loaded</b> / <b>Remaining</b> figures have no data behind them — the manifest itself is still
+        an open question with MPP (what a manifest covers, and where it comes from). Scan-to-ship,
+        validation, reprint and the pending list all work; only the manifest counters are placeholders. Do
+        not rely on them to decide a truck is complete.</div></div>
+    </section>
+
+    <!-- ============ DOWNTIME ============ -->
+    <section id="downtime">
+      <h2>Downtime</h2>
+      <p class="lead">The <b>Downtime</b> popup is where machine downtime is managed. You can start a new
+        downtime, edit an existing one, and add downtime that has already happened. Open it with the blue
+        <code>Downtime</code> button in the header.</p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Downtime Screen</span></div>
+          <img src="shots/15_downtime.png" alt="Downtime">
+        </div>
+        <figcaption>Downtime events for the selected shift.</figcaption>
+      </figure>
+      <p>A downtime event has the following properties:</p>
+      <ul>
+        <li><b>Reason</b> — categorises the downtime, which makes past events easier to sort and report on.
+          Supervisors create new reasons in the Configuration Tool.
+        </li>
+        <li><b>Start date</b> and <b>End date</b> — when the downtime ran. Both can be set by hand, or filled
+          in automatically when you press the start and end buttons.
+        </li>
+        <li><b>Duration</b> — for downtime that has already happened and whose exact start and end are not
+          known, switch the editor to <b>Duration only</b> and enter how long the machine was down. Events
+          entered this way are flagged as approximate.
+        </li>
+        <li><b>Remarks</b> — optional. Extra context explaining the downtime, which is useful when reviewing
+          past events.
+        </li>
+      </ul>
+      <p>Pressing <code>Start Downtime</code> creates a new event with the start time set to now; you can set
+        the reason afterwards. In the list, <code>End</code> appears on the active event and sets its end time
+        to now. <code>Edit</code> lets you change the properties by hand. <code>Void</code> deprecates the
+        event — the data is not deleted, but the event no longer counts and cannot be edited further.</p>
+      <p>Downtime is organised by shift. Use the dropdown at the top of the popup to change shift, which is
+        also how you record a downtime event against an earlier shift.
+      </p>
+    </section>
+
+    <!-- ============ END OF SHIFT ============ -->
+    <section id="end-of-shift">
+      <h2>End of Shift</h2>
+      <p class="lead">At the end of a shift the operator records the breaks they actually took. This is what
+        turns scheduled shift time into <em>worked</em> time, which is what the availability figures are
+        calculated against.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">End of Shift</span></div>
+          <img src="shots/22_end_of_shift.png" alt="End of Shift screen with a cell selector and a row of break toggle buttons above the submit button.">
+        </div>
+        <figcaption>Tap each break you took, then submit.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>Pick the <b>Cell</b> you worked, if the terminal covers more than one.</li>
+        <li>Under <b>Breaks taken</b>, tap each break you actually took. Breaks are recorded at the end of
+          the shift in one go — there is no clocking in and out of each break as it happens.</li>
+        <li>Press <code>Submit Shift Time Entry</code>.</li>
+      </ol>
+      <div class="note"><span class="ic">i</span><div>Each break you tap becomes a downtime event against
+        that cell, which is why an unrecorded break shows up later as unexplained running time.</div></div>
+    </section>
+
+    <!-- ============ SHIFT-END SUMMARY ============ -->
+    <section id="shift-summary">
+      <h2>Shift-End Summary</h2>
+      <p class="lead">The Shift-End Summary is the handover sheet: everything the outgoing shift is leaving
+        behind for the incoming one, on a single screen.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Shift-End Summary</span></div>
+          <img src="shots/23_shift_end_summary.png" alt="Shift-End Summary with three panels: open downtime events, paused LOTs, and in-process LOTs, and an Acknowledge Handover button.">
+        </div>
+        <figcaption>Three panels of unfinished business, and one button to sign for it.</figcaption>
+      </figure>
+      <p>Pick the <b>Cell</b> and review the three panels:</p>
+      <ul>
+        <li><b>Open downtime events</b> — downtime that was started and never ended. These keep accruing
+          against the machine until somebody closes them.</li>
+        <li><b>Paused LOTs</b> — LOTs stopped part-way through a step, waiting to resume.</li>
+        <li><b>In-process LOTs</b> — what is still open at the cell and will carry into the next shift.</li>
+      </ul>
+      <p>Press <code>Acknowledge Handover</code> to record that the summary was reviewed. The acknowledgement
+        is audited — the shift-time data is already committed, so this is a record that somebody read it, not
+        a submission.</p>
     </section>
 
     <!-- ============ SUPERVISOR ACCESS ============ -->
@@ -527,116 +867,154 @@
         <a href="#genealogy">Genealogy Lookup</a>.</p>
     </section>
 
-    <!-- ============ DOWNTIME ============ -->
-    <section id="downtime">
-      <h2>Downtime</h2>
-      <p class="lead">The <b>Downtime</b> popup is where machine downtime is managed. You can start a new
-        downtime, edit an existing one, and add downtime that has already happened. Open it with the blue
-        <code>Downtime</code> button in the header.</p>
-      <figure class="shot">
-        <div class="frame">
-          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
-            <span class="path">Downtime Screen</span></div>
-          <img src="shots/15_downtime.png" alt="Downtime">
-        </div>
-        <figcaption>Downtime events for the selected shift.</figcaption>
-      </figure>
-      <p>A downtime event has the following properties:</p>
-      <ul>
-        <li><b>Reason</b> — categorises the downtime, which makes past events easier to sort and report on.
-          Supervisors create new reasons in the Configuration Tool.
-        </li>
-        <li><b>Start date</b> and <b>End date</b> — when the downtime ran. Both can be set by hand, or filled
-          in automatically when you press the start and end buttons.
-        </li>
-        <li><b>Duration</b> — for downtime that has already happened and whose exact start and end are not
-          known, switch the editor to <b>Duration only</b> and enter how long the machine was down. Events
-          entered this way are flagged as approximate.
-        </li>
-        <li><b>Remarks</b> — optional. Extra context explaining the downtime, which is useful when reviewing
-          past events.
-        </li>
-      </ul>
-      <p>Pressing <code>Start Downtime</code> creates a new event with the start time set to now; you can set
-        the reason afterwards. In the list, <code>End</code> appears on the active event and sets its end time
-        to now. <code>Edit</code> lets you change the properties by hand. <code>Void</code> deprecates the
-        event — the data is not deleted, but the event no longer counts and cannot be edited further.</p>
-      <p>Downtime is organised by shift. Use the dropdown at the top of the popup to change shift, which is
-        also how you record a downtime event against an earlier shift.
-      </p>
-    </section>
-
-    <!-- ============ HOLDS ============ -->
-    <section id="holds">
-      <h2>Holds</h2>
-      <p class="lead">A hold stops a LOT from being moved or consumed. When a hold is placed, the LOT's
-        <b>status badge</b> updates to show it and the terminals refuse to act on it until the hold is
-        released.
-      </p>
-      <figure class="shot">
-        <div class="frame">
-          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
-            <span class="path">Hold Example</span></div>
-          <img src="shots/13_hold_example.png" alt="Hold Example">
-        </div>
-        <figcaption>A hold placed on a LOT at Machining OUT.
-        </figcaption>
-      </figure>
-
-      <p>A hold can be placed on a LOT at any location. Common reasons include a failed quality inspection or
-        a customer complaint. The hold stays on the LOT until a supervisor releases it.</p>
-
-      <h3>Hold Management</h3>
+    <!-- ============ SUPERVISOR DASHBOARD ============ -->
+    <section id="supervisor-dashboard">
+      <h2>Supervisor Dashboard</h2>
       <div class="note"><span class="ic">i</span><div>This screen is available only to users with
         <b>elevated access</b>.</div></div>
-      <p>The <b>Hold Management</b> screen is where supervisors view, place, and release holds on LOTs and
-        containers. It has two tabs: <b>Open Holds</b> and <b>Bulk &amp; Scrap</b>.</p>
+      <p class="lead">A single strip of tiles answering "what needs attention right now?" across the whole
+        plant, rather than at one terminal.
+      </p>
       <figure class="shot">
         <div class="frame">
           <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
-            <span class="path">Hold Management Screen</span></div>
-          <img src="shots/14_hold_management.png" alt="Hold Management">
+            <span class="path">Supervisor Dashboard</span></div>
+          <img src="shots/24_supervisor_dashboard.png" alt="Supervisor Dashboard showing tiles for open downtime, classified downtime, paused LOTs, shift availability, AIM pool depth, and print failures.">
         </div>
-        <figcaption>The Open Holds tab: the list of open holds on the left, the selected hold on the right.</figcaption>
+        <figcaption>Plant-wide counts. The AIM Pool tile is reading a real depth here.</figcaption>
       </figure>
-
-      <h4>Open Holds</h4>
-      <p>The left column lists every open hold. Narrow it with the <b>Filter</b> field, which matches LOT
-        name, AIM Shipper ID, item, or location, and with the <b>Hold Type</b> dropdown. Select a row to load
-        it into the panel on the right, or press <code>New hold</code> to start from an empty panel.</p>
-
-      <h4>Placing a hold</h4>
-      <ol class="steps">
-        <li>Identify the target: enter a <b>LOT name</b> (scan the LTT) or a <b>Container Id</b>, then press
-          <code>Load</code>.</li>
-        <li>Choose a <b>Hold type</b>. This is the broad category the hold falls under, and it is what the
-          Hold Type filter sorts on later.</li>
-        <li>Type a <b>Reason</b>. Be specific — this is what the next person reads when deciding whether the
-          hold can come off.</li>
-        <li>Press <code>Place hold</code>.</li>
-      </ol>
-
-      <h4>Releasing a hold</h4>
-      <p>With a held LOT or container loaded, the <b>Release hold</b> group shows a summary of the current
-        hold. Enter <b>Release remarks</b> explaining why it is being released, then press
-        <code>Release hold</code>. A LOT on hold can also be released from the <b>Hold</b> tab of its
-        <a href="#lot-search">LOT Detail</a> page.</p>
-
-      <h4>Bulk hold</h4>
-      <p>On the <b>Bulk &amp; Scrap</b> tab, <b>Bulk Hold</b> places one hold across several LOTs at once.
-        Search for LOTs by name or part, select the ones you want, choose a hold type, add an optional reason,
-        and place the hold on all of them together.</p>
-
-      <h4>Scrapping a held LOT</h4>
-      <p>The same tab has a <b>Scrap Held LOT</b> panel for recording scrap directly against a LOT that is on
-        hold — no split, and the hold stays in place. Enter the LOT name, the reject quantity, a defect code,
-        and any remarks, then press <code>Record Scrap</code>.</p>
+      <div class="tbl-scroll"><table class="fields">
+        <thead><tr><th>Tile</th><th>What it tells you</th></tr></thead>
+        <tbody>
+          <tr><td>Open Downtime</td><td>Downtime events currently running, and how many of them still have no reason set. An event with no reason cannot be reported on, so this is the number to drive to zero.</td></tr>
+          <tr><td>Classified</td><td>How many of those open events do have a reason.</td></tr>
+          <tr><td>Paused LOTs</td><td>Open pauses across every location — LOTs stopped part-way through a step.</td></tr>
+          <tr><td>Shift Availability</td><td>Availability for the shift that is currently open, rolled up across every piece of equipment. It reads <b>no open shift</b> when none is running rather than showing a misleading 0%.</td></tr>
+          <tr><td>AIM Pool</td><td>How many Honda shipper serials are left in the pool. If this runs dry, containers cannot be allocated a shipper ID and shipping stops.</td></tr>
+          <tr><td>Print Failures</td><td><em>Not wired yet.</em> Still shows a placeholder.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><span class="ic">i</span><div><b>How Shift Availability is calculated.</b> It is a
+        minutes-weighted roll-up — total running minutes divided by total planned minutes across all
+        equipment — not an average of each machine's percentage. A press that ran ten minutes therefore
+        cannot swing the plant figure as hard as one that ran the whole shift. Any
+        <b>Shift Override</b> on a machine is already reflected, because that machine's planned minutes move
+        with the override.</div></div>
     </section>
+
+    <!-- ============ DIE CAST PRODUCTION ============ -->
+    <section id="die-cast-production">
+      <h2>Die Cast Production</h2>
+      <div class="note"><span class="ic">i</span><div>This screen is available only to users with
+        <b>elevated access</b>.</div></div>
+      <p class="lead">A supervisor's view of die cast output: what the current shift has produced against
+        what the previous one did, per area.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Die Cast Production</span></div>
+          <img src="shots/25_die_cast_production.png" alt="Die Cast Production screen with an area filter and current, previous and change KPI tiles above the per-machine detail.">
+        </div>
+        <figcaption>Current shift, previous shift, and the change between them.</figcaption>
+      </figure>
+      <p>Use the <b>Area</b> dropdown to narrow to one die cast area, or leave it on <b>All Die Cast</b> for
+        the whole department. The three tiles show the current shift, the previous shift, and the
+        <b>Change</b> between them, with the per-machine breakdown beneath. <code>Refresh</code> re-reads the
+        tallies.</p>
+    </section>
+
+    <!-- ============ REPORTS ============ -->
+    <section id="reports">
+      <h2>Reports</h2>
+      <p class="lead">The Reports page produces the printable PDFs — the paperwork that leaves the system.
+        Pick a report from the rail, set its parameters, preview it on screen, and print.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Reports</span></div>
+          <img src="shots/26_reports.png" alt="Reports page with the report tile rail on the left and the parameter and preview pane on the right.">
+        </div>
+        <figcaption>Six reports. Selecting one shows only the parameters that report needs.</figcaption>
+      </figure>
+      <div class="tbl-scroll"><table class="fields">
+        <thead><tr><th>Report</th><th>What it covers</th></tr></thead>
+        <tbody>
+          <tr><td>Downtime by Shift</td><td>Loss analysis for one shift, broken down by machine and reason.</td></tr>
+          <tr><td>Downtime by Date Range</td><td>Downtime across a start/end period, by area.</td></tr>
+          <tr><td>Lot Detail</td><td>The full traceability sheet for one LOT — header, genealogy and production events.</td></tr>
+          <tr><td>Die Cast Shot Count</td><td>Shots per die against its shot limit, over a period.</td></tr>
+          <tr><td>Production Line Performance</td><td>Output, scrap and downtime by line, per shift or week.</td></tr>
+          <tr><td>Current Inventory</td><td>A plantwide snapshot of work in process by item and location.</td></tr>
+        </tbody>
+      </table></div>
+      <ol class="steps">
+        <li>Tap a report in the <b>REPORTS</b> rail.</li>
+        <li>Set the parameters that appear — a shift, a date range, or a LOT, depending on the report.</li>
+        <li>Read the preview, then press <code>Print PDF</code> to produce the file.</li>
+      </ol>
+    </section>
+
+    <!-- ============ AIM POOL CONFIG ============ -->
+    <section id="aim-pool">
+      <h2>AIM Pool Configuration</h2>
+      <div class="note"><span class="ic">i</span><div>This screen is available only to users with
+        <b>elevated access</b>.</div></div>
+      <p class="lead">Honda issues the shipper IDs that go on outbound containers. The MES keeps a buffer of
+        them so shipping never has to wait on a call to AIM. This screen manages that buffer.
+      </p>
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">AIM Pool Configuration</span></div>
+          <img src="shots/27_aim_pool_config.png" alt="AIM Pool Configuration with the pool depth card, threshold fields, posting toggle, and the unposted backlog list.">
+        </div>
+        <figcaption><b>AIM serials available in pool</b> is the number that matters day to day.</figcaption>
+      </figure>
+      <div class="tbl-scroll"><table class="fields">
+        <thead><tr><th>Setting</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Target buffer depth</td><td>How many spare serials to hold.</td></tr>
+          <tr><td>Top-up threshold</td><td>The depth at which the system fetches more from AIM.</td></tr>
+          <tr><td>Alarm warning depth</td><td>Raises a warning when the pool falls this low.</td></tr>
+          <tr><td>Alarm critical depth</td><td>Raises a critical alarm — shipping is close to stopping.</td></tr>
+          <tr><td>AIM posting enabled</td><td>Whether completed containers are posted back to Honda.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Change the values and press <code>Save</code>. <b>AIM post backlog</b> lists containers that are
+        shipped but not yet acknowledged by AIM; <b>Nothing owed to AIM</b> means the backlog is clear.
+        <code>Connection settings</code> covers how the gateway reaches AIM.</p>
+      <div class="note warn"><span class="ic">!</span><div>Turning <b>AIM posting enabled</b> on consumes
+        real Honda serials, and they cannot be returned. Leave it off outside production.</div></div>
+    </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     <div class="footer">
       <b>MPP MES — Shop Floor Guide.</b>
       Prepared by Blue Ridge Automation for Madison Precision Products, Inc.
-      Draft v0.2, 2026-08-25. Screenshots are drawn from the development environment and use sample data.
+      Draft v0.3, 2026-08-25. Screenshots are drawn from the development environment and use sample data.
     </div>
 
   </main>
