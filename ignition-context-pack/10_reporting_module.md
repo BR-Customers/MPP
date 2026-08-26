@@ -214,14 +214,20 @@ than as a row of cells), plus `version-key` and `stay-with`. Omitting those and 
 it as an ordinary structured row produces **one** band carrying the **first row's**
 value — the "frozen band" symptom.
 
-### Known-broken example in this repo — do NOT copy it
+### The trap that produced two broken nests here
 
-**`Rejects Part Matrix`** has nested `ByParty` / `Defects` tables that have **never
-rendered**. It omits the `<table-group>` and gives each child its own `y` offset and a
-narrower width. It is a tempting reference because it is the repo's only nested layout.
-It is wrong. **Render any report before adopting it as a reference** — that single check
-is what separated "the feature is unsupported" from "our markup is malformed", after
-several hours spent on the former conclusion.
+**`Rejects Part Matrix`** shipped with its `ByParty` / `Defects` tables rendering nothing:
+it omitted the `<table-group>` and gave each child its own `y` offset and a narrower box.
+The generator behind it (`nested_table()` in `tools/build_aggregate_reports.py`) had a
+docstring claiming the Cryovac shape while emitting exactly that malformation. Both were
+fixed 2026-08-26 (`11d6f268`) and the report now renders both sections — it is safe to
+read as a reference again, but read the **generator**, which carries the rules inline.
+
+The failure is completely silent, so a nest can pass review and a render check while
+producing nothing. **Render any report before adopting it as a reference, and check that
+every section actually has content** — not just that a page appeared. That single check is
+what separated "the feature is unsupported" from "our markup is malformed", after several
+hours spent on the former conclusion.
 
 Working references live outside this repo: `CryovacWeeklyEnterpriseReport.zip` and
 `ContainerFareCIPReport.zip` (Boar's Head, 8.1). They are also the provenance for the

@@ -107,8 +107,21 @@ keys cannot resolve; the same report rendered to PDF shows `Page 1 of 6` correct
 The markup is byte-identical to the production Boar's Head reports. Recorded in the pack, because
 the PNG-based verify harness makes this look like a project-wide bug.
 
+**`Rejects Part Matrix` was shipping broken and is now fixed** (`11d6f268`). It rendered, so it read
+as working, but its `ByParty` and `Defects` nested tables produced nothing — operators got part rows
+with the department split and defect breakdown silently absent, on an `available: True` report. Fixed
+at the generator (`nested_table()` in `tools/build_aggregate_reports.py`), which emitted the same
+malformed nest — no `<table-group>`, children given their own offsets and boxes — so the next nested
+report would have inherited it. Verified by render in PDF and PNG.
+
 **Open, chipped, not fixed:** `InventoryManager.receiveLoose` has the same int-first resolution
 bug the picker had, safe today only because part numbers contain letters.
+
+**Unverified, worth a look:** of the five aggregate reports, only `Rejects Part Matrix` has been
+render-inspected. The other four (`Rejects Transaction Detail`, `Rejects Plant Summary`,
+`Hold Status`, `Shipping History`) have no nesting so are structurally unaffected, but "it rendered"
+was accepted for Part Matrix while two sections were missing — treat them as unconfirmed rather
+than assume.
 
 ---
 
