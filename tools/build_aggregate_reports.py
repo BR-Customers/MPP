@@ -339,12 +339,19 @@ def build_shipping_history():
     # "Completed" is container CLOSE time. There is no ship timestamp in the
     # schema and no integration that would supply one, so the note states the
     # semantics on the page rather than letting a reader infer truck departure.
-    note = ("Dated by container closure. The MES holds no shipping-system "
-            "integration, so closure time is the latest point it can observe.")
+    # Scope and wording both say "closed", not "shipped". MES has no integration
+    # with MPP's shipping infrastructure and never will, so container closure is
+    # the ceiling of what it can observe -- for the DATE and for the SCOPE alike.
+    # A container with no AIM shipper ID still appears, blank: that is a
+    # reconciliation gap worth seeing, not a row to hide.
+    note = ("Every container closed in this window. The MES holds no "
+            "shipping-system integration, so closure is the last point it can "
+            "observe - not truck departure. A blank AIM shipper ID means the "
+            "container closed without one.")
     layout = "".join([
         L.doc_open(), L.page_open(),
         title_block("Shipping History",
-                    "@StartDate@ - @EndDate@" + L.esc("  |  shipped containers")),
+                    "@StartDate@ - @EndDate@" + L.esc("  |  containers closed in the window")),
         L.text(36, 122, 540, 12, L.esc(note), size=8.5, italic=True, color=MUTED),
         L.table(36, 140, 540, "Shipped", cols, HEAD_TXT, BODY),
         L.page_close(), L.doc_close(),

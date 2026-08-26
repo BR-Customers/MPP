@@ -141,13 +141,52 @@ BEGIN
     EXEC test.Assert_IsEqual @TestName = N'[ShippingHistory] a past window excludes it',
         @Expected = N'0', @Actual = @n;
 
-    -- Status Shipped only: a merely Complete container must not appear.
+    -- Scope is CLOSED containers, not status-3-only. INVERTED DELIBERATELY
+    -- 2026-08-26: there will never be a Shipped flag in practice (MPP ships
+    -- through their own infrastructure; MES is never told), so scoping on
+    -- status 3 made this report return zero rows forever. A merely Complete
+    -- container MUST now appear -- that is the whole point of the change.
     UPDATE Lots.Container SET ContainerStatusCodeId = 2 WHERE Id = @ContainerId;
     DELETE FROM #S;
     INSERT INTO #S EXEC Lots.Container_ListShipped;
     SELECT @n = COUNT(*) FROM #S WHERE ContainerId = @ContainerId;
-    EXEC test.Assert_IsEqual @TestName = N'[ShippingHistory] a Complete-but-not-Shipped container is excluded',
+    EXEC test.Assert_IsEqual @TestName = N'[ShippingHistory] a Complete-but-not-Shipped container IS listed',
+        @Expected = N'1', @Actual = @n;
+
+    -- An OPEN container is still excluded: closure is the observable end state,
+    -- so the scope widened to "closed", not to "any container".
+    UPDATE Lots.Container SET ContainerStatusCodeId = 1 WHERE Id = @ContainerId;
+    DELETE FROM #S;
+    INSERT INTO #S EXEC Lots.Container_ListShipped;
+    SELECT @n = COUNT(*) FROM #S WHERE ContainerId = @ContainerId;
+    EXEC test.Assert_IsEqual @TestName = N'[ShippingHistory] an Open container is excluded',
         @Expected = N'0', @Actual = @n;
+
+    -- The AIM shipper ID resolves from the live (non-void) label, and a closed
+    -- container with NO live label is still listed, with a blank ID. Both
+    -- directions are asserted: a blank-only check would pass vacuously here,
+    -- because the fixture container has no label to begin with.
+    UPDATE Lots.Container SET ContainerStatusCodeId = 2 WHERE Id = @ContainerId;
+
+    DECLARE @LabelTypeId BIGINT = (SELECT MIN(Id) FROM Lots.LabelTypeCode);
+    INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId,
+                                    Initial, IsVoid, CreatedAt, PrintAttempts)
+    VALUES (@ContainerId, N'TEST-AIM-0069', @LabelTypeId, 1, 0, SYSUTCDATETIME(), 0);
+
+    DELETE FROM #S;
+    INSERT INTO #S EXEC Lots.Container_ListShipped;
+    SELECT @s = AimShipperId FROM #S WHERE ContainerId = @ContainerId;
+    EXEC test.Assert_IsEqual @TestName = N'[ShippingHistory] the live label supplies the AIM shipper ID',
+        @Expected = N'TEST-AIM-0069', @Actual = @s;
+
+    -- Voiding the label must NOT drop the container -- a closed container with
+    -- no live shipper ID is a reconciliation gap and has to stay visible.
+    UPDATE Lots.ShippingLabel SET IsVoid = 1 WHERE ContainerId = @ContainerId;
+    DELETE FROM #S;
+    INSERT INTO #S EXEC Lots.Container_ListShipped;
+    SELECT @n = COUNT(*) FROM #S WHERE ContainerId = @ContainerId AND AimShipperId IS NULL;
+    EXEC test.Assert_IsEqual @TestName = N'[ShippingHistory] a closed container whose label is void is still listed, with a blank shipper ID',
+        @Expected = N'1', @Actual = @n;
 END
 GO
 
@@ -158,6 +197,7 @@ DECLARE @ContainerId BIGINT = (SELECT Val FROM #SF WHERE Tag = N'Container1');
 DELETE FROM Quality.HoldEvent WHERE LotId = @LotId;
 IF @ContainerId IS NOT NULL
 BEGIN
+    DELETE FROM Lots.ShippingLabel WHERE ContainerId = @ContainerId;
     DELETE FROM Lots.ContainerTray WHERE ContainerId = @ContainerId;
     DELETE FROM Lots.Container     WHERE Id          = @ContainerId;
 END

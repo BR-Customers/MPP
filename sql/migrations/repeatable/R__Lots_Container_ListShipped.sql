@@ -15,9 +15,33 @@
 --              CompletedAt and the report labels it "Completed" so no reader
 --              infers truck-departure time.
 --
---              Scope is ContainerStatusCodeId = 3 (Shipped): status still
---              distinguishes shipped from merely complete, so the report shows
---              WHICH containers shipped -- just not the minute they left.
+--              SCOPE IS CLOSED CONTAINERS (status 2 Complete or 3 Shipped),
+--              NOT status 3 alone. Corrected 2026-08-26.
+--
+--              The original scope assumed "status still distinguishes shipped
+--              from merely complete." It does not, and never will. Per Jacques
+--              (2026-08-26) there will never be a Shipped flag in practice --
+--              MPP ships through their own infrastructure and MES is never told.
+--              Nothing outside the Shipping Dock's Ship button sets status 3,
+--              and that step is itself under review for removal. Scoping on it
+--              made this report return ZERO ROWS FOREVER: not empty because
+--              nothing shipped, but empty because the gate can never open. Dev
+--              held 5 closed containers, every one carrying a live AIM shipper
+--              ID, and the report showed none of them.
+--
+--              The same reasoning the header already applied to the TIMESTAMP
+--              applies to the SCOPE: closure is the ceiling of what this system
+--              can ever know, so closure is what the report is built on. A
+--              container that is closed is as far as MES can follow it.
+--
+--              The AIM shipper ID comes from an OUTER APPLY, so a container that
+--              closed WITHOUT a label still appears, with a blank shipper ID.
+--              That is deliberate: a closed container with no AIM ID is a
+--              reconciliation gap, and hiding it would hide the problem the
+--              report exists to surface.
+--
+--              Status 3 stays in scope so that if the Ship step survives, those
+--              containers keep appearing rather than silently dropping out.
 --
 --              One result set (FDS-11-011).
 -- =============================================
@@ -75,7 +99,8 @@ BEGIN
         WHERE sl.ContainerId = c.Id AND sl.IsVoid = 0
         ORDER BY sl.CreatedAt DESC, sl.Id DESC
     ) lbl
-    WHERE c.ContainerStatusCodeId = 3          -- Shipped
+    WHERE c.ContainerStatusCodeId IN (2, 3)    -- 2 Complete, 3 Shipped: see header
+      AND c.CompletedAt IS NOT NULL            -- closed is the observable end state
       AND (@FromUtc IS NULL OR c.CompletedAt >= @FromUtc)
       AND (@ToUtc   IS NULL OR c.CompletedAt <  @ToUtc)
       AND (@P       IS NULL OR i.PartNumber LIKE @P)
