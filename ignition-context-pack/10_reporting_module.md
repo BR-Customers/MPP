@@ -158,37 +158,74 @@ Also worth knowing: a blank date picker does NOT render an unfiltered report —
 the module fails the parameter expression and the viewer shows nothing with no
 explanation. `BlueRidge.Reports.composeParams` now defaults a 14-day window.
 
-## Nested tables and column-keyed grouping DO NOT RENDER (cost hours, 2026-08-26)
+## Nested tables and column-keyed grouping DO work — but ONLY inside a `<table-group>` (2026-08-26)
 
-Two ReportMill hierarchy mechanisms look available in the layout XML and are silently
-inert on our gateway. Both were established by **render**, not by reasoning:
+Both mechanisms are real and render correctly. Getting them wrong fails **silently** —
+no exception, no log line, no partial output — so a malformed nest looks exactly like an
+unsupported feature. Two independent attempts in this repo got it wrong the same way.
 
-| What you write | What actually happens |
-|---|---|
-| A `<table>` nested inside another `<table>` | Renders **nothing**. No exception, no log line, no partial output. The parent's rows render fine, the child is simply absent. |
-| A **column-keyed** `<grouping>` (e.g. `<grouping key="PartNumber" header="true"/>`) meant to emit a band per distinct value | Emits **one** band carrying the **first row's** value. Looks like a "frozen" band. |
+### The shape that works
 
-**Do not adopt a report as a known-good reference without rendering it.** The nested-table
-failure reproduces on the pre-existing `Rejects Part Matrix` report, whose `ByParty` /
-`Defects` nests have never rendered — it was adopted as the reference precisely *because*
-it was the only nested layout in the repo, and it was broken too. Rendering it is what
-turned a confusing bisect into a five-minute answer.
+Copied from the production **`CryovacEnterpriseWeeklyReport`** (Boar's Head), which nests
+five tables successfully:
 
-Corroborating survey: **every `<grouping>` in all 11 MPP reports is dataset-level**
-(`key` == the data-source key, one per table). There is no working example of either
-mechanism anywhere in the codebase — that absence is itself the signal.
+```xml
+<table-group x="36" y="100" width="540" height="632" useStroke="false">
+  <table width="540" height="632" list-key="Parent" startrowbreak="false">
+    <grouping key="Parent" details="true" />
+    <tablerow width="540" height="22" title="Parent Details"> … </tablerow>
+    <table width="540" height="632" list-key="Child">
+      <grouping key="Child" header="true" details="true" />
+      <tablerow width="540" height="15" title="Child Header">  … </tablerow>
+      <tablerow y="15" width="540" height="14" title="Child Details"> … </tablerow>
+    </table>
+  </table>
+</table-group>
+```
 
-**The rule: flatten hierarchies in SQL, draw them with a flat table.** Write a read proc
-that returns the joined/denormalised shape (one row per parent-child pair, parent identity
-repeated on every row) and give it a single dataset-level grouping. Reference impl:
-`Lots.Lot_GetAncestorSteps` + the "Ancestor Process History" page of the Lot Detail report.
-Copy the parent walk **verbatim** from the proc that feeds the parent table so the two can
-never disagree, and `LEFT JOIN` the children so a parent with none still appears.
+Three rules, each of which silently renders nothing if broken:
 
-Corollary: the shared skill's `add_nested_query` / `_subquery` support builds a data
-structure that is real (the child query does execute, bound to a parent row column) but
-that **no layout can currently draw**. Nesting is a data-layer capability with no
-presentation-layer counterpart here.
+1. **The whole nest MUST be wrapped in `<table-group>`.** A `<table>` nested directly
+   inside another `<table>` with no wrapper renders nothing.
+2. **The child table carries the SAME `width` AND `height` as its parent, and NO `x`/`y`
+   of its own.** The `<table-group>` positions the stack. Giving the child its own
+   smaller box and offsets renders nothing.
+3. **`<tablerow title>` must read exactly `"<groupingKey> Header|Details|Summary"`** —
+   that string *is* the band binding. A nested table uses the **bare** child key
+   (`list-key="Child"`); a standalone table elsewhere in the document may use a dotted
+   path (`sites.siteTotals`).
+
+### Column-keyed grouping (a band per distinct value)
+
+Also real. From the production `CIPReport_OLD`, where `step` is the dataset and
+`stepIndex` is a **column** of it:
+
+```xml
+<grouping key="step" details="true" />
+<grouping key="stepIndex" header="true" details="true" />
+<tablerow width="540" height="1" title="step Details"> … 1px spacer … </tablerow>
+<tablerow y="51" width="540" height="596" version-key="phaseName"
+          title="stepIndex Details" structured="false" stay-with="0"> … </tablerow>
+```
+
+Note the dataset-level row is a **1px spacer** and the column-keyed row carries
+`structured="false"` (free-form band: children positioned absolutely inside it rather
+than as a row of cells), plus `version-key` and `stay-with`. Omitting those and writing
+it as an ordinary structured row produces **one** band carrying the **first row's**
+value — the "frozen band" symptom.
+
+### Known-broken example in this repo — do NOT copy it
+
+**`Rejects Part Matrix`** has nested `ByParty` / `Defects` tables that have **never
+rendered**. It omits the `<table-group>` and gives each child its own `y` offset and a
+narrower width. It is a tempting reference because it is the repo's only nested layout.
+It is wrong. **Render any report before adopting it as a reference** — that single check
+is what separated "the feature is unsupported" from "our markup is malformed", after
+several hours spent on the former conclusion.
+
+Working references live outside this repo: `CryovacWeeklyEnterpriseReport.zip` and
+`ContainerFareCIPReport.zip` (Boar's Head, 8.1). They are also the provenance for the
+nested-**query** binary shape in `tools/reports/nesting_builder.py`.
 
 ## An overflowing table repeats the WHOLE page
 

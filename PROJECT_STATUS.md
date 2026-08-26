@@ -72,15 +72,19 @@ name. The resolver branches on TYPE, not parseability — LOT names are zero-pad
 first would have rendered a fully populated Honda traceability document **for the wrong LOT**.
 The plan's own code did exactly that; it had never been run.
 
-**Nested report tables and column-keyed grouping DO NOT WORK on this gateway** — the most
-reusable finding here. A `<table>` inside a `<table>` renders nothing; a column-keyed
-`<grouping>` emits one band with the first row's value. Both established by render, both
-silent — no exception, no log line. The pre-existing `Rejects Part Matrix` report has the same
-broken nesting and had never been looked at. Every `<grouping>` in all 11 MPP reports is
-dataset-level. **Flatten hierarchies in SQL and draw them with a flat table.** That is how the
-new "Ancestor Process History" page is built (`a3343fd9`), via the new read proc
-`Lots.Lot_GetAncestorSteps`, whose ancestor walk is copied verbatim from
-`Lot_GetGenealogyEdgeTree` so the two can never disagree.
+**Nested report tables work, but the markup is exacting and fails SILENTLY** — the most reusable
+finding here. The whole nest must sit inside a **`<table-group>`**, and the child table must carry
+the **same width and height as its parent with no `x`/`y` of its own**. Break either and the child
+renders nothing at all — no exception, no log line, no partial output. The reverted `80f87484`, my
+first attempt, and the pre-existing **`Rejects Part Matrix`** (whose nests have never rendered) all
+break the same two rules. Working skeleton now in `ignition-context-pack/10_reporting_module.md`,
+taken from the production Boar's Head `CryovacEnterpriseWeeklyReport`. The "Ancestor Process
+History" page is built as designed on that shape.
+
+I initially concluded from two failing examples that the engine did not support nesting at all, and
+wrote that into the pack, memory and this file. Jacques corrected it by pointing at the Boar's Head
+reports. **Two failures sharing an author-error are not evidence about the engine**, and "no working
+example in this repo" is not "unsupported".
 
 **Section counts now appear in every page subtitle** (`ce89ce56`). An empty ReportMill table is
 a bare header over a void with no "no rows" message, so an empty section read as broken — the

@@ -27,7 +27,7 @@ The genuine feature gap: ancestor rows name *which* LOTs were involved but not *
 | 1 — extract report to version-controlled source | ✅ complete, reviewed clean |
 | 2 — nested-child-query builder | ✅ complete, reviewed clean |
 | 3 — wire `AncestorSteps` data source | ✅ complete, reviewed clean |
-| 4 — nested ancestors layout | ✅ **complete 2026-08-26** (`a3343fd9`) — NOT as designed; nested tables do not render. Rebuilt flat. |
+| 4 — nested ancestors layout | ✅ **complete 2026-08-26** — built **as designed** (nested child query + nested table). Needs the `<table-group>` wrapper; see below. |
 | 5 — section counts in subtitles | ✅ **complete 2026-08-26** (`ce89ce56`) |
 | 6 — drop dead data source | ✅ **verified NO-OP 2026-08-26** — no bare `Genealogy` source, no layout reference. Nothing to commit. |
 | 7 — reachable LOT picker | ✅ **complete 2026-08-26** (`214d1674`), verified on the gateway |
@@ -154,38 +154,67 @@ in flight, not the only way in.
 
 All 8 plan tasks are now done. The report renders 6 pages.
 
-### The headline finding: ReportMill hierarchy does not work here
+### The headline finding: nested tables work — but a malformed nest renders NOTHING, silently
 
-Established by render, twice over, not by reasoning:
+**Corrected 2026-08-26 after Jacques pointed at the Boar's Head reports.** My first conclusion here
+was that the engine did not support nesting at all. That was wrong, and the way it was wrong is the
+useful part.
 
-- **A `<table>` nested inside a `<table>` renders NOTHING.** No exception, no log line, no
-  partial output.
-- **A column-keyed `<grouping>` does not group.** It emits ONE band carrying the FIRST row's
-  value — exactly the "frozen part-number band" of the reverted `80f87484`, reproduced
-  deliberately and now understood.
+The evidence I had: my nested layout rendered nothing, AND the pre-existing `Rejects Part Matrix`
+nest rendered nothing, AND every `<grouping>` in all 11 MPP reports is dataset-level. Three
+consistent signals — and the conclusion still did not follow, because **both failing examples were
+malformed in the same way**, and "no working example in this repo" is not "unsupported". The
+working references were sitting outside the repo the whole time
+(`CryovacWeeklyEnterpriseReport.zip`, `ContainerFareCIPReport.zip` — Boar's Head, 8.1; also the
+provenance for `nesting_builder.py`'s binary shape).
 
-The nested-table failure was confirmed on the **pre-existing `Rejects Part Matrix`** report,
-which was adopted as a "known-good" reference and turned out to be silently broken itself —
-its `ByParty` / `Defects` nests have never rendered. **That is the whole lesson of this
-thread repeating: a reference is only known-good once you have looked at its output.** A survey
-of all 11 MPP reports found every single `<grouping>` is dataset-level; there is no working
-example of either mechanism anywhere in the codebase.
+**The shape that actually works**, from `CryovacEnterpriseWeeklyReport`, which nests five tables:
 
-**Rule going forward: flatten hierarchies in SQL, draw them with a flat table.**
+```xml
+<table-group x="36" y="100" width="540" height="632" useStroke="false">
+  <table width="540" height="632" list-key="Parent" startrowbreak="false">
+    <grouping key="Parent" details="true" />
+    <tablerow width="540" height="22" title="Parent Details"> … </tablerow>
+    <table width="540" height="632" list-key="Child">     <!-- SAME w/h, NO x/y -->
+      <grouping key="Child" header="true" details="true" />
+      <tablerow width="540" height="15" title="Child Header"> … </tablerow>
+      <tablerow y="15" width="540" height="14" title="Child Details"> … </tablerow>
+    </table>
+  </table>
+</table-group>
+```
+
+1. The nest MUST be wrapped in **`<table-group>`**. Bare `<table>`-in-`<table>` renders nothing.
+2. The child carries the **parent's exact width AND height, with no `x`/`y`** — the table-group
+   positions the stack. A child with its own smaller box and offsets renders nothing.
+3. `<tablerow title>` must be exactly `"<groupingKey> Header|Details"`; nested tables use the
+   **bare** child key.
+
+`80f87484`, my first attempt, and `Rejects Part Matrix` all break rules 1 and 2.
+
+**Column-keyed grouping also works** (`CIPReport_OLD`): the dataset row is a **1px spacer** and the
+column-keyed row needs `structured="false"` plus `version-key` / `stay-with`. Written as an ordinary
+structured row it yields ONE band with the FIRST row's value — the "frozen band" of `80f87484`.
+
+**Do not adopt `Rejects Part Matrix` as a reference.** It is the repo's only nested layout, which is
+exactly why it is tempting, and its nests have never rendered. Render a reference before trusting
+it — that check is what eventually separated "unsupported feature" from "malformed markup", and it
+should have been applied to the *search for a reference*, not just to the reference I happened to
+find.
 
 ### What was built
 
-- New read proc `Lots.Lot_GetAncestorSteps` — one row per (ancestor path, lifecycle step). Its
-  ancestor walk is copied **verbatim** from `Lot_GetGenealogyEdgeTree`'s `Up` CTE (cycle guard,
-  MAXRECURSION and all) so the history and the ancestors table can never disagree about who the
-  ancestors are. `LEFT JOIN` so an ancestor with no events still appears once.
-- `AncestorSteps` promoted from a nested child to a **root** data source bound to `{LotId}`.
-  This means `tools/reports/nesting_builder.py` is **no longer used by this report**. It is
-  left in place, tested, not deleted — it is proven code, and the question of consolidating it
-  with the other session's `add_nested_query` in the shared global skill is still open.
-- "Ancestor Process History" is its **own page** (page 2). It shared page 1 initially; see the
-  page-break note below.
+- The Ancestor Process History page is built **as the design intended**: a `<table-group>` holding
+  the `GenealogyAncestors` table, with each ancestor's own `AncestorSteps` history nested beneath
+  its band. `AncestorSteps` is a true nested child query — `Lots.Lot_GetLifecycle` bound to the
+  parent row's `{RelatedLotId}` column, so `nesting_builder.py` IS in use.
+- It gets its **own page** (page 2); see the page-break note below.
 - Section counts in every page subtitle, verified in SQL before the layout was touched.
+
+A flat fallback was built first (a `Lots.Lot_GetAncestorSteps` proc returning one row per
+(ancestor, step), drawn as a plain table) while nesting was believed impossible. Once the real
+nesting shape was found, that proc was **dropped** — from the repo and from `MPP_MES_Dev` — and the
+nested design shipped instead. It is in history at `a3343fd9` if the flat shape is ever wanted.
 
 ### Observed page-break behaviour (Task 8 Step 2 — replaces the design's assumption)
 
