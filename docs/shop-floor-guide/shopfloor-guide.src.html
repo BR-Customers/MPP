@@ -15,7 +15,7 @@
       <div class="toc-body">
         <div class="toc-grp">Start here</div>
         <a href="#overview">Overview</a>
-        <a href="#login">Logging In</a>
+        <a href="#login">Signing In</a>
         <div class="toc-grp">Production</div>
         <a href="#receiving">Receiving Dock</a>
         <a href="#die-cast">Die Cast</a>
@@ -56,8 +56,9 @@
       <span class="eyebrow">Blue Ridge Automation · Prepared for Madison Precision Products</span>
       <h1>About this Guide</h1>
       <p class="lead">The Shop Floor App is where operators create and move LOTs at the terminals.
-        Each terminal shows a different screen depending on the location it is assigned to. This guide
-        walks through every screen and explains what each one does.
+        Each terminal is set up once for the station it serves and opens straight onto that station's
+        screen, so what you see depends on where you are standing. This guide walks through every screen
+        and explains what each one does.
       </p>
       <div class="meta">
         <span class="tag">Prepared by <b>Blue Ridge Automation</b></span>
@@ -124,7 +125,7 @@
 
     <!-- ============ LOGIN ============ -->
     <section id="login">
-      <h2>Login &amp; Setup</h2>
+      <h2>Signing In</h2>
       <p class="lead">The first time you use a terminal you are prompted to sign in. Signing in requires only
         your initials — the account system is not a security boundary, so there is no password. Its purpose is
         to record which operator performed which action. Everything operators do is audited and stored
@@ -133,30 +134,24 @@
         <b>Display Name</b>. Initials must be unique, because initials — not the display name — are how each
         user is identified.
       </p>
-      <p class="lead">After signing in you land on the <b>Terminal Entry</b> page. Here you scan or select the
-        location the terminal should be set to. If you do not have a barcode to scan, use the location tree
-        below to find it. The tree follows the plant hierarchy: Enterprise &rarr; Site &rarr; Area &rarr;
-        Line/Cell &rarr; Terminal.
-      </p>
-      <p class="lead">Click the arrow to the right of any name to expand that branch, and keep going until you
-        reach the terminal you want. Clicking the terminal's name sets your terminal to that location.
+      <p class="lead">That is the whole of it. <b>You do not set the terminal up.</b> Each terminal is
+        configured once, to the station it is bolted to, and it opens straight onto that station's screen —
+        a Die Cast terminal opens the Die Cast screen, a Trim terminal opens Trim, and so on. Signing in
+        puts your initials against the work; it does not change where the terminal thinks it is.
       </p>
 
-      <div class="note"><span class="ic">i</span><div><b>It is important to set your location correctly.</b>
-        Setting the terminal to a <code>Die Cast</code>, <code>Trim</code>, or
-        <code>Machining &amp; Assembly</code> location sends you to a different screen, and each Die Cast
-        location only offers the parts that are eligible to be cast there.</div></div>
+      <p>The <b>header</b> is where you confirm you are in the right place. It names the station on the
+        left, next to the menu button, and shows the current shift and the signed-in operator across the
+        top. Glance at it when you start; it should match the machine you are standing at.
+      </p>
 
-      <figure class="shot">
-        <div class="frame">
-          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
-            <span class="path">Terminal Entry</span></div>
-          <img src="shots/01_terminal.png" alt="Terminal Entry screen">
-        </div>
-        <figcaption>Set your terminal's location here.</figcaption>
-      </figure>
+      <div class="note warn"><span class="ic">!</span><div><b>If the header does not name your station,
+        stop and tell a supervisor.</b> A terminal showing another station's name — or the whole site, such
+        as <span class="mono">Madison Facility</span> — has lost its configuration. It is not something to
+        work around: the queues, the eligible parts and the printer all follow the station the terminal
+        thinks it is, so carrying on will file your work against the wrong machine.</div></div>
 
-      <p>The next few sections of this guide cover the individual locations and their screens.</p>
+      <p>The next few sections of this guide cover the individual stations and their screens.</p>
     </section>
 
     <!-- ============ RECEIVING DOCK ============ -->
@@ -712,6 +707,17 @@
       <p>The menu button at the top left of the header opens the <b>Supervisor Menu</b>. From here you can
         reach every screen in the project and switch terminals using the location tree on the left. Many of
         these screens are available only to users with elevated status.</p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Supervisor Menu &rsaquo; location tree</span></div>
+          <img src="shots/01_terminal.png" alt="The location tree in the Supervisor Menu, showing the plant hierarchy from Enterprise down to individual terminals.">
+        </div>
+        <figcaption>The tree follows the plant hierarchy: Enterprise &rarr; Site &rarr; Area &rarr;
+          Line/Cell &rarr; Terminal. Expand a branch with the arrow to its right; clicking a terminal's
+          name points this session at that station.</figcaption>
+      </figure>
 
       <div class="note warn"><span class="ic">!</span><div>Selecting a terminal in the location tree
         <b>removes your elevated status</b>. You must sign in again to keep using the Supervisor Menu. Elevated

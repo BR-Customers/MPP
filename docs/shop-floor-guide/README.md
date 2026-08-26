@@ -53,9 +53,14 @@ This rewrites `MPP_MES_ShopFloor_Guide.html`.
   has no data model behind it yet. Remove the callout once that lands.
 - **Supervisor Dashboard's Print Failures tile** is still a placeholder in the app; the section
   says so. Update it when the tile is wired.
-- Every screenshot is captured from a session bound to the **Receiving** terminal (the gateway
-  host's loopback address maps there), so terminal-scoped screens show that name in the header.
-  Re-capture from the right station before customer release.
+- **Screenshot headers must match the guide's framing.** The guide now tells operators the terminal
+  is already set for their station and to raise it with a supervisor if the header says otherwise, so
+  a screenshot whose header contradicts that undercuts the message. Two sets need re-capturing before
+  customer release:
+  - `17_initial_entry.png` is captured from the **Fallback Terminal / Madison Facility** — the exact
+    unconfigured state the guide tells operators to report.
+  - Shots `23`-`34` come from a session bound to the **Receiving** terminal, because the gateway
+    host's loopback address maps there, so terminal-scoped screens name the wrong station.
 - Before final customer release, review the dev-environment / sample-data caveat in the footer
   and the `Draft v0.3` tag in the masthead.
 
