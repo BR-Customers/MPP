@@ -57,6 +57,14 @@ ORIGINAL_PATH = ("ignition/projects/MPP/com.inductiveautomation.reporting/"
                   "reports/Lot Detail/data.bin")
 EXPECTED_ONLY_A_DIFF = "<root>: source key 'Genealogy' present only in A"
 EXPECTED_ONLY_B_DIFF = "<root>: source key 'AncestorSteps' present only in B"
+# 3. The Summary SQL gained four section-count sub-selects (Task 5), so its SQL no
+#    longer matches the original byte-for-byte. Matched by PREFIX, not by hash: the
+#    hash changes on every wording tweak to the SQL comments, and a test that has to
+#    be re-pinned after each edit gets re-pinned without thought. The count columns
+#    themselves are asserted by name below.
+EXPECTED_SUMMARY_DIFF_PREFIX = "[key=Summary] sql differs"
+EXPECTED_SUMMARY_COLUMNS = ("ancestor_count", "descendant_count",
+                            "container_count", "event_count")
 
 # Content of the AncestorSteps root source. The A/B diff above only proves the
 # KEY exists on the rebuild side -- it is silent about what that node actually
@@ -94,7 +102,9 @@ def main():
     diffs = compare(original_path, rebuilt_path)
 
     expected_diffs = (EXPECTED_ONLY_A_DIFF, EXPECTED_ONLY_B_DIFF)
-    unexpected = [d for d in diffs if d not in expected_diffs]
+    unexpected = [d for d in diffs
+                  if d not in expected_diffs
+                  and not d.startswith(EXPECTED_SUMMARY_DIFF_PREFIX)]
     saw_expected_drop = EXPECTED_ONLY_A_DIFF in diffs
     saw_expected_nest = EXPECTED_ONLY_B_DIFF in diffs
 
@@ -145,11 +155,24 @@ def main():
             EXPECTED_ANCESTOR_KEY, node["tokens"], EXPECTED_ANCESTOR_TOKENS))
         return 1
 
+    summary = next((s for s in rebuilt_info["sources"] if s["key"] == "Summary"), None)
+    if summary is None:
+        print("FAIL -- 'Summary' data source not found in rebuild.")
+        return 1
+    missing = [c for c in EXPECTED_SUMMARY_COLUMNS if c not in summary["sql"]]
+    if missing:
+        print("FAIL -- Summary SQL is missing section-count columns: %r. The page "
+              "subtitles bind to these; without them every count renders as "
+              "<N/A> and an empty section is indistinguishable from a broken "
+              "one again." % (missing,))
+        return 1
+
     notes = []
     if saw_expected_drop:
         notes.append("the deliberately-dropped dead 'Genealogy' data source")
     if saw_expected_nest:
         notes.append("the deliberately-added 'AncestorSteps' data source")
+    notes.append("the section-count columns added to Summary")
     if notes:
         print("PASS -- rebuild matches original exactly, except %s." % " and ".join(notes))
     else:
