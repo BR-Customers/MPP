@@ -241,9 +241,11 @@ last line of output** — that is the entire point of running a test.
 
 ### Still open
 
-- **Footer renders literal `@Page@` / `@PageMax@`** on every page of **all 11 reports**.
-  Pre-existing and global, not specific to this report. Chipped, not fixed — deliberately out
-  of scope here.
+- ~~Footer renders literal `@Page@` / `@PageMax@`~~ — **NOT a defect.** Verified 2026-08-26: the
+  PDF renders `Page 1 of 6` correctly on every page. PNG is not a paginated format, so the
+  page-number keys cannot resolve there and render as literal text. Our markup is byte-identical
+  to the production Boar's Head reports. **Verify page tokens in PDF, not PNG** — the render
+  harness is PNG-based, which makes this look like a project-wide bug on all 11 reports.
 - **`InventoryManager.receiveLoose`** has the same int-first resolution bug the LOT picker had.
   Safe today only because MPP part numbers contain letters. Chipped.
 - **Tooling duplication** with the other session's `tools/build_aggregate_reports.py` and its

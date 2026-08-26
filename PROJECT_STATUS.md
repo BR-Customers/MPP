@@ -101,10 +101,14 @@ reading samples, never rendered, and faithfully transcribed by the implementer. 
 is interactive work — render, look, adjust — not a delegable transcription task. A clean render
 with no exception proves nothing; bad layout renders blank and logs nothing.
 
-**Open, chipped, not fixed:** every report's footer renders the literal `@Page@` / `@PageMax@`
-rather than a page number (all 11 reports, pre-existing); and `InventoryManager.receiveLoose`
-has the same int-first resolution bug the picker had, safe today only because part numbers
-contain letters.
+**A reported "defect" that turned out not to be one:** the footer rendering literal `@Page@` /
+`@PageMax@` is a **PNG artifact, not a bug**. PNG is not a paginated format, so the page-number
+keys cannot resolve; the same report rendered to PDF shows `Page 1 of 6` correctly on every page.
+The markup is byte-identical to the production Boar's Head reports. Recorded in the pack, because
+the PNG-based verify harness makes this look like a project-wide bug.
+
+**Open, chipped, not fixed:** `InventoryManager.receiveLoose` has the same int-first resolution
+bug the picker had, safe today only because part numbers contain letters.
 
 ---
 

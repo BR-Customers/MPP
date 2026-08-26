@@ -234,6 +234,39 @@ When a table runs past the bottom of its page, ReportMill continues it by repeat
 sharing a page with a summary block will reprint that summary block on the continuation
 page. Give any table that can grow unboundedly its own page.
 
+## `@Page@` / `@PageMax@` resolve only in PAGINATED output — verify them in PDF, not PNG
+
+A footer element like:
+
+```xml
+<text x="36" y="762" width="260" height="16"><string>Page  @Page@  of  @PageMax@</string></text>
+```
+
+is correct and works. But `executeReport(..., "png")` renders the **literal text**
+`Page @Page@ of @PageMax@`, because PNG is not a paginated format and the page-number
+keys have nothing to resolve against. The same report rendered with
+`executeReport(..., "pdf")` shows `Page 1 of 6`, `Page 2 of 6`, and so on.
+
+This is a trap for the whole render-verify workflow, which is PNG-based: an unresolved
+`@token@` in a PNG normally *does* mean a broken binding, so the footer looks like a bug
+on every report in the project. It is not. **Confirm page-number tokens against a PDF
+render before "fixing" anything.** Checking the drawn text is enough:
+
+```python
+import pypdf, re
+r = pypdf.PdfReader("report.pdf")
+shown = re.compile(r'\(([^)]*)\)\s*Tj').findall(
+    r.pages[0].get_contents().get_data().decode('latin-1', 'replace'))
+print([x for x in shown if 'Page' in x])      # -> ['Page  1  of  6']
+```
+
+(`pypdf`'s `extract_text()` missed this string entirely — scan the content-stream
+text-showing operators instead.)
+
+Corroboration: the production Boar's Head reports use byte-identical footer markup.
+Markup that matches a known-good production report and still "fails" is a signal to
+question the verification method, not the markup.
+
 ## Report PNGs are RGBA with a TRANSPARENT background
 
 `executeReport(..., "png")` returns an image whose page background is transparent, not
