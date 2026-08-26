@@ -128,13 +128,27 @@ bug the picker had, safe today only because part numbers contain letters.
 | Hold Status | ✅ the one open hold, complete (`000000005 / 1,220 pcs / Trim Shop 1 / Precautionary / 533 h`) |
 | Shipping History | ⚠️ headers only — **correct, not broken** (see below) |
 
-**Shipping History cannot be content-verified in Dev, and that is a seed-data gap, not a defect.**
-`Lots.Container_ListShipped` filters `ContainerStatusCodeId = 3` (Shipped); Dev holds 5 containers,
-**all at `Complete`, none at `Shipped`**, so the empty report is the right answer. Note Lot Detail
-*does* show those containers with live AIM shipper IDs — different proc, no status filter — so the
-two are consistent, not contradictory. To exercise this report end-to-end (and for FAT), the demo
-seed needs at least one container advanced to Shipped. Until then this report has never been
-content-verified anywhere.
+**Shipping History was gated on a flag that will never be set — fixed** (`10bf8b81`). It returned
+zero rows and would have done so forever: `Lots.Container_ListShipped` scoped on
+`ContainerStatusCodeId = 3` (Shipped), and per Jacques there will never be a Shipped flag in
+practice — MPP ships through their own infrastructure and MES is never told. Not empty because
+nothing shipped; empty because the gate can never open.
+
+The proc header already reasoned correctly about the **timestamp** ("closure time is not a degraded
+proxy, it is the ceiling of what this system can ever know") and then failed to apply the same
+reasoning to the **scope**. Scope is now closed containers (Complete or Shipped) ranged on
+`CompletedAt`, with the AIM shipper ID left-joined so a container that closed *without* one still
+appears blank — a closed container missing its ID is a reconciliation gap worth surfacing. Report
+note and subtitle now say "closed", not "shipped". The test asserting the old contract was inverted
+deliberately; 56/56 green. Render-verified: all 5 containers listed.
+
+**Consequence still open — the Shipped status is a dead path.** Nothing sets status 3 except the
+Shipping Dock's Ship button (operator action, not integration). If that step will not be used, the
+button / `Lots.Container_Ship` / its NQ and entity wrapper are dead weight that will read as working
+features at FAT. Scoped but deliberately NOT actioned in
+`notes/2026-08-26_shipped-status-dead-path-scope.md` — it needs one question answered by MPP, then
+an FDS revision + Open Item, not a silent code deletion. The system is correct meanwhile: the
+report no longer depends on the flag.
 
 ---
 
