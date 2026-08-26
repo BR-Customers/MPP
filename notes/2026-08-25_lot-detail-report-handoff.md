@@ -27,11 +27,11 @@ The genuine feature gap: ancestor rows name *which* LOTs were involved but not *
 | 1 — extract report to version-controlled source | ✅ complete, reviewed clean |
 | 2 — nested-child-query builder | ✅ complete, reviewed clean |
 | 3 — wire `AncestorSteps` data source | ✅ complete, reviewed clean |
-| 4 — nested ancestors layout | ⚠️ **committed in a bad state, never reviewed** |
+| 4 — nested ancestors layout | ↩️ **REVERTED 2026-08-26** (`9c64ff9e`). Report is back to its good five-page state. Candidate fix preserved as `notes/2026-08-26_task4-candidate-layout.patch`. Still to be redone **interactively**. |
 | 5 — section counts in subtitles | not started |
 | 6 — drop dead data source | **confirmed NO-OP** — verify and record, don't dispatch |
-| 7 — reachable LOT picker | not started; **re-verify its targets first** (see below) |
-| 8 — remove harness, close out | not started |
+| 7 — reachable LOT picker | ✅ **complete 2026-08-26** (`214d1674`), verified on the gateway |
+| 8 — remove harness, close out | not started — `DevRenderReport` timer still present, disabled |
 
 **Biggest win so far:** the report had **no generator anywhere in version control** — six `data.bin` files were built ad-hoc in a scratchpad and only the binaries committed. It now has `tools/reports/` with the layout as editable XML, the SQL as Python, a generator, and a test proving byte-level reproduction of the original.
 
@@ -92,3 +92,58 @@ Our `NestingReportBuilder` now shadows those with an incompatible interface. Ver
 - **`Lots.LotGenealogyClosure`** (`AncestorLotId`, `DescendantLotId`, `Depth`, with a `Depth=0` self-row) makes ancestor/descendant counts cheap index lookups.
 - **Never SUM `PieceCount`** across genealogy rows — the proc emits one row per distinct *path*, so a LOT reachable by two paths appears twice.
 - The Reporting module is in **TRIAL** on this gateway: watermark is normal; a *licensing* failure with no image means a lapsed trial needing a gateway restart, not a layout bug.
+
+---
+
+## 2026-08-26 session — revert + Task 7
+
+**Task 4 reverted (`9c64ff9e`).** The deployed report is good again: five pages,
+populated, verified by render (see below). The revert backs out ONLY the layout
+page — the nested `AncestorSteps` data source from `e89af0b9` is untouched and
+`test_report_reproduction.py` stays green, so Task 4 can be redone without
+repeating Tasks 1–3. `80f87484` touched exactly the two files that were dirty in
+the working tree, so the never-rendered candidate had to be salvaged before the
+revert could run; it is `notes/2026-08-26_task4-candidate-layout.patch`, with a
+header explaining what it is and how to reapply. **Still never rendered — still
+not a solution.**
+
+**Task 7 complete (`214d1674`).** The dropdown takes `allowCustomOptions` +
+`search`; `BlueRidge.Reports._resolveLotId` resolves a scanned/typed LOT name
+server-side.
+
+> **The plan's Task 7 code was wrong, in the same way Task 4 was wrong.** It
+> tried `int(lotId)` FIRST and only fell back to a name lookup. LOT names are
+> zero-padded numerics, so `int('000000001')` succeeds and returns **1** — and
+> LOT `000000001` is actually Id **254**. On a Honda traceability document that
+> is the worst available failure: a fully populated report for the wrong LOT,
+> with nothing on the page to signal it. Dev hides it (no LOT with Id 1);
+> production would not. The plan's own Step 3 asserted `{'LotId': 254}` for that
+> input, which its code could not produce — the contradiction survived because
+> nobody ran it. Resolution now branches on TYPE (string ⇒ name-first), not on
+> parseability.
+
+**Verified, not assumed:** a temporary gateway timer exercised `composeParams`
+against all six input shapes — option value `254`, scanned `'000000001'`, typed
+`'254'`, unknown `'NOPE-999'`, blank, `None` — all six PASS. Then rendered Lot
+Detail for the resolved LOT and *looked at the PNG*: 5 descendants, 5 containers
+with live AIM shipper IDs, 6 lifecycle events, 3 production events, correctly
+empty Ancestors page. The temp timer was deleted; `DevRenderReport` is back to
+`enabled: false` (confirmed on disk after the final scan).
+
+**Caveat on scope of proof:** Dev holds only **33 LOTs**, so the `TOP 100`
+truncation cannot be reproduced here — every LOT currently fits the list. What
+is proven is that resolution never consults the picker list at all, so list size
+is irrelevant to the by-name path. The `TOP 100` query is left in place
+deliberately (comment added saying why): it is now a convenience list of what is
+in flight, not the only way in.
+
+### Two pre-existing defects found while verifying — NOT fixed, NOT mine
+
+1. **Page footer renders literal `@Page@` / `@PageMax@`.** Visible on every page
+   of the known-good report, so it predates both Task 4 and Task 7. Cosmetic but
+   customer-facing on a Honda-bound document. Needs the interactive render loop,
+   so it belongs with Task 4.
+2. **`InventoryManager.receiveLoose` has the same int-first bug** the Task 7 plan
+   had: `int(partValue)` before `getByPartNumber`. Safe today only because MPP
+   part numbers contain letters/dashes. A purely numeric part number would
+   silently receive stock against the wrong item.
