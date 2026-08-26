@@ -27,11 +27,11 @@ The genuine feature gap: ancestor rows name *which* LOTs were involved but not *
 | 1 — extract report to version-controlled source | ✅ complete, reviewed clean |
 | 2 — nested-child-query builder | ✅ complete, reviewed clean |
 | 3 — wire `AncestorSteps` data source | ✅ complete, reviewed clean |
-| 4 — nested ancestors layout | ↩️ **REVERTED 2026-08-26** (`9c64ff9e`). Report is back to its good five-page state. Candidate fix preserved as `notes/2026-08-26_task4-candidate-layout.patch`. Still to be redone **interactively**. |
-| 5 — section counts in subtitles | not started |
-| 6 — drop dead data source | **confirmed NO-OP** — verify and record, don't dispatch |
+| 4 — nested ancestors layout | ✅ **complete 2026-08-26** (`a3343fd9`) — NOT as designed; nested tables do not render. Rebuilt flat. |
+| 5 — section counts in subtitles | ✅ **complete 2026-08-26** (`ce89ce56`) |
+| 6 — drop dead data source | ✅ **verified NO-OP 2026-08-26** — no bare `Genealogy` source, no layout reference. Nothing to commit. |
 | 7 — reachable LOT picker | ✅ **complete 2026-08-26** (`214d1674`), verified on the gateway |
-| 8 — remove harness, close out | not started — `DevRenderReport` timer still present, disabled |
+| 8 — remove harness, close out | ✅ **complete 2026-08-26** — both dev timers deleted, spec + PROJECT_STATUS updated |
 
 **Biggest win so far:** the report had **no generator anywhere in version control** — six `data.bin` files were built ad-hoc in a scratchpad and only the binaries committed. It now has `tools/reports/` with the layout as editable XML, the SQL as Python, a generator, and a test proving byte-level reproduction of the original.
 
@@ -147,3 +147,77 @@ in flight, not the only way in.
    had: `int(partValue)` before `getByPartNumber`. Safe today only because MPP
    part numbers contain letters/dashes. A purely numeric part number would
    silently receive stock against the wrong item.
+
+---
+
+## 2026-08-26 (session 2) — Tasks 4, 5, 6, 8 complete
+
+All 8 plan tasks are now done. The report renders 6 pages.
+
+### The headline finding: ReportMill hierarchy does not work here
+
+Established by render, twice over, not by reasoning:
+
+- **A `<table>` nested inside a `<table>` renders NOTHING.** No exception, no log line, no
+  partial output.
+- **A column-keyed `<grouping>` does not group.** It emits ONE band carrying the FIRST row's
+  value — exactly the "frozen part-number band" of the reverted `80f87484`, reproduced
+  deliberately and now understood.
+
+The nested-table failure was confirmed on the **pre-existing `Rejects Part Matrix`** report,
+which was adopted as a "known-good" reference and turned out to be silently broken itself —
+its `ByParty` / `Defects` nests have never rendered. **That is the whole lesson of this
+thread repeating: a reference is only known-good once you have looked at its output.** A survey
+of all 11 MPP reports found every single `<grouping>` is dataset-level; there is no working
+example of either mechanism anywhere in the codebase.
+
+**Rule going forward: flatten hierarchies in SQL, draw them with a flat table.**
+
+### What was built
+
+- New read proc `Lots.Lot_GetAncestorSteps` — one row per (ancestor path, lifecycle step). Its
+  ancestor walk is copied **verbatim** from `Lot_GetGenealogyEdgeTree`'s `Up` CTE (cycle guard,
+  MAXRECURSION and all) so the history and the ancestors table can never disagree about who the
+  ancestors are. `LEFT JOIN` so an ancestor with no events still appears once.
+- `AncestorSteps` promoted from a nested child to a **root** data source bound to `{LotId}`.
+  This means `tools/reports/nesting_builder.py` is **no longer used by this report**. It is
+  left in place, tested, not deleted — it is proven code, and the question of consolidating it
+  with the other session's `add_nested_query` in the shared global skill is still open.
+- "Ancestor Process History" is its **own page** (page 2). It shared page 1 initially; see the
+  page-break note below.
+- Section counts in every page subtitle, verified in SQL before the layout was touched.
+
+### Observed page-break behaviour (Task 8 Step 2 — replaces the design's assumption)
+
+When a table overflows its page, ReportMill **repeats the entire page design**, not just the
+continuing table. With the history on page 1, the summary block and the ancestors table
+printed a second time. Moving it to its own page confines the repeat to the table that
+actually continues. **With current Dev data no test LOT overflows a page**, so this is recorded
+from the page-1 experiment, not from the shipped layout — stated explicitly rather than left
+implied.
+
+### Verification
+
+Rendered and *looked at* on all three test LOTs: `10270` (4 ancestors, 19 step rows),
+`10274` (1 ancestor, 5 steps), `254` (0 ancestors — correctly empty; it is a die-cast origin).
+Subtitle counts match the SQL exactly on every line. The reproduction test was rewritten for
+the flat shape and **mutation-tested twice**: rebinding the source to `Lot_GetLifecycle` (which
+would show the SUBJECT's history under an ancestors heading) fails loudly, and renaming a count
+alias fails loudly.
+
+One process miss worth recording: the Task 5 commit went in with the reproduction test
+FAILING. The test was run as `python ... | tail -1`, so the pipeline's exit status came from
+`tail` and the `&&` guard never fired. Fixed in `e4929c00`. **Check the exit code, not the
+last line of output** — that is the entire point of running a test.
+
+### Still open
+
+- **Footer renders literal `@Page@` / `@PageMax@`** on every page of **all 11 reports**.
+  Pre-existing and global, not specific to this report. Chipped, not fixed — deliberately out
+  of scope here.
+- **`InventoryManager.receiveLoose`** has the same int-first resolution bug the LOT picker had.
+  Safe today only because MPP part numbers contain letters. Chipped.
+- **Tooling duplication** with the other session's `tools/build_aggregate_reports.py` and its
+  `add_nested_query` in the shared global skill — still Jacques's call. Note that the shared
+  skill's nested-query support builds a structure that, per the finding above, **no layout can
+  currently draw.**

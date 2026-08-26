@@ -53,6 +53,57 @@
 
 ---
 
+## 🔖 2026-08-26 — LOT Detail report: ancestor process history + reachable picker
+
+All 8 tasks of `docs/superpowers/plans/2026-08-25-lot-detail-report-genealogy-nesting.md`
+complete on `jacques/working`. Full narrative in
+`notes/2026-08-25_lot-detail-report-handoff.md`.
+
+**The report was never broken.** It was a working five-page traceability document whose data
+sources all returned correctly. It *looked* empty because the picker was
+`TOP 100 ORDER BY CreatedAt DESC` and Dev's newest LOTs are terminal SubAssemblies with no
+descendants, containers or events.
+
+**The picker was the real defect** and is fixed (`214d1674`): a traceability report you can
+only run on the newest 100 LOTs is backwards, since its purpose is investigating something
+that shipped months ago. Any LOT of any age is now reachable by scanning or typing its LTT
+name. The resolver branches on TYPE, not parseability — LOT names are zero-padded numerics, so
+`int('000000001')` succeeds and returns `1` while that LOT's Id is `254`. Resolving numerically
+first would have rendered a fully populated Honda traceability document **for the wrong LOT**.
+The plan's own code did exactly that; it had never been run.
+
+**Nested report tables and column-keyed grouping DO NOT WORK on this gateway** — the most
+reusable finding here. A `<table>` inside a `<table>` renders nothing; a column-keyed
+`<grouping>` emits one band with the first row's value. Both established by render, both
+silent — no exception, no log line. The pre-existing `Rejects Part Matrix` report has the same
+broken nesting and had never been looked at. Every `<grouping>` in all 11 MPP reports is
+dataset-level. **Flatten hierarchies in SQL and draw them with a flat table.** That is how the
+new "Ancestor Process History" page is built (`a3343fd9`), via the new read proc
+`Lots.Lot_GetAncestorSteps`, whose ancestor walk is copied verbatim from
+`Lot_GetGenealogyEdgeTree` so the two can never disagree.
+
+**Section counts now appear in every page subtitle** (`ce89ce56`). An empty ReportMill table is
+a bare header over a void with no "no rows" message, so an empty section read as broken — the
+thing that started this investigation.
+
+**The report now has a generator in version control** — the biggest structural win. It
+previously had none: six `data.bin` files were built ad-hoc in a scratchpad and only the
+binaries committed. `tools/reports/` now holds the layout as editable XML, the SQL as Python, a
+generator, and a reproduction test proving byte-level fidelity. Never hand-edit `data.bin`.
+
+**Process note:** the broken layout commit `80f87484` was reverted (`9c64ff9e`) before any new
+work. Its layout XML had been authored into the plan as verbatim code from ~10 minutes of
+reading samples, never rendered, and faithfully transcribed by the implementer. Report layout
+is interactive work — render, look, adjust — not a delegable transcription task. A clean render
+with no exception proves nothing; bad layout renders blank and logs nothing.
+
+**Open, chipped, not fixed:** every report's footer renders the literal `@Page@` / `@PageMax@`
+rather than a page number (all 11 reports, pre-existing); and `InventoryManager.receiveLoose`
+has the same int-first resolution bug the picker had, safe today only because part numbers
+contain letters.
+
+---
+
 ## 🔖 2026-08-10 — Reporting Module suite + FAT-practice remediation
 
 Two threads, both on `jacques/working`.

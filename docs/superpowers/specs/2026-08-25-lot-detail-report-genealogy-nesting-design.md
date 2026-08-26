@@ -1,10 +1,48 @@
 # LOT Detail report — nested ancestor process history + reachable LOT picker
 
 **Date:** 2026-08-25
-**Status:** Partially implemented 2026-08-25 — data layer done and reviewed; the
-ancestors **layout is committed in a broken state** (`80f87484`). Resume from
-`notes/2026-08-25_lot-detail-report-handoff.md`.
-**Scope:** Reporting Module report + one Core NQ + the Reports landing-page picker. No schema change, no new stored procedure, no test-suite impact.
+**Status:** Implemented and render-verified 2026-08-26 — all 8 tasks complete.
+**The nesting mechanism in this design does not work and was replaced**; see
+"Implemented differently" below.
+**Scope:** Reporting Module report + one Core NQ + the Reports landing-page picker + **one new
+read proc** (`Lots.Lot_GetAncestorSteps`). No schema change, no test-suite impact. The original
+"no new stored procedure" scope line no longer holds — flattening the hierarchy into SQL is
+precisely what made the feature deliverable.
+
+---
+
+## Implemented differently — read this before trusting the design below
+
+The design specifies a **nested child query drawn as a table nested inside the ancestors
+table**. The data half of that works. The layout half does not exist on this gateway.
+Established by render on 2026-08-26, not by reasoning:
+
+| Mechanism the design assumes | What actually happens |
+|---|---|
+| `<table>` nested inside a `<table>` | Renders **nothing**. No exception, no log line, no partial output. |
+| Column-keyed `<grouping>` producing a band per group | Emits **one** band carrying the **first row's** value. This is the "frozen part-number band" of the reverted `80f87484`, reproduced deliberately. |
+
+Both were confirmed twice over. The nested-table failure reproduces on the pre-existing
+**`Rejects Part Matrix`** report, whose `ByParty`/`Defects` nests have never rendered either —
+it was adopted as a known-good reference and turned out to be broken itself. A survey of all
+11 MPP reports found **every** `<grouping>` is dataset-level: there is no working example of
+either hierarchical mechanism anywhere in this codebase.
+
+**What was built instead** (the fallback this spec already recorded): the hierarchy is
+flattened in SQL by `Lots.Lot_GetAncestorSteps`, which returns one row per (ancestor path,
+lifecycle step) with its ancestor walk copied verbatim from `Lot_GetGenealogyEdgeTree`'s `Up`
+CTE so the two can never disagree. The report draws it as a flat table on its own page — the
+one table shape that demonstrably renders.
+
+### Observed page-break behaviour (replaces the assumption this design was built on)
+
+The design assumed a nested block splitting across a page break needed its LOT name and part
+number restated to avoid orphaned timestamps. Observed instead: when a table overflows,
+ReportMill **repeats the entire page design**, not just the continuing table. With the history
+on page 1 that reprinted the summary block and ancestors table a second time. Giving the
+history its own page confines the repeat to the table that actually continues. With the
+current Dev data no test LOT overflows a page, so the repeat behaviour is recorded from the
+page-1 experiment rather than from the shipped layout.
 
 ---
 
