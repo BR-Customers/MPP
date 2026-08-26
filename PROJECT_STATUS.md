@@ -117,11 +117,24 @@ report would have inherited it. Verified by render in PDF and PNG.
 **Open, chipped, not fixed:** `InventoryManager.receiveLoose` has the same int-first resolution
 bug the picker had, safe today only because part numbers contain letters.
 
-**Unverified, worth a look:** of the five aggregate reports, only `Rejects Part Matrix` has been
-render-inspected. The other four (`Rejects Transaction Detail`, `Rejects Plant Summary`,
-`Hold Status`, `Shipping History`) have no nesting so are structurally unaffected, but "it rendered"
-was accepted for Part Matrix while two sections were missing — treat them as unconfirmed rather
-than assume.
+**All five aggregate reports are now content-verified by PDF render** (2026-08-26), not merely
+"it rendered" — every value checked against the proc output that feeds it:
+
+| Report | Verdict |
+|---|---|
+| Rejects - Transaction Detail | ✅ full detail rows (part, LOT, operator, defect, charge-to, qty) |
+| Rejects - Plant Summary | ✅ all 6 departments matching SQL exactly (Die Cast `25,241 / 192 / 25,433 / 0.75`), non-reject scrap section, customer-scrap explainer |
+| Rejects - Part Matrix | ✅ fixed this session (`11d6f268`) — both nested sections now render |
+| Hold Status | ✅ the one open hold, complete (`000000005 / 1,220 pcs / Trim Shop 1 / Precautionary / 533 h`) |
+| Shipping History | ⚠️ headers only — **correct, not broken** (see below) |
+
+**Shipping History cannot be content-verified in Dev, and that is a seed-data gap, not a defect.**
+`Lots.Container_ListShipped` filters `ContainerStatusCodeId = 3` (Shipped); Dev holds 5 containers,
+**all at `Complete`, none at `Shipped`**, so the empty report is the right answer. Note Lot Detail
+*does* show those containers with live AIM shipper IDs — different proc, no status filter — so the
+two are consistent, not contradictory. To exercise this report end-to-end (and for FAT), the demo
+seed needs at least one container advanced to Shipped. Until then this report has never been
+content-verified anywhere.
 
 ---
 
