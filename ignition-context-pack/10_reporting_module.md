@@ -157,3 +157,54 @@ report rather than assuming:**
 Also worth knowing: a blank date picker does NOT render an unfiltered report —
 the module fails the parameter expression and the viewer shows nothing with no
 explanation. `BlueRidge.Reports.composeParams` now defaults a 14-day window.
+
+## Nested tables and column-keyed grouping DO NOT RENDER (cost hours, 2026-08-26)
+
+Two ReportMill hierarchy mechanisms look available in the layout XML and are silently
+inert on our gateway. Both were established by **render**, not by reasoning:
+
+| What you write | What actually happens |
+|---|---|
+| A `<table>` nested inside another `<table>` | Renders **nothing**. No exception, no log line, no partial output. The parent's rows render fine, the child is simply absent. |
+| A **column-keyed** `<grouping>` (e.g. `<grouping key="PartNumber" header="true"/>`) meant to emit a band per distinct value | Emits **one** band carrying the **first row's** value. Looks like a "frozen" band. |
+
+**Do not adopt a report as a known-good reference without rendering it.** The nested-table
+failure reproduces on the pre-existing `Rejects Part Matrix` report, whose `ByParty` /
+`Defects` nests have never rendered — it was adopted as the reference precisely *because*
+it was the only nested layout in the repo, and it was broken too. Rendering it is what
+turned a confusing bisect into a five-minute answer.
+
+Corroborating survey: **every `<grouping>` in all 11 MPP reports is dataset-level**
+(`key` == the data-source key, one per table). There is no working example of either
+mechanism anywhere in the codebase — that absence is itself the signal.
+
+**The rule: flatten hierarchies in SQL, draw them with a flat table.** Write a read proc
+that returns the joined/denormalised shape (one row per parent-child pair, parent identity
+repeated on every row) and give it a single dataset-level grouping. Reference impl:
+`Lots.Lot_GetAncestorSteps` + the "Ancestor Process History" page of the Lot Detail report.
+Copy the parent walk **verbatim** from the proc that feeds the parent table so the two can
+never disagree, and `LEFT JOIN` the children so a parent with none still appears.
+
+Corollary: the shared skill's `add_nested_query` / `_subquery` support builds a data
+structure that is real (the child query does execute, bound to a parent row column) but
+that **no layout can currently draw**. Nesting is a data-layer capability with no
+presentation-layer counterpart here.
+
+## An overflowing table repeats the WHOLE page
+
+When a table runs past the bottom of its page, ReportMill continues it by repeating the
+**entire page design** — every static element on that page, not just the table. A section
+sharing a page with a summary block will reprint that summary block on the continuation
+page. Give any table that can grow unboundedly its own page.
+
+## Report PNGs are RGBA with a TRANSPARENT background
+
+`executeReport(..., "png")` returns an image whose page background is transparent, not
+white. Compositing it onto black (which is what a naive `.convert("RGB")` does) makes the
+page look inky and the dark-on-light text nearly unreadable — easy to misread as a broken
+render. Composite onto white before judging a layout:
+
+```python
+bg = Image.new("RGBA", page.size, (255, 255, 255, 255))
+Image.alpha_composite(bg, page).convert("RGB").save(out)
+```
