@@ -20,6 +20,25 @@ SUMMARY_SQL = """SELECT
   l.PieceCount AS pieces, s.Code AS status, ot.Name AS origin, loc.Name AS location,
   CAST(l.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(0)) AS created_et,
   COALESCE(tool.Name, '-') AS tool
+  -- Section counts for the page subtitles. An empty ReportMill table renders as a
+  -- bare header over a void with no "no rows" message, so a legitimately-empty
+  -- section reads as broken -- which is what started this whole investigation.
+  --
+  -- These are DISTINCT LOTS; the ancestors/descendants tables list PATHS.
+  -- Lot_GetGenealogyEdgeTree emits one row per distinct path, so on a diamond
+  -- topology a lot reachable two ways appears twice in the table while the closure
+  -- counts it once. Deliberate: "Ancestors: 3 LOTs" is the meaningful headline.
+  -- Never SUM a consumed/contributed column to derive a total.
+  ,(SELECT COUNT(*) FROM Lots.LotGenealogyClosure c
+      WHERE c.DescendantLotId = l.Id AND c.Depth > 0) AS ancestor_count
+  ,(SELECT COUNT(*) FROM Lots.LotGenealogyClosure c
+      WHERE c.AncestorLotId = l.Id AND c.Depth > 0) AS descendant_count
+  ,(SELECT COUNT(*) FROM Lots.ContainerTray ct
+      WHERE ct.FinishedGoodLotId = l.Id
+         OR ct.FinishedGoodLotId IN (
+              SELECT c.DescendantLotId FROM Lots.LotGenealogyClosure c
+              WHERE c.AncestorLotId = l.Id AND c.Depth > 0)) AS container_count
+  ,(SELECT COUNT(*) FROM Workorder.ProductionEvent pe WHERE pe.LotId = l.Id) AS event_count
 FROM Lots.Lot l
 JOIN Parts.Item i ON i.Id = l.ItemId
 LEFT JOIN Lots.LotStatusCode s ON s.Id = l.LotStatusId
