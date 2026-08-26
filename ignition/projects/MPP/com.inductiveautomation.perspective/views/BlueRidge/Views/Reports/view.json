@@ -1043,7 +1043,9 @@
                   }
                 },
                 "props": {
-                  "placeholder": "Select LOT",
+                  "allowCustomOptions": true,
+                  "placeholder": "Scan or select LOT",
+                  "search": true,
                   "style": {
                     "classes": "pf-field-select"
                   }

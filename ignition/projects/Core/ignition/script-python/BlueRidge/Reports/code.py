@@ -125,6 +125,48 @@ def lotOptions():
         return []
 
 
+def _resolveLotId(lotId):
+    """Resolve the LOT picker's value to an internal LotId.
+
+    The picker allows custom options, so the value arrives in one of two shapes:
+    an option VALUE (a numeric Id, picked from the recent-LOTs list) or a plain
+    STRING (a LOT name the operator scanned or typed, which may be any age).
+
+    Branch on TYPE, not on parseability. LOT names are zero-padded numerics
+    ('000000001'), so int() succeeds on a scanned name and yields a DIFFERENT,
+    unrelated LotId -- int('000000001') is 1, but that LOT's Id is 254. On a
+    traceability document that is the worst possible failure: a fully populated
+    report for the wrong LOT, with nothing to signal it. So a string is looked up
+    BY NAME first, and only falls back to int() for someone typing a raw Id.
+
+    Returns 0 for unresolvable input -- the report then renders its own empty
+    state rather than the Report Viewer rejecting the params outright."""
+    if lotId is None:
+        return 0
+    if isinstance(lotId, basestring):
+        name = lotId.strip()
+        if not name:
+            return 0
+        try:
+            row = BlueRidge.Lots.Lot.getByName(name)
+            if row and row.get("Id"):
+                return int(row.get("Id"))
+        except (Exception, _JavaThrowable) as e:
+            logger.warn("_resolveLotId name lookup failed for %r: %s" % (name, str(e)))
+        # Not a known LOT name -- accept a raw internal Id typed by hand.
+        try:
+            return int(name)
+        except (ValueError, TypeError):
+            logger.warn("_resolveLotId could not resolve %r to a LOT" % name)
+            return 0
+    # An option value straight off the picker list.
+    try:
+        return int(lotId)
+    except (ValueError, TypeError):
+        logger.warn("_resolveLotId got an unusable picker value %r" % (lotId,))
+        return 0
+
+
 def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None):
     """Build the report-parameter dict for the Report Viewer from the landing page's
     inputs, keyed by which report is selected. Bound (runScript) to view.custom.reportParams.
@@ -137,7 +179,7 @@ def composeParams(selectedKey, shiftId, startDate, endDate, lotId=None):
         if selectedKey == "shot_count":
             return {"MinShots": 0}
         if selectedKey == "lot_detail":
-            return {"LotId": lotId}
+            return {"LotId": _resolveLotId(lotId)}
         if selectedKey == "line_perf":
             return {"WeeksBack": 8}
         # The date-ranged aggregate reports. These MUST be listed explicitly:
