@@ -44,14 +44,17 @@ DATA_SOURCES = [
     {"key": "GenealogyAncestors",
      "sql": "EXEC Lots.Lot_GetGenealogyEdgeTree ?, N'Ancestors'",
      "tokens": ["{LotId}"],
-     # Runs once per ancestor row. {RelatedLotId} is a COLUMN of the parent row,
-     # not a report parameter -- this is what gives each ancestor its own history.
-     "children": [
-         {"key": "AncestorSteps",
-          "sql": "EXEC Lots.Lot_GetLifecycle ?",
-          "tokens": ["{RelatedLotId}"],
-          "children": []},
-     ]},
+     "children": []},
+    # Per-ancestor process history, FLAT: one row per (ancestor, lifecycle step),
+    # ancestor identity repeated on every row. This was originally a NESTED child
+    # of GenealogyAncestors bound to {RelatedLotId}; the data worked but no layout
+    # could draw it -- a <table> inside a <table> renders nothing on this gateway,
+    # and a column-keyed <grouping> emits one band with the first row's value.
+    # Both verified by render 2026-08-26. The hierarchy is flattened in SQL instead
+    # (Lots.Lot_GetAncestorSteps mirrors the edge-tree walk verbatim so the two
+    # can never disagree), and drawn with the one table shape that renders.
+    {"key": "AncestorSteps", "sql": "EXEC Lots.Lot_GetAncestorSteps ?",
+     "tokens": ["{LotId}"], "children": []},
     {"key": "GenealogyDescendants",
      "sql": "EXEC Lots.Lot_GetGenealogyEdgeTree ?, N'Descendants'",
      "tokens": ["{LotId}"], "children": []},

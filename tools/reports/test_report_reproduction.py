@@ -14,19 +14,26 @@ OTHER difference fails the test with the specific diff line(s) printed:
   1. The dead `Genealogy` data source, dropped during the source refactor
      (Task 1). OPTIONAL -- per Task 1's report this source never existed in
      the real original, so this diff has never once fired in practice.
-  2. The `AncestorSteps` nested child added under `GenealogyAncestors`
-     (Task 3) -- runs `Lots.Lot_GetLifecycle` once per ancestor row, bound to
-     that row's `RelatedLotId` column. Data-only change; the report layout does
-     not reference it yet, so this diff is expected on every rebuild from here
-     on, not just once. MANDATORY -- if this diff stops appearing, the nesting
-     was silently reverted and the test fails loudly rather than passing.
+  2. The `AncestorSteps` ROOT data source (Tasks 3-4) -- runs
+     `Lots.Lot_GetAncestorSteps`, returning one row per (ancestor, lifecycle
+     step) for the subject LOT. MANDATORY -- if this diff stops appearing, the
+     ancestor-history feature was silently reverted and the test fails loudly
+     rather than passing.
+
+     This was originally a NESTED child under `GenealogyAncestors` bound to
+     `{RelatedLotId}`. The data worked, but nothing could DRAW it: verified by
+     render 2026-08-26, a <table> nested inside a <table> renders nothing on
+     this gateway, and a column-keyed <grouping> emits one band carrying the
+     first row's value. The hierarchy was therefore flattened into SQL and the
+     source promoted to a root query.
 
      compare() only diffs fields for keys present on both sides, so the A/B
      diff alone can prove `AncestorSteps` EXISTS but says nothing about its
-     CONTENT -- a child rebound to the wrong token (e.g. `{LotId}` instead of
-     `{RelatedLotId}`) still produces zero diffs. This test additionally
-     asserts the new node's key, tokens and SQL directly via describe() on
-     the freshly-built binary.
+     CONTENT -- a source rebound to the wrong proc still produces zero diffs.
+     This test additionally asserts the node's key, tokens and SQL directly via
+     describe() on the freshly-built binary. The specific silent-wrong-data
+     failure it guards is a rebind to `Lots.Lot_GetLifecycle`, which would show
+     the SUBJECT's own history under an "Ancestor Process History" heading.
 
 Run from the repo root:
 
@@ -49,18 +56,18 @@ ORIGINAL_COMMIT = "f4f71b95"
 ORIGINAL_PATH = ("ignition/projects/MPP/com.inductiveautomation.reporting/"
                   "reports/Lot Detail/data.bin")
 EXPECTED_ONLY_A_DIFF = "<root>: source key 'Genealogy' present only in A"
-EXPECTED_ONLY_B_DIFF = ("[key=GenealogyAncestors].children: source key "
-                        "'AncestorSteps' present only in B")
+EXPECTED_ONLY_B_DIFF = "<root>: source key 'AncestorSteps' present only in B"
 
-# Content of the AncestorSteps nested child that Task 3 added. The A/B diff
-# above only proves the KEY 'AncestorSteps' exists on the rebuild side -- it is
-# silent about what that node actually contains (compare() only diffs fields
-# for keys present on BOTH sides). These are asserted directly against
-# describe() on the freshly-built binary, independent of the original.
-EXPECTED_ANCESTOR_PARENT_KEY = "GenealogyAncestors"
-EXPECTED_ANCESTOR_CHILD_KEY = "AncestorSteps"
-EXPECTED_ANCESTOR_CHILD_TOKENS = ["{RelatedLotId}"]
-EXPECTED_ANCESTOR_CHILD_SQL = "EXEC Lots.Lot_GetLifecycle ?"
+# Content of the AncestorSteps root source. The A/B diff above only proves the
+# KEY exists on the rebuild side -- it is silent about what that node actually
+# contains (compare() only diffs fields for keys present on BOTH sides). These
+# are asserted directly against describe() on the freshly-built binary.
+EXPECTED_ANCESTOR_KEY = "AncestorSteps"
+EXPECTED_ANCESTOR_TOKENS = ["{LotId}"]
+EXPECTED_ANCESTOR_SQL = "EXEC Lots.Lot_GetAncestorSteps ?"
+# The rebind that would silently show the WRONG lot's history under the
+# "Ancestor Process History" heading. Named so the failure message can say so.
+FORBIDDEN_ANCESTOR_SQL = "EXEC Lots.Lot_GetLifecycle ?"
 
 
 def _git_show_binary(commit, path):
@@ -105,11 +112,10 @@ def main():
     # fail loudly rather than read as an unqualified pass.
     if not saw_expected_nest:
         print("FAIL -- expected diff not found: %r" % EXPECTED_ONLY_B_DIFF)
-        print("        The 'AncestorSteps' nested child under "
-              "'GenealogyAncestors' appears to have been dropped from the "
-              "generator -- rebuild now matches the pre-Task-3 original "
-              "exactly, which means the nesting this test exists to protect "
-              "is gone.")
+        print("        The 'AncestorSteps' data source appears to have been "
+              "dropped from the generator -- rebuild now matches the "
+              "pre-Task-3 original exactly, which means the ancestor-history "
+              "feature this test exists to protect is gone.")
         return 1
 
     # Direct content assertions on the freshly-built binary. compare() only
@@ -119,36 +125,31 @@ def main():
     # key doesn't exist in the original to compare against). Assert its
     # shape directly instead of relying on the A/B diff for it.
     rebuilt_info = describe(rebuilt_path)
-    parent = next((s for s in rebuilt_info["sources"]
-                   if s["key"] == EXPECTED_ANCESTOR_PARENT_KEY), None)
-    if parent is None:
-        print("FAIL -- data source %r not found in rebuild." %
-              EXPECTED_ANCESTOR_PARENT_KEY)
+    node = next((s for s in rebuilt_info["sources"]
+                 if s["key"] == EXPECTED_ANCESTOR_KEY), None)
+    if node is None:
+        print("FAIL -- data source %r not found in rebuild." % EXPECTED_ANCESTOR_KEY)
         return 1
-    if len(parent["children"]) != 1:
-        print("FAIL -- %r has %d children, expected exactly 1: %r" % (
-            EXPECTED_ANCESTOR_PARENT_KEY, len(parent["children"]), parent["children"]))
+    if node["sql"] == FORBIDDEN_ANCESTOR_SQL:
+        print("FAIL -- %r is bound to %r, the SUBJECT lot's own lifecycle. The "
+              "report would show the subject's history under an 'Ancestor "
+              "Process History' heading -- populated, plausible and wrong." % (
+                  EXPECTED_ANCESTOR_KEY, FORBIDDEN_ANCESTOR_SQL))
         return 1
-    child = parent["children"][0]
-    if child["key"] != EXPECTED_ANCESTOR_CHILD_KEY:
-        print("FAIL -- %r child key %r != %r" % (
-            EXPECTED_ANCESTOR_PARENT_KEY, child["key"], EXPECTED_ANCESTOR_CHILD_KEY))
-        return 1
-    if list(child["tokens"]) != EXPECTED_ANCESTOR_CHILD_TOKENS:
-        print("FAIL -- %r tokens %r != %r" % (
-            EXPECTED_ANCESTOR_CHILD_KEY, child["tokens"], EXPECTED_ANCESTOR_CHILD_TOKENS))
-        return 1
-    if child["sql"] != EXPECTED_ANCESTOR_CHILD_SQL:
+    if node["sql"] != EXPECTED_ANCESTOR_SQL:
         print("FAIL -- %r sql %r != %r" % (
-            EXPECTED_ANCESTOR_CHILD_KEY, child["sql"], EXPECTED_ANCESTOR_CHILD_SQL))
+            EXPECTED_ANCESTOR_KEY, node["sql"], EXPECTED_ANCESTOR_SQL))
+        return 1
+    if list(node["tokens"]) != EXPECTED_ANCESTOR_TOKENS:
+        print("FAIL -- %r tokens %r != %r" % (
+            EXPECTED_ANCESTOR_KEY, node["tokens"], EXPECTED_ANCESTOR_TOKENS))
         return 1
 
     notes = []
     if saw_expected_drop:
         notes.append("the deliberately-dropped dead 'Genealogy' data source")
     if saw_expected_nest:
-        notes.append("the deliberately-added 'AncestorSteps' nested child "
-                     "under 'GenealogyAncestors'")
+        notes.append("the deliberately-added 'AncestorSteps' data source")
     if notes:
         print("PASS -- rebuild matches original exactly, except %s." % " and ".join(notes))
     else:
