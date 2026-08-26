@@ -66,15 +66,33 @@ def nested_table(x, y, w, parent_key, parent_cols, child_blocks,
                  parent_row_h=15, header_h=18):
     """A parent list table with CHILD tables nested inside it.
 
-    This is the shape the Cryovac donor uses (<table list-key="sites"> holding a
-    <table list-key="machines">): the child re-binds per parent row, which is how
-    a per-part block renders without a variable column set.
+    THREE RULES, each of which fails SILENTLY if broken -- a malformed nest
+    renders NOTHING at all: no exception, no log line, no partial output. That
+    is indistinguishable from the engine not supporting nesting, and it cost a
+    lot of time before the shape was pinned down. Verified against the
+    production Cryovac donor by render on 2026-08-26:
 
-    child_blocks: list of (label, child_list_key, columns, y_offset).
+      1. The whole nest MUST be wrapped in <table-group>. A <table> placed
+         directly inside another <table> renders nothing.
+      2. Every child table carries the SAME width AND height as its parent and
+         NO x/y of its own. The <table-group> positions the stack; ReportMill
+         flows the children under each parent row. Giving a child its own
+         narrower box or a y offset renders nothing.
+      3. <tablerow title> must read exactly "<key> Header|Details"; a nested
+         table binds by its BARE child key.
+
+    An earlier version of this function claimed the Cryovac shape but emitted
+    per-child y offsets and narrower child boxes -- breaking rules 1 and 2 --
+    which is why `Rejects Part Matrix` shipped with its two detail sections
+    invisible. Do not reintroduce child positioning: siblings stack on their
+    own.
+
+    child_blocks: list of (child_list_key, columns).
     """
     total = sum(c[0] for c in parent_cols)   # parent_cols is (width, token, align, bold)
-    p = ['<table x="%d" y="%d" width="%d" height="%d" list-key="%s" startrowbreak="true">'
-         % (x, y, w, L.PAGE_H - y - 70, parent_key),
+    h = L.PAGE_H - y - 70
+    p = ['<table-group x="%d" y="%d" width="%d" height="%d" useStroke="false">' % (x, y, w, h),
+         '<table width="%d" height="%d" list-key="%s" startrowbreak="true">' % (w, h, parent_key),
          '<grouping key="%s" details="true" />' % parent_key]
 
     # Parent detail row: the per-part heading.
@@ -88,11 +106,12 @@ def nested_table(x, y, w, parent_key, parent_cols, child_blocks,
         cx += cw
     p.append('</tablerow>')
 
-    # Child tables, nested INSIDE the parent table element.
-    for (label, child_key, cols, yoff) in child_blocks:
+    # Child tables, nested INSIDE the parent element -- same width/height as the
+    # parent, no x/y (rule 2). Siblings stack automatically.
+    for (child_key, cols) in child_blocks:
         ctotal = sum(c[1] for c in cols)
-        p.append('<table y="%d" width="%d" height="%d" list-key="%s" startrowbreak="false">'
-                 % (yoff, ctotal, header_h + 40, child_key))
+        p.append('<table width="%d" height="%d" list-key="%s" startrowbreak="false">'
+                 % (w, h, child_key))
         p.append('<grouping key="%s" header="true" details="true" />' % child_key)
         p.append('<tablerow width="%d" height="%d" title="%s Header">' % (ctotal, header_h, child_key))
         cx = 0
@@ -118,6 +137,7 @@ def nested_table(x, y, w, parent_key, parent_cols, child_blocks,
         p.append('</table>')
 
     p.append('</table>')
+    p.append('</table-group>')
     return "".join(p)
 
 
@@ -263,8 +283,8 @@ def build_rejects_matrix():
                L.esc("Totals exclude non-reject scrap, which is shown separately."),
                size=8.5, italic=True, color=MUTED),
         nested_table(36, 140, 540, "Parts", parent_cols,
-                     [("By department", "ByParty",  party_cols,  18),
-                      ("Defects",       "Defects",  defect_cols, 74)]),
+                     [("ByParty", party_cols),
+                      ("Defects", defect_cols)]),
         L.page_close(), L.doc_close(),
     ])
     write("Rejects Part Matrix", "Rejects Part Matrix", DATE_PARAMS, [], layout,
