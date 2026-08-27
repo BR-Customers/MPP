@@ -2,7 +2,7 @@
 -- Procedure:   Parts.ContainerConfig_GetByItem
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.3
 --
 -- Description:
 --   Returns the active ContainerConfig(s) for a given Item, one per closure
@@ -29,6 +29,9 @@
 --   2026-04-14 - 2.0 - Removed OUTPUT params for Named Query compatibility
 --   2026-04-23 - 2.1 - Phase G.3: MaxParts exposed (OI-12)
 --   2026-04-27 - 2.2 - OI-12 correction: MaxParts removed from SELECT (moved to Parts.Item)
+--   2026-08-27 - 2.3 - ToleranceWeight projected, immediately after TargetWeight
+--                       (IND570 checkweigh, migration 0068). Column ORDER is
+--                       load-bearing: INSERT-EXEC callers mirror this list.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.ContainerConfig_GetByItem
     @ItemId BIGINT
@@ -39,7 +42,7 @@ BEGIN
     SELECT
         Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized,
         DunnageCode, CustomerCode,
-        ClosureMethod, TargetWeight,
+        ClosureMethod, TargetWeight, ToleranceWeight,
         CreatedAt, UpdatedAt, DeprecatedAt
     FROM Parts.ContainerConfig
     WHERE ItemId = @ItemId
