@@ -78,6 +78,7 @@ Two, both discovered while mapping the spec onto the existing code. Confirm with
 | `.../ShopFloor/AssemblyNonSerialized/view.json` | **Designer only.** Capture button + setpoint push | 6, 7 |
 | `sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql` | `@WeightValue` / `@WeightUomId` passthrough | 9 |
 | `named-query/parts/ContainerConfig_{Create,Update}/` | + `toleranceWeight` param | 10 |
+| `BlueRidge/Parts/ContainerConfig/code.py` | `_CONFIG_SHAPE` + `add()`/`update()` passthrough | 10 |
 | `.../ItemMaster/ContainerConfig/view.json` | **Designer only.** Tolerance field | 10 |
 | `MPP_MES_DATA_MODEL.md`, `MPP_MES_FDS.md`, `MPP_MES_Open_Issues_Register.md` | Doc reconciliation | 8 |
 
@@ -1066,13 +1067,26 @@ git commit -m "feat(scale): record the checkweigh reading on the ByWeight tray-c
 **Files:**
 - Modify: `ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Create/query.sql`
 - Modify: `ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Update/query.sql`
+- Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Parts/ContainerConfig/code.py`
 - Modify (in Designer): `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/ItemMaster/ContainerConfig/view.json`
 
 **Interfaces:**
 - Consumes: `@ToleranceWeight` on both procs (Task 1).
 - Produces: a populated `ContainerConfig.ToleranceWeight` for `ByWeight` items, which Task 5's `loadSetpointForItem` reads.
 
-- [ ] **Step 1: Add the parameter to both named queries**
+- [x] **Step 0: Confirm the target database actually has Task 1's SQL applied** ⚠️ ADDED
+
+**Committed SQL is not applied SQL.** During execution `MPP_MES_Dev` was still at migration `0067` while the repo was at `0068`, so the deployed procs had no `@ToleranceWeight`. Deploying the named query against that DB makes the Container Config tab's Save fail outright with *"Procedure or function ContainerConfig_Update has too many arguments specified"* — on a gateway other people are using.
+
+Before running `scan.ps1` in Step 3:
+
+```bash
+sqlcmd -S localhost -d MPP_MES_Dev -C -h -1 -W -Q "SET NOCOUNT ON; SELECT MAX(MigrationId) FROM dbo.SchemaVersion"
+```
+
+If it is behind `0068_containerconfig_tolerance_weight`, apply `sql/migrations/versioned/0068_containerconfig_tolerance_weight.sql` and the four `R__Parts_ContainerConfig_*` repeatables (all `CREATE OR ALTER`, all additive) before deploying. Do **not** reset the database — it holds hand-created parts.
+
+- [x] **Step 1: Add the parameter to both named queries**
 
 Named-query `query.sql` files are plain SQL and safe to edit on disk — the Designer view-edit boundary does not apply to them.
 
@@ -1084,17 +1098,29 @@ In `parts/ContainerConfig_Create/query.sql`, add after the `@TargetWeight` line:
 
 Do the same in `parts/ContainerConfig_Update/query.sql`. Keep `@AppUserId` last in both.
 
-- [ ] **Step 2: Declare the parameter in each `resource.json`**
+- [x] **Step 2: Declare the parameter in each `resource.json`**
 
 Each named query's `resource.json` carries the typed parameter list. Open `parts/ContainerConfig_Create/resource.json`, find the entry declaring `targetWeight`, and add a sibling `toleranceWeight` with the identical type. Repeat for `_Update`. A parameter used in `query.sql` but undeclared here fails at runtime, not at scan.
 
-- [ ] **Step 3: Scan and verify the queries still resolve**
+- [x] **Step 3: Scan and verify the queries still resolve**
 
 ```bash
 powershell -File scan.ps1
 ```
 
 In the Designer, run `parts/ContainerConfig_GetByItemAndMethod` from the named-query tester against a `ByWeight` item and confirm `ToleranceWeight` appears as a column. Then run `ContainerConfig_Update` with a `toleranceWeight` value and confirm `Status = 1`.
+
+- [ ] **Step 3b: Thread the value through the Python layer** ⚠️ ADDED — the plan originally missed this file
+
+The editor field cannot round-trip without it. `ignition/projects/Core/ignition/script-python/BlueRidge/Parts/ContainerConfig/code.py` stops at `TargetWeight` in three places:
+
+- **`_CONFIG_SHAPE`** (~line 49) — add `"ToleranceWeight": None` after `"TargetWeight": None`. This dict is the binding-safe empty shape; a key missing here is filtered out of `getByItemOrEmpty` / `getByItemAndMethodOrEmpty`, so the value would never reach the view even once the DB has it.
+- **`add()`** (~line 143) — add `"toleranceWeight": data.get("ToleranceWeight"),` to the named-query parameter dict, after `targetWeight`.
+- **`update()`** (~line 182) — the same addition.
+
+Also extend the two docstring shape comments (~lines 124 and 167) that enumerate the accepted dict keys, so the contract stays accurate.
+
+This file is a Python script, not a view, so it is safe to edit on disk.
 
 - [ ] **Step 4: Add the editor field — Designer task**
 
