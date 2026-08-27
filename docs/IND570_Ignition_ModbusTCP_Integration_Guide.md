@@ -4,6 +4,8 @@
 
 For: Jacques (Ignition side) & Tom (terminal side, plant floor)
 
+**Revision 3 — 2026-08-27.** Section 5's Ignition settings are now named as they appear in the **8.3** device-config UI (rev 2 used 8.1-era names). Address Mapping, Radix, Zero-based Addressing, Reverse Word Order and the write-request flags are all covered.
+
 **Revision 2 — 2026-08-27.** The register map, command codes, byte order and status-bit layout are no longer open questions. They were extracted from the IND570 PLC Interface Manual and are stated outright below. What remains for the call is device configuration, connection, and verification. Design rationale lives in `docs/superpowers/specs/2026-08-27-ind570-scale-udt-modbus-tcp-design.md`.
 
 # 0. Before the Call — What to Have Ready
@@ -149,11 +151,23 @@ For any command taking a value, the manual (Table B-4 note 6) says: *"If the com
 
 # 5. Jacques's Side — Configuring Ignition
 
-1. Config › OPC UA › Device Connections › Create new Device → **Modbus TCP**. ([Connecting to a Modbus Device](https://www.docs.inductiveautomation.com/docs/8.3/ignition-modules/opc-ua/opc-ua-drivers/modbus/connecting-to-modbus-device))
+*Settings below are named as they appear in the Ignition **8.3** device-config UI. Reference: [Connecting to a Modbus Device](https://www.docs.inductiveautomation.com/docs/8.3/ignition-modules/opc-ua/opc-ua-drivers/modbus/connecting-to-modbus-device).*
+
+1. Config › OPC UA › Device Connections › Create new Device → **Modbus TCP**.
+
 2. **Hostname:** the terminal IP from section 3.1. **Port:** 502.
-3. **Addressing Mode:** one-based.
-4. Leave word/byte order at defaults — only revisit if data comes back garbled.
-5. Create the test tags below.
+
+3. **Address Mapping: leave it EMPTY.** If the table shows a blank row flagging "2 invalid fields" (empty PREFIX and MODBUS ADDRESS), click **Delete** on that row — do not fill it in. Address mapping is an optional bulk-alias feature for devices whose native numbering differs from Modbus; the docs offer it "because it can be tedious to manually enter OPC tag information one-by-one." We address registers directly as `HR1`, `HRF2` and so on, which needs no mapping — `HR`, `IR`, `C` and `DI` are reserved prefixes precisely because direct addressing coexists with it. **Radix** (default 10) only governs the numbering base used by mapping rows, so with no rows it is irrelevant. Leave it at 10.
+
+4. **ADVANCED › Zero-based Addressing: leave UNCHECKED.** Unchecked means each area's address range starts at 1, which is what the register map in section 4 assumes (`HR1` is the first holding register). This is the setting that decides whether section 6 step 1's checks pass.
+
+5. **ADVANCED › Reverse Word Order: leave UNCHECKED** for now. This is the Ignition-side counterpart to the terminal's Byte Order setting — "swaps the low and high words in 32-bit values." With the terminal on Double Word Swap this should not be needed; it is the first thing to toggle if the float reads back scrambled.
+
+6. **WRITE REQUESTS › Allow Write Multiple Registers Request: must stay CHECKED.** Its own help text warns that disabling it "will break the ability to write 32-bit and String values correctly to registers." Our setpoint load writes a 32-bit float to `HRF1030`, which spans two registers — turning this off breaks Flow A specifically.
+
+7. Everything under REQUEST OPTIMIZATION, READ REQUESTS and STRING HANDLING can stay at defaults. The IND570 exposes at most 16 read and 13 write registers, far below every per-request ceiling.
+
+8. Create the test tags below.
 
 Ignition's Modbus driver supports single-bit extraction from a holding register with a `.N` suffix, zero-indexed (`[Device]HR1024.0` is the first bit) — see [Modbus Addressing](https://www.docs.inductiveautomation.com/docs/8.3/ignition-modules/opc-ua/opc-ua-drivers/modbus/modbus-addressing) for the full prefix table (`HR`, `HRF`, `HRUS`, `C`, `DI`, …). That matches Mettler's bit numbering directly, so status flags are plain OPC tags.
 
@@ -195,13 +209,15 @@ Ignition's Modbus driver supports single-bit extraction from a holding register 
 | Symptom | Likely cause | What to try |
 |---|---|---|
 | No connection / device Faulted | IP mismatch, cable/port, or terminal not serving Modbus | Ping the terminal from the Gateway machine. Confirm subnet/gateway. Confirm section 2 outcome. |
-| All registers read 0 or garbage | Register base wrong — `HR400001` instead of `HR1`, or wrong addressing mode | Run the section 6 step 1 checks. `HR4.5` reading 0 is the tell. |
-| Weight is non-zero but obviously wrong (huge, negative, scrambled) | Byte/word order mismatch | Terminal Byte Order should be Double Word Swap. If still wrong, try each terminal option against toggling Ignition's word-order setting. |
+| All registers read 0 or garbage | Register base wrong — `HR400001` instead of `HR1`, or **Zero-based Addressing** checked when it should not be | Run the section 6 step 1 checks. `HR4.5` reading 0 is the tell. Confirm ADVANCED › Zero-based Addressing is UNCHECKED. |
+| Weight is non-zero but obviously wrong (huge, negative, scrambled) | Byte/word order mismatch | Terminal Byte Order should be Double Word Swap. If still wrong, toggle Ignition's ADVANCED › **Reverse Word Order**, then work through the terminal's four Byte Order options against it. |
 | **Weight looks plausible but is consistently high** | **Reporting gross, not net** — command register is 0 after a power cycle | Check `HR1` bits 8–12 decode to `1`. Re-write `11` to `HR1026`. This must be re-parked on every reconnect. |
 | Value close but missing decimal precision | Format is Integer/Divisions, not Floating Point | Confirm Format = Floating Point. Remember changing Format wipes Message Slots. |
 | Value updates once then freezes | Command didn't stick in the register | Read `HR1026` back to confirm the write landed. Do **not** add a repeating write — the command is meant to be sticky. |
 | Setpoint load rejected, FP Indicator reads `31` | Invalid command — the terminal has Fill-570 after all | Commands become 170 / 173 / 174 / 119. Re-verify the licensing question. |
 | Verdict bits never change | Target comparison not started, or wrong target mode | Confirm `114` was sent and acknowledged. Confirm over/under mode (section 3.3). |
+| Device config refuses to save, "This configuration has N invalid fields" | A blank **Address Mapping** row with empty PREFIX / MODBUS ADDRESS | **Delete** the row. Address mapping is optional and we do not use it — see section 5 step 3. |
+| Reads fine, setpoint float write fails or corrupts | **Allow Write Multiple Registers Request** unchecked | Re-check it. A 32-bit float spans two registers and needs function code 0x10. |
 
 # 8. Reference Material
 
@@ -245,7 +261,8 @@ Everything the manual settled has been removed from this table. What's left is g
 | Subnet mask | |
 | Gateway address | |
 | MAC address (informational) | |
-| Ignition addressing mode that worked (0- or 1-based) | |
+| Zero-based Addressing checked or unchecked? | |
+| Reverse Word Order needed? | |
 | `HR4.5` reads 1? | |
 | Integrity bits toggle together? | |
 | Primary units reported by command 30 | |

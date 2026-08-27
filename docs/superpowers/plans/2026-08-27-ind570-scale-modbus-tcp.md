@@ -1208,7 +1208,7 @@ git commit -m "feat(scale): record the checkweigh reading on the ByWeight tray-c
 
 Not tasks — they need the physical terminal and are covered by the integration guide's §6 test sequence:
 
-- Addressing-base confirmation (`HR4.5` reads 1; integrity bits toggle together).
+- Addressing-base confirmation (`HR4.5` reads 1; integrity bits toggle together). In the 8.3 device config this is ADVANCED > **Zero-based Addressing**, left UNCHECKED; the **Address Mapping** table stays empty (we address registers directly).
 - Byte order confirmation against a known weight.
 - Whether the combo card serves EtherNet/IP and Modbus TCP concurrently.
 - Whether all four message slots can address the same local scale independently.
