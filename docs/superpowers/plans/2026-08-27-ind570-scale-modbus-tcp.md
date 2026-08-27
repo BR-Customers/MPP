@@ -25,6 +25,30 @@
 
 ---
 
+## Verified codebase facts — read before writing any SQL
+
+Task 1 execution proved seven of this plan's assumptions wrong. They are corrected here; **any task writing SQL or tests must follow this section, not the plan author's original guesses.**
+
+1. **Assertion helper is `test.Assert_IsEqual`, not `test.AssertEqual`**, and the parameter order is `@TestName, @Expected, @Actual`. The full set: `Assert_IsEqual`, `Assert_IsNull`, `Assert_IsNotNull`, `Assert_RowCount`, `Assert_IsTrue`, `Assert_Contains`.
+
+2. **T-SQL rejects a subquery as an `EXEC` parameter.** `@Actual = (SELECT ...)` is a syntax error. Assign to a variable first — this is also the repo's standing convention ("EXEC parameters must be literals or `@variables`").
+
+3. **`SchemaVersion` takes `(MigrationId, Description)`** where `MigrationId` is an NVARCHAR matching the filename stem. There is no `VersionNumber` column and no timestamp parameter. Migrations also open with an `IF EXISTS (... WHERE MigrationId = ...) RETURN` guard. Copy `0067`'s form.
+
+4. **No migration in this repo uses `sp_addextendedproperty`.** Do not introduce it. Column rationale belongs in the migration header comment and the data model doc.
+
+5. **`Parts.Item_Create` takes `@PartNumber`, not `@ItemNumber`**, and `ItemTypeId` 4 is FinishedGood (not 5).
+
+6. **`ContainerConfig` read-proc result shape** is `Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized, DunnageCode, CustomerCode, ClosureMethod, TargetWeight, ToleranceWeight, CreatedAt, UpdatedAt, DeprecatedAt`.
+
+7. **Adding a column to a read proc's SELECT breaks every test that `INSERT-EXEC`s it into a temp table** (`Msg 213`). A parameter default protects *mutation*-proc callers; it does nothing for read-proc callers. Before changing any read proc's SELECT list, grep for tests that capture it and widen their temp tables in the same commit:
+
+```bash
+grep -rln "INSERT INTO #.* EXEC <Schema>.<Proc>" sql/tests/
+```
+
+---
+
 ## Deviations from the spec — read before starting
 
 Two, both discovered while mapping the spec onto the existing code. Confirm with Jacques before Task 3.
@@ -53,230 +77,30 @@ Two, both discovered while mapping the spec onto the existing code. Confirm with
 | `.../BlueRidge/Workorder/ScaleWatcher/code.py` | Rewritten: capture gate + tray close; edge handler removed | 5 |
 | `.../ShopFloor/AssemblyNonSerialized/view.json` | **Designer only.** Capture button + setpoint push | 6, 7 |
 | `sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql` | `@WeightValue` / `@WeightUomId` passthrough | 9 |
+| `named-query/parts/ContainerConfig_{Create,Update}/` | + `toleranceWeight` param | 10 |
+| `.../ItemMaster/ContainerConfig/view.json` | **Designer only.** Tolerance field | 10 |
 | `MPP_MES_DATA_MODEL.md`, `MPP_MES_FDS.md`, `MPP_MES_Open_Issues_Register.md` | Doc reconciliation | 8 |
 
 Ignition script paths are under `ignition/projects/Core/ignition/script-python/`.
 
 ---
 
-### Task 1: `ContainerConfig.ToleranceWeight` — column, procs, tests
+### Task 1: `ContainerConfig.ToleranceWeight` — column, procs, tests ✅ DONE
 
-The checkweigh window's half-width. FDS-06-014 describes `ByWeight` closure as "`TargetWeight` per tray (+ optional tolerance)" but the tolerance never reached the schema; legacy SparkMES carried it as `GroupTargetWeightTolerance`. Symmetric by decision — pushed to the terminal as both the + and the − tolerance.
+**Completed 2026-08-27, commit `d64dcb92`.** 8 files, 10 new assertions, `0008_Parts_Item` at 111/111.
 
-**Files:**
-- Create: `sql/migrations/versioned/0068_containerconfig_tolerance_weight.sql`
-- Create: `sql/tests/0008_Parts_Item/028_ContainerConfig_tolerance.sql`
-- Modify: `sql/migrations/repeatable/R__Parts_ContainerConfig_Create.sql`
-- Modify: `sql/migrations/repeatable/R__Parts_ContainerConfig_Update.sql`
-- Modify: `sql/migrations/repeatable/R__Parts_ContainerConfig_GetByItem.sql`
-- Modify: `sql/migrations/repeatable/R__Parts_ContainerConfig_GetByItemAndMethod.sql`
+The original step-by-step code for this task has been removed rather than left in place. It contained the seven factual errors now recorded in **Verified codebase facts** above, and leaving it would invite the next task to copy them. The committed files are the reference:
 
-**Interfaces:**
-- Produces: `Parts.ContainerConfig.ToleranceWeight DECIMAL(10,4) NULL`; `@ToleranceWeight DECIMAL(10,4) = NULL` on `ContainerConfig_Create` and `ContainerConfig_Update`, positioned immediately after `@TargetWeight`; `ToleranceWeight` column in both read procs' result sets. Task 5 consumes it via `ContainerConfig_GetByItemAndMethod`.
+- `sql/migrations/versioned/0068_containerconfig_tolerance_weight.sql` — `Parts.ContainerConfig.ToleranceWeight DECIMAL(10,4) NULL`
+- `sql/migrations/repeatable/R__Parts_ContainerConfig_Create.sql` / `_Update.sql` — `@ToleranceWeight` after `@TargetWeight`, threaded through the failure JSON, the audit key-params narrative, and the `OldValue`/`NewValue` snapshots
+- `sql/migrations/repeatable/R__Parts_ContainerConfig_GetByItem.sql` / `_GetByItemAndMethod.sql` — projected after `TargetWeight`
+- `sql/tests/0008_Parts_Item/028_ContainerConfig_tolerance.sql` — new
+- `sql/tests/0008_Parts_Item/020_ContainerConfig_crud.sql`, `027_ContainerConfig_resolve.sql` — temp tables widened for the new projected column (finding 7)
 
-- [ ] **Step 1: Write the failing test**
+**Two things this task surfaced that are not yet resolved:**
 
-Create `sql/tests/0008_Parts_Item/028_ContainerConfig_tolerance.sql`:
-
-```sql
--- =============================================
--- File:         0008_Parts_Item/028_ContainerConfig_tolerance.sql
--- Author:       Blue Ridge Automation
--- Created:      2026-08-27
--- Description:
---   Tests Parts.ContainerConfig.ToleranceWeight (migration 0068).
---   Covers: Create round-trips the value, Update mutates it, NULL is
---   allowed (tolerance optional), and both read procs project it.
---   Spec: docs/superpowers/specs/2026-08-27-ind570-scale-udt-modbus-tcp-design.md Sec 7.1
--- =============================================
-
-EXEC test.BeginTestFile @FileName = N'0008_Parts_Item/028_ContainerConfig_tolerance.sql';
-GO
-
-DECLARE @S BIT, @M NVARCHAR(500), @ItemId BIGINT, @ConfigId BIGINT;
-
-CREATE TABLE #r (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-
-INSERT INTO #r EXEC Parts.Item_Create
-    @ItemNumber = N'TOLTEST-001', @Description = N'Tolerance test part',
-    @ItemTypeId = 5, @UomId = 1, @AppUserId = 1;
-SELECT @ItemId = NewId FROM #r;
-DELETE FROM #r;
-
--- Create with a tolerance round-trips it.
-INSERT INTO #r EXEC Parts.ContainerConfig_Create
-    @ItemId = @ItemId, @TraysPerContainer = 4, @PartsPerTray = 60,
-    @ClosureMethod = N'ByWeight', @TargetWeight = 4.2000,
-    @ToleranceWeight = 0.0500, @AppUserId = 1;
-SELECT @S = Status, @M = Message, @ConfigId = NewId FROM #r;
-DELETE FROM #r;
-
-EXEC test.AssertEqual @Expected = N'1', @Actual = @S,
-     @TestName = N'ContainerConfig_Create with ToleranceWeight succeeds';
-
-CREATE TABLE #cfg (Id BIGINT, ItemId BIGINT, TraysPerContainer INT, PartsPerTray INT,
-                   IsSerialized BIT, ClosureMethod NVARCHAR(20),
-                   TargetWeight DECIMAL(10,4), ToleranceWeight DECIMAL(10,4),
-                   DunnageCode NVARCHAR(50), CustomerCode NVARCHAR(50));
-
-INSERT INTO #cfg EXEC Parts.ContainerConfig_GetByItemAndMethod
-    @ItemId = @ItemId, @ClosureMethod = N'ByWeight';
-
-EXEC test.AssertEqual @Expected = N'0.0500',
-     @Actual = (SELECT CAST(ToleranceWeight AS NVARCHAR(20)) FROM #cfg),
-     @TestName = N'GetByItemAndMethod projects ToleranceWeight';
-
--- Update mutates it.
-INSERT INTO #r EXEC Parts.ContainerConfig_Update
-    @Id = @ConfigId, @TraysPerContainer = 4, @PartsPerTray = 60,
-    @ClosureMethod = N'ByWeight', @TargetWeight = 4.2000,
-    @ToleranceWeight = 0.0750, @AppUserId = 1;
-SELECT @S = Status FROM #r;
-DELETE FROM #r;
-
-EXEC test.AssertEqual @Expected = N'1', @Actual = @S,
-     @TestName = N'ContainerConfig_Update with ToleranceWeight succeeds';
-
-EXEC test.AssertEqual @Expected = N'0.0750',
-     @Actual = (SELECT CAST(ToleranceWeight AS NVARCHAR(20))
-                FROM Parts.ContainerConfig WHERE Id = @ConfigId),
-     @TestName = N'ContainerConfig_Update persists ToleranceWeight';
-
--- NULL tolerance is allowed (optional per FDS-06-014).
-EXEC Parts.ContainerConfig_Deprecate @Id = @ConfigId, @AppUserId = 1;
-
-INSERT INTO #r EXEC Parts.ContainerConfig_Create
-    @ItemId = @ItemId, @TraysPerContainer = 4, @PartsPerTray = 60,
-    @ClosureMethod = N'ByWeight', @TargetWeight = 4.2000, @AppUserId = 1;
-SELECT @S = Status FROM #r;
-
-EXEC test.AssertEqual @Expected = N'1', @Actual = @S,
-     @TestName = N'ContainerConfig_Create omitting ToleranceWeight succeeds';
-
-DROP TABLE #r; DROP TABLE #cfg;
-GO
-
-EXEC test.EndTestFile;
-GO
-```
-
-- [ ] **Step 2: Run the test to verify it fails**
-
-```bash
-cd sql/tests && powershell -File Run-Tests.ps1 -Filter "028_ContainerConfig_tolerance"
-```
-
-Expected: FAIL — `Invalid column name 'ToleranceWeight'` and `@ToleranceWeight is not a parameter for procedure ContainerConfig_Create`.
-
-- [ ] **Step 3: Write the migration**
-
-Create `sql/migrations/versioned/0068_containerconfig_tolerance_weight.sql`:
-
-```sql
--- ============================================================
--- Migration:   0068_containerconfig_tolerance_weight.sql
--- Author:      Blue Ridge Automation
--- Date:        2026-08-27
--- Description: Parts.ContainerConfig.ToleranceWeight -- the checkweigh
---              window half-width for ByWeight tray closure.
---
---              FDS-06-014 describes ByWeight closure as "TargetWeight per
---              tray (+ optional tolerance)" but only TargetWeight reached
---              the schema. Legacy SparkMES carried the tolerance as
---              GroupTargetWeightTolerance, listed in the FDS legacy-column
---              crosswalk as "subsumed by OI-02 resolution when that closes"
---              -- it was not. This closes that gap.
---
---              SYMMETRIC by decision: one value, pushed to the IND570 as
---              both the (+) and (-) tolerance (commands 131 and 112). The
---              device supports an asymmetric window; the schema
---              deliberately does not. Revisit only if MPP asks for it.
---
---              Unit-less, like TargetWeight. Units live on the scale UDT's
---              WeightUom parameter (default lb) and are verified against
---              the terminal at commissioning via command 30.
---
--- Spec:        docs/superpowers/specs/2026-08-27-ind570-scale-udt-modbus-tcp-design.md Sec 7.1
--- ============================================================
-
-SET NOCOUNT ON;
-GO
-
-IF NOT EXISTS (SELECT 1 FROM sys.columns
-               WHERE object_id = OBJECT_ID(N'Parts.ContainerConfig')
-                 AND name = N'ToleranceWeight')
-BEGIN
-    ALTER TABLE Parts.ContainerConfig
-        ADD ToleranceWeight DECIMAL(10,4) NULL;
-END
-GO
-
-EXEC sys.sp_addextendedproperty
-     @name = N'MS_Description',
-     @value = N'Symmetric tolerance about TargetWeight for ByWeight closure. Pushed to the scale as both the + and - tolerance. Required when ClosureMethod = ByWeight; ignored otherwise.',
-     @level0type = N'SCHEMA', @level0name = N'Parts',
-     @level1type = N'TABLE',  @level1name = N'ContainerConfig',
-     @level2type = N'COLUMN', @level2name = N'ToleranceWeight';
-GO
-
-INSERT INTO dbo.SchemaVersion (VersionNumber, Description, AppliedAt)
-VALUES (68, N'ContainerConfig.ToleranceWeight for ByWeight checkweigh window', SYSUTCDATETIME());
-GO
-```
-
-> Before running: open `sql/migrations/versioned/0067_reject_chargeto_and_location.sql` and copy its exact `SchemaVersion` insert form — column names and whether it uses `GETUTCDATE()` or `SYSUTCDATETIME()`. Match it rather than the shape above if they differ.
-
-- [ ] **Step 4: Add the parameter to the two mutation procs**
-
-In both `R__Parts_ContainerConfig_Create.sql` and `R__Parts_ContainerConfig_Update.sql`:
-
-Add the parameter immediately after `@TargetWeight`:
-
-```sql
-    @TargetWeight      DECIMAL(10,4)  = NULL,
-    @ToleranceWeight   DECIMAL(10,4)  = NULL,
-```
-
-Add `ToleranceWeight` to the `INSERT` column list and `VALUES` (Create), or to the `SET` clause (Update). Add to the header comment block's parameter list:
-
-```sql
---   @ToleranceWeight DECIMAL(10,4) NULL  -- symmetric checkweigh window
-```
-
-Add a revision-history line to each header, matching the existing dated format:
-
-```sql
---   2026-08-27 - 2.5 - @ToleranceWeight added (IND570 checkweigh, spec 2026-08-27)
-```
-
-Both procs write `Audit.ConfigLog` — add `ToleranceWeight` to the `OldValue`/`NewValue` JSON alongside `TargetWeight` so the audit trail stays complete. Follow the existing JSON construction in each proc verbatim; do not restructure it.
-
-- [ ] **Step 5: Add the column to the two read procs**
-
-In `R__Parts_ContainerConfig_GetByItem.sql` and `R__Parts_ContainerConfig_GetByItemAndMethod.sql`, add `ToleranceWeight` to the `SELECT` list immediately after `TargetWeight`. Column order matters — the test's `#cfg` temp table depends on it.
-
-- [ ] **Step 6: Run the tests to verify they pass**
-
-```bash
-cd sql/tests && powershell -File Run-Tests.ps1 -Filter "0008_Parts_Item"
-```
-
-Expected: PASS, and the whole `0008_Parts_Item` directory still green (020, 026, 027 must not regress — they call the same procs without the new parameter, which is why it has a default).
-
-- [ ] **Step 7: Run the full suite**
-
-```bash
-cd sql/tests && powershell -File Run-Tests.ps1
-```
-
-Expected: 0 failures. Exit code 1 with 0 reported failures means a test's `sqlcmd` errored — usually an FK violation during cleanup. Investigate rather than ignoring the exit code.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add sql/migrations/versioned/0068_containerconfig_tolerance_weight.sql sql/migrations/repeatable/R__Parts_ContainerConfig_Create.sql sql/migrations/repeatable/R__Parts_ContainerConfig_Update.sql sql/migrations/repeatable/R__Parts_ContainerConfig_GetByItem.sql sql/migrations/repeatable/R__Parts_ContainerConfig_GetByItemAndMethod.sql sql/tests/0008_Parts_Item/028_ContainerConfig_tolerance.sql
-git commit -m "feat(parts): ContainerConfig.ToleranceWeight for ByWeight checkweigh window"
-```
+1. **The column is not settable from the app.** The named queries stop at `@TargetWeight` and the editor has no field. → **Task 10**.
+2. **Two pre-existing full-suite failures in `0069_Aggregate_Reports/010_schema.sql`** — charge-to-party and IsExcused counts. They pass when that file runs in isolation (56/56) and fail in the full suite, so they are ordering pollution: earlier files (`0011_Quality_Spec/040_DefectCode_crud.sql`, the `0022`/`0023` reject tests) leave `Quality.DefectCode` rows behind that 0069's plant-wide `COUNT(*)` assertions then pick up. Unrelated to this work and present before it. Worth its own fix; **do not treat a green run as requiring these two to pass** until then.
 
 ---
 
@@ -1135,14 +959,19 @@ INSERT INTO #r EXEC Workorder.Assembly_CompleteTray
 SELECT @S = Status FROM #r;
 DELETE FROM #r;
 
-EXEC test.AssertEqual @Expected = N'1', @Actual = @S,
-     @TestName = N'Assembly_CompleteTray accepts @WeightValue';
+EXEC test.Assert_IsEqual
+     @TestName = N'Assembly_CompleteTray accepts @WeightValue',
+     @Expected = N'1', @Actual = @S;
 
-EXEC test.AssertEqual @Expected = N'4.2110',
-     @Actual = (SELECT TOP 1 CAST(WeightValue AS NVARCHAR(20))
-                FROM Workorder.ProductionEvent
-                ORDER BY Id DESC),
-     @TestName = N'ByWeight close persists WeightValue on the ProductionEvent';
+-- A subquery is not a legal EXEC parameter -- assign first.
+DECLARE @PersistedWeight NVARCHAR(20);
+SELECT TOP 1 @PersistedWeight = CAST(WeightValue AS NVARCHAR(20))
+FROM Workorder.ProductionEvent
+ORDER BY Id DESC;
+
+EXEC test.Assert_IsEqual
+     @TestName = N'ByWeight close persists WeightValue on the ProductionEvent',
+     @Expected = N'4.2110', @Actual = @PersistedWeight;
 ```
 
 Match the real parameter names from Step 1 — the names above are the expected shape, not verified signatures.
@@ -1200,6 +1029,76 @@ Expected: 0 failures, including the pre-existing `ByVision` and `ByCount` close 
 ```bash
 git add sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/Assembly/code.py ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/code.py <the test file>
 git commit -m "feat(scale): record the checkweigh reading on the ByWeight tray-close ProductionEvent"
+```
+
+---
+
+### Task 10: Make `ToleranceWeight` settable from Item Master
+
+**This plan shipped a column nothing can write to.** Task 1 added `ToleranceWeight` to the table and the stored procs, but the Ignition named queries `parts/ContainerConfig_Create` and `parts/ContainerConfig_Update` pass parameters by name and stop at `@TargetWeight`, and the ContainerConfig editor section has no field for it. So the value is permanently NULL from the application's point of view — and `loadSetpointForItem` (Task 5) refuses to push a setpoint when it is NULL. Flow A cannot work until this is done.
+
+**Run before Task 7**, otherwise Task 7's verification has no configured part to test against.
+
+**Files:**
+- Modify: `ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Create/query.sql`
+- Modify: `ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Update/query.sql`
+- Modify (in Designer): `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/ItemMaster/ContainerConfig/view.json`
+
+**Interfaces:**
+- Consumes: `@ToleranceWeight` on both procs (Task 1).
+- Produces: a populated `ContainerConfig.ToleranceWeight` for `ByWeight` items, which Task 5's `loadSetpointForItem` reads.
+
+- [ ] **Step 1: Add the parameter to both named queries**
+
+Named-query `query.sql` files are plain SQL and safe to edit on disk — the Designer view-edit boundary does not apply to them.
+
+In `parts/ContainerConfig_Create/query.sql`, add after the `@TargetWeight` line:
+
+```sql
+    @ToleranceWeight   = :toleranceWeight,
+```
+
+Do the same in `parts/ContainerConfig_Update/query.sql`. Keep `@AppUserId` last in both.
+
+- [ ] **Step 2: Declare the parameter in each `resource.json`**
+
+Each named query's `resource.json` carries the typed parameter list. Open `parts/ContainerConfig_Create/resource.json`, find the entry declaring `targetWeight`, and add a sibling `toleranceWeight` with the identical type. Repeat for `_Update`. A parameter used in `query.sql` but undeclared here fails at runtime, not at scan.
+
+- [ ] **Step 3: Scan and verify the queries still resolve**
+
+```bash
+powershell -File scan.ps1
+```
+
+In the Designer, run `parts/ContainerConfig_GetByItemAndMethod` from the named-query tester against a `ByWeight` item and confirm `ToleranceWeight` appears as a column. Then run `ContainerConfig_Update` with a `toleranceWeight` value and confirm `Status = 1`.
+
+- [ ] **Step 4: Add the editor field — Designer task**
+
+Open `BlueRidge/Components/Parts/ItemMaster/ContainerConfig`. Find the existing `TargetWeight` input and add a `ToleranceWeight` input directly beside it, copying the sibling's component type, styling and binding shape exactly.
+
+Two project rules apply here and both cause silent breakage if missed:
+
+- The input must bidi-bind to `view.custom.state.editDraft.<field>` following the section's existing pattern. **Pre-seed `ToleranceWeight` in the `editDraft` default shape** in the view's `custom` block — a nested bidi path whose parent lacks the key renders a red validation border and literal `"null"` text until the load handler fires.
+- The section's `load()` must include the new field, and must continue to assign `selected` and `editDraft` in **one** property write. Two sequential writes let the dirty binding observe a transient mismatch, fire `sectionDirtyChanged{isDirty: true}`, and latch the parent's flag — which blocks item navigation behind spurious ConfirmUnsaved popups.
+
+Label it **Tolerance (±)** to make the symmetry explicit; the single value is applied as both the plus and minus tolerance.
+
+- [ ] **Step 5: Verify end to end**
+
+In the running app, open an item with `ClosureMethod = ByWeight`, set a target and a tolerance, save, then confirm in SQL:
+
+```bash
+sqlcmd -S localhost -d MPP_MES_Dev -C -Q "SELECT ItemId, ClosureMethod, TargetWeight, ToleranceWeight FROM Parts.ContainerConfig WHERE ClosureMethod = 'ByWeight' AND DeprecatedAt IS NULL"
+```
+
+Expected: a non-NULL `ToleranceWeight`. Verify through SQL rather than the browser — the in-app browser cannot reliably commit Perspective input bindings, so a visual check is not evidence the value persisted.
+
+- [ ] **Step 6: Export and commit**
+
+```bash
+powershell -File scan.ps1 && git diff --stat ignition/
+git add ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Create/ ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Update/ ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/ItemMaster/ContainerConfig/
+git commit -m "feat(items): expose ContainerConfig.ToleranceWeight in Item Master"
 ```
 
 ---
