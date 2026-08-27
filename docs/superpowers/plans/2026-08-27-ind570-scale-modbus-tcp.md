@@ -104,7 +104,9 @@ The original step-by-step code for this task has been removed rather than left i
 
 ---
 
-### Task 2: Teach the tag generator address-decoupled members and folders
+### Task 2: Teach the tag generator address-decoupled members and folders ✅ DONE
+
+**Completed 2026-08-27, commit `c1fa261a`.** All six generated artifacts verified byte-identical after the change; `opc_member`, `memory_member`, `expr_member` and `folder` are in place.
 
 Today `generate_tags.py` derives each member's OPC address from its tag name (`opcItemPath = "{BasePath}" + name`) and emits a flat list of `AtomicTag`s. The IND570 UDT needs friendly names (`Weight/Net`) pointing at register addresses (`HRF2`), grouped in folders, plus memory and expression members. This task adds that capability **without changing any existing output** — the three MIP/tray types must regenerate byte-identical.
 
@@ -114,7 +116,7 @@ Today `generate_tags.py` derives each member's OPC address from its tag name (`o
 **Interfaces:**
 - Produces: `opc_member(name, kind, address=None)` — when `address` is `None`, behaviour is unchanged (address derived from `name`); when given, the address is used and the name is free. `memory_member(name, kind, default)`, `expr_member(name, kind, expression)`, `folder(name, members)`. Task 3 consumes all four.
 
-- [ ] **Step 1: Extend `opc_member` to accept an explicit address**
+- [x] **Step 1: Extend `opc_member` to accept an explicit address**
 
 Replace the existing `opc_member` in `ignition/tags/generate_tags.py`:
 
@@ -139,7 +141,7 @@ def opc_member(name, kind, address=None):
     }
 ```
 
-- [ ] **Step 2: Add the three new member builders**
+- [x] **Step 2: Add the three new member builders**
 
 Insert directly after `opc_member`:
 
@@ -173,7 +175,7 @@ def folder(name, members):
     return {"name": name, "tagType": "Folder", "tags": members}
 ```
 
-- [ ] **Step 3: Verify existing output is unchanged**
+- [x] **Step 3: Verify existing output is unchanged**
 
 ```bash
 git stash && python ignition/tags/generate_tags.py && cp ignition/tags/udt/SerializedMipStation.json /tmp/before.json && git stash pop && python ignition/tags/generate_tags.py && diff /tmp/before.json ignition/tags/udt/SerializedMipStation.json && echo "IDENTICAL"
@@ -181,7 +183,7 @@ git stash && python ignition/tags/generate_tags.py && cp ignition/tags/udt/Seria
 
 Expected: `IDENTICAL`. If it differs, `opc_member`'s default path changed behaviour — fix before continuing.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add ignition/tags/generate_tags.py
@@ -305,12 +307,23 @@ In the definition emitter, members that are already dicts pass through untouched
             for m in members]
 ```
 
-Add `WeightUom` to the parameter block for `ScaleStation` only (default `lb` — MPP's terminals are configured in pounds, verified at commissioning via command 30):
+Add `WeightUom` to the parameter block for `ScaleStation` only (default `lb` — MPP's terminals are configured in pounds, verified at commissioning via command 30).
+
+**There is no `params` variable today.** `build_udt_def` builds the `parameters` dict as a literal inside its `return` statement, so you must extract it to a local first, then conditionally add the key:
 
 ```python
+    params = {
+        "OpcServer": {"dataType": "String", "value": OPC_SERVER_DEFAULT},
+        "Device":    {"dataType": "String", "value": SIM_DEVICE},
+        "BasePath":  {"dataType": "String", "value": ""},
+    }
     if type_name == "ScaleStation":
         params["WeightUom"] = {"dataType": "String", "value": "lb"}
 ```
+
+Copy the three existing entries verbatim from the current `return` literal rather than the shape above — match the real defaults exactly.
+
+Leave `has_wde` alone. It is already `False` for `ScaleStation`, so no `WriteDisplayEnabled` member is appended, which is correct: display-write gating is a MIP/HMI concern and a scale has no display to write.
 
 - [ ] **Step 3: Handle folders in the simulator CSV emitter**
 
@@ -339,6 +352,15 @@ def flatten_opc(members):
     return out
 ```
 
+The sim-CSV emitter is **inline in `main()`**, not a separate function — look for the `for code, type_name in devices:` loop that writes rows. Its inner `for name, kind in members:` has the same tuple-unpack that breaks on dict members.
+
+Two things that are easy to get wrong here:
+
+- **The browse path must use the ADDRESS, not the friendly name.** The row becomes `"%s/%s" % (code, address)` — the simulator serves register addresses, so a row named `<device>/Net` would never match the UDT's `{BasePath}HRF2` item path. This is the whole reason `flatten_opc` returns addresses.
+- **Fix the member counter at the end of `main()`.** It currently reads `n_members = sum(len(CATALOG[t][0]) for _, t in devices)`, which with folders counts 4 (the folder count), not the leaf members, and would include memory/expr members that never reach the CSV. Derive it from `len(flatten_opc(...))` so the printed sim-row count matches the rows actually written.
+
+> While you are in `main()`: its summary `print` has a pre-existing argument-order bug — it passes `len(devices)` where the format string expects the instance count. It currently reads correctly only by coincidence. Fixing it is optional and out of scope; do not let it distract from the task.
+
 - [ ] **Step 4: Regenerate and inspect**
 
 ```bash
@@ -352,6 +374,8 @@ Expected: `parameters` contains `BasePath`, `Device`, `OpcServer`, `WeightUom`; 
 ```bash
 git diff --stat ignition/tags/
 ```
+
+`dump_json` uses `sort_keys=True`, so each member's keys come out alphabetised while list order inside `"tags"` is preserved. The emitted `ScaleStation.json` will not visually match the order in `scale_members()` — that is expected, not drift.
 
 Expected: `ScaleStation.json`, `PlcDevices.json` and `MPP_Sim_program.csv` change. `SerializedMipStation.json`, `NonSerializedMipStation.json` and `TrayInspectionStation.json` must show **no** changes. If they do, Task 2 Step 3's guarantee broke.
 
