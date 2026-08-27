@@ -71,7 +71,7 @@ Two, both discovered while mapping the spec onto the existing code. Confirm with
 | `sql/tests/0008_Parts_Item/028_ContainerConfig_tolerance.sql` | Tests for the above | 1 |
 | `ignition/tags/generate_tags.py` | Address-decoupled members + folder emission + `ScaleStation` rewrite | 2, 3 |
 | `ignition/tags/udt/ScaleStation.json` | **Generated** | 3 |
-| `ignition/tags/instances/PlcDevices.json` | **Generated** | 3 |
+| `ignition/tags/instances/PlcDevices.json` | Unchanged by Task 3 — instances carry no member data | — |
 | `ignition/tags/sim/MPP_Sim_program.csv` | **Generated** | 3 |
 | `.../BlueRidge/Workorder/Ind570/code.py` | **New.** Protocol layer: decode, command sequencer | 4 |
 | `.../BlueRidge/Workorder/ScaleWatcher/code.py` | Rewritten: capture gate + tray close; edge handler removed | 5 |
@@ -193,7 +193,17 @@ git commit -m "refactor(tags): decouple UDT member names from OPC addresses; add
 
 ---
 
-### Task 3: Rewrite the `ScaleStation` member set for Modbus TCP
+### Task 3: Rewrite the `ScaleStation` member set for Modbus TCP ✅ DONE
+
+**Completed 2026-08-27, commit `61706811`.** All 25 member paths Tasks 4 and 5 depend on are emitted; the three non-scale UDT types regenerate byte-identical; the sim CSV carries 8 rows per scale device with no duplicate browse paths.
+
+Two corrections found during execution, both now reflected below:
+
+- **The plan's `flatten_opc` deduped per-folder, not globally** — `out.extend(flatten_opc(...))` gives each recursive call its own `out`, so the `(word, kind) not in out` test only ever saw siblings. `HR4` is reached from `Weight`, `Verdict` *and* `Protocol/Live`, so it emitted three duplicate rows per scale device. Fixed by merging recursive results through the same membership test.
+- **`PlcDevices.json` does NOT change.** Instances carry only `OpcServer`/`Device`/`BasePath` and no member data, so it is byte-identical and was correctly left out of the commit. If a per-instance UOM override is ever needed, `build_instance` would have to change — Task 3 does not make it.
+
+`CATALOG` also had to move below the builder functions, since `scale_members()` evaluates at import.
+
 
 **Files:**
 - Modify: `ignition/tags/generate_tags.py`
@@ -203,7 +213,7 @@ git commit -m "refactor(tags): decouple UDT member names from OPC addresses; add
 - Consumes: `opc_member(name, kind, address)`, `memory_member`, `expr_member`, `folder` from Task 2.
 - Produces: UDT member paths consumed by Tasks 4 and 5 — `Weight/Net`, `Weight/InMotion`, `Weight/IsValid`, `Weight/SourceIsNet`, `Weight/Uom`, `Verdict/Under`, `Verdict/Ok`, `Verdict/Over`, `Setpoint/Target`, `Setpoint/Tolerance`, `Setpoint/Apply`, `Setpoint/ActiveTarget`, `Setpoint/State`, `Protocol/Live/Command`, `Protocol/Live/CommandResponse`, `Protocol/Live/FpIndicator`, `Protocol/Live/Status`, `Protocol/Live/Integrity1`, `Protocol/Live/Integrity2`, `Protocol/Command/Command`, `Protocol/Command/LoadValue`, `Protocol/Command/CommandResponse`, `Protocol/Command/FpIndicator`, `Protocol/Command/CommandAck`, `Protocol/Command/EchoValue`.
 
-- [ ] **Step 1: Replace the `SCALE` catalog entry**
+- [x] **Step 1: Replace the `SCALE` catalog entry**
 
 Replace the `SCALE = [...]` list in `generate_tags.py` with a builder function. Delete the old list entirely — the `NET_*` / `TRG_*` members are gone.
 
@@ -288,7 +298,7 @@ def scale_members():
     ]
 ```
 
-- [ ] **Step 2: Wire it into the catalog and add the `WeightUom` parameter**
+- [x] **Step 2: Wire it into the catalog and add the `WeightUom` parameter**
 
 The `CATALOG` dict maps type name to `(members, has_write_display)`. `ScaleStation` now supplies a nested structure rather than a flat `(name, kind)` list, so the emitter must branch. Locate the function that builds a UDT definition from `CATALOG` and make it accept an already-built member list for `ScaleStation`:
 
@@ -326,7 +336,7 @@ Copy the three existing entries verbatim from the current `return` literal rathe
 
 Leave `has_wde` alone. It is already `False` for `ScaleStation`, so no `WriteDisplayEnabled` member is appended, which is correct: display-write gating is a MIP/HMI concern and a scale has no display to write.
 
-- [ ] **Step 3: Handle folders in the simulator CSV emitter**
+- [x] **Step 3: Handle folders in the simulator CSV emitter**
 
 The sim CSV writes one row per OPC member. It currently iterates a flat list; it must now recurse into folders and skip non-OPC members (memory and expression tags have no device address). Add a flattener and use it wherever the CSV emitter walks members:
 
@@ -362,7 +372,7 @@ Two things that are easy to get wrong here:
 
 > While you are in `main()`: its summary `print` has a pre-existing argument-order bug — it passes `len(devices)` where the format string expects the instance count. It currently reads correctly only by coincidence. Fixing it is optional and out of scope; do not let it distract from the task.
 
-- [ ] **Step 4: Regenerate and inspect**
+- [x] **Step 4: Regenerate and inspect**
 
 ```bash
 python ignition/tags/generate_tags.py && python -c "import json;d=json.load(open('ignition/tags/udt/ScaleStation.json'));print(json.dumps(d,indent=1)[:1200])"
@@ -370,7 +380,7 @@ python ignition/tags/generate_tags.py && python -c "import json;d=json.load(open
 
 Expected: `parameters` contains `BasePath`, `Device`, `OpcServer`, `WeightUom`; `tags` contains four folders (`Weight`, `Verdict`, `Setpoint`, `Protocol`); no `NET_*` or `TRG_*` member survives anywhere.
 
-- [ ] **Step 5: Verify the other three types did not drift**
+- [x] **Step 5: Verify the other three types did not drift**
 
 ```bash
 git diff --stat ignition/tags/
@@ -380,7 +390,7 @@ git diff --stat ignition/tags/
 
 Expected: `ScaleStation.json`, `PlcDevices.json` and `MPP_Sim_program.csv` change. `SerializedMipStation.json`, `NonSerializedMipStation.json` and `TrayInspectionStation.json` must show **no** changes. If they do, Task 2 Step 3's guarantee broke.
 
-- [ ] **Step 6: Confirm no legacy member names remain**
+- [x] **Step 6: Confirm no legacy member names remain**
 
 ```bash
 grep -rn "NET_DataReady\|NET_NetWeightValue\|TRG_SendMessage\|TRG_TargetWeightValue" ignition/tags/ || echo "CLEAN"
@@ -388,7 +398,7 @@ grep -rn "NET_DataReady\|NET_NetWeightValue\|TRG_SendMessage\|TRG_TargetWeightVa
 
 Expected: `CLEAN`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add ignition/tags/generate_tags.py ignition/tags/udt/ScaleStation.json ignition/tags/instances/PlcDevices.json ignition/tags/sim/MPP_Sim_program.csv
@@ -617,6 +627,7 @@ The legacy watcher was edge-driven: the scale asserted `NET_DataReady` and the w
 **Files:**
 - Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/code.py`
 - Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/PlcWatcher/code.py` (remove the scale edge route)
+- Modify: `ignition/tags/plc_trigger_tag_paths.txt` (delete the 7 dead scale trigger paths)
 
 **Interfaces:**
 - Consumes: `BlueRidge.Workorder.Ind570.captureGate`, `.applySetpoint`, `.parkLiveCommand`; `BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId, closureMethod)`; `BlueRidge.Workorder.PlcWatcher.readMembers`, `.logInterface`, `.notifyAlarm`.
@@ -739,6 +750,20 @@ In `.../BlueRidge/Workorder/PlcWatcher/code.py`, find `_route` (near line 288) a
     # See spec 2026-08-27-ind570-scale-udt-modbus-tcp-design.md Sec 1.1.
 ```
 
+- [ ] **Step 2b: Delete the dead scale trigger paths** ⚠️ ADDED — surfaced by Task 3
+
+`ignition/tags/plc_trigger_tag_paths.txt` is tracked and hand-maintained (it is **not** generated by `generate_tags.py`, so Task 3 could not touch it). It still lists 7 scale trigger paths that no longer exist:
+
+```
+# --- ScaleStation ---
+[MPP]PlcDevices/59B_1_FP_1/NET_DataReady
+... 7 devices total
+```
+
+These are not renamed, they are **gone** — IND570 over Modbus TCP is polled, so there is no edge to watch. Delete the `# --- ScaleStation ---` heading and all 7 paths beneath it, and update the file's header comment from `# 33 trigger paths total.` to `# 26 trigger paths total.`
+
+Add `ignition/tags/plc_trigger_tag_paths.txt` to this task's staging list in Step 5.
+
 - [ ] **Step 3: Confirm no caller still references the removed entry point**
 
 ```bash
@@ -765,7 +790,7 @@ Expected: `{"ok": False, "reason": "No target is active on this scale. ..."}` �
 - [ ] **Step 5: Commit**
 
 ```bash
-git add ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/code.py ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/PlcWatcher/code.py
+git add ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/code.py ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/PlcWatcher/code.py ignition/tags/plc_trigger_tag_paths.txt
 git commit -m "feat(scale): ScaleWatcher rewritten for the IND570 pull model; edge route removed"
 ```
 
@@ -1110,7 +1135,7 @@ powershell -File scan.ps1
 
 In the Designer, run `parts/ContainerConfig_GetByItemAndMethod` from the named-query tester against a `ByWeight` item and confirm `ToleranceWeight` appears as a column. Then run `ContainerConfig_Update` with a `toleranceWeight` value and confirm `Status = 1`.
 
-- [ ] **Step 3b: Thread the value through the Python layer** ⚠️ ADDED — the plan originally missed this file
+- [x] **Step 3b: Thread the value through the Python layer** ⚠️ ADDED — the plan originally missed this file
 
 The editor field cannot round-trip without it. `ignition/projects/Core/ignition/script-python/BlueRidge/Parts/ContainerConfig/code.py` stops at `TargetWeight` in three places:
 
