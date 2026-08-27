@@ -370,11 +370,13 @@ Questions 1 and 2 have fallbacks that cost configuration time, not redesign: if 
 
 | Source | Relevance |
 |---|---|
-| `reference/IND570_PLC_Interface_Manual.md` | §5.4 register map · Appendix B floating point format, status bits, command table · Appendix C.2 byte order |
+| [IND570 PLC Interface Manual #30205335](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205335_12_MAN_PLC_IND570_EN.pdf) (in-repo extract: `reference/IND570_PLC_Interface_Manual.md`) | §5.4 register map · Appendix B floating point format, status bits, command table · Appendix C.2 byte order |
+| [IND570 User's Guide #30205308](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205308_R07_MAN_IND570_UG_EN.pdf) | Terminal-side setup menus — Setup › Application › Target (over/under mode), calibration, serial output modes. Not covered by the PLC manual. |
+| [Ignition Modbus Addressing](https://www.docs.inductiveautomation.com/docs/8.3/ignition-modules/opc-ua/opc-ua-drivers/modbus/modbus-addressing) · [getBit](https://www.docs.inductiveautomation.com/docs/8.1/appendix/expression-functions/logic/getBit) | Address prefixes + the `.N` bit suffix (§4.2); the bit-decode function (§4.3) |
 | `docs/IND570_Ignition_ModbusTCP_Integration_Guide.md` | Commissioning-call guide, generated from this spec's findings |
 | `notes/2026-08-12_mpp-opc-consolidation-assessment.md` | §4a listed these seven scales as un-migratable; superseded by this spec |
 | `reference/legacy_mes_extract/emmd_automation/` | `events.tsv`, `station_chain.tsv`, `tag_catalog.tsv` — the legacy `NET_*` / `TRG_*` flows this replaces |
 | FDS-06-014 | `ByWeight` tray closure — the verdict is authoritative, not the running count |
 | FDS-10-006 | OmniServer scale reads — superseded by this spec |
 
-**Not applicable:** IND570 Shared Data Reference (doc 30205337). Shared Data is unavailable over Modbus TCP (§3.6).
+**Not applicable:** [IND570 Shared Data Reference #30205337](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205337_R04_MAN_SDREF_IND570_EN.pdf). Shared Data is unavailable over Modbus TCP (§3.6).

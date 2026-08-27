@@ -16,7 +16,9 @@ For: Jacques (Ignition side) & Tom (terminal side, plant floor)
 
 - Confirm the option card installed is labeled **"EtherNet/IP – Modbus TCP."** It's one physical card that can run either protocol — we're choosing Modbus TCP in software, not swapping hardware.
 
-- The manual is in the repo at `reference/IND570_PLC_Interface_Manual.md` (searchable text, page-anchored). The original PDF is METTLER TOLEDO document 30205335 rev 12. Chapter 5 is Modbus TCP; Appendix B is the floating-point data format; Appendix C.2 is byte order.
+- Pull up the [METTLER TOLEDO IND570 PLC Interface Manual (document #30205335)](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205335_12_MAN_PLC_IND570_EN.pdf) — Chapter 5 is Modbus TCP, Appendix B is the floating-point data format, Appendix C.2 is byte order. **Tom should have this open on his own machine**; everything Jacques needs is already transcribed into sections 4 and 6 below.
+
+- Blue Ridge side, the same manual is in the repo at `reference/IND570_PLC_Interface_Manual.md` — searchable text, page-anchored, greppable. Figures are not in the extract, so use the web PDF for wiring diagrams and screenshots.
 
 > **Resolved since revision 1:** Fill-570 is **not licensed** on any of the seven terminals. That confirms the standard target-control command set (110 / 131 / 112 / 114). Had Fill been present, every one of those would have been illegal and replaced by 170 / 173 / 174 / 119.
 
@@ -76,7 +78,7 @@ What the manual says: the Modbus TCP setup lives in **the same setup block as Et
 
 2. **Format: Floating Point.** The terminal's native internal format; Integer/Divisions requires a conversion that introduces rounding error. Options are Integer (default), Divisions, Floating Point, Application.
 
-3. **Byte Order: Double Word Swap.** Appendix C.2 lists this as *"compatible with the Modicon Quantum PLC for Modbus TCP networks"* — it is the vendor's own recommendation for Modbus TCP specifically. (Word Swap, the terminal default, targets RSLogix 5000; Byte Swap targets S7 Profibus; Standard targets PLC-5.)
+3. **Byte Order: Double Word Swap.** [Appendix C.2](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205335_12_MAN_PLC_IND570_EN.pdf) lists this as *"compatible with the Modicon Quantum PLC for Modbus TCP networks"* — it is the vendor's own recommendation for Modbus TCP specifically. (Word Swap, the terminal default, targets RSLogix 5000; Byte Swap targets S7 Profibus; Standard targets PLC-5.)
 
 4. **Message Slots: 2.** Slot 1 for the live net weight, slot 2 as the command scratchpad.
 
@@ -94,11 +96,11 @@ This determines what the pass/fail status bits mean. Manual Table B-1, note 5:
 
 Over/under gives us a three-state verdict — Under / OK / Over — which is strictly more useful than the single pass/fail boolean the legacy system had. Material transfer mode is for controlling a filling operation and doesn't apply here.
 
-There is no PLC command to select target mode; it must be set on the front panel.
+There is no PLC command to select target mode — it must be set on the front panel. This menu is documented in the [IND570 User's Guide](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205308_R07_MAN_IND570_UG_EN.pdf), not the PLC Interface Manual, so that's the one to have open for this step.
 
 # 4. The Register Map (settled — no longer read live)
 
-Floating Point format, per manual §5.4.4 and Table 5-3. Read and write areas share one holding-register space, offset by exactly 1024.
+Floating Point format, per [manual](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205335_12_MAN_PLC_IND570_EN.pdf) §5.4.4 and Table 5-3. Read and write areas share one holding-register space, offset by exactly 1024.
 
 | Slot | Read (from IND570) | Write (to IND570) |
 |---|---|---|
@@ -147,13 +149,13 @@ For any command taking a value, the manual (Table B-4 note 6) says: *"If the com
 
 # 5. Jacques's Side — Configuring Ignition
 
-1. Config › OPC UA › Device Connections › Create new Device → **Modbus TCP**.
+1. Config › OPC UA › Device Connections › Create new Device → **Modbus TCP**. ([Connecting to a Modbus Device](https://www.docs.inductiveautomation.com/docs/8.3/ignition-modules/opc-ua/opc-ua-drivers/modbus/connecting-to-modbus-device))
 2. **Hostname:** the terminal IP from section 3.1. **Port:** 502.
 3. **Addressing Mode:** one-based.
 4. Leave word/byte order at defaults — only revisit if data comes back garbled.
 5. Create the test tags below.
 
-Ignition's Modbus driver supports single-bit extraction from a holding register with a `.N` suffix, zero-indexed (`[Device]HR1024.0` is the first bit). That matches Mettler's bit numbering directly, so status flags are plain OPC tags.
+Ignition's Modbus driver supports single-bit extraction from a holding register with a `.N` suffix, zero-indexed (`[Device]HR1024.0` is the first bit) — see [Modbus Addressing](https://www.docs.inductiveautomation.com/docs/8.3/ignition-modules/opc-ua/opc-ua-drivers/modbus/modbus-addressing) for the full prefix table (`HR`, `HRF`, `HRUS`, `C`, `DI`, …). That matches Mettler's bit numbering directly, so status flags are plain OPC tags.
 
 | Purpose | OPC address | Type |
 |---|---|---|
@@ -203,15 +205,33 @@ Ignition's Modbus driver supports single-bit extraction from a holding register 
 
 # 8. Reference Material
 
-- **`reference/IND570_PLC_Interface_Manual.md`** — in-repo searchable extract of MT document 30205335 rev 12. §5.4 register map, Appendix B floating point format and command table, Appendix C.2 byte order. Figures are not in the extract; open the source PDF for wiring diagrams and screenshots.
+## Vendor documentation
+
+- [**METTLER TOLEDO IND570 PLC Interface Manual**, document #30205335](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205335_12_MAN_PLC_IND570_EN.pdf) — the authority for everything in sections 4 and 6. Chapter 5 (Modbus TCP), Appendix B (Floating Point Format — status bits, command table, worked handshake examples), Appendix C.2 (Byte Order).
+
+- [**IND570 User's Guide**, document #30205308](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205308_R07_MAN_IND570_UG_EN.pdf) — **Tom's reference for section 3.** The terminal-side setup menus live here, not in the PLC manual: Setup › Application › Target (including over/under vs material transfer mode), scale calibration, and the serial-port output modes. If a menu in section 3 doesn't look the way this guide describes it, check here first.
+
+- [IND570 Quick Guide, document #30205355](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205355_06_MAN_QG_IND570_ML_A4.pdf) — condensed front-panel reference, handy to have printed at the terminal.
+
+## Ignition documentation
+
+- [Modbus Addressing](https://www.docs.inductiveautomation.com/docs/8.3/ignition-modules/opc-ua/opc-ua-drivers/modbus/modbus-addressing) — the prefix table (`HR`, `HRF`, `HRUS`, `HRI`, `C`, `DI`, …) and the `.N` bit-suffix syntax used throughout section 5.
+
+- [Connecting to a Modbus Device](https://www.docs.inductiveautomation.com/docs/8.3/ignition-modules/opc-ua/opc-ua-drivers/modbus/connecting-to-modbus-device) — device-connection settings, including the one-based/zero-based addressing option.
+
+- [getBit expression function](https://www.docs.inductiveautomation.com/docs/8.1/appendix/expression-functions/logic/getBit) — used to decode the multi-bit FP Indicator and Command Acknowledge fields (section 4.2). Zero-indexed, LSB at position 0, matching Mettler's numbering.
+
+- [Inductive Automation forum, "Metler Toledo IND570 Weight Data (float)"](https://forum.inductiveautomation.com/t/metler-toledo-ind570-weight-data-float/31892) — community precedent for this exact terminal on Ignition, including working byte-order and addressing combinations. Useful as a second opinion, but the manual is authoritative — the forum thread's register numbers were flagged by its own author as best guesses.
+
+## Blue Ridge internal
+
+- **`reference/IND570_PLC_Interface_Manual.md`** — in-repo searchable extract of the manual above, page-anchored and greppable. Figures are not in the extract; use the web PDF for wiring diagrams and screenshots.
 
 - **`docs/superpowers/specs/2026-08-27-ind570-scale-udt-modbus-tcp-design.md`** — the UDT design, both data flows, the `ContainerConfig.ToleranceWeight` schema change, and why each decision was made.
 
 - **`notes/2026-08-12_mpp-opc-consolidation-assessment.md`** — the earlier assessment that listed these 7 scales as un-migratable. Superseded: they connect to Ignition natively, and OmniServer can be retired entirely.
 
-- [Inductive Automation forum, "Metler Toledo IND570 Weight Data (float)"](https://forum.inductiveautomation.com/t/metler-toledo-ind570-weight-data-float/31892) — community precedent for this terminal on Ignition. Useful as a sanity check, but the manual is authoritative and the forum's register guesses were approximate.
-
-> **Not applicable:** the IND570 Shared Data Reference (document 30205337). Manual Table B-4 note 9 states outright that *"Shared data is not available with the AB-RIO, DeviceNet and Modbus TCP."* Command 160 (Apply scale setup) also does not function over this path.
+> **Not applicable:** the [IND570 Shared Data Reference, document #30205337](https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/30205337_R04_MAN_SDREF_IND570_EN.pdf). Manual Table B-4 note 9 states outright that *"Shared data is not available with the AB-RIO, DeviceNet and Modbus TCP."* Command 160 (Apply scale setup) also does not function over this path. Linked so nobody spends an afternoon working out why the `wt0101`-style variable names don't resolve.
 
 # 9. Worksheet — Fill In As We Go (Terminal #1 of 7)
 
