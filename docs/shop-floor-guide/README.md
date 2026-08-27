@@ -53,22 +53,25 @@ This rewrites `MPP_MES_ShopFloor_Guide.html`.
   has no data model behind it yet. Remove the callout once that lands.
 - **Supervisor Dashboard's Print Failures tile** is still a placeholder in the app; the section
   says so. Update it when the tile is wired.
-- **Screenshot headers must match the guide's framing.** The guide tells operators the terminal is
-  already set for their station and to raise it with a supervisor if the header says otherwise, so a
-  screenshot whose header contradicts that undercuts the message.
-  - **Done:** `02_die_cast_entry` plus `28`-`32` are captured from `DC1-M01-T1` ("Machine 01") with a
-    shift open and an operator signed in. The die-cast one also replaces a capture of the superseded
-    single-basket form with the current per-cavity grid.
-  - **Still wrong:** `17_initial_entry.png` is from the **Fallback Terminal / Madison Facility** — the
-    exact unconfigured state the guide tells operators to report — and `23`-`27`, `33`-`34` are from
-    the **Receiving** terminal, so terminal-scoped screens name the wrong station.
-  - **Blocked on the gateway trial.** Re-capturing these stopped because the Ignition trial expired
-    and every Perspective client now serves "Trial Expired". Reset the trial from the gateway web UI,
-    then re-run the capture (see DEVELOPING.md § Capturing screenshots headlessly).
-- **Two Dev-data blemishes visible in `02_die_cast_entry`:** the cavity names read "Test Part",
-  "Test Cavity", "12", "134", "1352" (`Tools.ToolCavity.Description` on tool DC-01), and the subtitle
-  says "SHARED TERMINAL" even on the dedicated die-cast route, because that string is hardcoded in
-  `DieCastBody`'s subtitle expression rather than derived from the terminal.
+- **Screenshot terminals are now correct.** Every shop-floor screen is captured from the station it
+  belongs to, with a shift open and an operator signed in, by repointing the gateway host's loopback
+  address per group (see DEVELOPING.md § Capturing screenshots headlessly):
+
+  | Terminal | Shots |
+  |---|---|
+  | `DC1-M01-T1` (Machine 01) | `02`, `17`, `28`-`32` |
+  | `INSP-SORT-T1` (Sort Cage Inspection) | `24`, `26` |
+  | `OS-64S-TC-T1` | `25` |
+  | `MA2-RPYCAM1-MIO-RS5` | `34` |
+  | `SHIPIN-REC-T1` (Receiving) | `23`, `27`, `33` |
+
+  `17_initial_entry` was previously shot from the **Fallback Terminal / Madison Facility** — the exact
+  unconfigured state the guide tells operators to report — and is now taken at Machine 01.
+- **Two Dev-data blemishes remain, visible in `02_die_cast_entry` and `17_initial_entry`:** the cavity
+  names read "Test Part", "Test Cavity", "12", "134", "1352" (`Tools.ToolCavity.Description` on tool
+  DC-01), and the subtitle says "SHARED TERMINAL" even on the dedicated die-cast route, because that
+  string is hardcoded in `DieCastBody`'s subtitle expression rather than derived from the terminal.
+  Both want fixing before customer release; neither is a screenshot problem.
 - Before final customer release, review the dev-environment / sample-data caveat in the footer
   and the `Draft v0.3` tag in the masthead.
 
