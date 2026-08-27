@@ -407,7 +407,11 @@ git commit -m "feat(tags): ScaleStation UDT rebuilt for IND570 Modbus TCP regist
 
 ---
 
-### Task 4: `BlueRidge.Workorder.Ind570` — protocol layer
+### Task 4: `BlueRidge.Workorder.Ind570` — protocol layer ✅ DONE
+
+**Completed 2026-08-27, commit `ba107442`.** Verified against the gateway's own Jython 2.7 compiler, not a CPython proxy. `PlcWatcher`'s four helpers exist with the assumed signatures, and `readMembers` keys its result by the member string verbatim, so nested folder paths like `Weight/InMotion` work — the plan's `captureGate` needed no change.
+
+**The module has never been executed.** A clean scan plus a Jython compile proves it parses and the resource registered; it does not prove `BlueRidge.Workorder.Ind570` resolves at runtime. Needs a Designer script-console check: `print BlueRidge.Workorder.Ind570.CMD["SET_TARGET"]` should print `110`.
 
 The Modbus command sequencer, isolated from any MES concern so it can be reasoned about and exercised on its own. Domain logic stays in SQL; this is protocol decode and handshake, which correctly lives in Jython.
 
@@ -419,7 +423,7 @@ The Modbus command sequencer, isolated from any MES concern so it can be reasone
 - Consumes: `BlueRidge.Workorder.PlcWatcher.readMember(udtInstancePath, member)`, `.writeMember(udtInstancePath, member, value)`, `.readMembers(udtInstancePath, members)`, `.logInterface(deviceCode, description, requestPayload=None, responsePayload=None, ok=True, errorDescription=None)`.
 - Produces: `CMD` (dict of command-code constants), `parkLiveCommand(instancePath)`, `sendCommand(instancePath, code, value=None, timeoutMs=3000)` returning `{"ok": bool, "message": str, "echo": float|None}`, `applySetpoint(instancePath, target, tolerance)` returning `{"ok": bool, "message": str}`, `captureGate(instancePath)` returning `{"ok": bool, "reason": str|None}`.
 
-- [ ] **Step 1: Create the resource descriptor**
+- [x] **Step 1: Create the resource descriptor**
 
 Create `.../BlueRidge/Workorder/Ind570/resource.json`, copying the exact shape of `.../BlueRidge/Workorder/ScaleWatcher/resource.json`:
 
@@ -427,7 +431,7 @@ Create `.../BlueRidge/Workorder/Ind570/resource.json`, copying the exact shape o
 cp ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/resource.json ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/Ind570/resource.json
 ```
 
-- [ ] **Step 2: Write the module**
+- [x] **Step 2: Write the module**
 
 Create `.../BlueRidge/Workorder/Ind570/code.py`:
 
@@ -597,7 +601,7 @@ def captureGate(instancePath):
     return {"ok": True, "reason": None}
 ```
 
-- [ ] **Step 3: Deploy to the gateway and confirm it loads**
+- [x] **Step 3: Deploy to the gateway and confirm it loads**
 
 ```bash
 powershell -File scan.ps1
@@ -611,7 +615,7 @@ print BlueRidge.Workorder.Ind570.CMD["SET_TARGET"]
 
 Expected: `110`. A `NameError` or import failure means `resource.json` is wrong or the scan did not pick the folder up.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/Ind570/
@@ -621,6 +625,21 @@ git commit -m "feat(scale): IND570 Modbus TCP protocol layer - command sequencer
 ---
 
 ### Task 5: Rewrite `ScaleWatcher` for the pull model
+
+> ## ⚠️ Four findings from Task 4 — read first
+>
+> **1. `applySetpoint` blocks for up to ~15 seconds and Task 7 calls it from a session thread.** Four commands at a 3 s timeout each, plus a fifth `ABORT_COMPARE` on failure. Task 7's dropdown handler calls `loadSetpointForItem` synchronously to read `["ok"]` for its toast, so the block lands on the operator's part-change click — and against the simulator, which never rotates the ack, it will reliably hit the full timeout.
+>
+> The project's convention for this is `BlueRidge/Lots/ShippingDispatcher/code.py` (the FDS-01-014 Gateway-script-async pattern) — the **only** `system.util.invokeAsynchronous` in the whole `ignition/projects/` tree. Its shape: validate and resolve cheaply on the calling thread, return a status immediately, run the slow loop asynchronously, and surface the real outcome through `PlcWatcher.notifyAlarm(terminalLocationId, title, message)`, which `BlueRidge/Components/NotifyHost` already filters per terminal.
+>
+> Applied here that means `loadSetpointForItem` does the `ContainerConfig` read and the NULL checks synchronously — those are the failures worth returning inline — then hands `applySetpoint` to `invokeAsynchronous` and reports sequencer failure via `notifyAlarm`. **This adds a `terminalLocationId` parameter to `loadSetpointForItem`**, which Task 7's handler already has in scope. **This is a design change, not a bug fix — confirm with Jacques before implementing it.**
+>
+> **2. `float(echo)` is a live crash path.** `readMember` returns `None` on bad tag quality, so if the ack rotates but `EchoValue` reads bad, `abs(float(echo) - float(value))` raises `TypeError` out of `sendCommand` → `applySetpoint` → the caller. There is no `try`/`except` in the module, and per the project rule a Jython `except Exception` would not catch a Java tag-subsystem throwable anyway — a guard needs `except (Exception, java.lang.Exception)`. Handle the `None` explicitly rather than relying on a catch.
+>
+> **3. The echo tolerance is too tight.** `> 0.0001` is an absolute comparison against a value round-tripped through a Modbus 32-bit float. Float32 carries ~7 significant digits, so a target above roughly 1000 lb can differ by more than 1e-4 from encoding alone — producing a spurious *"Echo mismatch — check Byte Order = Double Word Swap"* that sends commissioning down entirely the wrong path. Use a relative tolerance.
+>
+> **4. `parkLiveCommand` writes and returns nothing.** No `logInterface`, no read-back. Given the module header calls the unparked state a silent failure producing "plausible, well-formed, wrong numbers", a read-back confirm is cheap insurance and belongs here.
+
 
 The legacy watcher was edge-driven: the scale asserted `NET_DataReady` and the watcher reacted. Modbus TCP has no such edge — the operator button drives everything. `handleEdge` therefore disappears and is replaced by a function the button calls.
 
@@ -1083,7 +1102,9 @@ git commit -m "feat(scale): record the checkweigh reading on the ByWeight tray-c
 
 ---
 
-### Task 10: Make `ToleranceWeight` settable from Item Master
+### Task 10: Make `ToleranceWeight` settable from Item Master ✅ DONE
+
+**Completed 2026-08-27** — `add2030d` (named queries), `dce4e677` (Python passthrough), `5195c28e` (editor field). `ToleranceWeight` is now settable end to end, which unblocks Flow A.
 
 **This plan shipped a column nothing can write to.** Task 1 added `ToleranceWeight` to the table and the stored procs, but the Ignition named queries `parts/ContainerConfig_Create` and `parts/ContainerConfig_Update` pass parameters by name and stop at `@TargetWeight`, and the ContainerConfig editor section has no field for it. So the value is permanently NULL from the application's point of view — and `loadSetpointForItem` (Task 5) refuses to push a setpoint when it is NULL. Flow A cannot work until this is done.
 
@@ -1147,7 +1168,7 @@ Also extend the two docstring shape comments (~lines 124 and 167) that enumerate
 
 This file is a Python script, not a view, so it is safe to edit on disk.
 
-- [ ] **Step 4: Add the editor field — Designer task**
+- [x] **Step 4: Add the editor field — Designer task**
 
 Open `BlueRidge/Components/Parts/ItemMaster/ContainerConfig`. Find the existing `TargetWeight` input and add a `ToleranceWeight` input directly beside it, copying the sibling's component type, styling and binding shape exactly.
 
@@ -1158,7 +1179,7 @@ Two project rules apply here and both cause silent breakage if missed:
 
 Label it **Tolerance (±)** to make the symmetry explicit; the single value is applied as both the plus and minus tolerance.
 
-- [ ] **Step 5: Verify end to end**
+- [x] **Step 5: Verify end to end**
 
 In the running app, open an item with `ClosureMethod = ByWeight`, set a target and a tolerance, save, then confirm in SQL:
 
@@ -1168,7 +1189,7 @@ sqlcmd -S localhost -d MPP_MES_Dev -C -Q "SELECT ItemId, ClosureMethod, TargetWe
 
 Expected: a non-NULL `ToleranceWeight`. Verify through SQL rather than the browser — the in-app browser cannot reliably commit Perspective input bindings, so a visual check is not evidence the value persisted.
 
-- [ ] **Step 6: Export and commit**
+- [x] **Step 6: Export and commit**
 
 ```bash
 powershell -File scan.ps1 && git diff --stat ignition/
