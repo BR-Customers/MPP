@@ -86,18 +86,54 @@ CATALOG = {
 }
 
 
-def opc_member(name, kind):
+def opc_member(name, kind, address=None):
     """One OPC AtomicTag member -- opcServer + opcItemPath are parameter binds.
-    Member name appended directly to {BasePath} (separator lives in BasePath)."""
+
+    address=None  -> the member NAME is the address, appended directly to
+                     {BasePath} (the original scheme; separator lives in
+                     BasePath -- MIP + tray types).
+    address given -> the tag name and the OPC address are decoupled, so a
+                     UDT can present friendly names over raw register
+                     addresses (the IND570 scale over Modbus TCP).
+    """
     return {
         "name": name,
         "dataType": TAG_DTYPE[kind],
         "valueSource": "opc",
         "opcServer": {"bindType": "parameter", "binding": "{OpcServer}"},
         "opcItemPath": {"bindType": "parameter",
-                        "binding": "ns=1;s=[{Device}]{BasePath}" + name},
+                        "binding": "ns=1;s=[{Device}]{BasePath}" + (address or name)},
         "tagType": "AtomicTag",
     }
+
+
+def memory_member(name, kind, default):
+    """A memory tag -- MES-side state the device neither reads nor writes."""
+    return {
+        "name": name,
+        "dataType": TAG_DTYPE[kind],
+        "valueSource": "memory",
+        "defaultValue": default,
+        "tagType": "AtomicTag",
+    }
+
+
+def expr_member(name, kind, expression):
+    """A derived tag -- protocol decode over a raw register word. Expression
+    syntax is C-style (=, &&, !), NOT Python keywords, which fail silently
+    as falsy."""
+    return {
+        "name": name,
+        "dataType": TAG_DTYPE[kind],
+        "valueSource": "expr",
+        "expression": expression,
+        "tagType": "AtomicTag",
+    }
+
+
+def folder(name, members):
+    """A UDT folder member -- groups children by audience, not by address."""
+    return {"name": name, "tagType": "Folder", "tags": members}
 
 
 def write_display_member():
