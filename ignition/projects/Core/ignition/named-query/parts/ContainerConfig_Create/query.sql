@@ -7,4 +7,5 @@ EXEC Parts.ContainerConfig_Create
     @CustomerCode      = :customerCode,
     @ClosureMethod     = :closureMethod,
     @TargetWeight      = :targetWeight,
+    @ToleranceWeight   = :toleranceWeight,
     @AppUserId         = :appUserId
