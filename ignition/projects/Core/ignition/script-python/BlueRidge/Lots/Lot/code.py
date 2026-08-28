@@ -1024,3 +1024,180 @@ def crtNamesFor(lotIds):
         if row.get("CrtActive"):
             out.append(row.get("LotName") or ("%s" % lotId))
     return out
+
+
+# ---------------------------------------------------------------------------
+# FDS-12-004 LOT Search Advanced
+#
+# NOTE: search() above is FROZEN. It backs the HoldManagement bulk-hold picker,
+# which calls it POSITIONALLY, plus the lots/Lot_Search NQ and test 077. Do not
+# widen its signature -- the richer surface is searchAdvanced() below, against
+# the separate Lots.Lot_SearchAdvanced proc.
+# ---------------------------------------------------------------------------
+
+_EMPTY_FILTERS = {
+    "query": None, "itemId": None, "createdFromEt": None, "createdToEt": None,
+    "toolId": None, "toolCavityId": None, "locationId": None,
+    "machineLocationId": None, "shiftId": None, "lotStatusId": None,
+    "lotOriginTypeId": None, "limitRows": 100,
+}
+
+
+def emptyFilters():
+    """The canonical FDS-12-004 filter shape. The view seeds view.custom.filters
+       from this and Reset reseeds from it; searchAdvanced fills gaps from it.
+       ONE source of truth for the twelve names -- the SQL side is pinned by
+       sql/tests/0067_Lot_SearchAdvanced/050_signature_parity.sql."""
+    return dict(_EMPTY_FILTERS)
+
+
+def _toSqlDate(value):
+    """ia.input.date-time-input hands back a millisecond timestamp, not a
+       string. Floor it to the session-timezone day so the proc's DATE parameter
+       receives a clean calendar day. None/blank passes through as None.
+
+       system.date.* raises Java throwables, which a bare `except Exception`
+       does NOT catch in Jython -- hence the two-arm guard."""
+    from java.lang import Throwable
+    value = _u(value)
+    if value is None or value == "":
+        return None
+    try:
+        return system.date.midnight(value)
+    except (Exception, Throwable):
+        BlueRidge.Common.Util.log("un-coercible date value=%s" % (value,), level="warn")
+        return None
+
+
+def searchAdvanced(filters=None):
+    """FDS-12-004 filtered LOT browse. ONE argument -- a dict shaped like
+       _EMPTY_FILTERS. Absent keys fall back to the default (no filter); unknown
+       keys are ignored.
+
+       Deliberately NOT twelve positional arguments: positional drift is the
+       real hazard at this width, not the parameter count. search() above shows
+       why -- it is called positionally from a view, so any reorder there binds
+       the wrong argument silently.
+
+       Returns list[dict]; [] when nothing matches."""
+    filters = _u(filters) or {}
+    params = dict(_EMPTY_FILTERS)
+    for key in _EMPTY_FILTERS:
+        if key in filters:
+            params[key] = _u(filters[key])
+    params["createdFromEt"] = _toSqlDate(params["createdFromEt"])
+    params["createdToEt"] = _toSqlDate(params["createdToEt"])
+    if not params["limitRows"]:
+        params["limitRows"] = 100
+    BlueRidge.Common.Util.log("searchAdvanced params=%s" % params)
+    return BlueRidge.Common.Db.execList("lots/Lot_SearchAdvanced", params)
+
+
+def exportCsv(rows):
+    """FRS 3.5.10 -- export the current filtered result set as CSV. No-op with
+       an info toast when there is nothing to export."""
+    rows = _u(rows) or []
+    if not rows:
+        BlueRidge.Common.Notify.toast("Nothing to export", "Run a search first.", "info")
+        return
+    BlueRidge.Common.Util.log("exportCsv rows=%d" % len(rows))
+    ds = system.dataset.toDataSet(rows)
+    system.perspective.download("lot-search.csv", system.dataset.toCSV(ds))
+
+
+# ---------------------------------------------------------------------------
+# FDS-12-004 filter-bar option sources
+#
+# Sited here beside getStatusOptions / getOriginOptions, which already back this
+# same view's filter bar. Every one returns STRICT [{label, value}] -- the
+# dropdown component silently misbehaves when option dicts carry extra keys, so
+# helpers that return richer rows (e.g. Location.getCellsForDropdown, which adds
+# code/name) are re-shaped here rather than bound directly.
+# ---------------------------------------------------------------------------
+
+def _labelValue(rows, labelKey, valueKey="Id", fallbackKey=None):
+    """Re-shape read rows into strict [{label, value}] dropdown options."""
+    out = []
+    for r in (rows or []):
+        label = r.get(labelKey)
+        if not label and fallbackKey:
+            label = r.get(fallbackKey)
+        value = r.get(valueKey)
+        if value is None:
+            continue
+        out.append({"label": ("%s" % (label if label is not None else value)), "value": value})
+    return out
+
+
+def getPartOptions(_refreshToken=None):
+    """[{label: PartNumber, value: ItemId}] for the Part filter."""
+    return BlueRidge.Parts.Item.getForDropdown() or []
+
+
+def getDieOptions(_refreshToken=None):
+    """[{label: Tool Code, value: ToolId}] for the Die filter. Built off the
+       Tool list read; deprecated tools are dropped."""
+    rows = BlueRidge.Parts.Tool.getAllForList("", "All") or []
+    return [{"label": r.get("code"), "value": r.get("id")}
+            for r in rows if not r.get("deprecated") and r.get("id") is not None]
+
+
+def getCavityOptions(toolId=None, _refreshToken=None):
+    """[{label, value}] cavities for the selected Die. Empty until a Die is
+       chosen -- cavity is only meaningful within a tool."""
+    toolId = _u(toolId)
+    if toolId is None:
+        return []
+    return BlueRidge.Parts.Tool.getCavitiesForDropdown(toolId) or []
+
+
+def getLocationOptions(_refreshToken=None):
+    """[{label: '<Code> - <Name>', value: LocationId}] across the Area,
+       WorkCenter and Cell tiers -- the LOT-location filter is descendant
+       inclusive, so an Area selection is meaningful, not just a Cell."""
+    out = []
+    for tier in ("Area", "WorkCenter", "Cell"):
+        for r in (BlueRidge.Location.Location.listByTier(tier) or []):
+            if r.get("DeprecatedAt") is not None or r.get("Id") is None:
+                continue
+            code = r.get("Code") or ""
+            name = r.get("Name") or ""
+            label = ("%s - %s" % (code, name)) if code and name else (code or name)
+            out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
+def getMachineOptions(_refreshToken=None):
+    """[{label, value}] Cell-tier locations for the origin-machine (press)
+       filter. Machine resolves through DieCastContribution.CellLocationId, so
+       the candidate set is Cells."""
+    rows = BlueRidge.Location.Location.listByTier("Cell") or []
+    out = []
+    for r in rows:
+        if r.get("DeprecatedAt") is not None or r.get("Id") is None:
+            continue
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        label = ("%s - %s" % (code, name)) if code and name else (code or name)
+        out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
+def getShiftOptions(_refreshToken=None):
+    """[{label: 'ScheduleName - MM/dd', value: ShiftId}] for the Shift filter.
+
+       Broader than Oee.Shift.getRecentOptions, which caps at the three most
+       recent instances for die-cast entry -- a search filter needs history."""
+    rows = BlueRidge.Oee.Shift.listRecent() or []
+    out = []
+    for r in rows:
+        sid = r.get("Id")
+        if sid is None:
+            continue
+        start = r.get("ActualStart")
+        try:
+            day = system.date.format(start, "MM/dd") if start is not None else "?"
+        except (Exception,):
+            day = ("%s" % start)[:10]
+        out.append({"label": "%s - %s" % (r.get("ScheduleName") or "Shift", day), "value": sid})
+    return out

@@ -39,12 +39,12 @@
       }
     },
     "events": {
-      "component": {
-        "onActionPerformed": {
+      "dom": {
+        "onClick": {
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tif self.view.params.row and self.view.params.row.ParentLotId:\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.row.ParentLotId))"
+            "script": "\tBlueRidge.Lots.LotTrail.hopToParent(self.session, self.view.params.row)"
           }
         }
       }

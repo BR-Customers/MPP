@@ -29,3 +29,37 @@ def getBySerial(serialNumber):
     BlueRidge.Common.Util.log("serialNumber=%s" % serialNumber)
     return BlueRidge.Common.Db.execOne(
         "lots/SerializedPart_GetBySerial", {"serialNumber": serialNumber})
+
+
+# ---------------------------------------------------------------------------
+# FDS-12-002 Serialized Item Search -- Global Trace detail panel
+# ---------------------------------------------------------------------------
+
+_EMPTY_TRACE_DETAIL = {
+    "SerialNumber": None, "ItemId": None, "ItemPartNumber": None,
+    "ProducingLotId": None, "ProducingLotName": None, "EtchedAt": None,
+    "ProducedAt": None, "OperatorName": None, "MachineName": None,
+    "ContainerId": None, "ContainerStatusCode": None, "AimShipperId": None,
+    "CompletedAt": None,
+}
+
+
+def getTraceDetail(serialNumber):
+    """FDS-12-002 payload for one serial: item, producing LOT, production
+       date/time, operator, machine, container, AIM shipper id. Returns dict, or
+       None when the serial is unknown.
+
+       CompletedAt is container CLOSE time -- the schema has no ship timestamp
+       (design spec 2.5). The view labels it "Completed", never "Ship date".
+
+       Distinct from getBySerial above, which has a narrower contract and
+       existing callers."""
+    BlueRidge.Common.Util.log("getTraceDetail serialNumber=%s" % serialNumber)
+    return BlueRidge.Common.Db.execOne(
+        "lots/SerializedPart_GetTraceDetail", {"serialNumber": serialNumber})
+
+
+def getTraceDetailOrEmpty(serialNumber):
+    """Binding-safe variant: ALWAYS the fully-shaped dict. A None return would
+       replace the view's shaped default and make every nested read error."""
+    return getTraceDetail(serialNumber) or dict(_EMPTY_TRACE_DETAIL)

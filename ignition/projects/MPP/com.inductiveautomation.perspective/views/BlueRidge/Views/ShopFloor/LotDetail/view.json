@@ -122,29 +122,93 @@
                 "type": "ia.display.label"
               },
               {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Meta"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber}) + \" · \" + if(isNull({view.custom.lot.LotOriginTypeCode}), \"\", {view.custom.lot.LotOriginTypeCode}) + if(isNull({view.custom.lot.BomVersionNumber}), \"\", \" · BOM v\" + toStr({view.custom.lot.BomVersionNumber}))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "14px"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Breadcrumb"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "grow": 0,
+                      "shrink": 1
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "session.custom.lotTrail"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\treturn BlueRidge.Lots.LotTrail.crumbs(value)",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "row",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/CrumbChip",
+                      "style": {
+                        "classes": "pf-breadcrumb",
+                        "gap": "2px",
+                        "minHeight": "28px"
+                      },
+                      "useDefaultViewHeight": true,
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  }
+                ],
                 "meta": {
-                  "name": "Meta"
+                  "name": "MetaRow"
                 },
                 "position": {
+                  "basis": "auto",
                   "shrink": 0
                 },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "expression": "if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber}) + \" · \" + if(isNull({view.custom.lot.LotOriginTypeCode}), \"\", {view.custom.lot.LotOriginTypeCode}) + if(isNull({view.custom.lot.BomVersionNumber}), \"\", \" · BOM v\" + toStr({view.custom.lot.BomVersionNumber}))"
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
                 "props": {
+                  "alignItems": "center",
+                  "direction": "row",
                   "style": {
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "14px"
-                  }
+                    "gap": "12px",
+                    "minWidth": "0"
+                  },
+                  "wrap": "nowrap"
                 },
-                "type": "ia.display.label"
+                "type": "ia.container.flex"
               }
             ],
             "meta": {
@@ -271,7 +335,7 @@
             "classes": "pf-terminal-header",
             "flexShrink": 0,
             "gap": "16px",
-            "padding": "20px 24px"
+            "padding": "12px 24px"
           }
         },
         "type": "ia.container.flex"
@@ -479,7 +543,6 @@
               "direction": "column",
               "style": {
                 "classes": "pf-kpi",
-                "gap": "2px",
                 "minWidth": "160px",
                 "padding": "16px 20px"
               }
@@ -770,7 +833,7 @@
             "classes": "pf-kpis",
             "flexWrap": "wrap",
             "gap": "0px",
-            "padding": "0px 24px 0px 24px"
+            "padding": "0px 12px 0px 12px"
           }
         },
         "type": "ia.container.flex"
@@ -1819,7 +1882,7 @@
           "style": {
             "classes": "pf-panel",
             "gap": "0px",
-            "margin": "12px 24px",
+            "margin": "12px",
             "overflow": "hidden",
             "padding": "0px"
           }
@@ -1992,7 +2055,9 @@
             "borderTop": "1px solid var(--mpp-border-default)",
             "classes": "pf-actions",
             "gap": "12px",
-            "padding": "16px 24px"
+            "padding": "16px",
+            "paddingLeft": "16px",
+            "paddingRight": "16px"
           }
         },
         "type": "ia.container.flex"
@@ -2031,7 +2096,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      \u003d BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  \u003d BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children \u003d BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   \u003d BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container \u003d BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples \u003d BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold \u003d BlueRidge.Quality.Hold.getOpenByLotOne(lotId)\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0), \"containerId\": 0, \"allowLookup\": False}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotScrapPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotCountPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")"
+          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      \u003d BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  \u003d BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children \u003d BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   \u003d BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container \u003d BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples \u003d BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold \u003d BlueRidge.Quality.Hold.getOpenByLotOne(lotId)\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0), \"containerId\": 0, \"allowLookup\": False}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotScrapPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotCountPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tBlueRidge.Lots.LotTrail.sync(self.session, lotId, self.view.custom.lot)"
         },
         {
           "name": "doCrtToggle",
