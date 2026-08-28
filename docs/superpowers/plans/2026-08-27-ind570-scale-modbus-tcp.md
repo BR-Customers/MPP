@@ -442,6 +442,14 @@ The physical button surfaces as Scale Status bits 8-11. Task 3 shipped before th
         ]),
 ```
 
+- [ ] **Step 1b: Add `ActiveTolerance` to the `Setpoint` folder**
+
+Task 4b's skip-if-unchanged test compares the requested setpoint against what the scale is confirmed to be enforcing. `ActiveTarget` exists; its tolerance counterpart does not, so a tolerance-only change would be silently skipped and the line would run against a stale window. Add beside `ActiveTarget`:
+
+```python
+            memory_member("ActiveTolerance", "real", 0.0),
+```
+
 - [ ] **Step 2: Regenerate and verify**
 
 ```bash
