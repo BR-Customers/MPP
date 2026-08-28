@@ -192,6 +192,17 @@ def scale_members():
                         "{[.]Protocol/Live/FpIndicator} = 1"),
             memory_member("Uom", "str", "{WeightUom}"),
         ]),
+        folder("Trigger", [
+            # Physical button. Bit 8 LATCHES on ENTER and is cleared by command
+            # 75; bits 9-11 are discrete inputs and are live state, so a press
+            # shorter than the poll interval is invisible. All four are exposed
+            # because which one the button is wired to is a commissioning
+            # unknown -- press it and watch which moves. See spec 5.1.2.
+            opc_member("EnterKey", "bool", "HR4.8"),
+            opc_member("Input1",   "bool", "HR4.9"),
+            opc_member("Input2",   "bool", "HR4.10"),
+            opc_member("Input3",   "bool", "HR4.11"),
+        ]),
         folder("Verdict", [
             opc_member("Under", "bool", "HR4.0"),
             opc_member("Ok",    "bool", "HR4.2"),
@@ -206,6 +217,7 @@ def scale_members():
             memory_member("Tolerance",    "real", 0.0),
             memory_member("Apply",        "bool", False),
             memory_member("ActiveTarget", "real", 0.0),
+            memory_member("ActiveTolerance", "real", 0.0),
             memory_member("State",        "str",  "Idle"),
         ]),
         folder("Protocol", [

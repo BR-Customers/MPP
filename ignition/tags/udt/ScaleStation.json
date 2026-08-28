@@ -83,6 +83,68 @@
       ]
     },
     {
+      "name": "Trigger",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "dataType": "Boolean",
+          "name": "EnterKey",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.8"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "Input1",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.9"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "Input2",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.10"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "Input3",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.11"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        }
+      ]
+    },
+    {
       "name": "Verdict",
       "tagType": "Folder",
       "tags": [
@@ -166,6 +228,13 @@
           "dataType": "Float8",
           "defaultValue": 0.0,
           "name": "ActiveTarget",
+          "tagType": "AtomicTag",
+          "valueSource": "memory"
+        },
+        {
+          "dataType": "Float8",
+          "defaultValue": 0.0,
+          "name": "ActiveTolerance",
           "tagType": "AtomicTag",
           "valueSource": "memory"
         },
