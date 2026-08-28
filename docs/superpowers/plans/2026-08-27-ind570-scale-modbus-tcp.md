@@ -420,13 +420,15 @@ git commit -m "feat(tags): ScaleStation UDT rebuilt for IND570 Modbus TCP regist
 
 ---
 
-### Task 3b: Add the `Trigger` folder to the UDT ⚠️ NEW (rev 2)
+### Task 3b: Add the `Trigger` folder to the UDT ✅ DONE
+
+**Completed 2026-08-28, commit `d516bec2`.** 81 insertions, zero deletions. `MPP_Sim_program.csv` correctly did not move — all four bit-addresses collapse onto `HR4`, which was already present, confirming Task 3's global-dedup fix holds. Generation verified idempotent.
 
 The physical button surfaces as Scale Status bits 8-11. Task 3 shipped before that was known.
 
 **Files:** Modify `ignition/tags/generate_tags.py`; regenerate `udt/ScaleStation.json` + `sim/MPP_Sim_program.csv`.
 
-- [ ] **Step 1: Add the folder to `scale_members()`**, immediately before the `Verdict` folder:
+- [x] **Step 1: Add the folder to `scale_members()`**, immediately before the `Verdict` folder:
 
 ```python
         folder("Trigger", [
@@ -442,7 +444,7 @@ The physical button surfaces as Scale Status bits 8-11. Task 3 shipped before th
         ]),
 ```
 
-- [ ] **Step 1b: Add `ActiveTolerance` to the `Setpoint` folder**
+- [x] **Step 1b: Add `ActiveTolerance` to the `Setpoint` folder**
 
 Task 4b's skip-if-unchanged test compares the requested setpoint against what the scale is confirmed to be enforcing. `ActiveTarget` exists; its tolerance counterpart does not, so a tolerance-only change would be silently skipped and the line would run against a stale window. Add beside `ActiveTarget`:
 
@@ -450,7 +452,7 @@ Task 4b's skip-if-unchanged test compares the requested setpoint against what th
             memory_member("ActiveTolerance", "real", 0.0),
 ```
 
-- [ ] **Step 2: Regenerate and verify**
+- [x] **Step 2: Regenerate and verify**
 
 ```bash
 python ignition/tags/generate_tags.py && git status --short ignition/tags/
@@ -458,7 +460,7 @@ python ignition/tags/generate_tags.py && git status --short ignition/tags/
 
 `ScaleStation.json` changes. `MPP_Sim_program.csv` must **not** change — all four bits collapse onto `HR4`, which is already in the CSV. The three non-scale UDTs must not change. If the CSV moves, `flatten_opc`'s dedup regressed.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add ignition/tags/generate_tags.py ignition/tags/udt/ScaleStation.json
