@@ -25,6 +25,19 @@
 
 ---
 
+## ⚠️ Rev 2 — spec changed 2026-08-28, re-read before Task 5
+
+MPP are keeping their **physical buttons**. Capture is now **dual-trigger** and the setpoint push is **asynchronous**. See spec §5 (rewritten) and §6.5.
+
+Consequences for the remaining tasks:
+
+- **Task 3b (new)** — the UDT needs a `Trigger` folder. Task 3 shipped without it.
+- **Task 4b (new)** — the protocol layer needs command 75, a relative echo tolerance, a `None` guard, a shorter timeout and a read-back on park.
+- **Task 5 is rewritten.** The scale edge route is **retargeted, not deleted** — the trigger becomes `Trigger/EnterKey` instead of `NET_DataReady`. Step 2b's instruction to delete the 7 scale trigger paths is **superseded**: they are rewritten, not removed.
+- **Tasks 6 and 7** gain the screen-button half of the dual trigger and the async setpoint call.
+
+---
+
 ## Verified codebase facts — read before writing any SQL
 
 Task 1 execution proved seven of this plan's assumptions wrong. They are corrected here; **any task writing SQL or tests must follow this section, not the plan author's original guesses.**
@@ -407,6 +420,74 @@ git commit -m "feat(tags): ScaleStation UDT rebuilt for IND570 Modbus TCP regist
 
 ---
 
+### Task 3b: Add the `Trigger` folder to the UDT ⚠️ NEW (rev 2)
+
+The physical button surfaces as Scale Status bits 8-11. Task 3 shipped before that was known.
+
+**Files:** Modify `ignition/tags/generate_tags.py`; regenerate `udt/ScaleStation.json` + `sim/MPP_Sim_program.csv`.
+
+- [ ] **Step 1: Add the folder to `scale_members()`**, immediately before the `Verdict` folder:
+
+```python
+        folder("Trigger", [
+            # Physical button. Bit 8 LATCHES on ENTER and is cleared by command
+            # 75; bits 9-11 are discrete inputs and are live state, so a press
+            # shorter than the poll interval is invisible. All four are exposed
+            # because which one the button is wired to is a commissioning
+            # unknown -- press it and watch which moves. See spec 5.1.2.
+            opc_member("EnterKey", "bool", "HR4.8"),
+            opc_member("Input1",   "bool", "HR4.9"),
+            opc_member("Input2",   "bool", "HR4.10"),
+            opc_member("Input3",   "bool", "HR4.11"),
+        ]),
+```
+
+- [ ] **Step 2: Regenerate and verify**
+
+```bash
+python ignition/tags/generate_tags.py && git status --short ignition/tags/
+```
+
+`ScaleStation.json` changes. `MPP_Sim_program.csv` must **not** change — all four bits collapse onto `HR4`, which is already in the CSV. The three non-scale UDTs must not change. If the CSV moves, `flatten_opc`'s dedup regressed.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add ignition/tags/generate_tags.py ignition/tags/udt/ScaleStation.json
+git commit -m "feat(tags): expose the IND570 physical-button trigger bits"
+```
+
+---
+
+### Task 4b: Protocol-layer amendments ⚠️ NEW (rev 2)
+
+Four fixes Task 4 surfaced plus the async worker. **Files:** `BlueRidge/Workorder/Ind570/code.py`.
+
+- [ ] **Step 1: `CMD["CLEAR_ENTER_KEY"] = 75`** — acknowledges a physical press.
+
+- [ ] **Step 2: Guard the echo against bad tag quality.** `readMember` returns `None` on bad quality, so `abs(float(echo) - float(value))` raises `TypeError` out of `sendCommand`. Handle it explicitly — a Jython `except Exception` would not catch a Java tag-subsystem throwable anyway:
+
+```python
+        if value is not None:
+            if echo is None:
+                return {"ok": False, "echo": None,
+                        "message": "Command %s: echo read back bad quality." % code}
+            if abs(float(echo) - float(value)) > max(0.001, abs(float(value)) * 1e-5):
+                return {"ok": False, "echo": echo, "message": ...}
+```
+
+- [ ] **Step 3: Relative echo tolerance** (folded into Step 2 above). The old absolute `> 0.0001` compares a value round-tripped through a Modbus **float32**, which carries ~7 significant digits — a target above roughly 1000 lb can differ by more than 1e-4 from encoding alone, producing a spurious "check Byte Order" that sends commissioning down the wrong path.
+
+- [ ] **Step 4: Per-command timeout 3000 -> 1500 ms.** Worst case for the four-command sequence drops from ~15 s to ~6 s.
+
+- [ ] **Step 5: `parkLiveCommand` reads back and confirms.** It currently writes and returns nothing, on the one condition the module header calls a silent failure. Read `Protocol/Live/FpIndicator` after the write and return whether it settled at `FP_NET`; log via `logInterface` when it did not.
+
+- [ ] **Step 6: Async wrapper.** Add `applySetpointAsync(instancePath, terminalLocationId, target, tolerance)` that returns immediately and runs `applySetpoint` inside `system.util.invokeAsynchronous`, reporting failure through `PlcWatcher.notifyAlarm(terminalLocationId, ...)`. Follow `BlueRidge/Lots/ShippingDispatcher/code.py` — the only `invokeAsynchronous` in the project and the FDS-01-014 reference. Also skip the whole sequence when `ActiveTarget` already equals `Target` and the tolerance matches.
+
+- [ ] **Step 7:** `scan.ps1`, confirm no `PySyntaxError` naming the module, commit.
+
+---
+
 ### Task 4: `BlueRidge.Workorder.Ind570` — protocol layer ✅ DONE
 
 **Completed 2026-08-27, commit `ba107442`.** Verified against the gateway's own Jython 2.7 compiler, not a CPython proxy. `PlcWatcher`'s four helpers exist with the assumed signatures, and `readMembers` keys its result by the member string verbatim, so nested folder paths like `Weight/InMotion` work — the plan's `captureGate` needed no change.
@@ -659,27 +740,40 @@ Overwrite `.../BlueRidge/Workorder/ScaleWatcher/code.py`:
 ```python
 """BlueRidge.Workorder.ScaleWatcher - assembly checkweigh scales (IND570 / Modbus TCP).
 
-   Spec: docs/superpowers/specs/2026-08-27-ind570-scale-udt-modbus-tcp-design.md
+   Spec: docs/superpowers/specs/2026-08-27-ind570-scale-udt-modbus-tcp-design.md (rev 2)
 
-   REPLACES the OmniServer edge model. The scale no longer pushes: net weight
-   is continuously present in the polled register, so there is no NET_DataReady
-   edge, no clear-down, and no handleEdge entry point. The operator button is
-   the trigger.
+   DUAL-TRIGGER. The scale no longer pushes -- net weight is continuously
+   present in the polled register -- but the operator PHYSICAL button is still
+   the signal, and it survives as a latched status bit:
 
-   Nothing is latched in tags. captureAndClose reads the live values, gates
-   them, and hands them straight to SQL -- the tag tree stays a pure device
-   mirror and MES state lives in the database.
+     physical button -> Trigger/EnterKey (HR4.8) -> tag-change -> onTriggerEdge
+     screen button   -> Perspective handler ------------------> captureAndClose
 
-   The verdict closes the tray; the weight rides along on the ProductionEvent
-   as evidence. FDS-06-014 is explicit that the device's OK bit is
-   authoritative, never the running count. Recording the reading is what makes
-   scale drift visible -- a verdict-only record reads "fine" until it abruptly
-   reads "broken".
+   Both converge on captureAndClose. Nothing is latched in tags; the handler
+   reads live, gates, and hands straight to SQL.
+
+   The ENTER latch is acknowledged with command 75 AFTER the proc returns, not
+   before -- acknowledging first would silently swallow a press consumed by a
+   capture that then failed.
 """
+
+_TRIGGERS = ("Trigger/EnterKey",)
+
+# Per-instance re-entrancy guard. Two triggers means a press can land while a
+# capture is still running (a double-press, or a screen tap racing the physical
+# button). A second entry must not close a second tray against one weighing.
+_inFlight = set()
+
+
+def onTriggerEdge(instancePath, terminalLocationId, member):
+    """Rising edge on the physical button. Routed here by PlcWatcher.dispatch."""
+    if member not in _TRIGGERS:
+        return
+    captureAndClose(instancePath, terminalLocationId)
 
 
 def captureAndClose(instancePath, terminalLocationId):
-    """Operator pressed the capture button. Gate the live reading, then close
+    """Shared entry point for BOTH triggers. Gate the live reading, then close
        the tray through the SAME Assembly_CompleteTray path the ByCount button
        uses (identical genealogy).
 
@@ -687,48 +781,59 @@ def captureAndClose(instancePath, terminalLocationId):
     W = BlueRidge.Workorder.PlcWatcher
     device = instancePath.rsplit("/", 1)[-1]
 
-    gate = BlueRidge.Workorder.Ind570.captureGate(instancePath)
-    if not gate["ok"]:
-        W.logInterface(device, "Scale capture refused",
-                       responsePayload=gate["reason"], ok=False,
-                       errorDescription=gate["reason"])
-        return {"Status": 0, "Message": gate["reason"], "ContainerId": None}
+    if instancePath in _inFlight:
+        return {"Status": 0, "Message": "A capture is already in progress.",
+                "ContainerId": None}
+    _inFlight.add(instancePath)
+    try:
+        gate = BlueRidge.Workorder.Ind570.captureGate(instancePath)
+        if not gate["ok"]:
+            W.logInterface(device, "Scale capture refused",
+                           responsePayload=gate["reason"], ok=False,
+                           errorDescription=gate["reason"])
+            return {"Status": 0, "Message": gate["reason"], "ContainerId": None}
 
-    vals = W.readMembers(instancePath,
-                         ["Weight/Net", "Weight/Uom", "Verdict/State"])
-    weight = vals.get("Weight/Net")
-    uom = vals.get("Weight/Uom")
-    verdict = vals.get("Verdict/State")
+        vals = W.readMembers(instancePath,
+                             ["Weight/Net", "Weight/Uom", "Verdict/State"])
+        weight = vals.get("Weight/Net")
+        uom = vals.get("Weight/Uom")
+        verdict = vals.get("Verdict/State")
 
-    if verdict != "Ok":
-        msg = "Tray is %s target -- not within tolerance." % (verdict or "outside")
-        W.logInterface(device, "Scale capture",
-                       requestPayload="weight=%s uom=%s verdict=%s"
-                                      % (weight, uom, verdict),
-                       ok=False, errorDescription=msg)
-        return {"Status": 0, "Message": msg, "ContainerId": None}
+        if verdict != "Ok":
+            msg = "Tray is %s target - not within tolerance." % (verdict or "outside")
+            W.logInterface(device, "Scale capture",
+                           requestPayload="weight=%s uom=%s verdict=%s"
+                                          % (weight, uom, verdict),
+                           ok=False, errorDescription=msg)
+            return {"Status": 0, "Message": msg, "ContainerId": None}
 
-    result = BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId,
-                                                          "ByWeight")
-    ok = bool(result and result.get("Status"))
-    W.logInterface(device, "ByWeight tray close",
-                   requestPayload="terminal=%s weight=%s uom=%s"
-                                  % (terminalLocationId, weight, uom),
-                   responsePayload=str(result), ok=ok,
-                   errorDescription=None if ok else (result or {}).get("Message"))
+        result = BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId,
+                                                              "ByWeight")
+        ok = bool(result and result.get("Status"))
+        W.logInterface(device, "ByWeight tray close",
+                       requestPayload="terminal=%s weight=%s uom=%s"
+                                      % (terminalLocationId, weight, uom),
+                       responsePayload=str(result), ok=ok,
+                       errorDescription=None if ok else (result or {}).get("Message"))
 
-    if not ok:
-        msg = (result or {}).get("Message") or "Tray close failed"
-        W.notifyAlarm(terminalLocationId, "ByWeight tray close failed", msg)
-        return {"Status": 0, "Message": msg, "ContainerId": None}
+        if not ok:
+            msg = (result or {}).get("Message") or "Tray close failed"
+            W.notifyAlarm(terminalLocationId, "ByWeight tray close failed", msg)
+            return {"Status": 0, "Message": msg, "ContainerId": None}
 
-    return {"Status": 1, "Message": "Tray closed",
-            "ContainerId": result.get("ContainerId")}
+        return {"Status": 1, "Message": "Tray closed",
+                "ContainerId": result.get("ContainerId")}
+    finally:
+        # Acknowledge the ENTER latch only now.
+        BlueRidge.Workorder.Ind570.sendCommand(
+            instancePath, BlueRidge.Workorder.Ind570.CMD["CLEAR_ENTER_KEY"])
+        _inFlight.discard(instancePath)
 
 
-def loadSetpointForItem(instancePath, itemId):
-    """Flow A entry point. Reads the ByWeight ContainerConfig for the item now
-       running and pushes target + tolerance to the terminal.
+def loadSetpointForItem(instancePath, terminalLocationId, itemId):
+    """Flow A entry point. Resolves config SYNCHRONOUSLY (those failures are
+       worth returning inline for a toast), then dispatches the command
+       sequence asynchronously so it never blocks a session thread.
 
        A missing tolerance is a configuration error, not a zero -- a zero-width
        window would reject every tray."""
@@ -747,9 +852,9 @@ def loadSetpointForItem(instancePath, itemId):
                            "ToleranceWeight. Set both in Item Master before "
                            "running this part."}
 
-    return BlueRidge.Workorder.Ind570.applySetpoint(instancePath,
-                                                    float(target),
-                                                    float(tolerance))
+    BlueRidge.Workorder.Ind570.applySetpointAsync(
+        instancePath, terminalLocationId, float(target), float(tolerance))
+    return {"ok": True, "message": "Setpoint loading"}
 
 
 def onDeviceReconnect(instancePath):
@@ -759,17 +864,26 @@ def onDeviceReconnect(instancePath):
     BlueRidge.Workorder.Ind570.parkLiveCommand(instancePath)
 ```
 
-- [ ] **Step 2: Remove the scale edge route from the dispatcher**
+- [ ] **Step 2: RETARGET the scale edge route** (REVISED in rev 2 - do not delete it)
 
-In `.../BlueRidge/Workorder/PlcWatcher/code.py`, find `_route` (near line 288) and delete the branch that dispatches `ScaleStation` device types to `ScaleWatcher.handleEdge`. Leave the MIP and tray routes untouched. Add a comment where the branch was:
+Rev 1 said to delete this branch. Rev 2 keeps it: the physical button *is* the edge. In `.../BlueRidge/Workorder/PlcWatcher/code.py`, find `_route` (near line 291) and change the `ScaleStation` branch to call `ScaleWatcher.onTriggerEdge` instead of `handleEdge`. Leave the MIP and tray routes untouched.
 
 ```python
-    # ScaleStation has no edge route -- IND570 over Modbus TCP is polled, not
-    # pushed. The operator button calls ScaleWatcher.captureAndClose directly.
-    # See spec 2026-08-27-ind570-scale-udt-modbus-tcp-design.md Sec 1.1.
+    # ScaleStation edge = the operator PHYSICAL button, surfaced as a latched
+    # status bit (Trigger/EnterKey, HR4.8). The weight itself is polled, not
+    # pushed. The screen button calls ScaleWatcher.captureAndClose directly --
+    # both converge there. Spec rev 2 Sec 5.
 ```
 
-- [ ] **Step 2b: Delete the dead scale trigger paths** ⚠️ ADDED — surfaced by Task 3
+- [ ] **Step 2b: RETARGET the scale trigger paths** ⚠️ REVISED in rev 2 — do not delete them
+
+Rev 1 said to delete these because a polled scale has no edge. Rev 2 reverses that: the **physical button is the edge**, so the paths stay and change member.
+
+In `ignition/tags/plc_trigger_tag_paths.txt`, rewrite each of the 7 scale entries under `# --- ScaleStation ---` from `/NET_DataReady` to `/Trigger/EnterKey`. Leave the `# 33 trigger paths total.` count alone — it is unchanged.
+
+If commissioning finds the button is on a discrete input rather than ENTER, these become `/Trigger/Input1` (or 2/3). That is a one-line-per-device change here plus the matching `_TRIGGERS` tuple in `ScaleWatcher`.
+
+- [ ] **Step 2c: SUPERSEDED — do not delete the scale trigger paths**
 
 `ignition/tags/plc_trigger_tag_paths.txt` is tracked and hand-maintained (it is **not** generated by `generate_tags.py`, so Task 3 could not touch it). It still lists 7 scale trigger paths that no longer exist:
 
@@ -850,6 +964,7 @@ The script body must begin with a tab character — the Designer wraps it in `de
 	instancePath = self.session.custom.terminal.udtInstancePath
 	terminalId = self.session.custom.terminal.locationId
 
+	# Same entry point the physical button reaches via onTriggerEdge.
 	result = BlueRidge.Workorder.ScaleWatcher.captureAndClose(
 		instancePath, terminalId)
 
@@ -907,7 +1022,8 @@ Append to the existing item-selection handler (tab-indented). Do not replace wha
 
 ```python
 	setpoint = BlueRidge.Workorder.ScaleWatcher.loadSetpointForItem(
-		self.session.custom.terminal.udtInstancePath, itemId)
+		self.session.custom.terminal.udtInstancePath,
+		self.session.custom.terminal.locationId, itemId)
 	if not setpoint["ok"]:
 		BlueRidge.Common.Notify.toast(
 			"Scale setpoint not loaded", setpoint["message"], "error", 0)
@@ -916,6 +1032,8 @@ Append to the existing item-selection handler (tab-indented). Do not replace wha
 `itemId` is whatever the surrounding handler already resolved the selection to — reuse that variable, do not re-derive it.
 
 The error toast uses `ttl=0` so it persists. A silently failed setpoint load is the failure mode this whole design guards against.
+
+**Rev 2:** `loadSetpointForItem` now takes `terminalLocationId` and returns as soon as the config resolves - the command sequence runs asynchronously (spec 6.5). So `setpoint["ok"]` means *"config was valid and the push started"*, **not** *"the scale is now enforcing this target"*. The authoritative signal is `Setpoint.State` reaching `Active`, which is what gates the capture button. A sequencer failure arrives later via `notifyAlarm`, not in this return value - do not word the toast as if the setpoint has landed.
 
 - [ ] **Step 2: Verify against the simulator**
 
