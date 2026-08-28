@@ -289,3 +289,65 @@ Anything component-rendered in Perspective is just HTML + CSS in the browser. Op
 ## `ia.input.dropdown` - free-entry (custom options)
 
 To let an operator type a value that isn't in `props.options`, set the top-level prop **`props.allowCustomOptions: true`** (a sibling of `props.search`, NOT nested under it). Verified in Designer 8.3 on 2026-06-15 - the plausible-looking `allowCustomValues` is NOT the key. Used by the Die Cast cavity dropdown's no-active-cavity fallback (operator types a cavity manually). The typed value arrives as a plain string (not an option `value`), so downstream code must distinguish a free-text entry from a selected option id.
+
+## `ia.display.markdown` — rich in-app content (help guides, change diffs)
+
+Two traps, and both fail **silently and completely** — no error, no console
+warning, just wrong output on the operator's screen.
+
+**1. The text goes in `props.source`.** `props.markdown` is an *options
+object*, not the content. A string there renders nothing at all.
+
+**2. `escapeHtml` defaults to `true`.** Leave it alone with HTML in the source
+and the operator reads `<div style="...">` on screen. The two settings only
+mean anything together:
+
+```json
+{
+  "type": "ia.display.markdown",
+  "meta": { "name": "Guide" },
+  "position": { "basis": "0px", "grow": 1 },
+  "props": {
+    "source": "<the markdown or HTML string>",
+    "markdown": { "escapeHtml": false },
+    "sectionSpacing": 8,
+    "style": { "fontSize": 13, "overflow": "auto" }
+  }
+}
+```
+
+### HTML inside the source renders through a plain HTML pipeline
+
+**Not** the Perspective layout engine. Flexbox and `<style>` blocks are not
+dependable. Build structured content the way an HTML email is built: **nested
+tables, every style inline, web-safe fonts**. Anything laid out with divs and
+classes looks right in a browser preview and wrong in the component.
+
+Use **literal hex colours**, not `var(--mpp-*)`. The custom properties are not
+guaranteed to resolve outside Perspective's own styling, and a colour that
+silently falls back to nothing is invisible until someone squints at the
+screen. Take the palette from the screen the content belongs to — on the
+plant floor that means a **dark** surface with light text; the usual
+light-background email palette is unreadable there.
+
+### Authoring
+
+A guide body is one multi-kilobyte string inside a view.json. Hand-editing that
+is how you get an unclosed tag that swallows the rest of the page and is
+invisible in a diff. Author it in a script with small helpers — see
+`tools/gen_howto_views.py`, which generates the How To popups and carries a
+verifier for every failure mode above (empty source, string-in-`markdown`,
+`escapeHtml` left true, unbalanced tags, missing `resource.json`, and
+`openPopup` view paths that do not resolve).
+
+That last check must follow the **project inheritance chain**: MPP declares
+`"parent": "Core"`, so a viewPath absent from MPP may still resolve from Core
+at runtime. Resolving against one project alone reports inherited popups —
+`ConfirmDestructive` is the live example — as broken.
+
+### In use
+
+- `MPP_Config` → `Components/Popups/ConfigChangeDetail` — binds `props.source`
+  to a rendered audit diff.
+- `MPP` → `Components/Popups/DieCastHowTo` — a static operator guide, opened
+  from a `pf-btn-primary` button in the Die Cast header.

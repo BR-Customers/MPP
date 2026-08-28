@@ -377,6 +377,35 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tsystem.perspective.openPopup(\u0027dieCastHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/DieCastHowTo\u0027,\n\t\ttitle\u003d\u0027How to run Die Cast\u0027,\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, draggable\u003dTrue, resizable\u003dTrue,\n\t\toverlayDismiss\u003dFalse, showCloseIcon\u003dTrue)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "HowToButton",
+              "tooltip": {
+                "text": "How to open baskets, record shift output and release"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              },
+              "text": "How To"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                   },
                   "scope": "G",
