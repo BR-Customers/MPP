@@ -722,7 +722,7 @@ git commit -m "feat(scale): IND570 Modbus TCP protocol layer - command sequencer
 > **4. `parkLiveCommand` writes and returns nothing.** No `logInterface`, no read-back. Given the module header calls the unparked state a silent failure producing "plausible, well-formed, wrong numbers", a read-back confirm is cheap insurance and belongs here.
 
 
-The legacy watcher was edge-driven: the scale asserted `NET_DataReady` and the watcher reacted. Modbus TCP has no such edge — the operator button drives everything. `handleEdge` therefore disappears and is replaced by a function the button calls.
+**Rev 2.** The legacy watcher was edge-driven: the scale asserted `NET_DataReady` on an unsolicited push and the watcher reacted. Under Modbus TCP the *weight* is polled rather than pushed — but the operator's **physical button is still an edge**, surfaced as the latched `Trigger/EnterKey` bit. So the edge model survives; only the trigger member changes. `handleEdge` becomes `onTriggerEdge`, and a screen button calls the same `captureAndClose` directly.
 
 **Files:**
 - Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/code.py`
