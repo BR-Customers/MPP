@@ -136,6 +136,12 @@ IND570_Scale
 │   ├── SourceIsNet      Bool     expr — FP Indicator == 1
 │   └── Uom              String   memory, default {WeightUom}
 │
+├── Trigger                                                rev 2 - physical button
+│   ├── EnterKey         Bool     [{DeviceName}]HR4.8   latched; cleared by cmd 75
+│   ├── Input1           Bool     [{DeviceName}]HR4.9
+│   ├── Input2           Bool     [{DeviceName}]HR4.10
+│   └── Input3           Bool     [{DeviceName}]HR4.11
+│
 ├── Verdict
 │   ├── Under            Bool     [{DeviceName}]HR4.0
 │   ├── Ok               Bool     [{DeviceName}]HR4.2
@@ -213,21 +219,49 @@ Decoding once and consuming many times keeps the gross/net guard (§5.3) and the
 
 ---
 
-## 5. Flow B — Capture (the operator button)
+## 5. Flow B — Capture (dual-trigger)
 
-The simpler flow, and the one that reverses direction from the legacy design.
+**Rev 2.** MPP are keeping the physical button on the indicator, so capture has **two triggers and one handler**. Neither issues a command: slot 1 sits parked on command 11 and the terminal refreshes net weight every interface update cycle, so the reading is already present. The trigger only decides *when* to trust it.
 
-There is nothing to request. Slot 1 sits parked on command 11 and the terminal refreshes the net weight every interface update cycle — Table B-5: *"As long as the PLC leaves the 11 (dec) in the command word, the IND570 terminal will update the net value every interface update cycle."* The button's only job is to decide **when the current reading is trustworthy** and hand it to SQL.
+| Trigger | Path |
+|---|---|
+| **Physical button** on the indicator | latches `HR4.8` (ENTER) or asserts `HR4.9-.11` (discrete input) -> gateway tag-change script -> `captureAndClose` |
+| **On-screen button** | Perspective handler -> `captureAndClose` |
 
-### 5.1 Sequence
+### 5.1 Sequence and timing
 
-1. Operator presses the screen button.
-2. The handler evaluates the **capture gate** (§5.2). If it fails, surface a toast naming the reason and stop — no partial write.
-3. The handler reads `Weight.Net`, `Verdict.State`, and `Weight.Uom`.
-4. It calls the tray-close stored proc with the verdict, the weight, and the UOM.
-5. SQL owns everything after that: tray close, `ProductionEvent`, container accumulation.
+| # | Step | Time |
+|---|---|---|
+| 1 | Operator presses the button | t = 0 |
+| 2 | IND570 latches `HR4.8` | < 30 ms, internal |
+| 3 | Ignition polls `HR1`-`HR4` — one contiguous FC03, so status, weight and both integrity bits arrive **in the same read** | 0 – T_poll |
+| 4 | Tag-change event -> `captureAndClose` | ~1 ms |
+| 5 | Gate (§5.2) + read `Weight/Net`, `Verdict/State` from that same block | < 5 ms |
+| 6 | Tray-close stored proc — mint FG LOT, consume BOM | 50 – 200 ms |
+| 7 | Toast / screen update | < 50 ms |
+| 8 | Command 75 clears the ENTER latch — **async, off the critical path** | — |
 
-No tag is written. Nothing is latched. Pressing the button twice writes two rows, which is correct — each press is a distinct weighing.
+**Total = T_poll + ~250 ms**, so ~350 ms on the 100 ms tag group §6.5 requires. The screen button is identical minus step 3.
+
+Because everything the gate reads lives in one contiguous register block, there is no tearing between "the button was pressed" and "the weight at that moment", and the integrity-bit pair confirms coherence.
+
+Nothing is latched in tags and nothing is written except the acknowledgement. Two presses write two rows, which is correct — each is a distinct weighing.
+
+### 5.1.1 Re-entrancy guard
+
+Two triggers means a press can arrive while a capture is still running — a double-press, or a screen tap racing the physical button. `captureAndClose` SHALL be guarded per instance so a second invocation returns immediately rather than closing a second tray against one weighing. Acknowledge (command 75) **after** the proc returns, not before, so a press consumed by a failed capture is not silently swallowed.
+
+### 5.1.2 Which bit is the button
+
+**This is the highest-risk unknown in rev 2 and must be settled at commissioning.** The legacy behaviour was PRINT-driven, and PRINT emits a demand string out the *serial* port — which produces **nothing** over Modbus TCP.
+
+| Button wired to | Over Modbus TCP | Verdict |
+|---|---|---|
+| **ENTER key** | latches `HR4.8` | ideal — no press can be missed |
+| **Discrete input 0.1.1-0.1.3** | `HR4.9/.10/.11`, live state | usable, but a press shorter than the poll interval is invisible — needs a maintained contact or a fast group |
+| **PRINT key** | nothing | **the button does nothing**; rewire to ENTER or a discrete input |
+
+All four bits are in the UDT precisely so commissioning can press the button and watch which one moves.
 
 ### 5.2 The capture gate
 
@@ -239,6 +273,7 @@ All five must hold:
 | Terminal healthy | `Weight.IsValid` | Data OK — false during setup, over-capacity, under-zero |
 | Reading is net | `Weight.SourceIsNet` | guards the command-0-reports-gross trap |
 | Data coherent | `Protocol.Live.Integrity1 == Integrity2` | both bits share polarity on a healthy link |
+| Not already capturing | per-instance guard (§5.1.1) | a second trigger must not close a second tray against one weighing |
 | Setpoint live | `Setpoint.State == Active` | a tray cannot be validated against a target the terminal is not enforcing (§6.4) |
 
 The button is also disabled in the UI on the last condition, but the handler re-checks all five — the UI state is a courtesy, the gate is the contract.
@@ -295,6 +330,27 @@ The FP value is written **before** the command in every step — Table B-6 estab
 
 A failed load **must not** leave a partially-applied window — a new target with stale tolerances is worse than an unchanged setpoint. On any step failure the sequence sends `115` (Abort target comparison) and leaves `ActiveTarget` at its previous value, so `Target != ActiveTarget` remains visible as the signal that the line is running on a stale setpoint.
 
+### 6.5 Execution model and poll rate (rev 2)
+
+Task 4 established that a synchronous `applySetpoint` blocks its caller for as long as the sequence runs, and Flow A was to be called from the item-dropdown handler — a session thread, on the operator's part-change click. Not acceptable. Four requirements:
+
+1. **`Protocol/*` polls on a 100 ms tag group.** This is the dominant term and the whole problem. Ack observation costs one poll interval, so sequence time scales directly with it:
+
+   | Tag group | Per command | Full 4-command sequence |
+   |---|---|---|
+   | 1000 ms (Ignition's usual default) | ~1050 ms | **~4.2 s** |
+   | 250 ms | ~300 ms | ~1.2 s |
+   | **100 ms** | ~150 ms | **~0.6 s** |
+   | dead link @ 3 s timeouts | — | ~15 s |
+
+2. **Dispatch asynchronously** per FDS-01-014, following `BlueRidge/Lots/ShippingDispatcher` — the only `system.util.invokeAsynchronous` in the project. `loadSetpointForItem` resolves the `ContainerConfig` read and its NULL checks synchronously (those are worth returning inline), then hands `applySetpoint` to the async worker and reports sequencer failure through `PlcWatcher.notifyAlarm`. This adds a `terminalLocationId` parameter.
+
+3. **Per-command timeout 1.5 s, abort the sequence on first failure.** Worst case ~6 s, off-thread, with an alarm — rather than 15 s on a frozen screen.
+
+4. **Skip when nothing changed.** If `ActiveTarget` already equals `Target` and the tolerance matches, do not re-push. Re-selecting the same part then costs nothing.
+
+Normal case ~0.6 s, never on a session thread, and a dead scale alarms instead of freezing a screen.
+
 ### 6.4 Interlock with tray closure
 
 While `Setpoint.State != Active`, the capture button is disabled. A tray cannot be validated against a target the terminal is not currently enforcing.
@@ -346,6 +402,7 @@ Before trusting any value:
 
 | # | Question | Blocks |
 |---|---|---|
+| 0 | **What is the physical button wired to — ENTER key, a discrete input, or PRINT?** Press it and watch `HR4.8` / `HR4.9-.11`. If neither moves it is PRINT-wired and does nothing over Modbus. | the entire physical-button path (§5.1.2) |
 | 1 | Does the combo card serve EtherNet/IP and Modbus TCP concurrently, or must it be switched? | connection method |
 | 2 | Can all 4 message slots address the same local scale with independent commands? | Option B's two-slot split |
 | 3 | Is anything **still** an active EtherNet/IP client on these terminals? If so it shares the same discrete data map and would contend for the slot command words. | slot allocation |
