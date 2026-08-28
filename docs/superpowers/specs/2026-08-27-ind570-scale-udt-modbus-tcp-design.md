@@ -330,6 +330,10 @@ The FP value is written **before** the command in every step — Table B-6 estab
 
 A failed load **must not** leave a partially-applied window — a new target with stale tolerances is worse than an unchanged setpoint. On any step failure the sequence sends `115` (Abort target comparison) and leaves `ActiveTarget` at its previous value, so `Target != ActiveTarget` remains visible as the signal that the line is running on a stale setpoint.
 
+### 6.4a Confirming the park
+
+`parkLiveCommand` must **poll** for its confirmation, not read back immediately. The write reaches the device, but `FpIndicator` only moves once the terminal has processed the command *and* the Protocol tag group has next polled — an immediate read races both and reports a false failure on every call. Poll at the sequencer's existing cadence until it reads `FP_NET`, then log either outcome.
+
 ### 6.5 Execution model and poll rate (rev 2)
 
 Task 4 established that a synchronous `applySetpoint` blocks its caller for as long as the sequence runs, and Flow A was to be called from the item-dropdown handler — a session thread, on the operator's part-change click. Not acceptable. Four requirements:
@@ -347,7 +351,16 @@ Task 4 established that a synchronous `applySetpoint` blocks its caller for as l
 
 3. **Per-command timeout 1.5 s, abort the sequence on first failure.** Worst case ~6 s, off-thread, with an alarm — rather than 15 s on a frozen screen.
 
-4. **Skip when nothing changed.** If `ActiveTarget` already equals `Target` and the tolerance matches, do not re-push. Re-selecting the same part then costs nothing.
+4. **Skip when nothing changed**, but only under three conditions together — `ActiveTarget` equals the requested target, `ActiveTolerance` equals the requested tolerance, **and** `State` is `Active`. Re-selecting the part already running then costs nothing.
+
+   The `State` term is not optional. On failure the sequence deliberately leaves `ActiveTarget` at its last *successful* value and sends `ABORT_COMPARE` — so a target-and-tolerance-only test would skip the retry after a failed load, leaving the operator looking at a setpoint the terminal is not enforcing.
+
+5. **The `Setpoint` memory tags need writers.** Three of them are only meaningful if something sets them, and the rev-1 design specified the reads without the writes:
+
+   | Tag | Written when | Consequence if not |
+   |---|---|---|
+   | `Target`, `Tolerance` | on dispatch, before the sequence runs | `Target != ActiveTarget` is the documented "running on a stale setpoint" signal — it can never fire if `Target` sits at its default |
+   | `ActiveTolerance` | on sequence success, alongside `ActiveTarget` | the skip test compares against the `0.0` default forever and never fires |
 
 Normal case ~0.6 s, never on a session thread, and a dead scale alarms instead of freezing a screen.
 
@@ -402,6 +415,7 @@ Before trusting any value:
 
 | # | Question | Blocks |
 |---|---|---|
+| 0a | **Does the terminal quantize a downloaded setpoint to the scale division?** Send a target with more precision than the increment (e.g. 24.37 on a 0.2 lb scale) and read the echo. If it comes back rounded, the echo check needs an increment-aware tolerance. | Flow A echo verification |
 | 0 | **What is the physical button wired to — ENTER key, a discrete input, or PRINT?** Press it and watch `HR4.8` / `HR4.9-.11`. If neither moves it is PRINT-wired and does nothing over Modbus. | the entire physical-button path (§5.1.2) |
 | 1 | Does the combo card serve EtherNet/IP and Modbus TCP concurrently, or must it be switched? | connection method |
 | 2 | Can all 4 message slots address the same local scale with independent commands? | Option B's two-slot split |

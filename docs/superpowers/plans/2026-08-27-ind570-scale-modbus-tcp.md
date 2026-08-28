@@ -469,13 +469,24 @@ git commit -m "feat(tags): expose the IND570 physical-button trigger bits"
 
 ---
 
-### Task 4b: Protocol-layer amendments ⚠️ NEW (rev 2)
+### Task 4b: Protocol-layer amendments ✅ DONE
+
+**Completed 2026-08-28, commit `e2050197`.** Compiled against the gateway's own Jython 2.7 and every new branch exercised under it with stubbed globals — 27/27.
+
+Four gaps in the plan and spec were found and fixed during execution; all four are now folded into spec §6.4a and §6.5:
+
+- **`ActiveTolerance` had no writer**, so the skip test would have compared against the `0.0` default forever and never fired.
+- **The skip needs a `State == "Active"` term.** Without it, a retry after a failed load is skipped — `ActiveTarget` still holds the last *successful* value while `ABORT_COMPARE` has left the terminal enforcing nothing.
+- **`Setpoint/Target` and `Tolerance` had no writer**, so the documented `Target != ActiveTarget` stale-setpoint signal could never fire.
+- **The park read-back must be polled**, not immediate — an immediate read races the tag group and reports a false failure every time.
+
+Echo tolerance is `max(1e-4, abs(value) * 1e-5)` — the floor is the *old* absolute threshold verbatim, so the change is strictly a loosening above the ~10 lb crossover and a no-op below it. The plan's suggested `0.001` floor was 10% of a plausible small tolerance.
 
 Four fixes Task 4 surfaced plus the async worker. **Files:** `BlueRidge/Workorder/Ind570/code.py`.
 
-- [ ] **Step 1: `CMD["CLEAR_ENTER_KEY"] = 75`** — acknowledges a physical press.
+- [x] **Step 1: `CMD["CLEAR_ENTER_KEY"] = 75`** — acknowledges a physical press.
 
-- [ ] **Step 2: Guard the echo against bad tag quality.** `readMember` returns `None` on bad quality, so `abs(float(echo) - float(value))` raises `TypeError` out of `sendCommand`. Handle it explicitly — a Jython `except Exception` would not catch a Java tag-subsystem throwable anyway:
+- [x] **Step 2: Guard the echo against bad tag quality.** `readMember` returns `None` on bad quality, so `abs(float(echo) - float(value))` raises `TypeError` out of `sendCommand`. Handle it explicitly — a Jython `except Exception` would not catch a Java tag-subsystem throwable anyway:
 
 ```python
         if value is not None:
@@ -486,15 +497,15 @@ Four fixes Task 4 surfaced plus the async worker. **Files:** `BlueRidge/Workorde
                 return {"ok": False, "echo": echo, "message": ...}
 ```
 
-- [ ] **Step 3: Relative echo tolerance** (folded into Step 2 above). The old absolute `> 0.0001` compares a value round-tripped through a Modbus **float32**, which carries ~7 significant digits — a target above roughly 1000 lb can differ by more than 1e-4 from encoding alone, producing a spurious "check Byte Order" that sends commissioning down the wrong path.
+- [x] **Step 3: Relative echo tolerance** (folded into Step 2 above). The old absolute `> 0.0001` compares a value round-tripped through a Modbus **float32**, which carries ~7 significant digits — a target above roughly 1000 lb can differ by more than 1e-4 from encoding alone, producing a spurious "check Byte Order" that sends commissioning down the wrong path.
 
-- [ ] **Step 4: Per-command timeout 3000 -> 1500 ms.** Worst case for the four-command sequence drops from ~15 s to ~6 s.
+- [x] **Step 4: Per-command timeout 3000 -> 1500 ms.** Worst case for the four-command sequence drops from ~15 s to ~6 s.
 
-- [ ] **Step 5: `parkLiveCommand` reads back and confirms.** It currently writes and returns nothing, on the one condition the module header calls a silent failure. Read `Protocol/Live/FpIndicator` after the write and return whether it settled at `FP_NET`; log via `logInterface` when it did not.
+- [x] **Step 5: `parkLiveCommand` reads back and confirms.** It currently writes and returns nothing, on the one condition the module header calls a silent failure. Read `Protocol/Live/FpIndicator` after the write and return whether it settled at `FP_NET`; log via `logInterface` when it did not.
 
-- [ ] **Step 6: Async wrapper.** Add `applySetpointAsync(instancePath, terminalLocationId, target, tolerance)` that returns immediately and runs `applySetpoint` inside `system.util.invokeAsynchronous`, reporting failure through `PlcWatcher.notifyAlarm(terminalLocationId, ...)`. Follow `BlueRidge/Lots/ShippingDispatcher/code.py` — the only `invokeAsynchronous` in the project and the FDS-01-014 reference. Also skip the whole sequence when `ActiveTarget` already equals `Target` and the tolerance matches.
+- [x] **Step 6: Async wrapper.** Add `applySetpointAsync(instancePath, terminalLocationId, target, tolerance)` that returns immediately and runs `applySetpoint` inside `system.util.invokeAsynchronous`, reporting failure through `PlcWatcher.notifyAlarm(terminalLocationId, ...)`. Follow `BlueRidge/Lots/ShippingDispatcher/code.py` — the only `invokeAsynchronous` in the project and the FDS-01-014 reference. Also skip the whole sequence when `ActiveTarget` already equals `Target` and the tolerance matches.
 
-- [ ] **Step 7:** `scan.ps1`, confirm no `PySyntaxError` naming the module, commit.
+- [x] **Step 7:** `scan.ps1`, confirm no `PySyntaxError` naming the module, commit.
 
 ---
 
