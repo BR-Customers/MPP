@@ -6,13 +6,13 @@
 # 33 trigger paths total.
 
 # --- ScaleStation ---
-[MPP]PlcDevices/59B_1_FP_1/NET_DataReady
-[MPP]PlcDevices/5PA_1_FP_1/NET_DataReady
-[MPP]PlcDevices/6B2_1_FP_1/NET_DataReady
-[MPP]PlcDevices/RPY_1_FP_1/NET_DataReady
-[MPP]PlcDevices/RPY_1_CB_1/NET_DataReady
-[MPP]PlcDevices/5G0_Front_Scale/NET_DataReady
-[MPP]PlcDevices/5G0_Rear_Scale/NET_DataReady
+[MPP]PlcDevices/59B_1_FP_1/Trigger/EnterKey
+[MPP]PlcDevices/5PA_1_FP_1/Trigger/EnterKey
+[MPP]PlcDevices/6B2_1_FP_1/Trigger/EnterKey
+[MPP]PlcDevices/RPY_1_FP_1/Trigger/EnterKey
+[MPP]PlcDevices/RPY_1_CB_1/Trigger/EnterKey
+[MPP]PlcDevices/5G0_Front_Scale/Trigger/EnterKey
+[MPP]PlcDevices/5G0_Rear_Scale/Trigger/EnterKey
 
 # --- SerializedMipStation ---
 [MPP]PlcDevices/5G0_A1/DataReady
