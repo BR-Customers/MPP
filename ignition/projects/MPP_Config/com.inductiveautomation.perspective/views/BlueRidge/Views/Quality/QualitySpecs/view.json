@@ -1167,18 +1167,9 @@
                           "name": "NewVersionButton"
                         },
                         "position": {
-                          "basis": "102px",
-                          "display": false
+                          "basis": "102px"
                         },
                         "propConfig": {
-                          "position.display": {
-                            "binding": {
-                              "config": {
-                                "expression": "{view.custom.specHeader.selected.deprecatedAt} \u003d null"
-                              },
-                              "type": "expr"
-                            }
-                          },
                           "props.enabled": {
                             "binding": {
                               "config": {
