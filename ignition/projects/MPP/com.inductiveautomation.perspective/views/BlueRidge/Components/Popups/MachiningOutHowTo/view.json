@@ -1,0 +1,124 @@
+{
+  "custom": {},
+  "params": {
+    "popupId": "machiningOutHowTo"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 720
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "How to run Machining OUT"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "modal-header"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Guide"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1
+            },
+            "props": {
+              "markdown": {
+                "escapeHtml": false
+              },
+              "sectionSpacing": 8,
+              "source": "\u003cdiv style\u003d\"font-size:14.5px;color:#C9D2E0;line-height:1.55;padding:0 0 16px 0;\"\u003eEnter how many pieces to mint out of the castings queued for this cell, then submit to create one new machined LOT.\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e1\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eCheck the queue\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eCastings pending Machining OUT at this cell are listed oldest first, and the oldest is already selected as the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eActive Machined LOT\u003c/span\u003e. Tap \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eSelect\u003c/span\u003e on a different card only if you need to work a different casting first.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e2\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eEnter Pieces\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eUnder \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eExtract Sub-LOT\u003c/span\u003e, enter how many pieces to mint. This is pulled from the queue, not just the one selected casting \u0026ndash; if the card you picked does not have enough by itself, older castings behind it in the queue cover the rest.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e3\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eAdd scrap if any\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003ePress \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003e+ Add scrap line\u003c/span\u003e for each defect, pick the reason and enter its count.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e4\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eSubmit\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003ePress \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eSubmit\u003c/span\u003e. It mints one new machined LOT for the pieces you entered.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\"\u003eIf the queue does not have enough pieces left, you are asked to confirm minting the smaller amount that is available instead of being blocked outright.\u003c/div\u003e",
+              "style": {
+                "fontSize": 13,
+                "overflow": "auto"
+              }
+            },
+            "type": "ia.display.markdown"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

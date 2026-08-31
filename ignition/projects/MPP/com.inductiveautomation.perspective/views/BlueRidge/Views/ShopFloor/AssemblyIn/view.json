@@ -125,6 +125,37 @@
           },
           {
             "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\u0027assemblyInHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/AssemblyInHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027assemblyInHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "HowToButton",
+              "tooltip": {
+                "text": "How to scan components into Assembly"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/help_outline",
+              "style": {
+                "cursor": "pointer",
+                "height": "35px",
+                "width": "35px"
+              }
+            },
+            "type": "ia.display.icon"
+          },
+          {
+            "events": {
               "component": {
                 "onActionPerformed": {
                   "config": {

@@ -1,7 +1,13 @@
 {
   "custom": {},
-  "params": {},
-  "propConfig": {},
+  "params": {
+    "popupId": "dieCastHowTo"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
   "props": {
     "defaultSize": {
       "height": 620,
@@ -11,25 +17,97 @@
   "root": {
     "children": [
       {
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "How to run Die Cast"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
         "meta": {
-          "name": "Guide"
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "modal-header"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Guide"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1
+            },
+            "props": {
+              "markdown": {
+                "escapeHtml": false
+              },
+              "sectionSpacing": 8,
+              "source": "\u003cdiv style\u003d\"font-size:14.5px;color:#C9D2E0;line-height:1.55;padding:0 0 16px 0;\"\u003eOpen a basket into each cavity, record what the die makes during your shift, then release the baskets when they are full.\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e1\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eCheck the die\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eThe \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eDie\u003c/span\u003e box at the top names the tool mounted on this machine, and the cavity rows below come from it. If it is empty or names a different die, stop and tell a supervisor \u0026ndash; do not work around it.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e2\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eOpen a basket into each cavity\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eOn \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eOpen Basket\u003c/span\u003e, each row is one cavity. Pick the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003ePart\u003c/span\u003e for the cavity, then scan the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eLTT Barcode\u003c/span\u003e from the basket into that row. Press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eOPEN BASKETS\u003c/span\u003e to open every row you filled in.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\"\u003eIf every cavity on this die runs the same part, \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eCopy part to empty rows\u003c/span\u003e fills the empty rows for you instead of picking the part on each one.\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e3\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eRecord what the die made\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eOn \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eRecord Shift Output\u003c/span\u003e, choose your \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eReporting shift\u003c/span\u003e and enter the shot count. Press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eCompute / Preview\u003c/span\u003e, then use \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eAdd scrap reason\u003c/span\u003e on any cavity that had scrap \u0026ndash; \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eGood (pc)\u003c/span\u003e updates on its own as you log it. Press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eSUBMIT SHIFT OUTPUT\u003c/span\u003e when the rows look right.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e4\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eRelease the full baskets\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eOn \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eLot Release\u003c/span\u003e, press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eRelease\u003c/span\u003e on a basket that is full. It leaves the cavity, moves on to its next step, and frees the cavity for a new basket. \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eVoid\u003c/span\u003e only appears on an empty basket and discards it.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"border-top:1px solid #172238;margin:2px 0 16px 0;\"\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#093240;border-left:5px solid #22A8CC;border-radius:4px;padding:12px 14px;margin:4px 0 16px 0;\"\u003e\u003cdiv style\u003d\"font-size:14px;font-weight:bold;color:#F0F3F8;padding-bottom:4px;\"\u003eIf a basket goes over its count\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003eThe row shows \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eOver basket headroom\u003c/span\u003e and tells you how many pieces fit and how many overflow. Leave \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eOverfill this basket\u003c/span\u003e unchecked to release the basket at its limit and scan a new LTT for the extra pieces. Check it instead to keep everything in the one basket and carry on past the limit.\u003c/div\u003e\u003c/div\u003e",
+              "style": {
+                "fontSize": 13,
+                "overflow": "auto"
+              }
+            },
+            "type": "ia.display.markdown"
+          }
+        ],
+        "meta": {
+          "name": "Body"
         },
         "position": {
           "basis": "0px",
           "grow": 1
         },
         "props": {
-          "markdown": {
-            "escapeHtml": false
-          },
-          "sectionSpacing": 8,
-          "source": "\u003cdiv style\u003d\"font-size:14.5px;color:#C9D2E0;line-height:1.55;padding:0 0 16px 0;\"\u003eOpen a basket into each cavity, record what the die makes during your shift, then release the baskets when they are full.\u003c/div\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"margin:0 0 14px 0;\"\u003e\u003ctr\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e1\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eCheck the die\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eThe \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eDIE\u003c/span\u003e box at the top names the tool mounted on this machine, and the cavity rows below come from it. If it is empty or names a different die, stop and tell a supervisor \u0026ndash; do not work around it.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"margin:0 0 14px 0;\"\u003e\u003ctr\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e2\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eOpen a basket into each cavity\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eOn \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eOpen Basket\u003c/span\u003e, each row is one cavity. Pick the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003ePart\u003c/span\u003e for the cavity, then scan the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eLTT Barcode\u003c/span\u003e from the basket into that row. Press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eOPEN BASKETS\u003c/span\u003e to open every row you filled in. On a single-part die, fill the first row and press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eCopy part to empty rows\u003c/span\u003e.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"margin:0 0 14px 0;\"\u003e\u003ctr\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e3\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eRecord what the die made\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eOn \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eRecord Shift Output\u003c/span\u003e, choose your \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eReporting shift\u003c/span\u003e and enter the shot count. Press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eCompute / Preview\u003c/span\u003e, correct the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eGood (pc)\u003c/span\u003e figure on any row that needs it, and use \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eAdd scrap reason\u003c/span\u003e to log scrap against a cavity. Press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eSUBMIT SHIFT OUTPUT\u003c/span\u003e when the rows look right.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"margin:0 0 14px 0;\"\u003e\u003ctr\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e4\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eRelease the full baskets\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eOn \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eLot Release\u003c/span\u003e, press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eRelease\u003c/span\u003e on a basket that is full. It leaves the cavity, moves on to its next step, and frees the cavity for a new basket. \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eVoid\u003c/span\u003e only appears on an empty basket and discards it.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003cdiv style\u003d\"border-top:1px solid #172238;margin:2px 0 16px 0;\"\u003e\u003c/div\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"margin:4px 0 16px 0;\"\u003e\u003ctr\u003e\u003ctd style\u003d\"background-color:#3A2E10;border-left:5px solid #F4B343;border-radius:4px;padding:12px 14px;\"\u003e\u003cdiv style\u003d\"font-size:14px;font-weight:bold;color:#F0F3F8;padding-bottom:4px;\"\u003eThe shot count is for the whole die\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003eOne machine cycle makes one part in every active cavity, so \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eShots this entry\u003c/span\u003e is the number of cycles \u0026ndash; enter it once. The system splits it across the open cavities for you. Do not multiply it by the number of cavities.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"margin:4px 0 16px 0;\"\u003e\u003ctr\u003e\u003ctd style\u003d\"background-color:#093240;border-left:5px solid #22A8CC;border-radius:4px;padding:12px 14px;\"\u003e\u003cdiv style\u003d\"font-size:14px;font-weight:bold;color:#F0F3F8;padding-bottom:4px;\"\u003eIf a basket goes over its count\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003eThe row shows \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eOver basket headroom\u003c/span\u003e and submitting asks you to choose. \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eFill\u003c/span\u003e tops the basket up to its limit, releases it, and asks you to scan a new LTT \u0026ndash; the extra parts go into the new basket automatically. \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eOverfill\u003c/span\u003e keeps everything in the one basket and carries on past the limit.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003cdiv style\u003d\"border-top:1px solid #172238;margin:2px 0 16px 0;\"\u003e\u003c/div\u003e\u003cdiv style\u003d\"font-size:14px;font-weight:bold;color:#F0F3F8;padding-bottom:5px;\"\u003eYou do not have to type\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.6;padding-bottom:14px;\"\u003eThe die, the list of cavities, how the shots split between them, or any of the totals down the right-hand side. All of that follows from the mounted tool and the one shot count you enter.\u003c/div\u003e\u003cdiv style\u003d\"font-size:14px;font-weight:bold;color:#F0F3F8;padding-bottom:5px;\"\u003eWhat happens next\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#9AA8BF;line-height:1.6;\"\u003eA released basket carries its LTT to the next step on its route, and the shift figures on the right update straight away.\u003c/div\u003e",
+          "direction": "column",
           "style": {
-            "fontSize": 13,
-            "overflow": "auto"
+            "classes": "modal-body"
           }
         },
-        "type": "ia.display.markdown"
+        "type": "ia.container.flex"
       }
     ],
     "meta": {
@@ -38,8 +116,7 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "modal",
-        "padding": "14px 16px"
+        "classes": "modal"
       }
     },
     "type": "ia.container.flex"

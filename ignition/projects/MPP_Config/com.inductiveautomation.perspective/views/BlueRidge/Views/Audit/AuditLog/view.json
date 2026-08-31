@@ -485,6 +485,8 @@
         "props": {
           "params": {
             "category": "System",
+            "howToPopupId": "auditLogHowTo",
+            "howToViewPath": "BlueRidge/Components/Popups/AuditLogHowTo",
             "title": "Audit Log"
           },
           "path": "BlueRidge/Components/Common/TitleBar"
