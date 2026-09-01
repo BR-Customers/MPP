@@ -74,8 +74,6 @@ CARDS = [
             "<b>Lot count</b>.",
             "Add scrap reasons if any, then press <b>Trim OUT</b> to release the whole LOT.",
         ],
-        note="Trim OUT always moves the <b>entire</b> LOT together – there is no "
-             "split here.",
     ),
     dict(
         station="Machining IN", tag="Scan · Confirm",
@@ -84,8 +82,6 @@ CARDS = [
             "Check the LOT, item, and piece count shown are the right ones.",
             "Press <b>Start Machining</b>. It moves onto <b>Active machined LOT</b> below.",
         ],
-        note="You do not have to type which line or cell you are on – the scan "
-             "already knows.",
     ),
     dict(
         station="Machining OUT", tag="Mint from the queue",
@@ -96,8 +92,6 @@ CARDS = [
             "not just one casting.",
             "Add scrap lines if any, then press <b>Submit</b>.",
         ],
-        note="If the queue is short, you will be asked to confirm minting the smaller "
-             "amount – that is normal, not an error.",
     ),
     dict(
         station="Assembly IN", tag="Scan components",
@@ -105,8 +99,6 @@ CARDS = [
             "Scan or enter the LTT on the machined component.",
             "Press <b>Scan In</b>. It is added to <b>Components at this cell</b> below.",
         ],
-        note="This is the one screen with no confirm step – a good scan is all it "
-             "takes.",
     ),
     dict(
         station="Assembly · Non-Serialized", tag="Fill · Complete",
@@ -200,9 +192,14 @@ def draw_card(c, x, y, data):
     # above the footer on every shorter card. ----
     foot_h = 1.05 * 72
     foot_y = bottom
+    has_note = bool(data.get("note"))
     note_h = 0.42 * 72
     note_gap = 0.08 * 72
-    note_y = foot_y + foot_h + note_h + note_gap  # top of the note box
+    # Without a note, steps_bottom collapses to just above the footer (a
+    # small breathing gap, not the full note box + gap) so the steps block
+    # actually reclaims that space instead of centering in a shorter range
+    # that still assumes a note is there.
+    note_y = foot_y + foot_h + (note_h + note_gap if has_note else note_gap)
 
     body_top = top - head_h - 0.12 * 72
     body_left = x + 0.28 * 72
@@ -246,13 +243,14 @@ def draw_card(c, x, y, data):
         p.drawOn(c, text_x, cy - h)
         cy -= h + step_gap
 
-    # ---- Callout note ----
-    c.setFillColor(WARN_SOFT)
-    c.rect(body_left, note_y - note_h, body_w, note_h, stroke=0, fill=1)
-    c.setFillColor(WARN)
-    c.rect(body_left, note_y - note_h, 2.6, note_h, stroke=0, fill=1)
-    draw_para(c, data["note"], style_note, body_left + 10, note_y - 7,
-              body_w - 18, note_h - 6)
+    # ---- Callout note (only on cards that have one) ----
+    if has_note:
+        c.setFillColor(WARN_SOFT)
+        c.rect(body_left, note_y - note_h, body_w, note_h, stroke=0, fill=1)
+        c.setFillColor(WARN)
+        c.rect(body_left, note_y - note_h, 2.6, note_h, stroke=0, fill=1)
+        draw_para(c, data["note"], style_note, body_left + 10, note_y - 7,
+                  body_w - 18, note_h - 6)
 
     # ---- Footer strip ----
     c.setStrokeColor(INK)
