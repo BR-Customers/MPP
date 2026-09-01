@@ -939,6 +939,521 @@ def die_tabs_source():
     return ''.join(parts)
 
 
+# ==================================================== MPP editor popups ====
+# Reusable workflow popups opened from plant-floor screens. Verified against
+# the live view.json for each - button scripts, not labels, since one of
+# these (ChangeoverElevation) has a real silent-no-op trap and another
+# (MoveOverride) has a button whose label overstates what its own script
+# does (it only authenticates; the calling screen performs the move).
+
+# ---------------------------------------------------------- downtime -------
+# Verified against DowntimeManager + DowntimeEditor + EventRow view.json.
+# End needs no supervisor sign-in; changing the Reason, Edit, and Void all
+# do (a hidden AD-elevation gate the operator only discovers on click).
+def downtime_manager_source():
+    parts = []
+    parts.append(_lead(
+        'Start, edit, or end downtime for this cell.'))
+
+    parts.append(_step(1, 'Start it',
+        'Press %s. It opens with no reason yet &ndash; pick one on the row '
+        'once you know it.' % _b('Start Downtime')))
+
+    parts.append(_step(2, 'End it',
+        'Press %s on the row when work resumes. No supervisor sign-in '
+        'needed.' % _b('End')))
+
+    parts.append(_step(3, 'Add a past event',
+        'Press %s. Fill in %s and %s, or check %s if you only know how '
+        'long it ran, not the exact times.'
+        % (_b('Add Past Event'), _b('Start (ET)'), _b('End (ET)'),
+           _b('Duration only'))))
+    parts.append(_note(
+        'A past event needs both a start and an end &ndash; leaving %s '
+        'blank is only allowed when editing a downtime that is still '
+        'open.' % _b('End (ET)')))
+
+    parts.append(_step(4, 'Edit or Void',
+        '%s and %s both ask for a supervisor sign-in first. %s is '
+        'permanent.' % (_b('Edit'), _b('Void'), _b('Void'))))
+
+    return ''.join(parts)
+
+
+# ------------------------------------------------------------ scrap entry --
+# Verified against ScrapEntry view.json. Quantity is a plain text field, not
+# a numeric one - the Record Scrap button stays disabled until LOT, Defect
+# Code, and a positive Quantity are all set.
+def scrap_entry_source():
+    parts = []
+    parts.append(_lead(
+        'Record scrap against a LOT at this cell.'))
+
+    parts.append(_step(1, 'Fill it in',
+        'Pick the %s, the %s, and enter the %s.'
+        % (_b('LOT'), _b('Defect Code'), _b('Quantity'))))
+
+    parts.append(_step(2, 'Submit',
+        'Add a %s if it helps, then press %s.'
+        % (_b('Remarks'), _b('Record Scrap'))))
+
+    return ''.join(parts)
+
+
+# --------------------------------------------------------- move override ---
+# Verified against MoveOverride view.json. "Authorize & move" only
+# authenticates - the move itself runs back on the scan screen that opened
+# this popup, once it hears the authorization succeeded.
+def move_override_source():
+    parts = []
+    parts.append(_lead(
+        "Get a supervisor's sign-off on a move that's normally blocked "
+        '(for example, moving a LOT backward on its route).'))
+
+    parts.append(_step(1, 'Authorize',
+        'Enter the supervisor\'s %s and %s, then press %s.'
+        % (_b('Supervisor AD account'), _b('Password'), _b('Authorize & move'))))
+    parts.append(_note(
+        'This only signs off the request &ndash; the move itself completes '
+        'automatically back on the scan screen once authorization goes '
+        'through.'))
+
+    return ''.join(parts)
+
+
+# ------------------------------------------------ change closure mode ------
+# Verified against ChangeoverElevation view.json. Confirm changeover only
+# acts on whichever field actually changed - leaving both the mode and the
+# CRT toggle untouched closes the popup with no call made and no toast, a
+# silent no-op that looks identical to success.
+def changeover_elevation_source():
+    parts = []
+    parts.append(_lead(
+        "Change this line's closure method, its CRT hold setting, or "
+        'both.'))
+
+    parts.append(_step(1, 'Choose what to change',
+        'Pick a %s if you are changing it, and/or toggle %s if you are '
+        'changing that.'
+        % (_b('New closure mode'),
+           _b('Hold containers for second-person validation'))))
+
+    parts.append(_step(2, 'Authorize',
+        "Enter the supervisor's %s and %s, then press %s."
+        % (_b('AD account'), _b('Password'), _b('Confirm changeover'))))
+    parts.append(_note(
+        'Only whatever you actually changed gets applied. Leaving both '
+        'the mode and the CRT toggle alone and pressing %s does nothing '
+        '&ndash; there is no error, it just closes.' % _b('Confirm changeover')))
+
+    return ''.join(parts)
+
+
+# ------------------------------------------------------- CRT validation ----
+# Verified against CrtValidation + CrtContainerRow view.json. One sign-in
+# covers the whole list, not one per row.
+def crt_validation_source():
+    parts = []
+    parts.append(_lead(
+        'Validate or hold CRT containers waiting for review.'))
+
+    parts.append(_step(1, 'Sign in once',
+        "Enter a supervisor's account and password and press %s. That "
+        'one sign-in covers every container in the list.' % _b('Unlock')))
+
+    parts.append(_step(2, 'Work the list',
+        'Press %s to clear a container, or %s to set it aside for '
+        'further review.' % (_b('Validate'), _b('Hold'))))
+    parts.append(_note(
+        '%s does not ask for a reason &ndash; it is always logged as held '
+        'for supervisor review.' % _b('Hold')))
+
+    return ''.join(parts)
+
+
+# ------------------------------------------------- AIM connection settings -
+# Verified against AimConnectionSettings view.json. Every field loads with
+# its CURRENT value already filled in - the "leave blank to keep current"
+# placeholder only shows if you deliberately clear a field.
+def aim_connection_settings_source():
+    parts = []
+    parts.append(_lead(
+        "Update this line's AIM connection settings."))
+
+    parts.append(_step(1, 'Change only what needs to change',
+        'Every field opens filled in with its current value. Edit the '
+        'ones you need to change and leave the rest alone.'))
+    parts.append(_note(
+        'Clearing a field on purpose keeps its stored value rather than '
+        'blanking it out &ndash; it is built for partial updates, not a '
+        'reset.'))
+
+    parts.append(_step(2, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_rule())
+
+    parts.append(_callout(WARN_BG, WARN_EDGE,
+        'Never point this at 99',
+        '%s is test. 99 is live production &ndash; do not enter it here.'
+        % _b('01')))
+
+    return ''.join(parts)
+
+
+# -------------------------------------------------------- register operator
+# Verified against RegisterOperator view.json.
+def register_operator_source():
+    parts = []
+    parts.append(_lead(
+        'Create a new operator record.'))
+
+    parts.append(_step(1, 'Confirm the details',
+        'Check the %s and type the %s.'
+        % (_b('Initials'), _b('Display Name'))))
+
+    parts.append(_step(2, 'Save',
+        'Press %s.' % _b('Save & Continue')))
+
+    return ''.join(parts)
+
+
+# ----------------------------------------------------------- paused lots ---
+# Verified against PausedLotList + PausedLotRow view.json.
+def paused_lot_list_source():
+    parts = []
+    parts.append(_lead(
+        'See and resume LOTs paused at this cell.'))
+
+    parts.append(_step(1, 'Resume one',
+        'Press %s on a LOT to bring it back. It resumes right away '
+        '&ndash; there is no confirmation step.' % _b('Resume')))
+
+    return ''.join(parts)
+
+
+# ============================================ MPP_Config editor popups ====
+# Reusable Add/Edit popups opened from the Config Tool's list pages.
+# Verified against each popup's own script bodies, not its labels.
+
+# ------------------------------------------------------- defect code editor
+def defect_code_editor_source():
+    parts = []
+    parts.append(_lead(
+        'Add or edit a defect code.'))
+
+    parts.append(_step(1, 'Fill it in',
+        'Pick %s first &ndash; on a new code, it fills in a starting %s '
+        'for you. %s is optional (a blank field applies plant-wide).'
+        % (_b('Applies to'), _b('Code'), _b('Applies to'))))
+    parts.append(_note(
+        '%s cannot change once the code is created.' % _b('Code')))
+
+    parts.append(_step(2, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_step(3, 'Deprecate',
+        'Press %s to retire the code.' % _b('Deprecate')))
+
+    return ''.join(parts)
+
+
+# ----------------------------------------------------- downtime code editor
+def downtime_code_editor_source():
+    parts = []
+    parts.append(_lead(
+        'Add or edit a downtime code.'))
+
+    parts.append(_step(1, 'Fill it in',
+        'Pick %s if it applies to one area, and %s if this reason has a '
+        'type. Both are optional.' % (_b('Applies to'), _b('Reason Type'))))
+    parts.append(_note(
+        '%s cannot change once the code is created.' % _b('Code')))
+
+    parts.append(_step(2, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_step(3, 'Deprecate',
+        'Press %s to retire the code.' % _b('Deprecate')))
+
+    return ''.join(parts)
+
+
+# -------------------------------------------------------------- operators --
+def operator_editor_source():
+    parts = []
+    parts.append(_lead(
+        'Add or edit an operator.'))
+
+    parts.append(_step(1, 'Fill it in',
+        'Enter %s and %s. %s is optional &ndash; add it only if this '
+        'operator signs in with an AD account.'
+        % (_b('Initials'), _b('Display Name'), _b('AD Account'))))
+
+    parts.append(_step(2, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_step(3, 'Deprecate',
+        'Press %s to retire the operator.' % _b('Deprecate')))
+
+    return ''.join(parts)
+
+
+# --------------------------------------------------------- shift overrides -
+def shift_override_editor_source():
+    parts = []
+    parts.append(_lead(
+        'Add or edit a one-day exception to a shift schedule.'))
+
+    parts.append(_step(1, 'Pick what it is for',
+        'Choose the %s, %s, and %s &ndash; once saved, these three cannot '
+        'change. Moving an override means removing it and adding a new '
+        'one.' % (_b('Equipment'), _b('Shift'), _b('Date'))))
+
+    parts.append(_step(2, 'Set the times',
+        'Enter %s and %s as 24-hour %s &ndash; picking the shift fills '
+        'these in first, so only change them if this day is actually '
+        'different.' % (_b('Start'), _b('End'), _b('HH:MM'))))
+    parts.append(_note(
+        'An overnight shift is fine &ndash; End earlier than Start just '
+        'means it crosses midnight. Start and End only need to differ '
+        'from each other.'))
+
+    parts.append(_step(3, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_step(4, 'Remove',
+        'Press %s. The record is kept so past OEE figures can still be '
+        'explained &ndash; it is hidden, not erased.' % _b('Remove')))
+
+    return ''.join(parts)
+
+
+# --------------------------------------------------------- shift schedules -
+def shift_schedule_editor_source():
+    parts = []
+    parts.append(_lead(
+        'Add or edit a shift schedule.'))
+
+    parts.append(_step(1, 'Fill it in',
+        'Enter a %s, tap every day it runs under %s, and set %s and %s '
+        'as 24-hour %s.'
+        % (_b('Name'), _b('Days of Week'), _b('Start Time'), _b('End Time'),
+           _b('HH:MM'))))
+    parts.append(_note(
+        'A %s date is required, and at least one day must be checked, or '
+        'Save will reject it.' % _b('Effective From')))
+
+    parts.append(_step(2, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_step(3, 'Deprecate',
+        'Press %s to retire the schedule.' % _b('Deprecate')))
+
+    return ''.join(parts)
+
+
+# ------------------------------------------------------------- add item ----
+def add_item_source():
+    parts = []
+    parts.append(_lead(
+        'Create a new part.'))
+
+    parts.append(_step(1, 'Fill in the identity',
+        '%s, %s, and %s are required.'
+        % (_b('Part Number'), _b('Item Type'), _b('UOM'))))
+
+    parts.append(_step(2, 'Add what you know',
+        'Weight, Country of Origin, Default Sub-Lot Qty, Parts Per '
+        'Basket, Max Parts, and the Macola cross-reference are all '
+        'optional &ndash; fill in what applies now and come back for the '
+        'rest later on the item\'s own Identity tab.'))
+
+    parts.append(_step(3, 'Create',
+        'Press %s.' % _b('Create Item')))
+
+    return ''.join(parts)
+
+
+# -------------------------------------------------------------- add die ----
+def add_die_source():
+    parts = []
+    parts.append(_lead(
+        'Create a new die.'))
+
+    parts.append(_step(1, 'Fill it in',
+        '%s and %s are required. %s defaults to B if you leave it alone.'
+        % (_b('Code'), _b('Name'), _b('Die Rank'))))
+
+    parts.append(_step(2, 'Create',
+        'Press %s.' % _b('Create Die')))
+    parts.append(_note(
+        'A new die always starts Active with tool type Die &ndash; there '
+        'is nothing to set for either one here.'))
+
+    return ''.join(parts)
+
+
+# --------------------------------------------------------- duplicate die ---
+def duplicate_die_source():
+    parts = []
+    parts.append(_lead(
+        "Copy a die's configuration into a new one."))
+
+    parts.append(_step(1, 'Select a source die first',
+        'Pick the die to copy on the Tools screen, then press %s '
+        'there.' % _b('Duplicate')))
+
+    parts.append(_step(2, 'Name the copy',
+        'Enter a %s and %s for the new die.' % (_b('New Code'), _b('New Name'))))
+    parts.append(_note(
+        'Die Rank, Shot Limit, cavities, attributes, and description all '
+        'carry over from the source die &ndash; cavities copy exactly, '
+        'including any that are Closed or Scrapped.'))
+
+    parts.append(_step(3, 'Create',
+        'Press %s.' % _b('Duplicate Die')))
+    parts.append(_note(
+        'The new die starts clean otherwise: shot count resets to 0, '
+        'status is Active, and cell mount history is not copied.'))
+
+    return ''.join(parts)
+
+
+# -------------------------------------------------------------- edit rank --
+def edit_rank_source():
+    parts = []
+    parts.append(_lead(
+        'Add or edit a die rank.'))
+
+    parts.append(_step(1, 'Fill it in',
+        'Enter %s and %s.' % (_b('Code'), _b('Name'))))
+
+    parts.append(_step(2, 'Save',
+        'Press %s &ndash; it saves either way, whether you are adding a '
+        'rank or editing one.' % _b('Create Rank')))
+
+    parts.append(_step(3, 'Remove',
+        'Press %s. This cannot be undone from here.' % _b('Remove')))
+
+    return ''.join(parts)
+
+
+# -------------------------------------------------------------- die ranks --
+def die_ranks_source():
+    parts = []
+    parts.append(_lead(
+        'Manage the list of die ranks and which ranks can share a line.'))
+
+    parts.append(_step(1, 'Add or edit a rank',
+        'Press %s for a new one, or %s on a row to change it.'
+        % (_b('+ Add Rank'), _b('Edit'))))
+
+    parts.append(_step(2, 'Set which ranks can merge',
+        'Tap a cell in the grid to flip it between %s and %s for that '
+        'pair of ranks.' % (_b('Can merge'), _b('Blocked'))))
+    parts.append(_note(
+        'Tapping a cell only changes it on screen &ndash; nothing is '
+        'saved until you press Save.'))
+
+    parts.append(_step(3, 'Save', 'Press %s.' % _b('Save')))
+
+    return ''.join(parts)
+
+
+# ------------------------------------------------- location type editor ----
+def location_type_editor_source():
+    parts = []
+    parts.append(_lead(
+        'Define the attribute schema for a location type, tier by tier.'))
+
+    parts.append(_step(1, 'Pick a tier, then a definition',
+        'Choose a %s, then tap a definition chip to open it, or press %s '
+        'for a new one under that tier.'
+        % (_b('Location Type (ISA-95 Tier)'), _b('+ Add'))))
+    parts.append(_note(
+        'Switching tiers drops whatever you were editing with no warning '
+        '&ndash; save first if you want to keep it.'))
+
+    parts.append(_step(2, 'Edit the definition',
+        'Set %s, %s, and an optional %s and %s. %s locks once the '
+        'definition is saved for the first time.'
+        % (_b('Code'), _b('Name'), _b('Icon'), _b('Description'), _b('Code'))))
+
+    parts.append(_step(3, 'Edit its attributes',
+        'Press %s for each attribute this location type needs, and set '
+        'its %s, %s, and whether it is %s. The arrows reorder the list; '
+        '%s takes one out.'
+        % (_b('+ Add Attribute'), _b('Attribute Name'), _b('Data Type'),
+           _b('Required'), _b('Remove'))))
+
+    parts.append(_step(4, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_rule())
+
+    parts.append(_callout(WARN_BG, WARN_EDGE,
+        'Deprecate has no confirmation step',
+        'Pressing %s retires the definition and every one of its '
+        'attributes immediately &ndash; there is no "are you sure?" '
+        'prompt. It only succeeds if no Location still uses this '
+        'definition.' % _b('Deprecate')))
+
+    return ''.join(parts)
+
+
+# --------------------------------------------------- new operation template
+def new_operation_template_source():
+    parts = []
+    parts.append(_lead(
+        'Create a new operation template.'))
+
+    parts.append(_step(1, 'Fill it in',
+        'Enter %s and %s, then pick a %s &ndash; picking one may fill in '
+        '%s for you if it is the only one available.'
+        % (_b('Code'), _b('Name'), _b('Category'), _b('Operation'))))
+    parts.append(_note(
+        'Changing %s clears whatever you had picked for %s, so pick '
+        'Category first.' % (_b('Category'), _b('Operation'))))
+
+    parts.append(_step(2, 'Create',
+        'Press %s.' % _b('Create Template')))
+
+    return ''.join(parts)
+
+
+# --------------------------------------------------------- new spec modal --
+def new_spec_modal_source():
+    parts = []
+    parts.append(_lead(
+        'Create a new quality spec.'))
+
+    parts.append(_step(1, 'Fill it in',
+        '%s is the only required field. %s, %s, and %s are all optional '
+        'and can be filled in later.'
+        % (_b('Name'), _b('Linked Item'), _b('Description'),
+           _b('Initial Effective Date'))))
+    parts.append(_note(
+        'There is no field here for an Operation Template link &ndash; '
+        'set that afterward on the spec itself.'))
+
+    parts.append(_step(2, 'Create',
+        'Press %s.' % _b('Create')))
+
+    return ''.join(parts)
+
+
+# ---------------------------------------------- add attribute definition ---
+def add_attribute_definition_source():
+    parts = []
+    parts.append(_lead(
+        'Define a brand-new attribute type for every die of this tool '
+        'type.'))
+
+    parts.append(_step(1, 'Fill it in',
+        'Enter %s and %s, pick its %s, and check %s if every die of this '
+        'type must have a value for it.'
+        % (_b('Code'), _b('Name'), _b('Data Type'), _b('Required'))))
+
+    parts.append(_step(2, 'Create',
+        'Press %s.' % _b('Create Definition')))
+
+    return ''.join(parts)
+
+
 def build_config_view(source_html, default_size, title, popup_id):
     """Same shell as build_view() (Header + Body, self-drawn - see that
     function's docstring for why no title=/draggable= on openPopup), styled
@@ -1074,6 +1589,62 @@ GUIDES = [
         "defaultSize": {"width": 680, "height": 440},
         "title": "How to run Assembly (Serialized)",
         "popupId": "assemblySerializedHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DowntimeManagerHowTo"),
+        "source": downtime_manager_source,
+        "defaultSize": {"width": 640, "height": 440},
+        "title": "How to manage downtime",
+        "popupId": "downtimeManagerHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "ScrapEntryHowTo"),
+        "source": scrap_entry_source,
+        "defaultSize": {"width": 560, "height": 340},
+        "title": "How to record scrap",
+        "popupId": "scrapEntryHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "MoveOverrideHowTo"),
+        "source": move_override_source,
+        "defaultSize": {"width": 560, "height": 320},
+        "title": "How to authorize a move override",
+        "popupId": "moveOverrideHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "ChangeoverElevationHowTo"),
+        "source": changeover_elevation_source,
+        "defaultSize": {"width": 580, "height": 360},
+        "title": "How to change closure mode",
+        "popupId": "changeoverElevationHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "CrtValidationHowTo"),
+        "source": crt_validation_source,
+        "defaultSize": {"width": 580, "height": 340},
+        "title": "How to validate CRT containers",
+        "popupId": "crtValidationHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "AimConnectionSettingsHowTo"),
+        "source": aim_connection_settings_source,
+        "defaultSize": {"width": 600, "height": 400},
+        "title": "How to update AIM connection settings",
+        "popupId": "aimConnectionSettingsHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "RegisterOperatorHowTo"),
+        "source": register_operator_source,
+        "defaultSize": {"width": 520, "height": 300},
+        "title": "How to register a new operator",
+        "popupId": "registerOperatorHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "PausedLotListHowTo"),
+        "source": paused_lot_list_source,
+        "defaultSize": {"width": 480, "height": 260},
+        "title": "How to resume a paused LOT",
+        "popupId": "pausedLotListHowTo",
     },
     {
         "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "AuditLogHowTo"),
@@ -1225,6 +1796,118 @@ GUIDES = [
         "defaultSize": {"width": 640, "height": 420},
         "title": "How to use the die tabs",
         "popupId": "dieTabsHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "DefectCodeEditorHowTo"),
+        "source": defect_code_editor_source,
+        "defaultSize": {"width": 560, "height": 340},
+        "title": "How to edit a Defect Code",
+        "popupId": "defectCodeEditorHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "DowntimeCodeEditorHowTo"),
+        "source": downtime_code_editor_source,
+        "defaultSize": {"width": 560, "height": 340},
+        "title": "How to edit a Downtime Code",
+        "popupId": "downtimeCodeEditorHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "OperatorEditorHowTo"),
+        "source": operator_editor_source,
+        "defaultSize": {"width": 540, "height": 320},
+        "title": "How to edit an Operator",
+        "popupId": "operatorEditorHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "ShiftOverrideEditorHowTo"),
+        "source": shift_override_editor_source,
+        "defaultSize": {"width": 600, "height": 440},
+        "title": "How to edit a Shift Override",
+        "popupId": "shiftOverrideEditorHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "ShiftScheduleEditorHowTo"),
+        "source": shift_schedule_editor_source,
+        "defaultSize": {"width": 580, "height": 380},
+        "title": "How to edit a Shift Schedule",
+        "popupId": "shiftScheduleEditorHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "AddItemHowTo"),
+        "source": add_item_source,
+        "defaultSize": {"width": 560, "height": 360},
+        "title": "How to add an Item",
+        "popupId": "addItemHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "AddDieHowTo"),
+        "source": add_die_source,
+        "defaultSize": {"width": 540, "height": 320},
+        "title": "How to add a Die",
+        "popupId": "addDieHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "DuplicateDieHowTo"),
+        "source": duplicate_die_source,
+        "defaultSize": {"width": 580, "height": 400},
+        "title": "How to duplicate a Die",
+        "popupId": "duplicateDieHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "EditRankHowTo"),
+        "source": edit_rank_source,
+        "defaultSize": {"width": 520, "height": 300},
+        "title": "How to edit a Die Rank",
+        "popupId": "editRankHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "DieRanksHowTo"),
+        "source": die_ranks_source,
+        "defaultSize": {"width": 580, "height": 380},
+        "title": "How to manage Die Ranks",
+        "popupId": "dieRanksHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "LocationTypeEditorHowTo"),
+        "source": location_type_editor_source,
+        "defaultSize": {"width": 660, "height": 480},
+        "title": "How to edit Location Type Definitions",
+        "popupId": "locationTypeEditorHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "NewOperationTemplateHowTo"),
+        "source": new_operation_template_source,
+        "defaultSize": {"width": 560, "height": 360},
+        "title": "How to create an Operation Template",
+        "popupId": "newOperationTemplateHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "NewSpecModalHowTo"),
+        "source": new_spec_modal_source,
+        "defaultSize": {"width": 560, "height": 340},
+        "title": "How to create a Quality Spec",
+        "popupId": "newSpecModalHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "AddAttributeDefinitionHowTo"),
+        "source": add_attribute_definition_source,
+        "defaultSize": {"width": 540, "height": 320},
+        "title": "How to add an Attribute Definition",
+        "popupId": "addAttributeDefinitionHowTo",
         "builder": build_config_view,
     },
 ]
