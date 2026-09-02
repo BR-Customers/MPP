@@ -51,7 +51,15 @@ EXEC test.Assert_IsEqual @TestName = N'[0067] all six expected party codes prese
     @Expected = N'6', @Actual = @n;
 
 -- ---- Backfill: every seeded defect code resolves a party ----
-SELECT @n = COUNT(*) FROM Quality.DefectCode WHERE ChargeToPartyId IS NULL;
+-- Every count in this block is scoped to the SEED (Code NOT LIKE 'TEST%').
+-- These assert what migration 0067 backfilled, and 0067 only ever touched
+-- seeded rows -- but earlier suites legitimately create their own TEST-*
+-- defect codes and leave them behind (0011_Quality_Spec/040 leaves
+-- TEST-DEF-001/002/003), so an unscoped COUNT(*) measures whichever tests
+-- happened to run first. Same idiom as 0046_Shift_Reconcile and
+-- 0062_Oee_ShiftAttribution. No seeded defect code contains "TEST".
+SELECT @n = COUNT(*) FROM Quality.DefectCode
+WHERE ChargeToPartyId IS NULL AND Code NOT LIKE N'TEST%';
 EXEC test.Assert_IsEqual @TestName = N'[0067] no seeded defect code is left without a charge-to party',
     @Expected = N'0', @Actual = @n;
 
@@ -69,7 +77,8 @@ EXEC test.Assert_IsEqual @TestName = N'[0067] the seven Prod-Control/Quality-Con
     @Expected = N'7', @Actual = @n;
 
 -- ---- Non-reject scrap: exactly the five named codes ----
-SELECT @n = COUNT(*) FROM Quality.DefectCode WHERE IsNonRejectScrap = 1;
+SELECT @n = COUNT(*) FROM Quality.DefectCode
+WHERE IsNonRejectScrap = 1 AND Code NOT LIKE N'TEST%';
 EXEC test.Assert_IsEqual @TestName = N'[0067] exactly five codes flagged IsNonRejectScrap',
     @Expected = N'5', @Actual = @n;
 
@@ -80,11 +89,13 @@ EXEC test.Assert_IsEqual @TestName = N'[0067] the flagged codes are Test/Trial/A
 
 -- IsNonRejectScrap and IsExcused are DIFFERENT axes: no code carries both, and
 -- the excused set is untouched by this migration.
-SELECT @n = COUNT(*) FROM Quality.DefectCode WHERE IsNonRejectScrap = 1 AND IsExcused = 1;
+SELECT @n = COUNT(*) FROM Quality.DefectCode
+WHERE IsNonRejectScrap = 1 AND IsExcused = 1 AND Code NOT LIKE N'TEST%';
 EXEC test.Assert_IsEqual @TestName = N'[0067] IsNonRejectScrap and IsExcused do not overlap',
     @Expected = N'0', @Actual = @n;
 
-SELECT @n = COUNT(*) FROM Quality.DefectCode WHERE IsExcused = 1;
+SELECT @n = COUNT(*) FROM Quality.DefectCode
+WHERE IsExcused = 1 AND Code NOT LIKE N'TEST%';
 EXEC test.Assert_IsEqual @TestName = N'[0067] the eight IsExcused codes are unchanged',
     @Expected = N'8', @Actual = @n;
 GO
