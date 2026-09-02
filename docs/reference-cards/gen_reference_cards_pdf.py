@@ -43,9 +43,8 @@ SIGN_IN_BODY = (
     "<b>Register New User</b>.<br/>Wrong name showing? Tap <b>Operator:</b> "
     "up top to switch."
 )
-END_SHIFT_BODY = (
-    "Go to <b>End of Shift</b>. Tap every break you took, then Submit "
-    "Shift Time Entry."
+DOWNTIME_BODY = (
+    "Machine down or waiting on something? Press <b>Downtime</b> up top."
 )
 HELP_BODY = (
     "Tap the <b>?</b> in the corner of any screen for step-by-step help "
@@ -282,8 +281,8 @@ def draw_card(c, x, y, data):
 
     c.setFillColor(INK_MUTED)
     c.setFont(F_BOLD, 8.2)
-    c.drawString(col3_x + pad, foot_y + foot_h - 13, "END OF SHIFT")
-    draw_para(c, END_SHIFT_BODY, style_foot, col3_x + pad, foot_y + foot_h - 20,
+    c.drawString(col3_x + pad, foot_y + foot_h - 13, "DOWNTIME")
+    draw_para(c, DOWNTIME_BODY, style_foot, col3_x + pad, foot_y + foot_h - 20,
               col3_w - 2 * pad, foot_h - 22)
 
     badge_d = 30
