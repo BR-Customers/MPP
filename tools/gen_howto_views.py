@@ -656,9 +656,6 @@ def plant_hierarchy_source():
         'Enter %s, %s, %s, and any attributes %s added, then press %s.'
         % (_b('Name'), _b('Code'), _b('Description'), _b('Definition'),
            _b('Save'))))
-    parts.append(_note(
-        '%s only appears on a Printer location, and checks that the '
-        'printer responds before you save.' % _b('Validate endpoint')))
 
     parts.append(_points('Working with an existing location', [
         ('Edit', 'Select it in the tree, change what you need, then press '
