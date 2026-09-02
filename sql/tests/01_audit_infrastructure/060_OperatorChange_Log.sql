@@ -18,9 +18,9 @@ GO
 -- operators sign in by initials with no AD account (CK_AppUser_IgnitionRole_Requires_AdAccount:
 -- an IgnitionRole requires an AdAccount, so an initials-only operator leaves both NULL).
 IF NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Initials = N'ZZA')
-    INSERT INTO Location.AppUser (DisplayName, Initials, CreatedAt) VALUES (N'Op Alpha', N'ZZA', SYSUTCDATETIME());
+    INSERT INTO Location.AppUser (DisplayName, Initials, Pin, CreatedAt) VALUES (N'Op Alpha', N'ZZA', N'99001', SYSUTCDATETIME());
 IF NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Initials = N'ZZB')
-    INSERT INTO Location.AppUser (DisplayName, Initials, CreatedAt) VALUES (N'Op Beta', N'ZZB', SYSUTCDATETIME());
+    INSERT INTO Location.AppUser (DisplayName, Initials, Pin, CreatedAt) VALUES (N'Op Beta', N'ZZB', N'99002', SYSUTCDATETIME());
 GO
 
 -- =============================================
