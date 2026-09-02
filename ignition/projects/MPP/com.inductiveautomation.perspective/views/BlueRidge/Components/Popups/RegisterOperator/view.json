@@ -404,7 +404,7 @@
               "name": "Keyboard"
             },
             "position": {
-              "basis": "280px",
+              "basis": "350px",
               "shrink": 0
             },
             "props": {
