@@ -25,6 +25,7 @@ CREATE TABLE #ByAd1 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),
@@ -50,6 +51,7 @@ CREATE TABLE #ByAd2 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),
@@ -78,6 +80,7 @@ INSERT INTO #Create3
 EXEC Location.AppUser_Create
     @Initials     = N'TD30',
     @DisplayName  = N'Test Deprecated 030',
+    @Pin = N'94001',
     @AdAccount    = N'test.deprecated.030',
     @IgnitionRole = NULL,
     @AppUserId    = 1;
@@ -102,6 +105,7 @@ CREATE TABLE #ByAd3 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),

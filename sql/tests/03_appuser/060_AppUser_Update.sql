@@ -35,6 +35,7 @@ INSERT INTO #CreateHappy
 EXEC Location.AppUser_Create
     @Initials    = N'UPH',
     @DisplayName = N'Happy User',
+    @Pin = N'98001',
     @AdAccount   = N'update060.happy@test.com',
     @IgnitionRole = N'Operator',
     @AppUserId   = 1;
@@ -55,6 +56,7 @@ EXEC Location.AppUser_Update
     @Id           = @UserId,
     @Initials     = N'UPH',
     @DisplayName  = N'Happy User Updated',
+    @Pin = N'98002',
     @AdAccount    = N'update060.happy@test.com',
     @IgnitionRole = N'Supervisor',
     @AppUserId    = 1;
@@ -134,6 +136,7 @@ INSERT INTO #CreateNullDN
 EXEC Location.AppUser_Create
     @Initials    = N'UND',
     @DisplayName = N'Null DN User',
+    @Pin = N'98003',
     @AppUserId   = 1;
 SELECT @UserId = NewId FROM #CreateNullDN;
 DROP TABLE #CreateNullDN;
@@ -144,6 +147,7 @@ EXEC Location.AppUser_Update
     @Id          = @UserId,
     @Initials    = N'UND',
     @DisplayName = NULL,
+    @Pin         = N'98008',
     @AppUserId   = 1;
 SELECT @S = Status, @M = Message FROM #R2;
 DROP TABLE #R2;
@@ -181,6 +185,7 @@ EXEC Location.AppUser_Update
     @Id          = @BogusId,
     @Initials    = N'GHX',
     @DisplayName = N'Ghost User',
+    @Pin = N'98004',
     @AppUserId   = 1;
 SELECT @S = Status, @M = Message FROM #R3;
 DROP TABLE #R3;
@@ -209,6 +214,7 @@ INSERT INTO #CreateDepReject
 EXEC Location.AppUser_Create
     @Initials    = N'UDR',
     @DisplayName = N'Dep Reject User',
+    @Pin = N'98005',
     @AdAccount   = N'update060.depreject@test.com',
     @AppUserId   = 1;
 SELECT @UserId = NewId FROM #CreateDepReject;
@@ -221,6 +227,7 @@ INSERT INTO #CreateHelper
 EXEC Location.AppUser_Create
     @Initials    = N'UDH',
     @DisplayName = N'Dep Helper',
+    @Pin = N'98006',
     @AdAccount   = N'update060.dephelper@test.com',
     @AppUserId   = 1;
 SELECT @HelperUserId = NewId FROM #CreateHelper;
@@ -240,6 +247,7 @@ EXEC Location.AppUser_Update
     @Id          = @UserId,
     @Initials    = N'UDR',
     @DisplayName = N'Should Not Apply',
+    @Pin = N'98007',
     @AppUserId   = 1;
 SELECT @S = Status, @M = Message FROM #R4b;
 DROP TABLE #R4b;

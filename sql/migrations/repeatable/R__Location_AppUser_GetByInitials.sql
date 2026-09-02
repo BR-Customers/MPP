@@ -26,6 +26,7 @@
 --
 -- Change Log:
 --   2026-04-23 - 1.0 - Initial version (replaces legacy _GetByClockNumber)
+--   2026-09-02 - 1.1 - Pin exposed in SELECT (terminal PIN sign-in)
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.AppUser_GetByInitials
     @Initials NVARCHAR(10)
@@ -37,6 +38,7 @@ BEGIN
         Id,
         Initials,
         DisplayName,
+        Pin,
         AdAccount,
         IgnitionRole,
         CreatedAt,

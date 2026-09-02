@@ -24,6 +24,7 @@ INSERT INTO #CreateActive
 EXEC Location.AppUser_Create
     @Initials     = N'TA50',
     @DisplayName  = N'Test Active 050',
+    @Pin = N'97001',
     @AdAccount    = N'test.active.050',
     @IgnitionRole = NULL,
     @AppUserId    = 1;
@@ -34,6 +35,7 @@ INSERT INTO #CreateDep
 EXEC Location.AppUser_Create
     @Initials     = N'TD50',
     @DisplayName  = N'Test Deprecated 050',
+    @Pin = N'97002',
     @AdAccount    = N'test.deprecated.050',
     @IgnitionRole = NULL,
     @AppUserId    = 1;
@@ -59,6 +61,7 @@ CREATE TABLE #List1 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),
@@ -116,6 +119,7 @@ CREATE TABLE #List2 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),

@@ -27,6 +27,7 @@
 --   2026-04-23 - 2.1 - Phase G.4: dropped ClockNumber + PinHash (legacy auth)
 --   2026-04-23 - 2.2 - Initials realignment: Initials exposed in SELECT
 --   2026-06-29 - 2.3 - Added @Filter text search (Users management screen)
+--   2026-09-02 - 2.4 - Pin exposed in SELECT and searchable via @Filter
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.AppUser_List
     @IncludeDeprecated BIT = 0,
@@ -39,6 +40,7 @@ BEGIN
         Id,
         Initials,
         DisplayName,
+        Pin,
         AdAccount,
         IgnitionRole,
         CreatedAt,
@@ -48,7 +50,8 @@ BEGIN
       AND (@Filter IS NULL OR @Filter = ''
            OR Initials    LIKE '%' + @Filter + '%'
            OR DisplayName LIKE '%' + @Filter + '%'
-           OR AdAccount   LIKE '%' + @Filter + '%')
+           OR AdAccount   LIKE '%' + @Filter + '%'
+           OR Pin         LIKE '%' + @Filter + '%')
     ORDER BY DisplayName;
 END;
 GO

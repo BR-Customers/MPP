@@ -31,6 +31,8 @@
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
 --   2026-04-23 - 2.1 - Phase G.4: dropped ClockNumber from JSON snapshots
 --   2026-04-23 - 2.2 - Initials realignment: Initials added to JSON snapshots
+--   2026-09-02 - 1.1 - Pin captured in the audit old/new snapshots so the
+--                      retired PIN is recorded (it is never reissued).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.AppUser_Deprecate
     @Id        BIGINT,
@@ -149,6 +151,7 @@ BEGIN
         SELECT @OldValue =
             (SELECT Initials,
                     DisplayName,
+                    Pin,
                     AdAccount,
                     IgnitionRole,
                     DeprecatedAt
@@ -170,6 +173,7 @@ BEGIN
         SELECT @NewValue =
             (SELECT Initials,
                     DisplayName,
+                    Pin,
                     AdAccount,
                     IgnitionRole,
                     DeprecatedAt

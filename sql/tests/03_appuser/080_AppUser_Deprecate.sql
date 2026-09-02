@@ -5,12 +5,12 @@ GO
 -- Test 1: Happy path
 DECLARE @UserId BIGINT, @CallerId BIGINT;
 CREATE TABLE #R1a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #R1a EXEC Location.AppUser_Create @Initials = N'D8CA', @DisplayName = N'Caller', @AdAccount = N'dep080.caller@test.com', @AppUserId = 1;
+INSERT INTO #R1a EXEC Location.AppUser_Create @Initials = N'D8CA', @DisplayName = N'Caller', @Pin = N'89001', @AdAccount = N'dep080.caller@test.com', @AppUserId = 1;
 SELECT @CallerId = NewId FROM #R1a;
 DROP TABLE #R1a;
 
 CREATE TABLE #R1b (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #R1b EXEC Location.AppUser_Create @Initials = N'D8TG', @DisplayName = N'Target', @AdAccount = N'dep080.target@test.com', @AppUserId = 1;
+INSERT INTO #R1b EXEC Location.AppUser_Create @Initials = N'D8TG', @DisplayName = N'Target', @Pin = N'89002', @AdAccount = N'dep080.target@test.com', @AppUserId = 1;
 SELECT @UserId = NewId FROM #R1b;
 DROP TABLE #R1b;
 
@@ -57,7 +57,7 @@ GO
 -- Test 3: Cannot self-deprecate
 DECLARE @UserId BIGINT;
 CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #R3 EXEC Location.AppUser_Create @Initials = N'D8SR', @DisplayName = N'SelfRef', @AdAccount = N'dep080.selfref@test.com', @AppUserId = 1;
+INSERT INTO #R3 EXEC Location.AppUser_Create @Initials = N'D8SR', @DisplayName = N'SelfRef', @Pin = N'89003', @AdAccount = N'dep080.selfref@test.com', @AppUserId = 1;
 SELECT @UserId = NewId FROM #R3;
 DROP TABLE #R3;
 
@@ -78,12 +78,12 @@ GO
 -- Test 4: Cannot double-deprecate
 DECLARE @UserId BIGINT, @CallerId BIGINT;
 CREATE TABLE #R4a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #R4a EXEC Location.AppUser_Create @Initials = N'D8DC', @DisplayName = N'DDCaller', @AdAccount = N'dep080.ddcaller@test.com', @AppUserId = 1;
+INSERT INTO #R4a EXEC Location.AppUser_Create @Initials = N'D8DC', @DisplayName = N'DDCaller', @Pin = N'89004', @AdAccount = N'dep080.ddcaller@test.com', @AppUserId = 1;
 SELECT @CallerId = NewId FROM #R4a;
 DROP TABLE #R4a;
 
 CREATE TABLE #R4b (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #R4b EXEC Location.AppUser_Create @Initials = N'D8DB', @DisplayName = N'Double', @AdAccount = N'dep080.double@test.com', @AppUserId = 1;
+INSERT INTO #R4b EXEC Location.AppUser_Create @Initials = N'D8DB', @DisplayName = N'Double', @Pin = N'89005', @AdAccount = N'dep080.double@test.com', @AppUserId = 1;
 SELECT @UserId = NewId FROM #R4b;
 DROP TABLE #R4b;
 
