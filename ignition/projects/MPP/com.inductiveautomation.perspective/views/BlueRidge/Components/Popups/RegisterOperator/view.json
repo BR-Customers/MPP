@@ -2,24 +2,25 @@
   "custom": {
     "editDisplayName": "",
     "editInitials": "",
+    "editPin": "",
     "error": "",
     "focusedField": "displayName"
   },
   "params": {
-    "initials": "",
+    "pin": "",
     "popupId": "mpp-register-operator",
     "replyMessage": "registerOperatorResult"
   },
   "propConfig": {
-    "params.initials": {
-      "paramDirection": "input",
-      "persistent": true
-    },
     "params.popupId": {
       "paramDirection": "input",
       "persistent": true
     },
     "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.pin": {
       "paramDirection": "input",
       "persistent": true
     }
@@ -47,7 +48,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tself.view.custom.editInitials = self.view.params.initials or \"\"\n\tself.view.custom.editDisplayName = \"\"\n\tself.view.custom.focusedField = \"displayName\"\n\tself.view.custom.error = \"\""
+            "script": "\tself.view.custom.editPin = self.view.params.pin or \"\"\n\tself.view.custom.editInitials = \"\"\n\tself.view.custom.editDisplayName = \"\"\n\tself.view.custom.focusedField = \"displayName\"\n\tself.view.custom.error = \"\""
           }
         }
       }
@@ -74,7 +75,7 @@
         {
           "name": "saveOperator",
           "params": [],
-          "script": "\tinitials = (self.view.custom.editInitials or \"\").strip()\n\tname = (self.view.custom.editDisplayName or \"\").strip()\n\tif not initials or not name:\n\t\tself.view.custom.error = \"Initials and display name are both required.\"\n\t\treturn\n\tres = BlueRidge.Location.AppUser.create({\"initials\": initials, \"displayName\": name})\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"registered\", \"initials\": initials.upper(), \"appUserId\": res.get(\"NewId\"), \"displayName\": name}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)\n\telse:\n\t\tself.view.custom.error = (res.get(\"Message\") if res else None) or \"Could not create operator\""
+          "script": "\tinitials = (self.view.custom.editInitials or \"\").strip()\n\tname = (self.view.custom.editDisplayName or \"\").strip()\n\tpin = (self.view.custom.editPin or \"\").strip()\n\tif not initials or not name:\n\t\tself.view.custom.error = \"Initials and display name are both required.\"\n\t\treturn\n\tif len(pin) != 5 or not pin.isdigit():\n\t\tself.view.custom.error = \"PIN must be exactly 5 digits.\"\n\t\treturn\n\tres = BlueRidge.Location.AppUser.create({\"initials\": initials, \"displayName\": name, \"pin\": pin})\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"registered\", \"initials\": initials.upper(), \"appUserId\": res.get(\"NewId\"), \"displayName\": name}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)\n\telse:\n\t\tself.view.custom.error = (res.get(\"Message\") if res else None) or \"Could not create operator\""
         }
       ],
       "messageHandlers": [
@@ -172,6 +173,68 @@
               }
             },
             "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "PinField"
+                },
+                "position": {
+                  "basis": "200px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "PinLabel"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "PIN",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "PinValue"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-accent)",
+                        "fontFamily": "monospace",
+                        "fontSize": "28px",
+                        "letterSpacing": "0.12em"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editPin"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
               {
                 "type": "ia.container.flex",
                 "meta": {
