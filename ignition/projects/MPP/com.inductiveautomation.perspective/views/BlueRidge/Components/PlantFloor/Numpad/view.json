@@ -62,7 +62,7 @@
               "transforms": [
                 {
                   "type": "script",
-                  "code": "\tmn = value or \"numpadKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"123\"]"
+                  "code": "\tmn \u003d value or \"numpadKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"123\"]"
                 }
               ]
             }
@@ -102,7 +102,7 @@
               "transforms": [
                 {
                   "type": "script",
-                  "code": "\tmn = value or \"numpadKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"456\"]"
+                  "code": "\tmn \u003d value or \"numpadKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"456\"]"
                 }
               ]
             }
@@ -142,7 +142,7 @@
               "transforms": [
                 {
                   "type": "script",
-                  "code": "\tmn = value or \"numpadKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"789\"]"
+                  "code": "\tmn \u003d value or \"numpadKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"789\"]"
                 }
               ]
             }
@@ -182,7 +182,7 @@
               "transforms": [
                 {
                   "type": "script",
-                  "code": "\tmn = value or \"numpadKeyPressed\"\n\treturn [\n\t\t{\"label\": \"Clear\", \"key\": \"\", \"action\": \"clear\", \"variant\": \"secondary\", \"messageName\": mn},\n\t\t{\"label\": \"0\", \"key\": \"0\", \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn},\n\t\t{\"label\": \"Back\", \"key\": \"\", \"action\": \"backspace\", \"variant\": \"secondary\", \"messageName\": mn}\n\t]"
+                  "code": "\tmn \u003d value or \"numpadKeyPressed\"\n\treturn [\n\t\t{\"label\": \"Clear\", \"key\": \"\", \"action\": \"clear\", \"variant\": \"secondary\", \"messageName\": mn},\n\t\t{\"label\": \"0\", \"key\": \"0\", \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn},\n\t\t{\"label\": \"Back\", \"key\": \"\", \"action\": \"backspace\", \"variant\": \"secondary\", \"messageName\": mn}\n\t]"
                 }
               ]
             }

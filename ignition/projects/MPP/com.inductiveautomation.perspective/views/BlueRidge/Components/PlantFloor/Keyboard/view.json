@@ -62,7 +62,7 @@
               "transforms": [
                 {
                   "type": "script",
-                  "code": "\tmn = value or \"keyboardKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"1234567890\"]"
+                  "code": "\tmn \u003d value or \"keyboardKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"1234567890\"]"
                 }
               ]
             }
@@ -88,7 +88,7 @@
               "transforms": [
                 {
                   "type": "script",
-                  "code": "\tmn = value or \"keyboardKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"QWERTYUIOP\"]"
+                  "code": "\tmn \u003d value or \"keyboardKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"QWERTYUIOP\"]"
                 }
               ]
             }
@@ -128,7 +128,7 @@
               "transforms": [
                 {
                   "type": "script",
-                  "code": "\tmn = value or \"keyboardKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"ASDFGHJKL\"]"
+                  "code": "\tmn \u003d value or \"keyboardKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"ASDFGHJKL\"]"
                 }
               ]
             }
@@ -168,7 +168,7 @@
               "transforms": [
                 {
                   "type": "script",
-                  "code": "\tmn = value or \"keyboardKeyPressed\"\n\twide = {\"basis\": \"130px\", \"grow\": 0, \"shrink\": 0}\n\trow = [{\"label\": \"Clear\", \"key\": \"\", \"action\": \"clear\", \"variant\": \"secondary\", \"messageName\": mn, \"instancePosition\": wide}]\n\trow += [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"ZXCVBNM\"]\n\trow.append({\"label\": \"Enter\", \"key\": \"\", \"action\": \"enter\", \"variant\": \"primary\", \"messageName\": mn, \"instancePosition\": wide})\n\treturn row"
+                  "code": "\tmn \u003d value or \"keyboardKeyPressed\"\n\twide \u003d {\"basis\": \"130px\", \"grow\": 0, \"shrink\": 0}\n\trow \u003d [{\"label\": \"Clear\", \"key\": \"\", \"action\": \"clear\", \"variant\": \"secondary\", \"messageName\": mn, \"instancePosition\": wide}]\n\trow +\u003d [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"ZXCVBNM\"]\n\trow.append({\"label\": \"Enter\", \"key\": \"\", \"action\": \"enter\", \"variant\": \"primary\", \"messageName\": mn, \"instancePosition\": wide})\n\treturn row"
                 }
               ]
             }
@@ -208,7 +208,7 @@
               "transforms": [
                 {
                   "type": "script",
-                  "code": "\tmn = value or \"keyboardKeyPressed\"\n\treturn [{\"label\": \"Space\", \"key\": \" \", \"action\": \"space\", \"variant\": \"default\", \"messageName\": mn, \"instancePosition\": {\"basis\": \"620px\", \"grow\": 0, \"shrink\": 0}}, {\"label\": \"Backspace\", \"key\": \"\", \"action\": \"backspace\", \"variant\": \"secondary\", \"messageName\": mn, \"instancePosition\": {\"basis\": \"130px\", \"grow\": 0, \"shrink\": 0}}]"
+                  "code": "\tmn \u003d value or \"keyboardKeyPressed\"\n\treturn [{\"label\": \"Space\", \"key\": \" \", \"action\": \"space\", \"variant\": \"default\", \"messageName\": mn, \"instancePosition\": {\"basis\": \"620px\", \"grow\": 0, \"shrink\": 0}}, {\"label\": \"Backspace\", \"key\": \"\", \"action\": \"backspace\", \"variant\": \"secondary\", \"messageName\": mn, \"instancePosition\": {\"basis\": \"130px\", \"grow\": 0, \"shrink\": 0}}]"
                 }
               ]
             }
