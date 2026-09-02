@@ -26,44 +26,14 @@
       }
     ],
     "lastModification": {
-      "actor": "admin",
-      "timestamp": "2026-06-16T14:33:56Z"
+      "actor": "claude",
+      "timestamp": "2026-09-02T12:00:00Z"
     },
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "id",
-        "sqlType": 3
-      },
-      {
-        "type": "Parameter",
-        "identifier": "initials",
-        "sqlType": 7
-      },
-      {
-        "type": "Parameter",
-        "identifier": "displayName",
-        "sqlType": 7
-      },
-      {
-        "type": "Parameter",
         "identifier": "pin",
         "sqlType": 7
-      },
-      {
-        "type": "Parameter",
-        "identifier": "adAccount",
-        "sqlType": 7
-      },
-      {
-        "type": "Parameter",
-        "identifier": "ignitionRole",
-        "sqlType": 7
-      },
-      {
-        "type": "Parameter",
-        "identifier": "appUserId",
-        "sqlType": 3
       }
     ]
   }

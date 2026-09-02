@@ -42,6 +42,11 @@
       },
       {
         "type": "Parameter",
+        "identifier": "pin",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
         "identifier": "adAccount",
         "sqlType": 7
       },
