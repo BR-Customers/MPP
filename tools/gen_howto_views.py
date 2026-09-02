@@ -111,6 +111,48 @@ def _step(n, title, body):
          title, BODY, body)
 
 
+def _points(heading, items):
+    """A set of independent facts/actions - NOT a sequence, so no numbered
+    badges. One shared card, one table row per item (bullet + bold lead-in
+    + description), so it reads as reference material rather than a
+    workflow the operator works through in order.
+
+    Same defensive pattern as _step(): every <tr>/<td> needs its own
+    border:none + background-color, because the component's default
+    GitHub-flavoured-markdown table CSS is scoped to EVERY table under it,
+    not just ones that look like a numbered step - see _step()'s docstring
+    for the full explanation (corner artifacts, forced white backgrounds,
+    the works)."""
+    tr = 'border:none;'
+    td = 'border:none;'
+    rows = []
+    for title, body in items:
+        rows.append(
+            '<tr style="%s">'
+            '<td width="18" valign="top" style="%sbackground-color:%s;'
+            'color:%s;font-size:15px;font-weight:bold;padding-bottom:10px;">'
+            '&bull;</td>'
+            '<td valign="top" style="%sbackground-color:%s;padding-bottom:10px;">'
+            '<span style="font-size:13.5px;font-weight:bold;color:%s;">%s'
+            '</span><span style="font-size:13.5px;color:%s;line-height:1.5;">'
+            ' &ndash; %s</span>'
+            '</td></tr>'
+            % (tr, td, CARD, ACCENT, td, CARD, INK, title, BODY, body))
+    heading_html = ''
+    if heading:
+        heading_html = (
+            '<div style="font-size:12px;font-weight:bold;letter-spacing:'
+            '0.03em;text-transform:uppercase;color:%s;padding-bottom:8px;">'
+            '%s</div>' % (MUTED, heading))
+    return (
+        '<div style="background-color:%s;border-radius:6px;padding:14px;'
+        'margin:0 0 12px 0;">%s'
+        '<table width="100%%" cellpadding="0" cellspacing="0" border="0" '
+        'style="border-collapse:collapse;">%s</table>'
+        '</div>'
+    ) % (CARD, heading_html, ''.join(rows))
+
+
 def _note(text):
     """A small aside for a secondary detail - not important enough for a
     boxed callout, but worth a beat of visual separation from the step body
@@ -600,28 +642,33 @@ def plc_devices_source():
 def plant_hierarchy_source():
     parts = []
     parts.append(_lead(
-        'Add, edit, reorder, or deprecate a location in the plant tree.'))
+        'Add a location to the plant tree, or work with one that already '
+        'exists.'))
 
-    parts.append(_step(1, 'Add a location',
-        'Press %s. Pick %s then %s first &ndash; they decide which '
-        'attribute fields show up below. Fill in %s, %s, and %s, then '
-        'press %s.' % (_b('+ Add Location'), _b('Type'), _b('Definition'),
-                       _b('Name'), _b('Code'), _b('Description'), _b('Save'))))
+    parts.append(_step(1, 'Start a new location',
+        'Press %s. It opens a blank form.' % _b('+ Add Location')))
 
-    parts.append(_step(2, 'Edit a location',
-        'Select it in the tree, change what you need, then press %s. '
-        '%s discards your changes.' % (_b('Save'), _b('Cancel'))))
+    parts.append(_step(2, 'Set its type',
+        'Pick %s, then %s &ndash; these decide which attribute fields '
+        'show up below.' % (_b('Type'), _b('Definition'))))
 
-    parts.append(_step(3, 'Reorder',
-        'The up/down arrows next to %s move it right away &ndash; no %s '
-        'needed.' % (_b('Sort Order'), _b('Save'))))
-
-    parts.append(_step(4, 'Deprecate',
-        'Press %s. This takes effect immediately, with no confirmation '
-        'step.' % _b('Deprecate')))
+    parts.append(_step(3, 'Fill it in and save',
+        'Enter %s, %s, %s, and any attributes %s added, then press %s.'
+        % (_b('Name'), _b('Code'), _b('Description'), _b('Definition'),
+           _b('Save'))))
     parts.append(_note(
         '%s only appears on a Printer location, and checks that the '
         'printer responds before you save.' % _b('Validate endpoint')))
+
+    parts.append(_points('Working with an existing location', [
+        ('Edit', 'Select it in the tree, change what you need, then press '
+                 '%s. %s discards your changes.'
+                 % (_b('Save'), _b('Cancel'))),
+        ('Reorder', 'The up/down arrows next to %s move it right away '
+                    '&ndash; no %s needed.' % (_b('Sort Order'), _b('Save'))),
+        ('Deprecate', 'Press %s. This takes effect immediately, with no '
+                      'confirmation step.' % _b('Deprecate')),
+    ]))
 
     return ''.join(parts)
 
