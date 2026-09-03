@@ -12,12 +12,19 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-09-02 — **Operator sign-in switched from initials to a 5-digit PIN.** Nine commits on `jacques/working` (`83f9c244`..`b589aa60`). Migration `0069_appuser_pin.sql` adds `Location.AppUser.Pin NVARCHAR(5) NOT NULL UNIQUE` + `CK_AppUser_Pin_Format`; new procs `AppUser_GetActiveByPin` (presence gate) / `AppUser_GetByPin` (history), both mirroring the initials pair; `Pin` carried through Create/Update/Get/List/Deprecate. New `Components/PlantFloor/Numpad` view; `Popups/InitialsEntry` now takes a PIN and auto-submits on the 5th digit (path + popup id unchanged, so none of the ~16 call sites moved). Config-Tool Users screen gained a PIN column and field.
+**Last updated:** 2026-09-03 — **`MPP_MES_Prod` deployed to `0069` and the three Ignition project exports built; customer go-live is next week.** Prod (`MESDBSRV` / `172.17.10.148`) was at `0065` with **zero drift** — nothing applied that wasn't in the repo, and the four pending migrations (`0066`..`0069`) all sat above the high-water mark, so it was a clean forward-only catch-up. Backed up + `RESTORE VERIFYONLY`-checked first (`…\MSSQL\Backup\MPP_MES_Prod_pre0066_20260903.bak`, 5,058 pages), then `Update-Prod.ps1`: **4 migrations + 447 repeatables, seeds off**. Final state **69 migrations | 103 tables**; 20 procs prod never had now exist (rejects reporting, container/serial trace, `Lot_SearchAdvanced`, both PIN lookups, CRT helpers). Every migration's effect verified against real data: CrtBanner template 1 / stale `{CrtMark}` **0**; ChargeToParty 6 rows, **153 of 154** defect codes charged (the one holdout is `DC-999` "Warmup" — by design it reports under Unassigned); 5 non-reject-scrap codes; **27 of 27** reject events backfilled with a terminal; `ToleranceWeight` present; 7 users, 7 distinct PINs. **Nothing destructive** — no DROP/TRUNCATE/DELETE anywhere in the four; the only in-place edit is `0066` stripping `{CrtMark}` from 3 label templates, which I simulated read-only against prod's live ZPL before running (removes exactly one field, remaining ~200 chars byte-identical).
+> **Seed `032` run by hand on BOTH prod and Dev.** Prod's Primary LOT ticket was still migration `0021`'s 260-char **placeholder** — MPP's real Honda layout had never reached it. Checking before pushing caught that **Dev was in the same state**: seeds only run on a full `Reset-DevDatabase`, and Dev has been migrated forward incrementally since seed 032 was written (2026-08-20), so it never ran there either. Both are now the real 402-byte layout, byte-identical to the seed. **Still divergent:** Dev's `Container` template is 1284 bytes vs prod's 1317 — pre-existing, untouched by 032 (Container is owned by migration `0054`), worth resolving before go-live.
+> **Three Ignition project exports built** — `dist/ignition-exports/{Core,MPP,MPP_Config}_2026-09-03_1154.zip` (860 / 288 / 176 files). New rerunnable builder **`build-project-exports.ps1`** at the repo root; `dist/` gitignored as a rebuildable artifact. **Import Core FIRST** — both children declare `"parent": "Core"` and won't resolve inherited resources without it. Format was **not guessed**: matched against a genuine Ignition-produced export (`Downloads\MPP_2026-08-20_0713.zip`, 8.3.5-rc1) — `project.json` at the zip ROOT, resource paths relative to it, **forward-slash** separators, files only, no directory entries. The forward slashes are the trap: `Compress-Archive` on PS 5.1 writes backslash separators that Java-side consumers read as one long filename, so the builder writes entries by hand via `System.IO.Compression`. Verified **1,324 entries, zero byte differences** vs source, zero backslash entries, zero excluded-file leaks. Exclusions checked rather than assumed: 159 `thumbnail.png` dropped (Core legitimately has none), 4 `.gitkeep`, and **all 12 report `data.bin` KEPT** — the gitignore rule is scoped `views/**/data.bin`, so report binaries under `com.inductiveautomation.reporting/` are real authored resources; dropping them would have shipped MPP with no PDF reports.
+> **Owed before go-live:** (1) **no import smoke test** — the 8.3 gateway exposes no reachable import endpoint (`openapi.json` 404s), so the zips are verified structurally and byte-wise but never actually imported; import `Core` into the local dev gateway once to close that link. (2) Prod's Ignition server has **no projects yet** and needs either the git-sync loop (`pull.ps1` + junction, per `ignition-context-pack/09_repo_gateway_sync.md`) or repeat imports. (3) **Real PINs** — prod's 7 users carry zero-padded Id placeholders (`00001`, `00002`, `00006`–`00010`); initials sign-in still works until the new project ships, so this is not urgent, but the new views are PIN-only. (4) The `Ignition` SQL login is **sysadmin** on `MESDBSRV` — more than an app service account should hold; tighten to `db_owner` on `MPP_MES_Prod` before go-live.
+> **Also this session:** the customer's **tool configuration imported from prod into Dev** — `6MA-A` (12 cavities), `6MA-B` (12 cavities) and `5G0-F-A` (2), proc-driven via `Tool_Create` + `ToolCavity_SaveAll` so it carries full validation + audit rows; script `sql/scratch/2026-09-03_import_prod_tools_to_dev.sql` (scratch, never a seed). Verified all 26 tool+cavity rows byte-identical to source. **`6MA` is two dies, not one.** **Die ranks DO exist in prod** (A/Premium, B/Good, C/Okay, D/Poor; two of the three dies reference B) — which **contradicts the FAT #2b note in `CLAUDE.md`** that MPP confirmed they don't; worth reopening. `DieRankCompatibility` is empty in prod as it is here, so `Lot_Merge`'s cross-die gate is inert there too. `MPP_MES_DATA_MODEL.md` → **v2.2**: §7 still claimed "No shot counter column", false since migration `0050` (2026-08-04) — now documented along with `ShotLimit`, `Tool_Duplicate`'s config-vs-per-asset split, and a new normative rule that cross-database tool copies resolve FKs **by natural key, never by Id**.
+> **Uncommitted on `jacques/working`:** `MPP_MES_DATA_MODEL.md` (v2.2), `.gitignore` (`dist/`), `build-project-exports.ps1`, `sql/scratch/2026-09-03_import_prod_tools_to_dev.sql`. Flagged for a separate pass: the older `Tools` procs (`Tool_Create`, `Tool_Update`, `DieRank_Create`) still emit generic `'Tool created.'` audit descriptions instead of the `<SUBJECT> · <CATEGORY> · <ACTION>` convention that `ToolCavity_SaveAll` / `ToolAttribute_SaveAll` already follow.
+
+**Previously:** 2026-09-02 — **Operator sign-in switched from initials to a 5-digit PIN.** Nine commits on `jacques/working` (`83f9c244`..`b589aa60`). Migration `0069_appuser_pin.sql` adds `Location.AppUser.Pin NVARCHAR(5) NOT NULL UNIQUE` + `CK_AppUser_Pin_Format`; new procs `AppUser_GetActiveByPin` (presence gate) / `AppUser_GetByPin` (history), both mirroring the initials pair; `Pin` carried through Create/Update/Get/List/Deprecate. New `Components/PlantFloor/Numpad` view; `Popups/InitialsEntry` now takes a PIN and auto-submits on the 5th digit (path + popup id unchanged, so none of the ~16 call sites moved). Config-Tool Users screen gained a PIN column and field.
 > **Leading zeros are load-bearing** — a full-time employee's code is `04218`, a temp's `40218`. Column is NVARCHAR, NQ params are `sqlType: 7`. Three tests guard it (`046_AppUser_Pin_lookups.sql` round trip, plus 4-digit and duplicate rejection in `010_AppUser_Create.sql`). Full suite **3221 assertions, 2 failures — both pre-existing** and unrelated (`0069_Aggregate_Reports/010_schema.sql` defect-code charge-to counts; verified identical at baseline with the PIN work stashed, 3136/2).
 > **No seed dependency.** Operators self-provision at the terminal on first unrecognised PIN; the unknown-PIN dialog makes **Re-type PIN** primary and *Register New User* secondary so a mistyped digit cannot become a duplicate person. **Elevation deliberately untouched** — a PIN grants presence only, AD per-action elevation is unchanged, and a supervisor covering a break just signs in with their own PIN.
 > **Owed:** live smoke of the four edited/new views — the gateway trial had expired when the work landed, so they are validated by JSON parse + clean `scan.ps1` only. `MPP_MES_Dev` has migration `0069` applied and all 16 users backfilled with zero-padded placeholder PINs (`JGP` = `00022`, `TOM` = `00023`); real PINs need entering before use. Dev also still shows migrations `0064`/`0065`/`0066` pending out-of-order — pre-existing, untouched.
 
-**Previously:** 2026-08-18 — **FAT Day 1 punch list worked; `main` == `jacques/working` == `0b000bdf`; full suite 2728/0.** Eight items triaged against the actual code, three shipped, one closed with no build, two decided, one deferred, one written up for the customer. Working notes: **`notes/2026-08-18_fat-day1-punch-list.md`** (all eight, with file references, decisions and what is still owed) and **`notes/2026-08-18_serialized-line-validation-number-brief.md`** (item 7 for Tom).
+**Prior header (2026-08-18):** **FAT Day 1 punch list worked; `main` == `jacques/working` == `0b000bdf`; full suite 2728/0.** Eight items triaged against the actual code, three shipped, one closed with no build, two decided, one deferred, one written up for the customer. Working notes: **`notes/2026-08-18_fat-day1-punch-list.md`** (all eight, with file references, decisions and what is still owed) and **`notes/2026-08-18_serialized-line-validation-number-brief.md`** (item 7 for Tom).
 > **Shipped.** **#6 session timeout** (`c62ea5e2`) — migration `0058` sets operator presence to **30 min** (1800 s) on the live row and on the shipped DEFAULT; the Config-Tool **Users** page editor now speaks **whole minutes with the unit shown** and converts at the boundary, refusing a blank/non-numeric field instead of writing a silent fallback. Storage deliberately stays in **seconds** (the unit `Common.Session` computes with and both CHECKs are written against). **#3 terminal IP auto-nav** (`126d267c`) — root-caused: **nothing was broken.** `Terminal_GetByIpAddress` v1.2 + `ufn_NormalizeIpAddress` are correct (26 dedicated assertions green); localhost failed at the prod test because **no terminal carries `127.0.0.1`**, so the fallback row was the right answer — it was just *silent*. TerminalSelector now shows an `UnregisteredBanner` naming `{session.props.address}` when `isFallback`, and `sql/scratch/register_loopback_terminal.sql` binds one chosen terminal to loopback for gateway-host demos (scratch, never a seed — shipping `127.0.0.1` to a plant terminal would make every gateway-host session claim to be it). **#8 vision station by IP** (`05764eaa`) — migration `0059` renames LTD-7 `VisionAppUrl` → **`VisionAppIp`**; new **`Location.ufn_VisionAppUrl`** composes `http://<ip>/` (`:port` and `/path` carried through, an existing full URL passed through unchanged — which is what makes the rename non-breaking, blank → NULL so the iframe never loads `http:///`); `Terminal_GetClosureContext` v1.1 reads it but **keeps the result column named `VisionAppUrl`**, so `applyToSession`, the session property and both assembly views are untouched. +15 tests.
 > **Closed / decided.** **#5 weekend shifts** — no build: Jacques authors the weekend `ShiftSchedule` in the existing editor. (One residual worth doing: `DowntimeEvent_Start` writes `ShiftId = NULL` silently when no shift instance is open and `GetByScope` then filters the event out of every shift-scoped read — any future schedule gap reproduces the disappearance.) **#4 production/inventory report** — **building = Area** (no new location tier; `DC1`–`DC4`, `TRIM1/2`, `MA1/2`, `WHSE`, `SHIPIN/OUT` already hang off the facility) and **daily = shift-anchored, 3rd → 1st → 2nd**, so the report must group on the `Oee.Shift` instance, not a `CAST(… AS DATE)` cut that would split 3rd shift across two rows. Spec pending.
 > **Two corrections to earlier assumptions, both the same mistake:** a `SessionPolicy` editor **did** already exist (Config-Tool Users page), and there is **no missing attribute editor** for terminals — the Plant Hierarchy attribute panel renders generically from `LocationAttributeDefinition` via `buildAttributesForType`, so any LTD-7 attribute appears automatically.
@@ -55,6 +62,71 @@
 > **See the `## 🔖 2026-07-14 — PLC Integration` section directly below for the full PLC writeup.**
 
 **Prior header note (hunter/explore, 2026-07-07):** **Smoke-findings fix pass on `hunter/explore`: all 14 items from `notes/2026-07-07_smoke_findings.md` addressed (full suite 1945/1945, only the pre-existing `010_Parts_codes_crud` thrower). Per-item ✅/⚠️ annotations live in the findings file. Re-smoke owed — see the section directly below.** Prior header note (2026-07-06 second session): **Jacques 2026-07-06 meeting task list worked on `hunter/explore`: 21 of 24 items fixed, tested, committed (full suite 1934/1934, only the pre-existing `010_Parts_codes_crud` thrower). 3 items open pending live repro / Jacques's call.** Prior header note (earlier 2026-07-06):
+
+---
+
+## 🔖 2026-09-03 — Prod deploy to `0069` + Ignition project exports
+
+**Target:** `MPP_MES_Prod` on `MESDBSRV` / `172.17.10.148`, SQL login `Ignition`. Customer go-live next week; prod was **not yet in use**, which is what made this routine.
+
+### Pre-flight (what made it safe to proceed)
+
+| Check | Finding |
+|---|---|
+| Applied vs repo | 65 applied, 69 in repo — missing `0066`, `0067`, `0068`, `0069` |
+| Drift | **None.** Nothing applied on prod that is absent from the repo |
+| Ordering | All four above the `0065` high-water mark — clean forward-only, no `-AllowOutOfOrder` |
+| Tools schema prod vs Dev | **Byte-identical** despite the 4-migration gap |
+| `0067` preconditions | `RejectEvent` partitioned on `ps_MonthlyUtc` ✓, all 3 `OperationCategory` codes ✓, 6 HSP + 7 Prod/QC defect codes present ✓ |
+| `0069` backfill safety | max `AppUser.Id` = 10 across 7 rows → PINs `00001`..`00010`, all 5-digit, all unique |
+| Permissions | `Ignition` login is **sysadmin** + `db_owner` (also `BACKUP DATABASE`) |
+| Live volume | 7 AppUsers, 47 LOTs, 169 Items, 218 Locations, 88 ProductionEvents, 27 RejectEvents, 40 ContainerConfigs |
+
+### Destructiveness review — nothing destructive
+
+No `DROP`, `TRUNCATE`, `DELETE`, or column narrowed/retyped in any of the four. Three mutate existing rows:
+
+1. **`0066`** rewrites 3 live label templates to strip the `{CrtMark}` token `0065` had spliced in. **Simulated read-only against prod's actual ZPL before running** — removes exactly the one `^FO300,45…{CrtMark}^FS` field, remaining ~200 chars byte-identical on all three.
+2. **`0067`** backfills, all `WHERE … IS NULL` so it can never overwrite an engineer's edit.
+3. **`0069`** backfills `Pin` then applies NOT NULL + UNIQUE + format CHECK.
+
+**Re-run safety note:** `0066` and `0067` carry the known guard bug — a top-of-file `IF EXISTS … RETURN` before a `GO` only exits its own batch. Both survive it because every statement is individually guarded and the `SchemaVersion` insert is `IF NOT EXISTS`-wrapped. `0069` has no `GO`, so its `RETURN` works properly. (Same family as the `0049_session_policy.sql` issue flagged 2026-08-18.)
+
+### Runbook as executed
+
+```
+BACKUP DATABASE MPP_MES_Prod TO DISK='…\MSSQL\Backup\MPP_MES_Prod_pre0066_20260903.bak'
+  WITH INIT, COMPRESSION, STATS=25;      -- 5,058 pages
+RESTORE VERIFYONLY FROM DISK='…';        -- "backup set is valid"
+.\Update-Prod.ps1 -ServerInstance 172.17.10.148 -DatabaseName MPP_MES_Prod `
+                  -Username Ignition -Password <pw> -Preview
+.\Update-Prod.ps1 … -Force                -- 4 migrations + 447 repeatables, seeds OFF
+sqlcmd … -i sql\seeds\032_seed_label_templates_mpp.sql   -- by hand, prod AND Dev
+```
+
+> `Update-Prod.ps1`'s confirmation uses `Read-Host`, so an agent/non-interactive shell must pass `-Force`. Run it from a real terminal to get the "type the database name" prompt.
+
+### Post-deploy verification (all green)
+
+`69 migrations | 103 tables`; CrtBanner template 1, stale `{CrtMark}` 0; ChargeToParty 6; defect codes charged 153/154 (`DC-999` "Warmup" unassigned **by design**); non-reject-scrap 5; RejectEvent terminal backfill **27/27** (better than predicted — every reject had a prior `LotMovement`); `ToleranceWeight` present; 7 PINs / 7 distinct.
+
+### Label templates — a gap that was nearly missed
+
+Prod's **Primary** LOT ticket was still migration `0021`'s 260-char placeholder; MPP's real Honda layout lives only in seed `032`. Checking before pushing revealed **Dev was identical** — seeds run only on a full `Reset-DevDatabase`, and Dev has been migrated forward incrementally since 032 was authored (2026-08-20), so **seed 032 had never run anywhere.** It is a scoped idempotent `UPDATE` (Primary only, `AND ZplBody <> @Zpl`), not insert-if-missing, so it does replace the placeholder. Run on both. Prod now: Container 1317, Primary 401, Master 226, Void 226, CrtBanner 53. **Dev's Container is 1284 vs prod's 1317 — unresolved.**
+
+### Ignition project exports
+
+`build-project-exports.ps1` (repo root, rerunnable) → `dist/ignition-exports/` (gitignored).
+
+| Zip | Title | Parent | Files | Size |
+|---|---|---|---|---|
+| `Core_2026-09-03_1154.zip` | Core | — (inheritable) | 860 | 680 KB |
+| `MPP_2026-09-03_1154.zip` | MPP MES | Core | 288 | 374 KB |
+| `MPP_Config_2026-09-03_1154.zip` | MPP Configuration Tool | Core | 176 | 269 KB |
+
+**Import Core first.** Format reverse-checked against a real Ignition export (`Downloads\MPP_2026-08-20_0713.zip`): `project.json` at zip ROOT, relative resource paths, **forward-slash** separators, files only. `Compress-Archive` on PS 5.1 writes backslashes that Java reads as one filename — hence hand-built entries via `System.IO.Compression`. Verified 1,324 entries / 0 byte diffs / 0 backslash entries / 0 leaks. **Report `data.bin` kept** (gitignore is scoped `views/**/data.bin`); 159 thumbnails + 4 `.gitkeep` dropped. `MPP_MES` and `Refrence project` are empty stubs with no `project.json` — the builder refuses them.
+
+**Not verified:** no actual import was performed (no reachable 8.3 import endpoint; `openapi.json` 404s). Smoke-import `Core` into the dev gateway before the customer deploy.
 
 ---
 
