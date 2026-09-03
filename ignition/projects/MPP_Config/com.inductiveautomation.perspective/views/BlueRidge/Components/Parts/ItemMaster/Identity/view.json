@@ -1020,11 +1020,23 @@
             "children": [
               {
                 "meta": {
-                  "name": "Input",
+                  "name": "Label",
                   "tooltip": {
                     "enabled": true,
                     "text": "Enable CRT - every LOT of this part minted while this is on is tagged CRT and cannot advance until Quality clears it."
                   }
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "CRT Enabled"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
                 },
                 "position": {
                   "basis": "auto"
