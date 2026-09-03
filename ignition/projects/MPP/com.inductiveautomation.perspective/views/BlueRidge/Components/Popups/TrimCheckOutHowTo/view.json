@@ -1,0 +1,124 @@
+{
+  "custom": {},
+  "params": {
+    "popupId": "trimCheckOutHowTo"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 420,
+      "width": 620
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "How to check out of Trim"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "modal-header"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Guide"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1
+            },
+            "props": {
+              "markdown": {
+                "escapeHtml": false
+              },
+              "sectionSpacing": 8,
+              "source": "\u003cdiv style\u003d\"font-size:14.5px;color:#C9D2E0;line-height:1.55;padding:0 0 16px 0;\"\u003eScan or tap a LOT back out on \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eTrim OUT\u003c/span\u003e once it is ready to move on.\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e1\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eSelect the LOT\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eTap the LOT\u0027s card in the Trim inventory list, or scan its \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eLTT Barcode\u003c/span\u003e, then enter the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eLot count\u003c/span\u003e.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e2\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eAdd scrap, then check it out\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eTap a reason under \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eScrap reasons\u003c/span\u003e to add one piece; press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eMore reasons\u003c/span\u003e if the reason you need is not on the short list. Press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eTrim OUT\u003c/span\u003e to release the whole LOT out of Trim.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\"\u003eTrim OUT always moves the entire LOT together - there is no split here.\u003c/div\u003e",
+              "style": {
+                "fontSize": 13,
+                "overflow": "auto"
+              }
+            },
+            "type": "ia.display.markdown"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -54,6 +54,74 @@
       {
         "children": [
           {
+            "meta": {
+              "name": "PanelHeader"
+            },
+            "props": {
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": "600"
+              },
+              "text": "Assignments"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup('dieAssignmentsHowTo',\n\t\t'BlueRidge/Components/Popups/DieAssignmentsHowTo',\n\t\tparams={'popupId': 'dieAssignmentsHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "HowToButton",
+              "tooltip": {
+                "text": "How to manage Assignments"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/help_outline",
+              "style": {
+                "cursor": "pointer",
+                "height": "35px",
+                "width": "35px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "HeaderRow"
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "8px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
             "children": [
               {
                 "meta": {

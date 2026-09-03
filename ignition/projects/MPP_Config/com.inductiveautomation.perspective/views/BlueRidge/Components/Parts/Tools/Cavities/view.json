@@ -143,6 +143,37 @@
               "text": "Save"
             },
             "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup('dieCavitiesHowTo',\n\t\t'BlueRidge/Components/Popups/DieCavitiesHowTo',\n\t\tparams={'popupId': 'dieCavitiesHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "HowToButton",
+              "tooltip": {
+                "text": "How to manage Cavities"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/help_outline",
+              "style": {
+                "cursor": "pointer",
+                "height": "35px",
+                "width": "35px"
+              }
+            },
+            "type": "ia.display.icon"
           }
         ],
         "meta": {

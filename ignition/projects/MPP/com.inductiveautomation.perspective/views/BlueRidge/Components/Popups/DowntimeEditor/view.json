@@ -120,6 +120,37 @@
               }
             },
             "type": "ia.display.icon"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup('downtimeEditorHowTo',\n\t\t'BlueRidge/Components/Popups/DowntimeEditorHowTo',\n\t\tparams={'popupId': 'downtimeEditorHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "HowToButton",
+              "tooltip": {
+                "text": "How to record downtime"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/help_outline",
+              "style": {
+                "cursor": "pointer",
+                "height": "35px",
+                "width": "35px"
+              }
+            },
+            "type": "ia.display.icon"
           }
         ],
         "meta": {

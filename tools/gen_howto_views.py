@@ -195,52 +195,76 @@ def _b(t):
 # ------------------------------------------------------------- die cast -----
 # Written for the operator at the machine, not for whoever built the system.
 # Order matches the screen: the die, then the three tabs left to right.
-def diecast_source():
+def die_cast_open_source():
     parts = []
     parts.append(_lead(
-        'Open a basket into each cavity, record what the die makes during your '
-        'shift, then release the baskets when they are full.'))
+        'Open a basket into each cavity of the die mounted on this machine.'))
 
     parts.append(_step(1, 'Check the die',
-        'The %s box at the top names the tool mounted on this machine, and the '
-        'cavity rows below come from it. If it is empty or names a different '
-        'die, stop and tell a supervisor &ndash; do not work around it.'
-        % _b('Die')))
+        'The %s box at the top names the tool mounted on this machine, and '
+        'the cavity rows below come from it.' % _b('Die')))
 
-    parts.append(_step(2, 'Open a basket into each cavity',
-        'On %s, each row is one cavity. Pick the %s for the cavity, then scan '
-        'the %s from the basket into that row. Press %s to open every row you '
-        'filled in.'
-        % (_b('Open Basket'), _b('Part'), _b('LTT Barcode'),
-           _b('OPEN BASKETS'))))
+    parts.append(_step(2, 'Pick the part',
+        'Each row is one cavity. Pick the %s for the cavity.'
+        % _b('Part')))
     parts.append(_note(
         'If every cavity on this die runs the same part, %s fills the empty '
         'rows for you instead of picking the part on each one.'
         % _b('Copy part to empty rows')))
 
-    parts.append(_step(3, 'Record what the die made',
-        'On %s, choose your %s and enter the shot count. Press %s, then use '
-        '%s on any cavity that had scrap &ndash; %s updates on its own as '
-        'you log it. Press %s when the rows look right.'
-        % (_b('Record Shift Output'), _b('Reporting shift'),
-           _b('Compute / Preview'), _b('Add scrap reason'), _b('Good (pc)'),
-           _b('SUBMIT SHIFT OUTPUT'))))
+    parts.append(_step(3, 'Scan the basket',
+        'Scan the %s from the basket into that row.' % _b('LTT Barcode')))
 
-    parts.append(_step(4, 'Release the full baskets',
-        'On %s, press %s on a basket that is full. It leaves the cavity, moves '
-        'on to its next step, and frees the cavity for a new basket. %s only '
-        'appears on an empty basket and discards it.'
-        % (_b('Lot Release'), _b('Release'), _b('Void'))))
+    parts.append(_step(4, 'Open it',
+        'Press %s to open every row you filled in.' % _b('OPEN BASKETS')))
 
     parts.append(_rule())
 
-    parts.append(_callout(INFO_BG, INFO_EDGE,
-        'If a basket goes over its count',
-        'The row shows %s and tells you how many pieces fit and how many '
-        'overflow. Leave %s unchecked to release the basket at its limit '
-        'and scan a new LTT for the extra pieces. Check it instead to keep '
-        'everything in the one basket and carry on past the limit.'
-        % (_b('Over basket headroom'), _b('Overfill this basket'))))
+    parts.append(_callout(WARN_BG, WARN_EDGE,
+        'If the die is wrong',
+        'If it is empty or names a different die, stop and tell a '
+        'supervisor &ndash; do not work around it.'))
+
+    return ''.join(parts)
+
+
+def die_cast_shift_output_source():
+    parts = []
+    parts.append(_lead(
+        'Record what the die made during your shift.'))
+
+    parts.append(_step(1, 'Pick the shift',
+        'Choose your %s.' % _b('Reporting shift')))
+
+    parts.append(_step(2, 'Enter the shot count',
+        'Enter %s.' % _b('Shots this entry (die-wide)')))
+
+    parts.append(_step(3, 'Compute it',
+        'Press %s to break it down by cavity.' % _b('Compute / Preview')))
+
+    parts.append(_step(4, 'Log any scrap',
+        'Press %s on any cavity that had scrap &ndash; %s updates on its '
+        'own as you log it.' % (_b('Add scrap reason'), _b('Good (pc)'))))
+
+    parts.append(_step(5, 'Submit',
+        'Press %s when the rows look right.'
+        % _b('SUBMIT SHIFT OUTPUT')))
+
+    return ''.join(parts)
+
+
+def die_cast_lot_release_source():
+    parts = []
+    parts.append(_lead(
+        'Release a full basket, or void an empty one.'))
+
+    parts.append(_points('', [
+        ('Release', 'Press %s on a basket that is full. It leaves the '
+                    'cavity, moves on to its next step, and frees the '
+                    'cavity for a new basket.' % _b('Release')),
+        ('Void', 'Press %s. It only appears on an empty basket and '
+                 'discards it.' % _b('Void')),
+    ]))
 
     return ''.join(parts)
 
@@ -250,29 +274,33 @@ def diecast_source():
 # the guide still describes a destination picker that the terminal-mint
 # redesign (2026-07-07) removed. Trim OUT is a whole-LOT move straight to
 # this line's TRIM{N}-STORE now; there is no line/destination choice to make.
-def trim_source():
+def trim_check_in_source():
     parts = []
     parts.append(_lead(
-        'Scan a LOT into Trim on %s, then scan or tap it back out on %s once '
-        'it is ready to move on.' % (_b('Check IN'), _b('Trim OUT'))))
+        'Scan a LOT into Trim on %s.' % _b('Check IN')))
 
-    parts.append(_step(1, 'Check a LOT in',
-        'If this press is shared, pick it from %s at the top first. Then '
-        'scan the %s - the LOT, item, and eligibility show up for you to '
-        'check. Press %s to commit it to this cell.'
-        % (_b('Scan or pick a press'), _b('Scan LTT'), _b('Move'))))
+    parts.append(_step(1, 'Scan the LTT',
+        'Scan the %s - the LOT, item, and eligibility show up for you to '
+        'check.' % _b('Scan LTT')))
 
-    parts.append(_step(2, "It's in Trim now",
-        'The LOT shows up under %s for this press. It stays there - no '
-        'further action needed - until you check it out.'
-        % _b('Currently in Trim')))
+    parts.append(_step(2, 'Move it in',
+        'Press %s to commit it to this cell.' % _b('Move')))
 
-    parts.append(_step(3, 'Select the LOT on Trim OUT',
-        'Switch to %s. Tap the LOT\'s card in the Trim inventory list, '
-        'or scan its %s, then enter the %s.'
-        % (_b('Trim OUT'), _b('LTT Barcode'), _b('Lot count'))))
+    return ''.join(parts)
 
-    parts.append(_step(4, 'Add scrap, then check it out',
+
+def trim_check_out_source():
+    parts = []
+    parts.append(_lead(
+        'Scan or tap a LOT back out on %s once it is ready to move on.'
+        % _b('Trim OUT')))
+
+    parts.append(_step(1, 'Select the LOT',
+        'Tap the LOT\'s card in the Trim inventory list, or scan its %s, '
+        'then enter the %s.'
+        % (_b('LTT Barcode'), _b('Lot count'))))
+
+    parts.append(_step(2, 'Add scrap, then check it out',
         'Tap a reason under %s to add one piece; press %s if the reason '
         'you need is not on the short list. Press %s to release the whole '
         'LOT out of Trim.'
@@ -366,9 +394,11 @@ def assembly_in_source():
         'ready to build with.'))
 
     parts.append(_step(1, 'Scan the LTT',
-        'Enter or scan the LTT into %s, then press %s. The component LOT '
-        'is added to %s below.'
-        % (_b('Scan / enter LTT'), _b('Scan In'), _b('Components at this cell'))))
+        'Enter or scan the LTT into %s.' % _b('Scan / enter LTT')))
+
+    parts.append(_step(2, 'Scan it in',
+        'Press %s. The component LOT is added to %s below.'
+        % (_b('Scan In'), _b('Components at this cell'))))
 
     return ''.join(parts)
 
@@ -386,19 +416,23 @@ def assembly_nonserialized_source():
 
     parts.append(_step(2, 'Fill the tray',
         'How a tray closes depends on this line - its closure method '
-        '(%s / %s / %s) shows near the header; tap it to open %s if it '
-        'needs to change. On %s, enter the count in %s and press %s when '
-        'it is full. On %s or %s, the scale or camera closes the tray on '
-        'its own at target - there is nothing to press.'
-        % (_b('By Count'), _b('By Weight'), _b('By Vision'),
-           _b('Change Closure Mode'), _b('By Count'), _b('Parts in tray'),
-           _b('Complete Tray'), _b('By Weight'), _b('By Vision'))))
+        '(%s / %s / %s) shows near the header. On %s, enter the count in '
+        '%s and press %s when it is full. On %s or %s, the scale or '
+        'camera closes the tray on its own at target - there is nothing '
+        'to press.'
+        % (_b('By Count'), _b('By Weight'), _b('By Vision'), _b('By Count'),
+           _b('Parts in tray'), _b('Complete Tray'), _b('By Weight'),
+           _b('By Vision'))))
 
     parts.append(_step(3, 'Complete the container',
         'On a %s line, once enough trays have gone in, press %s under %s '
         'to finish and ship it. A single-tray container ships on its own '
         '- you will not see the gate for it.'
         % (_b('By Count'), _b('Complete'), _b('Container Completion Gate'))))
+
+    parts.append(_note(
+        'If the closure method needs to change, a supervisor has to do it '
+        'through %s.' % _b('Change Closure Mode')))
 
     return ''.join(parts)
 
@@ -445,21 +479,15 @@ def audit_log_source():
         'Filter the audit trail, then open a row to see exactly what '
         'changed.'))
 
-    parts.append(_step(1, 'Filter',
-        'Narrow by %s, %s, a date range, or free-text %s in the sidebar.'
-        % (_b('Entity Type'), _b('Severity'), _b('Search'))))
-
-    parts.append(_step(2, 'Run it',
-        'Press %s. %s jumps you back to the last 7 days and clears every '
-        'filter.' % (_b('Apply'), _b('Reset'))))
-
-    parts.append(_step(3, 'See what changed',
-        'Double-click a row to open its full detail, including the old and '
-        'new values.'))
-    parts.append(_note(
-        'If the banner reads &ldquo;Showing first 1000 of N &ndash; narrow '
-        'your filter,&rdquo; there are more rows than shown - tighten the '
-        'filter to see the rest.'))
+    parts.append(_points('', [
+        ('Filter', 'Narrow by %s, %s, a date range, or free-text %s in '
+                   'the sidebar.'
+                   % (_b('Entity Type'), _b('Severity'), _b('Search'))),
+        ('Run it', 'Press %s. %s jumps you back to the last 7 days and '
+                   'clears every filter.' % (_b('Apply'), _b('Reset'))),
+        ('See what changed', 'Double-click a row to open its full detail, '
+                              'including the old and new values.'),
+    ]))
 
     return ''.join(parts)
 
@@ -474,16 +502,14 @@ def failure_log_source():
     parts.append(_lead(
         'Filter what failed, then open a row to see the full detail.'))
 
-    parts.append(_step(1, 'Filter',
-        'Narrow by %s, %s, a date range, or free-text %s in the sidebar.'
-        % (_b('Entity Type'), _b('Procedure'), _b('Search'))))
-
-    parts.append(_step(2, 'Run it',
-        'Press %s. %s jumps you back to the last 7 days and clears every '
-        'filter.' % (_b('Apply'), _b('Reset'))))
-
-    parts.append(_step(3, 'See the detail',
-        'Click a row to open its full failure detail.'))
+    parts.append(_points('', [
+        ('Filter', 'Narrow by %s, %s, a date range, or free-text %s in '
+                   'the sidebar.'
+                   % (_b('Entity Type'), _b('Procedure'), _b('Search'))),
+        ('Run it', 'Press %s. %s jumps you back to the last 7 days and '
+                   'clears every filter.' % (_b('Apply'), _b('Reset'))),
+        ('See the detail', 'Click a row to open its full failure detail.'),
+    ]))
 
     parts.append(_rule())
 
@@ -503,12 +529,13 @@ def defect_codes_source():
     parts.append(_lead(
         'Add, edit, or find a defect code.'))
 
-    parts.append(_step(1, 'Add or edit',
-        'Press %s for a new one, or %s on a row to change it &ndash; both '
-        'open the same editor.' % (_b('+ Add Code'), _b('Edit'))))
-
-    parts.append(_step(2, 'Find one',
-        'Filter by %s, or use %s.' % (_b('Applies to'), _b('Search'))))
+    parts.append(_points('', [
+        ('Add or edit', 'Press %s for a new one, or %s on a row to change '
+                        'it &ndash; both open the same editor.'
+                        % (_b('+ Add Code'), _b('Edit'))),
+        ('Find one', 'Filter by %s, or use %s.'
+                     % (_b('Applies to'), _b('Search'))),
+    ]))
     parts.append(_note(
         'A removed code is not gone &ndash; check %s to see it again.'
         % _b('Include deprecated')))
@@ -523,13 +550,13 @@ def downtime_codes_source():
     parts.append(_lead(
         'Add, edit, or find a downtime code.'))
 
-    parts.append(_step(1, 'Add or edit',
-        'Press %s for a new one, or %s on a row to change it &ndash; both '
-        'open the same editor.' % (_b('+ Add Code'), _b('Edit'))))
-
-    parts.append(_step(2, 'Find one',
-        'Filter by %s or %s, or use %s.'
-        % (_b('Applies to'), _b('Reason Type'), _b('Search'))))
+    parts.append(_points('', [
+        ('Add or edit', 'Press %s for a new one, or %s on a row to change '
+                        'it &ndash; both open the same editor.'
+                        % (_b('+ Add Code'), _b('Edit'))),
+        ('Find one', 'Filter by %s or %s, or use %s.'
+                     % (_b('Applies to'), _b('Reason Type'), _b('Search'))),
+    ]))
     parts.append(_note(
         'A removed code is not gone &ndash; check %s to see it again.'
         % _b('Include deprecated')))
@@ -546,19 +573,18 @@ def users_source():
         'Add or edit an operator, and set the session timeouts that apply '
         'everywhere.'))
 
-    parts.append(_step(1, 'Add or edit an operator',
-        'Press %s for a new one, or %s on a row to change it &ndash; both '
-        'open the same editor.' % (_b('+ Add Operator'), _b('Edit'))))
-
-    parts.append(_step(2, 'Find one',
-        'Use %s, or check %s to see removed operators too.'
-        % (_b('Search'), _b('Include deprecated'))))
-
-    parts.append(_step(3, 'Session timeouts',
-        'Set %s and %s, then press %s. These are global &ndash; every '
-        'terminal uses them.'
-        % (_b('Operator presence (min)'), _b('Elevation (min)'),
-           _b('Save timeouts'))))
+    parts.append(_points('', [
+        ('Add or edit an operator', 'Press %s for a new one, or %s on a '
+                                     'row to change it &ndash; both open '
+                                     'the same editor.'
+                                     % (_b('+ Add Operator'), _b('Edit'))),
+        ('Find one', 'Use %s, or check %s to see removed operators too.'
+                     % (_b('Search'), _b('Include deprecated'))),
+        ('Session timeouts', 'Set %s and %s, then press %s. These are '
+                              'global &ndash; every terminal uses them.'
+                              % (_b('Operator presence (min)'),
+                                 _b('Elevation (min)'), _b('Save timeouts'))),
+    ]))
 
     return ''.join(parts)
 
@@ -573,13 +599,14 @@ def shift_overrides_source():
         'Extend or shorten a shift on one day for one piece of equipment. '
         'Anything without an override runs the global shift schedule.'))
 
-    parts.append(_step(1, 'Add or edit',
-        'Press %s for a new one, or %s on a row to change it &ndash; both '
-        'open the same editor.' % (_b('+ Add Override'), _b('Edit'))))
-
-    parts.append(_step(2, 'Find one',
-        'Filter by equipment, use %s, or check %s to see ones no longer '
-        'active.' % (_b('Search'), _b('Include removed'))))
+    parts.append(_points('', [
+        ('Add or edit', 'Press %s for a new one, or %s on a row to change '
+                        'it &ndash; both open the same editor.'
+                        % (_b('+ Add Override'), _b('Edit'))),
+        ('Find one', 'Filter by equipment, use %s, or check %s to see '
+                     'ones no longer active.'
+                     % (_b('Search'), _b('Include removed'))),
+    ]))
 
     return ''.join(parts)
 
@@ -593,14 +620,14 @@ def shift_schedules_source():
     parts.append(_lead(
         'Add, edit, or find a shift schedule.'))
 
-    parts.append(_step(1, 'Add or edit',
-        'Press %s for a new one, or %s on a row to change it &ndash; both '
-        'open the same editor, pre-filled when you are editing.'
-        % (_b('+ Add Schedule'), _b('Edit'))))
-
-    parts.append(_step(2, 'Find one',
-        'Use %s, or check %s to see removed schedules too.'
-        % (_b('Search'), _b('Include deprecated'))))
+    parts.append(_points('', [
+        ('Add or edit', 'Press %s for a new one, or %s on a row to change '
+                        'it &ndash; both open the same editor, pre-filled '
+                        'when you are editing.'
+                        % (_b('+ Add Schedule'), _b('Edit'))),
+        ('Find one', 'Use %s, or check %s to see removed schedules too.'
+                     % (_b('Search'), _b('Include deprecated'))),
+    ]))
 
     return ''.join(parts)
 
@@ -621,17 +648,29 @@ def plc_devices_source():
         % _b('Select a terminal...')))
 
     parts.append(_step(2, 'Add or edit a mapping',
-        'Press %s (enabled once a terminal is picked) or %s on a row. Fill '
-        'in %s, %s, %s, and %s, then press %s.'
-        % (_b('+ Add mapping'), _b('Edit'), _b('Device Type'),
-           _b('Device Code'), _b('UDT Instance Path'), _b('Sort Order'),
-           _b('Save'))))
-    parts.append(_note('Press %s instead to discard without saving.'
-        % _b('Cancel')))
+        'Press %s (enabled once a terminal is picked), or %s on a row.'
+        % (_b('+ Add mapping'), _b('Edit'))))
 
-    parts.append(_step(3, 'Remove a mapping',
-        'Press %s on a row. This hides the mapping &ndash; it does not '
-        'erase it.' % _b('Remove')))
+    parts.append(_step(3, 'Device Type',
+        'Pick it from the dropdown.'))
+
+    parts.append(_step(4, 'Device Code',
+        'Type the code this device is known by.'))
+
+    parts.append(_step(5, 'UDT Instance Path',
+        'Pick it from the dropdown.'))
+
+    parts.append(_step(6, 'Sort Order',
+        'Set where this mapping falls in the list, relative to the '
+        'terminal\'s other mappings.'))
+
+    parts.append(_step(7, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_points('', [
+        ('Remove a mapping', 'Press %s on a row. This hides the mapping '
+                              '&ndash; it does not erase it.'
+                              % _b('Remove')),
+    ]))
 
     return ''.join(parts)
 
@@ -682,33 +721,37 @@ def quality_specs_source():
         'Manage a quality spec and its versioned attribute list.'))
 
     parts.append(_step(1, 'Add or select a spec',
-        'Press %s for a new one, or pick one from the list. %s and %s are '
-        'read-only; edit %s or %s and press %s to keep them.'
-        % (_b('+ New Spec'), _b('Linked Item'), _b('Linked Operation Template'),
-           _b('Name'), _b('Description'), _b('Save Spec'))))
+        'Press %s for a new one, or pick one from the list.'
+        % _b('+ New Spec')))
 
-    parts.append(_step(2, 'Work a version',
-        '%s opens an editable draft. Add or remove attributes on the %s '
-        'tab and set their Target/Lower/Upper values, then %s to keep '
-        'working or %s when it is ready.'
-        % (_b('+ New Version'), _b('Attributes'), _b('Save Draft'),
-           _b('Publish'))))
-    parts.append(_note(
-        'Publish needs at least one attribute and an %s date.'
-        % _b('Effective From')))
+    parts.append(_step(2, 'Edit its fields',
+        'Edit %s or %s. %s and %s are read-only.'
+        % (_b('Name'), _b('Description'), _b('Linked Item'),
+           _b('Linked Operation Template'))))
 
-    parts.append(_step(3, 'Retire',
-        '%s throws away a draft you do not want. %s retires one published '
-        'version. %s retires the whole spec and every one of its versions '
-        'at once.'
-        % (_b('Discard Draft'), _b('Deprecate Version'), _b('Deprecate Spec'))))
+    parts.append(_step(3, 'Save', 'Press %s to keep the changes.'
+        % _b('Save Spec')))
 
     parts.append(_rule())
 
-    parts.append(_callout(INFO_BG, INFO_EDGE,
-        'A published or deprecated version is read-only',
-        'Press %s to get an editable copy with a new effective date.'
-        % _b('+ New Version')))
+    parts.append(_step(1, 'Start a new version',
+        '%s opens an editable draft.' % _b('+ New Version')))
+
+    parts.append(_step(2, 'Edit its attributes',
+        'Add or remove attributes on the %s tab and set their '
+        'Target/Lower/Upper values.' % _b('Attributes')))
+
+    parts.append(_step(3, 'Save or publish',
+        '%s keeps working on the draft. %s when it is ready.'
+        % (_b('Save Draft'), _b('Publish'))))
+
+    parts.append(_points('', [
+        ('Retire', '%s throws away a draft you do not want. %s retires '
+                   'one published version. %s retires the whole spec and '
+                   'every one of its versions at once.'
+                   % (_b('Discard Draft'), _b('Deprecate Version'),
+                      _b('Deprecate Spec'))),
+    ]))
 
     return ''.join(parts)
 
@@ -729,22 +772,23 @@ def operation_templates_source():
         'Press %s for a new one, or pick one from the list.'
         % _b('+ New Template')))
 
-    parts.append(_step(2, 'Edit and publish',
-        'Change %s, %s, or %s and press %s. Press %s once it is ready '
-        '&ndash; that only shows while the version is still a draft. %s '
-        'makes a new editable version off the current one.'
-        % (_b('Name'), _b('Operation Type'), _b('Description'), _b('Save'),
-           _b('Publish'), _b('+ New Version'))))
+    parts.append(_step(2, 'Edit and save',
+        'Change %s, %s, or %s and press %s.'
+        % (_b('Name'), _b('Operation Type'), _b('Description'), _b('Save'))))
 
-    parts.append(_step(3, 'Data Collection Fields',
+    parts.append(_step(3, 'Publish',
+        'Press %s once it is ready &ndash; that only shows while the '
+        'version is still a draft.' % _b('Publish')))
+
+    parts.append(_step(4, 'Data Collection Fields',
         'Press %s to add one, then %s to keep your changes.'
         % (_b('+ Add field'), _b('Save fields'))))
-    parts.append(_note(
-        'Fields save on their own &ndash; you do not need to Publish for a '
-        'field change to take effect.'))
 
-    parts.append(_step(4, 'Deprecate',
-        'Press %s to retire the template.' % _b('Deprecate')))
+    parts.append(_points('', [
+        ('New Version', '%s makes a new editable version off the current '
+                         'one.' % _b('+ New Version')),
+        ('Deprecate', 'Press %s to retire the template.' % _b('Deprecate')),
+    ]))
 
     return ''.join(parts)
 
@@ -762,17 +806,27 @@ def tools_source():
         'Press %s for a new one, or pick one from the list.'
         % _b('+ Add Die')))
 
-    parts.append(_step(2, 'Edit',
-        'Change %s, %s, %s, and %s (plus %s on a die), then press %s.'
-        % (_b('Name'), _b('Die Rank'), _b('Status'), _b('Description'),
-           _b('Shot Limit'), _b('Save'))))
+    parts.append(_step(2, 'Set its identity',
+        'Change %s, %s, and %s. %s and %s are read-only, set when the die '
+        'or tool was first added.'
+        % (_b('Name'), _b('Die Rank'), _b('Status'), _b('Code'),
+           _b('Tool Type'))))
 
-    parts.append(_step(3, 'Duplicate',
-        'With a die selected, press %s to copy its configuration into a '
-        'new one.' % _b('Duplicate')))
+    parts.append(_step(3, 'Description', 'Update the %s field.'
+        % _b('Description')))
 
-    parts.append(_step(4, 'Retire',
-        'Press %s.' % _b('Retire')))
+    parts.append(_step(4, 'Shot Limit',
+        'Dies only &ndash; set the %s. %s is a read-only running count, '
+        'not something you edit here.'
+        % (_b('Shot Limit'), _b('Total Shots'))))
+
+    parts.append(_step(5, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_points('', [
+        ('Duplicate', 'With a die selected, press %s to copy its '
+                      'configuration into a new one.' % _b('Duplicate')),
+        ('Retire', 'Press %s.' % _b('Retire')),
+    ]))
     parts.append(_note(
         '%s manages the list of ranks itself, separate from any one die.'
         % _b('Die Ranks')))
@@ -794,23 +848,55 @@ def item_identity_source():
     parts.append(_lead(
         "Edit a part's core identity and settings."))
 
-    parts.append(_step(1, 'Edit and save',
-        'Change any field, then press %s. %s reverts to the last saved '
-        'values.' % (_b('Save'), _b('Discard'))))
+    parts.append(_points('Editing', [
+        ('Edit and save', 'Change any field, then press %s. %s reverts to '
+                          'the last saved values.'
+                          % (_b('Save'), _b('Discard'))),
+        ('Deprecate', 'Press %s. This also deprecates the part\'s routes, '
+                      'BOMs, eligibility, and container config together, '
+                      'and is blocked while any LOT of the part is still '
+                      'active.' % _b('Deprecate')),
+    ]))
 
-    parts.append(_step(2, 'Deprecate',
-        'Press %s. This also deprecates the part\'s routes, BOMs, '
-        'eligibility, and container config together, and is blocked while '
-        'any LOT of the part is still active.' % _b('Deprecate')))
-
-    parts.append(_rule())
-
-    parts.append(_callout(INFO_BG, INFO_EDGE,
-        'Two fields worth knowing',
-        '%s is the standard pieces per basket &ndash; one LOT, one LTT '
-        'label, at Die Cast, Trim, and intermediate Machining. %s sets the '
-        'default split size used at Machining OUT.'
-        % (_b('Parts Per Basket'), _b('Default Sub-Lot Qty'))))
+    parts.append(_points('Fields', [
+        ('Part Number', 'Unique MPP part number. Read-only here &ndash; '
+                         'set when the part is created.'),
+        ('Item Type', 'Part classification (Component, Sub-Assembly, '
+                       'Finished Good, etc.). Gates which Areas and routes '
+                       'the part may use. Read-only.'),
+        ('UOM', 'Counting unit of measure the part is tracked in '
+                '(e.g. EA = each).'),
+        ('Description', 'Human-readable part name shown throughout the '
+                         'app and on labels.'),
+        ('Macola Part #', "Cross-reference to this part's number in "
+                           'Macola (the ERP system). Optional.'),
+        ('PLC / Vision Recipe ID', 'Integer recipe/program number the PLC '
+                                   'or vision system loads for this part '
+                                   'at serialized/vision stations. Blank '
+                                   'for parts with no PLC recipe.'),
+        ('Unit Weight', 'Weight of a single piece, expressed in the '
+                         'Weight UOM.'),
+        ('Weight UOM', 'Unit of measure for Unit Weight (e.g. LB, KG).'),
+        ('Default Sub-Lot Qty', 'Default pieces per sub-LOT when a '
+                                 'machined LOT is split across downstream '
+                                 'destinations at Machining OUT.'),
+        ('Parts Per Basket', 'Standard pieces per basket, which equals '
+                              'one LOT / one LTT label at Die Cast, Trim, '
+                              'and intermediate Machining. Also the max '
+                              'LOT size.'),
+        ('Country of Origin', 'ISO 3166-1 alpha-2 country code (US, JP, '
+                               'MX) where the part originates. Appears on '
+                               'genealogy and shipping output for Honda '
+                               'compliance.'),
+        ('Max Parts (per location)', 'Hard cap on pieces of this part '
+                                      'allowed at any single location. '
+                                      'Scan-in is rejected if existing + '
+                                      'incoming pieces would exceed it. '
+                                      'Optional.'),
+        ('CRT Enabled', 'Every LOT of this part minted while this is on '
+                         'is tagged CRT and cannot advance until Quality '
+                         'clears it.'),
+    ]))
 
     return ''.join(parts)
 
@@ -955,30 +1041,71 @@ def item_eligibility_source():
 # do different things: New definition creates a brand-new attribute type
 # available to every tool of this TYPE; Add just adds a row for an existing
 # definition to THIS die.
-def die_tabs_source():
+def die_attributes_source():
     parts = []
     parts.append(_lead(
-        "Manage a die's attributes, cavities, and cell assignment."))
+        "Add or edit a value for one of this die's attributes."))
 
-    parts.append(_step(1, 'Attributes',
-        'Press %s to add a value for an attribute that already exists on '
-        'this tool type, then %s.'
-        % (_b('+ Add'), _b('Save'))))
+    parts.append(_step(1, 'Add or remove a row',
+        'Press %s for each attribute value you want to set. Press %s on a '
+        'row to take it out.' % (_b('+ Add'), _b('&times;'))))
+
+    parts.append(_step(2, 'Pick the attribute',
+        'Choose one from the dropdown &ndash; only attributes that already '
+        'exist on this tool type show up. Once the row is saved, the '
+        'choice locks and only the value stays editable.'))
+
+    parts.append(_step(3, 'Set its value',
+        'The editor matches the attribute\'s data type &ndash; a text box, '
+        'a number, a checkbox, or a date.'))
+
+    parts.append(_step(4, 'Save', 'Press %s.' % _b('Save')))
+
     parts.append(_note(
         '%s creates a brand-new attribute type for every die of this kind '
         '&ndash; only use it when the attribute does not exist yet.'
         % _b('+ New definition')))
 
-    parts.append(_step(2, 'Cavities',
-        'Press %s for each cavity, fill in its %s, %s, and %s, then %s.'
-        % (_b('+ Add cavity'), _b('Number'), _b('Description'), _b('Status'),
-           _b('Save'))))
+    return ''.join(parts)
 
-    parts.append(_step(3, 'Assignments',
-        'The top shows where this die is mounted now. Pick a %s and press '
-        '%s to assign it there; press %s to take it off. The table below '
-        'keeps a full history of every past assignment.'
-        % (_b('Cell'), _b('Mount'), _b('Release'))))
+
+def die_cavities_source():
+    parts = []
+    parts.append(_lead('Track each cavity in this die.'))
+
+    parts.append(_step(1, 'Add a cavity',
+        'Press %s and set its %s. %s locks once the cavity is saved.'
+        % (_b('+ Add cavity'), _b('Number'), _b('Number'))))
+
+    parts.append(_step(2, 'Fill it in',
+        'Set its %s and %s.' % (_b('Description'), _b('Status'))))
+
+    parts.append(_step(3, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_note(
+        '%s only removes a cavity that has not been saved yet &ndash; once '
+        'saved, or once the cavity is Scrapped or the die itself is '
+        'deprecated, %s and %s lock too.'
+        % (_b('&times;'), _b('Description'), _b('Status'))))
+
+    return ''.join(parts)
+
+
+def die_assignments_source():
+    parts = []
+    parts.append(_lead('Mount this die to a cell, or release it.'))
+
+    parts.append(_step(1, 'Check the current mount',
+        'The top shows where this die is mounted now, if anywhere.'))
+
+    parts.append(_step(2, 'Mount it',
+        'Pick a %s and press %s to assign it there.'
+        % (_b('Cell'), _b('Mount'))))
+
+    parts.append(_step(3, 'Release it',
+        'Press %s to take it off.' % _b('Release')))
+    parts.append(_note(
+        'The table below keeps a full history of every past assignment.'))
 
     return ''.join(parts)
 
@@ -999,27 +1126,79 @@ def downtime_manager_source():
     parts.append(_lead(
         'Start, edit, or end downtime for this cell.'))
 
-    parts.append(_step(1, 'Start it',
-        'Press %s. It opens with no reason yet &ndash; pick one on the row '
-        'once you know it.' % _b('Start Downtime')))
+    parts.append(_points('', [
+        ('Start it', 'Press %s. It opens with no reason yet &ndash; pick '
+                     'one on the row once you know it.'
+                     % _b('Start Downtime')),
+        ('End it', 'Press %s on the row when work resumes. No supervisor '
+                   'sign-in needed.' % _b('End')),
+        ('Add a past event', 'Press %s to open its own editor.'
+                              % _b('Add Past Event')),
+        ('Edit or Void', 'Both ask for a supervisor sign-in first. %s is '
+                         'permanent.' % _b('Void')),
+    ]))
 
-    parts.append(_step(2, 'End it',
-        'Press %s on the row when work resumes. No supervisor sign-in '
-        'needed.' % _b('End')))
+    return ''.join(parts)
 
-    parts.append(_step(3, 'Add a past event',
-        'Press %s. Fill in %s and %s, or check %s if you only know how '
-        'long it ran, not the exact times.'
-        % (_b('Add Past Event'), _b('Start (ET)'), _b('End (ET)'),
-           _b('Duration only'))))
-    parts.append(_note(
-        'A past event needs both a start and an end &ndash; leaving %s '
-        'blank is only allowed when editing a downtime that is still '
-        'open.' % _b('End (ET)')))
 
-    parts.append(_step(4, 'Edit or Void',
-        '%s and %s both ask for a supervisor sign-in first. %s is '
-        'permanent.' % (_b('Edit'), _b('Void'), _b('Void'))))
+# ----------------------------------------------------- downtime editor -----
+def downtime_editor_source():
+    parts = []
+    parts.append(_lead(
+        'Record a past downtime event, or correct an existing one.'))
+
+    parts.append(_step(1, 'Pick a reason',
+        'Choose one from %s &ndash; optional.' % _b('Reason')))
+
+    parts.append(_step(2, 'Enter the time',
+        'Check %s if you only know how long it ran and enter %s. '
+        'Otherwise fill in %s and %s &ndash; a past event needs both.'
+        % (_b('Duration only'), _b('Duration (minutes)'), _b('Start (ET)'),
+           _b('End (ET)'))))
+
+    parts.append(_step(3, 'Add a note',
+        'Add %s if it helps.' % _b('Remarks')))
+
+    parts.append(_step(4, 'Save', 'Press %s.' % _b('Save')))
+
+    parts.append(_points('', [
+        ('Editing an existing event', 'Asks for a supervisor sign-in '
+                                       'first. You can leave %s blank here '
+                                       'to keep the event open.'
+                                       % _b('End (ET)')),
+    ]))
+
+    return ''.join(parts)
+
+
+# ------------------------------------------------------- inventory manager -
+# Verified against the live InventoryManager view.json. "On hand" is
+# display-only (getLineInventoryCards always returns selectable=False) - no
+# action to describe there beyond what it shows.
+def inventory_manager_source():
+    parts = []
+    parts.append(_lead(
+        'Check a LOT in, receive loose parts, or see what is on hand at '
+        'this line.'))
+
+    parts.append(_points('', [
+        ('Check in LTT', 'Scan the LTT barcode to move it onto this '
+                         'line.'),
+        ('On hand', 'Shows every LOT at this line in FIFO order &ndash; '
+                    'oldest first. Display only.'),
+    ]))
+
+    parts.append(_step(1, 'Pick the part',
+        'Scan or pick the %s.' % _b('Part Number')))
+
+    parts.append(_step(2, 'Enter the count',
+        'Enter the %s.' % _b('Piece Count')))
+
+    parts.append(_step(3, 'Add a vendor LOT',
+        'Add a %s if you have one &ndash; optional.' % _b('Vendor LOT')))
+
+    parts.append(_step(4, 'Add it',
+        'Press %s.' % _b('Add to line')))
 
     return ''.join(parts)
 
@@ -1033,11 +1212,16 @@ def scrap_entry_source():
     parts.append(_lead(
         'Record scrap against a LOT at this cell.'))
 
-    parts.append(_step(1, 'Fill it in',
-        'Pick the %s, the %s, and enter the %s.'
-        % (_b('LOT'), _b('Defect Code'), _b('Quantity'))))
+    parts.append(_step(1, 'Pick the LOT',
+        'Choose the %s.' % _b('LOT')))
 
-    parts.append(_step(2, 'Submit',
+    parts.append(_step(2, 'Pick the reason',
+        'Choose the %s.' % _b('Defect Code')))
+
+    parts.append(_step(3, 'Enter the amount',
+        'Enter the %s.' % _b('Quantity')))
+
+    parts.append(_step(4, 'Submit',
         'Add a %s if it helps, then press %s.'
         % (_b('Remarks'), _b('Record Scrap'))))
 
@@ -1189,13 +1373,12 @@ def defect_code_editor_source():
         'Pick %s first &ndash; on a new code, it fills in a starting %s '
         'for you. %s is optional (a blank field applies plant-wide).'
         % (_b('Applies to'), _b('Code'), _b('Applies to'))))
-    parts.append(_note(
-        '%s cannot change once the code is created.' % _b('Code')))
 
     parts.append(_step(2, 'Save', 'Press %s.' % _b('Save')))
 
-    parts.append(_step(3, 'Deprecate',
-        'Press %s to retire the code.' % _b('Deprecate')))
+    parts.append(_points('', [
+        ('Deprecate', 'Press %s to retire the code.' % _b('Deprecate')),
+    ]))
 
     return ''.join(parts)
 
@@ -1209,13 +1392,12 @@ def downtime_code_editor_source():
     parts.append(_step(1, 'Fill it in',
         'Pick %s if it applies to one area, and %s if this reason has a '
         'type. Both are optional.' % (_b('Applies to'), _b('Reason Type'))))
-    parts.append(_note(
-        '%s cannot change once the code is created.' % _b('Code')))
 
     parts.append(_step(2, 'Save', 'Press %s.' % _b('Save')))
 
-    parts.append(_step(3, 'Deprecate',
-        'Press %s to retire the code.' % _b('Deprecate')))
+    parts.append(_points('', [
+        ('Deprecate', 'Press %s to retire the code.' % _b('Deprecate')),
+    ]))
 
     return ''.join(parts)
 
@@ -1233,8 +1415,9 @@ def operator_editor_source():
 
     parts.append(_step(2, 'Save', 'Press %s.' % _b('Save')))
 
-    parts.append(_step(3, 'Deprecate',
-        'Press %s to retire the operator.' % _b('Deprecate')))
+    parts.append(_points('', [
+        ('Deprecate', 'Press %s to retire the operator.' % _b('Deprecate')),
+    ]))
 
     return ''.join(parts)
 
@@ -1261,9 +1444,11 @@ def shift_override_editor_source():
 
     parts.append(_step(3, 'Save', 'Press %s.' % _b('Save')))
 
-    parts.append(_step(4, 'Remove',
-        'Press %s. The record is kept so past OEE figures can still be '
-        'explained &ndash; it is hidden, not erased.' % _b('Remove')))
+    parts.append(_points('', [
+        ('Remove', 'Press %s. The record is kept so past OEE figures can '
+                   'still be explained &ndash; it is hidden, not erased.'
+                   % _b('Remove')),
+    ]))
 
     return ''.join(parts)
 
@@ -1285,8 +1470,9 @@ def shift_schedule_editor_source():
 
     parts.append(_step(2, 'Save', 'Press %s.' % _b('Save')))
 
-    parts.append(_step(3, 'Deprecate',
-        'Press %s to retire the schedule.' % _b('Deprecate')))
+    parts.append(_points('', [
+        ('Deprecate', 'Press %s to retire the schedule.' % _b('Deprecate')),
+    ]))
 
     return ''.join(parts)
 
@@ -1409,32 +1595,29 @@ def location_type_editor_source():
         'Choose a %s, then tap a definition chip to open it, or press %s '
         'for a new one under that tier.'
         % (_b('Location Type (ISA-95 Tier)'), _b('+ Add'))))
-    parts.append(_note(
-        'Switching tiers drops whatever you were editing with no warning '
-        '&ndash; save first if you want to keep it.'))
 
-    parts.append(_step(2, 'Edit the definition',
-        'Set %s, %s, and an optional %s and %s. %s locks once the '
-        'definition is saved for the first time.'
-        % (_b('Code'), _b('Name'), _b('Icon'), _b('Description'), _b('Code'))))
+    parts.append(_points('Working with the definition', [
+        ('Edit', 'Set %s, %s, and an optional %s and %s. %s locks once the '
+                 'definition is saved for the first time.'
+                 % (_b('Code'), _b('Name'), _b('Icon'), _b('Description'),
+                    _b('Code'))),
+        ('Save', 'Press %s.' % _b('Save')),
+        ('Deprecate', 'Press %s. This retires the definition and every one '
+                      'of its attributes immediately &ndash; there is no '
+                      '"are you sure?" prompt. It only succeeds if no '
+                      'Location still uses this definition.'
+                      % _b('Deprecate')),
+    ]))
 
-    parts.append(_step(3, 'Edit its attributes',
-        'Press %s for each attribute this location type needs, and set '
-        'its %s, %s, and whether it is %s. The arrows reorder the list; '
-        '%s takes one out.'
-        % (_b('+ Add Attribute'), _b('Attribute Name'), _b('Data Type'),
-           _b('Required'), _b('Remove'))))
-
-    parts.append(_step(4, 'Save', 'Press %s.' % _b('Save')))
-
-    parts.append(_rule())
-
-    parts.append(_callout(WARN_BG, WARN_EDGE,
-        'Deprecate has no confirmation step',
-        'Pressing %s retires the definition and every one of its '
-        'attributes immediately &ndash; there is no "are you sure?" '
-        'prompt. It only succeeds if no Location still uses this '
-        'definition.' % _b('Deprecate')))
+    parts.append(_points('Editing its attributes', [
+        ('Add', 'Press %s for each attribute this location type needs, and '
+                'set its %s, %s, and whether it is %s.'
+                % (_b('+ Add Attribute'), _b('Attribute Name'),
+                   _b('Data Type'), _b('Required'))),
+        ('Reorder', 'The up/down arrows next to an attribute move it right '
+                    'away.'),
+        ('Remove', 'Press %s to take an attribute out.' % _b('Remove')),
+    ]))
 
     return ''.join(parts)
 
@@ -1586,18 +1769,39 @@ def build_config_view(source_html, default_size, title, popup_id):
 
 GUIDES = [
     {
-        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastHowTo"),
-        "source": diecast_source,
-        "defaultSize": {"width": 720, "height": 620},
-        "title": "How to run Die Cast",
-        "popupId": "dieCastHowTo",
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastOpenHowTo"),
+        "source": die_cast_open_source,
+        "defaultSize": {"width": 720, "height": 560},
+        "title": "How to open baskets",
+        "popupId": "dieCastOpenHowTo",
     },
     {
-        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "TrimHowTo"),
-        "source": trim_source,
-        "defaultSize": {"width": 720, "height": 520},
-        "title": "How to run Trim",
-        "popupId": "trimHowTo",
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastShiftOutputHowTo"),
+        "source": die_cast_shift_output_source,
+        "defaultSize": {"width": 620, "height": 340},
+        "title": "How to record shift output",
+        "popupId": "dieCastShiftOutputHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastLotReleaseHowTo"),
+        "source": die_cast_lot_release_source,
+        "defaultSize": {"width": 620, "height": 300},
+        "title": "How to release baskets",
+        "popupId": "dieCastLotReleaseHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "TrimCheckInHowTo"),
+        "source": trim_check_in_source,
+        "defaultSize": {"width": 620, "height": 380},
+        "title": "How to check in at Trim",
+        "popupId": "trimCheckInHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "TrimCheckOutHowTo"),
+        "source": trim_check_out_source,
+        "defaultSize": {"width": 620, "height": 420},
+        "title": "How to check out of Trim",
+        "popupId": "trimCheckOutHowTo",
     },
     {
         "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "MachiningInHowTo"),
@@ -1637,9 +1841,23 @@ GUIDES = [
     {
         "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DowntimeManagerHowTo"),
         "source": downtime_manager_source,
-        "defaultSize": {"width": 640, "height": 440},
+        "defaultSize": {"width": 640, "height": 340},
         "title": "How to manage downtime",
         "popupId": "downtimeManagerHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DowntimeEditorHowTo"),
+        "source": downtime_editor_source,
+        "defaultSize": {"width": 620, "height": 420},
+        "title": "How to record downtime",
+        "popupId": "downtimeEditorHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "InventoryManagerHowTo"),
+        "source": inventory_manager_source,
+        "defaultSize": {"width": 620, "height": 400},
+        "title": "How to use line inventory",
+        "popupId": "inventoryManagerHowTo",
     },
     {
         "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "ScrapEntryHowTo"),
@@ -1835,11 +2053,27 @@ GUIDES = [
         "builder": build_config_view,
     },
     {
-        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "DieTabsHowTo"),
-        "source": die_tabs_source,
-        "defaultSize": {"width": 640, "height": 420},
-        "title": "How to use the die tabs",
-        "popupId": "dieTabsHowTo",
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "DieAttributesHowTo"),
+        "source": die_attributes_source,
+        "defaultSize": {"width": 620, "height": 380},
+        "title": "How to manage Attributes",
+        "popupId": "dieAttributesHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "DieCavitiesHowTo"),
+        "source": die_cavities_source,
+        "defaultSize": {"width": 620, "height": 340},
+        "title": "How to manage Cavities",
+        "popupId": "dieCavitiesHowTo",
+        "builder": build_config_view,
+    },
+    {
+        "dir": os.path.join(MPP_CONFIG_VIEWS, "Components", "Popups", "DieAssignmentsHowTo"),
+        "source": die_assignments_source,
+        "defaultSize": {"width": 620, "height": 420},
+        "title": "How to manage Assignments",
+        "popupId": "dieAssignmentsHowTo",
         "builder": build_config_view,
     },
     {
