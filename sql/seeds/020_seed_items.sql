@@ -39,8 +39,8 @@ DECLARE @Now0 DATETIME2(3) = SYSUTCDATETIME();
 IF NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = 2)
 BEGIN
     SET IDENTITY_INSERT Location.AppUser ON;
-    INSERT INTO Location.AppUser (Id, AdAccount, DisplayName, IgnitionRole, Initials, CreatedAt)
-    VALUES (2, N'dev.user', N'Dev User', N'Admin', N'DEV', @Now0);
+    INSERT INTO Location.AppUser (Id, AdAccount, DisplayName, IgnitionRole, Initials, Pin, CreatedAt)
+    VALUES (2, N'dev.user', N'Dev User', N'Admin', N'DEV', N'00002', @Now0);
     SET IDENTITY_INSERT Location.AppUser OFF;
 END
 GO

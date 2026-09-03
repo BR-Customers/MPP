@@ -52,13 +52,6 @@ SIM_LITERAL = {"bool": "false", "int": "0", "real": "0.0", "str": ""}
 # Every member is DECLARED in the UDT (cheap; keeps the sim/real contract
 # complete). The watcher (Plan 3) decides read vs write; display members are
 # gated by WriteDisplayEnabled (spec Sec 5.1 / 5.3).
-SCALE = [
-    ("NET_DataReady", "bool"), ("NET_NetWeightValue", "real"),
-    ("NET_NetWeightUOM", "str"), ("NET_TargetWeightMetFlag", "bool"),
-    ("NET_PartNumber", "str"), ("TRG_TargetWeightValue", "real"),
-    ("TRG_TargetWeightUOM", "str"), ("TRG_ToleranceWeightValue", "real"),
-    ("TRG_SendMessage", "bool"),
-]
 SERIALIZED = [
     ("DataReady", "bool"), ("TransInProc", "bool"), ("PartSN", "str"),
     ("PartComplete", "bool"), ("HardwareInterlockEnforced", "bool"),
@@ -77,27 +70,186 @@ TRAY = (
     + [("OkToContinue", "bool"), ("ContainerName", "str")]
 )
 
-# UDT type -> (opc members, has WriteDisplayEnabled memory member)
-CATALOG = {
-    "ScaleStation":            (SCALE, False),
-    "SerializedMipStation":    (SERIALIZED, True),
-    "NonSerializedMipStation": (NONSERIALIZED, True),
-    "TrayInspectionStation":   (TRAY, True),
-}
-
-
-def opc_member(name, kind):
+def opc_member(name, kind, address=None):
     """One OPC AtomicTag member -- opcServer + opcItemPath are parameter binds.
-    Member name appended directly to {BasePath} (separator lives in BasePath)."""
+
+    address=None  -> the member NAME is the address, appended directly to
+                     {BasePath} (the original scheme; separator lives in
+                     BasePath -- MIP + tray types).
+    address given -> the tag name and the OPC address are decoupled, so a
+                     UDT can present friendly names over raw register
+                     addresses (the IND570 scale over Modbus TCP).
+    """
     return {
         "name": name,
         "dataType": TAG_DTYPE[kind],
         "valueSource": "opc",
         "opcServer": {"bindType": "parameter", "binding": "{OpcServer}"},
         "opcItemPath": {"bindType": "parameter",
-                        "binding": "ns=1;s=[{Device}]{BasePath}" + name},
+                        "binding": "ns=1;s=[{Device}]{BasePath}" + (address or name)},
         "tagType": "AtomicTag",
     }
+
+
+def memory_member(name, kind, default):
+    """A memory tag -- MES-side state the device neither reads nor writes."""
+    return {
+        "name": name,
+        "dataType": TAG_DTYPE[kind],
+        "valueSource": "memory",
+        "defaultValue": default,
+        "tagType": "AtomicTag",
+    }
+
+
+def expr_member(name, kind, expression):
+    """A derived tag -- protocol decode over a raw register word. Expression
+    syntax is C-style (=, &&, !), NOT Python keywords, which fail silently
+    as falsy."""
+    return {
+        "name": name,
+        "dataType": TAG_DTYPE[kind],
+        "valueSource": "expr",
+        "expression": expression,
+        "tagType": "AtomicTag",
+    }
+
+
+def folder(name, members):
+    """A UDT folder member -- groups children by audience, not by address."""
+    return {"name": name, "tagType": "Folder", "tags": members}
+
+
+def flatten_opc(members):
+    """Yield (address, kind) for every OPC member, recursing into folders.
+    Memory and expression members are skipped -- they have no device address.
+    Bit-addressed members (HR4.12) collapse onto their containing word (HR4),
+    deduped, because the simulator serves whole registers.
+
+    Dedup is GLOBAL, not per-folder: HR4 is reached from Weight, Verdict and
+    Protocol/Live alike, so the recursive results must be merged through the
+    same membership test as the local ones or the word gets a row per folder
+    that touches it."""
+    out = []
+    for m in members:
+        if m.get("tagType") == "Folder":
+            for pair in flatten_opc(m["tags"]):
+                if pair not in out:
+                    out.append(pair)
+        elif m.get("valueSource") == "opc":
+            addr = m["opcItemPath"]["binding"].split("}")[-1]
+            word = addr.split(".")[0]
+            kind = "bool" if m["dataType"] == "Boolean" else (
+                   "real" if m["dataType"] == "Float8" else
+                   "str" if m["dataType"] == "String" else "int")
+            if addr != word:
+                kind = "int"   # the containing word, not the bit
+            if (word, kind) not in out:
+                out.append((word, kind))
+    return out
+
+
+# ---- IND570 scale over Modbus TCP -------------------------------------------
+# Register map: PLC Interface Manual (doc 30205335 rev 12) Sec 5.4.4 + Table 5-3,
+# Floating Point format. Mettler's 4000xx/4010xx are Modicon DISPLAY convention;
+# the real register numbers are 1 and 1025 -- hence HR1 / HR1026, not HR400001.
+# Read and write areas share one holding-register space, offset by 1024.
+#
+#   slot 1 (live, parked on command 11 = report net weight)
+#     HR1     Command Response      HR1026   Command        (write)
+#     HRF2    FP value (regs 2-3)
+#     HR4     Scale Status
+#   slot 2 (command scratchpad -- setpoint loads never interrupt the live read)
+#     HR5     Command Response      HR1029   Command        (write)
+#     HRF6    FP value (regs 6-7)   HRF1030  FP Load Value  (write)
+#
+# Scale Status bits: 0 Under / 2 OK / 4 Over (over/under target mode),
+# 5 always 1, 12 Motion, 13 Net mode, 14 Data Integrity 2, 15 Data OK.
+# Command Response bits: 8-12 FP Indicator, 13 Data Integrity 1, 14-15 Cmd Ack.
+
+_LIVE_CR = "{[.]Protocol/Live/CommandResponse}"
+_CMD_CR = "{[.]Protocol/Command/CommandResponse}"
+
+
+def _bitfield(word, lo, hi):
+    """Decode an inclusive bit range out of a 16-bit word as an integer.
+    getBit(number, position) is zero-indexed with the LSB at position 0,
+    which matches Mettler's bit numbering directly."""
+    return " + ".join("getBit(%s, %d) * %d" % (word, b, 2 ** i)
+                      for i, b in enumerate(range(lo, hi + 1)))
+
+
+def scale_members():
+    return [
+        folder("Weight", [
+            opc_member("Net",        "real", "HRF2"),
+            opc_member("InMotion",   "bool", "HR4.12"),
+            opc_member("IsValid",    "bool", "HR4.15"),
+            # FP Indicator 1 == net weight. 0 == gross, which is what a
+            # power-cycled terminal reports when its command register is 0 --
+            # plausible, well-formed, wrong. This is the guard.
+            expr_member("SourceIsNet", "bool",
+                        "{[.]Protocol/Live/FpIndicator} = 1"),
+            memory_member("Uom", "str", "{WeightUom}"),
+        ]),
+        folder("Trigger", [
+            # Physical button. Bit 8 LATCHES on ENTER and is cleared by command
+            # 75; bits 9-11 are discrete inputs and are live state, so a press
+            # shorter than the poll interval is invisible. All four are exposed
+            # because which one the button is wired to is a commissioning
+            # unknown -- press it and watch which moves. See spec 5.1.2.
+            opc_member("EnterKey", "bool", "HR4.8"),
+            opc_member("Input1",   "bool", "HR4.9"),
+            opc_member("Input2",   "bool", "HR4.10"),
+            opc_member("Input3",   "bool", "HR4.11"),
+        ]),
+        folder("Verdict", [
+            opc_member("Under", "bool", "HR4.0"),
+            opc_member("Ok",    "bool", "HR4.2"),
+            opc_member("Over",  "bool", "HR4.4"),
+            expr_member("State", "str",
+                        "if({[.]Verdict/Ok}, 'Ok', "
+                        "if({[.]Verdict/Under}, 'Under', "
+                        "if({[.]Verdict/Over}, 'Over', 'Unknown')))"),
+        ]),
+        folder("Setpoint", [
+            memory_member("Target",       "real", 0.0),
+            memory_member("Tolerance",    "real", 0.0),
+            memory_member("Apply",        "bool", False),
+            memory_member("ActiveTarget", "real", 0.0),
+            memory_member("ActiveTolerance", "real", 0.0),
+            memory_member("State",        "str",  "Idle"),
+        ]),
+        folder("Protocol", [
+            folder("Live", [
+                opc_member("Command",         "int",  "HR1026"),
+                opc_member("CommandResponse", "int",  "HR1"),
+                opc_member("Status",          "int",  "HR4"),
+                opc_member("Integrity1",      "bool", "HR1.13"),
+                opc_member("Integrity2",      "bool", "HR4.14"),
+                expr_member("FpIndicator", "int", _bitfield(_LIVE_CR, 8, 12)),
+            ]),
+            folder("Command", [
+                opc_member("Command",         "int",  "HR1029"),
+                opc_member("LoadValue",       "real", "HRF1030"),
+                opc_member("CommandResponse", "int",  "HR5"),
+                opc_member("EchoValue",       "real", "HRF6"),
+                expr_member("FpIndicator", "int", _bitfield(_CMD_CR, 8, 12)),
+                expr_member("CommandAck",  "int", _bitfield(_CMD_CR, 14, 15)),
+            ]),
+        ]),
+    ]
+
+
+# UDT type -> (members, has WriteDisplayEnabled memory member).
+# Members are either (name, kind) tuples -- address derived from the name --
+# or already-built member dicts (ScaleStation's folder tree).
+CATALOG = {
+    "ScaleStation":            (scale_members(), False),
+    "SerializedMipStation":    (SERIALIZED, True),
+    "NonSerializedMipStation": (NONSERIALIZED, True),
+    "TrayInspectionStation":   (TRAY, True),
+}
 
 
 def write_display_member():
@@ -111,19 +263,35 @@ def write_display_member():
     }
 
 
+def build_members(type_name):
+    """The type's member tree, minus WriteDisplayEnabled.
+
+    CATALOG entries are either (name, kind) tuples -- the address is derived
+    from the name -- or already-built member dicts (ScaleStation's folder
+    tree, whose names and addresses are decoupled)."""
+    members = CATALOG[type_name][0]
+    return [m if isinstance(m, dict) else opc_member(m[0], m[1])
+            for m in members]
+
+
 def build_udt_def(type_name):
-    members, has_wde = CATALOG[type_name]
-    tags = [opc_member(n, k) for n, k in members]
+    has_wde = CATALOG[type_name][1]
+    tags = build_members(type_name)
     if has_wde:
         tags.append(write_display_member())
+    params = {
+        "OpcServer": {"dataType": "String", "value": OPC_SERVER_DEFAULT},
+        "Device": {"dataType": "String", "value": SIM_DEVICE},
+        "BasePath": {"dataType": "String", "value": ""},
+    }
+    if type_name == "ScaleStation":
+        # MPP's terminals are configured in pounds (verified at commissioning
+        # via command 30, report units). Weight/Uom mirrors this parameter.
+        params["WeightUom"] = {"dataType": "String", "value": "lb"}
     return {
         "name": type_name,
         "tagType": "UdtType",
-        "parameters": {
-            "OpcServer": {"dataType": "String", "value": OPC_SERVER_DEFAULT},
-            "Device": {"dataType": "String", "value": SIM_DEVICE},
-            "BasePath": {"dataType": "String", "value": ""},
-        },
+        "parameters": params,
         "tags": tags,
     }
 
@@ -192,12 +360,18 @@ def main():
         f.write("Time Interval, Browse Path, Value Source, Data Type\n")
         w = csv.writer(f, quoting=csv.QUOTE_ALL, lineterminator="\n")
         for code, type_name in devices:
-            members, has_wde = CATALOG[type_name]
-            for name, kind in members:
-                w.writerow(["0", "%s/%s" % (code, name), SIM_LITERAL[kind], SIM_DTYPE[kind]])
+            # The browse path carries the ADDRESS, not the friendly member
+            # name -- the simulator serves register addresses, so a row named
+            # <device>/Net would never match the UDT's {BasePath}HRF2 path.
+            for address, kind in flatten_opc(build_members(type_name)):
+                w.writerow(["0", "%s/%s" % (code, address),
+                            SIM_LITERAL[kind], SIM_DTYPE[kind]])
             # WriteDisplayEnabled is a UDT memory member, NOT an OPC/sim tag -> skip.
 
-    n_members = sum(len(CATALOG[t][0]) for _, t in devices)
+    # Count the LEAF OPC members that actually reached the CSV -- len() over
+    # the catalog entry would count folders, and would include the memory and
+    # expression members that never get a sim row.
+    n_members = sum(len(flatten_opc(build_members(t))) for _, t in devices)
     print("Wrote 4 UDT defs, %d instances, %d sim rows (%d devices)."
           % (len(devices), n_members, len(devices)))
 

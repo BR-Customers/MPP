@@ -6,7 +6,8 @@
         "displayName": "",
         "id": null,
         "ignitionRole": "",
-        "initials": ""
+        "initials": "",
+        "pin": ""
       }
     },
     "selected": {
@@ -15,7 +16,8 @@
         "displayName": "",
         "id": null,
         "ignitionRole": "",
-        "initials": ""
+        "initials": "",
+        "pin": ""
       }
     }
   },
@@ -27,7 +29,7 @@
     "params.editId": {
       "onChange": {
         "enabled": null,
-        "script": "\tnewId \u003d currentValue.value\n\tsystem.perspective.print(\"test\")\n\tif newId is None:\n\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Location.AppUser.emptyMeta()}\n\telse:\n\t\trow \u003d BlueRidge.Location.AppUser.getUser(newId)\n\t\tif row:\n\t\t\tmeta \u003d {\n\t\t\t\t\"id\":                   row.get(\"Id\"),\n\t\t\t\t\"initials\":             row.get(\"Initials\"),\n\t\t\t\t\"displayName\":          row.get(\"DisplayName\"),\n\t\t\t\t\"adAccount\":            row.get(\"AdAccount\") or \"\",\n\t\t\t\t\"ignitionRole\":         row.get(\"IgnitionRole\") or \"\",\n\t\t\t}\n\t\t\tself.view.custom.selected \u003d {\"meta\": meta}\n\t\telse:\n\t\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Location.AppUser.emptyMeta()}\n\tself.view.custom.editDraft \u003d {\"meta\": dict(self.view.custom.selected[\"meta\"])}"
+        "script": "\tnewId \u003d currentValue.value\n\tif newId is None:\n\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Location.AppUser.emptyMeta()}\n\telse:\n\t\trow \u003d BlueRidge.Location.AppUser.getUser(newId)\n\t\tif row:\n\t\t\tmeta \u003d {\n\t\t\t\t\"id\":                   row.get(\"Id\"),\n\t\t\t\t\"initials\":             row.get(\"Initials\"),\n\t\t\t\t\"displayName\":          row.get(\"DisplayName\"),\n\t\t\t\t\"pin\":                  row.get(\"Pin\") or \"\",\n\t\t\t\t\"adAccount\":            row.get(\"AdAccount\") or \"\",\n\t\t\t\t\"ignitionRole\":         row.get(\"IgnitionRole\") or \"\",\n\t\t\t}\n\t\t\tself.view.custom.selected \u003d {\"meta\": meta}\n\t\telse:\n\t\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Location.AppUser.emptyMeta()}\n\tself.view.custom.editDraft \u003d {\"meta\": dict(self.view.custom.selected[\"meta\"])}"
       },
       "paramDirection": "input",
       "persistent": true
@@ -237,6 +239,59 @@
             "type": "ia.container.flex"
           },
           {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PinFieldRow"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "text": "PIN (5 digits)",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "e.g. 04218",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.pin"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
             "children": [
               {
                 "meta": {
@@ -290,26 +345,104 @@
           },
           {
             "children": [
-              { "meta": { "name": "Label" }, "props": { "style": { "classes": "field-label" }, "text": "AD Account (optional)" }, "type": "ia.display.label" },
-              { "meta": { "name": "Input" },
-                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.adAccount" }, "type": "property" } } },
-                "props": { "placeholder": "AD login that maps to this user (links to a supervisor)", "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" } },
-                "type": "ia.input.text-field" }
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "AD Account (optional)"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.adAccount"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "AD login that maps to this user (links to a supervisor)",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
             ],
-            "meta": { "name": "AdAccountField" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "meta": {
+              "name": "AdAccountField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
             "type": "ia.container.flex"
           },
           {
             "children": [
-              { "meta": { "name": "Label" }, "props": { "style": { "classes": "field-label" }, "text": "Ignition Role (requires an AD account)" }, "type": "ia.display.label" },
-              { "meta": { "name": "Input" },
-                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.ignitionRole" }, "type": "property" } } },
-                "props": { "placeholder": "e.g. Admin", "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" } },
-                "type": "ia.input.text-field" }
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Ignition Role (requires an AD account)"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.ignitionRole"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "e.g. Admin",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
             ],
-            "meta": { "name": "IgnitionRoleField" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "meta": {
+              "name": "IgnitionRoleField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
             "type": "ia.container.flex"
           }
         ],

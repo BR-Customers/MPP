@@ -2,7 +2,7 @@
 -- Procedure:   Parts.ContainerConfig_GetByItemAndMethod
 -- Author:      Blue Ridge Automation
 -- Created:     2026-07-17
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Returns the single active ContainerConfig for a given (Item, closure
@@ -19,6 +19,12 @@
 --
 -- Dependencies:
 --   Tables: Parts.ContainerConfig
+--
+-- Change Log:
+--   2026-07-17 - 1.0 - Initial version (per-method resolver)
+--   2026-08-27 - 1.1 - ToleranceWeight projected, immediately after
+--                       TargetWeight (IND570 checkweigh, migration 0068).
+--                       This is the proc the ByWeight setpoint load reads.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.ContainerConfig_GetByItemAndMethod
     @ItemId        BIGINT,
@@ -30,7 +36,7 @@ BEGIN
     SELECT
         Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized,
         DunnageCode, CustomerCode,
-        ClosureMethod, TargetWeight,
+        ClosureMethod, TargetWeight, ToleranceWeight,
         CreatedAt, UpdatedAt, DeprecatedAt
     FROM Parts.ContainerConfig
     WHERE ItemId = @ItemId

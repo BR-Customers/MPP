@@ -8,40 +8,7 @@
       "includeDeprecated": false,
       "searchText": ""
     },
-    "rows": [
-      {
-        "AdAccount": "dev.user",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            0,
-            1784834046205
-          ],
-          "$ts": 1784238086444
-        },
-        "DeprecatedAt": null,
-        "DisplayName": "Dev User",
-        "Id": 2,
-        "IgnitionRole": "Admin",
-        "Initials": "DEV"
-      },
-      {
-        "AdAccount": "system.bootstrap",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            0,
-            1784834046205
-          ],
-          "$ts": 1784238046314
-        },
-        "DeprecatedAt": null,
-        "DisplayName": "System Bootstrap",
-        "Id": 1,
-        "IgnitionRole": "Admin",
-        "Initials": "SYS"
-      }
-    ]
+    "rows": []
   },
   "params": {},
   "propConfig": {
@@ -235,8 +202,12 @@
         "type": "ia.container.flex"
       },
       {
-        "meta": { "name": "SessionPolicyPanel" },
-        "position": { "shrink": 0 },
+        "meta": {
+          "name": "SessionPolicyPanel"
+        },
+        "position": {
+          "shrink": 0
+        },
         "props": {
           "alignItems": "flex-end",
           "style": {
@@ -249,42 +220,149 @@
         "type": "ia.container.flex",
         "children": [
           {
-            "meta": { "name": "PolicyEyebrow" },
-            "position": { "shrink": 0 },
-            "props": { "style": { "classes": "label-eyebrow", "paddingBottom": "6px" }, "text": "Session timeouts (global)" },
+            "meta": {
+              "name": "PolicyEyebrow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "label-eyebrow",
+                "paddingBottom": "6px"
+              },
+              "text": "Session timeouts (global)"
+            },
             "type": "ia.display.label"
           },
           {
             "children": [
-              { "meta": { "name": "OpLabel" }, "props": { "style": { "classes": "label-eyebrow" }, "text": "Operator presence (min)" }, "type": "ia.display.label" },
-              { "meta": { "name": "OpInput" },
-                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.policy.operatorPresenceTimeoutMinutes" }, "type": "property" } } },
-                "props": { "style": { "classes": "search-input", "width": "110px" } },
-                "type": "ia.input.text-field" }
+              {
+                "meta": {
+                  "name": "OpLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "label-eyebrow"
+                  },
+                  "text": "Operator presence (min)"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "OpInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.policy.operatorPresenceTimeoutMinutes"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "110px"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
             ],
-            "meta": { "name": "OpField" },
-            "position": { "shrink": 0 },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "meta": {
+              "name": "OpField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
             "type": "ia.container.flex"
           },
           {
             "children": [
-              { "meta": { "name": "ElevLabel" }, "props": { "style": { "classes": "label-eyebrow" }, "text": "Elevation (min)" }, "type": "ia.display.label" },
-              { "meta": { "name": "ElevInput" },
-                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.policy.elevationTimeoutMinutes" }, "type": "property" } } },
-                "props": { "style": { "classes": "search-input", "width": "110px" } },
-                "type": "ia.input.text-field" }
+              {
+                "meta": {
+                  "name": "ElevLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "label-eyebrow"
+                  },
+                  "text": "Elevation (min)"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ElevInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.policy.elevationTimeoutMinutes"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "110px"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
             ],
-            "meta": { "name": "ElevField" },
-            "position": { "shrink": 0 },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "meta": {
+              "name": "ElevField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
             "type": "ia.container.flex"
           },
           {
-            "events": { "component": { "onActionPerformed": { "config": { "script": "\tself.view.rootContainer.handleSavePolicy()" }, "scope": "G", "type": "script" } } },
-            "meta": { "name": "SavePolicyButton" },
-            "position": { "shrink": 0 },
-            "props": { "style": { "classes": "btn btn-primary" }, "text": "Save timeouts" },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleSavePolicy()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SavePolicyButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary"
+              },
+              "text": "Save timeouts"
+            },
             "type": "ia.input.button"
           }
         ]
@@ -446,6 +524,19 @@
                         "type": "ia.display.label"
                       },
                       {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ColPin"
+                        },
+                        "position": {
+                          "basis": "100px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "PIN"
+                        }
+                      },
+                      {
                         "meta": {
                           "name": "ColDisplayName"
                         },
@@ -595,7 +686,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\t# Storage is SECONDS; the editor presents whole MINUTES (FAT day-1 item 6).\n\tp = BlueRidge.Location.SessionPolicy.getPolicy() or {}\n\tself.view.custom.policy = {\"operatorPresenceTimeoutMinutes\": int(round((p.get(\"OperatorPresenceTimeoutSeconds\") or 1800) / 60.0)), \"elevationTimeoutMinutes\": int(round((p.get(\"ElevationTimeoutSeconds\") or 300) / 60.0))}"
+            "script": "\t# Storage is SECONDS; the editor presents whole MINUTES (FAT day-1 item 6).\n\tp \u003d BlueRidge.Location.SessionPolicy.getPolicy() or {}\n\tself.view.custom.policy \u003d {\"operatorPresenceTimeoutMinutes\": int(round((p.get(\"OperatorPresenceTimeoutSeconds\") or 1800) / 60.0)), \"elevationTimeoutMinutes\": int(round((p.get(\"ElevationTimeoutSeconds\") or 300) / 60.0))}"
           }
         }
       }
@@ -605,7 +696,7 @@
         {
           "name": "handleSavePolicy",
           "params": [],
-          "script": "\t# The editor holds MINUTES; the proc + column are SECONDS. Convert at the boundary.\n\tpol = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.policy) or {}\n\top = BlueRidge.Common.Util.toIntOrNone(pol.get(\"operatorPresenceTimeoutMinutes\"))\n\tel = BlueRidge.Common.Util.toIntOrNone(pol.get(\"elevationTimeoutMinutes\"))\n\tif op is None or el is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": 0, \"Message\": \"Enter whole minutes for both timeouts.\"}, \"Session timeouts saved\")\n\t\treturn\n\tres = BlueRidge.Location.SessionPolicy.updatePolicy({\"operatorPresenceTimeoutSeconds\": op * 60, \"elevationTimeoutSeconds\": el * 60})\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session timeouts saved\")"
+          "script": "\t# The editor holds MINUTES; the proc + column are SECONDS. Convert at the boundary.\n\tpol \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.policy) or {}\n\top \u003d BlueRidge.Common.Util.toIntOrNone(pol.get(\"operatorPresenceTimeoutMinutes\"))\n\tel \u003d BlueRidge.Common.Util.toIntOrNone(pol.get(\"elevationTimeoutMinutes\"))\n\tif op is None or el is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": 0, \"Message\": \"Enter whole minutes for both timeouts.\"}, \"Session timeouts saved\")\n\t\treturn\n\tres \u003d BlueRidge.Location.SessionPolicy.updatePolicy({\"operatorPresenceTimeoutSeconds\": op * 60, \"elevationTimeoutSeconds\": el * 60})\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session timeouts saved\")"
         }
       ],
       "extensionFunctions": null,

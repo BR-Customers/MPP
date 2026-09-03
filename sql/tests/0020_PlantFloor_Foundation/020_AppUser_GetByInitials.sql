@@ -27,6 +27,7 @@ INSERT INTO @C
 EXEC Location.AppUser_Create
     @Initials     = N'P1IN',
     @DisplayName  = N'Phase1 Initials User',
+    @Pin = N'91001',
     @AdAccount    = N'p1.initials',
     @IgnitionRole = N'Supervisor',
     @AppUserId    = 1;
@@ -39,6 +40,7 @@ CREATE TABLE #GbI1 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),
@@ -82,6 +84,7 @@ CREATE TABLE #GbI2 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),

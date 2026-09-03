@@ -2,7 +2,7 @@
 -- Procedure:   Location.AppUser_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-13
--- Version:     3.0
+-- Version:     4.0
 --
 -- Description:
 --   Updates mutable fields on an existing AppUser: Initials, DisplayName,
@@ -16,6 +16,10 @@
 --   AdAccount is mutable to support operators who later receive an AD
 --   account when promoted to an interactive role. Pass NULL to clear.
 --
+--   Pin is mutable so an admin can re-issue a number when MPP recycles or
+--   corrects one. Uniqueness is re-validated on every update, excluding the
+--   row being updated -- the same treatment Initials and AdAccount get.
+--
 --   IgnitionRole requires AdAccount to be set — enforced here plus by
 --   the CK_AppUser_IgnitionRole_Requires_AdAccount constraint.
 --
@@ -23,6 +27,8 @@
 --   @Id BIGINT                        - PK. Required.
 --   @Initials NVARCHAR(10)            - Required. Unique (excluding self).
 --   @DisplayName NVARCHAR(200)        - Required.
+--   @Pin NVARCHAR(5)                  - Required. Unique (excluding self).
+--                                       Leading zeros significant -- string, not a number.
 --   @AdAccount NVARCHAR(100) NULL     - Optional. Unique among non-NULL (excluding self).
 --   @IgnitionRole NVARCHAR(100) NULL  - Optional. Requires @AdAccount to be set.
 --   @AppUserId BIGINT                 - Required for audit.
@@ -41,11 +47,15 @@
 --   2026-04-23 - 2.1 - Phase G.4: dropped @ClockNumber (legacy auth)
 --   2026-04-23 - 3.0 - Initials realignment: @Initials added, @AdAccount
 --                      now mutable, IgnitionRole/AdAccount pairing enforced
+--   2026-09-02 - 4.0 - @Pin added (required): format + uniqueness validated
+--                      here ahead of the DB constraints; Pin carried into
+--                      both audit JSON snapshots.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.AppUser_Update
     @Id           BIGINT,
     @Initials     NVARCHAR(10),
     @DisplayName  NVARCHAR(200),
+    @Pin          NVARCHAR(5),
     @AdAccount    NVARCHAR(100)  = NULL,
     @IgnitionRole NVARCHAR(100)  = NULL,
     @AppUserId    BIGINT
@@ -62,6 +72,7 @@ BEGIN
         (SELECT @Id           AS Id,
                 @Initials     AS Initials,
                 @DisplayName  AS DisplayName,
+                @Pin          AS Pin,
                 @AdAccount    AS AdAccount,
                 @IgnitionRole AS IgnitionRole
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
@@ -149,6 +160,40 @@ BEGIN
             RETURN;
         END
 
+        -- PIN format: exactly 5 numeric digits (mirrors CK_AppUser_Pin_Format).
+        -- A leading zero is legal and significant -- 04218 is a full-time
+        -- employee's code -- so this must never be a numeric comparison.
+        IF @Pin IS NULL OR LEN(@Pin) <> 5 OR @Pin LIKE '%[^0-9]%'
+        BEGIN
+            SET @Message = N'PIN must be exactly 5 digits.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId           = @AppUserId,
+                @LogEntityTypeCode   = N'AppUser',
+                @EntityId            = @Id,
+                @LogEventTypeCode    = N'Updated',
+                @FailureReason       = @Message,
+                @ProcedureName       = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- PIN uniqueness across ALL rows (active + deprecated), excluding self
+        IF EXISTS (SELECT 1 FROM Location.AppUser WHERE Pin = @Pin AND Id <> @Id)
+        BEGIN
+            SET @Message = N'Another AppUser already has this PIN.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId           = @AppUserId,
+                @LogEntityTypeCode   = N'AppUser',
+                @EntityId            = @Id,
+                @LogEventTypeCode    = N'Updated',
+                @FailureReason       = @Message,
+                @ProcedureName       = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
         -- IgnitionRole requires AdAccount
         IF @IgnitionRole IS NOT NULL AND @AdAccount IS NULL
         BEGIN
@@ -172,6 +217,7 @@ BEGIN
         SELECT @OldValue =
             (SELECT Initials,
                     DisplayName,
+                    Pin,
                     AdAccount,
                     IgnitionRole
              FROM Location.AppUser
@@ -181,6 +227,7 @@ BEGIN
         DECLARE @NewValue NVARCHAR(MAX) =
             (SELECT @Initials     AS Initials,
                     @DisplayName  AS DisplayName,
+                    @Pin          AS Pin,
                     @AdAccount    AS AdAccount,
                     @IgnitionRole AS IgnitionRole
              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
@@ -193,6 +240,7 @@ BEGIN
         UPDATE Location.AppUser
         SET Initials     = @Initials,
             DisplayName  = @DisplayName,
+            Pin          = @Pin,
             AdAccount    = @AdAccount,
             IgnitionRole = @IgnitionRole
         WHERE Id = @Id;

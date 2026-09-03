@@ -29,6 +29,7 @@ CREATE TABLE #Act1 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),
@@ -54,6 +55,7 @@ CREATE TABLE #Act2 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),
@@ -82,6 +84,7 @@ INSERT INTO #Create3
 EXEC Location.AppUser_Create
     @Initials    = N'DA45',
     @DisplayName = N'Test Deprecated 045',
+    @Pin = N'96001',
     @AppUserId   = 1;
 DECLARE @NewId BIGINT = (SELECT TOP 1 NewId FROM #Create3);
 DROP TABLE #Create3;
@@ -98,6 +101,7 @@ CREATE TABLE #Act3 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),

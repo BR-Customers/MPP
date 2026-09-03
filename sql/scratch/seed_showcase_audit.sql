@@ -6,11 +6,11 @@ SET NOCOUNT ON; SET QUOTED_IDENTIFIER ON;
 
 -- Two named engineers for realistic attribution (idempotent).
 IF NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Initials = N'SLC')
-    INSERT INTO Location.AppUser (AdAccount, DisplayName, IgnitionRole, Initials, CreatedAt)
-    VALUES (N'RIVERSIDE\schen', N'Sarah Chen', N'Engineer', N'SLC', SYSUTCDATETIME());
+    INSERT INTO Location.AppUser (AdAccount, DisplayName, IgnitionRole, Initials, Pin, CreatedAt)
+    VALUES (N'RIVERSIDE\schen', N'Sarah Chen', N'Engineer', N'SLC', N'00101', SYSUTCDATETIME());
 IF NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Initials = N'MDT')
-    INSERT INTO Location.AppUser (AdAccount, DisplayName, IgnitionRole, Initials, CreatedAt)
-    VALUES (N'RIVERSIDE\mtorres', N'Mike Torres', N'Supervisor', N'MDT', SYSUTCDATETIME());
+    INSERT INTO Location.AppUser (AdAccount, DisplayName, IgnitionRole, Initials, Pin, CreatedAt)
+    VALUES (N'RIVERSIDE\mtorres', N'Mike Torres', N'Supervisor', N'MDT', N'00102', SYSUTCDATETIME());
 
 DECLARE @Sarah BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'SLC');
 DECLARE @Mike  BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'MDT');

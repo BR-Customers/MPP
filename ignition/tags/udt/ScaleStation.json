@@ -12,135 +12,405 @@
     "OpcServer": {
       "dataType": "String",
       "value": "Ignition OPC UA Server"
+    },
+    "WeightUom": {
+      "dataType": "String",
+      "value": "lb"
     }
   },
   "tagType": "UdtType",
   "tags": [
     {
-      "dataType": "Boolean",
-      "name": "NET_DataReady",
-      "opcItemPath": {
-        "bindType": "parameter",
-        "binding": "ns=1;s=[{Device}]{BasePath}NET_DataReady"
-      },
-      "opcServer": {
-        "bindType": "parameter",
-        "binding": "{OpcServer}"
-      },
-      "tagType": "AtomicTag",
-      "valueSource": "opc"
+      "name": "Weight",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "dataType": "Float8",
+          "name": "Net",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HRF2"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "InMotion",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.12"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "IsValid",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.15"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "expression": "{[.]Protocol/Live/FpIndicator} = 1",
+          "name": "SourceIsNet",
+          "tagType": "AtomicTag",
+          "valueSource": "expr"
+        },
+        {
+          "dataType": "String",
+          "defaultValue": "{WeightUom}",
+          "name": "Uom",
+          "tagType": "AtomicTag",
+          "valueSource": "memory"
+        }
+      ]
     },
     {
-      "dataType": "Float8",
-      "name": "NET_NetWeightValue",
-      "opcItemPath": {
-        "bindType": "parameter",
-        "binding": "ns=1;s=[{Device}]{BasePath}NET_NetWeightValue"
-      },
-      "opcServer": {
-        "bindType": "parameter",
-        "binding": "{OpcServer}"
-      },
-      "tagType": "AtomicTag",
-      "valueSource": "opc"
+      "name": "Trigger",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "dataType": "Boolean",
+          "name": "EnterKey",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.8"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "Input1",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.9"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "Input2",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.10"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "Input3",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.11"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        }
+      ]
     },
     {
-      "dataType": "String",
-      "name": "NET_NetWeightUOM",
-      "opcItemPath": {
-        "bindType": "parameter",
-        "binding": "ns=1;s=[{Device}]{BasePath}NET_NetWeightUOM"
-      },
-      "opcServer": {
-        "bindType": "parameter",
-        "binding": "{OpcServer}"
-      },
-      "tagType": "AtomicTag",
-      "valueSource": "opc"
+      "name": "Verdict",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "dataType": "Boolean",
+          "name": "Under",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.0"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "Ok",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.2"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "Boolean",
+          "name": "Over",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]{BasePath}HR4.4"
+          },
+          "opcServer": {
+            "bindType": "parameter",
+            "binding": "{OpcServer}"
+          },
+          "tagType": "AtomicTag",
+          "valueSource": "opc"
+        },
+        {
+          "dataType": "String",
+          "expression": "if({[.]Verdict/Ok}, 'Ok', if({[.]Verdict/Under}, 'Under', if({[.]Verdict/Over}, 'Over', 'Unknown')))",
+          "name": "State",
+          "tagType": "AtomicTag",
+          "valueSource": "expr"
+        }
+      ]
     },
     {
-      "dataType": "Boolean",
-      "name": "NET_TargetWeightMetFlag",
-      "opcItemPath": {
-        "bindType": "parameter",
-        "binding": "ns=1;s=[{Device}]{BasePath}NET_TargetWeightMetFlag"
-      },
-      "opcServer": {
-        "bindType": "parameter",
-        "binding": "{OpcServer}"
-      },
-      "tagType": "AtomicTag",
-      "valueSource": "opc"
+      "name": "Setpoint",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "dataType": "Float8",
+          "defaultValue": 0.0,
+          "name": "Target",
+          "tagType": "AtomicTag",
+          "valueSource": "memory"
+        },
+        {
+          "dataType": "Float8",
+          "defaultValue": 0.0,
+          "name": "Tolerance",
+          "tagType": "AtomicTag",
+          "valueSource": "memory"
+        },
+        {
+          "dataType": "Boolean",
+          "defaultValue": false,
+          "name": "Apply",
+          "tagType": "AtomicTag",
+          "valueSource": "memory"
+        },
+        {
+          "dataType": "Float8",
+          "defaultValue": 0.0,
+          "name": "ActiveTarget",
+          "tagType": "AtomicTag",
+          "valueSource": "memory"
+        },
+        {
+          "dataType": "Float8",
+          "defaultValue": 0.0,
+          "name": "ActiveTolerance",
+          "tagType": "AtomicTag",
+          "valueSource": "memory"
+        },
+        {
+          "dataType": "String",
+          "defaultValue": "Idle",
+          "name": "State",
+          "tagType": "AtomicTag",
+          "valueSource": "memory"
+        }
+      ]
     },
     {
-      "dataType": "String",
-      "name": "NET_PartNumber",
-      "opcItemPath": {
-        "bindType": "parameter",
-        "binding": "ns=1;s=[{Device}]{BasePath}NET_PartNumber"
-      },
-      "opcServer": {
-        "bindType": "parameter",
-        "binding": "{OpcServer}"
-      },
-      "tagType": "AtomicTag",
-      "valueSource": "opc"
-    },
-    {
-      "dataType": "Float8",
-      "name": "TRG_TargetWeightValue",
-      "opcItemPath": {
-        "bindType": "parameter",
-        "binding": "ns=1;s=[{Device}]{BasePath}TRG_TargetWeightValue"
-      },
-      "opcServer": {
-        "bindType": "parameter",
-        "binding": "{OpcServer}"
-      },
-      "tagType": "AtomicTag",
-      "valueSource": "opc"
-    },
-    {
-      "dataType": "String",
-      "name": "TRG_TargetWeightUOM",
-      "opcItemPath": {
-        "bindType": "parameter",
-        "binding": "ns=1;s=[{Device}]{BasePath}TRG_TargetWeightUOM"
-      },
-      "opcServer": {
-        "bindType": "parameter",
-        "binding": "{OpcServer}"
-      },
-      "tagType": "AtomicTag",
-      "valueSource": "opc"
-    },
-    {
-      "dataType": "Float8",
-      "name": "TRG_ToleranceWeightValue",
-      "opcItemPath": {
-        "bindType": "parameter",
-        "binding": "ns=1;s=[{Device}]{BasePath}TRG_ToleranceWeightValue"
-      },
-      "opcServer": {
-        "bindType": "parameter",
-        "binding": "{OpcServer}"
-      },
-      "tagType": "AtomicTag",
-      "valueSource": "opc"
-    },
-    {
-      "dataType": "Boolean",
-      "name": "TRG_SendMessage",
-      "opcItemPath": {
-        "bindType": "parameter",
-        "binding": "ns=1;s=[{Device}]{BasePath}TRG_SendMessage"
-      },
-      "opcServer": {
-        "bindType": "parameter",
-        "binding": "{OpcServer}"
-      },
-      "tagType": "AtomicTag",
-      "valueSource": "opc"
+      "name": "Protocol",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "name": "Live",
+          "tagType": "Folder",
+          "tags": [
+            {
+              "dataType": "Int4",
+              "name": "Command",
+              "opcItemPath": {
+                "bindType": "parameter",
+                "binding": "ns=1;s=[{Device}]{BasePath}HR1026"
+              },
+              "opcServer": {
+                "bindType": "parameter",
+                "binding": "{OpcServer}"
+              },
+              "tagType": "AtomicTag",
+              "valueSource": "opc"
+            },
+            {
+              "dataType": "Int4",
+              "name": "CommandResponse",
+              "opcItemPath": {
+                "bindType": "parameter",
+                "binding": "ns=1;s=[{Device}]{BasePath}HR1"
+              },
+              "opcServer": {
+                "bindType": "parameter",
+                "binding": "{OpcServer}"
+              },
+              "tagType": "AtomicTag",
+              "valueSource": "opc"
+            },
+            {
+              "dataType": "Int4",
+              "name": "Status",
+              "opcItemPath": {
+                "bindType": "parameter",
+                "binding": "ns=1;s=[{Device}]{BasePath}HR4"
+              },
+              "opcServer": {
+                "bindType": "parameter",
+                "binding": "{OpcServer}"
+              },
+              "tagType": "AtomicTag",
+              "valueSource": "opc"
+            },
+            {
+              "dataType": "Boolean",
+              "name": "Integrity1",
+              "opcItemPath": {
+                "bindType": "parameter",
+                "binding": "ns=1;s=[{Device}]{BasePath}HR1.13"
+              },
+              "opcServer": {
+                "bindType": "parameter",
+                "binding": "{OpcServer}"
+              },
+              "tagType": "AtomicTag",
+              "valueSource": "opc"
+            },
+            {
+              "dataType": "Boolean",
+              "name": "Integrity2",
+              "opcItemPath": {
+                "bindType": "parameter",
+                "binding": "ns=1;s=[{Device}]{BasePath}HR4.14"
+              },
+              "opcServer": {
+                "bindType": "parameter",
+                "binding": "{OpcServer}"
+              },
+              "tagType": "AtomicTag",
+              "valueSource": "opc"
+            },
+            {
+              "dataType": "Int4",
+              "expression": "getBit({[.]Protocol/Live/CommandResponse}, 8) * 1 + getBit({[.]Protocol/Live/CommandResponse}, 9) * 2 + getBit({[.]Protocol/Live/CommandResponse}, 10) * 4 + getBit({[.]Protocol/Live/CommandResponse}, 11) * 8 + getBit({[.]Protocol/Live/CommandResponse}, 12) * 16",
+              "name": "FpIndicator",
+              "tagType": "AtomicTag",
+              "valueSource": "expr"
+            }
+          ]
+        },
+        {
+          "name": "Command",
+          "tagType": "Folder",
+          "tags": [
+            {
+              "dataType": "Int4",
+              "name": "Command",
+              "opcItemPath": {
+                "bindType": "parameter",
+                "binding": "ns=1;s=[{Device}]{BasePath}HR1029"
+              },
+              "opcServer": {
+                "bindType": "parameter",
+                "binding": "{OpcServer}"
+              },
+              "tagType": "AtomicTag",
+              "valueSource": "opc"
+            },
+            {
+              "dataType": "Float8",
+              "name": "LoadValue",
+              "opcItemPath": {
+                "bindType": "parameter",
+                "binding": "ns=1;s=[{Device}]{BasePath}HRF1030"
+              },
+              "opcServer": {
+                "bindType": "parameter",
+                "binding": "{OpcServer}"
+              },
+              "tagType": "AtomicTag",
+              "valueSource": "opc"
+            },
+            {
+              "dataType": "Int4",
+              "name": "CommandResponse",
+              "opcItemPath": {
+                "bindType": "parameter",
+                "binding": "ns=1;s=[{Device}]{BasePath}HR5"
+              },
+              "opcServer": {
+                "bindType": "parameter",
+                "binding": "{OpcServer}"
+              },
+              "tagType": "AtomicTag",
+              "valueSource": "opc"
+            },
+            {
+              "dataType": "Float8",
+              "name": "EchoValue",
+              "opcItemPath": {
+                "bindType": "parameter",
+                "binding": "ns=1;s=[{Device}]{BasePath}HRF6"
+              },
+              "opcServer": {
+                "bindType": "parameter",
+                "binding": "{OpcServer}"
+              },
+              "tagType": "AtomicTag",
+              "valueSource": "opc"
+            },
+            {
+              "dataType": "Int4",
+              "expression": "getBit({[.]Protocol/Command/CommandResponse}, 8) * 1 + getBit({[.]Protocol/Command/CommandResponse}, 9) * 2 + getBit({[.]Protocol/Command/CommandResponse}, 10) * 4 + getBit({[.]Protocol/Command/CommandResponse}, 11) * 8 + getBit({[.]Protocol/Command/CommandResponse}, 12) * 16",
+              "name": "FpIndicator",
+              "tagType": "AtomicTag",
+              "valueSource": "expr"
+            },
+            {
+              "dataType": "Int4",
+              "expression": "getBit({[.]Protocol/Command/CommandResponse}, 14) * 1 + getBit({[.]Protocol/Command/CommandResponse}, 15) * 2",
+              "name": "CommandAck",
+              "tagType": "AtomicTag",
+              "valueSource": "expr"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

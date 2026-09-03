@@ -1,20 +1,20 @@
 {
   "custom": {},
   "params": {
-    "initials": "",
+    "pin": "",
     "popupId": "mpp-unknown-initials",
     "replyMessage": "unknownInitialsResult"
   },
   "propConfig": {
-    "params.initials": {
-      "paramDirection": "input",
-      "persistent": true
-    },
     "params.popupId": {
       "paramDirection": "input",
       "persistent": true
     },
     "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.pin": {
       "paramDirection": "input",
       "persistent": true
     }
@@ -82,7 +82,7 @@
               "grow": 1
             },
             "props": {
-              "text": "Initials Not Recognised"
+              "text": "PIN Not Recognized"
             }
           }
         ]
@@ -118,7 +118,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "\"The initials \\\"\" + {view.params.initials} + \"\\\" don't match any operator on file.\""
+                    "expression": "\"PIN \" + {view.params.pin} + \" is not registered at this plant.\""
                   }
                 }
               }
@@ -141,7 +141,7 @@
               "shrink": 0
             },
             "props": {
-              "text": "Register a new operator, or dismiss to try again.",
+              "text": "Check the number and try again, or register as a new operator.",
               "style": {
                 "color": "var(--mpp-text-secondary)",
                 "fontSize": "13px"
@@ -171,13 +171,13 @@
           {
             "type": "ia.input.button",
             "meta": {
-              "name": "DismissButton"
+              "name": "RegisterButton"
             },
             "position": {
               "shrink": 0
             },
             "props": {
-              "text": "Dismiss",
+              "text": "Register New User",
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
               }
@@ -188,7 +188,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"dismiss\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"register\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
                   }
                 }
               }
@@ -197,13 +197,13 @@
           {
             "type": "ia.input.button",
             "meta": {
-              "name": "RegisterButton"
+              "name": "RetypeButton"
             },
             "position": {
               "shrink": 0
             },
             "props": {
-              "text": "Register New User",
+              "text": "Re-type PIN",
               "style": {
                 "classes": "pf-btn pf-btn-primary"
               }
@@ -214,7 +214,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"register\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"retype\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
                   }
                 }
               }

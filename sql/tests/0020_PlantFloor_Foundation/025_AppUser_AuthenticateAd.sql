@@ -42,6 +42,7 @@ INSERT INTO @CA
 EXEC Location.AppUser_Create
     @Initials     = N'P1EA',
     @DisplayName  = N'Phase1 Elevation Active',
+    @Pin = N'92001',
     @AdAccount    = N'p1.elev.active',
     @IgnitionRole = N'Supervisor',
     @AppUserId    = 1;
@@ -53,6 +54,7 @@ INSERT INTO @CD
 EXEC Location.AppUser_Create
     @Initials     = N'P1ED',
     @DisplayName  = N'Phase1 Elevation Deprecated',
+    @Pin = N'92002',
     @AdAccount    = N'p1.elev.dep',
     @IgnitionRole = N'Supervisor',
     @AppUserId    = 1;

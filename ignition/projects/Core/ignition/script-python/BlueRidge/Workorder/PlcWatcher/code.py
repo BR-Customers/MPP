@@ -15,8 +15,14 @@
 
    dispatch() rising-edge-guards, resolves the instance's terminal + device type
    (Location.TerminalPlcDevice.getByInstancePath), and routes to the matching
-   *Watcher.handleEdge. Watcher modules are referenced fully-qualified at call time
+   watcher -- *Watcher.handleEdge for the MIP/tray types, ScaleWatcher.onTriggerEdge
+   for the IND570 scales (whose edge is the operator's physical button, not a
+   device push). Watcher modules are referenced fully-qualified at call time
    (Ignition project-library namespace) so there is no import cycle.
+
+   A trigger member is NOT necessarily one path segment -- the scale's is the
+   folder-grouped 'Trigger/EnterKey' -- so the instance/member split is resolved
+   against the mapping table rather than assumed. See _splitCandidates.
 
    All PLC-driven mutations attribute to the system AppUser
    (BlueRidge.Common.Util.systemAppUserId()). No business logic here or in the
@@ -241,14 +247,32 @@ def logInterface(deviceCode, description, requestPayload=None,
 
 
 # ---- dispatch ---------------------------------------------------------------
-def _splitPath(tagPath):
-    """('[MPP]PlcDevices/5G0_A1', 'DataReady') from
-       '[MPP]PlcDevices/5G0_A1/DataReady'."""
+def _splitCandidates(tagPath):
+    """Every plausible (instancePath, member) split of a trigger tag path,
+       LONGEST instance path first. The caller takes the first that resolves to
+       a TerminalPlcDevice row.
+
+       This used to be a single rfind('/') split, which is correct only while
+       every trigger member is one path segment ('DataReady', 'TrayLocked').
+       The IND570 scale broke that: its trigger is the folder-grouped
+       'Trigger/EnterKey' (HR4.8), so the naive split yields
+       instancePath='[MPP]PlcDevices/<device>/Trigger' -- which matches no
+       mapping row, so dispatch bailed at the 'no TerminalPlcDevice mapping'
+       warn and the physical button did nothing at all. Probing candidates
+       instead of assuming a depth keeps flat members on exactly the old path
+       (one mapping lookup, first candidate) and costs one extra lookup per
+       press for a nested one.
+
+       The walk stops while the prefix still contains at least one '/', so the
+       provider+folder root ('[MPP]PlcDevices') is never itself offered as an
+       instance path. Returns [] for a path with no '/' at all."""
     s = str(tagPath)
+    out = []
     idx = s.rfind("/")
-    if idx < 0:
-        return (s, "")
-    return (s[:idx], s[idx + 1:])
+    while idx > 0 and s.find("/") < idx:
+        out.append((s[:idx], s[idx + 1:]))
+        idx = s.rfind("/", 0, idx)
+    return out
 
 
 def resolveInstance(udtInstancePath):
@@ -265,12 +289,16 @@ def dispatch(tagPath, previousValue, currentValue):
     try:
         if not isRisingEdge(previousValue, currentValue):
             return
-        instancePath, member = _splitPath(tagPath)
-        row = resolveInstance(instancePath)
+        instancePath, member, row = None, None, None
+        for candidatePath, candidateMember in _splitCandidates(tagPath):
+            row = resolveInstance(candidatePath)
+            if row is not None:
+                instancePath, member = candidatePath, candidateMember
+                break
         if row is None:
             BlueRidge.Common.Util.log(
-                "no TerminalPlcDevice mapping for %s (edge on %s ignored)"
-                % (instancePath, member), level="warn")
+                "no TerminalPlcDevice mapping under %s (edge ignored)"
+                % tagPath, level="warn")
             return
         code = row.get("DeviceTypeCode")
         terminalLocationId = row.get("TerminalLocationId")
@@ -289,7 +317,11 @@ def _route(deviceTypeCode, instancePath, terminalLocationId, member):
     """Route a rising edge to the per-type watcher. Watchers referenced fully-
        qualified (no import) to avoid a cycle."""
     if deviceTypeCode == "ScaleStation":
-        BlueRidge.Workorder.ScaleWatcher.handleEdge(instancePath, terminalLocationId, member)
+        # ScaleStation edge = the operator PHYSICAL button, surfaced as a latched
+        # status bit (Trigger/EnterKey, HR4.8). The weight itself is polled, not
+        # pushed. The screen button calls ScaleWatcher.captureAndClose directly --
+        # both converge there. Spec rev 2 Sec 5.
+        BlueRidge.Workorder.ScaleWatcher.onTriggerEdge(instancePath, terminalLocationId, member)
     elif deviceTypeCode == "SerializedMipStation":
         BlueRidge.Workorder.SerializedMipWatcher.handleEdge(instancePath, terminalLocationId, member)
     elif deviceTypeCode == "NonSerializedMipStation":

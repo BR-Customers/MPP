@@ -2,24 +2,25 @@
   "custom": {
     "editDisplayName": "",
     "editInitials": "",
+    "editPin": "",
     "error": "",
     "focusedField": "displayName"
   },
   "params": {
-    "initials": "",
+    "pin": "",
     "popupId": "mpp-register-operator",
     "replyMessage": "registerOperatorResult"
   },
   "propConfig": {
-    "params.initials": {
-      "paramDirection": "input",
-      "persistent": true
-    },
     "params.popupId": {
       "paramDirection": "input",
       "persistent": true
     },
     "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.pin": {
       "paramDirection": "input",
       "persistent": true
     }
@@ -47,7 +48,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tself.view.custom.editInitials = self.view.params.initials or \"\"\n\tself.view.custom.editDisplayName = \"\"\n\tself.view.custom.focusedField = \"displayName\"\n\tself.view.custom.error = \"\""
+            "script": "\tself.view.custom.editPin \u003d self.view.params.pin or \"\"\n\tself.view.custom.editInitials \u003d \"\"\n\tself.view.custom.editDisplayName \u003d \"\"\n\tself.view.custom.focusedField \u003d \"displayName\"\n\tself.view.custom.error \u003d \"\""
           }
         }
       }
@@ -59,22 +60,22 @@
           "params": [
             "ch"
           ],
-          "script": "\tself.view.custom.error = \"\"\n\tif self.view.custom.focusedField == \"initials\":\n\t\tself.view.custom.editInitials = (self.view.custom.editInitials or \"\") + ch\n\telse:\n\t\tself.view.custom.editDisplayName = (self.view.custom.editDisplayName or \"\") + ch"
+          "script": "\tself.view.custom.error \u003d \"\"\n\tif self.view.custom.focusedField \u003d\u003d \"initials\":\n\t\tself.view.custom.editInitials \u003d (self.view.custom.editInitials or \"\") + ch\n\telse:\n\t\tself.view.custom.editDisplayName \u003d (self.view.custom.editDisplayName or \"\") + ch"
         },
         {
           "name": "backspaceFocused",
           "params": [],
-          "script": "\tself.view.custom.error = \"\"\n\tif self.view.custom.focusedField == \"initials\":\n\t\tself.view.custom.editInitials = (self.view.custom.editInitials or \"\")[:-1]\n\telse:\n\t\tself.view.custom.editDisplayName = (self.view.custom.editDisplayName or \"\")[:-1]"
+          "script": "\tself.view.custom.error \u003d \"\"\n\tif self.view.custom.focusedField \u003d\u003d \"initials\":\n\t\tself.view.custom.editInitials \u003d (self.view.custom.editInitials or \"\")[:-1]\n\telse:\n\t\tself.view.custom.editDisplayName \u003d (self.view.custom.editDisplayName or \"\")[:-1]"
         },
         {
           "name": "clearFocused",
           "params": [],
-          "script": "\tself.view.custom.error = \"\"\n\tif self.view.custom.focusedField == \"initials\":\n\t\tself.view.custom.editInitials = \"\"\n\telse:\n\t\tself.view.custom.editDisplayName = \"\""
+          "script": "\tself.view.custom.error \u003d \"\"\n\tif self.view.custom.focusedField \u003d\u003d \"initials\":\n\t\tself.view.custom.editInitials \u003d \"\"\n\telse:\n\t\tself.view.custom.editDisplayName \u003d \"\""
         },
         {
           "name": "saveOperator",
           "params": [],
-          "script": "\tinitials = (self.view.custom.editInitials or \"\").strip()\n\tname = (self.view.custom.editDisplayName or \"\").strip()\n\tif not initials or not name:\n\t\tself.view.custom.error = \"Initials and display name are both required.\"\n\t\treturn\n\tres = BlueRidge.Location.AppUser.create({\"initials\": initials, \"displayName\": name})\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"registered\", \"initials\": initials.upper(), \"appUserId\": res.get(\"NewId\"), \"displayName\": name}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)\n\telse:\n\t\tself.view.custom.error = (res.get(\"Message\") if res else None) or \"Could not create operator\""
+          "script": "\tinitials \u003d (self.view.custom.editInitials or \"\").strip()\n\tname \u003d (self.view.custom.editDisplayName or \"\").strip()\n\tpin \u003d (self.view.custom.editPin or \"\").strip()\n\tif not initials or not name:\n\t\tself.view.custom.error \u003d \"Initials and display name are both required.\"\n\t\treturn\n\tif len(pin) !\u003d 5 or not pin.isdigit():\n\t\tself.view.custom.error \u003d \"PIN must be exactly 5 digits.\"\n\t\treturn\n\tres \u003d BlueRidge.Location.AppUser.create({\"initials\": initials, \"displayName\": name, \"pin\": pin})\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"registered\", \"initials\": initials.upper(), \"appUserId\": res.get(\"NewId\"), \"displayName\": name}, scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)\n\telse:\n\t\tself.view.custom.error \u003d (res.get(\"Message\") if res else None) or \"Could not create operator\""
         }
       ],
       "messageHandlers": [
@@ -83,7 +84,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\ta = payload.get(\"action\") if payload else None\n\tif a == \"key\":\n\t\tself.appendToFocused(payload.get(\"key\"))\n\telif a == \"space\":\n\t\tself.appendToFocused(\" \")\n\telif a == \"backspace\":\n\t\tself.backspaceFocused()\n\telif a == \"clear\":\n\t\tself.clearFocused()\n\telif a == \"enter\":\n\t\tself.saveOperator()"
+          "script": "\ta \u003d payload.get(\"action\") if payload else None\n\tif a \u003d\u003d \"key\":\n\t\tself.appendToFocused(payload.get(\"key\"))\n\telif a \u003d\u003d \"space\":\n\t\tself.appendToFocused(\" \")\n\telif a \u003d\u003d \"backspace\":\n\t\tself.backspaceFocused()\n\telif a \u003d\u003d \"clear\":\n\t\tself.clearFocused()\n\telif a \u003d\u003d \"enter\":\n\t\tself.saveOperator()"
         }
       ]
     },
@@ -206,6 +207,68 @@
               {
                 "type": "ia.container.flex",
                 "meta": {
+                  "name": "PinField"
+                },
+                "position": {
+                  "basis": "200px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "PinLabel"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "PIN",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "PinValue"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-accent)",
+                        "fontFamily": "monospace",
+                        "fontSize": "28px",
+                        "letterSpacing": "0.12em"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editPin"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
                   "name": "InitialsField"
                 },
                 "position": {
@@ -258,7 +321,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "if({view.custom.focusedField} = \"initials\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"
+                            "expression": "if({view.custom.focusedField} \u003d \"initials\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"
                           }
                         }
                       }
@@ -276,7 +339,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.custom.focusedField = \"initials\""
+                            "script": "\tself.view.custom.focusedField \u003d \"initials\""
                           }
                         }
                       }
@@ -339,7 +402,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "if({view.custom.focusedField} = \"displayName\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"
+                            "expression": "if({view.custom.focusedField} \u003d \"displayName\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"
                           }
                         }
                       }
@@ -356,7 +419,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.custom.focusedField = \"displayName\""
+                            "script": "\tself.view.custom.focusedField \u003d \"displayName\""
                           }
                         }
                       }
@@ -372,7 +435,7 @@
               "name": "Keyboard"
             },
             "position": {
-              "basis": "280px",
+              "basis": "350px",
               "shrink": 0
             },
             "props": {
@@ -401,7 +464,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "{view.custom.error} != \"\""
+                    "expression": "{view.custom.error} !\u003d \"\""
                   }
                 }
               },
@@ -461,7 +524,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"cancel\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"cancel\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
                   }
                 }
               }
@@ -480,13 +543,13 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "{view.custom.editInitials} != \"\" && {view.custom.editDisplayName} != \"\""
+                    "expression": "{view.custom.editInitials} !\u003d \"\" \u0026\u0026 {view.custom.editDisplayName} !\u003d \"\""
                   }
                 }
               }
             },
             "props": {
-              "text": "Save & Continue",
+              "text": "Save \u0026 Continue",
               "style": {
                 "classes": "pf-btn pf-btn-primary"
               }

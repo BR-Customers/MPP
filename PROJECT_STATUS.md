@@ -12,7 +12,12 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-08-18 — **FAT Day 1 punch list worked; `main` == `jacques/working` == `0b000bdf`; full suite 2728/0.** Eight items triaged against the actual code, three shipped, one closed with no build, two decided, one deferred, one written up for the customer. Working notes: **`notes/2026-08-18_fat-day1-punch-list.md`** (all eight, with file references, decisions and what is still owed) and **`notes/2026-08-18_serialized-line-validation-number-brief.md`** (item 7 for Tom).
+**Last updated:** 2026-09-02 — **Operator sign-in switched from initials to a 5-digit PIN.** Nine commits on `jacques/working` (`83f9c244`..`b589aa60`). Migration `0069_appuser_pin.sql` adds `Location.AppUser.Pin NVARCHAR(5) NOT NULL UNIQUE` + `CK_AppUser_Pin_Format`; new procs `AppUser_GetActiveByPin` (presence gate) / `AppUser_GetByPin` (history), both mirroring the initials pair; `Pin` carried through Create/Update/Get/List/Deprecate. New `Components/PlantFloor/Numpad` view; `Popups/InitialsEntry` now takes a PIN and auto-submits on the 5th digit (path + popup id unchanged, so none of the ~16 call sites moved). Config-Tool Users screen gained a PIN column and field.
+> **Leading zeros are load-bearing** — a full-time employee's code is `04218`, a temp's `40218`. Column is NVARCHAR, NQ params are `sqlType: 7`. Three tests guard it (`046_AppUser_Pin_lookups.sql` round trip, plus 4-digit and duplicate rejection in `010_AppUser_Create.sql`). Full suite **3221 assertions, 2 failures — both pre-existing** and unrelated (`0069_Aggregate_Reports/010_schema.sql` defect-code charge-to counts; verified identical at baseline with the PIN work stashed, 3136/2).
+> **No seed dependency.** Operators self-provision at the terminal on first unrecognised PIN; the unknown-PIN dialog makes **Re-type PIN** primary and *Register New User* secondary so a mistyped digit cannot become a duplicate person. **Elevation deliberately untouched** — a PIN grants presence only, AD per-action elevation is unchanged, and a supervisor covering a break just signs in with their own PIN.
+> **Owed:** live smoke of the four edited/new views — the gateway trial had expired when the work landed, so they are validated by JSON parse + clean `scan.ps1` only. `MPP_MES_Dev` has migration `0069` applied and all 16 users backfilled with zero-padded placeholder PINs (`JGP` = `00022`, `TOM` = `00023`); real PINs need entering before use. Dev also still shows migrations `0064`/`0065`/`0066` pending out-of-order — pre-existing, untouched.
+
+**Previously:** 2026-08-18 — **FAT Day 1 punch list worked; `main` == `jacques/working` == `0b000bdf`; full suite 2728/0.** Eight items triaged against the actual code, three shipped, one closed with no build, two decided, one deferred, one written up for the customer. Working notes: **`notes/2026-08-18_fat-day1-punch-list.md`** (all eight, with file references, decisions and what is still owed) and **`notes/2026-08-18_serialized-line-validation-number-brief.md`** (item 7 for Tom).
 > **Shipped.** **#6 session timeout** (`c62ea5e2`) — migration `0058` sets operator presence to **30 min** (1800 s) on the live row and on the shipped DEFAULT; the Config-Tool **Users** page editor now speaks **whole minutes with the unit shown** and converts at the boundary, refusing a blank/non-numeric field instead of writing a silent fallback. Storage deliberately stays in **seconds** (the unit `Common.Session` computes with and both CHECKs are written against). **#3 terminal IP auto-nav** (`126d267c`) — root-caused: **nothing was broken.** `Terminal_GetByIpAddress` v1.2 + `ufn_NormalizeIpAddress` are correct (26 dedicated assertions green); localhost failed at the prod test because **no terminal carries `127.0.0.1`**, so the fallback row was the right answer — it was just *silent*. TerminalSelector now shows an `UnregisteredBanner` naming `{session.props.address}` when `isFallback`, and `sql/scratch/register_loopback_terminal.sql` binds one chosen terminal to loopback for gateway-host demos (scratch, never a seed — shipping `127.0.0.1` to a plant terminal would make every gateway-host session claim to be it). **#8 vision station by IP** (`05764eaa`) — migration `0059` renames LTD-7 `VisionAppUrl` → **`VisionAppIp`**; new **`Location.ufn_VisionAppUrl`** composes `http://<ip>/` (`:port` and `/path` carried through, an existing full URL passed through unchanged — which is what makes the rename non-breaking, blank → NULL so the iframe never loads `http:///`); `Terminal_GetClosureContext` v1.1 reads it but **keeps the result column named `VisionAppUrl`**, so `applyToSession`, the session property and both assembly views are untouched. +15 tests.
 > **Closed / decided.** **#5 weekend shifts** — no build: Jacques authors the weekend `ShiftSchedule` in the existing editor. (One residual worth doing: `DowntimeEvent_Start` writes `ShiftId = NULL` silently when no shift instance is open and `GetByScope` then filters the event out of every shift-scoped read — any future schedule gap reproduces the disappearance.) **#4 production/inventory report** — **building = Area** (no new location tier; `DC1`–`DC4`, `TRIM1/2`, `MA1/2`, `WHSE`, `SHIPIN/OUT` already hang off the facility) and **daily = shift-anchored, 3rd → 1st → 2nd**, so the report must group on the `Oee.Shift` instance, not a `CAST(… AS DATE)` cut that would split 3rd shift across two rows. Spec pending.
 > **Two corrections to earlier assumptions, both the same mistake:** a `SessionPolicy` editor **did** already exist (Config-Tool Users page), and there is **no missing attribute editor** for terminals — the Plant Hierarchy attribute panel renders generically from `LocationAttributeDefinition` via `buildAttributesForType`, so any LTD-7 attribute appears automatically.
@@ -50,6 +55,105 @@
 > **See the `## 🔖 2026-07-14 — PLC Integration` section directly below for the full PLC writeup.**
 
 **Prior header note (hunter/explore, 2026-07-07):** **Smoke-findings fix pass on `hunter/explore`: all 14 items from `notes/2026-07-07_smoke_findings.md` addressed (full suite 1945/1945, only the pre-existing `010_Parts_codes_crud` thrower). Per-item ✅/⚠️ annotations live in the findings file. Re-smoke owed — see the section directly below.** Prior header note (2026-07-06 second session): **Jacques 2026-07-06 meeting task list worked on `hunter/explore`: 21 of 24 items fixed, tested, committed (full suite 1934/1934, only the pre-existing `010_Parts_codes_crud` thrower). 3 items open pending live repro / Jacques's call.** Prior header note (earlier 2026-07-06):
+
+---
+
+## 🔖 2026-08-26 — LOT Detail report: ancestor process history + reachable picker
+
+All 8 tasks of `docs/superpowers/plans/2026-08-25-lot-detail-report-genealogy-nesting.md`
+complete on `jacques/working`. Full narrative in
+`notes/2026-08-25_lot-detail-report-handoff.md`.
+
+**The report was never broken.** It was a working five-page traceability document whose data
+sources all returned correctly. It *looked* empty because the picker was
+`TOP 100 ORDER BY CreatedAt DESC` and Dev's newest LOTs are terminal SubAssemblies with no
+descendants, containers or events.
+
+**The picker was the real defect** and is fixed (`214d1674`): a traceability report you can
+only run on the newest 100 LOTs is backwards, since its purpose is investigating something
+that shipped months ago. Any LOT of any age is now reachable by scanning or typing its LTT
+name. The resolver branches on TYPE, not parseability — LOT names are zero-padded numerics, so
+`int('000000001')` succeeds and returns `1` while that LOT's Id is `254`. Resolving numerically
+first would have rendered a fully populated Honda traceability document **for the wrong LOT**.
+The plan's own code did exactly that; it had never been run.
+
+**Nested report tables work, but the markup is exacting and fails SILENTLY** — the most reusable
+finding here. The whole nest must sit inside a **`<table-group>`**, and the child table must carry
+the **same width and height as its parent with no `x`/`y` of its own**. Break either and the child
+renders nothing at all — no exception, no log line, no partial output. The reverted `80f87484`, my
+first attempt, and the pre-existing **`Rejects Part Matrix`** (whose nests have never rendered) all
+break the same two rules. Working skeleton now in `ignition-context-pack/10_reporting_module.md`,
+taken from the production Boar's Head `CryovacEnterpriseWeeklyReport`. The "Ancestor Process
+History" page is built as designed on that shape.
+
+I initially concluded from two failing examples that the engine did not support nesting at all, and
+wrote that into the pack, memory and this file. Jacques corrected it by pointing at the Boar's Head
+reports. **Two failures sharing an author-error are not evidence about the engine**, and "no working
+example in this repo" is not "unsupported".
+
+**Section counts now appear in every page subtitle** (`ce89ce56`). An empty ReportMill table is
+a bare header over a void with no "no rows" message, so an empty section read as broken — the
+thing that started this investigation.
+
+**The report now has a generator in version control** — the biggest structural win. It
+previously had none: six `data.bin` files were built ad-hoc in a scratchpad and only the
+binaries committed. `tools/reports/` now holds the layout as editable XML, the SQL as Python, a
+generator, and a reproduction test proving byte-level fidelity. Never hand-edit `data.bin`.
+
+**Process note:** the broken layout commit `80f87484` was reverted (`9c64ff9e`) before any new
+work. Its layout XML had been authored into the plan as verbatim code from ~10 minutes of
+reading samples, never rendered, and faithfully transcribed by the implementer. Report layout
+is interactive work — render, look, adjust — not a delegable transcription task. A clean render
+with no exception proves nothing; bad layout renders blank and logs nothing.
+
+**A reported "defect" that turned out not to be one:** the footer rendering literal `@Page@` /
+`@PageMax@` is a **PNG artifact, not a bug**. PNG is not a paginated format, so the page-number
+keys cannot resolve; the same report rendered to PDF shows `Page 1 of 6` correctly on every page.
+The markup is byte-identical to the production Boar's Head reports. Recorded in the pack, because
+the PNG-based verify harness makes this look like a project-wide bug.
+
+**`Rejects Part Matrix` was shipping broken and is now fixed** (`11d6f268`). It rendered, so it read
+as working, but its `ByParty` and `Defects` nested tables produced nothing — operators got part rows
+with the department split and defect breakdown silently absent, on an `available: True` report. Fixed
+at the generator (`nested_table()` in `tools/build_aggregate_reports.py`), which emitted the same
+malformed nest — no `<table-group>`, children given their own offsets and boxes — so the next nested
+report would have inherited it. Verified by render in PDF and PNG.
+
+**Open, chipped, not fixed:** `InventoryManager.receiveLoose` has the same int-first resolution
+bug the picker had, safe today only because part numbers contain letters.
+
+**All five aggregate reports are now content-verified by PDF render** (2026-08-26), not merely
+"it rendered" — every value checked against the proc output that feeds it:
+
+| Report | Verdict |
+|---|---|
+| Rejects - Transaction Detail | ✅ full detail rows (part, LOT, operator, defect, charge-to, qty) |
+| Rejects - Plant Summary | ✅ all 6 departments matching SQL exactly (Die Cast `25,241 / 192 / 25,433 / 0.75`), non-reject scrap section, customer-scrap explainer |
+| Rejects - Part Matrix | ✅ fixed this session (`11d6f268`) — both nested sections now render |
+| Hold Status | ✅ the one open hold, complete (`000000005 / 1,220 pcs / Trim Shop 1 / Precautionary / 533 h`) |
+| Shipping History | ⚠️ headers only — **correct, not broken** (see below) |
+
+**Shipping History was gated on a flag that will never be set — fixed** (`10bf8b81`). It returned
+zero rows and would have done so forever: `Lots.Container_ListShipped` scoped on
+`ContainerStatusCodeId = 3` (Shipped), and per Jacques there will never be a Shipped flag in
+practice — MPP ships through their own infrastructure and MES is never told. Not empty because
+nothing shipped; empty because the gate can never open.
+
+The proc header already reasoned correctly about the **timestamp** ("closure time is not a degraded
+proxy, it is the ceiling of what this system can ever know") and then failed to apply the same
+reasoning to the **scope**. Scope is now closed containers (Complete or Shipped) ranged on
+`CompletedAt`, with the AIM shipper ID left-joined so a container that closed *without* one still
+appears blank — a closed container missing its ID is a reconciliation gap worth surfacing. Report
+note and subtitle now say "closed", not "shipped". The test asserting the old contract was inverted
+deliberately; 56/56 green. Render-verified: all 5 containers listed.
+
+**Consequence still open — the Shipped status is a dead path.** Nothing sets status 3 except the
+Shipping Dock's Ship button (operator action, not integration). If that step will not be used, the
+button / `Lots.Container_Ship` / its NQ and entity wrapper are dead weight that will read as working
+features at FAT. Scoped but deliberately NOT actioned in
+`notes/2026-08-26_shipped-status-dead-path-scope.md` — it needs one question answered by MPP, then
+an FDS revision + Open Item, not a silent code deletion. The system is correct meanwhile: the
+report no longer depends on the flag.
 
 ---
 

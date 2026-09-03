@@ -187,3 +187,59 @@ WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Code = d.Code);
 
 PRINT 'Seed 030 (FRS defect codes) applied: ' + CAST(@@ROWCOUNT AS NVARCHAR(10)) + ' new rows.';
 GO
+
+-- ============================================================
+-- Classification (migration 0067) -- charge-to party + non-reject scrap.
+--
+-- Applied HERE as well as in the migration because of ordering: a reset runs
+-- migrations BEFORE seeds, so 0067's backfill sees an empty DefectCode and
+-- no-ops. The migration's copy is what fixes an in-place upgrade (Dev/Prod,
+-- where the codes already exist); this copy is what fixes a fresh reset.
+-- Same split migration 0048 uses for OperationCategoryId -- keep the two in
+-- step if the mapping ever changes.
+--
+-- Guarded on the columns existing so this seed still applies cleanly to a
+-- database that predates 0067.
+-- ============================================================
+IF COL_LENGTH(N'Quality.DefectCode', N'ChargeToPartyId') IS NOT NULL
+BEGIN
+    DECLARE @cpDieCast     BIGINT = (SELECT Id FROM Quality.ChargeToParty WHERE Code = N'DieCast');
+    DECLARE @cpTrimShop    BIGINT = (SELECT Id FROM Quality.ChargeToParty WHERE Code = N'TrimShop');
+    DECLARE @cpMachineShop BIGINT = (SELECT Id FROM Quality.ChargeToParty WHERE Code = N'MachineShop');
+    DECLARE @cpMppNS       BIGINT = (SELECT Id FROM Quality.ChargeToParty WHERE Code = N'MppNonSpecific');
+    DECLARE @cpSupplierNS  BIGINT = (SELECT Id FROM Quality.ChargeToParty WHERE Code = N'SupplierNonSpecific');
+
+    DECLARE @ocDieCast BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
+    DECLARE @ocTrim    BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'Trim');
+    DECLARE @ocMachAsm BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'MachiningAssembly');
+
+    -- HSP -> Non-Specific Supplier (supplier-provided parts).
+    UPDATE Quality.DefectCode SET ChargeToPartyId = @cpSupplierNS
+    WHERE ChargeToPartyId IS NULL
+      AND Code IN (N'247', N'248', N'249', N'250', N'252', N'253');
+
+    -- Prod. Control + Quality Control -> Non-Specific MPP.
+    UPDATE Quality.DefectCode SET ChargeToPartyId = @cpMppNS
+    WHERE ChargeToPartyId IS NULL
+      AND Code IN (N'225', N'201', N'202', N'203', N'204', N'205', N'212');
+
+    -- The three process families, from OperationCategory.
+    UPDATE Quality.DefectCode SET ChargeToPartyId = @cpDieCast
+    WHERE ChargeToPartyId IS NULL AND OperationCategoryId = @ocDieCast;
+
+    UPDATE Quality.DefectCode SET ChargeToPartyId = @cpTrimShop
+    WHERE ChargeToPartyId IS NULL AND OperationCategoryId = @ocTrim;
+
+    UPDATE Quality.DefectCode SET ChargeToPartyId = @cpMachineShop
+    WHERE ChargeToPartyId IS NULL AND OperationCategoryId = @ocMachAsm;
+
+    -- Counted, but excluded from every reject percentage.
+    --   107 Test Part (DC)             170 Machine Trial (MS)
+    --   229 Trial Part (DC)
+    --   230 Assembled on to NG (DC)    199 Assembled on to NG (MS)
+    UPDATE Quality.DefectCode SET IsNonRejectScrap = 1
+    WHERE IsNonRejectScrap = 0 AND Code IN (N'107', N'170', N'229', N'230', N'199');
+
+    PRINT 'Seed 030 classification applied (charge-to party + non-reject scrap).';
+END
+GO

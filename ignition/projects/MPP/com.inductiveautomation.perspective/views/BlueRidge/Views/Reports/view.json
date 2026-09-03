@@ -1,17 +1,25 @@
 {
   "custom": {
+    "lotOpts": [],
     "rangeEnd": null,
     "rangeStart": null,
     "reportSource": "Downtime Report",
     "selectedDesc": "Loss analysis for one shift, by machine and reason.",
     "selectedKey": "downtime_shift",
-    "selectedShift": null,
-    "selectedTitle": "Downtime by Shift",
     "selectedLot": null,
-    "lotOpts": []
+    "selectedShift": null,
+    "selectedTitle": "Downtime by Shift"
   },
   "params": {},
   "propConfig": {
+    "custom.lotOpts": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Reports.lotOptions\")"
+        },
+        "type": "expr"
+      }
+    },
     "custom.reportParams": {
       "binding": {
         "config": {
@@ -26,14 +34,6 @@
           "expression": "runScript(\"BlueRidge.Reports.shiftOptions\")"
         },
         "type": "expr"
-      }
-    },
-    "custom.lotOpts": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Reports.lotOptions\")"
-        }
       }
     }
   },
@@ -90,7 +90,7 @@
                     "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11.5px"
                   },
-                  "text": "Loss analysis for one shift, by machine & reason."
+                  "text": "Loss analysis for one shift, by machine \u0026 reason."
                 },
                 "type": "ia.display.label"
               }
@@ -116,7 +116,7 @@
               "props.style.backgroundColor": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.selectedKey} = \"downtime_shift\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                    "expression": "if({view.custom.selectedKey} \u003d \"downtime_shift\", \"rgba(34,168,204,0.14)\", \"transparent\")"
                   },
                   "type": "expr"
                 }
@@ -184,7 +184,7 @@
               "props.style.backgroundColor": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.selectedKey} = \"downtime_range\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                    "expression": "if({view.custom.selectedKey} \u003d \"downtime_range\", \"rgba(34,168,204,0.14)\", \"transparent\")"
                   },
                   "type": "expr"
                 }
@@ -252,7 +252,7 @@
               "props.style.backgroundColor": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.selectedKey} = \"lot_detail\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                    "expression": "if({view.custom.selectedKey} \u003d \"lot_detail\", \"rgba(34,168,204,0.14)\", \"transparent\")"
                   },
                   "type": "expr"
                 }
@@ -320,7 +320,7 @@
               "props.style.backgroundColor": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.selectedKey} = \"shot_count\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                    "expression": "if({view.custom.selectedKey} \u003d \"shot_count\", \"rgba(34,168,204,0.14)\", \"transparent\")"
                   },
                   "type": "expr"
                 }
@@ -362,7 +362,7 @@
                     "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11.5px"
                   },
-                  "text": "Output, scrap & downtime by line, per shift/week."
+                  "text": "Output, scrap \u0026 downtime by line, per shift/week."
                 },
                 "type": "ia.display.label"
               }
@@ -388,7 +388,7 @@
               "props.style.backgroundColor": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.selectedKey} = \"line_perf\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                    "expression": "if({view.custom.selectedKey} \u003d \"line_perf\", \"rgba(34,168,204,0.14)\", \"transparent\")"
                   },
                   "type": "expr"
                 }
@@ -430,7 +430,7 @@
                     "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11.5px"
                   },
-                  "text": "Plantwide WIP snapshot by item & location."
+                  "text": "Plantwide WIP snapshot by item \u0026 location."
                 },
                 "type": "ia.display.label"
               }
@@ -456,7 +456,347 @@
               "props.style.backgroundColor": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.selectedKey} = \"inventory\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                    "expression": "if({view.custom.selectedKey} \u003d \"inventory\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Rejects - Transaction Detail"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Every reject record, with defect and charge-to."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"rejects_detail\", \"Rejects - Transaction Detail\", \"Every reject record, with defect and charge-to.\", \"Rejects Transaction Detail\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileRejectsDetail"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} \u003d \"rejects_detail\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Rejects - Plant Summary"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Departmental scrap and reject % across the plant."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"rejects_summary\", \"Rejects - Plant Summary\", \"Departmental scrap and reject % across the plant.\", \"Rejects Plant Summary\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileRejectsSummary"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} \u003d \"rejects_summary\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Rejects - Part Matrix"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Per part: department split and defect detail."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"rejects_matrix\", \"Rejects - Part Matrix\", \"Per part: department split and defect detail.\", \"Rejects Part Matrix\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileRejectsMatrix"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} \u003d \"rejects_matrix\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Hold Status"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Every LOT and container currently on hold."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"hold_status\", \"Hold Status\", \"Every LOT and container currently on hold.\", \"Hold Status\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileHoldStatus"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} \u003d \"hold_status\", \"rgba(34,168,204,0.14)\", \"transparent\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderRadius": "8px",
+                "cursor": "pointer",
+                "gap": "2px",
+                "padding": "12px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "T"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "14.5px",
+                    "fontWeight": 600
+                  },
+                  "text": "Shipping History"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "D"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11.5px"
+                  },
+                  "text": "Shipped containers, dated by container closure."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectReport(\"shipping_history\", \"Shipping History\", \"Shipped containers, dated by container closure.\", \"Shipping History\", True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileShippingHistory"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedKey} \u003d \"shipping_history\", \"rgba(34,168,204,0.14)\", \"transparent\")"
                   },
                   "type": "expr"
                 }
@@ -562,7 +902,7 @@
                   "meta.visible": {
                     "binding": {
                       "config": {
-                        "expression": "{view.custom.selectedKey} = \"downtime_shift\""
+                        "expression": "{view.custom.selectedKey} \u003d \"downtime_shift\""
                       },
                       "type": "expr"
                     }
@@ -605,7 +945,7 @@
                   "meta.visible": {
                     "binding": {
                       "config": {
-                        "expression": "{view.custom.selectedKey} = \"downtime_range\""
+                        "expression": "{view.custom.selectedKey} \u003d \"downtime_range\" || {view.custom.selectedKey} \u003d \"rejects_detail\" || {view.custom.selectedKey} \u003d \"rejects_summary\" || {view.custom.selectedKey} \u003d \"rejects_matrix\" || {view.custom.selectedKey} \u003d \"shipping_history\""
                       },
                       "type": "expr"
                     }
@@ -642,7 +982,7 @@
                   "meta.visible": {
                     "binding": {
                       "config": {
-                        "expression": "{view.custom.selectedKey} = \"downtime_range\""
+                        "expression": "{view.custom.selectedKey} \u003d \"downtime_range\" || {view.custom.selectedKey} \u003d \"rejects_detail\" || {view.custom.selectedKey} \u003d \"rejects_summary\" || {view.custom.selectedKey} \u003d \"rejects_matrix\" || {view.custom.selectedKey} \u003d \"shipping_history\""
                       },
                       "type": "expr"
                     }
@@ -668,7 +1008,6 @@
                 "type": "ia.input.date-time-input"
               },
               {
-                "type": "ia.input.dropdown",
                 "meta": {
                   "name": "LotDropdown"
                 },
@@ -679,36 +1018,39 @@
                 "propConfig": {
                   "meta.visible": {
                     "binding": {
-                      "type": "expr",
                       "config": {
-                        "expression": "{view.custom.selectedKey} = \"lot_detail\""
-                      }
+                        "expression": "{view.custom.selectedKey} \u003d \"lot_detail\""
+                      },
+                      "type": "expr"
                     }
                   },
                   "props.options": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "path": "view.custom.lotOpts"
-                      }
+                      },
+                      "type": "property"
                     }
                   },
                   "props.value": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.selectedLot"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
-                  "placeholder": "Select LOT",
+                  "allowCustomOptions": true,
+                  "placeholder": "Scan or select LOT",
+                  "search": true,
                   "style": {
                     "classes": "pf-field-select"
                   }
-                }
+                },
+                "type": "ia.input.dropdown"
               },
               {
                 "events": {
@@ -833,12 +1175,12 @@
             "reportPath",
             "available"
           ],
-          "script": "\ttry:\n\t\tself.view.custom.selectedKey = key\n\t\tself.view.custom.selectedTitle = title\n\t\tself.view.custom.selectedDesc = desc\n\t\tif not available:\n\t\t\tBlueRidge.Common.Notify.toast(title, \"This report is coming soon.\", \"info\")\n\t\t\treturn\n\t\tself.view.custom.reportSource = reportPath\n\t\tif key == \"downtime_range\" and not self.view.custom.rangeStart:\n\t\t\tend = system.date.now()\n\t\t\tself.view.custom.rangeEnd = end\n\t\t\tself.view.custom.rangeStart = system.date.addDays(end, -7)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\"Report error\", str(e), \"error\")"
+          "script": "\ttry:\n\t\tself.view.custom.selectedKey \u003d key\n\t\tself.view.custom.selectedTitle \u003d title\n\t\tself.view.custom.selectedDesc \u003d desc\n\t\tif not available:\n\t\t\tBlueRidge.Common.Notify.toast(title, \"This report is coming soon.\", \"info\")\n\t\t\treturn\n\t\tself.view.custom.reportSource \u003d reportPath\n\t\tif key in (\"downtime_range\", \"rejects_detail\", \"rejects_summary\", \"rejects_matrix\", \"shipping_history\") and not self.view.custom.rangeStart:\n\t\t\tend \u003d system.date.now()\n\t\t\tself.view.custom.rangeEnd \u003d end\n\t\t\tself.view.custom.rangeStart \u003d system.date.addDays(end, -7)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\"Report error\", str(e), \"error\")"
         },
         {
           "name": "printPdf",
           "params": [],
-          "script": "\ttry:\n\t\tsrc = self.view.custom.reportSource\n\t\tsel = self.view.custom.selectedKey\n\t\tparams = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.reportParams) or {}\n\t\tif sel == \"downtime_shift\" and not params.get(\"ShiftId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a shift\", \"Select a shift before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel == \"downtime_range\" and not params.get(\"StartDate\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick dates\", \"Select a date range before printing.\", \"warn\")\n\t\t\treturn\n\t\tif not src:\n\t\t\tBlueRidge.Common.Notify.toast(\"No report\", \"Select a report first.\", \"warn\")\n\t\t\treturn\n\t\tdata = system.report.executeReport(src, \"MPP\", params, \"pdf\")\n\t\tsystem.perspective.download(src + \".pdf\", data)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\"Print failed\", str(e), \"error\")"
+          "script": "\ttry:\n\t\tsrc \u003d self.view.custom.reportSource\n\t\tsel \u003d self.view.custom.selectedKey\n\t\tparams \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.reportParams) or {}\n\t\tif sel \u003d\u003d \"downtime_shift\" and not params.get(\"ShiftId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick a shift\", \"Select a shift before printing.\", \"warn\")\n\t\t\treturn\n\t\tif sel in (\"downtime_range\", \"rejects_detail\", \"rejects_summary\", \"rejects_matrix\", \"shipping_history\") and not params.get(\"StartDate\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Pick dates\", \"Select a date range before printing.\", \"warn\")\n\t\t\treturn\n\t\tif not src:\n\t\t\tBlueRidge.Common.Notify.toast(\"No report\", \"Select a report first.\", \"warn\")\n\t\t\treturn\n\t\tdata \u003d system.report.executeReport(src, \"MPP\", params, \"pdf\")\n\t\tsystem.perspective.download(src + \".pdf\", data)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\"Print failed\", str(e), \"error\")"
         }
       ],
       "extensionFunctions": null,

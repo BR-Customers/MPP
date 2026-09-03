@@ -32,6 +32,7 @@ Comments may be returned as annotations on the Word document, an annotated PDF, 
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.8 | 2026-09-02 | Blue Ridge Automation | **Operator sign-in moves from initials to a 5-digit PIN.** **FDS-04-002** retitled *Operator PIN Capture* — the terminal prompts for a PIN and resolves it via the new `Location.AppUser_GetActiveByPin`; the PIN is an **identifier, not a credential** (plaintext, admin-visible, echoed on screen, verifies no secret) and replaces initials as the sign-in key only because MPP already issues PINs internally. **FDS-04-004**'s "no clock-number/PIN convenience login" prohibition is struck: that clause barred a *credential* login, whereas a PIN establishes presence only and confers no privilege — nothing reads the signed-in user's `IgnitionRole` as an authorisation gate, and every elevated action still takes a per-action AD credential (**FDS-04-007**, unchanged). A supervisor covering a break therefore does a plain PIN swap with no elevation. **FDS-04-001** identity table gains `Pin`, `NOT NULL` for *both* identity classes, with leading zeros significant (full-time `04218` vs temp `40218`) and therefore string-typed end to end. **FDS-04-005** presence resolution repointed at the active-only resolvers. **FDS-04-010** rewritten: operators **self-provision at the terminal** on first unrecognised PIN — there is no pre-loaded roster and no seed dependency — with re-entry as the prominent action so a mistyped digit cannot become a duplicate person. Initials and DisplayName are retained unchanged as attribution fields. Migration `0069_appuser_pin.sql`; procs `AppUser_GetActiveByPin` / `AppUser_GetByPin`. |
 | 1.7 | 2026-07-29 | Blue Ridge Automation | **Die Cast redesigned to a per-cavity Open → accumulate → release lifecycle.** (spec `docs/superpowers/specs/2026-07-28-diecast-per-cavity-lifecycle-design.md`, migration `0045`) Die Cast LOT creation (**FDS-05-004**, retitled) no longer mints a fully-populated `Good`-status LOT at scan time — it **opens** an empty per-`(Tool, ToolCavity)` accumulator basket at the new `Open` status (`PieceCount = 0`), which fills across shifts and is explicitly released when full. Four new requirements added: **FDS-05-039** (basket lifecycle overview), **FDS-05-040** (shift-output recording — die-wide gross shot entry, per-cavity good/scrap split via `Workorder.DieCast_GetShiftOutputBreakdown`, additive scrap, soft `MaxLotSize` ceiling), **FDS-05-041** (Release: `Open → Good` + first `LotMovement` to warehouse storage), **FDS-05-042** (Void: empty `Open → Scrap`). **FDS-05-013/-014** (status codes / transition rules) gain the `Open` status and its `OPEN → GOOD` / `OPEN → SCRAP` transitions. **FDS-05-036** (lazy LOT creation) and **FDS-05-037** (close semantics) amended with Die-Cast-specific carve-outs. **FDS-06-001/-002/-003** (§6.2 Die Cast Workflow) rewritten: the production screen is now an Open panel + Shape-1 die-wide shift-output entry with a Currently-Open list (Release/Void); good/scrap capture moves from `Workorder.ProductionEvent` checkpoints to the new `Workorder.DieCastContribution` ledger (additive scrap continues to post to `RejectEvent`, unchanged). `Workorder.ProductionEvent` is otherwise unaffected — it remains the checkpoint mechanism for Trim / Machining / Assembly. All SQL landed + tested (full `MPP_MES_Test` suite 2225/0), deployed to `MPP_MES_Dev`; `DieCastBody` view rebuilt (first cut, pending Jacques's live smoke — see `PROJECT_STATUS.md` 2026-07-29). See Data Model v2.1 for the `Open` `LotStatusCode` row and the new `Workorder.DieCastContribution` table. |
 | 1.6 | 2026-07-06 | Blue Ridge Automation | **Machining extract-one + assembly finished-good LOT (Spec 2).** Machining OUT is now **extract-one / partial-remainder** - the operator extracts one-or-more sub-LOTs of an entered quantity and the parent STAYS OPEN with its remaining balance, closing only at zero (retires the even-N-way-split default; **closes UJ-03** and executes the v1.3a carried action). Amended **FDS-05-009** (extraction workflow), **FDS-05-010** (partial-remainder handling), **FDS-05-022** (parent stays open across extractions). Assembly-out (serialized AND non-serialized) now **mints a finished-good LOT** where `tray = LOT`, consuming `BOM x PieceCount` FIFO (oldest-first by `CreatedAt`) from line inventory with the Container retained as the wrapper; consumption targets the finished-good LOT. Amended **FDS-06-013** (non-serialized mint + tray=LOT + container wrapper), **FDS-06-010/011** (serialized mints the FG LOT), **FDS-06-020/021** (`ConsumptionEvent.ProducedLotId` is the primary consumption target; assembly genealogy shape). Reconciled the FIFO-ordering wording into one stated rule per terminal class (machining-in queue `LotMovement.MovedAt` FDS-06-007; machining-cell cavity FIFO `CreatedAt` FDS-05-029; assembly consumption `CreatedAt` FDS-06-013). New column `Lots.ContainerTray.FinishedGoodLotId` (see Data Model). Closes **OI-32** (lineside check-in IS the allocation). Design record: `docs/superpowers/specs/2026-07-02-machining-assembly-plant-floor-flow-design.md`. |
 | 1.5 | 2026-07-02 | Blue Ridge Automation | **Operation-type model restructure (Spec 1).** Operation templates are decoupled from a specific Area: `OperationTemplate.AreaLocationId` is replaced by an operation **role** (`OperationTypeId` → new `Parts.OperationType`, grouped by `Parts.OperationCategory`) so one template serves all areas of a kind (e.g. one die-cast template for DC1–DC4) and a terminal resolves the right template by role. Amended: **FDS-03-012** (`AreaLocationId` → `OperationTypeId` field), **FDS-03-009** (operation template defines the role, not the area), **FDS-02-001 note** + **FDS-02-003** (defect/downtime screens filter by the terminal's runtime area, not the template). Defect/downtime code area filtering is otherwise unchanged (those tables keep their own `AreaLocationId`). **FDS-05-025** sort/inspection-terminator marker is orthogonal to `OperationType` (a route-step property) — no conflict. Migrations `0032`/`0033`; SQL + Ignition NQ/entity layers built and green; Config-Tool views pending Designer smoke. |
@@ -728,24 +729,34 @@ The MES SHALL validate at WorkOrder Create / Edit time that the WO target quanti
 
 ## 4. User Identity, Authentication & Elevation — `MVP`
 
-Operators do not authenticate. They are identified on a terminal by their initials, which are stamped onto every event. Elevated actions (holds, overrides, scrap, maintenance WOs, admin edits) require an Active Directory login at the moment of action — no session-sticky elevation, no clock-number/PIN convenience login.
+Operators do not authenticate. They are identified on a terminal by a **5-digit PIN** — an identifier MPP already issues internally, not a credential — and the resolved user is stamped onto every event. Elevated actions (holds, overrides, scrap, maintenance WOs, admin edits) require an Active Directory login at the moment of action — no session-sticky elevation. Entering a PIN establishes presence only and confers no privilege whatsoever.
 
 ### 4.1 Identity Model
 
 #### FDS-04-001 — Two Identity Classes
 The MES SHALL recognise two classes of `Location.AppUser`:
 
-| Class | AdAccount | Initials | IgnitionRole | How they identify |
-|---|---|---|---|---|
-| Operator | NULL | NOT NULL | NULL | Initials entered at a shop-floor terminal |
-| Interactive User (Quality, Supervisor, Engineering, Admin) | NOT NULL | NOT NULL | NOT NULL | Active Directory login |
+| Class | AdAccount | Initials | Pin | IgnitionRole | How they identify |
+|---|---|---|---|---|---|
+| Operator | NULL | NOT NULL | NOT NULL | NULL | PIN entered at a shop-floor terminal |
+| Interactive User (Quality, Supervisor, Engineering, Admin) | NOT NULL | NOT NULL | NOT NULL | NOT NULL | Active Directory login for elevation; PIN for terminal presence |
 
-Every event and mutation SHALL stamp `AppUserId` — never free-text initials or names. Initials are a natural key used at the UI layer only; the database records the resolved `AppUserId`.
+`Pin` is `NOT NULL` for **both** classes. An interactive user must exist in `Location.AppUser` for elevation to resolve their account at all, and may also step onto the floor and sign in at a terminal, so a universal PIN removes any operator-vs-interactive branching from the sign-in path.
 
-#### FDS-04-002 — Operator Initials Capture
-When an operator approaches a shop-floor terminal to perform their first action, the UI SHALL prompt for initials. The MES SHALL look up the `AppUser` by initials and establish an **operator presence context** on that terminal's Perspective session. No password is verified. The presence context SHALL apply to subsequent events until:
+PINs are exactly 5 numeric characters and **leading zeros are significant** — a full-time employee's code is `04218`, a temp's is `40218`. The PIN is therefore stored and transported as a string; any numeric coercion would strip the zero and lock out every full-time employee.
 
-- another operator enters different initials, or
+Every event and mutation SHALL stamp `AppUserId` — never free-text initials, PINs or names. Initials and PIN are natural keys used at the UI layer only; the database records the resolved `AppUserId`. Initials remain the human-readable label shown on screen and in reports; the PIN is only how a person is recognised at a terminal.
+
+#### FDS-04-002 — Operator PIN Capture
+When an operator approaches a shop-floor terminal to perform their first action, the UI SHALL prompt for their 5-digit PIN. The MES SHALL resolve the `AppUser` via `Location.AppUser_GetActiveByPin` and establish an **operator presence context** on that terminal's Perspective session.
+
+The PIN is an **identifier, not a credential**: it is stored in plaintext, is visible to administrators, is echoed on screen as it is typed, and verifies no secret. It replaces initials as the sign-in key only because MPP already issues PINs internally and operators know them. No password is verified at any point in this flow.
+
+A PIN that resolves to a **deprecated** user SHALL be refused with a message directing the operator to a supervisor, and SHALL NOT offer registration — that PIN is already taken. A PIN that resolves to nothing SHALL offer, in order of prominence, re-entry first and new-operator registration second (FDS-04-010).
+
+The presence context SHALL apply to subsequent events until:
+
+- another operator enters a different PIN, or
 - the terminal has been idle for 30 minutes and the operator answers "No" to the re-confirmation prompt.
 
 Operator presence is NOT an authenticated session. It is a stamping context. The operator cannot perform elevated actions from within it.
@@ -759,14 +770,14 @@ Presence behavior follows the **view flavor** assigned to the terminal (FDS-02-0
 #### FDS-04-004 — Interactive User Authentication
 Interactive users (Quality, Supervisor, Engineering, Admin) SHALL authenticate via Ignition's Active Directory User Source. AD groups SHALL map to the Ignition roles in FDS-04-008. Operators SHALL NOT exist in AD.
 
-There is no shop-floor-terminal convenience login. An interactive user authorising an elevated action from a shop-floor terminal SHALL enter AD credentials via the elevation prompt described in FDS-04-006. (A badge-scan or RFID-based elevation mechanism is a documented future enhancement aligned with Honda's RFID-on-labels initiative — see OI-08 addenda — but is not in MVP scope.)
+PIN sign-in establishes **presence only** and grants no privilege — nothing in the runtime reads the signed-in user's `IgnitionRole` as an authorisation gate. An interactive user authorising an elevated action from a shop-floor terminal SHALL enter AD credentials via the elevation prompt described in FDS-04-006, regardless of whose PIN is currently signed in. A supervisor stepping in to cover an operator's break therefore signs in with their own PIN like anyone else: a plain presence swap, no elevation, no added permissions. (A badge-scan or RFID-based elevation mechanism is a documented future enhancement aligned with Honda's RFID-on-labels initiative — see OI-08 addenda — but is not in MVP scope.)
 
 ### 4.2 Event Attribution on Mutations
 
 #### FDS-04-005 — Pre-Populated Initials Field
 Every shop-floor mutation screen (LOT creation, production event, downtime, inspection, container close, etc.) SHALL include an **Initials** field pre-populated from the terminal's presence context. The operator MAY override this value before submission — for example, when a pair-working partner is recording on their behalf.
 
-On submission, the MES SHALL resolve the submitted initials to an `AppUserId` via the `Location.AppUser_GetByInitials` proc. If the initials are unknown or resolve to a deprecated user, the MES SHALL block the submission with a clear validation message; it SHALL NOT auto-create users from unknown initials.
+On submission, the MES SHALL resolve the submitted initials to an `AppUserId` via the `Location.AppUser_GetActiveByInitials` proc (presence resolution at sign-in uses the PIN equivalent, `Location.AppUser_GetActiveByPin`). If the initials are unknown or resolve to a deprecated user, the MES SHALL block the submission with a clear validation message; it SHALL NOT auto-create users from unknown initials.
 
 #### FDS-04-006 — 30-Minute Presence Re-Confirmation
 After 30 minutes of terminal inactivity, the next operator interaction SHALL trigger a re-confirmation overlay:
@@ -818,7 +829,15 @@ Interactive-user roles configured in Ignition's identity provider map to AD grou
 - Elevated action controls (buttons, menu items) SHALL be visible on shop-floor screens but SHALL trigger the FDS-04-007 prompt on activation. Unauthorised users cancel out.
 
 #### FDS-04-010 — Operator AppUser Lifecycle
-Operator `AppUser` rows SHALL be managed by the Configuration Tool (Admin-only screen). MPP has no AD accounts for operators; their rows carry `AdAccount = NULL`, `Initials = NOT NULL, UNIQUE`, and no Ignition role. When an operator's initials would collide with an existing row, the Admin SHALL enter disambiguating initials (e.g., three- or four-character codes). Deprecation follows the standard `DeprecatedAt` soft-delete pattern; events referencing deprecated operators retain the historical `AppUserId`.
+Operator `AppUser` rows SHALL be **self-provisioned at the terminal**. There is no pre-loaded roster: the first time a person enters a PIN the MES does not recognise, the UI SHALL offer — with re-entry as the more prominent option — to register a new operator, capturing the PIN already entered plus initials and display name. The PIN is carried through read-only, so the number a person signs in with is the number stored against them.
+
+Re-entry is deliberately the default action. Under PIN sign-in a single mistyped digit reaches this dialog, and because registration is the only onboarding path, an emphasised "create" button would turn a typo into a duplicate person record.
+
+MPP has no AD accounts for operators; their rows carry `AdAccount = NULL`, `IgnitionRole = NULL`, and `Initials` / `Pin` both `NOT NULL, UNIQUE`. When an operator's initials would collide with an existing row, disambiguating initials SHALL be entered (e.g., three- or four-character codes); a colliding PIN is refused outright, since PINs are unique plant-wide.
+
+`Pin` uniqueness is enforced across the **full row set including deprecated rows**, so a retired person's PIN is never reissued and historical attribution can never be re-pointed at someone else.
+
+The Configuration Tool (Admin-only screen) remains the place to correct a record, re-issue a PIN, or deprecate a person — not to onboard one. Deprecation follows the standard `DeprecatedAt` soft-delete pattern; events referencing deprecated operators retain the historical `AppUserId`, and a deprecated person's PIN is refused at sign-in with a see-a-supervisor message rather than being offered registration.
 
 ---
 

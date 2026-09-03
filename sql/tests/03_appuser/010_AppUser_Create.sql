@@ -31,6 +31,7 @@ INSERT INTO #Result1
 EXEC Location.AppUser_Create
     @Initials     = N'JD',
     @DisplayName  = N'John Doe',
+    @Pin = N'93001',
     @AdAccount    = N'DOMAIN\jdoe',
     @IgnitionRole = N'Operator',
     @AppUserId    = 1;
@@ -126,6 +127,7 @@ INSERT INTO #Result2
 EXEC Location.AppUser_Create
     @Initials    = NULL,
     @DisplayName = N'No Initials User',
+    @Pin = N'93002',
     @AppUserId   = 1;
 
 DECLARE @S2    BIT         = (SELECT Status FROM #Result2);
@@ -153,6 +155,7 @@ INSERT INTO #Result3
 EXEC Location.AppUser_Create
     @Initials    = N'ND',
     @DisplayName = NULL,
+    @Pin         = N'93007',
     @AppUserId   = 1;
 
 DECLARE @S3    BIT         = (SELECT Status FROM #Result3);
@@ -189,6 +192,7 @@ INSERT INTO #Result4a
 EXEC Location.AppUser_Create
     @Initials    = N'DP',
     @DisplayName = N'Duplicate User',
+    @Pin = N'93003',
     @AppUserId   = 1;
 
 DECLARE @S4a    BIT         = (SELECT Status FROM #Result4a);
@@ -214,6 +218,7 @@ INSERT INTO #Result4b
 EXEC Location.AppUser_Create
     @Initials    = N'DP',
     @DisplayName = N'Duplicate User Again',
+    @Pin = N'93004',
     @AppUserId   = 1;
 
 DECLARE @S4b    BIT         = (SELECT Status FROM #Result4b);
@@ -257,6 +262,7 @@ INSERT INTO #Result5
 EXEC Location.AppUser_Create
     @Initials    = N'MIN',
     @DisplayName = N'Minimal Operator',
+    @Pin = N'93005',
     @AppUserId   = 1;
 
 DECLARE @S5    BIT         = (SELECT Status FROM #Result5);
@@ -303,6 +309,7 @@ INSERT INTO #Result6
 EXEC Location.AppUser_Create
     @Initials     = N'IR6',
     @DisplayName  = N'Role Without AD',
+    @Pin = N'93006',
     @AdAccount    = NULL,
     @IgnitionRole = N'Supervisor',
     @AppUserId    = 1;
@@ -329,6 +336,80 @@ EXEC test.Assert_RowCount
     @TestName      = N'[IgnitionRoleWithoutAd] No row inserted',
     @ExpectedCount = 0,
     @ActualCount   = @RowCount6;
+GO
+
+-- =============================================
+-- Test 7: a 4-digit PIN is rejected.
+--   Full-time employees' codes are 5 characters with a LEADING ZERO
+--   (04218), never 4 digits. If this ever passes, something has coerced
+--   the PIN to a number and every full-time employee is locked out.
+-- =============================================
+CREATE TABLE #ShortPin (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #ShortPin
+EXEC Location.AppUser_Create
+    @Initials    = N'SPN',
+    @DisplayName = N'Short Pin',
+    @Pin         = N'4218',
+    @AppUserId   = 1;
+
+DECLARE @SStr7 NVARCHAR(1) = CAST((SELECT Status FROM #ShortPin) AS NVARCHAR(1));
+DROP TABLE #ShortPin;
+
+EXEC test.Assert_IsEqual
+    @TestName = N'[ShortPin] 4-digit PIN rejected',
+    @Expected = N'0',
+    @Actual   = @SStr7;
+GO
+
+-- =============================================
+-- Test 8: a duplicate PIN is rejected.
+--   PINs are UNIQUE across all rows, so a second person can never claim
+--   one -- this is what stops self-registration from re-pointing an
+--   existing person's attribution.
+-- =============================================
+CREATE TABLE #DupPinA (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #DupPinA
+EXEC Location.AppUser_Create
+    @Initials    = N'DPA',
+    @DisplayName = N'Dup Pin A',
+    @Pin         = N'93101',
+    @AppUserId   = 1;
+DROP TABLE #DupPinA;
+
+CREATE TABLE #DupPinB (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #DupPinB
+EXEC Location.AppUser_Create
+    @Initials    = N'DPB',
+    @DisplayName = N'Dup Pin B',
+    @Pin         = N'93101',
+    @AppUserId   = 1;
+
+DECLARE @SStr8 NVARCHAR(1) = CAST((SELECT Status FROM #DupPinB) AS NVARCHAR(1));
+DROP TABLE #DupPinB;
+
+EXEC test.Assert_IsEqual
+    @TestName = N'[DupPin] duplicate PIN rejected',
+    @Expected = N'0',
+    @Actual   = @SStr8;
+GO
+
+-- =============================================
+-- Test 9: a leading-zero PIN is STORED with its zero intact.
+-- =============================================
+CREATE TABLE #ZeroPin (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #ZeroPin
+EXEC Location.AppUser_Create
+    @Initials    = N'ZPN',
+    @DisplayName = N'Zero Pin',
+    @Pin         = N'09310',
+    @AppUserId   = 1;
+DROP TABLE #ZeroPin;
+
+DECLARE @StoredPin NVARCHAR(5) = (SELECT Pin FROM Location.AppUser WHERE Initials = N'ZPN');
+EXEC test.Assert_IsEqual
+    @TestName = N'[ZeroPin] leading zero stored intact',
+    @Expected = N'09310',
+    @Actual   = @StoredPin;
 GO
 
 -- =============================================

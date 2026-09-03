@@ -12,6 +12,7 @@
           "ItemId": null,
           "PartsPerTray": "",
           "TargetWeight": "",
+          "ToleranceWeight": "",
           "TraysPerContainer": ""
         },
         "ByVision": {
@@ -24,6 +25,7 @@
           "ItemId": null,
           "PartsPerTray": "",
           "TargetWeight": "",
+          "ToleranceWeight": "",
           "TraysPerContainer": ""
         },
         "ByWeight": {
@@ -36,6 +38,7 @@
           "ItemId": null,
           "PartsPerTray": "",
           "TargetWeight": "",
+          "ToleranceWeight": "",
           "TraysPerContainer": ""
         }
       },
@@ -50,6 +53,7 @@
           "ItemId": null,
           "PartsPerTray": "",
           "TargetWeight": "",
+          "ToleranceWeight": "",
           "TraysPerContainer": ""
         },
         "ByVision": {
@@ -62,6 +66,7 @@
           "ItemId": null,
           "PartsPerTray": "",
           "TargetWeight": "",
+          "ToleranceWeight": "",
           "TraysPerContainer": ""
         },
         "ByWeight": {
@@ -74,6 +79,7 @@
           "ItemId": null,
           "PartsPerTray": "",
           "TargetWeight": "",
+          "ToleranceWeight": "",
           "TraysPerContainer": ""
         }
       }
@@ -932,6 +938,60 @@
                 "children": [
                   {
                     "meta": {
+                      "name": "Label_ByWeight_ToleranceWeight",
+                      "tooltip": {
+                        "enabled": true,
+                        "text": "Symmetric tolerance about the target. Sent to the scale as both the + and the - tolerance. Required for the By Weight pack-out - a zero-width window rejects every tray."
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-label"
+                      },
+                      "text": "Tolerance (+/-)"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Input_ByWeight_ToleranceWeight"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.state.editDraft.ByWeight.ToleranceWeight"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "search-input",
+                        "width": "100px"
+                      }
+                    },
+                    "type": "ia.input.text-field"
+                  }
+                ],
+                "meta": {
+                  "name": "Field_ByWeight_ToleranceWeight"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "field",
+                    "gap": "2px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
                       "name": "Label_ByWeight_Serialized",
                       "tooltip": {
                         "enabled": true,
@@ -1502,12 +1562,12 @@
         {
           "name": "load",
           "params": [],
-          "script": "\titemId \u003d self.view.params.value or 0\n\tmethods \u003d [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\trows \u003d []\n\tif itemId:\n\t\trows \u003d BlueRidge.Parts.ContainerConfig.getByItemAll(itemId) or []\n\tbyMethod \u003d {}\n\tfor r in rows:\n\t\tm \u003d r.get(\"ClosureMethod\")\n\t\tif m:\n\t\t\tbyMethod[m] \u003d r\n\tdef _build():\n\t\tout \u003d {}\n\t\tfor m in methods:\n\t\t\tr \u003d byMethod.get(m)\n\t\t\tif r:\n\t\t\t\tout[m] \u003d {\n\t\t\t\t\t\"Id\":                r.get(\"Id\"),\n\t\t\t\t\t\"ItemId\":            itemId,\n\t\t\t\t\t\"ClosureMethod\":     m,\n\t\t\t\t\t\"Active\":            True,\n\t\t\t\t\t\"PartsPerTray\":      _s(r.get(\"PartsPerTray\")),\n\t\t\t\t\t\"TraysPerContainer\": _s(r.get(\"TraysPerContainer\")),\n\t\t\t\t\t\"DunnageCode\":       _s(r.get(\"DunnageCode\")),\n\t\t\t\t\t\"CustomerCode\":      _s(r.get(\"CustomerCode\")),\n\t\t\t\t\t\"IsSerialized\":      bool(r.get(\"IsSerialized\", False)),\n\t\t\t\t\t\"TargetWeight\":      _s(r.get(\"TargetWeight\")),\n\t\t\t\t}\n\t\t\telse:\n\t\t\t\tout[m] \u003d {\n\t\t\t\t\t\"Id\": None, \"ItemId\": itemId, \"ClosureMethod\": m,\n\t\t\t\t\t\"Active\": False,\n\t\t\t\t\t\"PartsPerTray\": \"\", \"TraysPerContainer\": \"\",\n\t\t\t\t\t\"DunnageCode\": \"\", \"CustomerCode\": \"\",\n\t\t\t\t\t\"IsSerialized\": False, \"TargetWeight\": \"\",\n\t\t\t\t}\n\t\treturn out\n\tself.view.custom.state \u003d {\"selected\": _build(), \"editDraft\": _build()}"
+          "script": "\titemId \u003d self.view.params.value or 0\n\tmethods \u003d [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\trows \u003d []\n\tif itemId:\n\t\trows \u003d BlueRidge.Parts.ContainerConfig.getByItemAll(itemId) or []\n\tbyMethod \u003d {}\n\tfor r in rows:\n\t\tm \u003d r.get(\"ClosureMethod\")\n\t\tif m:\n\t\t\tbyMethod[m] \u003d r\n\tdef _build():\n\t\tout \u003d {}\n\t\tfor m in methods:\n\t\t\tr \u003d byMethod.get(m)\n\t\t\tif r:\n\t\t\t\tout[m] \u003d {\n\t\t\t\t\t\"Id\":                r.get(\"Id\"),\n\t\t\t\t\t\"ItemId\":            itemId,\n\t\t\t\t\t\"ClosureMethod\":     m,\n\t\t\t\t\t\"Active\":            True,\n\t\t\t\t\t\"PartsPerTray\":      _s(r.get(\"PartsPerTray\")),\n\t\t\t\t\t\"TraysPerContainer\": _s(r.get(\"TraysPerContainer\")),\n\t\t\t\t\t\"DunnageCode\":       _s(r.get(\"DunnageCode\")),\n\t\t\t\t\t\"CustomerCode\":      _s(r.get(\"CustomerCode\")),\n\t\t\t\t\t\"IsSerialized\":      bool(r.get(\"IsSerialized\", False)),\n\t\t\t\t\t\"TargetWeight\":      _s(r.get(\"TargetWeight\")),\n\t\t\t\t\t\"ToleranceWeight\":   _s(r.get(\"ToleranceWeight\")),\n\t\t\t\t}\n\t\t\telse:\n\t\t\t\tout[m] \u003d {\n\t\t\t\t\t\"Id\": None, \"ItemId\": itemId, \"ClosureMethod\": m,\n\t\t\t\t\t\"Active\": False,\n\t\t\t\t\t\"PartsPerTray\": \"\", \"TraysPerContainer\": \"\",\n\t\t\t\t\t\"DunnageCode\": \"\", \"CustomerCode\": \"\",\n\t\t\t\t\t\"IsSerialized\": False, \"TargetWeight\": \"\",\n\t\t\t\t\t\"ToleranceWeight\": \"\",\n\t\t\t\t}\n\t\treturn out\n\tself.view.custom.state \u003d {\"selected\": _build(), \"editDraft\": _build()}"
         },
         {
           "name": "handleSave",
           "params": [],
-          "script": "\titemId \u003d self.view.params.value or 0\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdraft \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tmethods \u003d [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _toNum(v):\n\t\tif v is None or v \u003d\u003d \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttoSave \u003d []\n\ttoDeprecate \u003d []\n\tfor m in methods:\n\t\tblock \u003d draft.get(m) or {}\n\t\tpriorId \u003d block.get(\"Id\")\n\t\tpartsPerTray \u003d _toNum(block.get(\"PartsPerTray\"))\n\t\tif partsPerTray is not None and partsPerTray \u003e 0:\n\t\t\ttrays \u003d _toNum(block.get(\"TraysPerContainer\"))\n\t\t\tif trays is None or trays \u003c\u003d 0:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive trays per container for the %s pack-out.\" % m, \"warning\")\n\t\t\t\treturn\n\t\t\ttargetWeight \u003d None\n\t\t\tif m \u003d\u003d \"ByWeight\":\n\t\t\t\ttargetWeight \u003d _toNum(block.get(\"TargetWeight\"))\n\t\t\t\tif targetWeight is None or targetWeight \u003c\u003d 0:\n\t\t\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"The By Weight pack-out requires a positive target weight.\", \"warning\")\n\t\t\t\t\treturn\n\t\t\ttoSave.append({\"Id\": priorId, \"ItemId\": itemId, \"ClosureMethod\": m, \"TraysPerContainer\": trays, \"PartsPerTray\": partsPerTray, \"TargetWeight\": targetWeight, \"DunnageCode\": block.get(\"DunnageCode\"), \"CustomerCode\": block.get(\"CustomerCode\"), \"IsSerialized\": bool(block.get(\"IsSerialized\", False))})\n\t\telif priorId:\n\t\t\ttoDeprecate.append({\"Id\": priorId, \"ClosureMethod\": m})\n\tif not toSave and not toDeprecate:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Add at least one pack-out, or leave it cleared.\", \"info\")\n\t\treturn\n\tfailures \u003d []\n\tfor payload in toSave:\n\t\tif payload.get(\"Id\"):\n\t\t\tresult \u003d BlueRidge.Parts.ContainerConfig.update(payload)\n\t\telse:\n\t\t\tresult \u003d BlueRidge.Parts.ContainerConfig.add(payload)\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg \u003d (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (payload[\"ClosureMethod\"], msg))\n\tfor dep in toDeprecate:\n\t\tresult \u003d BlueRidge.Parts.ContainerConfig.deprecate(dep[\"Id\"])\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg \u003d (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (dep[\"ClosureMethod\"], msg))\n\tif failures:\n\t\tBlueRidge.Common.Notify.toast(\"Some pack-outs not saved\", \"; \".join(failures), \"error\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Container config saved\", \"Pack-out configuration saved.\", \"success\")\n\tself.load()"
+          "script": "\titemId \u003d self.view.params.value or 0\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdraft \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tmethods \u003d [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _toNum(v):\n\t\tif v is None or v \u003d\u003d \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttoSave \u003d []\n\ttoDeprecate \u003d []\n\tfor m in methods:\n\t\tblock \u003d draft.get(m) or {}\n\t\tpriorId \u003d block.get(\"Id\")\n\t\tpartsPerTray \u003d _toNum(block.get(\"PartsPerTray\"))\n\t\tif partsPerTray is not None and partsPerTray \u003e 0:\n\t\t\ttrays \u003d _toNum(block.get(\"TraysPerContainer\"))\n\t\t\tif trays is None or trays \u003c\u003d 0:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive trays per container for the %s pack-out.\" % m, \"warning\")\n\t\t\t\treturn\n\t\t\ttargetWeight \u003d None\n\t\t\ttoleranceWeight \u003d None\n\t\t\tif m \u003d\u003d \"ByWeight\":\n\t\t\t\ttargetWeight \u003d _toNum(block.get(\"TargetWeight\"))\n\t\t\t\tif targetWeight is None or targetWeight \u003c\u003d 0:\n\t\t\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"The By Weight pack-out requires a positive target weight.\", \"warning\")\n\t\t\t\t\treturn\n\t\t\t\ttoleranceWeight \u003d _toNum(block.get(\"ToleranceWeight\"))\n\t\t\t\tif toleranceWeight is None or toleranceWeight \u003c\u003d 0:\n\t\t\t\t\tBlueRidge.Common.Notify.toast(\"Tolerance required\", \"The By Weight pack-out requires a positive tolerance - a zero-width window rejects every tray.\", \"warning\")\n\t\t\t\t\treturn\n\t\t\ttoSave.append({\"Id\": priorId, \"ItemId\": itemId, \"ClosureMethod\": m, \"TraysPerContainer\": trays, \"PartsPerTray\": partsPerTray, \"TargetWeight\": targetWeight, \"ToleranceWeight\": toleranceWeight, \"DunnageCode\": block.get(\"DunnageCode\"), \"CustomerCode\": block.get(\"CustomerCode\"), \"IsSerialized\": bool(block.get(\"IsSerialized\", False))})\n\t\telif priorId:\n\t\t\ttoDeprecate.append({\"Id\": priorId, \"ClosureMethod\": m})\n\tif not toSave and not toDeprecate:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Add at least one pack-out, or leave it cleared.\", \"info\")\n\t\treturn\n\tfailures \u003d []\n\tfor payload in toSave:\n\t\tif payload.get(\"Id\"):\n\t\t\tresult \u003d BlueRidge.Parts.ContainerConfig.update(payload)\n\t\telse:\n\t\t\tresult \u003d BlueRidge.Parts.ContainerConfig.add(payload)\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg \u003d (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (payload[\"ClosureMethod\"], msg))\n\tfor dep in toDeprecate:\n\t\tresult \u003d BlueRidge.Parts.ContainerConfig.deprecate(dep[\"Id\"])\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg \u003d (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (dep[\"ClosureMethod\"], msg))\n\tif failures:\n\t\tBlueRidge.Common.Notify.toast(\"Some pack-outs not saved\", \"; \".join(failures), \"error\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Container config saved\", \"Pack-out configuration saved.\", \"success\")\n\tself.load()"
         },
         {
           "name": "handleDiscard",
@@ -1526,7 +1586,7 @@
           "params": [
             "method"
           ],
-          "script": "\tst \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)) or {}\n\tsel \u003d st.get(\"selected\") or {}\n\tdraft \u003d st.get(\"editDraft\") or {}\n\tcur \u003d draft.get(method) or {}\n\tdraft[method] \u003d {\"Id\": cur.get(\"Id\"), \"ItemId\": self.view.params.value or 0, \"ClosureMethod\": method, \"Active\": False, \"PartsPerTray\": \"\", \"TraysPerContainer\": \"\", \"DunnageCode\": \"\", \"CustomerCode\": \"\", \"IsSerialized\": False, \"TargetWeight\": \"\"}\n\tself.view.custom.state \u003d {\"selected\": sel, \"editDraft\": draft}"
+          "script": "\tst \u003d system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)) or {}\n\tsel \u003d st.get(\"selected\") or {}\n\tdraft \u003d st.get(\"editDraft\") or {}\n\tcur \u003d draft.get(method) or {}\n\tdraft[method] \u003d {\"Id\": cur.get(\"Id\"), \"ItemId\": self.view.params.value or 0, \"ClosureMethod\": method, \"Active\": False, \"PartsPerTray\": \"\", \"TraysPerContainer\": \"\", \"DunnageCode\": \"\", \"CustomerCode\": \"\", \"IsSerialized\": False, \"TargetWeight\": \"\", \"ToleranceWeight\": \"\"}\n\tself.view.custom.state \u003d {\"selected\": sel, \"editDraft\": draft}"
         }
       ],
       "extensionFunctions": null,

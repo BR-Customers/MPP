@@ -2,7 +2,7 @@
 -- Procedure:   Location.AppUser_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-13
--- Version:     3.0
+-- Version:     4.0
 --
 -- Description:
 --   Creates a new AppUser row. Initials are the primary accountability
@@ -14,6 +14,9 @@
 -- Parameters:
 --   @Initials NVARCHAR(10)            - Operator/user initials. Required. Unique.
 --   @DisplayName NVARCHAR(200)        - Display name. Required.
+--   @Pin NVARCHAR(5)                  - 5-digit sign-in PIN. Required for EVERY user.
+--                                       Unique across all rows including deprecated.
+--                                       Leading zeros significant -- string, not a number.
 --   @AdAccount NVARCHAR(100) NULL     - AD identity. Optional. Unique among non-NULL values.
 --   @IgnitionRole NVARCHAR(100) NULL  - Optional role. Requires @AdAccount to be set.
 --   @AppUserId BIGINT                 - User performing the action. Required for audit.
@@ -36,10 +39,14 @@
 --   2026-04-23 - 2.1 - Phase G.4: dropped @ClockNumber + @PinHash (legacy auth)
 --   2026-04-23 - 3.0 - Initials realignment: @Initials NOT NULL required,
 --                      @AdAccount now optional, IgnitionRole/AdAccount pairing enforced
+--   2026-09-02 - 4.0 - @Pin added (required): users sign in by PIN. Uniqueness
+--                      and 5-digit format validated here ahead of the DB
+--                      constraints so the UI gets a readable message.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.AppUser_Create
     @Initials     NVARCHAR(10),
     @DisplayName  NVARCHAR(200),
+    @Pin          NVARCHAR(5),
     @AdAccount    NVARCHAR(100)  = NULL,
     @IgnitionRole NVARCHAR(100)  = NULL,
     @AppUserId    BIGINT
@@ -56,6 +63,7 @@ BEGIN
     DECLARE @Params   NVARCHAR(MAX) =
         (SELECT @Initials     AS Initials,
                 @DisplayName  AS DisplayName,
+                @Pin          AS Pin,
                 @AdAccount    AS AdAccount,
                 @IgnitionRole AS IgnitionRole
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
@@ -131,6 +139,42 @@ BEGIN
             RETURN;
         END
 
+        -- PIN format: exactly 5 numeric digits (mirrors CK_AppUser_Pin_Format).
+        -- A leading zero is legal and significant -- 04218 is a full-time
+        -- employee's code -- so this must never be a numeric comparison.
+        IF @Pin IS NULL OR LEN(@Pin) <> 5 OR @Pin LIKE '%[^0-9]%'
+        BEGIN
+            SET @Message = N'PIN must be exactly 5 digits.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId           = @AppUserId,
+                @LogEntityTypeCode   = N'AppUser',
+                @EntityId            = NULL,
+                @LogEventTypeCode    = N'Created',
+                @FailureReason       = @Message,
+                @ProcedureName       = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- PIN uniqueness across ALL rows (active + deprecated): a retired
+        -- person's PIN stays reserved so historical attribution can never
+        -- collide with a newly issued one.
+        IF EXISTS (SELECT 1 FROM Location.AppUser WHERE Pin = @Pin)
+        BEGIN
+            SET @Message = N'An AppUser with this PIN already exists.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId           = @AppUserId,
+                @LogEntityTypeCode   = N'AppUser',
+                @EntityId            = NULL,
+                @LogEventTypeCode    = N'Created',
+                @FailureReason       = @Message,
+                @ProcedureName       = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
         -- IgnitionRole requires AdAccount (enforced at DB via CHECK constraint,
         -- but caught here for a friendly message before the INSERT fires)
         IF @IgnitionRole IS NOT NULL AND @AdAccount IS NULL
@@ -154,9 +198,9 @@ BEGIN
         BEGIN TRANSACTION;
 
         INSERT INTO Location.AppUser
-            (Initials, DisplayName, AdAccount, IgnitionRole, CreatedAt)
+            (Initials, DisplayName, Pin, AdAccount, IgnitionRole, CreatedAt)
         VALUES
-            (@Initials, @DisplayName, @AdAccount, @IgnitionRole, SYSUTCDATETIME());
+            (@Initials, @DisplayName, @Pin, @AdAccount, @IgnitionRole, SYSUTCDATETIME());
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 

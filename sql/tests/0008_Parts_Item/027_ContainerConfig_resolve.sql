@@ -19,13 +19,13 @@ GO
 DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-RES');
 
 -- GetByItem returns both
-CREATE TABLE #All (Id BIGINT, ItemId BIGINT, TraysPerContainer INT, PartsPerTray INT, IsSerialized BIT, DunnageCode NVARCHAR(50), CustomerCode NVARCHAR(50), ClosureMethod NVARCHAR(20), TargetWeight DECIMAL(10,4), CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), DeprecatedAt DATETIME2(3));
+CREATE TABLE #All (Id BIGINT, ItemId BIGINT, TraysPerContainer INT, PartsPerTray INT, IsSerialized BIT, DunnageCode NVARCHAR(50), CustomerCode NVARCHAR(50), ClosureMethod NVARCHAR(20), TargetWeight DECIMAL(10,4), ToleranceWeight DECIMAL(10,4), CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), DeprecatedAt DATETIME2(3));
 INSERT INTO #All EXEC Parts.ContainerConfig_GetByItem @ItemId = @Item;
 DECLARE @AllCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #All);
 EXEC test.Assert_IsEqual @TestName = N'[Resolve] GetByItem returns 2 rows', @Expected = N'2', @Actual = @AllCnt;
 
 -- GetByItemAndMethod resolves the ByVision one (12x8)
-CREATE TABLE #One (Id BIGINT, ItemId BIGINT, TraysPerContainer INT, PartsPerTray INT, IsSerialized BIT, DunnageCode NVARCHAR(50), CustomerCode NVARCHAR(50), ClosureMethod NVARCHAR(20), TargetWeight DECIMAL(10,4), CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), DeprecatedAt DATETIME2(3));
+CREATE TABLE #One (Id BIGINT, ItemId BIGINT, TraysPerContainer INT, PartsPerTray INT, IsSerialized BIT, DunnageCode NVARCHAR(50), CustomerCode NVARCHAR(50), ClosureMethod NVARCHAR(20), TargetWeight DECIMAL(10,4), ToleranceWeight DECIMAL(10,4), CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), DeprecatedAt DATETIME2(3));
 INSERT INTO #One EXEC Parts.ContainerConfig_GetByItemAndMethod @ItemId = @Item, @ClosureMethod = N'ByVision';
 DECLARE @VisPpt NVARCHAR(10) = (SELECT CAST(PartsPerTray AS NVARCHAR(10)) FROM #One);
 EXEC test.Assert_IsEqual @TestName = N'[Resolve] GetByItemAndMethod picks ByVision PartsPerTray', @Expected = N'8', @Actual = @VisPpt;

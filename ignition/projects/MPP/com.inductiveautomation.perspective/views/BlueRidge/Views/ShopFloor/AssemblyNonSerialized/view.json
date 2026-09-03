@@ -22,6 +22,7 @@
       "trayPosition": ""
     },
     "refreshToken": 0,
+    "scaleInstancePath": "",
     "selectedFinishedGoodItemId": null,
     "printerCards": [],
     "usePrinterCards": false,
@@ -30,6 +31,20 @@
   },
   "params": {},
   "propConfig": {
+    "custom.scaleInstancePath": {
+      "binding": {
+        "config": {
+          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.TerminalPlcDevice.getByTerminal\", 0, {session.custom.terminal.terminalLocationId}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\trows \u003d value or []\n\tfor r in rows:\n\t\tif (r.get(\"DeviceTypeCode\") or \"\") \u003d\u003d \"ScaleStation\":\n\t\t\treturn r.get(\"UdtInstancePath\") or \"\"\n\treturn \"\"",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
     "custom.printerCards": {
       "binding": {
         "type": "expr",
@@ -159,7 +174,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\t# Auto-populate from the part\u0027s container config: prefill the parts-in-tray\n\t# field with PartsPerTray (only into an EMPTY field - never overwrite input).\n\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif ppt and d.get(\"partsCount\") in (None, \"\"):\n\t\tself.view.custom.draft \u003d {\"partsCount\": ppt, \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
+        "script": "\t# Auto-populate from the part\u0027s container config: prefill the parts-in-tray\n\t# field with PartsPerTray (only into an EMPTY field - never overwrite input).\n\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif ppt and d.get(\"partsCount\") in (None, \"\"):\n\t\tself.view.custom.draft \u003d {\"partsCount\": ppt, \"trayPosition\": d.get(\"trayPosition\") or \"\"}\n\t# --- Flow A: push the checkweigh setpoint when the running part changes ---\n\t# ByWeight lines only. A ByCount / ByVision line has no ByWeight container\n\t# config, so the push would raise a persistent error toast on every change.\n\tif self.session.custom.closureMethod !\u003d \"ByWeight\":\n\t\treturn\n\tcontainer \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.container) or {}\n\titemId \u003d container.get(\"ItemId\") or self.view.custom.selectedFinishedGoodItemId\n\tif not itemId:\n\t\treturn\n\t# The scale\u0027s UDT instance path is per-terminal and lives on the terminal\u0027s\n\t# PLC-device mapping (session.custom.plcDevices), NOT on session.custom.terminal.\n\t# Rows arrive as Java ImmutableMaps: dev[\u0027Key\u0027] works, dev.get(...) does not.\n\tscalePath \u003d \"\"\n\tfor dev in (self.session.custom.plcDevices or []):\n\t\tif dev and dev[\"DeviceTypeCode\"] \u003d\u003d \"ScaleStation\":\n\t\t\tscalePath \u003d \"%s\" % (dev[\"UdtInstancePath\"] or \"\")\n\t\t\tbreak\n\tif not scalePath:\n\t\treturn\n\t# ok means \"the config was valid and the push STARTED\", NOT \"the terminal is\n\t# enforcing this target\" -- the command sequence runs asynchronously (spec\n\t# 6.5). Setpoint/State reaching Active is the authoritative signal, and that\n\t# is what gates the Weigh \u0026 Close Tray button.\n\tsetpoint \u003d BlueRidge.Workorder.ScaleWatcher.loadSetpointForItem(scalePath, self.session.custom.terminal.terminalLocationId, itemId)\n\tif not setpoint[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Scale setpoint not sent\", setpoint[\"message\"], \"error\", 0)"
       }
     }
   },
@@ -965,9 +980,45 @@
                                     "maxWidth": "360px",
                                     "textAlign": "center"
                                   },
-                                  "text": "Waiting for scale - PLC closes the container at target weight."
+                                  "text": "Waiting for scale - press Weigh \u0026 Close Tray, or the button on the indicator."
                                 },
                                 "type": "ia.display.label"
+                              },
+                              {
+                                "events": {
+                                  "component": {
+                                    "onActionPerformed": {
+                                      "config": {
+                                        "script": "\t# The scale\u0027s UDT instance path is per-terminal and lives on the terminal\u0027s\n\t# PLC-device mapping (session.custom.plcDevices), NOT on session.custom.terminal.\n\t# Rows arrive as Java ImmutableMaps: dev[\u0027Key\u0027] works, dev.get(...) does not.\n\tscalePath \u003d \"\"\n\tfor dev in (self.session.custom.plcDevices or []):\n\t\tif dev and dev[\"DeviceTypeCode\"] \u003d\u003d \"ScaleStation\":\n\t\t\tscalePath \u003d \"%s\" % (dev[\"UdtInstancePath\"] or \"\")\n\t\t\tbreak\n\tif not scalePath:\n\t\tBlueRidge.Common.Notify.toast(\"No scale mapped\", \"This terminal has no ScaleStation device configured.\", \"warning\", 6000)\n\t\treturn\n\t# The SAME entry point the physical ENTER-key trigger reaches, so a screen\n\t# tap and a button press mint identically. captureAndClose re-checks the\n\t# full five-condition gate -- props.enabled below is only a courtesy.\n\tresult \u003d BlueRidge.Workorder.ScaleWatcher.captureAndClose(scalePath, self.session.custom.terminal.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray closed - FG LOT minted\", errorTitle\u003d\"Cannot close tray\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
+                                "meta": {
+                                  "name": "WeighCloseTrayButton"
+                                },
+                                "position": {
+                                  "shrink": 0
+                                },
+                                "propConfig": {
+                                  "props.enabled": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "!coalesce(tag({view.custom.scaleInstancePath} + \"/Weight/InMotion\"), true) \u0026\u0026 coalesce(tag({view.custom.scaleInstancePath} + \"/Weight/IsValid\"), false) \u0026\u0026 coalesce(tag({view.custom.scaleInstancePath} + \"/Setpoint/State\"), \"\") \u003d \"Active\""
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-primary pf-btn-large"
+                                  },
+                                  "text": "Weigh \u0026 Close Tray"
+                                },
+                                "type": "ia.input.button"
                               }
                             ],
                             "meta": {

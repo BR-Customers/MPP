@@ -2,7 +2,7 @@
 -- Procedure:   Parts.ContainerConfig_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.3
+-- Version:     2.5
 --
 -- Description:
 --   Updates mutable fields of an active ContainerConfig. ItemId is
@@ -23,6 +23,7 @@
 --   @CustomerCode NVARCHAR(50) NULL
 --   @ClosureMethod NVARCHAR(20) NULL   -- OI-02 pending
 --   @TargetWeight DECIMAL(10,4) NULL   -- OI-02 pending
+--   @ToleranceWeight DECIMAL(10,4) NULL -- symmetric checkweigh window
 --   @AppUserId BIGINT                - Required for audit.
 --
 -- Result set:
@@ -46,6 +47,9 @@
 --   2026-07-17 - 2.4 - ClosureMethod is now immutable (the per-method
 --                       discriminator): removed from the UPDATE SET + audit
 --                       diff; a change attempt is rejected pre-transaction.
+--   2026-08-27 - 2.5 - @ToleranceWeight added (IND570 checkweigh, spec
+--                       2026-08-27; migration 0068). Mutable: in the SET list,
+--                       the field diff and both Old/NewValue snapshots.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.ContainerConfig_Update
     @Id                BIGINT,
@@ -56,6 +60,7 @@ CREATE OR ALTER PROCEDURE Parts.ContainerConfig_Update
     @CustomerCode      NVARCHAR(50)   = NULL,
     @ClosureMethod     NVARCHAR(20)   = NULL,
     @TargetWeight      DECIMAL(10,4)  = NULL,
+    @ToleranceWeight   DECIMAL(10,4)  = NULL,
     @AppUserId         BIGINT
 AS
 BEGIN
@@ -70,7 +75,8 @@ BEGIN
         (SELECT @Id AS Id, @TraysPerContainer AS TraysPerContainer,
                 @PartsPerTray AS PartsPerTray, @IsSerialized AS IsSerialized,
                 @DunnageCode AS DunnageCode, @CustomerCode AS CustomerCode,
-                @ClosureMethod AS ClosureMethod, @TargetWeight AS TargetWeight
+                @ClosureMethod AS ClosureMethod, @TargetWeight AS TargetWeight,
+                @ToleranceWeight AS ToleranceWeight
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
@@ -124,6 +130,7 @@ BEGIN
         DECLARE @OldCustomerCode   NVARCHAR(50);
         DECLARE @OldClosureMethod  NVARCHAR(20);
         DECLARE @OldTargetWeight   DECIMAL(10,4);
+        DECLARE @OldToleranceWeight DECIMAL(10,4);
 
         SELECT @ItemId           = ItemId,
                @OldTrays         = TraysPerContainer,
@@ -132,7 +139,8 @@ BEGIN
                @OldDunnageCode   = DunnageCode,
                @OldCustomerCode  = CustomerCode,
                @OldClosureMethod = ClosureMethod,
-               @OldTargetWeight  = TargetWeight
+               @OldTargetWeight  = TargetWeight,
+               @OldToleranceWeight = ToleranceWeight
         FROM Parts.ContainerConfig WHERE Id = @Id;
 
         -- Subject: parent Item's PartNumber
@@ -151,7 +159,8 @@ BEGIN
                 cc.DunnageCode,
                 cc.CustomerCode,
                 cc.ClosureMethod,
-                cc.TargetWeight
+                cc.TargetWeight,
+                cc.ToleranceWeight
             FROM Parts.ContainerConfig cc
             WHERE cc.Id = @Id
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
@@ -178,6 +187,9 @@ BEGIN
                  ELSE N'' END,
             CASE WHEN ISNULL(@OldTargetWeight, -999999) <> ISNULL(@TargetWeight, -999999)
                  THEN N', TargetWeight ' + ISNULL(CAST(@OldTargetWeight AS NVARCHAR(40)), N'null') + @Arrow + ISNULL(CAST(@TargetWeight AS NVARCHAR(40)), N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldToleranceWeight, -999999) <> ISNULL(@ToleranceWeight, -999999)
+                 THEN N', ToleranceWeight ' + ISNULL(CAST(@OldToleranceWeight AS NVARCHAR(40)), N'null') + @Arrow + ISNULL(CAST(@ToleranceWeight AS NVARCHAR(40)), N'null')
                  ELSE N'' END
         ), 1, 2, N'');  -- strip leading ", "
 
@@ -201,6 +213,7 @@ BEGIN
             DunnageCode       = @DunnageCode,
             CustomerCode      = @CustomerCode,
             TargetWeight      = @TargetWeight,
+            ToleranceWeight   = @ToleranceWeight,
             UpdatedAt         = SYSUTCDATETIME()
         WHERE Id = @Id;
 
@@ -216,7 +229,8 @@ BEGIN
                 cc.DunnageCode,
                 cc.CustomerCode,
                 cc.ClosureMethod,
-                cc.TargetWeight
+                cc.TargetWeight,
+                cc.ToleranceWeight
             FROM Parts.ContainerConfig cc
             WHERE cc.Id = @Id
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER

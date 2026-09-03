@@ -30,6 +30,7 @@
 --
 -- Change Log:
 --   2026-08-07 - 1.0 - Initial version (FAT-USR-090 presence-eligibility gate)
+--   2026-09-02 - 1.1 - Pin exposed in SELECT (terminal PIN sign-in)
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.AppUser_GetActiveByInitials
     @Initials NVARCHAR(10)
@@ -41,6 +42,7 @@ BEGIN
         Id,
         Initials,
         DisplayName,
+        Pin,
         AdAccount,
         IgnitionRole,
         CreatedAt,

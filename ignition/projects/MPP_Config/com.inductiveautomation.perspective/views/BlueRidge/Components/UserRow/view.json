@@ -6,7 +6,8 @@
     "DisplayName": "",
     "Id": null,
     "Initials": "",
-    "selected": false
+    "selected": false,
+    "Pin": ""
   },
   "propConfig": {
     "params.CreatedAt": {
@@ -26,6 +27,10 @@
     },
     "params.selected": {
       "paramDirection": "input"
+    },
+    "params.Pin": {
+      "paramDirection": "input",
+      "persistent": true
     }
   },
   "props": {
@@ -54,6 +59,26 @@
           }
         },
         "type": "ia.display.label"
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Pin"
+        },
+        "position": {
+          "basis": "100px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.Pin"
+              }
+            }
+          }
+        }
       },
       {
         "meta": {

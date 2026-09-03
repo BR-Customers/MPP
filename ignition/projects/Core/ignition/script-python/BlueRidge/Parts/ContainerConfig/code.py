@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-20
-# Version:          1.1
+# Version:          1.2
 #
 # Description:
 #   Read + mutation surface for the Item Master Container Config tab.
@@ -17,6 +17,7 @@
 # Change Log:
 #   2026-05-20 - 1.0 - Initial version (getByItem only).
 #   2026-05-26 - 1.1 - Phase 4: add() + update() mutation surface.
+#   2026-08-27 - 1.2 - ToleranceWeight threaded through the shape + add/update.
 # =============================================================================
 
 
@@ -51,7 +52,7 @@ _CONFIG_SHAPE = {
     "TraysPerContainer": 0, "PartsPerTray": 0,
     "IsSerialized": False,
     "DunnageCode": "", "CustomerCode": "",
-    "ClosureMethod": "", "TargetWeight": None,
+    "ClosureMethod": "", "TargetWeight": None, "ToleranceWeight": None,
 }
 
 
@@ -121,7 +122,8 @@ def add(data):
     """Create a new active ContainerConfig for an Item.
 
     data: {ItemId, TraysPerContainer, PartsPerTray, IsSerialized,
-           ClosureMethod, TargetWeight, DunnageCode, CustomerCode}
+           ClosureMethod, TargetWeight, ToleranceWeight,
+           DunnageCode, CustomerCode}
     Returns {Status, Message, NewId}.
 
     The proc enforces at-most-one-active-config-per-Item via a filtered
@@ -141,6 +143,7 @@ def add(data):
             "customerCode":      data.get("CustomerCode"),
             "closureMethod":     data.get("ClosureMethod"),
             "targetWeight":      data.get("TargetWeight"),
+            "toleranceWeight":   data.get("ToleranceWeight"),
             "appUserId":         BlueRidge.Common.Util._currentAppUserId(),
         },
     )
@@ -164,7 +167,8 @@ def update(data):
     deprecate this one and add a new one.
 
     data: {Id, TraysPerContainer, PartsPerTray, IsSerialized,
-           ClosureMethod, TargetWeight, DunnageCode, CustomerCode}
+           ClosureMethod, TargetWeight, ToleranceWeight,
+           DunnageCode, CustomerCode}
     Returns {Status, Message}.
     """
     data = _u(data) or {}
@@ -180,6 +184,7 @@ def update(data):
             "customerCode":      data.get("CustomerCode"),
             "closureMethod":     data.get("ClosureMethod"),
             "targetWeight":      data.get("TargetWeight"),
+            "toleranceWeight":   data.get("ToleranceWeight"),
             "appUserId":         BlueRidge.Common.Util._currentAppUserId(),
         },
     )

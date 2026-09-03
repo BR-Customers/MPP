@@ -611,7 +611,15 @@ EXEC test.Assert_IsEqual @TestName = N'[DefectListByType] trim code excluded',  
 GO
 
 -- Cleanup
-DELETE FROM Quality.DefectCode WHERE Code IN (N'TST-DF-S8', N'TEST-DEF-PW', N'TEST-DEF-TRIM');
+-- Every code this file creates, so the table is left as the seed left it.
+-- These rows outlive the file otherwise, and whole-table assertions in later
+-- suites then measure them (0069_Aggregate_Reports counted TEST-DEF-001/002
+-- among the seeded IsExcused codes until this was completed). Safe to DELETE:
+-- the only FK to Quality.DefectCode is Workorder.RejectEvent.DefectCodeId and
+-- this file records no reject events.
+DELETE FROM Quality.DefectCode
+WHERE Code IN (N'TST-DF-S8', N'TEST-DEF-PW', N'TEST-DEF-TRIM',
+               N'TEST-DEF-001', N'TEST-DEF-002', N'TEST-DEF-003');
 DROP TABLE #TestContext;
 GO
 

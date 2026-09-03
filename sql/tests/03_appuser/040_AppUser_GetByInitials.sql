@@ -25,6 +25,7 @@ CREATE TABLE #ByIn1 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),
@@ -57,6 +58,7 @@ CREATE TABLE #ByIn2 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),
@@ -85,6 +87,7 @@ INSERT INTO #Create3
 EXEC Location.AppUser_Create
     @Initials    = N'DP40',
     @DisplayName = N'Test Deprecated 040',
+    @Pin = N'95001',
     @AppUserId   = 1;
 DECLARE @NewId BIGINT = (SELECT TOP 1 NewId FROM #Create3);
 DROP TABLE #Create3;
@@ -101,6 +104,7 @@ CREATE TABLE #ByIn3 (
     Id           BIGINT,
     Initials     NVARCHAR(10),
     DisplayName  NVARCHAR(200),
+    Pin          NVARCHAR(5),
     AdAccount    NVARCHAR(100),
     IgnitionRole NVARCHAR(100),
     CreatedAt    DATETIME2(3),

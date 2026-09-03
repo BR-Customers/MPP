@@ -115,3 +115,172 @@ and Expanded"): **Rejects Report, Die Shot Report, Downtime Report, Production R
 Traceability/Honda **genealogy + shipping-history exports** (FAT-TRC-100/280/310) are the
 Spec H cluster this skill unblocks — TRC-310's Honda format is pending an example from MPP
 (`notes/2026-08-07_mpp-email-honda-trace-export.md`).
+
+## The format element uses `pattern=`, not `format=` (cost hours, 2026-08-25)
+
+Building the five aggregate reports, all five failed to render with the generic
+*"Enter a valid report in the source property"* — the same symptom as a title
+mismatch, but the titles were correct.
+
+**Cause:** the ReportMill `<format>` element's attribute is **`pattern`**, not
+`format`. An unrecognised attribute invalidates the element and takes the whole
+report down. Nothing in the gateway log points at it: the only reporting entries
+were `Error executing query parameter expression "{StartDate}"`, which is
+**benign noise the working reports emit too** — chasing it is a dead end.
+
+```xml
+<!-- WRONG: renders nothing, no useful log line -->
+<format type="date"   format="MM/dd/yy HH:mm" />
+<format type="number" format="#,##0" />
+
+<!-- RIGHT: copied from the working Downtime by Date Range report -->
+<format type="date"   pattern="MMM d, yyyy" null-string="&lt;N/A&gt;" />
+<format type="date"   pattern="MMM d  HH:mm" null-string="&lt;N/A&gt;" />
+<format type="number" pattern="#,##0"        null-string="&lt;N/A&gt;" />
+```
+
+**The technique that found it** — bisect from a KNOWN-GOOD report, not from the
+broken one. Build your report with the working report's layout XML verbatim: if
+it renders, the fault is entirely in your layout, and you can halve it from
+there (title block only, then table). Guessing at title/snapshot/param-type/SQL
+form burned far longer and eliminated nothing.
+
+**Two red herrings encountered on the way, both disproved by checking a WORKING
+report rather than assuming:**
+
+- *Row cells wider than the table.* Real in one of ours (588pt of cells in a
+  540pt table) — but `Downtime by Date Range` overflows too (550 in 540) and
+  renders fine. Not fatal.
+- *`logical_name="Times New Roman"`* (the layout helper's default) vs the
+  `Helvetica` every MPP report uses. Cosmetic; not the cause.
+
+Also worth knowing: a blank date picker does NOT render an unfiltered report —
+the module fails the parameter expression and the viewer shows nothing with no
+explanation. `BlueRidge.Reports.composeParams` now defaults a 14-day window.
+
+## Nested tables and column-keyed grouping DO work — but ONLY inside a `<table-group>` (2026-08-26)
+
+Both mechanisms are real and render correctly. Getting them wrong fails **silently** —
+no exception, no log line, no partial output — so a malformed nest looks exactly like an
+unsupported feature. Two independent attempts in this repo got it wrong the same way.
+
+### The shape that works
+
+Copied from the production **`CryovacEnterpriseWeeklyReport`** (Boar's Head), which nests
+five tables successfully:
+
+```xml
+<table-group x="36" y="100" width="540" height="632" useStroke="false">
+  <table width="540" height="632" list-key="Parent" startrowbreak="false">
+    <grouping key="Parent" details="true" />
+    <tablerow width="540" height="22" title="Parent Details"> … </tablerow>
+    <table width="540" height="632" list-key="Child">
+      <grouping key="Child" header="true" details="true" />
+      <tablerow width="540" height="15" title="Child Header">  … </tablerow>
+      <tablerow y="15" width="540" height="14" title="Child Details"> … </tablerow>
+    </table>
+  </table>
+</table-group>
+```
+
+Three rules, each of which silently renders nothing if broken:
+
+1. **The whole nest MUST be wrapped in `<table-group>`.** A `<table>` nested directly
+   inside another `<table>` with no wrapper renders nothing.
+2. **The child table carries the SAME `width` AND `height` as its parent, and NO `x`/`y`
+   of its own.** The `<table-group>` positions the stack. Giving the child its own
+   smaller box and offsets renders nothing.
+3. **`<tablerow title>` must read exactly `"<groupingKey> Header|Details|Summary"`** —
+   that string *is* the band binding. A nested table uses the **bare** child key
+   (`list-key="Child"`); a standalone table elsewhere in the document may use a dotted
+   path (`sites.siteTotals`).
+
+### Column-keyed grouping (a band per distinct value)
+
+Also real. From the production `CIPReport_OLD`, where `step` is the dataset and
+`stepIndex` is a **column** of it:
+
+```xml
+<grouping key="step" details="true" />
+<grouping key="stepIndex" header="true" details="true" />
+<tablerow width="540" height="1" title="step Details"> … 1px spacer … </tablerow>
+<tablerow y="51" width="540" height="596" version-key="phaseName"
+          title="stepIndex Details" structured="false" stay-with="0"> … </tablerow>
+```
+
+Note the dataset-level row is a **1px spacer** and the column-keyed row carries
+`structured="false"` (free-form band: children positioned absolutely inside it rather
+than as a row of cells), plus `version-key` and `stay-with`. Omitting those and writing
+it as an ordinary structured row produces **one** band carrying the **first row's**
+value — the "frozen band" symptom.
+
+### The trap that produced two broken nests here
+
+**`Rejects Part Matrix`** shipped with its `ByParty` / `Defects` tables rendering nothing:
+it omitted the `<table-group>` and gave each child its own `y` offset and a narrower box.
+The generator behind it (`nested_table()` in `tools/build_aggregate_reports.py`) had a
+docstring claiming the Cryovac shape while emitting exactly that malformation. Both were
+fixed 2026-08-26 (`11d6f268`) and the report now renders both sections — it is safe to
+read as a reference again, but read the **generator**, which carries the rules inline.
+
+The failure is completely silent, so a nest can pass review and a render check while
+producing nothing. **Render any report before adopting it as a reference, and check that
+every section actually has content** — not just that a page appeared. That single check is
+what separated "the feature is unsupported" from "our markup is malformed", after several
+hours spent on the former conclusion.
+
+Working references live outside this repo: `CryovacWeeklyEnterpriseReport.zip` and
+`ContainerFareCIPReport.zip` (Boar's Head, 8.1). They are also the provenance for the
+nested-**query** binary shape in `tools/reports/nesting_builder.py`.
+
+## An overflowing table repeats the WHOLE page
+
+When a table runs past the bottom of its page, ReportMill continues it by repeating the
+**entire page design** — every static element on that page, not just the table. A section
+sharing a page with a summary block will reprint that summary block on the continuation
+page. Give any table that can grow unboundedly its own page.
+
+## `@Page@` / `@PageMax@` resolve only in PAGINATED output — verify them in PDF, not PNG
+
+A footer element like:
+
+```xml
+<text x="36" y="762" width="260" height="16"><string>Page  @Page@  of  @PageMax@</string></text>
+```
+
+is correct and works. But `executeReport(..., "png")` renders the **literal text**
+`Page @Page@ of @PageMax@`, because PNG is not a paginated format and the page-number
+keys have nothing to resolve against. The same report rendered with
+`executeReport(..., "pdf")` shows `Page 1 of 6`, `Page 2 of 6`, and so on.
+
+This is a trap for the whole render-verify workflow, which is PNG-based: an unresolved
+`@token@` in a PNG normally *does* mean a broken binding, so the footer looks like a bug
+on every report in the project. It is not. **Confirm page-number tokens against a PDF
+render before "fixing" anything.** Checking the drawn text is enough:
+
+```python
+import pypdf, re
+r = pypdf.PdfReader("report.pdf")
+shown = re.compile(r'\(([^)]*)\)\s*Tj').findall(
+    r.pages[0].get_contents().get_data().decode('latin-1', 'replace'))
+print([x for x in shown if 'Page' in x])      # -> ['Page  1  of  6']
+```
+
+(`pypdf`'s `extract_text()` missed this string entirely — scan the content-stream
+text-showing operators instead.)
+
+Corroboration: the production Boar's Head reports use byte-identical footer markup.
+Markup that matches a known-good production report and still "fails" is a signal to
+question the verification method, not the markup.
+
+## Report PNGs are RGBA with a TRANSPARENT background
+
+`executeReport(..., "png")` returns an image whose page background is transparent, not
+white. Compositing it onto black (which is what a naive `.convert("RGB")` does) makes the
+page look inky and the dark-on-light text nearly unreadable — easy to misread as a broken
+render. Composite onto white before judging a layout:
+
+```python
+bg = Image.new("RGBA", page.size, (255, 255, 255, 255))
+Image.alpha_composite(bg, page).convert("RGB").save(out)
+```

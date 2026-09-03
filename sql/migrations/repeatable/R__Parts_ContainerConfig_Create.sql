@@ -2,7 +2,7 @@
 -- Procedure:   Parts.ContainerConfig_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.3
+-- Version:     2.5
 --
 -- Description:
 --   Creates a ContainerConfig for an Item. At most one active config is
@@ -24,6 +24,7 @@
 --   @CustomerCode NVARCHAR(50) NULL
 --   @ClosureMethod NVARCHAR(20) NULL   -- OI-02 pending
 --   @TargetWeight DECIMAL(10,4) NULL   -- OI-02 pending
+--   @ToleranceWeight DECIMAL(10,4) NULL -- symmetric checkweigh window
 --   @AppUserId BIGINT               - Required for audit.
 --
 -- Result set:
@@ -47,6 +48,10 @@
 --                       against Parts.ClosureMethodCode; duplicate check re-keyed
 --                       to (ItemId, ClosureMethod). Closure method is the
 --                       ContainerConfig discriminator (terminal-mode selection).
+--   2026-08-27 - 2.5 - @ToleranceWeight added (IND570 checkweigh, spec
+--                       2026-08-27; migration 0068). Symmetric window
+--                       half-width about @TargetWeight; carried into the
+--                       key-params narrative and the NewValue JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.ContainerConfig_Create
     @ItemId            BIGINT,
@@ -57,6 +62,7 @@ CREATE OR ALTER PROCEDURE Parts.ContainerConfig_Create
     @CustomerCode      NVARCHAR(50)   = NULL,
     @ClosureMethod     NVARCHAR(20)   = NULL,
     @TargetWeight      DECIMAL(10,4)  = NULL,
+    @ToleranceWeight   DECIMAL(10,4)  = NULL,
     @AppUserId         BIGINT
 AS
 BEGIN
@@ -72,7 +78,8 @@ BEGIN
         (SELECT @ItemId AS ItemId, @TraysPerContainer AS TraysPerContainer,
                 @PartsPerTray AS PartsPerTray, @IsSerialized AS IsSerialized,
                 @DunnageCode AS DunnageCode, @CustomerCode AS CustomerCode,
-                @ClosureMethod AS ClosureMethod, @TargetWeight AS TargetWeight
+                @ClosureMethod AS ClosureMethod, @TargetWeight AS TargetWeight,
+                @ToleranceWeight AS ToleranceWeight
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
@@ -137,11 +144,11 @@ BEGIN
         INSERT INTO Parts.ContainerConfig
             (ItemId, TraysPerContainer, PartsPerTray, IsSerialized,
              DunnageCode, CustomerCode, ClosureMethod, TargetWeight,
-             CreatedAt)
+             ToleranceWeight, CreatedAt)
         VALUES
             (@ItemId, @TraysPerContainer, @PartsPerTray, @IsSerialized,
              @DunnageCode, @CustomerCode, @ClosureMethod, @TargetWeight,
-             SYSUTCDATETIME());
+             @ToleranceWeight, SYSUTCDATETIME());
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
@@ -159,7 +166,9 @@ BEGIN
             CASE WHEN @ClosureMethod IS NOT NULL
                  THEN N'; ClosureMethod ' + @ClosureMethod ELSE N'' END,
             CASE WHEN @TargetWeight IS NOT NULL
-                 THEN N'; TargetWeight ' + CAST(@TargetWeight AS NVARCHAR(40)) ELSE N'' END
+                 THEN N'; TargetWeight ' + CAST(@TargetWeight AS NVARCHAR(40)) ELSE N'' END,
+            CASE WHEN @ToleranceWeight IS NOT NULL
+                 THEN N'; ToleranceWeight ' + CAST(@ToleranceWeight AS NVARCHAR(40)) ELSE N'' END
         ), 1, 2, N'');  -- strip leading "; "
 
         DECLARE @ActivityRaw NVARCHAR(MAX) =
@@ -181,7 +190,8 @@ BEGIN
                 cc.DunnageCode,
                 cc.CustomerCode,
                 cc.ClosureMethod,
-                cc.TargetWeight
+                cc.TargetWeight,
+                cc.ToleranceWeight
             FROM Parts.ContainerConfig cc
             WHERE cc.Id = @NewId
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER

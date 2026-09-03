@@ -1,0 +1,194 @@
+{
+  "custom": {},
+  "params": {
+    "messageName": "numpadKeyPressed"
+  },
+  "propConfig": {
+    "params.messageName": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 424,
+      "width": 400
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "justify": "center",
+      "alignItems": "center",
+      "style": {
+        "gap": "10px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Row1"
+        },
+        "position": {
+          "basis": "96px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": {
+            "basis": "120px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/_Keyboard/Key",
+          "style": {
+            "gap": "10px"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.messageName"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tmn \u003d value or \"numpadKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"123\"]"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Row2"
+        },
+        "position": {
+          "basis": "96px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": {
+            "basis": "120px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/_Keyboard/Key",
+          "style": {
+            "gap": "10px"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.messageName"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tmn \u003d value or \"numpadKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"456\"]"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Row3"
+        },
+        "position": {
+          "basis": "96px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": {
+            "basis": "120px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/_Keyboard/Key",
+          "style": {
+            "gap": "10px"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.messageName"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tmn \u003d value or \"numpadKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"789\"]"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Row4"
+        },
+        "position": {
+          "basis": "96px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": {
+            "basis": "120px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/_Keyboard/Key",
+          "style": {
+            "gap": "10px"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.messageName"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tmn \u003d value or \"numpadKeyPressed\"\n\treturn [\n\t\t{\"label\": \"Clear\", \"key\": \"\", \"action\": \"clear\", \"variant\": \"secondary\", \"messageName\": mn},\n\t\t{\"label\": \"0\", \"key\": \"0\", \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn},\n\t\t{\"label\": \"Back\", \"key\": \"\", \"action\": \"backspace\", \"variant\": \"secondary\", \"messageName\": mn}\n\t]"
+                }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

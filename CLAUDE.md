@@ -117,6 +117,56 @@ Every operation step resolves its `OperationTemplate` from the **LOT's route by 
 
 The methodology is **fragmented across five layers today** (view binding / view Python / Core-Python recorder / SQL proc / not-at-all) — converging it to one SQL resolver `Parts.ufn_OperationTemplateForLotRole` with thin-inert Python is a **prominent OPEN TODO** (top of `PROJECT_STATUS.md`; full inventory + blast radius in `notes/2026-07-16_operation-template-methodology-inventory.md`). Two latent-bug candidates flagged there: `AssemblyIn` records no Advance checkpoint; `AssemblyOut` mints with no template (unlike `MachiningOut`).
 
+### Operator sign-in is by PIN (2026-09-02)
+
+Shop-floor operators sign in with a **5-digit numeric PIN**, not initials.
+The PIN is an **identifier, not a credential** — `Location.AppUser.Pin
+NVARCHAR(5) NOT NULL UNIQUE`, plaintext, admin-visible, echoed on screen
+during entry. **Every** row carries one, AD users included (an AD user must
+exist in `AppUser` for elevation to resolve their account, and may also sign
+in at a terminal) — so there is no operator-vs-interactive branch anywhere
+in the sign-in path.
+
+**Leading zeros are significant.** A full-time employee's code is `04218`, a
+temp's is `40218`. The column is `NVARCHAR(5)` and every named-query
+parameter carrying it is `sqlType: 7` (String). Never `int()` a PIN and never
+use `sqlType: 3` — it eats the zero and locks out every full-time employee.
+Guarded by tests in `sql/tests/03_appuser/046_AppUser_Pin_lookups.sql`.
+
+Presence resolves through `Location.AppUser_GetActiveByPin` (active-only
+gate); `Location.AppUser_GetByPin` is the history lookup that lets the login
+screen say "deactivated" instead of offering self-registration on a PIN that
+is already taken — the same active/history split the initials procs use.
+Both are exposed as `BlueRidge.Location.AppUser.getActiveByPin` / `.getByPin`.
+
+`Initials` and `DisplayName` are retained unchanged as attribution fields:
+initials are what appear on screen and in reports, the PIN is only how a
+person is recognised at the terminal. Nothing downstream of
+`InitialsEntry.loginAs` changed — `session.custom.appUserId`, every
+mutation's `@AppUserId`, and the operator-change audit are identical.
+
+**There is no seed roster.** Operators self-provision: an unrecognised PIN
+offers registration, and the operator supplies initials + name against the
+PIN they already typed. The unknown-PIN dialog makes **Re-type PIN** the
+primary action and *Register New User* secondary, because a mistyped digit
+would otherwise become a duplicate person. The Config Tool Users screen is
+for correcting and deprecating, not onboarding.
+
+The login popups keep their historic folder names (`Popups/InitialsEntry`,
+`UnknownInitials`, `RegisterOperator`) deliberately — renaming them would
+force edits to the ~16 shop-floor views that open them. The numeric keypad
+is `Components/PlantFloor/Numpad`; the QWERTY `Keyboard` gained a digit row
+so registration can capture a PIN.
+
+**Elevation is a separate axis and was deliberately NOT touched.** A PIN
+grants presence only; every protected action still takes a per-action AD
+credential (FDS-04-007). `Common.Session.beginElevatedWindow` intentionally
+replaces `session.custom.user` with the supervisor so everything after an
+elevation is attributed to them — that is by design, not a defect. A
+supervisor covering a break instead does a plain PIN sign-in from the
+operator bar, which confers no privilege because nothing reads
+`session.custom.user.ignitionRole` as an authorization gate.
+
 ### Stored procedure template
 
 `sql/scripts/_TEMPLATE_stored_procedure.sql`. Three-tier error hierarchy. `RAISERROR` (not `THROW`) in CATCH blocks with nested TRY/CATCH for failure logging. Schema-qualify all DB references. `EXEC` parameters must be literals or `@variables` — never inline `CAST` / arithmetic / `CASE`.

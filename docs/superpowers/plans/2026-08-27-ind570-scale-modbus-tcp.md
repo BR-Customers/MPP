@@ -1,0 +1,1395 @@
+# IND570 Scale over Modbus TCP — Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Replace the OmniServer ASCII scale link on the seven Machining/Assembly checkweigh scales with a native Ignition Modbus TCP connection to their METTLER TOLEDO IND570 terminals.
+
+**Architecture:** The existing `ScaleStation` UDT keeps its name, parameters and 22 instance paths — only its member set changes, from the legacy `NET_*`/`TRG_*` names to folder-grouped members addressing IND570 holding registers. Two message slots: slot 1 permanently parked reporting net weight, slot 2 a command scratchpad for setpoint loads. The operator button reads live tags through a gate and calls the existing `Assembly.plcCompleteTray` path; nothing is latched in tags.
+
+**Tech Stack:** SQL Server 2022 · Ignition 8.3 (Perspective, Jython 2.7, Modbus TCP driver) · Python 3 for the tag generator.
+
+**Spec:** `docs/superpowers/specs/2026-08-27-ind570-scale-udt-modbus-tcp-design.md`
+
+## Global Constraints
+
+- **Branch:** `jacques/working`. Never commit to `main`.
+- **Git staging:** stage explicit paths only. Never `git add -u` or `git add -A` — a concurrent user git operation will sweep unrelated files into the commit.
+- **Commit trailer:** omit `Co-Authored-By: Claude`.
+- **SQL conventions:** `UpperCamelCase` tables/columns, `DECIMAL` not `FLOAT`, `NVARCHAR` not `VARCHAR`, `DATETIME2(3)`. Follow `sql/scripts/_TEMPLATE_stored_procedure.sql`.
+- **JDBC (FDS-11-011):** stored procedures SHALL NOT use `OUTPUT` parameters. Mutation procs end every exit path with `SELECT @Status AS Status, @Message AS Message;`. One result set per proc.
+- **Existing Ignition views are edited in the Designer, not on disk.** Designer's GSON serialization writes `=` `'` `<` `>` as 6-char unicode escapes and its in-memory model conflicts with on-disk changes. File edits are safe only for NEW views, Python scripts, named queries, SQL, and the tag JSON generator. Tasks 6 and 7 are therefore Designer tasks with written instructions, not file-edit tasks.
+- **UDT JSON is generated, never hand-edited.** `ignition/tags/generate_tags.py` is the single source of truth for `udt/*.json`, `instances/PlcDevices.json` and `sim/MPP_Sim_program.csv`. Edit the generator and re-run it.
+- **No business logic in Python.** Domain rules live in SQL. Protocol decode and command sequencing are not domain rules and correctly live in Jython.
+- **Test DB:** `MPP_MES_Test` (throwaway). Never destructively reset `MPP_MES_Dev` — it holds Jacques's manually-created parts.
+- **ASCII-only** in SQL seed/string values. `sqlcmd` reads `.sql` in the Windows codepage; em-dash and middle-dot become mojibake.
+
+---
+
+## ⚠️ Rev 2 — spec changed 2026-08-28, re-read before Task 5
+
+MPP are keeping their **physical buttons**. Capture is now **dual-trigger** and the setpoint push is **asynchronous**. See spec §5 (rewritten) and §6.5.
+
+Consequences for the remaining tasks:
+
+- **Task 3b (new)** — the UDT needs a `Trigger` folder. Task 3 shipped without it.
+- **Task 4b (new)** — the protocol layer needs command 75, a relative echo tolerance, a `None` guard, a shorter timeout and a read-back on park.
+- **Task 5 is rewritten.** The scale edge route is **retargeted, not deleted** — the trigger becomes `Trigger/EnterKey` instead of `NET_DataReady`. Step 2b's instruction to delete the 7 scale trigger paths is **superseded**: they are rewritten, not removed.
+- **Tasks 6 and 7** gain the screen-button half of the dual trigger and the async setpoint call.
+
+---
+
+## Verified codebase facts — read before writing any SQL
+
+Task 1 execution proved seven of this plan's assumptions wrong. They are corrected here; **any task writing SQL or tests must follow this section, not the plan author's original guesses.**
+
+1. **Assertion helper is `test.Assert_IsEqual`, not `test.AssertEqual`**, and the parameter order is `@TestName, @Expected, @Actual`. The full set: `Assert_IsEqual`, `Assert_IsNull`, `Assert_IsNotNull`, `Assert_RowCount`, `Assert_IsTrue`, `Assert_Contains`.
+
+2. **T-SQL rejects a subquery as an `EXEC` parameter.** `@Actual = (SELECT ...)` is a syntax error. Assign to a variable first — this is also the repo's standing convention ("EXEC parameters must be literals or `@variables`").
+
+3. **`SchemaVersion` takes `(MigrationId, Description)`** where `MigrationId` is an NVARCHAR matching the filename stem. There is no `VersionNumber` column and no timestamp parameter. Migrations also open with an `IF EXISTS (... WHERE MigrationId = ...) RETURN` guard. Copy `0067`'s form.
+
+4. **No migration in this repo uses `sp_addextendedproperty`.** Do not introduce it. Column rationale belongs in the migration header comment and the data model doc.
+
+5. **`Parts.Item_Create` takes `@PartNumber`, not `@ItemNumber`**, and `ItemTypeId` 4 is FinishedGood (not 5).
+
+6. **`ContainerConfig` read-proc result shape** is `Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized, DunnageCode, CustomerCode, ClosureMethod, TargetWeight, ToleranceWeight, CreatedAt, UpdatedAt, DeprecatedAt`.
+
+7. **Adding a column to a read proc's SELECT breaks every test that `INSERT-EXEC`s it into a temp table** (`Msg 213`). A parameter default protects *mutation*-proc callers; it does nothing for read-proc callers. Before changing any read proc's SELECT list, grep for tests that capture it and widen their temp tables in the same commit:
+
+```bash
+grep -rln "INSERT INTO #.* EXEC <Schema>.<Proc>" sql/tests/
+```
+
+---
+
+## Deviations from the spec — read before starting
+
+Two, both discovered while mapping the spec onto the existing code. Confirm with Jacques before Task 3.
+
+1. **The UDT keeps the name `ScaleStation`, not `IND570_Scale`.** The spec named it fresh, unaware that `ignition/tags/udt/ScaleStation.json` already exists with 7 scale instances inside `instances/PlcDevices.json` and matching `TerminalPlcDevice.UdtInstancePath` rows in the database (`[MPP]PlcDevices/<device>`). Renaming would require re-seeding those mappings for no benefit — the type name is protocol-agnostic. Members change; name, parameters and instance paths do not.
+
+2. **Parameter names reuse the existing ones.** The spec proposed `DeviceName`; the type already has `Device`, `BasePath` and `OpcServer`, which serve the same purpose and are already set per instance. Only `WeightUom` is new.
+
+---
+
+## File Structure
+
+| File | Responsibility | Task |
+|---|---|---|
+| `sql/migrations/versioned/0068_containerconfig_tolerance_weight.sql` | Adds `Parts.ContainerConfig.ToleranceWeight` | 1 |
+| `sql/migrations/repeatable/R__Parts_ContainerConfig_Create.sql` | + `@ToleranceWeight` param | 1 |
+| `sql/migrations/repeatable/R__Parts_ContainerConfig_Update.sql` | + `@ToleranceWeight` param | 1 |
+| `sql/migrations/repeatable/R__Parts_ContainerConfig_GetByItem.sql` | + `ToleranceWeight` in SELECT | 1 |
+| `sql/migrations/repeatable/R__Parts_ContainerConfig_GetByItemAndMethod.sql` | + `ToleranceWeight` in SELECT | 1 |
+| `sql/tests/0008_Parts_Item/028_ContainerConfig_tolerance.sql` | Tests for the above | 1 |
+| `ignition/tags/generate_tags.py` | Address-decoupled members + folder emission + `ScaleStation` rewrite | 2, 3 |
+| `ignition/tags/udt/ScaleStation.json` | **Generated** | 3 |
+| `ignition/tags/instances/PlcDevices.json` | Unchanged by Task 3 — instances carry no member data | — |
+| `ignition/tags/sim/MPP_Sim_program.csv` | **Generated** | 3 |
+| `.../BlueRidge/Workorder/Ind570/code.py` | **New.** Protocol layer: decode, command sequencer | 4 |
+| `.../BlueRidge/Workorder/ScaleWatcher/code.py` | Rewritten: capture gate + tray close; edge handler removed | 5 |
+| `.../ShopFloor/AssemblyNonSerialized/view.json` | **Designer only.** Capture button + setpoint push | 6, 7 |
+| `sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql` | `@WeightValue` / `@WeightUomId` passthrough | 9 |
+| `named-query/parts/ContainerConfig_{Create,Update}/` | + `toleranceWeight` param | 10 |
+| `BlueRidge/Parts/ContainerConfig/code.py` | `_CONFIG_SHAPE` + `add()`/`update()` passthrough | 10 |
+| `.../ItemMaster/ContainerConfig/view.json` | **Designer only.** Tolerance field | 10 |
+| `MPP_MES_DATA_MODEL.md`, `MPP_MES_FDS.md`, `MPP_MES_Open_Issues_Register.md` | Doc reconciliation | 8 |
+
+Ignition script paths are under `ignition/projects/Core/ignition/script-python/`.
+
+---
+
+### Task 1: `ContainerConfig.ToleranceWeight` — column, procs, tests ✅ DONE
+
+**Completed 2026-08-27, commit `d64dcb92`.** 8 files, 10 new assertions, `0008_Parts_Item` at 111/111.
+
+The original step-by-step code for this task has been removed rather than left in place. It contained the seven factual errors now recorded in **Verified codebase facts** above, and leaving it would invite the next task to copy them. The committed files are the reference:
+
+- `sql/migrations/versioned/0068_containerconfig_tolerance_weight.sql` — `Parts.ContainerConfig.ToleranceWeight DECIMAL(10,4) NULL`
+- `sql/migrations/repeatable/R__Parts_ContainerConfig_Create.sql` / `_Update.sql` — `@ToleranceWeight` after `@TargetWeight`, threaded through the failure JSON, the audit key-params narrative, and the `OldValue`/`NewValue` snapshots
+- `sql/migrations/repeatable/R__Parts_ContainerConfig_GetByItem.sql` / `_GetByItemAndMethod.sql` — projected after `TargetWeight`
+- `sql/tests/0008_Parts_Item/028_ContainerConfig_tolerance.sql` — new
+- `sql/tests/0008_Parts_Item/020_ContainerConfig_crud.sql`, `027_ContainerConfig_resolve.sql` — temp tables widened for the new projected column (finding 7)
+
+**Two things this task surfaced that are not yet resolved:**
+
+1. **The column is not settable from the app.** The named queries stop at `@TargetWeight` and the editor has no field. → **Task 10**.
+2. **Two pre-existing full-suite failures in `0069_Aggregate_Reports/010_schema.sql`** — charge-to-party and IsExcused counts. They pass when that file runs in isolation (56/56) and fail in the full suite, so they are ordering pollution: earlier files (`0011_Quality_Spec/040_DefectCode_crud.sql`, the `0022`/`0023` reject tests) leave `Quality.DefectCode` rows behind that 0069's plant-wide `COUNT(*)` assertions then pick up. Unrelated to this work and present before it. Worth its own fix; **do not treat a green run as requiring these two to pass** until then.
+
+---
+
+### Task 2: Teach the tag generator address-decoupled members and folders ✅ DONE
+
+**Completed 2026-08-27, commit `c1fa261a`.** All six generated artifacts verified byte-identical after the change; `opc_member`, `memory_member`, `expr_member` and `folder` are in place.
+
+Today `generate_tags.py` derives each member's OPC address from its tag name (`opcItemPath = "{BasePath}" + name`) and emits a flat list of `AtomicTag`s. The IND570 UDT needs friendly names (`Weight/Net`) pointing at register addresses (`HRF2`), grouped in folders, plus memory and expression members. This task adds that capability **without changing any existing output** — the three MIP/tray types must regenerate byte-identical.
+
+**Files:**
+- Modify: `ignition/tags/generate_tags.py`
+
+**Interfaces:**
+- Produces: `opc_member(name, kind, address=None)` — when `address` is `None`, behaviour is unchanged (address derived from `name`); when given, the address is used and the name is free. `memory_member(name, kind, default)`, `expr_member(name, kind, expression)`, `folder(name, members)`. Task 3 consumes all four.
+
+- [x] **Step 1: Extend `opc_member` to accept an explicit address**
+
+Replace the existing `opc_member` in `ignition/tags/generate_tags.py`:
+
+```python
+def opc_member(name, kind, address=None):
+    """One OPC AtomicTag member -- opcServer + opcItemPath are parameter binds.
+
+    address=None  -> the member NAME is the address, appended directly to
+                     {BasePath} (the original scheme; MIP + tray types).
+    address given -> the tag name and the OPC address are decoupled, so a
+                     UDT can present friendly names over raw register
+                     addresses (the IND570 scale over Modbus TCP).
+    """
+    return {
+        "name": name,
+        "dataType": TAG_DTYPE[kind],
+        "valueSource": "opc",
+        "opcServer": {"bindType": "parameter", "binding": "{OpcServer}"},
+        "opcItemPath": {"bindType": "parameter",
+                        "binding": "ns=1;s=[{Device}]{BasePath}" + (address or name)},
+        "tagType": "AtomicTag",
+    }
+```
+
+- [x] **Step 2: Add the three new member builders**
+
+Insert directly after `opc_member`:
+
+```python
+def memory_member(name, kind, default):
+    """A memory tag -- MES-side state the device neither reads nor writes."""
+    return {
+        "name": name,
+        "dataType": TAG_DTYPE[kind],
+        "valueSource": "memory",
+        "defaultValue": default,
+        "tagType": "AtomicTag",
+    }
+
+
+def expr_member(name, kind, expression):
+    """A derived tag -- protocol decode over a raw register word. Expression
+    syntax is C-style (=, &&, !), NOT Python keywords, which fail silently
+    as falsy."""
+    return {
+        "name": name,
+        "dataType": TAG_DTYPE[kind],
+        "valueSource": "expr",
+        "expression": expression,
+        "tagType": "AtomicTag",
+    }
+
+
+def folder(name, members):
+    """A UDT folder member -- groups children by audience, not by address."""
+    return {"name": name, "tagType": "Folder", "tags": members}
+```
+
+- [x] **Step 3: Verify existing output is unchanged**
+
+```bash
+git stash && python ignition/tags/generate_tags.py && cp ignition/tags/udt/SerializedMipStation.json /tmp/before.json && git stash pop && python ignition/tags/generate_tags.py && diff /tmp/before.json ignition/tags/udt/SerializedMipStation.json && echo "IDENTICAL"
+```
+
+Expected: `IDENTICAL`. If it differs, `opc_member`'s default path changed behaviour — fix before continuing.
+
+- [x] **Step 4: Commit**
+
+```bash
+git add ignition/tags/generate_tags.py
+git commit -m "refactor(tags): decouple UDT member names from OPC addresses; add folder/memory/expr builders"
+```
+
+---
+
+### Task 3: Rewrite the `ScaleStation` member set for Modbus TCP ✅ DONE
+
+**Completed 2026-08-27, commit `61706811`.** All 25 member paths Tasks 4 and 5 depend on are emitted; the three non-scale UDT types regenerate byte-identical; the sim CSV carries 8 rows per scale device with no duplicate browse paths.
+
+Two corrections found during execution, both now reflected below:
+
+- **The plan's `flatten_opc` deduped per-folder, not globally** — `out.extend(flatten_opc(...))` gives each recursive call its own `out`, so the `(word, kind) not in out` test only ever saw siblings. `HR4` is reached from `Weight`, `Verdict` *and* `Protocol/Live`, so it emitted three duplicate rows per scale device. Fixed by merging recursive results through the same membership test.
+- **`PlcDevices.json` does NOT change.** Instances carry only `OpcServer`/`Device`/`BasePath` and no member data, so it is byte-identical and was correctly left out of the commit. If a per-instance UOM override is ever needed, `build_instance` would have to change — Task 3 does not make it.
+
+`CATALOG` also had to move below the builder functions, since `scale_members()` evaluates at import.
+
+
+**Files:**
+- Modify: `ignition/tags/generate_tags.py`
+- Regenerate: `ignition/tags/udt/ScaleStation.json`, `ignition/tags/instances/PlcDevices.json`, `ignition/tags/sim/MPP_Sim_program.csv`
+
+**Interfaces:**
+- Consumes: `opc_member(name, kind, address)`, `memory_member`, `expr_member`, `folder` from Task 2.
+- Produces: UDT member paths consumed by Tasks 4 and 5 — `Weight/Net`, `Weight/InMotion`, `Weight/IsValid`, `Weight/SourceIsNet`, `Weight/Uom`, `Verdict/Under`, `Verdict/Ok`, `Verdict/Over`, `Setpoint/Target`, `Setpoint/Tolerance`, `Setpoint/Apply`, `Setpoint/ActiveTarget`, `Setpoint/State`, `Protocol/Live/Command`, `Protocol/Live/CommandResponse`, `Protocol/Live/FpIndicator`, `Protocol/Live/Status`, `Protocol/Live/Integrity1`, `Protocol/Live/Integrity2`, `Protocol/Command/Command`, `Protocol/Command/LoadValue`, `Protocol/Command/CommandResponse`, `Protocol/Command/FpIndicator`, `Protocol/Command/CommandAck`, `Protocol/Command/EchoValue`.
+
+- [x] **Step 1: Replace the `SCALE` catalog entry**
+
+Replace the `SCALE = [...]` list in `generate_tags.py` with a builder function. Delete the old list entirely — the `NET_*` / `TRG_*` members are gone.
+
+```python
+# ---- IND570 scale over Modbus TCP -------------------------------------------
+# Register map: PLC Interface Manual (doc 30205335 rev 12) Sec 5.4.4 + Table 5-3,
+# Floating Point format. Mettler's 4000xx/4010xx are Modicon DISPLAY convention;
+# the real register numbers are 1 and 1025 -- hence HR1 / HR1026, not HR400001.
+# Read and write areas share one holding-register space, offset by 1024.
+#
+#   slot 1 (live, parked on command 11 = report net weight)
+#     HR1     Command Response      HR1026   Command        (write)
+#     HRF2    FP value (regs 2-3)
+#     HR4     Scale Status
+#   slot 2 (command scratchpad -- setpoint loads never interrupt the live read)
+#     HR5     Command Response      HR1029   Command        (write)
+#     HRF6    FP value (regs 6-7)   HRF1030  FP Load Value  (write)
+#
+# Scale Status bits: 0 Under / 2 OK / 4 Over (over/under target mode),
+# 5 always 1, 12 Motion, 13 Net mode, 14 Data Integrity 2, 15 Data OK.
+# Command Response bits: 8-12 FP Indicator, 13 Data Integrity 1, 14-15 Cmd Ack.
+
+_LIVE_CR = "{[.]Protocol/Live/CommandResponse}"
+_CMD_CR = "{[.]Protocol/Command/CommandResponse}"
+
+
+def _bitfield(word, lo, hi):
+    """Decode an inclusive bit range out of a 16-bit word as an integer.
+    getBit(number, position) is zero-indexed with the LSB at position 0,
+    which matches Mettler's bit numbering directly."""
+    return " + ".join("getBit(%s, %d) * %d" % (word, b, 2 ** i)
+                      for i, b in enumerate(range(lo, hi + 1)))
+
+
+def scale_members():
+    return [
+        folder("Weight", [
+            opc_member("Net",        "real", "HRF2"),
+            opc_member("InMotion",   "bool", "HR4.12"),
+            opc_member("IsValid",    "bool", "HR4.15"),
+            # FP Indicator 1 == net weight. 0 == gross, which is what a
+            # power-cycled terminal reports when its command register is 0 --
+            # plausible, well-formed, wrong. This is the guard.
+            expr_member("SourceIsNet", "bool",
+                        "{[.]Protocol/Live/FpIndicator} = 1"),
+            memory_member("Uom", "str", "{WeightUom}"),
+        ]),
+        folder("Verdict", [
+            opc_member("Under", "bool", "HR4.0"),
+            opc_member("Ok",    "bool", "HR4.2"),
+            opc_member("Over",  "bool", "HR4.4"),
+            expr_member("State", "str",
+                        "if({[.]Verdict/Ok}, 'Ok', "
+                        "if({[.]Verdict/Under}, 'Under', "
+                        "if({[.]Verdict/Over}, 'Over', 'Unknown')))"),
+        ]),
+        folder("Setpoint", [
+            memory_member("Target",       "real", 0.0),
+            memory_member("Tolerance",    "real", 0.0),
+            memory_member("Apply",        "bool", False),
+            memory_member("ActiveTarget", "real", 0.0),
+            memory_member("State",        "str",  "Idle"),
+        ]),
+        folder("Protocol", [
+            folder("Live", [
+                opc_member("Command",         "int",  "HR1026"),
+                opc_member("CommandResponse", "int",  "HR1"),
+                opc_member("Status",          "int",  "HR4"),
+                opc_member("Integrity1",      "bool", "HR1.13"),
+                opc_member("Integrity2",      "bool", "HR4.14"),
+                expr_member("FpIndicator", "int", _bitfield(_LIVE_CR, 8, 12)),
+            ]),
+            folder("Command", [
+                opc_member("Command",         "int",  "HR1029"),
+                opc_member("LoadValue",       "real", "HRF1030"),
+                opc_member("CommandResponse", "int",  "HR5"),
+                opc_member("EchoValue",       "real", "HRF6"),
+                expr_member("FpIndicator", "int", _bitfield(_CMD_CR, 8, 12)),
+                expr_member("CommandAck",  "int", _bitfield(_CMD_CR, 14, 15)),
+            ]),
+        ]),
+    ]
+```
+
+- [x] **Step 2: Wire it into the catalog and add the `WeightUom` parameter**
+
+The `CATALOG` dict maps type name to `(members, has_write_display)`. `ScaleStation` now supplies a nested structure rather than a flat `(name, kind)` list, so the emitter must branch. Locate the function that builds a UDT definition from `CATALOG` and make it accept an already-built member list for `ScaleStation`:
+
+```python
+CATALOG = {
+    "ScaleStation":            (scale_members(), False),
+    "SerializedMipStation":    (SERIALIZED, True),
+    "NonSerializedMipStation": (NONSERIALIZED, True),
+    "TrayInspectionStation":   (TRAY, True),
+}
+```
+
+In the definition emitter, members that are already dicts pass through untouched; `(name, kind)` tuples still go through `opc_member`:
+
+```python
+    tags = [m if isinstance(m, dict) else opc_member(m[0], m[1])
+            for m in members]
+```
+
+Add `WeightUom` to the parameter block for `ScaleStation` only (default `lb` — MPP's terminals are configured in pounds, verified at commissioning via command 30).
+
+**There is no `params` variable today.** `build_udt_def` builds the `parameters` dict as a literal inside its `return` statement, so you must extract it to a local first, then conditionally add the key:
+
+```python
+    params = {
+        "OpcServer": {"dataType": "String", "value": OPC_SERVER_DEFAULT},
+        "Device":    {"dataType": "String", "value": SIM_DEVICE},
+        "BasePath":  {"dataType": "String", "value": ""},
+    }
+    if type_name == "ScaleStation":
+        params["WeightUom"] = {"dataType": "String", "value": "lb"}
+```
+
+Copy the three existing entries verbatim from the current `return` literal rather than the shape above — match the real defaults exactly.
+
+Leave `has_wde` alone. It is already `False` for `ScaleStation`, so no `WriteDisplayEnabled` member is appended, which is correct: display-write gating is a MIP/HMI concern and a scale has no display to write.
+
+- [x] **Step 3: Handle folders in the simulator CSV emitter**
+
+The sim CSV writes one row per OPC member. It currently iterates a flat list; it must now recurse into folders and skip non-OPC members (memory and expression tags have no device address). Add a flattener and use it wherever the CSV emitter walks members:
+
+```python
+def flatten_opc(members):
+    """Yield (address, kind) for every OPC member, recursing into folders.
+    Memory and expression members are skipped -- they have no device address.
+    Bit-addressed members (HR4.12) collapse onto their containing word (HR4),
+    deduped, because the simulator serves whole registers."""
+    out = []
+    for m in members:
+        if m.get("tagType") == "Folder":
+            out.extend(flatten_opc(m["tags"]))
+        elif m.get("valueSource") == "opc":
+            addr = m["opcItemPath"]["binding"].split("}")[-1]
+            word = addr.split(".")[0]
+            kind = "bool" if m["dataType"] == "Boolean" else (
+                   "real" if m["dataType"] == "Float8" else
+                   "str" if m["dataType"] == "String" else "int")
+            if addr != word:
+                kind = "int"   # the containing word, not the bit
+            if (word, kind) not in out:
+                out.append((word, kind))
+    return out
+```
+
+The sim-CSV emitter is **inline in `main()`**, not a separate function — look for the `for code, type_name in devices:` loop that writes rows. Its inner `for name, kind in members:` has the same tuple-unpack that breaks on dict members.
+
+Two things that are easy to get wrong here:
+
+- **The browse path must use the ADDRESS, not the friendly name.** The row becomes `"%s/%s" % (code, address)` — the simulator serves register addresses, so a row named `<device>/Net` would never match the UDT's `{BasePath}HRF2` item path. This is the whole reason `flatten_opc` returns addresses.
+- **Fix the member counter at the end of `main()`.** It currently reads `n_members = sum(len(CATALOG[t][0]) for _, t in devices)`, which with folders counts 4 (the folder count), not the leaf members, and would include memory/expr members that never reach the CSV. Derive it from `len(flatten_opc(...))` so the printed sim-row count matches the rows actually written.
+
+> While you are in `main()`: its summary `print` has a pre-existing argument-order bug — it passes `len(devices)` where the format string expects the instance count. It currently reads correctly only by coincidence. Fixing it is optional and out of scope; do not let it distract from the task.
+
+- [x] **Step 4: Regenerate and inspect**
+
+```bash
+python ignition/tags/generate_tags.py && python -c "import json;d=json.load(open('ignition/tags/udt/ScaleStation.json'));print(json.dumps(d,indent=1)[:1200])"
+```
+
+Expected: `parameters` contains `BasePath`, `Device`, `OpcServer`, `WeightUom`; `tags` contains four folders (`Weight`, `Verdict`, `Setpoint`, `Protocol`); no `NET_*` or `TRG_*` member survives anywhere.
+
+- [x] **Step 5: Verify the other three types did not drift**
+
+```bash
+git diff --stat ignition/tags/
+```
+
+`dump_json` uses `sort_keys=True`, so each member's keys come out alphabetised while list order inside `"tags"` is preserved. The emitted `ScaleStation.json` will not visually match the order in `scale_members()` — that is expected, not drift.
+
+Expected: `ScaleStation.json`, `PlcDevices.json` and `MPP_Sim_program.csv` change. `SerializedMipStation.json`, `NonSerializedMipStation.json` and `TrayInspectionStation.json` must show **no** changes. If they do, Task 2 Step 3's guarantee broke.
+
+- [x] **Step 6: Confirm no legacy member names remain**
+
+```bash
+grep -rn "NET_DataReady\|NET_NetWeightValue\|TRG_SendMessage\|TRG_TargetWeightValue" ignition/tags/ || echo "CLEAN"
+```
+
+Expected: `CLEAN`.
+
+- [x] **Step 7: Commit**
+
+```bash
+git add ignition/tags/generate_tags.py ignition/tags/udt/ScaleStation.json ignition/tags/instances/PlcDevices.json ignition/tags/sim/MPP_Sim_program.csv
+git commit -m "feat(tags): ScaleStation UDT rebuilt for IND570 Modbus TCP register map"
+```
+
+---
+
+### Task 3b: Add the `Trigger` folder to the UDT ✅ DONE
+
+**Completed 2026-08-28, commit `d516bec2`.** 81 insertions, zero deletions. `MPP_Sim_program.csv` correctly did not move — all four bit-addresses collapse onto `HR4`, which was already present, confirming Task 3's global-dedup fix holds. Generation verified idempotent.
+
+The physical button surfaces as Scale Status bits 8-11. Task 3 shipped before that was known.
+
+**Files:** Modify `ignition/tags/generate_tags.py`; regenerate `udt/ScaleStation.json` + `sim/MPP_Sim_program.csv`.
+
+- [x] **Step 1: Add the folder to `scale_members()`**, immediately before the `Verdict` folder:
+
+```python
+        folder("Trigger", [
+            # Physical button. Bit 8 LATCHES on ENTER and is cleared by command
+            # 75; bits 9-11 are discrete inputs and are live state, so a press
+            # shorter than the poll interval is invisible. All four are exposed
+            # because which one the button is wired to is a commissioning
+            # unknown -- press it and watch which moves. See spec 5.1.2.
+            opc_member("EnterKey", "bool", "HR4.8"),
+            opc_member("Input1",   "bool", "HR4.9"),
+            opc_member("Input2",   "bool", "HR4.10"),
+            opc_member("Input3",   "bool", "HR4.11"),
+        ]),
+```
+
+- [x] **Step 1b: Add `ActiveTolerance` to the `Setpoint` folder**
+
+Task 4b's skip-if-unchanged test compares the requested setpoint against what the scale is confirmed to be enforcing. `ActiveTarget` exists; its tolerance counterpart does not, so a tolerance-only change would be silently skipped and the line would run against a stale window. Add beside `ActiveTarget`:
+
+```python
+            memory_member("ActiveTolerance", "real", 0.0),
+```
+
+- [x] **Step 2: Regenerate and verify**
+
+```bash
+python ignition/tags/generate_tags.py && git status --short ignition/tags/
+```
+
+`ScaleStation.json` changes. `MPP_Sim_program.csv` must **not** change — all four bits collapse onto `HR4`, which is already in the CSV. The three non-scale UDTs must not change. If the CSV moves, `flatten_opc`'s dedup regressed.
+
+- [x] **Step 3: Commit**
+
+```bash
+git add ignition/tags/generate_tags.py ignition/tags/udt/ScaleStation.json
+git commit -m "feat(tags): expose the IND570 physical-button trigger bits"
+```
+
+---
+
+### Task 4b: Protocol-layer amendments ✅ DONE
+
+**Completed 2026-08-28, commit `e2050197`.** Compiled against the gateway's own Jython 2.7 and every new branch exercised under it with stubbed globals — 27/27.
+
+Four gaps in the plan and spec were found and fixed during execution; all four are now folded into spec §6.4a and §6.5:
+
+- **`ActiveTolerance` had no writer**, so the skip test would have compared against the `0.0` default forever and never fired.
+- **The skip needs a `State == "Active"` term.** Without it, a retry after a failed load is skipped — `ActiveTarget` still holds the last *successful* value while `ABORT_COMPARE` has left the terminal enforcing nothing.
+- **`Setpoint/Target` and `Tolerance` had no writer**, so the documented `Target != ActiveTarget` stale-setpoint signal could never fire.
+- **The park read-back must be polled**, not immediate — an immediate read races the tag group and reports a false failure every time.
+
+Echo tolerance is `max(1e-4, abs(value) * 1e-5)` — the floor is the *old* absolute threshold verbatim, so the change is strictly a loosening above the ~10 lb crossover and a no-op below it. The plan's suggested `0.001` floor was 10% of a plausible small tolerance.
+
+Four fixes Task 4 surfaced plus the async worker. **Files:** `BlueRidge/Workorder/Ind570/code.py`.
+
+- [x] **Step 1: `CMD["CLEAR_ENTER_KEY"] = 75`** — acknowledges a physical press.
+
+- [x] **Step 2: Guard the echo against bad tag quality.** `readMember` returns `None` on bad quality, so `abs(float(echo) - float(value))` raises `TypeError` out of `sendCommand`. Handle it explicitly — a Jython `except Exception` would not catch a Java tag-subsystem throwable anyway:
+
+```python
+        if value is not None:
+            if echo is None:
+                return {"ok": False, "echo": None,
+                        "message": "Command %s: echo read back bad quality." % code}
+            if abs(float(echo) - float(value)) > max(0.001, abs(float(value)) * 1e-5):
+                return {"ok": False, "echo": echo, "message": ...}
+```
+
+- [x] **Step 3: Relative echo tolerance** (folded into Step 2 above). The old absolute `> 0.0001` compares a value round-tripped through a Modbus **float32**, which carries ~7 significant digits — a target above roughly 1000 lb can differ by more than 1e-4 from encoding alone, producing a spurious "check Byte Order" that sends commissioning down the wrong path.
+
+- [x] **Step 4: Per-command timeout 3000 -> 1500 ms.** Worst case for the four-command sequence drops from ~15 s to ~6 s.
+
+- [x] **Step 5: `parkLiveCommand` reads back and confirms.** It currently writes and returns nothing, on the one condition the module header calls a silent failure. Read `Protocol/Live/FpIndicator` after the write and return whether it settled at `FP_NET`; log via `logInterface` when it did not.
+
+- [x] **Step 6: Async wrapper.** Add `applySetpointAsync(instancePath, terminalLocationId, target, tolerance)` that returns immediately and runs `applySetpoint` inside `system.util.invokeAsynchronous`, reporting failure through `PlcWatcher.notifyAlarm(terminalLocationId, ...)`. Follow `BlueRidge/Lots/ShippingDispatcher/code.py` — the only `invokeAsynchronous` in the project and the FDS-01-014 reference. Also skip the whole sequence when `ActiveTarget` already equals `Target` and the tolerance matches.
+
+- [x] **Step 7:** `scan.ps1`, confirm no `PySyntaxError` naming the module, commit.
+
+---
+
+### Task 4: `BlueRidge.Workorder.Ind570` — protocol layer ✅ DONE
+
+**Completed 2026-08-27, commit `ba107442`.** Verified against the gateway's own Jython 2.7 compiler, not a CPython proxy. `PlcWatcher`'s four helpers exist with the assumed signatures, and `readMembers` keys its result by the member string verbatim, so nested folder paths like `Weight/InMotion` work — the plan's `captureGate` needed no change.
+
+**The module has never been executed.** A clean scan plus a Jython compile proves it parses and the resource registered; it does not prove `BlueRidge.Workorder.Ind570` resolves at runtime. Needs a Designer script-console check: `print BlueRidge.Workorder.Ind570.CMD["SET_TARGET"]` should print `110`.
+
+The Modbus command sequencer, isolated from any MES concern so it can be reasoned about and exercised on its own. Domain logic stays in SQL; this is protocol decode and handshake, which correctly lives in Jython.
+
+**Files:**
+- Create: `ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/Ind570/code.py`
+- Create: `ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/Ind570/resource.json`
+
+**Interfaces:**
+- Consumes: `BlueRidge.Workorder.PlcWatcher.readMember(udtInstancePath, member)`, `.writeMember(udtInstancePath, member, value)`, `.readMembers(udtInstancePath, members)`, `.logInterface(deviceCode, description, requestPayload=None, responsePayload=None, ok=True, errorDescription=None)`.
+- Produces: `CMD` (dict of command-code constants), `parkLiveCommand(instancePath)`, `sendCommand(instancePath, code, value=None, timeoutMs=3000)` returning `{"ok": bool, "message": str, "echo": float|None}`, `applySetpoint(instancePath, target, tolerance)` returning `{"ok": bool, "message": str}`, `captureGate(instancePath)` returning `{"ok": bool, "reason": str|None}`.
+
+- [x] **Step 1: Create the resource descriptor**
+
+Create `.../BlueRidge/Workorder/Ind570/resource.json`, copying the exact shape of `.../BlueRidge/Workorder/ScaleWatcher/resource.json`:
+
+```bash
+cp ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/resource.json ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/Ind570/resource.json
+```
+
+- [x] **Step 2: Write the module**
+
+Create `.../BlueRidge/Workorder/Ind570/code.py`:
+
+```python
+"""BlueRidge.Workorder.Ind570 - METTLER TOLEDO IND570 Modbus TCP protocol layer.
+
+   Spec: docs/superpowers/specs/2026-08-27-ind570-scale-udt-modbus-tcp-design.md
+   Manual: reference/IND570_PLC_Interface_Manual.md (doc 30205335 rev 12),
+           Appendix B for the command table and status-bit layout.
+
+   Two independent flows, mirroring the legacy OmniServer shape:
+
+     Flow B (capture) has NO protocol step. Slot 1 sits parked on command 11
+     and the terminal refreshes net weight every interface update cycle, so
+     the value is simply THERE. captureGate() decides whether to trust it.
+
+     Flow A (setpoint) is a 4-command sequence through slot 2. Each command
+     waits for the acknowledgement to rotate before the next is sent -- the
+     manual is explicit that the client must wait for the ack.
+
+   There is no send-message pulse. For a value-bearing command the FP value
+   is written FIRST, then the command; the echoed value coming back equal to
+   what was sent IS the acknowledgement (Table B-4 note 6).
+"""
+
+import time
+
+# ---- command codes (standard target control; Fill-570 NOT licensed) --------
+# With Fill-570 installed these are illegal and become 170/173/174/119.
+CMD = {
+    "REPORT_NET":       11,
+    "SET_TARGET":      110,
+    "SET_TOL_PLUS":    131,
+    "SET_TOL_MINUS":   112,
+    "START_COMPARE":   114,
+    "ABORT_COMPARE":   115,
+    "TARGET_USE_NET":  117,
+    "LATCH_DISABLE":   122,
+    "REPORT_UNITS":     30,
+}
+
+# FP Indicator values (Table B-2) that carry meaning for us.
+FP_GROSS = 0
+FP_NET = 1
+FP_CMD_OK = 30
+FP_INVALID = 31
+
+_POLL_MS = 100
+
+
+def parkLiveCommand(instancePath):
+    """Park 'report net weight' in slot 1. MUST be re-run on every device
+       reconnect -- a terminal power cycle clears the command register to 0,
+       and command 0 reports GROSS weight (Table B-4 note 1). The failure is
+       silent: plausible, well-formed, wrong numbers."""
+    W = BlueRidge.Workorder.PlcWatcher
+    W.writeMember(instancePath, "Protocol/Live/Command", CMD["REPORT_NET"])
+
+
+def sendCommand(instancePath, code, value=None, timeoutMs=3000):
+    """Send one command through slot 2 and wait for the ack to rotate.
+
+       Returns {"ok": bool, "message": str, "echo": float or None}.
+       For value-bearing commands the FP value is written BEFORE the command
+       (Table B-6 establishes that ordering) and the echo is verified."""
+    W = BlueRidge.Workorder.PlcWatcher
+    before = W.readMember(instancePath, "Protocol/Command/CommandAck")
+
+    if value is not None:
+        W.writeMember(instancePath, "Protocol/Command/LoadValue", float(value))
+    W.writeMember(instancePath, "Protocol/Command/Command", int(code))
+
+    waited = 0
+    while waited < timeoutMs:
+        time.sleep(_POLL_MS / 1000.0)
+        waited += _POLL_MS
+        ack = W.readMember(instancePath, "Protocol/Command/CommandAck")
+        if ack == before:
+            continue
+
+        fp = W.readMember(instancePath, "Protocol/Command/FpIndicator")
+        if fp == FP_INVALID:
+            return {"ok": False, "echo": None,
+                    "message": "Command %s rejected as invalid. If this "
+                               "persists the terminal has Fill-570 installed "
+                               "and needs commands 170/173/174/119." % code}
+
+        echo = W.readMember(instancePath, "Protocol/Command/EchoValue")
+        if value is not None and abs(float(echo) - float(value)) > 0.0001:
+            return {"ok": False, "echo": echo,
+                    "message": "Echo mismatch on command %s: sent %s, got %s. "
+                               "Check terminal Byte Order = Double Word Swap."
+                               % (code, value, echo)}
+        return {"ok": True, "echo": echo, "message": "OK"}
+
+    return {"ok": False, "echo": None,
+            "message": "Command %s timed out after %sms with no acknowledgement."
+                       % (code, timeoutMs)}
+
+
+def applySetpoint(instancePath, target, tolerance):
+    """Flow A. Load target + both tolerances, then start target comparison.
+
+       A partial application is worse than no change -- a new target paired
+       with stale tolerances silently validates against the wrong window. On
+       any step failure this aborts comparison and leaves ActiveTarget at its
+       previous value, so Target != ActiveTarget stays visible as the signal
+       that the line is on a stale setpoint."""
+    W = BlueRidge.Workorder.PlcWatcher
+    device = instancePath.rsplit("/", 1)[-1]
+    W.writeMember(instancePath, "Setpoint/State", "Loading")
+
+    steps = [
+        (CMD["SET_TARGET"],    target),
+        (CMD["SET_TOL_PLUS"],  tolerance),
+        (CMD["SET_TOL_MINUS"], tolerance),
+        (CMD["START_COMPARE"], None),
+    ]
+
+    for code, value in steps:
+        result = sendCommand(instancePath, code, value)
+        if not result["ok"]:
+            sendCommand(instancePath, CMD["ABORT_COMPARE"])
+            W.writeMember(instancePath, "Setpoint/State", "Failed")
+            W.logInterface(device, "Setpoint load",
+                           requestPayload="target=%s tol=%s" % (target, tolerance),
+                           responsePayload=result["message"], ok=False,
+                           errorDescription=result["message"])
+            return {"ok": False, "message": result["message"]}
+
+    W.writeMember(instancePath, "Setpoint/ActiveTarget", float(target))
+    W.writeMember(instancePath, "Setpoint/State", "Active")
+    W.logInterface(device, "Setpoint load",
+                   requestPayload="target=%s tol=%s" % (target, tolerance),
+                   ok=True)
+    return {"ok": True, "message": "Setpoint active"}
+
+
+def captureGate(instancePath):
+    """All five conditions must hold before a reading may be trusted.
+       Returns {"ok": bool, "reason": str or None}."""
+    W = BlueRidge.Workorder.PlcWatcher
+    v = W.readMembers(instancePath, [
+        "Weight/InMotion", "Weight/IsValid", "Weight/SourceIsNet",
+        "Protocol/Live/Integrity1", "Protocol/Live/Integrity2",
+        "Setpoint/State",
+    ])
+
+    if v.get("Weight/InMotion"):
+        return {"ok": False, "reason": "Scale is still in motion."}
+    if not v.get("Weight/IsValid"):
+        return {"ok": False,
+                "reason": "Scale reports data not OK -- in setup, over "
+                          "capacity, or under zero."}
+    if not v.get("Weight/SourceIsNet"):
+        return {"ok": False,
+                "reason": "Scale is reporting GROSS weight, not net. The "
+                          "command register was cleared -- re-park it."}
+    if bool(v.get("Protocol/Live/Integrity1")) != bool(v.get("Protocol/Live/Integrity2")):
+        return {"ok": False,
+                "reason": "Scale data integrity bits disagree -- reading is "
+                          "mid-update."}
+    if v.get("Setpoint/State") != "Active":
+        return {"ok": False,
+                "reason": "No target is active on this scale. Load a setpoint "
+                          "before validating a tray."}
+    return {"ok": True, "reason": None}
+```
+
+- [x] **Step 3: Deploy to the gateway and confirm it loads**
+
+```bash
+powershell -File scan.ps1
+```
+
+Then in the Designer, open the script console and run:
+
+```python
+print BlueRidge.Workorder.Ind570.CMD["SET_TARGET"]
+```
+
+Expected: `110`. A `NameError` or import failure means `resource.json` is wrong or the scan did not pick the folder up.
+
+- [x] **Step 4: Commit**
+
+```bash
+git add ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/Ind570/
+git commit -m "feat(scale): IND570 Modbus TCP protocol layer - command sequencer and capture gate"
+```
+
+---
+
+### Task 5: Rewrite `ScaleWatcher` for the pull model ✅ DONE
+
+**Completed 2026-08-28, commit `32fef596`** (+ `e0dcdb4f` for the live subscription). Verified by compiling all three modules against the gateway's own Jython 2.7 and running 40 assertions.
+
+**Four defects found, all of which would have shipped:**
+
+- **`PlcWatcher._splitPath` broke on nested members.** It split on `rfind("/")`, so `.../5G0_Front_Scale/Trigger/EnterKey` yielded instance `.../5G0_Front_Scale/Trigger` — which matches no `TerminalPlcDevice` row, so `dispatch` bailed at a "no mapping" warn and dropped the edge. **The physical button would have done nothing, silently.** Retargeting `_route` alone (all this task originally asked for) would never have surfaced it. Replaced with `_splitCandidates`, longest-instance-first.
+- **`plc_trigger_tag_paths.txt` is only documentation.** The live subscription is `ignition/projects/MPP/ignition/tag-change/TrayDataReady/resource.json`, whose 7 scale entries still pointed at the deleted `NET_DataReady`. Fixed separately in `e0dcdb4f`. **Without it everything above was inert.**
+- **`float()` on a JDBC `java.math.BigDecimal` raises `TypeError`** in the gateway Jython. `TargetWeight`/`ToleranceWeight` are `DECIMAL(10,4)`, so this plan's code *and* `Ind570._valuesMatch` would both have thrown. `_toFloat` adds a `str()` round-trip fallback.
+- **Command 75 was on the critical path.** `sendCommand` blocks up to 1.5 s, and against a simulator that never rotates the ack that is 1.5 s added to *every* capture. Now dispatched async, ordering unchanged.
+
+The re-entrancy guard's test-and-claim is also now under a `threading.Lock` — its whole premise is that the two triggers arrive on different threads.
+
+> ## ⚠️ Four findings from Task 4 — read first
+>
+> **1. `applySetpoint` blocks for up to ~15 seconds and Task 7 calls it from a session thread.** Four commands at a 3 s timeout each, plus a fifth `ABORT_COMPARE` on failure. Task 7's dropdown handler calls `loadSetpointForItem` synchronously to read `["ok"]` for its toast, so the block lands on the operator's part-change click — and against the simulator, which never rotates the ack, it will reliably hit the full timeout.
+>
+> The project's convention for this is `BlueRidge/Lots/ShippingDispatcher/code.py` (the FDS-01-014 Gateway-script-async pattern) — the **only** `system.util.invokeAsynchronous` in the whole `ignition/projects/` tree. Its shape: validate and resolve cheaply on the calling thread, return a status immediately, run the slow loop asynchronously, and surface the real outcome through `PlcWatcher.notifyAlarm(terminalLocationId, title, message)`, which `BlueRidge/Components/NotifyHost` already filters per terminal.
+>
+> Applied here that means `loadSetpointForItem` does the `ContainerConfig` read and the NULL checks synchronously — those are the failures worth returning inline — then hands `applySetpoint` to `invokeAsynchronous` and reports sequencer failure via `notifyAlarm`. **This adds a `terminalLocationId` parameter to `loadSetpointForItem`**, which Task 7's handler already has in scope. **This is a design change, not a bug fix — confirm with Jacques before implementing it.**
+>
+> **2. `float(echo)` is a live crash path.** `readMember` returns `None` on bad tag quality, so if the ack rotates but `EchoValue` reads bad, `abs(float(echo) - float(value))` raises `TypeError` out of `sendCommand` → `applySetpoint` → the caller. There is no `try`/`except` in the module, and per the project rule a Jython `except Exception` would not catch a Java tag-subsystem throwable anyway — a guard needs `except (Exception, java.lang.Exception)`. Handle the `None` explicitly rather than relying on a catch.
+>
+> **3. The echo tolerance is too tight.** `> 0.0001` is an absolute comparison against a value round-tripped through a Modbus 32-bit float. Float32 carries ~7 significant digits, so a target above roughly 1000 lb can differ by more than 1e-4 from encoding alone — producing a spurious *"Echo mismatch — check Byte Order = Double Word Swap"* that sends commissioning down entirely the wrong path. Use a relative tolerance.
+>
+> **4. `parkLiveCommand` writes and returns nothing.** No `logInterface`, no read-back. Given the module header calls the unparked state a silent failure producing "plausible, well-formed, wrong numbers", a read-back confirm is cheap insurance and belongs here.
+
+
+**Rev 2.** The legacy watcher was edge-driven: the scale asserted `NET_DataReady` on an unsolicited push and the watcher reacted. Under Modbus TCP the *weight* is polled rather than pushed — but the operator's **physical button is still an edge**, surfaced as the latched `Trigger/EnterKey` bit. So the edge model survives; only the trigger member changes. `handleEdge` becomes `onTriggerEdge`, and a screen button calls the same `captureAndClose` directly.
+
+**Files:**
+- Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/code.py`
+- Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/PlcWatcher/code.py` (remove the scale edge route)
+- Modify: `ignition/tags/plc_trigger_tag_paths.txt` (delete the 7 dead scale trigger paths)
+
+**Interfaces:**
+- Consumes: `BlueRidge.Workorder.Ind570.captureGate`, `.applySetpoint`, `.parkLiveCommand`; `BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId, closureMethod)`; `BlueRidge.Workorder.PlcWatcher.readMembers`, `.logInterface`, `.notifyAlarm`.
+- Produces: `captureAndClose(instancePath, terminalLocationId)` returning `{"Status": int, "Message": str, "ContainerId": int|None}`; `loadSetpointForItem(instancePath, itemId)` returning `{"ok": bool, "message": str}`. Task 6's button calls both.
+
+- [x] **Step 1: Replace the module body**
+
+Overwrite `.../BlueRidge/Workorder/ScaleWatcher/code.py`:
+
+```python
+"""BlueRidge.Workorder.ScaleWatcher - assembly checkweigh scales (IND570 / Modbus TCP).
+
+   Spec: docs/superpowers/specs/2026-08-27-ind570-scale-udt-modbus-tcp-design.md (rev 2)
+
+   DUAL-TRIGGER. The scale no longer pushes -- net weight is continuously
+   present in the polled register -- but the operator PHYSICAL button is still
+   the signal, and it survives as a latched status bit:
+
+     physical button -> Trigger/EnterKey (HR4.8) -> tag-change -> onTriggerEdge
+     screen button   -> Perspective handler ------------------> captureAndClose
+
+   Both converge on captureAndClose. Nothing is latched in tags; the handler
+   reads live, gates, and hands straight to SQL.
+
+   The ENTER latch is acknowledged with command 75 AFTER the proc returns, not
+   before -- acknowledging first would silently swallow a press consumed by a
+   capture that then failed.
+"""
+
+_TRIGGERS = ("Trigger/EnterKey",)
+
+# Per-instance re-entrancy guard. Two triggers means a press can land while a
+# capture is still running (a double-press, or a screen tap racing the physical
+# button). A second entry must not close a second tray against one weighing.
+_inFlight = set()
+
+
+def onTriggerEdge(instancePath, terminalLocationId, member):
+    """Rising edge on the physical button. Routed here by PlcWatcher.dispatch."""
+    if member not in _TRIGGERS:
+        return
+    captureAndClose(instancePath, terminalLocationId)
+
+
+def captureAndClose(instancePath, terminalLocationId):
+    """Shared entry point for BOTH triggers. Gate the live reading, then close
+       the tray through the SAME Assembly_CompleteTray path the ByCount button
+       uses (identical genealogy).
+
+       Returns {"Status": 1|0, "Message": str, "ContainerId": id or None}."""
+    W = BlueRidge.Workorder.PlcWatcher
+    device = instancePath.rsplit("/", 1)[-1]
+
+    if instancePath in _inFlight:
+        return {"Status": 0, "Message": "A capture is already in progress.",
+                "ContainerId": None}
+    _inFlight.add(instancePath)
+    try:
+        gate = BlueRidge.Workorder.Ind570.captureGate(instancePath)
+        if not gate["ok"]:
+            W.logInterface(device, "Scale capture refused",
+                           responsePayload=gate["reason"], ok=False,
+                           errorDescription=gate["reason"])
+            return {"Status": 0, "Message": gate["reason"], "ContainerId": None}
+
+        vals = W.readMembers(instancePath,
+                             ["Weight/Net", "Weight/Uom", "Verdict/State"])
+        weight = vals.get("Weight/Net")
+        uom = vals.get("Weight/Uom")
+        verdict = vals.get("Verdict/State")
+
+        if verdict != "Ok":
+            msg = "Tray is %s target - not within tolerance." % (verdict or "outside")
+            W.logInterface(device, "Scale capture",
+                           requestPayload="weight=%s uom=%s verdict=%s"
+                                          % (weight, uom, verdict),
+                           ok=False, errorDescription=msg)
+            return {"Status": 0, "Message": msg, "ContainerId": None}
+
+        result = BlueRidge.Workorder.Assembly.plcCompleteTray(terminalLocationId,
+                                                              "ByWeight")
+        ok = bool(result and result.get("Status"))
+        W.logInterface(device, "ByWeight tray close",
+                       requestPayload="terminal=%s weight=%s uom=%s"
+                                      % (terminalLocationId, weight, uom),
+                       responsePayload=str(result), ok=ok,
+                       errorDescription=None if ok else (result or {}).get("Message"))
+
+        if not ok:
+            msg = (result or {}).get("Message") or "Tray close failed"
+            W.notifyAlarm(terminalLocationId, "ByWeight tray close failed", msg)
+            return {"Status": 0, "Message": msg, "ContainerId": None}
+
+        return {"Status": 1, "Message": "Tray closed",
+                "ContainerId": result.get("ContainerId")}
+    finally:
+        # Acknowledge the ENTER latch only now.
+        BlueRidge.Workorder.Ind570.sendCommand(
+            instancePath, BlueRidge.Workorder.Ind570.CMD["CLEAR_ENTER_KEY"])
+        _inFlight.discard(instancePath)
+
+
+def loadSetpointForItem(instancePath, terminalLocationId, itemId):
+    """Flow A entry point. Resolves config SYNCHRONOUSLY (those failures are
+       worth returning inline for a toast), then dispatches the command
+       sequence asynchronously so it never blocks a session thread.
+
+       A missing tolerance is a configuration error, not a zero -- a zero-width
+       window would reject every tray."""
+    cfg = system.db.runNamedQuery("parts/ContainerConfig_GetByItemAndMethod",
+                                  {"ItemId": itemId,
+                                   "ClosureMethod": "ByWeight"})
+    if cfg.getRowCount() == 0:
+        return {"ok": False,
+                "message": "No ByWeight container config for this item."}
+
+    target = cfg.getValueAt(0, "TargetWeight")
+    tolerance = cfg.getValueAt(0, "ToleranceWeight")
+    if target is None or tolerance is None:
+        return {"ok": False,
+                "message": "ByWeight config is missing TargetWeight or "
+                           "ToleranceWeight. Set both in Item Master before "
+                           "running this part."}
+
+    BlueRidge.Workorder.Ind570.applySetpointAsync(
+        instancePath, terminalLocationId, float(target), float(tolerance))
+    return {"ok": True, "message": "Setpoint loading"}
+
+
+def onDeviceReconnect(instancePath):
+    """Re-park the live command. A terminal power cycle clears the command
+       register to 0, and command 0 reports GROSS weight -- silently. Call
+       from the device-connection-state handler and at gateway startup."""
+    BlueRidge.Workorder.Ind570.parkLiveCommand(instancePath)
+```
+
+- [x] **Step 2: RETARGET the scale edge route** (REVISED in rev 2 - do not delete it)
+
+Rev 1 said to delete this branch. Rev 2 keeps it: the physical button *is* the edge. In `.../BlueRidge/Workorder/PlcWatcher/code.py`, find `_route` (near line 291) and change the `ScaleStation` branch to call `ScaleWatcher.onTriggerEdge` instead of `handleEdge`. Leave the MIP and tray routes untouched.
+
+```python
+    # ScaleStation edge = the operator PHYSICAL button, surfaced as a latched
+    # status bit (Trigger/EnterKey, HR4.8). The weight itself is polled, not
+    # pushed. The screen button calls ScaleWatcher.captureAndClose directly --
+    # both converge there. Spec rev 2 Sec 5.
+```
+
+- [x] **Step 2b: RETARGET the scale trigger paths** ⚠️ REVISED in rev 2 — do not delete them
+
+Rev 1 said to delete these because a polled scale has no edge. Rev 2 reverses that: the **physical button is the edge**, so the paths stay and change member.
+
+In `ignition/tags/plc_trigger_tag_paths.txt`, rewrite each of the 7 scale entries under `# --- ScaleStation ---` from `/NET_DataReady` to `/Trigger/EnterKey`. Leave the `# 33 trigger paths total.` count alone — it is unchanged.
+
+If commissioning finds the button is on a discrete input rather than ENTER, these become `/Trigger/Input1` (or 2/3). That is a one-line-per-device change here plus the matching `_TRIGGERS` tuple in `ScaleWatcher`.
+
+- [x] **Step 2c: SUPERSEDED — do not delete the scale trigger paths**
+
+`ignition/tags/plc_trigger_tag_paths.txt` is tracked and hand-maintained (it is **not** generated by `generate_tags.py`, so Task 3 could not touch it). It still lists 7 scale trigger paths that no longer exist:
+
+```
+# --- ScaleStation ---
+[MPP]PlcDevices/59B_1_FP_1/NET_DataReady
+... 7 devices total
+```
+
+These are not renamed, they are **gone** — IND570 over Modbus TCP is polled, so there is no edge to watch. Delete the `# --- ScaleStation ---` heading and all 7 paths beneath it, and update the file's header comment from `# 33 trigger paths total.` to `# 26 trigger paths total.`
+
+Add `ignition/tags/plc_trigger_tag_paths.txt` to this task's staging list in Step 5.
+
+- [x] **Step 3: Confirm no caller still references the removed entry point**
+
+```bash
+grep -rn "handleEdge\|NET_DataReady\|NET_TargetWeightMetFlag" ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ | grep -i scale || echo "CLEAN"
+```
+
+Expected: `CLEAN`. Any hit is a caller that must be updated before proceeding.
+
+- [x] **Step 4: Deploy and smoke-test against the simulator**
+
+```bash
+powershell -File scan.ps1
+```
+
+In the Designer script console, with a `ScaleStation` instance selected in the Sim Panel:
+
+```python
+p = "[MPP]PlcDevices/5G0_Front_Scale"
+print BlueRidge.Workorder.Ind570.captureGate(p)
+```
+
+Expected: `{"ok": False, "reason": "No target is active on this scale. ..."}` — the setpoint has not been loaded, so the gate must refuse. A gate that returns `ok: True` against an unconfigured simulator is broken.
+
+- [x] **Step 5: Commit**
+
+```bash
+git add ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/code.py ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/PlcWatcher/code.py ignition/tags/plc_trigger_tag_paths.txt
+git commit -m "feat(scale): ScaleWatcher rewritten for the IND570 pull model; edge route removed"
+```
+
+---
+
+### Tasks 6 + 7: Capture button and setpoint push ✅ DONE
+
+**Completed 2026-08-28, commit `5bf2cdd0`.** One file, +53/-2, edited on disk rather than in the Designer. JSON re-parses, CRLF fully preserved (1802 of 1802), scan clean with no deserialization error.
+
+**Three things this plan got wrong:**
+
+- **The device-type key is `DeviceTypeCode`, not `PlcDeviceTypeCode`.** `TerminalPlcDevice.getByTerminal`'s *docstring* claims the latter and is stale; `R__Location_TerminalPlcDevice_GetByTerminal.sql` projects `t.Code AS DeviceTypeCode`. Filtering on the docstring's name would have matched nothing and every terminal would have looked unmapped. **Read the proc, not the docstring.**
+- **Task 7's anchor did not exist, and would have misfired if it had.** There is no item-selection handler — `FgDropdown` is purely bidi-bound with no events, and it lives inside `CloseForm`, which is gated `position.display` on `closureMethod = "ByCount"`. On a ByWeight line it never renders; on a ByCount line it *would* fire and toast a permanent "No ByWeight container config" on every selection. The real item-change signal is `custom.fgConfig`'s `onChange`, gated on `closureMethod == "ByWeight"`.
+- **`props.enabled` needs the instance path as a property**, which the handlers get from `session.custom.plcDevices`. Added `view.custom.scaleInstancePath` with a shaped `""` default, and every `tag()` read wrapped in `coalesce(..., <disabling default>)` so an unmapped terminal renders a disabled button rather than a red Component Error.
+
+`WeightStatus`'s label was also corrected — it read "PLC closes the container at target weight", which is false under rev 2's dual-trigger model.
+
+⚠️ **Not verified at runtime: the gateway's Perspective client trial has expired.** The view has never been rendered. See "Outstanding runtime checks" below.
+
+> **Do not edit `view.json` on disk.** This modifies an existing view. Designer's GSON serialization writes `=` `'` `<` `>` as 6-char unicode escapes that defeat literal string matching, and its in-memory model can overwrite on-disk changes through the "Files vs Gateway" conflict dialog. Perform these steps in the Designer, then export via `scan.ps1` and commit the resulting diff.
+
+**Files:**
+- Modify (in Designer): `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/AssemblyNonSerialized/view.json`
+
+- [x] **Step 1: Find the existing ByWeight container — do not add a parallel one**
+
+This view already has ByWeight scaffolding. `session.custom.closureMethod` drives display throughout, and at least one container is bound `position.display` to the expression `{session.custom.closureMethod} = "ByWeight"`. The capture button belongs **inside that container**, not beside the ByCount button.
+
+In the Designer, open the view and use the component tree to find the container whose `position.display` binding is that expression. Confirm what it already holds before adding anything — if a weight-related control is already present, extend it rather than duplicating.
+
+```bash
+grep -c 'ByWeight' ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/AssemblyNonSerialized/view.json
+```
+
+Expected: `7`. If the count differs, the view has moved on since this plan was written — re-inspect before proceeding.
+
+- [x] **Step 2: Add the button inside that container**
+
+Style it with the plant-floor classes already on its siblings (`psc-pf-*` — inspect a neighbour rather than inventing class names; the canonical stylesheet is the **Core** project's, and the MPP override was deliberately dropped in `4466f32b`).
+
+Label: **Weigh & Close Tray**.
+
+The view's existing tray-close entry point is `Assembly.handleTrayComplete` — read it first so the new handler is consistent with how the ByCount path reports success and failure.
+
+- [x] **Step 3: Write the `onActionPerformed` handler**
+
+The script body must begin with a tab character — the Designer wraps it in `def runAction(self, event):` and a column-0 body is an `IndentationError`.
+
+```python
+	instancePath = self.session.custom.terminal.udtInstancePath
+	terminalId = self.session.custom.terminal.locationId
+
+	# Same entry point the physical button reaches via onTriggerEdge.
+	result = BlueRidge.Workorder.ScaleWatcher.captureAndClose(
+		instancePath, terminalId)
+
+	if result["Status"]:
+		BlueRidge.Common.Notify.toast(
+			"Tray closed", result["Message"], "success", 4000)
+	else:
+		BlueRidge.Common.Notify.toast(
+			"Cannot close tray", result["Message"], "error", 0)
+```
+
+Confirm the two `session.custom.terminal` property names against `BlueRidge/Terminal/code.py`'s `applyToSession` before writing them — that function is the authority for what the session carries.
+
+- [x] **Step 4: Bind the button's enabled state**
+
+The UDT instance differs per terminal, so the path cannot be hard-coded. Use the `tag()` expression function over the session's instance path:
+
+```
+!tag({session.custom.terminal.udtInstancePath} + "/Weight/InMotion")
+ && tag({session.custom.terminal.udtInstancePath} + "/Weight/IsValid")
+ && tag({session.custom.terminal.udtInstancePath} + "/Setpoint/State") = "Active"
+```
+
+Expression syntax is C-style — `=` for equality, `&&`, `!`. Python keywords (`and`, `not`) parse but evaluate falsy, silently disabling the button forever.
+
+The handler re-checks all five gate conditions regardless — the binding is a courtesy, `captureGate` is the contract.
+
+- [x] **Step 5: Export and verify the diff is small**
+
+```bash
+powershell -File scan.ps1 && git diff --stat ignition/projects/MPP/
+```
+
+Expected: one `view.json` changed, tens of lines. A diff of hundreds of lines means the Designer pickled runtime-populated data into the view's defaults — discard and redo rather than committing it.
+
+- [x] **Step 6: Commit**
+
+```bash
+git add <the view.json path from step 1> <its resource.json>
+git commit -m "feat(shop-floor): Weigh & Close Tray capture button on the assembly terminal"
+```
+
+---
+
+### Task 7: Setpoint load on part change — **Designer task**
+
+Flow A must fire whenever the item running on the line changes, otherwise the terminal validates against a stale window.
+
+**Files:**
+- Modify (in Designer): the same assembly view; the item-selection dropdown's `onActionPerformed`.
+
+- [x] **Step 1: Extend the item dropdown handler**
+
+Append to the existing item-selection handler (tab-indented). Do not replace what is already there — read it first and add to it:
+
+```python
+	setpoint = BlueRidge.Workorder.ScaleWatcher.loadSetpointForItem(
+		self.session.custom.terminal.udtInstancePath,
+		self.session.custom.terminal.locationId, itemId)
+	if not setpoint["ok"]:
+		BlueRidge.Common.Notify.toast(
+			"Scale setpoint not loaded", setpoint["message"], "error", 0)
+```
+
+`itemId` is whatever the surrounding handler already resolved the selection to — reuse that variable, do not re-derive it.
+
+The error toast uses `ttl=0` so it persists. A silently failed setpoint load is the failure mode this whole design guards against.
+
+**Rev 2:** `loadSetpointForItem` now takes `terminalLocationId` and returns as soon as the config resolves - the command sequence runs asynchronously (spec 6.5). So `setpoint["ok"]` means *"config was valid and the push started"*, **not** *"the scale is now enforcing this target"*. The authoritative signal is `Setpoint.State` reaching `Active`, which is what gates the capture button. A sequencer failure arrives later via `notifyAlarm`, not in this return value - do not word the toast as if the setpoint has landed.
+
+- [x] **Step 2: Verify against the simulator**
+
+In the Sim Panel, select a scale device. In the Designer script console:
+
+```python
+p = "[MPP]PlcDevices/5G0_Front_Scale"
+print BlueRidge.Workorder.ScaleWatcher.loadSetpointForItem(p, <a ByWeight itemId>)
+```
+
+Expected: with no `ToleranceWeight` configured — `{"ok": False, "message": "ByWeight config is missing TargetWeight or ToleranceWeight..."}`. Set both in Item Master, re-run, and expect the sequencer to attempt four commands and time out against the simulator (which does not emulate the ack rotation) with a clear timeout message naming the command.
+
+That timeout is the correct simulator behaviour. A real ack round-trip is a commissioning test, not a simulator one.
+
+- [x] **Step 3: Export and commit**
+
+```bash
+powershell -File scan.ps1 && git diff --stat ignition/projects/MPP/
+git add <the view.json path> <its resource.json>
+git commit -m "feat(shop-floor): push scale setpoint on assembly item change"
+```
+
+---
+
+### Task 8: Documentation reconciliation
+
+Three canonical documents still describe the superseded design.
+
+**Files:**
+- Modify: `MPP_MES_DATA_MODEL.md`
+- Modify: `MPP_MES_FDS.md`
+- Modify: `MPP_MES_Open_Issues_Register.md`
+
+- [ ] **Step 1: Add `ToleranceWeight` to the data model**
+
+In `MPP_MES_DATA_MODEL.md`, in the `ContainerConfig` column table, add immediately after the `TargetWeight` row:
+
+```markdown
+| ToleranceWeight | DECIMAL(10,4) | NULL | Symmetric tolerance about `TargetWeight` for `ByWeight` closure — pushed to the scale as both the + and the − tolerance. Required when `ClosureMethod = 'ByWeight'`; ignored otherwise. Unit-less, like `TargetWeight`; units live on the scale UDT's `WeightUom` parameter. Added migration 0068. |
+```
+
+Add a Revision History row at the top of the document, matching the existing format and incrementing the version number from the current top row.
+
+- [ ] **Step 2: Rewrite FDS-10-006**
+
+In `MPP_MES_FDS.md`, replace the body of **FDS-10-006 — OmniServer Scale Reads**. The tag pattern `OmniServer/[LineName].[ScaleName].NET_NetWeightValue` is now wrong. Retitle it **Scale Integration (IND570 / Modbus TCP)** and state: the seven Machining/Assembly checkweigh scales are METTLER TOLEDO IND570 terminals connected natively over Modbus TCP with no third-party OPC server; the device computes the Under/OK/Over verdict, which is authoritative for tray closure per FDS-06-014; Trim Shop weight-based estimation (FDS-06-005) remains a manual entry against an unconnected scale. Cross-reference the design spec.
+
+Also update the two OmniServer rows in the interfaces table (near the "Scale/weight integration" and "OmniServer-connected weight scale" entries) and add a Revision History row.
+
+- [ ] **Step 3: Add the OI entry**
+
+In `MPP_MES_Open_Issues_Register.md`, add a **resolved** entry to Part A recording that FDS-06-014's parenthetical "(+ optional tolerance)" never reached the data model despite legacy SparkMES carrying `GroupTargetWeightTolerance`, that the FDS legacy-column crosswalk incorrectly claimed it was "subsumed by OI-02 resolution", and that it is resolved as a single symmetric `ContainerConfig.ToleranceWeight` (migration 0068) — the device supports an asymmetric window but the schema deliberately does not. Use the next free OI number and match the existing entry format exactly.
+
+- [ ] **Step 4: Regenerate the Word versions**
+
+```bash
+pandoc MPP_MES_DATA_MODEL.md -o MPP_MES_DATA_MODEL.docx --reference-doc=reference.docx && node style_docx_tables.js MPP_MES_DATA_MODEL.docx
+pandoc MPP_MES_FDS.md -o MPP_MES_FDS.docx --reference-doc=reference.docx && node style_docx_tables.js MPP_MES_FDS.docx
+pandoc MPP_MES_Open_Issues_Register.md -o MPP_MES_Open_Issues_Register.docx --reference-doc=reference.docx && node style_docx_tables.js MPP_MES_Open_Issues_Register.docx
+```
+
+Expected: `Styled: <file>` for each.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add MPP_MES_DATA_MODEL.md MPP_MES_DATA_MODEL.docx MPP_MES_FDS.md MPP_MES_FDS.docx MPP_MES_Open_Issues_Register.md MPP_MES_Open_Issues_Register.docx
+git commit -m "docs: reconcile data model, FDS-10-006 and OI register with the IND570 Modbus TCP design"
+```
+
+---
+
+### Task 9: Record the weight alongside the verdict
+
+Spec §7.2. The verdict closes the tray; the reading rides along on the `ProductionEvent` as evidence. `WeightValue DECIMAL(12,4)` and `WeightUomId` already exist on `Workorder.ProductionEvent` and FDS-06-004 already carries them as optional on the write path — nothing new to create, only a passthrough to wire.
+
+This is the one **reversible** decision in the plan. A verdict-only record reads "fine" right up until it reads "broken," with no history showing a scale drifting out of calibration. If MPP would rather not retain readings, drop this task entirely; nothing else changes.
+
+Run after Task 5 — it changes a signature that `captureAndClose` calls.
+
+**Files:**
+- Modify: `sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql`
+- Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/Assembly/code.py`
+- Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/code.py`
+- Modify: `sql/tests/` — the existing `Assembly_CompleteTray` test file (locate in Step 1)
+
+**Interfaces:**
+- Consumes: `captureAndClose`'s already-read `weight` and `uom` locals from Task 5.
+- Produces: `@WeightValue DECIMAL(12,4) = NULL`, `@WeightUomId BIGINT = NULL` on `Workorder.Assembly_CompleteTray`; `plcCompleteTray(terminalLocationId, closureMethod, weightValue=None, weightUomId=None)`.
+
+- [ ] **Step 1: Locate the proc and its tests**
+
+```bash
+ls sql/migrations/repeatable/ | grep -i completetray
+grep -rln "Assembly_CompleteTray" sql/tests/
+```
+
+Record both paths. Read the proc's parameter list and the `ProductionEvent` INSERT inside it before changing anything.
+
+- [ ] **Step 2: Write the failing test**
+
+Append to the located `Assembly_CompleteTray` test file, matching its existing setup idiom (reuse whatever LOT/Item fixtures it already builds — do not duplicate them):
+
+```sql
+-- ByWeight close records the scale reading on the ProductionEvent.
+INSERT INTO #r EXEC Workorder.Assembly_CompleteTray
+    @TerminalLocationId = @TerminalId, @FinishedGoodItemId = @FgItemId,
+    @PieceCount = 60, @ClosureMethod = N'ByWeight',
+    @WeightValue = 4.2110, @WeightUomId = 1, @AppUserId = 1;
+SELECT @S = Status FROM #r;
+DELETE FROM #r;
+
+EXEC test.Assert_IsEqual
+     @TestName = N'Assembly_CompleteTray accepts @WeightValue',
+     @Expected = N'1', @Actual = @S;
+
+-- A subquery is not a legal EXEC parameter -- assign first.
+DECLARE @PersistedWeight NVARCHAR(20);
+SELECT TOP 1 @PersistedWeight = CAST(WeightValue AS NVARCHAR(20))
+FROM Workorder.ProductionEvent
+ORDER BY Id DESC;
+
+EXEC test.Assert_IsEqual
+     @TestName = N'ByWeight close persists WeightValue on the ProductionEvent',
+     @Expected = N'4.2110', @Actual = @PersistedWeight;
+```
+
+Match the real parameter names from Step 1 — the names above are the expected shape, not verified signatures.
+
+- [ ] **Step 3: Run it to verify it fails**
+
+```bash
+cd sql/tests && powershell -File Run-Tests.ps1 -Filter "CompleteTray"
+```
+
+Expected: FAIL — `@WeightValue is not a parameter for procedure Assembly_CompleteTray`.
+
+- [ ] **Step 4: Add the parameters and wire them into the INSERT**
+
+In `R__Workorder_Assembly_CompleteTray.sql`, add after the existing optional parameters:
+
+```sql
+    @WeightValue       DECIMAL(12,4)  = NULL,
+    @WeightUomId       BIGINT         = NULL,
+```
+
+Add both columns to the `Workorder.ProductionEvent` INSERT column list and `VALUES`. Add a header revision line in the file's existing dated format. Do not restructure anything else in the proc.
+
+- [ ] **Step 5: Pass them through the Python layer**
+
+In `BlueRidge/Workorder/Assembly/code.py`, extend `plcCompleteTray`:
+
+```python
+def plcCompleteTray(terminalLocationId, closureMethod,
+                    weightValue=None, weightUomId=None):
+```
+
+and add both to the proc call's parameter dict. Defaulting to `None` keeps the existing `ByVision` caller working unchanged.
+
+In `BlueRidge/Workorder/ScaleWatcher/code.py`, `captureAndClose` already reads `weight` and `uom` — pass them:
+
+```python
+    result = BlueRidge.Workorder.Assembly.plcCompleteTray(
+        terminalLocationId, "ByWeight", weightValue=weight,
+        weightUomId=BlueRidge.Common.Util.uomIdForCode(uom))
+```
+
+If no `uomIdForCode` helper exists, resolve the UOM id in SQL inside the proc from a `@WeightUomCode NVARCHAR` instead — a code-to-id lookup is a domain rule and belongs in SQL, not a Python map.
+
+- [ ] **Step 6: Run the tests**
+
+```bash
+cd sql/tests && powershell -File Run-Tests.ps1
+```
+
+Expected: 0 failures, including the pre-existing `ByVision` and `ByCount` close tests, which must not regress.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/Assembly/code.py ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/ScaleWatcher/code.py <the test file>
+git commit -m "feat(scale): record the checkweigh reading on the ByWeight tray-close ProductionEvent"
+```
+
+---
+
+### Task 10: Make `ToleranceWeight` settable from Item Master ✅ DONE
+
+**Completed 2026-08-27** — `add2030d` (named queries), `dce4e677` (Python passthrough), `5195c28e` (editor field). `ToleranceWeight` is now settable end to end, which unblocks Flow A.
+
+**This plan shipped a column nothing can write to.** Task 1 added `ToleranceWeight` to the table and the stored procs, but the Ignition named queries `parts/ContainerConfig_Create` and `parts/ContainerConfig_Update` pass parameters by name and stop at `@TargetWeight`, and the ContainerConfig editor section has no field for it. So the value is permanently NULL from the application's point of view — and `loadSetpointForItem` (Task 5) refuses to push a setpoint when it is NULL. Flow A cannot work until this is done.
+
+**Run before Task 7**, otherwise Task 7's verification has no configured part to test against.
+
+**Files:**
+- Modify: `ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Create/query.sql`
+- Modify: `ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Update/query.sql`
+- Modify: `ignition/projects/Core/ignition/script-python/BlueRidge/Parts/ContainerConfig/code.py`
+- Modify (in Designer): `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/ItemMaster/ContainerConfig/view.json`
+
+**Interfaces:**
+- Consumes: `@ToleranceWeight` on both procs (Task 1).
+- Produces: a populated `ContainerConfig.ToleranceWeight` for `ByWeight` items, which Task 5's `loadSetpointForItem` reads.
+
+- [x] **Step 0: Confirm the target database actually has Task 1's SQL applied** ⚠️ ADDED
+
+**Committed SQL is not applied SQL.** During execution `MPP_MES_Dev` was still at migration `0067` while the repo was at `0068`, so the deployed procs had no `@ToleranceWeight`. Deploying the named query against that DB makes the Container Config tab's Save fail outright with *"Procedure or function ContainerConfig_Update has too many arguments specified"* — on a gateway other people are using.
+
+Before running `scan.ps1` in Step 3:
+
+```bash
+sqlcmd -S localhost -d MPP_MES_Dev -C -h -1 -W -Q "SET NOCOUNT ON; SELECT MAX(MigrationId) FROM dbo.SchemaVersion"
+```
+
+If it is behind `0068_containerconfig_tolerance_weight`, apply `sql/migrations/versioned/0068_containerconfig_tolerance_weight.sql` and the four `R__Parts_ContainerConfig_*` repeatables (all `CREATE OR ALTER`, all additive) before deploying. Do **not** reset the database — it holds hand-created parts.
+
+- [x] **Step 1: Add the parameter to both named queries**
+
+Named-query `query.sql` files are plain SQL and safe to edit on disk — the Designer view-edit boundary does not apply to them.
+
+In `parts/ContainerConfig_Create/query.sql`, add after the `@TargetWeight` line:
+
+```sql
+    @ToleranceWeight   = :toleranceWeight,
+```
+
+Do the same in `parts/ContainerConfig_Update/query.sql`. Keep `@AppUserId` last in both.
+
+- [x] **Step 2: Declare the parameter in each `resource.json`**
+
+Each named query's `resource.json` carries the typed parameter list. Open `parts/ContainerConfig_Create/resource.json`, find the entry declaring `targetWeight`, and add a sibling `toleranceWeight` with the identical type. Repeat for `_Update`. A parameter used in `query.sql` but undeclared here fails at runtime, not at scan.
+
+- [x] **Step 3: Scan and verify the queries still resolve**
+
+```bash
+powershell -File scan.ps1
+```
+
+In the Designer, run `parts/ContainerConfig_GetByItemAndMethod` from the named-query tester against a `ByWeight` item and confirm `ToleranceWeight` appears as a column. Then run `ContainerConfig_Update` with a `toleranceWeight` value and confirm `Status = 1`.
+
+- [x] **Step 3b: Thread the value through the Python layer** ⚠️ ADDED — the plan originally missed this file
+
+The editor field cannot round-trip without it. `ignition/projects/Core/ignition/script-python/BlueRidge/Parts/ContainerConfig/code.py` stops at `TargetWeight` in three places:
+
+- **`_CONFIG_SHAPE`** (~line 49) — add `"ToleranceWeight": None` after `"TargetWeight": None`. This dict is the binding-safe empty shape; a key missing here is filtered out of `getByItemOrEmpty` / `getByItemAndMethodOrEmpty`, so the value would never reach the view even once the DB has it.
+- **`add()`** (~line 143) — add `"toleranceWeight": data.get("ToleranceWeight"),` to the named-query parameter dict, after `targetWeight`.
+- **`update()`** (~line 182) — the same addition.
+
+Also extend the two docstring shape comments (~lines 124 and 167) that enumerate the accepted dict keys, so the contract stays accurate.
+
+This file is a Python script, not a view, so it is safe to edit on disk.
+
+- [x] **Step 4: Add the editor field — Designer task**
+
+Open `BlueRidge/Components/Parts/ItemMaster/ContainerConfig`. Find the existing `TargetWeight` input and add a `ToleranceWeight` input directly beside it, copying the sibling's component type, styling and binding shape exactly.
+
+Two project rules apply here and both cause silent breakage if missed:
+
+- The input must bidi-bind to `view.custom.state.editDraft.<field>` following the section's existing pattern. **Pre-seed `ToleranceWeight` in the `editDraft` default shape** in the view's `custom` block — a nested bidi path whose parent lacks the key renders a red validation border and literal `"null"` text until the load handler fires.
+- The section's `load()` must include the new field, and must continue to assign `selected` and `editDraft` in **one** property write. Two sequential writes let the dirty binding observe a transient mismatch, fire `sectionDirtyChanged{isDirty: true}`, and latch the parent's flag — which blocks item navigation behind spurious ConfirmUnsaved popups.
+
+Label it **Tolerance (±)** to make the symmetry explicit; the single value is applied as both the plus and minus tolerance.
+
+- [x] **Step 5: Verify end to end**
+
+In the running app, open an item with `ClosureMethod = ByWeight`, set a target and a tolerance, save, then confirm in SQL:
+
+```bash
+sqlcmd -S localhost -d MPP_MES_Dev -C -Q "SELECT ItemId, ClosureMethod, TargetWeight, ToleranceWeight FROM Parts.ContainerConfig WHERE ClosureMethod = 'ByWeight' AND DeprecatedAt IS NULL"
+```
+
+Expected: a non-NULL `ToleranceWeight`. Verify through SQL rather than the browser — the in-app browser cannot reliably commit Perspective input bindings, so a visual check is not evidence the value persisted.
+
+- [x] **Step 6: Export and commit**
+
+```bash
+powershell -File scan.ps1 && git diff --stat ignition/
+git add ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Create/ ignition/projects/Core/ignition/named-query/parts/ContainerConfig_Update/ ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/ItemMaster/ContainerConfig/
+git commit -m "feat(items): expose ContainerConfig.ToleranceWeight in Item Master"
+```
+
+---
+
+## ⚠️ Outstanding runtime checks — nothing here has executed in Ignition
+
+Every task was verified by Jython compilation, stubbed-global branch tests, and clean scans. **None of it has run inside the gateway.** Two blockers, both gateway-admin actions:
+
+1. **The Perspective client trial has expired** — "Please log into your Ignition Gateway if you'd like to start a new 2 hour trial period". Until it is reset the assembly view cannot even be rendered.
+2. **No Designer session** — so `Ind570`'s script-console check from Task 4 is still undischarged.
+
+Once the trial is reset, in priority order:
+
+| # | Check | Why it matters |
+|---|---|---|
+| 1 | Script console: `print BlueRidge.Workorder.Ind570.CMD["SET_TARGET"]` -> `110` | proves the project library resolves the module at all |
+| 2 | Open a ByWeight assembly terminal — does the page paint? | a malformed view renders blank and no scan catches it |
+| 3 | Is the Weigh & Close Tray button cleanly disabled, or a red Component Error? | tests the `tag()` binding and the `coalesce` hardening |
+| 4 | Change the running part — does the setpoint toast fire? | tests `fgConfig.onChange` as the item-change signal |
+| 5 | Item Master: set a tolerance on a ByWeight part, save, confirm in SQL | the in-app browser cannot commit Perspective inputs, so this needs a real session |
+
+## Deferred to commissioning
+
+Not tasks — they need the physical terminal and are covered by the integration guide's §6 test sequence:
+
+- Addressing-base confirmation (`HR4.5` reads 1; integrity bits toggle together). In the 8.3 device config this is ADVANCED > **Zero-based Addressing**, left UNCHECKED; the **Address Mapping** table stays empty (we address registers directly).
+- Byte order confirmation against a known weight.
+- Whether the combo card serves EtherNet/IP and Modbus TCP concurrently.
+- Whether all four message slots can address the same local scale independently.
+- Command 30 units verification against the `WeightUom` default of `lb`.
+- Instance parameter fill-in: `Device`, `BasePath` (empty for Modbus — registers are the address, unlike the sim's `<device>/`), `OpcServer`, per scale.
+
+## Not in this plan
+
+- Asymmetric tolerance windows.
+- Retiring the OmniServer OPC server connection itself — a separate infrastructure change once all seven scales are cut over.

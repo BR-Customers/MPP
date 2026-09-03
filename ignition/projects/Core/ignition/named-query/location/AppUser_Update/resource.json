@@ -18,7 +18,7 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
-    "lastModificationSignature": "c445bfd016c3648efcc02e3ec53a083b0af0ad18c421b877c6228870d66d98fd",
+    "lastModificationSignature": "",
     "permissions": [
       {
         "zone": "",
@@ -43,6 +43,11 @@
       {
         "type": "Parameter",
         "identifier": "displayName",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "pin",
         "sqlType": 7
       },
       {

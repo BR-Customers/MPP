@@ -8,7 +8,7 @@ import java.lang
 
 def getUserList(includeDeprecated=False, textFilter=None):
     """List AppUsers for the Users management screen, optionally filtered by
-       free text (matched against Initials / DisplayName / AdAccount).
+       free text (matched against Initials / DisplayName / AdAccount / Pin).
        Returns list[dict]."""
     BlueRidge.Common.Util.log("includeDeprecated=%s textFilter=%s"
                               % (includeDeprecated, textFilter))
@@ -28,13 +28,15 @@ def getUser(chosenId):
 
 
 def createOperator(meta, appUserId):
-    """Create a user from the operator editor. Initials + DisplayName always; an
-       optional AdAccount + IgnitionRole link the row to an AD supervisor
-       (empty -> NULL = operator-only). Returns {Status, Message, NewId}."""
+    """Create a user from the operator editor. Initials + DisplayName + Pin
+       always; an optional AdAccount + IgnitionRole link the row to an AD
+       supervisor (empty -> NULL = operator-only). Returns
+       {Status, Message, NewId}."""
     m = BlueRidge.Common.Util.extractQualifiedValues(meta) or {}
     attributes = {
         "initials":     m.get("initials"),
         "displayName":  m.get("displayName"),
+        "pin":          (m.get("pin") or None),
         "adAccount":    (m.get("adAccount") or None),
         "ignitionRole": (m.get("ignitionRole") or None),
         "appUserId":    appUserId,
@@ -44,8 +46,8 @@ def createOperator(meta, appUserId):
 
 def createUser(attributes):
     """Create a new AppUser from an attributes dict
-       (initials, displayName, adAccount, ignitionRole, appUserId).
-       Initials must be unique. Returns {Status, Message, NewId}."""
+       (initials, displayName, pin, adAccount, ignitionRole, appUserId).
+       Initials and pin must each be unique. Returns {Status, Message, NewId}."""
     BlueRidge.Common.Util.log("initials=%s" % attributes.get("initials"))
     if not attributes.get("appUserId"):
         attributes["appUserId"] = BlueRidge.Common.Util._currentAppUserId()
@@ -64,13 +66,15 @@ def deprecateUser(chosenId, appUserId):
 
 
 def updateOperator(chosenId, meta, appUserId):
-    """Update a user from the operator editor (Initials + DisplayName + optional
-       AdAccount/IgnitionRole AD link; empty -> NULL). Returns {Status, Message}."""
+    """Update a user from the operator editor (Initials + DisplayName + Pin +
+       optional AdAccount/IgnitionRole AD link; empty -> NULL).
+       Returns {Status, Message}."""
     m = BlueRidge.Common.Util.extractQualifiedValues(meta) or {}
     attributes = {
         "id":           chosenId,
         "initials":     m.get("initials"),
         "displayName":  m.get("displayName"),
+        "pin":          (m.get("pin") or None),
         "adAccount":    (m.get("adAccount") or None),
         "ignitionRole": (m.get("ignitionRole") or None),
         "appUserId":    appUserId,
@@ -80,7 +84,7 @@ def updateOperator(chosenId, meta, appUserId):
 
 def updateUser(attributes):
     """Update an AppUser from an attributes dict keyed by Id
-       (id, initials, displayName, adAccount, ignitionRole, appUserId).
+       (id, initials, displayName, pin, adAccount, ignitionRole, appUserId).
        Returns {Status, Message}."""
     BlueRidge.Common.Util.log("initials=%s" % attributes.get("initials"))
     if not attributes.get("appUserId"):
@@ -94,6 +98,7 @@ def emptyMeta():
         "id":          None,
         "initials":    "",
         "displayName": "",
+        "pin":         "",
         "adAccount":   "",
         "ignitionRole": "",
     }
@@ -128,17 +133,54 @@ def getActiveByInitials(initials):
     )
 
 
+def getByPin(pin):
+    """Resolve an AppUser by sign-in PIN, INCLUDING deprecated rows.
+
+       PINs are unique across the full lifecycle, so a retired person's PIN
+       still resolves here. Use this ONLY to tell a deactivated operator apart
+       from an unknown PIN after getActiveByPin has already refused -- never to
+       establish presence. Returns a dict or None."""
+    BlueRidge.Common.Util.log("pin=%s" % pin)
+    return BlueRidge.Common.Db.execOne(
+        "location/AppUser_GetByPin",
+        {"pin": pin},
+    )
+
+
+def getActiveByPin(pin):
+    """Resolve an ACTIVE (non-deprecated) AppUser by sign-in PIN.
+
+       The presence-eligibility gate for PIN login: unknown AND deprecated
+       PINs both return None, so neither can sign in nor stamp a mutation.
+       The DeprecatedAt filter is enforced in SQL (Location.
+       AppUser_GetActiveByPin), not here.
+
+       The PIN is a STRING throughout -- full-time employees' codes carry a
+       leading zero (04218), temps' do not (40218). Never int() it. Returns a
+       dict or None."""
+    BlueRidge.Common.Util.log("pin=%s" % pin)
+    return BlueRidge.Common.Db.execOne(
+        "location/AppUser_GetActiveByPin",
+        {"pin": pin},
+    )
+
+
 def create(data):
     """Create a new AppUser. Returns {Status, Message, NewId}.
 
        Shop-floor self-registration (UnknownInitials -> RegisterOperator) creates
-       Operator-class rows: Initials + DisplayName only, AdAccount/IgnitionRole NULL.
+       Operator rows: Initials + DisplayName + Pin, AdAccount/IgnitionRole NULL.
+       This is the ONLY onboarding path -- there is no seeded roster.
        appUserId defaults to 1 (the bootstrap/system user) because nobody is
-       authenticated at the Initials screen -- attribution policy, not a rule."""
+       authenticated at the PIN screen -- attribution policy, not a rule.
+
+       Note the PIN is NOT upper-cased or coerced: it is digits, and stripping
+       a leading zero would lock out every full-time employee."""
     BlueRidge.Common.Util.log("data=%s" % data)
     params = {
         "initials":     (data.get("initials") or "").strip().upper(),
         "displayName":  data.get("displayName"),
+        "pin":          (data.get("pin") or None),
         "adAccount":    data.get("adAccount"),
         "ignitionRole": data.get("ignitionRole"),
         "appUserId":    data.get("appUserId") or 1,
