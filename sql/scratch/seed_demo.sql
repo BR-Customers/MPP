@@ -129,7 +129,7 @@ DECLARE @L_TRIM1      BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'
 DECLARE @L_6NA        BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA');
 DECLARE @L_6NA_MIN    BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MIN');
 DECLARE @L_6NA_MOUT   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-MOUT');
-DECLARE @L_6NA_AFIN   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-AFIN');
+DECLARE @L_6NA_AFIN   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-AOUT');
 DECLARE @L_5GOF       BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
 DECLARE @L_5GOF_MIN   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
 DECLARE @L_5GOF_MOUT  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
@@ -170,7 +170,7 @@ DECLARE @rLot   TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLo
 DECLARE @rMove  TABLE (Status BIT, Message NVARCHAR(500));
 DECLARE @rTrim  TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @rMin   TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-DECLARE @rMint  TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+DECLARE @rMint  TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
 DECLARE @rTray  TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
 DECLARE @rComp  TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
 DECLARE @rShip  TABLE (Status BIT, Message NVARCHAR(500));
@@ -409,7 +409,7 @@ PRINT N'1) DIE CAST /shop-floor/die-cast : cell DC3-M01 has WIP cast ' + @W_DieC
 PRINT N'2) TRIM /shop-floor/trim : cast ' + @W_Trim + N' sits at TRIM1 -- trim it out to the 6NA line (MA1-FP6NA-MIN).';
 PRINT N'3) MACHINING IN /shop-floor/machining-in (line MA1-FP6NA) : unworked arrival ' + @W_MinCast + N' waiting to be picked.';
 PRINT N'4) MACHINING OUT /shop-floor/machining-out : machined ' + @W_MoutMachName + N' at MA1-FP6NA-MOUT (paused + 2-pc reject).';
-PRINT N'5) ASSEMBLY (NON-SERIALIZED) /shop-floor/assembly-nonserialized (MA1-FP6NA-AFIN) : a machined 6NA-M LOT + studs/dowels staged -- open a container + complete trays of 6.';
+PRINT N'5) ASSEMBLY (NON-SERIALIZED) /shop-floor/assembly-nonserialized (MA1-FP6NA-AOUT) : a machined 6NA-M LOT + studs/dowels staged -- open a container + complete trays of 6.';
 PRINT N'6) SHIPPING /shop-floor/shipping : 6NA container ' + CAST(@ShipContainer AS NVARCHAR(20)) + N' already SHIPPED, AIM ' + ISNULL(@ShipAim, N'?') + N'. Received pin LOT ' + @R_Pin + N' at MA1 (purchased-part receipt).';
 PRINT N'7) ASSEMBLY (SERIALIZED) /shop-floor/assembly-serialized (MA1-5GOF) : container ' + CAST(@G_Container AS NVARCHAR(20)) + N' has 4 serials from ' + @G_MachName + N'.';
 PRINT N'8) HOLD MANAGEMENT /shop-floor/hold-management : release hold ' + CAST(@G_HoldId AS NVARCHAR(20)) + N' on 5G0 machined ' + @G_MachName + N'.';
