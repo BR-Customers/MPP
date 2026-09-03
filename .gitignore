@@ -88,3 +88,6 @@ AIM_docs/customer_docs/
 
 # AIM verification scratch logs (Plan 1/2 execution)
 sql/scratch/aim_*.txt
+
+# Ignition project export zips built by build-project-exports.ps1 (rebuildable artifacts)
+dist/

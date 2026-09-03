@@ -1,0 +1,154 @@
+# ============================================================================
+# build-project-exports.ps1 -- build Ignition 8.3 project export .zip files
+#                              from the repo's file-based project folders.
+#
+# WHY THIS EXISTS
+#   The normal deploy path for this project is NOT export/import: the Gateway
+#   junctions into ignition/projects/<P> and picks up changes via scan.ps1
+#   (see ignition-context-pack/09_repo_gateway_sync.md). That works because the
+#   Gateway and the repo are on the same machine.
+#
+#   A BRAND-NEW Gateway -- e.g. MPP's production server, which has no projects
+#   on it yet -- has nothing to junction to and no repo checkout. Import a zip
+#   once to seed it, then set up the git-sync loop (or keep importing).
+#
+# FORMAT (verified against a real Ignition-produced export,
+#         Downloads\MPP_2026-08-20_0713.zip, gateway 8.3.5-rc1)
+#   * project.json sits at the ROOT of the zip -- NOT nested under a folder
+#     named after the project.
+#   * Every other entry is a resource path relative to that root, e.g.
+#     com.inductiveautomation.perspective/views/<Path>/view.json
+#   * Entry separators are FORWARD SLASHES. This matters: Compress-Archive on
+#     Windows PowerShell 5.1 has historically written backslash separators,
+#     which Java-side consumers read as one long filename instead of a tree.
+#     This script therefore builds entries by hand via System.IO.Compression
+#     rather than using Compress-Archive.
+#   * Files only -- no explicit directory entries (matches the donor).
+#
+# WHAT IS EXCLUDED (and why)
+#   thumbnail.png          Gateway-regenerated per-view preview. 159 of them in
+#                          this repo; gitignored for the same reason.
+#   views/**/data.bin      Gateway-regenerated view binary. NOTE the path
+#                          restriction: report data.bin under
+#                          com.inductiveautomation.reporting/reports/<R>/ is a
+#                          REAL authored resource and IS included (12 of them).
+#   .gitkeep / .git*       Repo scaffolding, meaningless to the Gateway.
+#   *.realbak*             link-projects.ps1's backups of pre-junction folders.
+#   pull.log, Thumbs.db, desktop.ini    Runtime / OS noise.
+#
+# Usage:
+#   .\build-project-exports.ps1                       # Core, MPP, MPP_Config
+#   .\build-project-exports.ps1 -Projects MPP
+#   .\build-project-exports.ps1 -OutputDir C:\deploy -NoTimestamp
+#
+# IMPORT ORDER ON THE TARGET GATEWAY
+#   Core FIRST. MPP and MPP_Config both declare "parent": "Core" and will not
+#   resolve their inherited views, scripts, named queries or styles until the
+#   parent project exists.
+# ============================================================================
+
+[CmdletBinding()]
+param(
+    [string[]]$Projects  = @('Core', 'MPP', 'MPP_Config'),
+    [string]  $OutputDir = '',
+    [switch]  $NoTimestamp
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.IO.Compression            # ZipArchive / ZipArchiveMode
+Add-Type -AssemblyName System.IO.Compression.FileSystem # ZipFile / ZipFileExtensions
+
+$RepoRoot    = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ProjectsDir = Join-Path $RepoRoot 'ignition\projects'
+if ($OutputDir -eq '') { $OutputDir = Join-Path $RepoRoot 'dist\ignition-exports' }
+
+# Excluded if the file NAME matches...
+$ExcludedNames = @('thumbnail.png', '.gitkeep', 'pull.log', 'Thumbs.db', 'desktop.ini')
+# ...or if the RELATIVE PATH matches one of these (forward-slash form).
+$ExcludedPathPatterns = @(
+    '(^|/)views/.*/data\.bin$',   # view binary -- regenerated. Reports' data.bin is NOT matched.
+    '(^|/)\.git',                 # .git, .gitignore, .gitattributes
+    '\.realbak'                   # link-projects.ps1 backups
+)
+
+function Test-Excluded {
+    param([string]$RelPath, [string]$Name)
+    if ($ExcludedNames -contains $Name) { return $true }
+    foreach ($p in $ExcludedPathPatterns) { if ($RelPath -match $p) { return $true } }
+    return $false
+}
+
+if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null }
+
+Write-Host ''
+Write-Host '============================================================' -ForegroundColor Cyan
+Write-Host '  IGNITION PROJECT EXPORTS' -ForegroundColor Cyan
+Write-Host "  Source: $ProjectsDir" -ForegroundColor Cyan
+Write-Host "  Output: $OutputDir" -ForegroundColor Cyan
+Write-Host '============================================================' -ForegroundColor Cyan
+Write-Host ''
+
+$stamp    = Get-Date -Format 'yyyy-MM-dd_HHmm'
+$results  = @()
+
+foreach ($proj in $Projects) {
+
+    $srcDir = Join-Path $ProjectsDir $proj
+    if (-not (Test-Path $srcDir)) { throw "Project folder not found: $srcDir" }
+
+    # A folder without project.json is not an Ignition project (the repo carries
+    # a couple of empty stubs -- MPP_MES, 'Refrence project' -- that are not).
+    $projJson = Join-Path $srcDir 'project.json'
+    if (-not (Test-Path $projJson)) {
+        throw "$proj has no project.json -- not an Ignition project, refusing to export it."
+    }
+
+    $meta   = Get-Content $projJson -Raw | ConvertFrom-Json
+    $title  = $meta.title
+    $parent = if ($meta.parent -ne '') { $meta.parent } else { '<none>' }
+
+    $zipName = if ($NoTimestamp) { "$proj.zip" } else { "${proj}_$stamp.zip" }
+    $zipPath = Join-Path $OutputDir $zipName
+    if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+
+    $srcFull = (Resolve-Path $srcDir).Path.TrimEnd('\')
+    $all     = @(Get-ChildItem -Path $srcFull -Recurse -File -Force)
+
+    $included = @()
+    $skipped  = 0
+    foreach ($f in $all) {
+        $rel = $f.FullName.Substring($srcFull.Length + 1).Replace('\', '/')
+        if (Test-Excluded -RelPath $rel -Name $f.Name) { $skipped++; continue }
+        $included += [pscustomobject]@{ Full = $f.FullName; Rel = $rel }
+    }
+
+    $zip = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        # project.json first, so it lands at the top of the archive like a real export.
+        foreach ($entry in ($included | Sort-Object { if ($_.Rel -eq 'project.json') { '' } else { $_.Rel } })) {
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $zip, $entry.Full, $entry.Rel,
+                [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        }
+    }
+    finally { $zip.Dispose() }
+
+    $sizeKb = [math]::Round((Get-Item $zipPath).Length / 1KB, 1)
+    $hash   = (Get-FileHash $zipPath -Algorithm SHA256).Hash.Substring(0, 16)
+
+    Write-Host ("  {0,-12} '{1}'" -f $proj, $title) -ForegroundColor Green
+    Write-Host ("               parent: {0} | inheritable: {1}" -f $parent, $meta.inheritable) -ForegroundColor Gray
+    Write-Host ("               {0} files ({1} excluded) -> {2}  [{3} KB]" -f $included.Count, $skipped, $zipName, $sizeKb) -ForegroundColor Gray
+
+    $results += [pscustomobject]@{
+        Project = $proj; Title = $title; Parent = $parent
+        Files = $included.Count; Excluded = $skipped; SizeKB = $sizeKb
+        Zip = $zipName; Sha256 = $hash
+    }
+}
+
+Write-Host ''
+Write-Host 'IMPORT ORDER: Core first (MPP and MPP_Config inherit from it).' -ForegroundColor Yellow
+Write-Host ''
+$results | Format-Table -AutoSize
