@@ -1,0 +1,124 @@
+{
+  "custom": {},
+  "params": {
+    "popupId": "inventoryManagerHowTo"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 400,
+      "width": 620
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "How to use line inventory"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "modal-header"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Guide"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1
+            },
+            "props": {
+              "markdown": {
+                "escapeHtml": false
+              },
+              "sectionSpacing": 8,
+              "source": "\u003cdiv style\u003d\"font-size:14.5px;color:#C9D2E0;line-height:1.55;padding:0 0 16px 0;\"\u003eCheck a LOT in, receive loose parts, or see what is on hand at this line.\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"18\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;color:#22A8CC;font-size:15px;font-weight:bold;padding-bottom:10px;\"\u003e\u0026bull;\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-bottom:10px;\"\u003e\u003cspan style\u003d\"font-size:13.5px;font-weight:bold;color:#F0F3F8;\"\u003eCheck in LTT\u003c/span\u003e\u003cspan style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003e \u0026ndash; Scan the LTT barcode to move it onto this line.\u003c/span\u003e\u003c/td\u003e\u003c/tr\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"18\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;color:#22A8CC;font-size:15px;font-weight:bold;padding-bottom:10px;\"\u003e\u0026bull;\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-bottom:10px;\"\u003e\u003cspan style\u003d\"font-size:13.5px;font-weight:bold;color:#F0F3F8;\"\u003eOn hand\u003c/span\u003e\u003cspan style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003e \u0026ndash; Shows every LOT at this line in FIFO order \u0026ndash; oldest first. Display only.\u003c/span\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e1\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003ePick the part\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eScan or pick the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003ePart Number\u003c/span\u003e.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e2\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eEnter the count\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eEnter the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003ePiece Count\u003c/span\u003e.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e3\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eAdd a vendor LOT\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eAdd a \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eVendor LOT\u003c/span\u003e if you have one \u0026ndash; optional.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e4\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eAdd it\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003ePress \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eAdd to line\u003c/span\u003e.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e",
+              "style": {
+                "fontSize": 13,
+                "overflow": "auto"
+              }
+            },
+            "type": "ia.display.markdown"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}
