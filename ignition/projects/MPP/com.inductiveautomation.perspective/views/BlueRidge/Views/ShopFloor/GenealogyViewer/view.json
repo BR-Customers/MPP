@@ -25,38 +25,87 @@
       {
         "children": [
           {
+            "children": [
+              {
+                "meta": {
+                  "name": "PageTitle"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "22px",
+                    "fontWeight": "600",
+                    "marginBottom": "4px"
+                  },
+                  "text": "Genealogy Lookup"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ElevatedBadge"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "13px"
+                  },
+                  "text": "Elevated · Honda audit query surface"
+                },
+                "type": "ia.display.label"
+              }
+            ],
             "meta": {
-              "name": "PageTitle"
+              "name": "TitleBlock"
             },
             "position": {
-              "shrink": 0
+              "grow": 1
             },
             "props": {
+              "alignItems": "center",
+              "direction": "column",
               "style": {
-                "color": "var(--mpp-text-primary)",
-                "fontSize": "22px",
-                "fontWeight": "600",
-                "marginBottom": "4px"
-              },
-              "text": "Genealogy Lookup"
+                "gap": "0"
+              }
             },
-            "type": "ia.display.label"
+            "type": "ia.container.flex"
           },
           {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup('genealogyViewerHowTo',\n\t\t'BlueRidge/Components/Popups/GenealogyViewerHowTo',\n\t\tparams={'popupId': 'genealogyViewerHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
-              "name": "ElevatedBadge"
+              "name": "HowToButton",
+              "tooltip": {
+                "text": "How to trace a LOT's genealogy"
+              }
             },
             "position": {
               "shrink": 0
             },
             "props": {
+              "path": "material/help_outline",
               "style": {
-                "color": "var(--mpp-text-secondary)",
-                "fontSize": "13px"
-              },
-              "text": "Elevated · Honda audit query surface"
+                "cursor": "pointer",
+                "height": "35px",
+                "width": "35px"
+              }
             },
-            "type": "ia.display.label"
+            "type": "ia.display.icon"
           }
         ],
         "meta": {
@@ -67,11 +116,10 @@
         },
         "props": {
           "alignItems": "center",
-          "direction": "column",
           "style": {
             "background": "var(--mpp-surface-card)",
             "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "gap": "0",
+            "gap": "8px",
             "padding": "16px 24px 12px 24px"
           }
         },

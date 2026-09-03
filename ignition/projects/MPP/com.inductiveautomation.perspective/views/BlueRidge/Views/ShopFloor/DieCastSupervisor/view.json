@@ -131,6 +131,26 @@
               "text": "Refresh"
             },
             "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup('dieCastSupervisorHowTo',\n\t\t'BlueRidge/Components/Popups/DieCastSupervisorHowTo',\n\t\tparams={'popupId': 'dieCastSupervisorHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": { "name": "HowToButton", "tooltip": { "text": "How to read this dashboard" } },
+            "position": { "shrink": 0 },
+            "props": {
+              "path": "material/help_outline",
+              "style": { "cursor": "pointer", "height": "35px", "width": "35px" }
+            },
+            "type": "ia.display.icon"
           }
         ],
         "meta": { "name": "Header" },

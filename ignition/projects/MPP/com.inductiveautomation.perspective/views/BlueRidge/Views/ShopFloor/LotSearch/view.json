@@ -70,6 +70,8 @@
       {
         "children": [
           {
+            "children": [
+          {
             "meta": {
               "name": "Heading"
             },
@@ -96,6 +98,52 @@
             },
             "type": "ia.display.label"
           }
+            ],
+            "meta": {
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup('lotSearchHowTo',\n\t\t'BlueRidge/Components/Popups/LotSearchHowTo',\n\t\tparams={'popupId': 'lotSearchHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "HowToButton",
+              "tooltip": {
+                "text": "How to search for a LOT"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/help_outline",
+              "style": {
+                "cursor": "pointer",
+                "height": "35px",
+                "width": "35px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
         ],
         "meta": {
           "name": "Header"
@@ -104,9 +152,9 @@
           "shrink": 0
         },
         "props": {
-          "direction": "column",
+          "alignItems": "flex-end",
           "style": {
-            "gap": "4px"
+            "gap": "8px"
           }
         },
         "type": "ia.container.flex"

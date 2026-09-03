@@ -1,0 +1,124 @@
+{
+  "custom": {},
+  "params": {
+    "popupId": "dieCastSupervisorHowTo"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 380,
+      "width": 620
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "How to read this dashboard"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "modal-header"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Guide"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1
+            },
+            "props": {
+              "markdown": {
+                "escapeHtml": false
+              },
+              "sectionSpacing": 8,
+              "source": "\u003cdiv style\u003d\"font-size:14.5px;color:#C9D2E0;line-height:1.55;padding:0 0 16px 0;\"\u003eRead-only production dashboard comparing the current shift to the previous one, plant-wide or filtered to one die-cast area.\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"18\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;color:#22A8CC;font-size:15px;font-weight:bold;padding-bottom:10px;\"\u003e\u0026bull;\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-bottom:10px;\"\u003e\u003cspan style\u003d\"font-size:13.5px;font-weight:bold;color:#F0F3F8;\"\u003eArea\u003c/span\u003e\u003cspan style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003e \u0026ndash; Filter to one die-cast area, or leave it on All Die Cast. Display only \u0026ndash; it never changes any data.\u003c/span\u003e\u003c/td\u003e\u003c/tr\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"18\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;color:#22A8CC;font-size:15px;font-weight:bold;padding-bottom:10px;\"\u003e\u0026bull;\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-bottom:10px;\"\u003e\u003cspan style\u003d\"font-size:13.5px;font-weight:bold;color:#F0F3F8;\"\u003eRefresh\u003c/span\u003e\u003cspan style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003e \u0026ndash; Pulls the latest numbers.\u003c/span\u003e\u003c/td\u003e\u003c/tr\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"18\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;color:#22A8CC;font-size:15px;font-weight:bold;padding-bottom:10px;\"\u003e\u0026bull;\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-bottom:10px;\"\u003e\u003cspan style\u003d\"font-size:13.5px;font-weight:bold;color:#F0F3F8;\"\u003eChange tile\u003c/span\u003e\u003cspan style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003e \u0026ndash; Current shift good pieces minus previous. Shows \u0026ldquo;no previous shift\u0026rdquo; instead of a number when there is not one yet, so it is never mistaken for zero.\u003c/span\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\"\u003eGood Pieces come from registered production, not shot count or basket size \u0026ndash; those do not map to a shift the same way, so do not expect this to tie out against a report built off them.\u003c/div\u003e\u003cdiv style\u003d\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\"\u003eScrap is deliberately not shown here \u0026ndash; it cannot be reliably attributed to a shift/press yet, so the screen shows nothing rather than a possibly-wrong number.\u003c/div\u003e",
+              "style": {
+                "fontSize": 13,
+                "overflow": "auto"
+              }
+            },
+            "type": "ia.display.markdown"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

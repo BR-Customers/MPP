@@ -148,6 +148,24 @@
                 }
               }
             }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": { "name": "HowToButton", "tooltip": { "text": "How to place or release a hold" } },
+            "position": { "shrink": 0 },
+            "props": {
+              "path": "material/help_outline",
+              "style": { "cursor": "pointer", "height": "35px", "width": "35px" }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tsystem.perspective.openPopup('holdManagementHowTo',\n\t\t'BlueRidge/Components/Popups/HoldManagementHowTo',\n\t\tparams={'popupId': 'holdManagementHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)" }
+                }
+              }
+            }
           }
         ]
       },

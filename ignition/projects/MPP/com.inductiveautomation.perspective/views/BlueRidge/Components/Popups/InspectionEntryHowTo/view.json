@@ -1,0 +1,124 @@
+{
+  "custom": {},
+  "params": {
+    "popupId": "inspectionEntryHowTo"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 480,
+      "width": 640
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "How to record an inspection"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "modal-header"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Guide"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1
+            },
+            "props": {
+              "markdown": {
+                "escapeHtml": false
+              },
+              "sectionSpacing": 8,
+              "source": "\u003cdiv style\u003d\"font-size:14.5px;color:#C9D2E0;line-height:1.55;padding:0 0 16px 0;\"\u003eScan a LOT, record its quality-spec measurements, and log the sample.\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e1\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eScan the LOT\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eScan or type it into the box, then tab or click away to look it up. Opening this screen from \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eInspections\u003c/span\u003e on LOT Detail loads the LOT for you.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e2\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eFill in the measurements\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eEnter each attribute the spec calls for. \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003e*\u003c/span\u003e marks a required one. The limit hint above each field is LSL / T / USL.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e3\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003ePick the trigger\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eChoose First Piece, Last Piece, Hourly, Random, or whatever applies.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e4\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eRecord it\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003ePress \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eRECORD INSPECTION\u003c/span\u003e.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"border-top:1px solid #172238;margin:2px 0 16px 0;\"\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#3A2E10;border-left:5px solid #F4B343;border-radius:4px;padding:12px 14px;margin:4px 0 16px 0;\"\u003e\u003cdiv style\u003d\"font-size:14px;font-weight:bold;color:#F0F3F8;padding-bottom:4px;\"\u003eA Fail does not hold the LOT\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003eRecording a failing measurement still saves it \u0026ndash; nothing stops the LOT from moving or shipping on its own. If it fails, press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003ePLACE HOLD\u003c/span\u003e right away; that button only shows up right after the Fail and disappears once you move on.\u003c/div\u003e\u003c/div\u003e\u003cdiv style\u003d\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\"\u003eEach measurement only saves when you tab or click out of its field, not as you type.\u003c/div\u003e\u003cdiv style\u003d\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\"\u003eThe form clears after you record, but the LOT stays loaded so you can log another sample (Hourly after First Piece, say) without rescanning.\u003c/div\u003e\u003cdiv style\u003d\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\"\u003ePress Close to return where you came from \u0026ndash; Home if you opened this screen directly.\u003c/div\u003e",
+              "style": {
+                "fontSize": 13,
+                "overflow": "auto"
+              }
+            },
+            "type": "ia.display.markdown"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

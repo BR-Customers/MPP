@@ -459,6 +459,367 @@ def assembly_serialized_source():
     return ''.join(parts)
 
 
+# ==================================================== shop-floor admin =====
+# Supervisor/oversight screens on the shop floor (MPP project), not the
+# operator production-entry terminals above and not the separate MPP_Config
+# app. Verified against each screen's live view.json and its backing Python
+# module. None of these gate their actions behind AD elevation despite some
+# carrying an "Elevated" badge in their own subtitle text - that badge is
+# decorative only (confirmed: no isElevated/ChangeoverElevation anywhere in
+# these views or their scripts), so the guides don't claim a sign-in step
+# that doesn't exist.
+
+def aim_pool_config_source():
+    parts = []
+    parts.append(_lead(
+        "Configure the AIM shipper pool's buffer and alarm thresholds, its "
+        'connection settings, and resolve serials that never posted to '
+        'AIM.'))
+
+    parts.append(_points('', [
+        ('Pool depth', 'Shows how many AIM serials are available in the '
+                       'pool right now. Updates on its own every few '
+                       'seconds.'),
+        ('Set thresholds', 'Fill in %s, %s, %s, and %s, then press %s. '
+                            'All four are required &ndash; Save rejects '
+                            'the whole form if any one is blank.'
+                            % (_b('Target buffer depth'),
+                               _b('Top-up threshold'),
+                               _b('Alarm warning depth'),
+                               _b('Alarm critical depth'), _b('Save'))),
+        ('Connection settings', 'Press %s to edit the AIM base URL, '
+                                 'company code, path token, and post-'
+                                 'warning/critical ages &ndash; leave a '
+                                 'field blank to keep its current value.'
+                                 % _b('Connection settings')),
+        ('Mark Posted', 'On a backlog row, this only records that you '
+                        "manually confirmed the serial on AIM's own "
+                        'Unshipped Labels report &ndash; it does not call '
+                        'AIM, and it requires a justification note.'),
+    ]))
+
+    parts.append(_rule())
+
+    parts.append(_callout(WARN_BG, WARN_EDGE,
+        'AIM posting enabled',
+        'Turning this on consumes real AIM serials, which cannot be '
+        'returned, and takes effect immediately on Save.'))
+
+    parts.append(_callout(WARN_BG, WARN_EDGE,
+        'Watch the company code',
+        '%s is test. Never point it at %s &ndash; that is live Honda '
+        'production.' % (_b('01'), _b('99'))))
+
+    return ''.join(parts)
+
+
+def die_cast_supervisor_source():
+    parts = []
+    parts.append(_lead(
+        'Read-only production dashboard comparing the current shift to '
+        'the previous one, plant-wide or filtered to one die-cast area.'))
+
+    parts.append(_points('', [
+        ('Area', 'Filter to one die-cast area, or leave it on All Die '
+                 'Cast. Display only &ndash; it never changes any data.'),
+        ('Refresh', 'Pulls the latest numbers.'),
+        ('Change tile', 'Current shift good pieces minus previous. Shows '
+                        '&ldquo;no previous shift&rdquo; instead of a '
+                        'number when there is not one yet, so it is never '
+                        'mistaken for zero.'),
+    ]))
+
+    parts.append(_note(
+        'Good Pieces come from registered production, not shot count or '
+        'basket size &ndash; those do not map to a shift the same way, so '
+        "do not expect this to tie out against a report built off them."))
+    parts.append(_note(
+        'Scrap is deliberately not shown here &ndash; it cannot be '
+        'reliably attributed to a shift/press yet, so the screen shows '
+        'nothing rather than a possibly-wrong number.'))
+
+    return ''.join(parts)
+
+
+def genealogy_viewer_source():
+    parts = []
+    parts.append(_lead(
+        "Look up a LOT by name and see its full parent/child genealogy "
+        'chain.'))
+
+    parts.append(_step(1, 'Type the LOT name',
+        'Enter it in the search box. Tabbing or clicking out of the '
+        'field runs the search on its own &ndash; you do not have to '
+        'press Walk Tree.'))
+
+    parts.append(_step(2, 'Pick a direction',
+        '%s, %s, or %s. Changing it after a search does not re-run the '
+        'search on its own &ndash; press %s again.'
+        % (_b('Both'), _b('Ancestors only'), _b('Descendants only'),
+           _b('Walk Tree'))))
+
+    parts.append(_step(3, 'Walk it', 'Press %s.' % _b('Walk Tree')))
+
+    parts.append(_note(
+        "Tap any row in the results to jump straight to that LOT's own "
+        'detail screen.'))
+    parts.append(_note(
+        'An empty LOT name does nothing when you search &ndash; no error, '
+        'no toast.'))
+
+    return ''.join(parts)
+
+
+def hold_management_source():
+    parts = []
+    parts.append(_lead(
+        'Place or release a hold on a LOT or Container, hold several '
+        'LOTs at once, or record scrap against a LOT that is already on '
+        'hold.'))
+
+    parts.append(_step(1, 'Find or start a hold',
+        'Filter the list on the left by text or hold type, or press %s '
+        'to look up a LOT or Container that is not already held.'
+        % _b('New Hold')))
+
+    parts.append(_step(2, 'Place it',
+        'Pick a %s, add a %s, then press %s.'
+        % (_b('Hold Type'), _b('Reason'), _b('Place hold'))))
+    parts.append(_note(
+        "Placing a hold on a LOT does not automatically hold its "
+        'containers &ndash; if any exist, a toast just reminds you to '
+        'check them yourself.'))
+
+    parts.append(_step(3, 'Release it',
+        'Select an open hold from the list, add %s if you want, then '
+        'press %s. Remarks are optional.'
+        % (_b('Release remarks'), _b('Release hold'))))
+
+    parts.append(_points('Bulk &amp; Scrap tab', [
+        ('Bulk hold', 'Search for LOTs &ndash; only ones not already on '
+                      'hold, scrap, or closed show up. Select the ones '
+                      'you want, pick a %s, then press %s. Each LOT is '
+                      'held one at a time, so some can succeed while '
+                      'others fail &ndash; check the result message.'
+                      % (_b('Hold Type'), _b('Place hold on N selected'))),
+        ('Scrap a held LOT', 'Enter the %s, %s, and %s, then press %s. '
+                              'This never releases the hold or splits the '
+                              'LOT.'
+                              % (_b('LOT'), _b('Quantity'), _b('Defect'),
+                                 _b('Record Scrap'))),
+    ]))
+
+    return ''.join(parts)
+
+
+def global_trace_source():
+    parts = []
+    parts.append(_lead(
+        'Scan or type a LOT name, serial, container id, or AIM shipper '
+        'id to pull up its full trace.'))
+
+    parts.append(_step(1, 'Search',
+        'Scan or type the identifier, then press %s &ndash; or just tab '
+        'or click away, which runs it too.' % _b('Search')))
+
+    parts.append(_step(2, 'Pick the match',
+        'If more than one LOT could match, tap the one you want from '
+        'the list.'))
+
+    parts.append(_note(
+        'Genealogy is a flat table (Relation/LotName/Item/Depth), not a '
+        'tree you can expand &ndash; Depth just reflects the order the '
+        'relationship was recorded, not how many steps away it really '
+        "is. To drill into a different LOT's genealogy, search for it by "
+        'name.'))
+    parts.append(_note(
+        'This screen is read-only and has no export or print option.'))
+
+    return ''.join(parts)
+
+
+def lot_search_source():
+    parts = []
+    parts.append(_lead(
+        'Search for a LOT across every Area, then pick a result to open '
+        'its detail.'))
+
+    parts.append(_points('', [
+        ('Filter', '%s, %s, %s, and %s are always visible. Press %s to '
+                   'also filter by Origin, a date range, or the Die Cast '
+                   'origin (Die, Cavity, Machine, Shift).'
+                   % (_b('Query'), _b('Status'), _b('Part'), _b('Location'),
+                      _b('More filters'))),
+        ('Search / Reset', '%s runs the query with whatever filters are '
+                           'set; %s clears all of them.'
+                           % (_b('Search'), _b('Reset'))),
+        ('Open a result', "Tap a row to jump to that LOT's detail "
+                          'screen.'),
+    ]))
+
+    parts.append(_note(
+        'Results are capped at 200 rows &ndash; narrow the filters if '
+        'you do not see what you are looking for.'))
+
+    return ''.join(parts)
+
+
+def shift_end_summary_source():
+    parts = []
+    parts.append(_lead(
+        "Review a cell's open downtime, paused LOTs, and in-process LOTs "
+        'before signing off that the shift was reviewed.'))
+
+    parts.append(_step(1, 'Pick the cell',
+        'Choose it from the dropdown at the top. Nothing below fills in '
+        'until you do.'))
+
+    parts.append(_step(2, 'Review the three lists',
+        'Open downtime events, paused LOTs, and in-process LOTs for '
+        'that cell.'))
+
+    parts.append(_step(3, 'Acknowledge it',
+        'Press %s.' % _b('Acknowledge Handover')))
+
+    parts.append(_note(
+        'Acknowledging is a sign-off only &ndash; it records that '
+        'someone reviewed the shift, and does not close, clear, or '
+        'change any of the items shown.'))
+    parts.append(_note(
+        'If no shift is currently open, %s just shows an error and '
+        'records nothing.' % _b('Acknowledge Handover')))
+
+    return ''.join(parts)
+
+
+def lot_detail_source():
+    parts = []
+    parts.append(_lead(
+        "Review a LOT's full history and make the small set of "
+        'corrections available from here. Each tab has its own guide '
+        'too &ndash; press the ? inside a tab for details on it.'))
+
+    parts.append(_points('', [
+        ('Tabs', 'History, Genealogy, Paused-at, Linked Container, and '
+                 'Inspections are read-only. Hold, Scrap, and Correct '
+                 'Count let you act.'),
+    ]))
+
+    parts.append(_points('Action bar', [
+        ('Reprint LTT', 'Reprints the label immediately &ndash; no '
+                        'confirmation. Fails with a toast if the '
+                        'terminal has no printer set up.'),
+        ('Inspections', 'Navigates to the Inspection terminal pre-loaded '
+                        'with this LOT, then brings you back here when '
+                        'you are done.'),
+        ('Enable/Disable CRT', 'Requires a supervisor sign-in in both '
+                               'directions. Applying it forces 200% '
+                               'downstream inspection; releasing it '
+                               'removes that going forward only &ndash; '
+                               'it does not clear the tag on LOTs '
+                               'already minted from this one.'),
+    ]))
+
+    parts.append(_note(
+        'Any change on the Hold, Scrap, or Correct Count tabs reloads '
+        'the whole page, not just that tab.'))
+
+    return ''.join(parts)
+
+
+def lot_detail_hold_tab_source():
+    parts = []
+    parts.append(_lead('Place or release a hold on this LOT.'))
+
+    parts.append(_step(1, 'Pick a reason',
+        'Pick a %s and add a %s.' % (_b('Hold Type'), _b('Reason'))))
+    parts.append(_step(2, 'Place it',
+        'Press %s.' % _b('Place hold')))
+
+    parts.append(_rule())
+
+    parts.append(_step(1, 'Add remarks',
+        'Add %s if you want &ndash; optional.' % _b('Release remarks')))
+    parts.append(_step(2, 'Release it',
+        'Press %s.' % _b('Release hold')))
+
+    parts.append(_note(
+        'No supervisor sign-in needed for either action.'))
+    return ''.join(parts)
+
+
+def lot_detail_scrap_tab_source():
+    parts = []
+    parts.append(_lead('Record scrap against this LOT.'))
+    parts.append(_step(1, 'Fill it in',
+        'Pick the %s, enter the %s, and add %s if it helps.'
+        % (_b('Defect'), _b('Quantity'), _b('Remarks'))))
+    parts.append(_step(2, 'Submit', 'Press %s.' % _b('Record Scrap')))
+    parts.append(_note(
+        'Scrap is always charged to wherever the LOT currently sits '
+        '&ndash; not a location you pick.'))
+    return ''.join(parts)
+
+
+def lot_detail_count_tab_source():
+    parts = []
+    parts.append(_lead("Correct this LOT's piece count."))
+    parts.append(_step(1, 'Enter the new count',
+        'Type the corrected %s.' % _b('Piece Count')))
+    parts.append(_step(2, 'Explain why',
+        '%s is required &ndash; %s stays disabled without one.'
+        % (_b('Reason'), _b('Correct count'))))
+    parts.append(_note(
+        'This is a permanent, audited correction, not an edit &ndash; it '
+        'cannot be undone, only corrected again with its own reason.'))
+    return ''.join(parts)
+
+
+def inspection_entry_source():
+    parts = []
+    parts.append(_lead(
+        "Scan a LOT, record its quality-spec measurements, and log the "
+        'sample.'))
+
+    parts.append(_step(1, 'Scan the LOT',
+        'Scan or type it into the box, then tab or click away to look '
+        'it up. Opening this screen from %s on LOT Detail loads the LOT '
+        'for you.' % _b('Inspections')))
+
+    parts.append(_step(2, 'Fill in the measurements',
+        'Enter each attribute the spec calls for. %s marks a required '
+        'one. The limit hint above each field is LSL / T / USL.' % _b('*')))
+
+    parts.append(_step(3, 'Pick the trigger',
+        'Choose First Piece, Last Piece, Hourly, Random, or whatever '
+        'applies.'))
+
+    parts.append(_step(4, 'Record it',
+        'Press %s.' % _b('RECORD INSPECTION')))
+
+    parts.append(_rule())
+
+    parts.append(_callout(WARN_BG, WARN_EDGE,
+        'A Fail does not hold the LOT',
+        'Recording a failing measurement still saves it &ndash; nothing '
+        'stops the LOT from moving or shipping on its own. If it fails, '
+        'press %s right away; that button only shows up right after the '
+        'Fail and disappears once you move on.' % _b('PLACE HOLD')))
+
+    parts.append(_note(
+        'Each measurement only saves when you tab or click out of its '
+        'field, not as you type.'))
+    parts.append(_note(
+        'The form clears after you record, but the LOT stays loaded so '
+        'you can log another sample (Hourly after First Piece, say) '
+        'without rescanning.'))
+    parts.append(_note(
+        'Press Close to return where you came from &ndash; Home if you '
+        'opened this screen directly.'))
+
+    return ''.join(parts)
+
+
 # ============================================================ MPP_Config ===
 # Config Tool screens - the admin/configuration app, not the shop floor.
 # Same dark palette (MPP_Config's Core-derived stylesheet defines the exact
@@ -1768,6 +2129,90 @@ def build_config_view(source_html, default_size, title, popup_id):
 
 
 GUIDES = [
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "AimPoolConfigHowTo"),
+        "source": aim_pool_config_source,
+        "defaultSize": {"width": 680, "height": 480},
+        "title": "How to configure the AIM pool",
+        "popupId": "aimPoolConfigHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastSupervisorHowTo"),
+        "source": die_cast_supervisor_source,
+        "defaultSize": {"width": 620, "height": 380},
+        "title": "How to read this dashboard",
+        "popupId": "dieCastSupervisorHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "GenealogyViewerHowTo"),
+        "source": genealogy_viewer_source,
+        "defaultSize": {"width": 620, "height": 440},
+        "title": "How to trace a LOT's genealogy",
+        "popupId": "genealogyViewerHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "HoldManagementHowTo"),
+        "source": hold_management_source,
+        "defaultSize": {"width": 680, "height": 560},
+        "title": "How to place or release a hold",
+        "popupId": "holdManagementHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "GlobalTraceHowTo"),
+        "source": global_trace_source,
+        "defaultSize": {"width": 620, "height": 440},
+        "title": "How to trace a LOT, serial, or container",
+        "popupId": "globalTraceHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "LotSearchHowTo"),
+        "source": lot_search_source,
+        "defaultSize": {"width": 620, "height": 420},
+        "title": "How to search for a LOT",
+        "popupId": "lotSearchHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "ShiftEndSummaryHowTo"),
+        "source": shift_end_summary_source,
+        "defaultSize": {"width": 620, "height": 420},
+        "title": "How to review and acknowledge a shift",
+        "popupId": "shiftEndSummaryHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "LotDetailHowTo"),
+        "source": lot_detail_source,
+        "defaultSize": {"width": 640, "height": 480},
+        "title": "How to use LOT Detail",
+        "popupId": "lotDetailHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "LotDetailHoldTabHowTo"),
+        "source": lot_detail_hold_tab_source,
+        "defaultSize": {"width": 560, "height": 340},
+        "title": "How to place or release a hold",
+        "popupId": "lotDetailHoldTabHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "LotDetailScrapTabHowTo"),
+        "source": lot_detail_scrap_tab_source,
+        "defaultSize": {"width": 560, "height": 340},
+        "title": "How to record scrap",
+        "popupId": "lotDetailScrapTabHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "LotDetailCountTabHowTo"),
+        "source": lot_detail_count_tab_source,
+        "defaultSize": {"width": 560, "height": 340},
+        "title": "How to correct a piece count",
+        "popupId": "lotDetailCountTabHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "InspectionEntryHowTo"),
+        "source": inspection_entry_source,
+        "defaultSize": {"width": 640, "height": 480},
+        "title": "How to record an inspection",
+        "popupId": "inspectionEntryHowTo",
+    },
     {
         "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastOpenHowTo"),
         "source": die_cast_open_source,

@@ -1,0 +1,124 @@
+{
+  "custom": {},
+  "params": {
+    "popupId": "holdManagementHowTo"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 680
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "How to place or release a hold"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "modal-header"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Guide"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1
+            },
+            "props": {
+              "markdown": {
+                "escapeHtml": false
+              },
+              "sectionSpacing": 8,
+              "source": "\u003cdiv style\u003d\"font-size:14.5px;color:#C9D2E0;line-height:1.55;padding:0 0 16px 0;\"\u003ePlace or release a hold on a LOT or Container, hold several LOTs at once, or record scrap against a LOT that is already on hold.\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e1\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eFind or start a hold\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eFilter the list on the left by text or hold type, or press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eNew Hold\u003c/span\u003e to look up a LOT or Container that is not already held.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e2\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003ePlace it\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003ePick a \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eHold Type\u003c/span\u003e, add a \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eReason\u003c/span\u003e, then press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003ePlace hold\u003c/span\u003e.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\"\u003ePlacing a hold on a LOT does not automatically hold its containers \u0026ndash; if any exist, a toast just reminds you to check them yourself.\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"46\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;\"\u003e\u003cdiv style\u003d\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\"\u003e3\u003c/div\u003e\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-top:2px;\"\u003e\u003cdiv style\u003d\"font-size:15px;font-weight:bold;color:#F0F3F8;\"\u003eRelease it\u003c/div\u003e\u003cdiv style\u003d\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\"\u003eSelect an open hold from the list, add \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eRelease remarks\u003c/span\u003e if you want, then press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eRelease hold\u003c/span\u003e. Remarks are optional.\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e\u003cdiv style\u003d\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"\u003e\u003cdiv style\u003d\"font-size:12px;font-weight:bold;letter-spacing:0.03em;text-transform:uppercase;color:#9AA8BF;padding-bottom:8px;\"\u003eBulk \u0026amp; Scrap tab\u003c/div\u003e\u003ctable width\u003d\"100%\" cellpadding\u003d\"0\" cellspacing\u003d\"0\" border\u003d\"0\" style\u003d\"border-collapse:collapse;\"\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"18\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;color:#22A8CC;font-size:15px;font-weight:bold;padding-bottom:10px;\"\u003e\u0026bull;\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-bottom:10px;\"\u003e\u003cspan style\u003d\"font-size:13.5px;font-weight:bold;color:#F0F3F8;\"\u003eBulk hold\u003c/span\u003e\u003cspan style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003e \u0026ndash; Search for LOTs \u0026ndash; only ones not already on hold, scrap, or closed show up. Select the ones you want, pick a \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eHold Type\u003c/span\u003e, then press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003ePlace hold on N selected\u003c/span\u003e. Each LOT is held one at a time, so some can succeed while others fail \u0026ndash; check the result message.\u003c/span\u003e\u003c/td\u003e\u003c/tr\u003e\u003ctr style\u003d\"border:none;\"\u003e\u003ctd width\u003d\"18\" valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;color:#22A8CC;font-size:15px;font-weight:bold;padding-bottom:10px;\"\u003e\u0026bull;\u003c/td\u003e\u003ctd valign\u003d\"top\" style\u003d\"border:none;background-color:#172238;padding-bottom:10px;\"\u003e\u003cspan style\u003d\"font-size:13.5px;font-weight:bold;color:#F0F3F8;\"\u003eScrap a held LOT\u003c/span\u003e\u003cspan style\u003d\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\"\u003e \u0026ndash; Enter the \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eLOT\u003c/span\u003e, \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eQuantity\u003c/span\u003e, and \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eDefect\u003c/span\u003e, then press \u003cspan style\u003d\"color:#F0F3F8;font-weight:bold;\"\u003eRecord Scrap\u003c/span\u003e. This never releases the hold or splits the LOT.\u003c/span\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/div\u003e",
+              "style": {
+                "fontSize": 13,
+                "overflow": "auto"
+              }
+            },
+            "type": "ia.display.markdown"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}
