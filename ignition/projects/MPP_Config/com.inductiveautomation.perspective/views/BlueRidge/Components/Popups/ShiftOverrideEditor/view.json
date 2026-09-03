@@ -52,7 +52,7 @@
     "custom.scheduleRows": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Oee.ShiftSchedule.search\", 0, {\"searchText\": \"\", \"includeDeprecated\": false})"
+          "expression": "runScript(\"BlueRidge.Oee.ShiftSchedule.search\", 0)"
         },
         "type": "expr"
       }
@@ -60,15 +60,15 @@
     "custom.scheduleOptions": {
       "binding": {
         "config": {
-          "path": "view.custom.scheduleRows"
+          "expression": "runScript(\"BlueRidge.Oee.ShiftSchedule.search\", 0)"
         },
         "transforms": [
           {
-            "code": "\treturn [\n\t\t{\"label\": \"%s  (%s - %s)\" % (r.get(\"Name\"), r.get(\"StartTimeText\"), r.get(\"EndTimeText\")),\n\t\t \"value\": r.get(\"Id\")}\n\t\tfor r in (value or [])\n\t]",
+            "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [\n\t\t{\"label\": \"%s  (%s - %s)\" % (r.get(\"Name\"), r.get(\"StartTimeText\"), r.get(\"EndTimeText\")),\n\t\t \"value\": r.get(\"Id\")}\n\t\tfor r in rows\n\t]",
             "type": "script"
           }
         ],
-        "type": "property"
+        "type": "expr"
       }
     },
     "params.editId": {
@@ -96,10 +96,7 @@
         "children": [
           {
             "meta": {
-              "name": "HeaderTitle"
-            },
-            "position": {
-              "grow": 1
+              "name": "TitleLabel"
             },
             "propConfig": {
               "props.text": {
@@ -113,18 +110,51 @@
             },
             "props": {
               "style": {
-                "fontSize": "16px",
+                "classes": "modal-title",
+                "fontSize": "14px",
                 "fontWeight": "600"
               }
             },
             "type": "ia.display.label"
           },
           {
-            "events": {
-              "component": {
-                "onActionPerformed": {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "DirtyIndicator"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
                   "config": {
-                    "script": "\tself.view.root.handleClose()"
+                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -132,26 +162,28 @@
               }
             },
             "meta": {
-              "name": "HeaderClose"
-            },
-            "position": {
-              "basis": "32px",
-              "shrink": 0
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
+              }
             },
             "props": {
+              "path": "mpp/cancel",
               "style": {
-                "classes": "btn btn-sm"
-              },
-              "text": "X"
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
             },
-            "type": "ia.input.button"
+            "type": "ia.display.icon"
           },
           {
             "events": {
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\u0027shiftOverrideEditorHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/ShiftOverrideEditorHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027shiftOverrideEditorHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
+                    "script": "\tsystem.perspective.openPopup('shiftOverrideEditorHowTo',\n\t\t'BlueRidge/Components/Popups/ShiftOverrideEditorHowTo',\n\t\tparams={'popupId': 'shiftOverrideEditorHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -182,15 +214,17 @@
           "name": "HeaderBar"
         },
         "position": {
+          "basis": "50px",
           "shrink": 0
         },
         "props": {
           "alignItems": "center",
           "style": {
+            "background": "var(--mpp-surface-raised)",
             "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "gap": "8px",
+            "gap": "12px",
             "overflow": "hidden",
-            "padding": "12px 16px"
+            "padding": "0 16px"
           }
         },
         "type": "ia.container.flex"
@@ -545,7 +579,11 @@
                       }
                     },
                     "props": {
-                      "placeholder": "06:00"
+                      "placeholder": "06:00",
+                      "style": {
+                        "classes": "search-input",
+                        "width": "100%"
+                      }
                     },
                     "type": "ia.input.text-field"
                   }
@@ -595,7 +633,11 @@
                       }
                     },
                     "props": {
-                      "placeholder": "16:00"
+                      "placeholder": "16:00",
+                      "style": {
+                        "classes": "search-input",
+                        "width": "100%"
+                      }
                     },
                     "type": "ia.input.text-field"
                   }
@@ -721,7 +763,6 @@
               "name": "RemoveButton"
             },
             "position": {
-              "basis": "100px",
               "shrink": 0
             },
             "propConfig": {
@@ -743,78 +784,87 @@
             "type": "ia.input.button"
           },
           {
-            "meta": {
-              "name": "FooterSpacer"
-            },
-            "position": {
-              "grow": 1
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.root.handleClose()"
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.handleClose()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "CancelButton"
+                },
+                "position": {
+                  "basis": "62px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-sm"
                   },
-                  "scope": "G",
-                  "type": "script"
-                }
+                  "text": "Cancel"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.doSave()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "SaveButton"
+                },
+                "position": {
+                  "basis": "51px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-primary btn-sm"
+                  },
+                  "text": "Save"
+                },
+                "type": "ia.input.button"
               }
-            },
+            ],
             "meta": {
-              "name": "CloseButton"
-            },
-            "position": {
-              "basis": "90px",
-              "shrink": 0
+              "name": "RightCluster"
             },
             "props": {
+              "alignItems": "center",
               "style": {
-                "classes": "btn btn-sm"
-              },
-              "text": "Close"
-            },
-            "type": "ia.input.button"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.root.doSave()"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
-            "meta": {
-              "name": "SaveButton"
-            },
-            "position": {
-              "basis": "90px",
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "classes": "btn btn-primary btn-sm"
-              },
-              "text": "Save"
-            },
-            "type": "ia.input.button"
+            "type": "ia.container.flex"
           }
         ],
         "meta": {
           "name": "FooterBar"
         },
         "position": {
+          "basis": "50px",
           "shrink": 0
         },
         "props": {
           "alignItems": "center",
+          "justify": "space-between",
           "style": {
+            "background": "var(--mpp-surface-raised)",
             "borderTop": "1px solid var(--mpp-border-subtle)",
             "gap": "8px",
             "overflow": "hidden",
@@ -830,9 +880,11 @@
     "props": {
       "direction": "column",
       "style": {
-        "background": "var(--mpp-surface-raised)",
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
         "height": "100%",
-        "overflow": "hidden"
+        "overflow": "hidden",
+        "width": "100%"
       }
     },
     "scripts": {

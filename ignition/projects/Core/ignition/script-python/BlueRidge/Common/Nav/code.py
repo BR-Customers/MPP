@@ -22,7 +22,7 @@ def categoryForPath(path):
 		return 'parts'
 	if path in ('/quality-specs', '/defect-codes'):
 		return 'quality'
-	if path in ('/downtime-codes', '/shifts'):
+	if path in ('/downtime-codes', '/shifts', '/shift-overrides'):
 		return 'operations'
 	if path in ('/users', '/audit-log', '/failure-log', '/plc-devices'):
 		return 'system'
