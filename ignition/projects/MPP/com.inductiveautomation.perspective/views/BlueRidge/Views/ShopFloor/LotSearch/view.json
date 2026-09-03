@@ -35,6 +35,7 @@
     "partOptions": [],
     "results": [],
     "shiftOptions": [],
+    "showMoreFilters": false,
     "statusOptions": [
       {
         "label": "Closed",
@@ -112,6 +113,8 @@
       },
       {
         "children": [
+        {
+          "children": [
           {
             "children": [
               {
@@ -248,86 +251,6 @@
             ],
             "meta": {
               "name": "StatusField"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "gap": "4px",
-                "minWidth": "160px"
-              }
-            },
-            "type": "ia.container.flex"
-          },
-          {
-            "children": [
-              {
-                "meta": {
-                  "name": "OriginLabel"
-                },
-                "props": {
-                  "style": {
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "12px",
-                    "fontWeight": "600",
-                    "letterSpacing": "0.05em",
-                    "textTransform": "uppercase"
-                  },
-                  "text": "Origin"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "config": {
-                        "script": "\tself.view.rootContainer.search()"
-                      },
-                      "scope": "G",
-                      "type": "script"
-                    }
-                  }
-                },
-                "meta": {
-                  "name": "OriginDropdown"
-                },
-                "propConfig": {
-                  "props.options": {
-                    "binding": {
-                      "config": {
-                        "path": "view.custom.originOptions"
-                      },
-                      "type": "property"
-                    }
-                  },
-                  "props.value": {
-                    "binding": {
-                      "config": {
-                        "bidirectional": true,
-                        "path": "view.custom.filters.lotOriginTypeId"
-                      },
-                      "type": "property"
-                    }
-                  }
-                },
-                "props": {
-                  "placeholder": {
-                    "color": "",
-                    "icon": "",
-                    "text": "Any"
-                  },
-                  "style": {
-                    "classes": "pf-field-select"
-                  }
-                },
-                "type": "ia.input.dropdown"
-              }
-            ],
-            "meta": {
-              "name": "OriginField"
             },
             "position": {
               "shrink": 0
@@ -499,6 +422,194 @@
               "style": {
                 "gap": "4px",
                 "minWidth": "200px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.showMoreFilters = not self.view.custom.showMoreFilters"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "MoreFiltersToggle"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.showMoreFilters}, 'Fewer filters', 'More filters')"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.search()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SearchButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary",
+                "height": "40px",
+                "minWidth": "90px"
+              },
+              "text": "Search"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.filters = BlueRidge.Lots.Lot.emptyFilters()\n\tself.view.custom.cavityOptions = []\n\tself.view.rootContainer.search()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ResetButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary",
+                "height": "40px",
+                "minWidth": "90px"
+              },
+              "text": "Reset"
+            },
+            "type": "ia.input.button"
+          }
+        
+          ],
+          "meta": {
+            "name": "PrimaryFiltersRow"
+          },
+          "props": {
+            "alignItems": "flex-end",
+            "style": {
+              "flexWrap": "wrap",
+              "gap": "12px"
+            }
+          },
+          "type": "ia.container.flex"
+        }
+,
+        {
+          "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "OriginLabel"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "12px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Origin"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.search()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "OriginDropdown"
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.originOptions"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.filters.lotOriginTypeId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": {
+                    "color": "",
+                    "icon": "",
+                    "text": "Any"
+                  },
+                  "style": {
+                    "classes": "pf-field-select"
+                  }
+                },
+                "type": "ia.input.dropdown"
+              }
+            ],
+            "meta": {
+              "name": "OriginField"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px",
+                "minWidth": "160px"
               }
             },
             "type": "ia.container.flex"
@@ -1015,63 +1126,30 @@
               }
             },
             "type": "ia.container.flex"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.rootContainer.search()"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "SearchButton"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "classes": "pf-btn pf-btn-primary",
-                "height": "40px",
-                "minWidth": "90px"
-              },
-              "text": "Search"
-            },
-            "type": "ia.input.button"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.custom.filters = BlueRidge.Lots.Lot.emptyFilters()\n\tself.view.custom.cavityOptions = []\n\tself.view.rootContainer.search()"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "ResetButton"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "classes": "pf-btn pf-btn-secondary",
-                "height": "40px",
-                "minWidth": "90px"
-              },
-              "text": "Reset"
-            },
-            "type": "ia.input.button"
           }
+          ],
+          "meta": {
+            "name": "MoreFiltersRow"
+          },
+          "propConfig": {
+            "position.display": {
+              "binding": {
+                "config": {
+                  "expression": "{view.custom.showMoreFilters}"
+                },
+                "type": "expr"
+              }
+            }
+          },
+          "props": {
+            "alignItems": "flex-end",
+            "style": {
+              "flexWrap": "wrap",
+              "gap": "12px"
+            }
+          },
+          "type": "ia.container.flex"
+        }
         ],
         "meta": {
           "name": "SearchBar"
@@ -1080,9 +1158,8 @@
           "shrink": 0
         },
         "props": {
-          "alignItems": "flex-end",
+          "direction": "column",
           "style": {
-            "flexWrap": "wrap",
             "gap": "12px"
           }
         },
