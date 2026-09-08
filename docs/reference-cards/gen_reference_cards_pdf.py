@@ -49,13 +49,13 @@ HELP_BODY = for_pdf(HELP)
 
 # ------------------------------------------------------------- paragraphs --
 style_step = ParagraphStyle(
-    "step", fontName=F_REG, fontSize=10.3, leading=13, textColor=INK)
+    "step", fontName=F_REG, fontSize=13.5, leading=17, textColor=INK)
 style_note = ParagraphStyle(
-    "note", fontName=F_REG, fontSize=8.8, leading=11.4, textColor=INK)
+    "note", fontName=F_REG, fontSize=11.5, leading=14.9, textColor=INK)
 style_foot = ParagraphStyle(
-    "foot", fontName=F_REG, fontSize=8.4, leading=10.6, textColor=INK)
+    "foot", fontName=F_REG, fontSize=10, leading=12.6, textColor=INK)
 style_rail = ParagraphStyle(
-    "rail", fontName=F_REG, fontSize=8.8, leading=11.4, textColor=INK)
+    "rail", fontName=F_REG, fontSize=11.5, leading=14.9, textColor=INK)
 style_foot_label = ParagraphStyle(
     "footlabel", fontName=F_BOLD, fontSize=8.2, leading=10,
     textColor=INK_MUTED, tracking=0.6)
@@ -131,7 +131,7 @@ def draw_card(c, x, y, data):
     # note) claim their space first and the steps get whatever is left,
     # rather than the steps claiming space top-down and leaving a gap
     # above the footer on every shorter card. ----
-    foot_h = 1.05 * 72
+    foot_h = 1.25 * 72
     foot_y = bottom
 
     body_top = top - head_h - 0.12 * 72
@@ -169,7 +169,7 @@ def draw_card(c, x, y, data):
 
     steps_top = body_top - 22
     steps_bottom = blocks_top  # steps stop above the callout stack
-    num_d = 15
+    num_d = 19
     text_x = body_left + num_d + 10
     text_w = body_w - num_d - 10
 
@@ -190,14 +190,16 @@ def draw_card(c, x, y, data):
 
     for i, (p, h) in enumerate(zip(paras, heights), start=1):
         cx = body_left + num_d / 2
-        ccy = cy - 9
+        # Centre the badge on the step's FIRST line, not on the whole
+        # paragraph - a two-line step would otherwise sit its number low.
+        ccy = cy - style_step.leading * 0.69
         c.setFillColor(ACCENT_SOFT)
         c.setStrokeColor(ACCENT_LINE)
         c.setLineWidth(1)
         c.circle(cx, ccy, num_d / 2, stroke=1, fill=1)
         c.setFillColor(ACCENT)
-        c.setFont(F_BOLD, 8.6)
-        c.drawCentredString(cx, ccy - 3, str(i))
+        c.setFont(F_BOLD, 10.5)
+        c.drawCentredString(cx, ccy - 3.7, str(i))
         p.drawOn(c, text_x, cy - h)
         cy -= h + step_gap
 
@@ -245,14 +247,14 @@ def draw_card(c, x, y, data):
 
     pad = 10
     c.setFillColor(INK_MUTED)
-    c.setFont(F_BOLD, 8.2)
-    c.drawString(col1_x + pad, foot_y + foot_h - 13, "START · SIGN IN")
+    c.setFont(F_BOLD, 9.5)
+    c.drawString(col1_x + pad, foot_y + foot_h - 14, "START · SIGN IN")
     draw_para(c, SIGN_IN_BODY, style_foot, col1_x + pad, foot_y + foot_h - 20,
               col1_w - 2 * pad, foot_h - 22)
 
     c.setFillColor(INK_MUTED)
-    c.setFont(F_BOLD, 8.2)
-    c.drawString(col3_x + pad, foot_y + foot_h - 13, "DOWNTIME")
+    c.setFont(F_BOLD, 9.5)
+    c.drawString(col3_x + pad, foot_y + foot_h - 14, "DOWNTIME")
     draw_para(c, DOWNTIME_BODY, style_foot, col3_x + pad, foot_y + foot_h - 20,
               col3_w - 2 * pad, foot_h - 22)
 
