@@ -48,6 +48,12 @@
 </thead>
 <tbody>
 <tr>
+<td>1.8</td>
+<td>2026-09-02</td>
+<td>Blue Ridge Automation</td>
+<td><strong>Operator sign-in moves from initials to a 5-digit PIN.</strong> <a id="fds-04-002" class="fds-req-anchor" href="#fds-04-002"><strong><a class="xref" href="#fds-04-002">FDS-04-002</a></strong></a> retitled <em>Operator PIN Capture</em> — the terminal prompts for a PIN and resolves it via the new <code>Location.AppUser_GetActiveByPin</code>; the PIN is an <strong>identifier, not a credential</strong> (plaintext, admin-visible, echoed on screen, verifies no secret) and replaces initials as the sign-in key only because MPP already issues PINs internally. <a id="fds-04-004" class="fds-req-anchor" href="#fds-04-004"><strong><a class="xref" href="#fds-04-004">FDS-04-004</a></strong></a>'s &quot;no clock-number/PIN convenience login&quot; prohibition is struck: that clause barred a <em>credential</em> login, whereas a PIN establishes presence only and confers no privilege — nothing reads the signed-in user's <code>IgnitionRole</code> as an authorisation gate, and every elevated action still takes a per-action AD credential (<a id="fds-04-007" class="fds-req-anchor" href="#fds-04-007"><strong><a class="xref" href="#fds-04-007">FDS-04-007</a></strong></a>, unchanged). A supervisor covering a break therefore does a plain PIN swap with no elevation. <a id="fds-04-001" class="fds-req-anchor" href="#fds-04-001"><strong><a class="xref" href="#fds-04-001">FDS-04-001</a></strong></a> identity table gains <code>Pin</code>, <code>NOT NULL</code> for <em>both</em> identity classes, with leading zeros significant (full-time <code>04218</code> vs temp <code>40218</code>) and therefore string-typed end to end. <a id="fds-04-005" class="fds-req-anchor" href="#fds-04-005"><strong><a class="xref" href="#fds-04-005">FDS-04-005</a></strong></a> presence resolution repointed at the active-only resolvers. <a id="fds-04-010" class="fds-req-anchor" href="#fds-04-010"><strong><a class="xref" href="#fds-04-010">FDS-04-010</a></strong></a> rewritten: operators <strong>self-provision at the terminal</strong> on first unrecognised PIN — there is no pre-loaded roster and no seed dependency — with re-entry as the prominent action so a mistyped digit cannot become a duplicate person. Initials and DisplayName are retained unchanged as attribution fields. Migration <code>0069_appuser_pin.sql</code>; procs <code>AppUser_GetActiveByPin</code> / <code>AppUser_GetByPin</code>.</td>
+</tr>
+<tr>
 <td>1.7</td>
 <td>2026-07-29</td>
 <td>Blue Ridge Automation</td>
@@ -1359,7 +1365,7 @@ d. Reject the submission if the payload duplicates a hot-column field (<code>Sho
 <p>The MES SHALL validate at WorkOrder Create / Edit time that the WO target quantity is <strong>evenly divisible by</strong> the Item's <code>ContainerConfig.PartsPerTray</code> (and, where applicable, by <code>TraysPerContainer × PartsPerTray</code>). Non-divisible targets SHALL be rejected with a specific error code (&quot;Target quantity {X} is not evenly divisible by tray quantity {Y}&quot;). The same check SHALL fire at WO Close: if actual good count is not divisible by the tray quantity, the close is blocked (supervisor AD elevation can override per <a class="xref" href="#fds-04-007">FDS-04-007</a> — the override reason is logged). Surfaced as a legacy Flexware error: <em>&quot;Container processing error — Work order target quantity exceeded. Ensure target quantity is evenly divisible by the tray quantity.&quot;</em></p>
 <hr>
 <h2 id="4-user-identity-authentication-elevation-mvp">4. User Identity, Authentication &amp; Elevation — <span class="scope-pill scope-mvp">MVP</span> <a class="heading-permalink" href="#4-user-identity-authentication-elevation-mvp" aria-label="Permalink">#</a></h2>
-<p>Operators do not authenticate. They are identified on a terminal by their initials, which are stamped onto every event. Elevated actions (holds, overrides, scrap, maintenance WOs, admin edits) require an Active Directory login at the moment of action — no session-sticky elevation, no clock-number/PIN convenience login.</p>
+<p>Operators do not authenticate. They are identified on a terminal by a <strong>5-digit PIN</strong> — an identifier MPP already issues internally, not a credential — and the resolved user is stamped onto every event. Elevated actions (holds, overrides, scrap, maintenance WOs, admin edits) require an Active Directory login at the moment of action — no session-sticky elevation. Entering a PIN establishes presence only and confers no privilege whatsoever.</p>
 <h3 id="4-1-identity-model">4.1 Identity Model <a class="heading-permalink" href="#4-1-identity-model" aria-label="Permalink">#</a></h3>
 <h4 id="fds-04-001"><a class="xref" href="#fds-04-001">FDS-04-001</a> — Two Identity Classes <a class="heading-permalink" href="#fds-04-001" aria-label="Permalink">#</a></h4>
 <p>The MES SHALL recognise two classes of <code>Location.AppUser</code>:</p>
@@ -1369,6 +1375,7 @@ d. Reject the submission if the payload duplicates a hot-column field (<code>Sho
 <th>Class</th>
 <th>AdAccount</th>
 <th>Initials</th>
+<th>Pin</th>
 <th>IgnitionRole</th>
 <th>How they identify</th>
 </tr>
@@ -1378,23 +1385,30 @@ d. Reject the submission if the payload duplicates a hot-column field (<code>Sho
 <td>Operator</td>
 <td>NULL</td>
 <td>NOT NULL</td>
+<td>NOT NULL</td>
 <td>NULL</td>
-<td>Initials entered at a shop-floor terminal</td>
+<td>PIN entered at a shop-floor terminal</td>
 </tr>
 <tr>
 <td>Interactive User (Quality, Supervisor, Engineering, Admin)</td>
 <td>NOT NULL</td>
 <td>NOT NULL</td>
 <td>NOT NULL</td>
-<td>Active Directory login</td>
+<td>NOT NULL</td>
+<td>Active Directory login for elevation; PIN for terminal presence</td>
 </tr>
 </tbody>
 </table>
-<p>Every event and mutation SHALL stamp <code>AppUserId</code> — never free-text initials or names. Initials are a natural key used at the UI layer only; the database records the resolved <code>AppUserId</code>.</p>
-<h4 id="fds-04-002"><a class="xref" href="#fds-04-002">FDS-04-002</a> — Operator Initials Capture <a class="heading-permalink" href="#fds-04-002" aria-label="Permalink">#</a></h4>
-<p>When an operator approaches a shop-floor terminal to perform their first action, the UI SHALL prompt for initials. The MES SHALL look up the <code>AppUser</code> by initials and establish an <strong>operator presence context</strong> on that terminal's Perspective session. No password is verified. The presence context SHALL apply to subsequent events until:</p>
+<p><code>Pin</code> is <code>NOT NULL</code> for <strong>both</strong> classes. An interactive user must exist in <code>Location.AppUser</code> for elevation to resolve their account at all, and may also step onto the floor and sign in at a terminal, so a universal PIN removes any operator-vs-interactive branching from the sign-in path.</p>
+<p>PINs are exactly 5 numeric characters and <strong>leading zeros are significant</strong> — a full-time employee's code is <code>04218</code>, a temp's is <code>40218</code>. The PIN is therefore stored and transported as a string; any numeric coercion would strip the zero and lock out every full-time employee.</p>
+<p>Every event and mutation SHALL stamp <code>AppUserId</code> — never free-text initials, PINs or names. Initials and PIN are natural keys used at the UI layer only; the database records the resolved <code>AppUserId</code>. Initials remain the human-readable label shown on screen and in reports; the PIN is only how a person is recognised at a terminal.</p>
+<h4 id="fds-04-002"><a class="xref" href="#fds-04-002">FDS-04-002</a> — Operator PIN Capture <a class="heading-permalink" href="#fds-04-002" aria-label="Permalink">#</a></h4>
+<p>When an operator approaches a shop-floor terminal to perform their first action, the UI SHALL prompt for their 5-digit PIN. The MES SHALL resolve the <code>AppUser</code> via <code>Location.AppUser_GetActiveByPin</code> and establish an <strong>operator presence context</strong> on that terminal's Perspective session.</p>
+<p>The PIN is an <strong>identifier, not a credential</strong>: it is stored in plaintext, is visible to administrators, is echoed on screen as it is typed, and verifies no secret. It replaces initials as the sign-in key only because MPP already issues PINs internally and operators know them. No password is verified at any point in this flow.</p>
+<p>A PIN that resolves to a <strong>deprecated</strong> user SHALL be refused with a message directing the operator to a supervisor, and SHALL NOT offer registration — that PIN is already taken. A PIN that resolves to nothing SHALL offer, in order of prominence, re-entry first and new-operator registration second (<a class="xref" href="#fds-04-010">FDS-04-010</a>).</p>
+<p>The presence context SHALL apply to subsequent events until:</p>
 <ul>
-<li>another operator enters different initials, or</li>
+<li>another operator enters a different PIN, or</li>
 <li>the terminal has been idle for 30 minutes and the operator answers &quot;No&quot; to the re-confirmation prompt.</li>
 </ul>
 <p>Operator presence is NOT an authenticated session. It is a stamping context. The operator cannot perform elevated actions from within it.</p>
@@ -1406,11 +1420,11 @@ d. Reject the submission if the payload duplicates a hot-column field (<code>Sho
 </ul>
 <h4 id="fds-04-004"><a class="xref" href="#fds-04-004">FDS-04-004</a> — Interactive User Authentication <a class="heading-permalink" href="#fds-04-004" aria-label="Permalink">#</a></h4>
 <p>Interactive users (Quality, Supervisor, Engineering, Admin) SHALL authenticate via Ignition's Active Directory User Source. AD groups SHALL map to the Ignition roles in <a class="xref" href="#fds-04-008">FDS-04-008</a>. Operators SHALL NOT exist in AD.</p>
-<p>There is no shop-floor-terminal convenience login. An interactive user authorising an elevated action from a shop-floor terminal SHALL enter AD credentials via the elevation prompt described in <a class="xref" href="#fds-04-006">FDS-04-006</a>. (A badge-scan or RFID-based elevation mechanism is a documented future enhancement aligned with Honda's RFID-on-labels initiative — see <a class="xref" href="oir.html#oi-08">OI-08</a> addenda — but is not in MVP scope.)</p>
+<p>PIN sign-in establishes <strong>presence only</strong> and grants no privilege — nothing in the runtime reads the signed-in user's <code>IgnitionRole</code> as an authorisation gate. An interactive user authorising an elevated action from a shop-floor terminal SHALL enter AD credentials via the elevation prompt described in <a class="xref" href="#fds-04-006">FDS-04-006</a>, regardless of whose PIN is currently signed in. A supervisor stepping in to cover an operator's break therefore signs in with their own PIN like anyone else: a plain presence swap, no elevation, no added permissions. (A badge-scan or RFID-based elevation mechanism is a documented future enhancement aligned with Honda's RFID-on-labels initiative — see <a class="xref" href="oir.html#oi-08">OI-08</a> addenda — but is not in MVP scope.)</p>
 <h3 id="4-2-event-attribution-on-mutations">4.2 Event Attribution on Mutations <a class="heading-permalink" href="#4-2-event-attribution-on-mutations" aria-label="Permalink">#</a></h3>
 <h4 id="fds-04-005"><a class="xref" href="#fds-04-005">FDS-04-005</a> — Pre-Populated Initials Field <a class="heading-permalink" href="#fds-04-005" aria-label="Permalink">#</a></h4>
 <p>Every shop-floor mutation screen (LOT creation, production event, downtime, inspection, container close, etc.) SHALL include an <strong>Initials</strong> field pre-populated from the terminal's presence context. The operator MAY override this value before submission — for example, when a pair-working partner is recording on their behalf.</p>
-<p>On submission, the MES SHALL resolve the submitted initials to an <code>AppUserId</code> via the <code>Location.AppUser_GetByInitials</code> proc. If the initials are unknown or resolve to a deprecated user, the MES SHALL block the submission with a clear validation message; it SHALL NOT auto-create users from unknown initials.</p>
+<p>On submission, the MES SHALL resolve the submitted initials to an <code>AppUserId</code> via the <code>Location.AppUser_GetActiveByInitials</code> proc (presence resolution at sign-in uses the PIN equivalent, <code>Location.AppUser_GetActiveByPin</code>). If the initials are unknown or resolve to a deprecated user, the MES SHALL block the submission with a clear validation message; it SHALL NOT auto-create users from unknown initials.</p>
 <h4 id="fds-04-006"><a class="xref" href="#fds-04-006">FDS-04-006</a> — 30-Minute Presence Re-Confirmation <a class="heading-permalink" href="#fds-04-006" aria-label="Permalink">#</a></h4>
 <p>After 30 minutes of terminal inactivity, the next operator interaction SHALL trigger a re-confirmation overlay:</p>
 <blockquote>
@@ -1481,7 +1495,11 @@ d. Reject the submission if the payload duplicates a hot-column field (<code>Sho
 <li>Elevated action controls (buttons, menu items) SHALL be visible on shop-floor screens but SHALL trigger the <a class="xref" href="#fds-04-007">FDS-04-007</a> prompt on activation. Unauthorised users cancel out.</li>
 </ul>
 <h4 id="fds-04-010"><a class="xref" href="#fds-04-010">FDS-04-010</a> — Operator AppUser Lifecycle <a class="heading-permalink" href="#fds-04-010" aria-label="Permalink">#</a></h4>
-<p>Operator <code>AppUser</code> rows SHALL be managed by the Configuration Tool (Admin-only screen). MPP has no AD accounts for operators; their rows carry <code>AdAccount = NULL</code>, <code>Initials = NOT NULL, UNIQUE</code>, and no Ignition role. When an operator's initials would collide with an existing row, the Admin SHALL enter disambiguating initials (e.g., three- or four-character codes). Deprecation follows the standard <code>DeprecatedAt</code> soft-delete pattern; events referencing deprecated operators retain the historical <code>AppUserId</code>.</p>
+<p>Operator <code>AppUser</code> rows SHALL be <strong>self-provisioned at the terminal</strong>. There is no pre-loaded roster: the first time a person enters a PIN the MES does not recognise, the UI SHALL offer — with re-entry as the more prominent option — to register a new operator, capturing the PIN already entered plus initials and display name. The PIN is carried through read-only, so the number a person signs in with is the number stored against them.</p>
+<p>Re-entry is deliberately the default action. Under PIN sign-in a single mistyped digit reaches this dialog, and because registration is the only onboarding path, an emphasised &quot;create&quot; button would turn a typo into a duplicate person record.</p>
+<p>MPP has no AD accounts for operators; their rows carry <code>AdAccount = NULL</code>, <code>IgnitionRole = NULL</code>, and <code>Initials</code> / <code>Pin</code> both <code>NOT NULL, UNIQUE</code>. When an operator's initials would collide with an existing row, disambiguating initials SHALL be entered (e.g., three- or four-character codes); a colliding PIN is refused outright, since PINs are unique plant-wide.</p>
+<p><code>Pin</code> uniqueness is enforced across the <strong>full row set including deprecated rows</strong>, so a retired person's PIN is never reissued and historical attribution can never be re-pointed at someone else.</p>
+<p>The Configuration Tool (Admin-only screen) remains the place to correct a record, re-issue a PIN, or deprecate a person — not to onboard one. Deprecation follows the standard <code>DeprecatedAt</code> soft-delete pattern; events referencing deprecated operators retain the historical <code>AppUserId</code>, and a deprecated person's PIN is refused at sign-in with a see-a-supervisor message rather than being offered registration.</p>
 <hr>
 <h2 id="5-lot-lifecycle-genealogy-mvp">5. LOT Lifecycle &amp; Genealogy — <span class="scope-pill scope-mvp">MVP</span> <a class="heading-permalink" href="#5-lot-lifecycle-genealogy-mvp" aria-label="Permalink">#</a></h2>
 <h3 id="5-1-lot-identity">5.1 LOT Identity <a class="heading-permalink" href="#5-1-lot-identity" aria-label="Permalink">#</a></h3>
@@ -3227,7 +3245,7 @@ c. If the AIM call fails, log the failure to <code>Audit.InterfaceLog</code>, ab
 </div>
 <footer class="portal-footer">
   <span>Source: <code>MPP_MES_FDS.md</code></span>
-  <span>Generated: <time datetime="2026-08-25T18:06:23.694Z">2026-08-25T18:06:23.694Z</time></span>
+  <span>Generated: <time datetime="2026-09-08T16:58:25.559Z">2026-09-08T16:58:25.559Z</time></span>
 </footer>
 <div id="search-modal" class="search-modal" hidden></div>
 <script src="assets/minisearch.min.js"></script>

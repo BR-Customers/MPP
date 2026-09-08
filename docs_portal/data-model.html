@@ -31,6 +31,12 @@
 </thead>
 <tbody>
 <tr>
+<td>2.x</td>
+<td>2026-09-02</td>
+<td>Blue Ridge Automation</td>
+<td><strong><code>Location.AppUser</code> gains <code>Pin NVARCHAR(5) NOT NULL UNIQUE</code></strong> (migration <code>0069_appuser_pin.sql</code>) — the 5-digit terminal sign-in identifier that replaces initials as the login key. Plaintext by design: an identifier, not a credential. <code>NOT NULL</code> for both identity classes (an AD user must exist here for elevation to resolve, and may also sign in at a terminal), which removes the operator-vs-interactive branch from the sign-in path. UNIQUE is deliberately unfiltered so a retired person's PIN is never reissued. New CHECK <code>CK_AppUser_Pin_Format</code> enforces exactly five numeric characters; <strong>leading zeros are significant</strong> (full-time <code>04218</code> vs temp <code>40218</code>), hence NVARCHAR and string-typed parameters throughout. <code>Initials</code> and <code>DisplayName</code> are unchanged and remain the attribution/display fields. Existing rows backfilled with zero-padded Id placeholders; there is no seed roster — operators self-provision at the terminal.</td>
+</tr>
+<tr>
 <td>2.1</td>
 <td>2026-07-29</td>
 <td>Blue Ridge Automation</td>
@@ -924,9 +930,10 @@
 <h3 id="location-appuser">AppUser <a class="heading-permalink" href="#location-appuser" aria-label="Permalink">#</a></h3>
 <p>MES users in two classes (FDS §4):</p>
 <ul>
-<li><strong>Operator</strong> rows — <code>AdAccount</code> NULL, <code>IgnitionRole</code> NULL. Identified by initials entered at a terminal; no authentication. Managed via the Configuration Tool Admin screen.</li>
-<li><strong>Interactive User</strong> rows (Quality, Supervisor, Engineering, Admin) — <code>AdAccount</code> NOT NULL, <code>IgnitionRole</code> NOT NULL. Authenticate via Active Directory.</li>
+<li><strong>Operator</strong> rows — <code>AdAccount</code> NULL, <code>IgnitionRole</code> NULL. Identified by a 5-digit <code>Pin</code> entered at a terminal; no authentication. Self-provisioned at the terminal on first unrecognised PIN (<a class="xref" href="fds.html#fds-04-010">FDS-04-010</a>); corrected or deprecated via the Configuration Tool Admin screen.</li>
+<li><strong>Interactive User</strong> rows (Quality, Supervisor, Engineering, Admin) — <code>AdAccount</code> NOT NULL, <code>IgnitionRole</code> NOT NULL. Authenticate via Active Directory for elevation, and carry a <code>Pin</code> like everyone else for terminal presence.</li>
 </ul>
+<p><code>Pin</code> is <code>NOT NULL</code> for <strong>both</strong> classes: an interactive user must exist here for elevation to resolve their account, and may also sign in at a terminal, so a universal PIN removes any operator-vs-interactive branching from sign-in.</p>
 <p>Roles managed in Ignition (mapped to AD groups for interactive users).</p>
 <table>
 <thead>
@@ -948,7 +955,13 @@
 <td>Initials</td>
 <td>NVARCHAR(10)</td>
 <td>NOT NULL, UNIQUE</td>
-<td>Shop-floor identification stamp. All classes carry this. Initials populate the Initials field on every shop-floor mutation screen.</td>
+<td>Shop-floor identification stamp. All classes carry this. Initials populate the Initials field on every shop-floor mutation screen, and remain the human-readable label in reports.</td>
+</tr>
+<tr>
+<td>Pin</td>
+<td>NVARCHAR(5)</td>
+<td>NOT NULL, UNIQUE</td>
+<td>5-digit terminal sign-in identifier. <strong>Plaintext by design — an identifier, not a credential</strong> (admin-visible, echoed on screen during entry, verifies no secret). UNIQUE is unfiltered, so a retired person's PIN is never reissued and historical attribution cannot be re-pointed. <strong>Leading zeros are significant</strong> — full-time <code>04218</code> vs temp <code>40218</code> — so the column is NVARCHAR and every parameter carrying it is string-typed; a numeric type would strip the zero and lock out every full-time employee.</td>
 </tr>
 <tr>
 <td>AdAccount</td>
@@ -982,8 +995,12 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Check constraint:</strong> <code>IgnitionRole IS NULL OR AdAccount IS NOT NULL</code> — an Operator (no AD) cannot carry an Ignition role; roles apply only to AD-backed users.</p>
-<p><strong>Legacy columns to be removed in the Phase G Tool &amp; Security migration</strong> (Phase G of the 2026-04-20 OI review refactor): <code>ClockNumber NVARCHAR(20)</code> and <code>PinHash NVARCHAR(255)</code> are no longer used by the design. They remain in the live schema from Phases 1–8 and will be dropped alongside the related procs (<code>AppUser_SetPin</code>, <code>AppUser_GetByClockNumber</code>) when Phase G runs.</p>
+<p><strong>Check constraints:</strong></p>
+<ul>
+<li><code>IgnitionRole IS NULL OR AdAccount IS NOT NULL</code> (<code>CK_AppUser_IgnitionRole_Requires_AdAccount</code>) — an Operator (no AD) cannot carry an Ignition role; roles apply only to AD-backed users.</li>
+<li><code>LEN(Pin) = 5 AND Pin NOT LIKE '%[^0-9]%'</code> (<code>CK_AppUser_Pin_Format</code>) — exactly five numeric characters. A leading zero satisfies this; a 4-character value does not.</li>
+</ul>
+<p><strong>Legacy columns — removed.</strong> <code>ClockNumber NVARCHAR(20)</code> and <code>PinHash NVARCHAR(255)</code> were dropped by migration <code>0011_drop_appuser_legacy_auth.sql</code>, along with the <code>AppUser_SetPin</code> and <code>AppUser_GetByClockNumber</code> procs. Note that the new <code>Pin</code> column is <strong>not</strong> a revival of <code>PinHash</code>: that was a hashed <em>credential</em> for the retired clock-number auth model, whereas <code>Pin</code> is a plaintext <em>identifier</em> that grants no privilege.</p>
 <hr>
 <h2 id="2-parts-schema-mvp">2. Parts Schema — <span class="scope-pill scope-mvp">MVP</span> <a class="heading-permalink" href="#2-parts-schema-mvp" aria-label="Permalink">#</a></h2>
 <blockquote>
@@ -2640,7 +2657,7 @@
 <td>RfidTag</td>
 <td>NVARCHAR(100)</td>
 <td>NULL</td>
-<td>Reserved placeholder for a future RFID-encoding phase (migration 0067). Not populated or read anywhere yet.</td>
+<td>Reserved placeholder for a future RFID-encoding phase (migration 0070). Not populated or read anywhere yet.</td>
 </tr>
 </tbody>
 </table>
@@ -3007,7 +3024,7 @@
 <td>RfidTag</td>
 <td>NVARCHAR(100)</td>
 <td>NULL</td>
-<td>Reserved placeholder for a future RFID-encoding phase (migration 0067). Not populated or read anywhere yet.</td>
+<td>Reserved placeholder for a future RFID-encoding phase (migration 0070). Not populated or read anywhere yet.</td>
 </tr>
 </tbody>
 </table>
@@ -6410,7 +6427,7 @@ Tools.ToolAssignment             -- check-in/out history against Cells
 </div>
 <footer class="portal-footer">
   <span>Source: <code>MPP_MES_DATA_MODEL.md</code></span>
-  <span>Generated: <time datetime="2026-08-25T18:06:23.694Z">2026-08-25T18:06:23.694Z</time></span>
+  <span>Generated: <time datetime="2026-09-08T16:58:25.559Z">2026-09-08T16:58:25.559Z</time></span>
 </footer>
 <div id="search-modal" class="search-modal" hidden></div>
 <script src="assets/minisearch.min.js"></script>
