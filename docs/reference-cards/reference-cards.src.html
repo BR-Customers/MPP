@@ -160,6 +160,32 @@
     line-height: 1;
   }
 
+  /* Station reads big and stays scannable from across the aisle - that is
+     how the right card gets found on a rack - with the tab name after a
+     hairline in a lighter grey, so the two register as separate things
+     rather than one run-on title. */
+  .card-head .head-row {
+    display: flex;
+    align-items: center;
+  }
+
+  .card-head .head-div {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.30);
+    margin: 0 15px;
+    flex-shrink: 0;
+  }
+
+  .card-head .substation {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 23px;
+    letter-spacing: 0.02em;
+    color: #C4CEDA;
+    line-height: 1;
+  }
+
   .card-head .tag {
     font-family: var(--font-display);
     font-weight: 700;
@@ -246,6 +272,33 @@
   }
 
   .card-note b { color: var(--warn); }
+
+  /* Accent-tinted counterpart to .card-note, for pointing at persistent
+     screen chrome rather than warning about something. Used where a card
+     has room left over - see the Lot Release card. */
+  .rail-box {
+    margin-top: 0.06in;
+    padding: 0.07in 0.14in;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-soft-line);
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .rail-label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 3px;
+  }
+
+  .rail-body {
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
 
   /* ================= Footer strip: Sign In / ? / Downtime ============= */
   .card-foot {
@@ -336,10 +389,12 @@
 <div class="screen-only">
   <h1>Shop Floor Reference Cards</h1>
   <p>
-    One half-page card per terminal &ndash; print on card stock, cut along the
-    dashed line, laminate. Every card follows the same shape: sign in, run
-    the screen, report downtime, and a reminder to tap the <b>?</b> icon for
-    more detail on that exact screen.
+    One half-page card per screen &ndash; print on card stock, cut along the
+    dashed line, laminate. Screens that run in more than one mode get a card
+    each, so a card never asks the operator to hold two tabs in their head at
+    once. Every card follows the same shape: sign in, run the screen, report
+    downtime, and a reminder to tap the <b>?</b> icon for more detail on that
+    exact screen.
   </p>
   <ul class="print-steps">
     <li><b>1.</b> File &rarr; Print &middot; Letter &middot; 100% scale &middot; no margins</li>
@@ -349,28 +404,28 @@
 </div>
 
 <!-- ======================= SHEET 1 ======================= -->
-<div class="sheet-label">Sheet 1 of 4</div>
+<div class="sheet-label">Sheet 1 of 6</div>
 <div class="sheet">
 
   <div class="card">
     <div class="card-head">
-      <span class="station">Die Cast</span>
-      <span class="tag">Open &middot; Record &middot; Release</span>
+      <span class="head-row"><span class="station">Die Cast</span><span class="head-div"></span><span class="substation">Open Basket</span></span>
+      <span class="tag">One basket per cavity</span>
     </div>
     <div class="card-body">
       <div class="run-label">Run the screen</div>
       <ul class="steps">
-        <li><span class="num">1</span><span class="txt">Check the <b>Die</b> box names the tool actually mounted on this machine.</span></li>
-        <li><span class="num">2</span><span class="txt">On <b>Open Basket</b>: pick the Part, scan the LTT, press <b>OPEN BASKETS</b>.</span></li>
-        <li><span class="num">3</span><span class="txt">On <b>Record Shift Output</b>: pick your shift, enter the shot count, <b>Compute / Preview</b>, log any scrap, <b>SUBMIT SHIFT OUTPUT</b>.</span></li>
-        <li><span class="num">4</span><span class="txt">On <b>Lot Release</b>: press <b>Release</b> on any basket that is full.</span></li>
+        <li><span class="num">1</span><span class="txt">Check the <b>Die</b> box names the tool actually mounted on this machine &ndash; the cavity rows below come from it.</span></li>
+        <li><span class="num">2</span><span class="txt">On each cavity row, pick the <b>Part</b>. Every cavity running the same part? Press <b>Copy part to empty rows</b>.</span></li>
+        <li><span class="num">3</span><span class="txt">Scan the <b>LTT Barcode</b> from the basket into that row.</span></li>
+        <li><span class="num">4</span><span class="txt">Press <b>OPEN BASKETS</b> to open every row you filled in.</span></li>
       </ul>
       <div class="card-note"><b>If the die is wrong or empty</b> &ndash; stop and tell a supervisor. Do not work around it.</div>
     </div>
     <div class="card-foot">
       <div class="foot-block">
         <span class="label">Start &middot; Sign In</span>
-        <span class="body">Type your initials, press <b>Enter</b>. Not recognized? Press <b>Register New User</b>.<br>Wrong name showing? Tap <b>Operator:</b> up top to switch.</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
       </div>
       <div class="foot-help">
         <span class="q-badge">?</span>
@@ -387,22 +442,24 @@
 
   <div class="card">
     <div class="card-head">
-      <span class="station">Trim</span>
-      <span class="tag">Check IN &middot; Trim OUT</span>
+      <span class="head-row"><span class="station">Die Cast</span><span class="head-div"></span><span class="substation">Record Shift Output</span></span>
+      <span class="tag">Shots &middot; Scrap &middot; Submit</span>
     </div>
     <div class="card-body">
       <div class="run-label">Run the screen</div>
       <ul class="steps">
-        <li><span class="num">1</span><span class="txt">If this press is shared, pick it from the top of the screen first.</span></li>
-        <li><span class="num">2</span><span class="txt">On <b>Check IN</b>: scan the LTT, review the LOT shown, press <b>Move</b>.</span></li>
-        <li><span class="num">3</span><span class="txt">On <b>Trim OUT</b>: tap the LOT&rsquo;s card (or scan its LTT), enter the <b>Lot count</b>.</span></li>
-        <li><span class="num">4</span><span class="txt">Add scrap reasons if any, then press <b>Trim OUT</b> to release the whole LOT.</span></li>
+        <li><span class="num">1</span><span class="txt">Pick your <b>Reporting shift</b>.</span></li>
+        <li><span class="num">2</span><span class="txt">Enter <b>Shots this entry</b> &ndash; that is die-wide, not per cavity.</span></li>
+        <li><span class="num">3</span><span class="txt">Press <b>Compute / Preview</b> to break it down by cavity.</span></li>
+        <li><span class="num">4</span><span class="txt">Press <b>Add scrap reason</b> on any cavity that had scrap. <b>Good (pc)</b> updates on its own as you log it.</span></li>
+        <li><span class="num">5</span><span class="txt">Lost a whole shot? Pick a reason and qty under <b>Shot loss (all cavities)</b> and press <b>Register shot loss</b> before you submit.</span></li>
+        <li><span class="num">6</span><span class="txt">Press <b>SUBMIT SHIFT OUTPUT</b> when the rows look right.</span></li>
       </ul>
     </div>
     <div class="card-foot">
       <div class="foot-block">
         <span class="label">Start &middot; Sign In</span>
-        <span class="body">Type your initials, press <b>Enter</b>. Not recognized? Press <b>Register New User</b>.<br>Wrong name showing? Tap <b>Operator:</b> up top to switch.</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
       </div>
       <div class="foot-help">
         <span class="q-badge">?</span>
@@ -418,8 +475,110 @@
 </div>
 
 <!-- ======================= SHEET 2 ======================= -->
-<div class="sheet-label">Sheet 2 of 4</div>
+<div class="sheet-label">Sheet 2 of 6</div>
 <div class="sheet">
+
+  <div class="card">
+    <div class="card-head">
+      <span class="head-row"><span class="station">Die Cast</span><span class="head-div"></span><span class="substation">Lot Release</span></span>
+      <span class="tag">Release &middot; Void</span>
+    </div>
+    <div class="card-body">
+      <div class="run-label">Run the screen</div>
+      <ul class="steps">
+        <li><span class="num">1</span><span class="txt"><b>Release</b> &ndash; press it on a basket that is full. It leaves the cavity, moves on to its next step, and frees the cavity for a new basket.</span></li>
+        <li><span class="num">2</span><span class="txt"><b>Void</b> &ndash; only shows on an empty basket. It discards that basket.</span></li>
+      </ul>
+      <div class="rail-box">
+        <div class="rail-label">Watch the right-hand rail</div>
+        <div class="rail-body"><b>Shots this shift</b> &middot; <b>Good parts this shift</b> &middot; <b>Scrap this shift</b> &middot; <b>Die total shots</b> (count / limit). If it reads <b>Approaching shot limit</b> or <b>OVER SHOT LIMIT</b>, tell a supervisor before you open the next basket.</div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="foot-block">
+        <span class="label">Start &middot; Sign In</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
+      </div>
+      <div class="foot-help">
+        <span class="q-badge">?</span>
+        <span class="body">Tap the <b>?</b> in the corner of any screen for step-by-step help on that exact screen.</span>
+      </div>
+      <div class="foot-block">
+        <span class="label">Downtime</span>
+        <span class="body">Machine down or waiting on something? Press <b>Downtime</b> up top.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cut-line"></div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="head-row"><span class="station">Trim</span><span class="head-div"></span><span class="substation">Check IN</span></span>
+      <span class="tag">Scan &middot; Move</span>
+    </div>
+    <div class="card-body">
+      <div class="run-label">Run the screen</div>
+      <ul class="steps">
+        <li><span class="num">1</span><span class="txt">If this press is shared, pick it from the <b>cell picker</b> at the top of the screen first.</span></li>
+        <li><span class="num">2</span><span class="txt">Scan the <b>LTT</b> &ndash; the LOT, item, and eligibility show up for you to check.</span></li>
+        <li><span class="num">3</span><span class="txt">Press <b>Move</b> to commit it to this cell.</span></li>
+      </ul>
+    </div>
+    <div class="card-foot">
+      <div class="foot-block">
+        <span class="label">Start &middot; Sign In</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
+      </div>
+      <div class="foot-help">
+        <span class="q-badge">?</span>
+        <span class="body">Tap the <b>?</b> in the corner of any screen for step-by-step help on that exact screen.</span>
+      </div>
+      <div class="foot-block">
+        <span class="label">Downtime</span>
+        <span class="body">Machine down or waiting on something? Press <b>Downtime</b> up top.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================= SHEET 3 ======================= -->
+<div class="sheet-label">Sheet 3 of 6</div>
+<div class="sheet">
+
+  <div class="card">
+    <div class="card-head">
+      <span class="head-row"><span class="station">Trim</span><span class="head-div"></span><span class="substation">Trim OUT</span></span>
+      <span class="tag">Count &middot; Scrap &middot; Release</span>
+    </div>
+    <div class="card-body">
+      <div class="run-label">Run the screen</div>
+      <ul class="steps">
+        <li><span class="num">1</span><span class="txt">Tap the LOT&rsquo;s card in the <b>Trim inventory</b> list, or scan its <b>LTT Barcode</b>.</span></li>
+        <li><span class="num">2</span><span class="txt">Enter the <b>Lot count</b>.</span></li>
+        <li><span class="num">3</span><span class="txt">Tap a reason under <b>Scrap reasons</b> to add one piece. Press <b>More reasons</b> if the one you need is not on the short list.</span></li>
+        <li><span class="num">4</span><span class="txt">Press <b>Trim OUT</b> to release the LOT out of Trim.</span></li>
+      </ul>
+      <div class="card-note"><b>Trim OUT always moves the whole LOT together</b> &ndash; there is no split here.</div>
+    </div>
+    <div class="card-foot">
+      <div class="foot-block">
+        <span class="label">Start &middot; Sign In</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
+      </div>
+      <div class="foot-help">
+        <span class="q-badge">?</span>
+        <span class="body">Tap the <b>?</b> in the corner of any screen for step-by-step help on that exact screen.</span>
+      </div>
+      <div class="foot-block">
+        <span class="label">Downtime</span>
+        <span class="body">Machine down or waiting on something? Press <b>Downtime</b> up top.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cut-line"></div>
 
   <div class="card">
     <div class="card-head">
@@ -437,7 +596,7 @@
     <div class="card-foot">
       <div class="foot-block">
         <span class="label">Start &middot; Sign In</span>
-        <span class="body">Type your initials, press <b>Enter</b>. Not recognized? Press <b>Register New User</b>.<br>Wrong name showing? Tap <b>Operator:</b> up top to switch.</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
       </div>
       <div class="foot-help">
         <span class="q-badge">?</span>
@@ -450,7 +609,11 @@
     </div>
   </div>
 
-  <div class="cut-line"></div>
+</div>
+
+<!-- ======================= SHEET 4 ======================= -->
+<div class="sheet-label">Sheet 4 of 6</div>
+<div class="sheet">
 
   <div class="card">
     <div class="card-head">
@@ -468,41 +631,7 @@
     <div class="card-foot">
       <div class="foot-block">
         <span class="label">Start &middot; Sign In</span>
-        <span class="body">Type your initials, press <b>Enter</b>. Not recognized? Press <b>Register New User</b>.<br>Wrong name showing? Tap <b>Operator:</b> up top to switch.</span>
-      </div>
-      <div class="foot-help">
-        <span class="q-badge">?</span>
-        <span class="body">Tap the <b>?</b> in the corner of any screen for step-by-step help on that exact screen.</span>
-      </div>
-      <div class="foot-block">
-        <span class="label">Downtime</span>
-        <span class="body">Machine down or waiting on something? Press <b>Downtime</b> up top.</span>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ======================= SHEET 3 ======================= -->
-<div class="sheet-label">Sheet 3 of 4</div>
-<div class="sheet">
-
-  <div class="card">
-    <div class="card-head">
-      <span class="station">Assembly IN</span>
-      <span class="tag">Scan components</span>
-    </div>
-    <div class="card-body">
-      <div class="run-label">Run the screen</div>
-      <ul class="steps">
-        <li><span class="num">1</span><span class="txt">Scan or enter the LTT on the machined component.</span></li>
-        <li><span class="num">2</span><span class="txt">Press <b>Scan In</b>. It is added to <b>Components at this cell</b> below.</span></li>
-      </ul>
-    </div>
-    <div class="card-foot">
-      <div class="foot-block">
-        <span class="label">Start &middot; Sign In</span>
-        <span class="body">Type your initials, press <b>Enter</b>. Not recognized? Press <b>Register New User</b>.<br>Wrong name showing? Tap <b>Operator:</b> up top to switch.</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
       </div>
       <div class="foot-help">
         <span class="q-badge">?</span>
@@ -519,22 +648,20 @@
 
   <div class="card">
     <div class="card-head">
-      <span class="station">Assembly &middot; Non-Serialized</span>
-      <span class="tag">Fill &middot; Complete</span>
+      <span class="station">Assembly IN</span>
+      <span class="tag">Scan components</span>
     </div>
     <div class="card-body">
       <div class="run-label">Run the screen</div>
       <ul class="steps">
-        <li><span class="num">1</span><span class="txt">Check <b>Now producing</b> and the components staged at this cell.</span></li>
-        <li><span class="num">2</span><span class="txt"><b>By Count</b> lines: enter the count and press <b>Complete Tray</b> when full. <b>By Weight / By Vision</b>: the scale or camera closes it &ndash; nothing to press.</span></li>
-        <li><span class="num">3</span><span class="txt">On a By Count line, once enough trays are in, press <b>Complete</b> under <b>Container Completion Gate</b>.</span></li>
+        <li><span class="num">1</span><span class="txt">Scan or enter the LTT on the machined component.</span></li>
+        <li><span class="num">2</span><span class="txt">Press <b>Scan In</b>. It is added to <b>Components at this cell</b> below.</span></li>
       </ul>
-      <div class="card-note">A single-tray container ships on its own &ndash; you will not see the gate for it.</div>
     </div>
     <div class="card-foot">
       <div class="foot-block">
         <span class="label">Start &middot; Sign In</span>
-        <span class="body">Type your initials, press <b>Enter</b>. Not recognized? Press <b>Register New User</b>.<br>Wrong name showing? Tap <b>Operator:</b> up top to switch.</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
       </div>
       <div class="foot-help">
         <span class="q-badge">?</span>
@@ -549,13 +676,45 @@
 
 </div>
 
-<!-- ======================= SHEET 4 ======================= -->
-<div class="sheet-label">Sheet 4 of 4</div>
+<!-- ======================= SHEET 5 ======================= -->
+<div class="sheet-label">Sheet 5 of 6</div>
 <div class="sheet">
 
   <div class="card">
     <div class="card-head">
-      <span class="station">Assembly &middot; Serialized</span>
+      <span class="head-row"><span class="station">Assembly</span><span class="head-div"></span><span class="substation">Non-Serialized</span></span>
+      <span class="tag">Fill &middot; Complete</span>
+    </div>
+    <div class="card-body">
+      <div class="run-label">Run the screen</div>
+      <ul class="steps">
+        <li><span class="num">1</span><span class="txt">Check <b>Now producing</b> and the components staged at this cell.</span></li>
+        <li><span class="num">2</span><span class="txt"><b>By Count</b> lines: enter the count and press <b>Complete Tray</b> when full. <b>By Weight / By Vision</b>: the scale or camera closes it &ndash; nothing to press.</span></li>
+        <li><span class="num">3</span><span class="txt">On a By Count line, once enough trays are in, press <b>Complete</b> under <b>Container Completion Gate</b>.</span></li>
+      </ul>
+      <div class="card-note">A single-tray container ships on its own &ndash; you will not see the gate for it.</div>
+    </div>
+    <div class="card-foot">
+      <div class="foot-block">
+        <span class="label">Start &middot; Sign In</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
+      </div>
+      <div class="foot-help">
+        <span class="q-badge">?</span>
+        <span class="body">Tap the <b>?</b> in the corner of any screen for step-by-step help on that exact screen.</span>
+      </div>
+      <div class="foot-block">
+        <span class="label">Downtime</span>
+        <span class="body">Machine down or waiting on something? Press <b>Downtime</b> up top.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cut-line"></div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="head-row"><span class="station">Assembly</span><span class="head-div"></span><span class="substation">Serialized</span></span>
       <span class="tag">Watch &middot; Complete</span>
     </div>
     <div class="card-body">
@@ -569,7 +728,44 @@
     <div class="card-foot">
       <div class="foot-block">
         <span class="label">Start &middot; Sign In</span>
-        <span class="body">Type your initials, press <b>Enter</b>. Not recognized? Press <b>Register New User</b>.<br>Wrong name showing? Tap <b>Operator:</b> up top to switch.</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
+      </div>
+      <div class="foot-help">
+        <span class="q-badge">?</span>
+        <span class="body">Tap the <b>?</b> in the corner of any screen for step-by-step help on that exact screen.</span>
+      </div>
+      <div class="foot-block">
+        <span class="label">Downtime</span>
+        <span class="body">Machine down or waiting on something? Press <b>Downtime</b> up top.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================= SHEET 6 ======================= -->
+<div class="sheet-label">Sheet 6 of 6</div>
+<div class="sheet">
+
+  <div class="card">
+    <div class="card-head">
+      <span class="head-row"><span class="station">Downtime</span><span class="head-div"></span><span class="substation">Downtime Entry</span></span>
+      <span class="tag">Start &middot; Reason &middot; End</span>
+    </div>
+    <div class="card-body">
+      <div class="run-label">Run the screen</div>
+      <ul class="steps">
+        <li><span class="num">1</span><span class="txt">Check the <b>Machine</b> box at the top is the one that stopped; pick it from the list if not.</span></li>
+        <li><span class="num">2</span><span class="txt">Press <b>Start Downtime</b> as soon as it stops &ndash; do not wait until you know why. It opens with no reason.</span></li>
+        <li><span class="num">3</span><span class="txt">Pick the <b>Reason</b> on the row once you know it.</span></li>
+        <li><span class="num">4</span><span class="txt">Press <b>End</b> on the row when work resumes. No supervisor sign-in needed.</span></li>
+      </ul>
+      <div class="card-note"><b>Add Past Event</b> logs downtime you missed. <b>Edit</b> and <b>Void</b> both ask for a supervisor sign-in &ndash; Void is permanent.</div>
+    </div>
+    <div class="card-foot">
+      <div class="foot-block">
+        <span class="label">Start &middot; Sign In</span>
+        <span class="body">Type your 5-digit <b>PIN</b>. Wrong digit? <b>Re-type PIN</b>. <b>Register New User</b> is first-time only.<br/>Wrong name up top? Tap <b>Operator:</b> to switch.</span>
       </div>
       <div class="foot-help">
         <span class="q-badge">?</span>

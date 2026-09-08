@@ -5,8 +5,9 @@ No browser dependency (headless Chromium/Edge proved unreliable in this
 environment) - pure reportlab. Structural elements (header bands, badges,
 dividers, callout boxes) are drawn directly on the canvas; text content uses
 reportlab.platypus.Paragraph for automatic wrapping, drawn at a fixed
-position via wrapOn/drawOn. Content mirrors the published HTML artifact
-(same 7 stations, same copy), reflowed for a vector PDF instead of CSS.
+position via wrapOn/drawOn. Card copy is imported from `cards_content.py`,
+which the HTML generator reads too - so the printed card and the published
+artifact cannot drift apart.
 """
 import io
 from reportlab.lib.pagesizes import letter
@@ -16,6 +17,8 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.platypus import Paragraph
+
+from cards_content import CARDS, SIGN_IN, DOWNTIME, HELP, for_pdf
 
 # ---------------------------------------------------------------- palette --
 INK          = HexColor("#16181D")
@@ -28,6 +31,8 @@ ACCENT_SOFT  = HexColor("#E3F3F7")
 ACCENT_LINE  = HexColor("#BFE1EA")
 WARN         = HexColor("#9A3412")
 WARN_SOFT    = HexColor("#FBE9E1")
+SUBSTATION   = HexColor("#C4CEDA")   # tab name on the dark header band
+HEAD_DIV     = HexColor("#4A5260")   # hairline between station and tab
 
 F_BOLD = "Helvetica-Bold"
 F_REG  = "Helvetica"
@@ -38,92 +43,9 @@ CARD_W = 7.7 * 72
 CARD_H = 5.05 * 72
 GAP    = 0.22 * 72
 
-SIGN_IN_BODY = (
-    "Type your initials, press <b>Enter</b>. Not recognized? Press "
-    "<b>Register New User</b>.<br/>Wrong name showing? Tap <b>Operator:</b> "
-    "up top to switch."
-)
-DOWNTIME_BODY = (
-    "Machine down or waiting on something? Press <b>Downtime</b> up top."
-)
-HELP_BODY = (
-    "Tap the <b>?</b> in the corner of any screen for step-by-step help "
-    "on that exact screen."
-)
-
-CARDS = [
-    dict(
-        station="Die Cast", tag="Open · Record · Release",
-        steps=[
-            "Check the <b>Die</b> box names the tool actually mounted on this machine.",
-            "On <b>Open Basket</b>: pick the Part, scan the LTT, press <b>OPEN BASKETS</b>.",
-            "On <b>Record Shift Output</b>: pick your shift, enter the shot count, "
-            "<b>Compute / Preview</b>, log any scrap, <b>SUBMIT SHIFT OUTPUT</b>.",
-            "On <b>Lot Release</b>: press <b>Release</b> on any basket that is full.",
-        ],
-        note="<b>If the die is wrong or empty</b> – stop and tell a supervisor. "
-             "Do not work around it.",
-    ),
-    dict(
-        station="Trim", tag="Check IN · Trim OUT",
-        steps=[
-            "If this press is shared, pick it from the top of the screen first.",
-            "On <b>Check IN</b>: scan the LTT, review the LOT shown, press <b>Move</b>.",
-            "On <b>Trim OUT</b>: tap the LOT’s card (or scan its LTT), enter the "
-            "<b>Lot count</b>.",
-            "Add scrap reasons if any, then press <b>Trim OUT</b> to release the whole LOT.",
-        ],
-    ),
-    dict(
-        station="Machining IN", tag="Scan · Confirm",
-        steps=[
-            "Scan the LTT on the casting you picked up.",
-            "Check the LOT, item, and piece count shown are the right ones.",
-            "Press <b>Start Machining</b>. It moves onto <b>Active machined LOT</b> below.",
-        ],
-    ),
-    dict(
-        station="Machining OUT", tag="Mint from the queue",
-        steps=[
-            "The oldest casting is already selected. Tap <b>Select</b> only to work a "
-            "different one.",
-            "Enter how many <b>Pieces</b> to mint – it pulls from the whole queue, "
-            "not just one casting.",
-            "Add scrap lines if any, then press <b>Submit</b>.",
-        ],
-    ),
-    dict(
-        station="Assembly IN", tag="Scan components",
-        steps=[
-            "Scan or enter the LTT on the machined component.",
-            "Press <b>Scan In</b>. It is added to <b>Components at this cell</b> below.",
-        ],
-    ),
-    dict(
-        station="Assembly · Non-Serialized", tag="Fill · Complete",
-        steps=[
-            "Check <b>Now producing</b> and the components staged at this cell.",
-            "<b>By Count</b> lines: enter the count and press <b>Complete Tray</b> when "
-            "full. <b>By Weight / By Vision</b>: the scale or camera closes it – "
-            "nothing to press.",
-            "On a By Count line, once enough trays are in, press <b>Complete</b> under "
-            "<b>Container Completion Gate</b>.",
-        ],
-        note="A single-tray container ships on its own – you will not see the gate "
-             "for it.",
-    ),
-    dict(
-        station="Assembly · Serialized", tag="Watch · Complete",
-        steps=[
-            "This line is MIP-integrated – watch <b>Current Tray</b>. It closes on "
-            "its own; nothing to press per piece.",
-            "Once enough trays are in, press <b>Complete</b> under <b>WorkOrder "
-            "Completion Gate</b> to finish and ship it.",
-        ],
-        note="A failed AIM post shows a warning and retries on its own – no action "
-             "needed from you.",
-    ),
-]
+SIGN_IN_BODY = for_pdf(SIGN_IN)
+DOWNTIME_BODY = for_pdf(DOWNTIME)
+HELP_BODY = for_pdf(HELP)
 
 # ------------------------------------------------------------- paragraphs --
 style_step = ParagraphStyle(
@@ -132,6 +54,8 @@ style_note = ParagraphStyle(
     "note", fontName=F_REG, fontSize=8.8, leading=11.4, textColor=INK)
 style_foot = ParagraphStyle(
     "foot", fontName=F_REG, fontSize=8.4, leading=10.6, textColor=INK)
+style_rail = ParagraphStyle(
+    "rail", fontName=F_REG, fontSize=8.8, leading=11.4, textColor=INK)
 style_foot_label = ParagraphStyle(
     "footlabel", fontName=F_BOLD, fontSize=8.2, leading=10,
     textColor=INK_MUTED, tracking=0.6)
@@ -169,12 +93,29 @@ def draw_card(c, x, y, data):
     c.setFillColor(INK)
     c.rect(x, top - head_h, CARD_W, head_h, stroke=0, fill=1)
 
+    # Station reads big and stays scannable from across the aisle (how the
+    # right card gets found on a rack); the tab name sits after a hairline in
+    # a lighter grey so the two are legible as separate things rather than
+    # one run-on title.
+    head_base = top - head_h + 0.16 * 72
+    head_x = x + 0.28 * 72
+    station = for_pdf(data["station"])
     c.setFillColor(PAPER)
     c.setFont(F_BOLD, 19)
-    c.drawString(x + 0.28 * 72, top - head_h + 0.16 * 72, data["station"])
+    c.drawString(head_x, head_base, station)
+
+    sub = data.get("sub")
+    if sub:
+        div_x = head_x + stringWidth(station, F_BOLD, 19) + 11
+        c.setStrokeColor(HEAD_DIV)
+        c.setLineWidth(1)
+        c.line(div_x, head_base - 2, div_x, head_base + 14)
+        c.setFillColor(SUBSTATION)
+        c.setFont(F_BOLD, 14.5)
+        c.drawString(div_x + 11, head_base, for_pdf(sub))
 
     tag_font_size = 8.2
-    tag_w = stringWidth(data["tag"], F_BOLD, tag_font_size) + 22
+    tag_w = stringWidth(for_pdf(data["tag"]), F_BOLD, tag_font_size) + 22
     tag_h = 16
     tag_x = x + CARD_W - 0.26 * 72 - tag_w
     tag_y = top - head_h / 2 - tag_h / 2
@@ -183,7 +124,8 @@ def draw_card(c, x, y, data):
     c.roundRect(tag_x, tag_y, tag_w, tag_h, tag_h / 2, stroke=1, fill=0)
     c.setFillColor(ACCENT)
     c.setFont(F_BOLD, tag_font_size)
-    c.drawCentredString(tag_x + tag_w / 2, tag_y + tag_h / 2 - 3, data["tag"])
+    c.drawCentredString(tag_x + tag_w / 2, tag_y + tag_h / 2 - 3,
+                        for_pdf(data["tag"]))
 
     # ---- Vertical budget, footer-up so the fixed-size blocks (footer,
     # note) claim their space first and the steps get whatever is left,
@@ -191,25 +133,42 @@ def draw_card(c, x, y, data):
     # above the footer on every shorter card. ----
     foot_h = 1.05 * 72
     foot_y = bottom
-    has_note = bool(data.get("note"))
-    note_h = 0.42 * 72
-    note_gap = 0.08 * 72
-    # Without a note, steps_bottom collapses to just above the footer (a
-    # small breathing gap, not the full note box + gap) so the steps block
-    # actually reclaims that space instead of centering in a shorter range
-    # that still assumes a note is there.
-    note_y = foot_y + foot_h + (note_h + note_gap if has_note else note_gap)
 
     body_top = top - head_h - 0.12 * 72
     body_left = x + 0.28 * 72
     body_w = CARD_W - 0.56 * 72
+
+    # Callout blocks (rail, then note) are measured against their real
+    # wrapped text rather than assumed to be one fixed height - the copy in
+    # cards_content.py is free to grow to two or three lines, and a fixed
+    # box would silently clip it on the printed card with nothing on screen
+    # to warn us. Each still claims a minimum so short callouts do not look
+    # cramped.
+    block_gap = 0.08 * 72
+    blocks = []          # bottom-up: (kind, height, payload)
+    if data.get("rail"):
+        rail_label, rail_body = data["rail"]
+        rp = Paragraph(for_pdf(rail_body), style_rail)
+        _, rh = rp.wrapOn(c, body_w - 20, 200)
+        blocks.append(("rail", max(0.44 * 72, rh + 22),
+                       (for_pdf(rail_label), rp, rh)))
+    if data.get("note"):
+        np_ = Paragraph(for_pdf(data["note"]), style_note)
+        _, nh = np_.wrapOn(c, body_w - 18, 200)
+        blocks.append(("note", max(0.42 * 72, nh + 12), np_))
+
+    # Stack the callouts up from the footer. With no callout at all the
+    # steps reclaim the space instead of centering in a range that still
+    # assumes a box is sitting there.
+    blocks_h = sum(h for _, h, _ in blocks) + block_gap * len(blocks)
+    blocks_top = foot_y + foot_h + (blocks_h if blocks else block_gap)
 
     c.setFillColor(ACCENT)
     c.setFont(F_BOLD, 8.6)
     c.drawString(body_left, body_top - 8, "RUN THE SCREEN")
 
     steps_top = body_top - 22
-    steps_bottom = note_y  # steps must not encroach below the note's top
+    steps_bottom = blocks_top  # steps stop above the callout stack
     num_d = 15
     text_x = body_left + num_d + 10
     text_w = body_w - num_d - 10
@@ -221,7 +180,7 @@ def draw_card(c, x, y, data):
     step_gap = 7
     paras, heights = [], []
     for step_text in data["steps"]:
-        p = Paragraph(step_text, style_step)
+        p = Paragraph(for_pdf(step_text), style_step)
         _, h = p.wrapOn(c, text_w, 400)
         paras.append(p)
         heights.append(h)
@@ -242,14 +201,26 @@ def draw_card(c, x, y, data):
         p.drawOn(c, text_x, cy - h)
         cy -= h + step_gap
 
-    # ---- Callout note (only on cards that have one) ----
-    if has_note:
-        c.setFillColor(WARN_SOFT)
-        c.rect(body_left, note_y - note_h, body_w, note_h, stroke=0, fill=1)
-        c.setFillColor(WARN)
-        c.rect(body_left, note_y - note_h, 2.6, note_h, stroke=0, fill=1)
-        draw_para(c, data["note"], style_note, body_left + 10, note_y - 7,
-                  body_w - 18, note_h - 6)
+    # ---- Callout blocks, drawn top-down from the top of the stack ----
+    by = blocks_top
+    for kind, bh, payload in blocks:
+        if kind == "rail":
+            label, rp, rh = payload
+            c.setFillColor(ACCENT_SOFT)
+            c.setStrokeColor(ACCENT_LINE)
+            c.setLineWidth(1)
+            c.roundRect(body_left, by - bh, body_w, bh, 3, stroke=1, fill=1)
+            c.setFillColor(ACCENT)
+            c.setFont(F_BOLD, 8.2)
+            c.drawString(body_left + 10, by - 12, label.upper())
+            rp.drawOn(c, body_left + 10, by - 16 - rh)
+        else:
+            c.setFillColor(WARN_SOFT)
+            c.rect(body_left, by - bh, body_w, bh, stroke=0, fill=1)
+            c.setFillColor(WARN)
+            c.rect(body_left, by - bh, 2.6, bh, stroke=0, fill=1)
+            payload.drawOn(c, body_left + 10, by - (bh + payload.height) / 2)
+        by -= bh + block_gap
 
     # ---- Footer strip ----
     c.setStrokeColor(INK)
