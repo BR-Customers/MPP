@@ -20,28 +20,50 @@
     "defectOptions": []
   },
   "propConfig": {
-    "params.toolCavityId": { "paramDirection": "input" },
-    "params.cavityNumber": { "paramDirection": "input" },
-    "params.cavityName": { "paramDirection": "input" },
-    "params.cavityOrdinalLabel": { "paramDirection": "input" },
-    "params.hasCavityName": { "paramDirection": "input" },
-    "params.lotId": { "paramDirection": "input" },
-    "params.lotName": { "paramDirection": "input" },
-    "params.isOpen": { "paramDirection": "input" },
-    "params.priorGoodThisShift": { "paramDirection": "input" },
-    "params.maxHeadroom": { "paramDirection": "input" },
-    "params.defectOptions": { "paramDirection": "input" },
+    "params.toolCavityId": {
+      "paramDirection": "input"
+    },
+    "params.cavityNumber": {
+      "paramDirection": "input"
+    },
+    "params.cavityName": {
+      "paramDirection": "input"
+    },
+    "params.cavityOrdinalLabel": {
+      "paramDirection": "input"
+    },
+    "params.hasCavityName": {
+      "paramDirection": "input"
+    },
+    "params.lotId": {
+      "paramDirection": "input"
+    },
+    "params.lotName": {
+      "paramDirection": "input"
+    },
+    "params.isOpen": {
+      "paramDirection": "input"
+    },
+    "params.priorGoodThisShift": {
+      "paramDirection": "input"
+    },
+    "params.maxHeadroom": {
+      "paramDirection": "input"
+    },
+    "params.defectOptions": {
+      "paramDirection": "input"
+    },
     "params.proposedGood": {
       "paramDirection": "input",
       "onChange": {
         "enabled": true,
-        "script": "\t# A fresh proposal replaces the row wholesale: the operator's scrap lines and\n\t# the derived Good both belong to the PREVIOUS proposal and must not survive.\n\tval = self.view.params.proposedGood\n\tself.view.custom.scrapLines = []\n\tself.view.custom.scrapTotal = 0\n\tself.view.custom.good = str(val) if val is not None else \"\"\n\tself.view.custom.overHeadroom = False"
+        "script": "\t# A fresh proposal replaces the row wholesale: the operator\u0027s scrap lines and\n\t# the derived Good both belong to the PREVIOUS proposal and must not survive.\n\tval \u003d self.view.params.proposedGood\n\tself.view.custom.scrapLines \u003d []\n\tself.view.custom.scrapTotal \u003d 0\n\tself.view.custom.good \u003d str(val) if val is not None else \"\"\n\tself.view.custom.overHeadroom \u003d False"
       }
     }
   },
   "props": {
     "defaultSize": {
-      "height": 76,
+      "height": 150,
       "width": 900
     }
   },
@@ -51,11 +73,11 @@
       "name": "root"
     },
     "props": {
-      "alignItems": "center",
+      "alignItems": "flex-start",
       "style": {
         "classes": "pf-inventory-row",
         "gap": "12px",
-        "overflow": "hidden"
+        "overflow": "visible"
       }
     },
     "children": [
@@ -180,53 +202,87 @@
           }
         },
         "props": {
-          "alignItems": "center",
+          "alignItems": "stretch",
           "style": {
-            "gap": "10px",
-            "overflow": "hidden"
-          }
+            "gap": "8px",
+            "overflow": "visible"
+          },
+          "direction": "column"
         },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "GoodBlock"
-            },
-            "position": {
-              "basis": "120px",
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "gap": "2px",
-                "overflow": "hidden"
-              }
-            },
             "children": [
               {
-                "type": "ia.display.label",
+                "type": "ia.container.flex",
                 "meta": {
-                  "name": "GoodLabel"
+                  "name": "GoodBlock"
+                },
+                "position": {
+                  "basis": "120px",
+                  "shrink": 0
                 },
                 "props": {
-                  "text": "Good (pc)",
+                  "direction": "column",
                   "style": {
-                    "classes": "pf-field-label"
+                    "gap": "2px",
+                    "overflow": "hidden"
                   }
-                }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "GoodLabel"
+                    },
+                    "props": {
+                      "text": "Good (pc)",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "GoodValue"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.good"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "classes": "pf-kpi-value",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "22px",
+                        "fontWeight": 700
+                      }
+                    }
+                  }
+                ]
               },
               {
                 "type": "ia.display.label",
                 "meta": {
-                  "name": "GoodValue"
+                  "name": "ReferenceLabel"
+                },
+                "position": {
+                  "basis": "150px",
+                  "shrink": 0
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
+                      "type": "expr",
                       "config": {
-                        "path": "view.custom.good"
+                        "expression": "\"prior \" + toStr({view.params.priorGoodThisShift}) + if({view.params.maxHeadroom} \u003c 2147483647, \"  ·  headroom \" + toStr({view.params.maxHeadroom}), \"\")"
                       }
                     }
                   }
@@ -234,40 +290,133 @@
                 "props": {
                   "text": "",
                   "style": {
-                    "classes": "pf-kpi-value",
-                    "fontFamily": "var(--mpp-font-mono)",
-                    "fontSize": "22px",
-                    "fontWeight": 700
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              },
+              {
+                "meta": {
+                  "name": "ControlsSpacer"
+                },
+                "position": {
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "props": {
+                  "text": ""
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ScrapTotalLabel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.scrapTotal} \u003e 0"
+                      }
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "\"scrap \" + toStr({view.custom.scrapTotal}) + \" pc\""
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "pf-kpi-sub",
+                    "whiteSpace": "nowrap"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "HeadroomWarning"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.overHeadroom"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Over basket headroom",
+                  "style": {
+                    "color": "var(--mpp-warning, #b26a00)",
+                    "fontWeight": 600,
+                    "whiteSpace": "nowrap"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "AddScrapButton"
+                },
+                "position": {
+                  "basis": "180px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Add scrap reason",
+                  "image": {
+                    "icon": {
+                      "path": "mpp/add_circle"
+                    }
+                  },
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary",
+                    "minHeight": "44px"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.addScrapLine()"
+                      }
+                    }
                   }
                 }
               }
-            ]
-          },
-          {
-            "type": "ia.display.label",
+            ],
             "meta": {
-              "name": "ReferenceLabel"
+              "name": "ControlsLine"
             },
             "position": {
-              "basis": "150px",
+              "basis": "auto",
               "shrink": 0
             },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"prior \" + toStr({view.params.priorGoodThisShift}) + if({view.params.maxHeadroom} < 2147483647, \"  ·  headroom \" + toStr({view.params.maxHeadroom}), \"\")"
-                  }
-                }
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "10px",
+                "overflow": "visible"
               }
             },
-            "props": {
-              "text": "",
-              "style": {
-                "classes": "pf-kpi-sub"
-              }
-            }
+            "type": "ia.container.flex"
           },
           {
             "type": "ia.container.flex",
@@ -275,17 +424,17 @@
               "name": "ScrapStack"
             },
             "position": {
-              "basis": "0",
-              "grow": 1,
-              "shrink": 1
+              "basis": "auto",
+              "shrink": 0
             },
             "props": {
-              "direction": "row",
+              "direction": "column",
               "style": {
-                "gap": "8px",
-                "overflow": "hidden"
+                "gap": "6px",
+                "overflow": "visible"
               },
-              "wrap": "wrap"
+              "wrap": "nowrap",
+              "alignItems": "stretch"
             },
             "children": [
               {
@@ -294,9 +443,8 @@
                   "name": "ScrapRepeater"
                 },
                 "position": {
-                  "basis": "0",
-                  "grow": 1,
-                  "shrink": 1
+                  "basis": "auto",
+                  "shrink": 0
                 },
                 "propConfig": {
                   "props.instances": {
@@ -308,125 +456,30 @@
                       "transforms": [
                         {
                           "type": "script",
-                          "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.params.defectOptions) or []\n\tlotId = self.view.params.lotId\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = r or {}\n\t\tout.append({\"lotId\": lotId, \"index\": i, \"defectCodeId\": r.get(\"defectCodeId\"), \"quantity\": r.get(\"quantity\") or \"\", \"defectOptions\": opts})\n\treturn out"
+                          "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.params.defectOptions) or []\n\tlotId \u003d self.view.params.lotId\n\tout \u003d []\n\tfor i, r in enumerate(rows):\n\t\tr \u003d r or {}\n\t\tout.append({\"lotId\": lotId, \"index\": i, \"defectCodeId\": r.get(\"defectCodeId\"), \"quantity\": r.get(\"quantity\") or \"\", \"defectOptions\": opts})\n\treturn out"
                         }
                       ]
                     }
                   }
                 },
                 "props": {
-                  "direction": "row",
-                  "wrap": "wrap",
+                  "direction": "column",
+                  "wrap": "nowrap",
                   "elementPosition": {
-                    "basis": "300px",
-                    "grow": 1,
-                    "shrink": 1
+                    "basis": "auto",
+                    "shrink": 0
                   },
                   "path": "BlueRidge/Components/PlantFloor/DieCastEntry/ScrapLineRow",
                   "style": {
-                    "flexWrap": "wrap",
-                    "gap": "8px",
-                    "overflow": "hidden"
+                    "flexWrap": "nowrap",
+                    "gap": "6px",
+                    "overflow": "visible"
                   },
                   "useDefaultViewHeight": true,
                   "useDefaultViewWidth": false
                 }
               }
             ]
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "AddScrapButton"
-            },
-            "position": {
-              "basis": "180px",
-              "shrink": 0
-            },
-            "props": {
-              "text": "Add scrap reason",
-              "image": {
-                "icon": {
-                  "path": "mpp/add_circle"
-                }
-              },
-              "style": {
-                "classes": "pf-btn pf-btn-secondary",
-                "minHeight": "44px"
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.addScrapLine()"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "ScrapTotalLabel"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.scrapTotal} > 0"
-                  }
-                }
-              },
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"scrap \" + toStr({view.custom.scrapTotal}) + \" pc\""
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "classes": "pf-kpi-sub",
-                "whiteSpace": "nowrap"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "HeadroomWarning"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.overHeadroom"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Over basket headroom",
-              "style": {
-                "color": "var(--mpp-warning, #b26a00)",
-                "fontWeight": 600,
-                "whiteSpace": "nowrap"
-              }
-            }
           }
         ]
       }
@@ -436,7 +489,7 @@
         {
           "name": "addScrapLine",
           "params": [],
-          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = [dict(r or {}) for r in rows]\n\trows.append({\"defectCodeId\": None, \"quantity\": \"\"})\n\tself.view.custom.scrapLines = rows"
+          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows \u003d [dict(r or {}) for r in rows]\n\trows.append({\"defectCodeId\": None, \"quantity\": \"\"})\n\tself.view.custom.scrapLines \u003d rows"
         },
         {
           "name": "setScrapLine",
@@ -445,31 +498,31 @@
             "defectCodeId",
             "quantity"
           ],
-          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = [dict(r or {}) for r in rows]\n\tif index is None or index < 0 or index >= len(rows):\n\t\treturn\n\trows[index] = {\"defectCodeId\": defectCodeId, \"quantity\": quantity or \"\"}\n\tself.view.custom.scrapLines = rows\n\tself.applyScrap()"
+          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows \u003d [dict(r or {}) for r in rows]\n\tif index is None or index \u003c 0 or index \u003e\u003d len(rows):\n\t\treturn\n\trows[index] \u003d {\"defectCodeId\": defectCodeId, \"quantity\": quantity or \"\"}\n\tself.view.custom.scrapLines \u003d rows\n\tself.applyScrap()"
         },
         {
           "name": "removeScrapLine",
           "params": [
             "index"
           ],
-          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = [dict(r or {}) for r in rows]\n\tif index is None or index < 0 or index >= len(rows):\n\t\treturn\n\tdel rows[index]\n\tself.view.custom.scrapLines = rows\n\tself.applyScrap()"
+          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows \u003d [dict(r or {}) for r in rows]\n\tif index is None or index \u003c 0 or index \u003e\u003d len(rows):\n\t\treturn\n\tdel rows[index]\n\tself.view.custom.scrapLines \u003d rows\n\tself.applyScrap()"
         },
         {
           "name": "applyScrap",
           "params": [],
-          "script": "\t# FAT #23: scrap auto-decrements Good. Good is DISPLAY-ONLY now (backlog 2.5),\n\t# so it is a pure derivation -- Good = ProposedGood - (submittable scrap),\n\t# floored at 0 -- rather than the old subtract-the-delta bookkeeping that\n\t# existed only to preserve operator hand-edits to an editable Good field.\n\t# Recomputing from the proposal means clearing or shrinking a scrap line puts\n\t# the pieces straight back, with no scrapApplied running total to drift.\n\ttotal = 0\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr = r or {}\n\t\tif r.get(\"defectCodeId\") is None:\n\t\t\tcontinue\n\t\tq = BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif q:\n\t\t\ttotal += q\n\tbase = BlueRidge.Common.Util.toIntOrNone(self.view.params.proposedGood) or 0\n\tg = base - total\n\tif g < 0:\n\t\tg = 0\n\tmaxH = BlueRidge.Common.Util.toIntOrNone(self.view.params.maxHeadroom)\n\tself.view.custom.scrapTotal = total\n\tself.view.custom.good = str(g)\n\tself.view.custom.overHeadroom = (maxH is not None and g > maxH)\n\tself.emitRowChanged()"
+          "script": "\t# FAT #23: scrap auto-decrements Good. Good is DISPLAY-ONLY now (backlog 2.5),\n\t# so it is a pure derivation -- Good \u003d ProposedGood - (submittable scrap),\n\t# floored at 0 -- rather than the old subtract-the-delta bookkeeping that\n\t# existed only to preserve operator hand-edits to an editable Good field.\n\t# Recomputing from the proposal means clearing or shrinking a scrap line puts\n\t# the pieces straight back, with no scrapApplied running total to drift.\n\ttotal \u003d 0\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\tif r.get(\"defectCodeId\") is None:\n\t\t\tcontinue\n\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif q:\n\t\t\ttotal +\u003d q\n\tbase \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.proposedGood) or 0\n\tg \u003d base - total\n\tif g \u003c 0:\n\t\tg \u003d 0\n\tmaxH \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.maxHeadroom)\n\tself.view.custom.scrapTotal \u003d total\n\tself.view.custom.good \u003d str(g)\n\tself.view.custom.overHeadroom \u003d (maxH is not None and g \u003e maxH)\n\tself.emitRowChanged()"
         },
         {
           "name": "emitRowChanged",
           "params": [],
-          "script": "\t# Wire shape is UNCHANGED from the fixed-six-slot version DieCastBody's\n\t# dieCastRowChanged handler + Workorder.DieCastShiftOutput_Record expect:\n\t# {lotId, good, scrapLines: [{defectCodeId, quantity}, ...]}. Only the number\n\t# of scrap lines is now unbounded (backlog 2.3).\n\tlines = []\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr = r or {}\n\t\td = r.get(\"defectCodeId\")\n\t\tq = r.get(\"quantity\")\n\t\tif d is not None and q not in (None, \"\"):\n\t\t\tlines.append({\"defectCodeId\": d, \"quantity\": q})\n\tsystem.perspective.sendMessage(\"dieCastRowChanged\", payload={\n\t\t\"lotId\": self.view.params.lotId,\n\t\t\"good\": self.view.custom.good,\n\t\t\"scrapLines\": lines,\n\t}, scope=\"page\")"
+          "script": "\t# Wire shape is UNCHANGED from the fixed-six-slot version DieCastBody\u0027s\n\t# dieCastRowChanged handler + Workorder.DieCastShiftOutput_Record expect:\n\t# {lotId, good, scrapLines: [{defectCodeId, quantity}, ...]}. Only the number\n\t# of scrap lines is now unbounded (backlog 2.3).\n\tlines \u003d []\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\td \u003d r.get(\"defectCodeId\")\n\t\tq \u003d r.get(\"quantity\")\n\t\tif d is not None and q not in (None, \"\"):\n\t\t\tlines.append({\"defectCodeId\": d, \"quantity\": q})\n\tsystem.perspective.sendMessage(\"dieCastRowChanged\", payload\u003d{\n\t\t\"lotId\": self.view.params.lotId,\n\t\t\"good\": self.view.custom.good,\n\t\t\"scrapLines\": lines,\n\t}, scope\u003d\"page\")"
         },
         {
           "name": "_isMine",
           "params": [
             "payload"
           ],
-          "script": "\t# The ScrapLineRow children broadcast on PAGE scope, so every CavityLotRow on\n\t# the shift-output list receives every child's message. Route by lotId.\n\tif not payload:\n\t\treturn False\n\treturn (\"%s\" % payload.get(\"lotId\")) == (\"%s\" % self.view.params.lotId)"
+          "script": "\t# The ScrapLineRow children broadcast on PAGE scope, so every CavityLotRow on\n\t# the shift-output list receives every child\u0027s message. Route by lotId.\n\tif not payload:\n\t\treturn False\n\treturn (\"%s\" % payload.get(\"lotId\")) \u003d\u003d (\"%s\" % self.view.params.lotId)"
         }
       ],
       "messageHandlers": [

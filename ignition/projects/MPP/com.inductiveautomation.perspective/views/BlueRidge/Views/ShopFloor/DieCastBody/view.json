@@ -1063,6 +1063,7 @@
                           }
                         },
                         "props": {
+                          "deferUpdates": false,
                           "placeholder": "qty",
                           "style": {
                             "classes": "pf-field-input"
@@ -1208,6 +1209,7 @@
                               }
                             },
                             "props": {
+                              "deferUpdates": false,
                               "placeholder": "0",
                               "style": {
                                 "classes": "pf-field-input"
