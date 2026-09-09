@@ -24,6 +24,12 @@
 --   sqlcmd -S 172.17.10.148 -U Ignition -P $pw -d MPP_MES_Prod -C -i <this file>
 -- =============================================
 
+-- sqlcmd defaults QUOTED_IDENTIFIER OFF. Lots.Lot carries a filtered index (B8),
+-- and SQL Server refuses DML against a filtered index unless QUOTED_IDENTIFIER is
+-- ON -- Msg 1934. Set it here so the script does not depend on the caller passing
+-- sqlcmd's -I flag.
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
 SET NOCOUNT ON;
 
 PRINT '';
