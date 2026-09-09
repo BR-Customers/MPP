@@ -119,6 +119,63 @@ SELECT p.Id, p.AimShipperId, p.ConsumedAt, p.PostedAt, p.LotNumber
 FROM   Lots.AimShipperIdPool p
 WHERE  p.ConsumedByContainerId IN (SELECT Id FROM #FatContainer);
 
+-- =============================================
+-- PRE-FLIGHT GUARDS -- added 2026-09-09 after the prod inventory showed this
+-- database is LIVE: 13 real LOTs were created on 2026-09-09 by operators JH
+-- (08464) and TCD (08356), several still Open at DC1-M11. The FAT rows stop at
+-- 2026-08-20, so there is a 19-day gap and nothing should cross the cutoff --
+-- but "should" is not good enough against live traceability data. If anything
+-- kept depends on anything deleted, ABORT rather than corrupt genealogy.
+-- =============================================
+PRINT '';
+PRINT '--- Pre-flight: does anything KEPT depend on anything DELETED? --';
+
+DECLARE @x_parent   INT = (SELECT COUNT(*) FROM Lots.Lot
+                            WHERE Id NOT IN (SELECT Id FROM #FatLot)
+                              AND ParentLotId IN (SELECT Id FROM #FatLot));
+-- "exactly one side is FAT" -- T-SQL cannot compare two predicates directly,
+-- so each side is projected to 1/0 first.
+DECLARE @x_gene     INT = (SELECT COUNT(*) FROM Lots.LotGenealogy
+                            WHERE CASE WHEN ParentLotId IN (SELECT Id FROM #FatLot) THEN 1 ELSE 0 END
+                               <> CASE WHEN ChildLotId  IN (SELECT Id FROM #FatLot) THEN 1 ELSE 0 END);
+DECLARE @x_closure  INT = (SELECT COUNT(*) FROM Lots.LotGenealogyClosure
+                            WHERE CASE WHEN AncestorLotId   IN (SELECT Id FROM #FatLot) THEN 1 ELSE 0 END
+                               <> CASE WHEN DescendantLotId IN (SELECT Id FROM #FatLot) THEN 1 ELSE 0 END);
+DECLARE @x_consume  INT = (SELECT COUNT(*) FROM Workorder.ConsumptionEvent
+                            WHERE CASE WHEN SourceLotId   IN (SELECT Id FROM #FatLot) THEN 1 ELSE 0 END
+                               <> CASE WHEN ProducedLotId IN (SELECT Id FROM #FatLot) THEN 1 ELSE 0 END);
+DECLARE @x_tray     INT = (SELECT COUNT(*) FROM Lots.ContainerTray
+                            WHERE ContainerId IN (SELECT Id FROM #FatContainer)
+                              AND FinishedGoodLotId IS NOT NULL
+                              AND FinishedGoodLotId NOT IN (SELECT Id FROM #FatLot));
+DECLARE @x_serial   INT = (SELECT COUNT(*) FROM Lots.ContainerSerial
+                            WHERE ContainerId IN (SELECT Id FROM #FatContainer)
+                              AND SerializedPartId IS NOT NULL
+                              AND SerializedPartId NOT IN (SELECT Id FROM #FatSerial));
+
+SELECT @x_parent  AS KeptLot_HasFatParent,
+       @x_gene    AS Genealogy_CrossesCutoff,
+       @x_closure AS Closure_CrossesCutoff,
+       @x_consume AS Consumption_CrossesCutoff,
+       @x_tray    AS FatContainer_HoldsKeptLotTray,
+       @x_serial  AS FatContainer_HoldsKeptSerial;
+
+IF (@x_parent + @x_gene + @x_closure + @x_consume + @x_tray + @x_serial) > 0
+BEGIN
+    RAISERROR('ABORT: kept data depends on data this script would delete (see counts above). Deleting would corrupt live traceability. Nothing was changed.', 16, 1);
+    RETURN;
+END
+PRINT '  OK - no dependency crosses the cutoff.';
+
+-- Shipping labels are externally visible (Honda AIM). List them explicitly so
+-- the decision to remove them is made with eyes open, not as a side effect.
+PRINT '';
+PRINT '--- Shipping labels that WILL be deleted (AIM-visible) ---------';
+SELECT sl.Id, sl.AimShipperId, sl.ContainerId, sl.IsVoid, sl.PrintedAt
+FROM   Lots.ShippingLabel sl
+WHERE  sl.ContainerId IN (SELECT Id FROM #FatContainer)
+ORDER BY sl.Id;
+
 -- ---------------- the delete ----------------
 DECLARE @rows TABLE (Seq INT IDENTITY(1,1), TableName SYSNAME, RowsDeleted INT);
 
