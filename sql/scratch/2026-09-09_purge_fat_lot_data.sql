@@ -170,11 +170,39 @@ PRINT '  OK - no dependency crosses the cutoff.';
 -- Shipping labels are externally visible (Honda AIM). List them explicitly so
 -- the decision to remove them is made with eyes open, not as a side effect.
 PRINT '';
-PRINT '--- Shipping labels that WILL be deleted (AIM-visible) ---------';
-SELECT sl.Id, sl.AimShipperId, sl.ContainerId, sl.IsVoid, sl.PrintedAt
+-- Provenance decides whether these matter, not the id string. A shipper id that
+-- genuinely came from Honda has a FetchedInterfaceLogId (the logged AIM call);
+-- one that was genuinely transmitted back has a PostedAt. Both NULL on every row
+-- means nothing ever left or entered this plant, so deleting the label is local
+-- housekeeping. Any non-NULL means STOP and talk to MPP before committing.
+PRINT '--- Shipping labels that WILL be deleted, with AIM provenance ---';
+SELECT sl.Id,
+       sl.AimShipperId,
+       sl.ContainerId,
+       sl.IsVoid,
+       sl.PrintedAt,
+       p.FetchedInterfaceLogId,                 -- non-NULL => really came from AIM
+       p.PostedAt,                              -- non-NULL => really sent to Honda
+       p.PostAttempts
 FROM   Lots.ShippingLabel sl
+LEFT  JOIN Lots.AimShipperIdPool p ON p.AimShipperId = sl.AimShipperId
 WHERE  sl.ContainerId IN (SELECT Id FROM #FatContainer)
 ORDER BY sl.Id;
+
+DECLARE @realAim INT = (
+    SELECT COUNT(*)
+    FROM   Lots.ShippingLabel sl
+    JOIN   Lots.AimShipperIdPool p ON p.AimShipperId = sl.AimShipperId
+    WHERE  sl.ContainerId IN (SELECT Id FROM #FatContainer)
+      AND (p.FetchedInterfaceLogId IS NOT NULL OR p.PostedAt IS NOT NULL));
+
+IF @realAim > 0
+BEGIN
+    PRINT '';
+    RAISERROR('ABORT: %d shipping label(s) carry an AIM shipper id that was really fetched from or posted to Honda. Deleting them would destroy the local record of an externally-known shipment. Nothing was changed - review with MPP first.', 16, 1, @realAim);
+    RETURN;
+END
+PRINT '  OK - no shipping label carries a genuinely fetched or posted AIM id.';
 
 -- ---------------- the delete ----------------
 DECLARE @rows TABLE (Seq INT IDENTITY(1,1), TableName SYSNAME, RowsDeleted INT);
