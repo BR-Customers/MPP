@@ -69,8 +69,17 @@ $ExcludedNames = @('thumbnail.png', '.gitkeep', 'pull.log', 'Thumbs.db', 'deskto
 $ExcludedPathPatterns = @(
     '(^|/)views/.*/data\.bin$',   # view binary -- regenerated. Reports' data.bin is NOT matched.
     '(^|/)\.git',                 # .git, .gitignore, .gitattributes
-    '\.realbak'                   # link-projects.ps1 backups
+    '\.realbak',                  # link-projects.ps1 backups
+    '(^|/)__pycache__(/|$)',      # CPython bytecode -- see below
+    '\.py[co]$'
 )
+
+# __pycache__ is not merely noise: a script-python resource is a LEAF folder holding
+# code.py + resource.json. Ship a __pycache__ subfolder inside it and the Gateway
+# renders the resource as a FOLDER instead of a module, so BlueRidge.Common.Util
+# stops being callable and Jython falls through to a same-named Java package:
+#   AttributeError: 'com.inductiveautomation...' object has no attribute 'Util'
+# The bytecode is CPython 3.x anyway; Ignition runs Jython 2.7 and never reads it.
 
 function Test-Excluded {
     param([string]$RelPath, [string]$Name)
@@ -121,6 +130,25 @@ foreach ($proj in $Projects) {
         $rel = $f.FullName.Substring($srcFull.Length + 1).Replace('\', '/')
         if (Test-Excluded -RelPath $rel -Name $f.Name) { $skipped++; continue }
         $included += [pscustomobject]@{ Full = $f.FullName; Rel = $rel }
+    }
+
+    # SAFETY NET. This builder walks the FILESYSTEM, so anything sitting in the working
+    # tree ships -- including files git deliberately ignores. That is how __pycache__
+    # reached a customer Gateway and broke 17 script modules. Git's ignore list is the
+    # best available statement of "this is local junk, not project source", so anything
+    # still included that git ignores is reported loudly rather than shipped silently.
+    $ignored = @()
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        $relPaths = $included | ForEach-Object { "ignition/projects/$proj/$($_.Rel)" }
+        $ignored  = @($relPaths | git -C $RepoRoot check-ignore --stdin 2>$null)
+        # check-ignore exits 1 when NOTHING matched -- the good case here. Clear it so
+        # the script's own exit status still means what it says.
+        $global:LASTEXITCODE = 0
+    }
+    if ($ignored.Count -gt 0) {
+        Write-Host ("               WARNING: {0} git-ignored file(s) are being shipped:" -f $ignored.Count) -ForegroundColor Red
+        $ignored | Select-Object -First 10 | ForEach-Object { Write-Host "                 $_" -ForegroundColor Red }
+        Write-Host '                 Add them to $ExcludedNames / $ExcludedPathPatterns, or delete them.' -ForegroundColor Yellow
     }
 
     # A resource.json's "files" array is a MANIFEST: the Gateway materializes the
