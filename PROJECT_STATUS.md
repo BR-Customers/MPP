@@ -106,7 +106,9 @@ $pw = Read-Host "Ignition password"      -- NOTE: echoes in CLEAR TEXT; use -AsS
 & …\sql\scripts\Update-Prod.ps1 … (same line, minus -Preview)  -- confirms by typing the db name
 ```
 
-`Update-Prod.ps1` must be invoked by absolute path or from the repo root; it derives `$SqlRoot` from its own location, ### Export/import incident — two builder defects, same root cause
+`Update-Prod.ps1` must be invoked by absolute path or from the repo root; it derives `$SqlRoot` from its own location, so the working directory is otherwise irrelevant.
+
+### Export/import incident — two builder defects, same root cause
 
 `build-project-exports.ps1` enumerates the **filesystem**, so a file being git-ignored does not stop it shipping, and a file being excluded does not stop the manifest promising it. Both directions bit us:
 
@@ -122,8 +124,6 @@ Defect 2's bytecode is CPython 3.14; Ignition runs Jython 2.7 and never reads it
 **Fixes:** manifests rewritten to match payload; `__pycache__`/`*.pyc` excluded and purged from the tree; missing `DraftStepRow/resource.json` added; and a git-ignore safety net that reports any ignored file still being shipped. Verification is now structural rather than spot-check: every file in every zip must be `project.json`, a `resource.json`, or declared by the `resource.json` in its own directory.
 
 **Lesson for next time:** “verified structurally and byte-wise but never actually imported” was already written down as owed work on 2026-09-03. It was the exact gap that let this reach a customer Gateway. Import once, into anything, before shipping.
-
-so the working directory is otherwise irrelevant.
 
 ### Post-deploy verification (all green)
 
