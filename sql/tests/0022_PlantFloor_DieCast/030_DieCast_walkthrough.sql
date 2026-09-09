@@ -84,7 +84,11 @@ DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-DC-TOOL'
 CREATE TABLE #Cav (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50), ToolName NVARCHAR(100),
     CavityNumber INT, StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
-    Description NVARCHAR(500));
+    Description NVARCHAR(500),
+    -- 0072: ItemId / ItemPartNumber / ItemDescription appended by
+    -- Tools.ToolCavity_ListActiveByTool. INSERT-EXEC requires an exact
+    -- column-count match, so the shape must track the proc.
+    ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500));
 INSERT INTO #Cav EXEC Tools.ToolCavity_ListActiveByTool @ToolId = @ToolId;
 DECLARE @CavCnt INT = (SELECT COUNT(*) FROM #Cav);
 DECLARE @CavCntStr NVARCHAR(10) = CAST(@CavCnt AS NVARCHAR(10));

@@ -135,7 +135,11 @@ CREATE TABLE #L (
     StatusCodeId BIGINT, StatusCode NVARCHAR(30), StatusName NVARCHAR(100),
     Description NVARCHAR(500),
     CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3),
-    CreatedByUserId BIGINT, UpdatedByUserId BIGINT, DeprecatedAt DATETIME2(3)
+    CreatedByUserId BIGINT, UpdatedByUserId BIGINT, DeprecatedAt DATETIME2(3),
+    -- 0072: ItemId / ItemPartNumber / ItemDescription appended by
+    -- Tools.ToolCavity_ListByTool. INSERT-EXEC requires an exact
+    -- column-count match, so the shape must track the proc.
+    ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500)
 );
 INSERT INTO #L EXEC Tools.ToolCavity_ListByTool @ToolId = @DieToolId;
 

@@ -2,7 +2,7 @@
 -- Procedure:   Tools.ToolCavity_SaveAll
 -- Author:      Blue Ridge Automation
 -- Created:     2026-06-08
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Bundled SaveAll for a Tool's cavities. Insert + update ONLY -- cavities
@@ -11,11 +11,18 @@
 --   not transition to another status. Audit: <Tool> . Cavities . ACTION.
 --
 -- Parameters: @ToolId BIGINT, @RowsJson NVARCHAR(MAX), @AppUserId BIGINT
---   RowsJson element: {Id, CavityNumber, Description, StatusCode}
+--   RowsJson element: {Id, CavityNumber, Description, StatusCode, ItemId}
+--   ItemId is OPTIONAL and NULLable -- the configured cavity-to-part map for
+--   family dies (0072). Omit it or send null on a die whose cavities all cut
+--   the same part; the part is then derived from the LOT as before.
 -- Result set: Status (BIT), Message (NVARCHAR), NewId (echoes @ToolId).
 --
 -- Change Log:
 --   2026-06-08 - 1.0 - Initial (eligibility-style config editors).
+--   2026-09-09 - 1.1 - ItemId accepted, validated (must exist and not be
+--                      deprecated in Parts.Item), persisted on insert+update,
+--                      and carried in the audit narrative / Old+New JSON with
+--                      the part number resolved per the audit convention.
 -- =============================================
 CREATE OR ALTER PROCEDURE Tools.ToolCavity_SaveAll
     @ToolId    BIGINT,
@@ -41,7 +48,8 @@ BEGIN
         CavityNumber INT NULL,
         Description  NVARCHAR(500) NULL,
         StatusCode   NVARCHAR(20) NULL,
-        StatusCodeId BIGINT NULL
+        StatusCodeId BIGINT NULL,
+        ItemId       BIGINT NULL
     );
 
     BEGIN TRY
@@ -70,12 +78,13 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
 
-        INSERT INTO @Incoming (RowIndex, Id, CavityNumber, Description, StatusCode)
+        INSERT INTO @Incoming (RowIndex, Id, CavityNumber, Description, StatusCode, ItemId)
         SELECT CAST([key] AS INT) + 1,
                TRY_CAST(JSON_VALUE([value], '$.Id') AS BIGINT),
                TRY_CAST(JSON_VALUE([value], '$.CavityNumber') AS INT),
                JSON_VALUE([value], '$.Description'),
-               JSON_VALUE([value], '$.StatusCode')
+               JSON_VALUE([value], '$.StatusCode'),
+               TRY_CAST(JSON_VALUE([value], '$.ItemId') AS BIGINT)
         FROM OPENJSON(ISNULL(@RowsJson, N'[]'));
 
         -- Resolve StatusCode -> StatusCodeId; default missing to 'Active'
@@ -86,6 +95,18 @@ BEGIN
         IF EXISTS (SELECT 1 FROM @Incoming WHERE StatusCodeId IS NULL)
         BEGIN
             SET @Message = N'One or more rows have an invalid cavity status.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
+        END
+
+        -- ItemId (0072) is optional; when supplied it must resolve to a live part.
+        IF EXISTS (
+            SELECT 1 FROM @Incoming i
+            WHERE i.ItemId IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM Parts.Item it
+                              WHERE it.Id = i.ItemId AND it.DeprecatedAt IS NULL))
+        BEGIN
+            SET @Message = N'One or more rows reference a part that does not exist or is deprecated.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
@@ -157,20 +178,28 @@ BEGIN
             ChangeKind NCHAR(1) NOT NULL, SortKey INT NOT NULL,
             CavityNumber INT NOT NULL,
             OldStatus NVARCHAR(20) NULL, NewStatus NVARCHAR(20) NULL,
-            OldDesc NVARCHAR(500) NULL, NewDesc NVARCHAR(500) NULL
+            OldDesc NVARCHAR(500) NULL, NewDesc NVARCHAR(500) NULL,
+            OldItem NVARCHAR(50) NULL, NewItem NVARCHAR(50) NULL
         );
 
-        INSERT INTO @Changes (ChangeKind, SortKey, CavityNumber, NewStatus, NewDesc)
-        SELECT N'+', ROW_NUMBER() OVER (ORDER BY i.CavityNumber), i.CavityNumber, i.StatusCode, i.Description
-        FROM @Incoming i WHERE i.Id IS NULL;
+        INSERT INTO @Changes (ChangeKind, SortKey, CavityNumber, NewStatus, NewDesc, NewItem)
+        SELECT N'+', ROW_NUMBER() OVER (ORDER BY i.CavityNumber), i.CavityNumber, i.StatusCode, i.Description, nit.PartNumber
+        FROM @Incoming i
+        LEFT JOIN Parts.Item nit ON nit.Id = i.ItemId
+        WHERE i.Id IS NULL;
 
-        INSERT INTO @Changes (ChangeKind, SortKey, CavityNumber, OldStatus, NewStatus, OldDesc, NewDesc)
+        INSERT INTO @Changes (ChangeKind, SortKey, CavityNumber, OldStatus, NewStatus, OldDesc, NewDesc, OldItem, NewItem)
         SELECT N'~', ROW_NUMBER() OVER (ORDER BY c.CavityNumber), c.CavityNumber,
-               oldsc.Code, i.StatusCode, c.Description, i.Description
+               oldsc.Code, i.StatusCode, c.Description, i.Description,
+               oit.PartNumber, nit.PartNumber
         FROM @Incoming i
         INNER JOIN Tools.ToolCavity c ON c.Id = i.Id AND c.DeprecatedAt IS NULL
         INNER JOIN Tools.ToolCavityStatusCode oldsc ON oldsc.Id = c.StatusCodeId
-        WHERE oldsc.Code <> i.StatusCode OR ISNULL(c.Description,N'') <> ISNULL(i.Description,N'');
+        LEFT  JOIN Parts.Item oit ON oit.Id = c.ItemId
+        LEFT  JOIN Parts.Item nit ON nit.Id = i.ItemId
+        WHERE oldsc.Code <> i.StatusCode
+           OR ISNULL(c.Description,N'') <> ISNULL(i.Description,N'')
+           OR ISNULL(c.ItemId,-1) <> ISNULL(i.ItemId,-1);
 
         DECLARE @AddSpec NVARCHAR(MAX)=N'', @AddOv INT=0, @UpdSpec NVARCHAR(MAX)=N'', @UpdOv INT=0;
         DECLARE @TotalRows INT = (SELECT COUNT(*) FROM @Incoming);
@@ -181,7 +210,12 @@ BEGIN
         SELECT @AddOv = COUNT(*) - 3 FROM @Changes WHERE ChangeKind=N'+'; IF @AddOv<0 SET @AddOv=0;
 
         ;WITH r AS (SELECT *, ROW_NUMBER() OVER (ORDER BY SortKey) rn FROM @Changes WHERE ChangeKind=N'~')
-        SELECT @UpdSpec = STRING_AGG(N'~#' + CAST(CavityNumber AS NVARCHAR) + N' ' + ISNULL(OldStatus,N'null') + NCHAR(8594) + ISNULL(NewStatus,N'null'), N'; ')
+        SELECT @UpdSpec = STRING_AGG(N'~#' + CAST(CavityNumber AS NVARCHAR) + N' ' +
+                              CASE WHEN ISNULL(OldStatus,N'') <> ISNULL(NewStatus,N'')
+                                   THEN ISNULL(OldStatus,N'null') + NCHAR(8594) + ISNULL(NewStatus,N'null')
+                                   WHEN ISNULL(OldItem,N'') <> ISNULL(NewItem,N'')
+                                   THEN N'part ' + ISNULL(OldItem,N'none') + NCHAR(8594) + ISNULL(NewItem,N'none')
+                                   ELSE N'desc' END, N'; ')
                           WITHIN GROUP (ORDER BY rn) FROM r WHERE rn <= 3;
         SELECT @UpdOv = COUNT(*) - 3 FROM @Changes WHERE ChangeKind=N'~'; IF @UpdOv<0 SET @UpdOv=0;
 
@@ -198,25 +232,31 @@ BEGIN
             N' ' + @ActionParts + N'; ' + CAST(@TotalRows AS NVARCHAR) + N' rows');
 
         DECLARE @OldValueResolved NVARCHAR(MAX) = (
-            SELECT c.Id, c.CavityNumber, sc.Code AS Status, c.Description
-            FROM Tools.ToolCavity c INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = c.StatusCodeId
+            SELECT c.Id, c.CavityNumber, sc.Code AS Status, c.Description,
+                   it.Id AS 'Item.Id', it.PartNumber AS 'Item.PartNumber'
+            FROM Tools.ToolCavity c
+            INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = c.StatusCodeId
+            LEFT  JOIN Parts.Item it ON it.Id = c.ItemId
             WHERE c.ToolId = @ToolId AND c.DeprecatedAt IS NULL
             ORDER BY c.CavityNumber FOR JSON PATH);
         DECLARE @NewValueResolved NVARCHAR(MAX) = (
-            SELECT i.Id, i.CavityNumber, i.StatusCode AS Status, i.Description
-            FROM @Incoming i ORDER BY i.CavityNumber FOR JSON PATH);
+            SELECT i.Id, i.CavityNumber, i.StatusCode AS Status, i.Description,
+                   it.Id AS 'Item.Id', it.PartNumber AS 'Item.PartNumber'
+            FROM @Incoming i
+            LEFT JOIN Parts.Item it ON it.Id = i.ItemId
+            ORDER BY i.CavityNumber FOR JSON PATH);
 
         -- ===== Mutation (atomic) -- insert + update only =====
         BEGIN TRANSACTION;
 
         UPDATE c
-        SET StatusCodeId = i.StatusCodeId, Description = i.Description,
+        SET StatusCodeId = i.StatusCodeId, Description = i.Description, ItemId = i.ItemId,
             UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
         FROM Tools.ToolCavity c INNER JOIN @Incoming i ON i.Id = c.Id
         WHERE c.ToolId = @ToolId AND c.DeprecatedAt IS NULL;
 
-        INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, CreatedAt, CreatedByUserId)
-        SELECT @ToolId, i.CavityNumber, i.StatusCodeId, i.Description, SYSUTCDATETIME(), @AppUserId
+        INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
+        SELECT @ToolId, i.CavityNumber, i.StatusCodeId, i.Description, i.ItemId, SYSUTCDATETIME(), @AppUserId
         FROM @Incoming i WHERE i.Id IS NULL;
 
         EXEC Audit.Audit_LogConfigChange

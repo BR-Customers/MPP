@@ -63,7 +63,11 @@ DECLARE @MultiTool BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-CP-MU
 CREATE TABLE #L1 (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50), ToolName NVARCHAR(100),
     CavityNumber INT, StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
-    Description NVARCHAR(500));
+    Description NVARCHAR(500),
+    -- 0072: ItemId / ItemPartNumber / ItemDescription appended by
+    -- Tools.ToolCavity_ListActiveByTool. INSERT-EXEC requires an exact
+    -- column-count match, so the shape must track the proc.
+    ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500));
 INSERT INTO #L1 EXEC Tools.ToolCavity_ListActiveByTool @ToolId = @MultiTool;
 
 DECLARE @Cnt INT = (SELECT COUNT(*) FROM #L1);
@@ -87,10 +91,11 @@ DECLARE @HasDeprecated INT = (SELECT COUNT(*) FROM #L1 WHERE CavityNumber = 4);
 DECLARE @HasDeprStr NVARCHAR(10) = CAST(@HasDeprecated AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[CpMulti] Deprecated cavity 4 excluded', @Expected = N'0', @Actual = @HasDeprStr;
 
--- §4.3 resolution: no producing ItemId column in the result set
+-- 0072 REVERSAL of the 2026-06-15 no-per-cavity-Item decision: the produced
+-- part IS now modeled per cavity (family dies), so the column must be present.
 DECLARE @HasItemIdCol INT = (SELECT COUNT(*) FROM tempdb.sys.columns WHERE object_id = OBJECT_ID('tempdb..#L1') AND name = N'ItemId');
 DECLARE @HasItemIdColStr NVARCHAR(10) = CAST(@HasItemIdCol AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[CpMulti] No producing ItemId column (derived, not per-cavity)', @Expected = N'0', @Actual = @HasItemIdColStr;
+EXEC test.Assert_IsEqual @TestName = N'[CpMulti] ItemId column present (0072 cavity-to-part map)', @Expected = N'1', @Actual = @HasItemIdColStr;
 DROP TABLE #L1;
 GO
 
@@ -101,7 +106,11 @@ DECLARE @EmptyTool BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-CP-EM
 CREATE TABLE #L2 (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50), ToolName NVARCHAR(100),
     CavityNumber INT, StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
-    Description NVARCHAR(500));
+    Description NVARCHAR(500),
+    -- 0072: ItemId / ItemPartNumber / ItemDescription appended by
+    -- Tools.ToolCavity_ListActiveByTool. INSERT-EXEC requires an exact
+    -- column-count match, so the shape must track the proc.
+    ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500));
 INSERT INTO #L2 EXEC Tools.ToolCavity_ListActiveByTool @ToolId = @EmptyTool;
 DECLARE @Cnt2 INT = (SELECT COUNT(*) FROM #L2);
 DECLARE @Cnt2Str NVARCHAR(10) = CAST(@Cnt2 AS NVARCHAR(10));
@@ -115,7 +124,11 @@ GO
 CREATE TABLE #L3 (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50), ToolName NVARCHAR(100),
     CavityNumber INT, StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
-    Description NVARCHAR(500));
+    Description NVARCHAR(500),
+    -- 0072: ItemId / ItemPartNumber / ItemDescription appended by
+    -- Tools.ToolCavity_ListActiveByTool. INSERT-EXEC requires an exact
+    -- column-count match, so the shape must track the proc.
+    ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500));
 INSERT INTO #L3 EXEC Tools.ToolCavity_ListActiveByTool @ToolId = 999999999;
 DECLARE @Cnt3 INT = (SELECT COUNT(*) FROM #L3);
 DECLARE @Cnt3Str NVARCHAR(10) = CAST(@Cnt3 AS NVARCHAR(10));
