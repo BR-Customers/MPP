@@ -65,9 +65,8 @@ CARDS = [
     dict(
         station="Die Cast", sub="Open Basket", tag="One basket per cavity",
         steps=[
-            "Check the <b>Die</b> box names the tool actually mounted on this "
-            "machine &ndash; the cavity rows below come from it.",
-            "On each cavity row, pick the <b>Part</b>. Every cavity running the "
+            "Check the <b>Die</b> name matches the tool actually mounted at this Machine, the cavity rows below come from it.",
+            "On each cavity row, pick the <b>Part</b>. Is every cavity running the "
             "same part? Press <b>Copy part to empty rows</b>.",
             "Scan the <b>LTT Barcode</b> from the basket into that row.",
             "Press <b>OPEN BASKETS</b> to open every row you filled in.",
@@ -101,15 +100,11 @@ CARDS = [
         rail=("Watch the right-hand rail",
               "<b>Shots this shift</b> &middot; <b>Good parts this shift</b> "
               "&middot; <b>Scrap this shift</b> &middot; <b>Die total shots</b> "
-              "(count / limit). If it reads <b>Approaching shot limit</b> or "
-              "<b>OVER SHOT LIMIT</b>, tell a supervisor before you open the "
-              "next basket."),
+              "(count / limit). "),
     ),
     dict(
         station="Trim", sub="Check IN", tag="Scan &middot; Move",
         steps=[
-            "If this press is shared, pick it from the <b>cell picker</b> at the "
-            "top of the screen first.",
             "Scan the <b>LTT</b> &ndash; the LOT, item, and eligibility show up "
             "for you to check.",
             "Press <b>Move</b> to commit it to this cell.",
