@@ -123,16 +123,57 @@ foreach ($proj in $Projects) {
         $included += [pscustomobject]@{ Full = $f.FullName; Rel = $rel }
     }
 
+    # A resource.json's "files" array is a MANIFEST: the Gateway materializes the
+    # resource from exactly the files it names. If we exclude a file (thumbnail.png)
+    # but ship a resource.json still promising it, the import produces a resource the
+    # Gateway cannot build -- the whole project then fails to load and the Designer
+    # dies with "NullPointerException ... because \"project\" is null". A genuine
+    # Ignition export never has this problem because it writes the manifest to match
+    # what it actually emits. So must we: drop excluded names from "files" too.
+    $rewritten = 0
+
     $zip = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create)
     try {
         # project.json first, so it lands at the top of the archive like a real export.
         foreach ($entry in ($included | Sort-Object { if ($_.Rel -eq 'project.json') { '' } else { $_.Rel } })) {
-            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-                $zip, $entry.Full, $entry.Rel,
-                [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+
+            $manifestJson = $null
+            if ($entry.Rel -like '*resource.json') {
+                $obj = Get-Content $entry.Full -Raw | ConvertFrom-Json
+                if ($obj.PSObject.Properties.Name -contains 'files') {
+                    $declared = @($obj.files)
+                    $kept     = @($declared | Where-Object { -not (Test-Excluded -RelPath $_ -Name $_) })
+                    if ($kept.Count -ne $declared.Count) {
+                        # PS 5.1's ConvertTo-Json collapses a 1-element array to a scalar,
+                        # which would emit "files": "view.json" and break the schema. Emit
+                        # the array by hand through a placeholder instead.
+                        $obj.files    = @('__FILES__')
+                        $manifestJson = $obj | ConvertTo-Json -Depth 20
+                        $arr = '[' + (($kept | ForEach-Object { '"' + $_ + '"' }) -join ', ') + ']'
+                        $manifestJson = $manifestJson -replace '"files":\s*\[\s*"__FILES__"\s*\]', ('"files": ' + $arr)
+                        $manifestJson = $manifestJson -replace '"files":\s*"__FILES__"',            ('"files": ' + $arr)
+                        $rewritten++
+                    }
+                }
+            }
+
+            if ($null -ne $manifestJson) {
+                $ze = $zip.CreateEntry($entry.Rel, [System.IO.Compression.CompressionLevel]::Optimal)
+                $sw = New-Object System.IO.StreamWriter($ze.Open(), (New-Object System.Text.UTF8Encoding($false)))
+                try { $sw.Write($manifestJson) } finally { $sw.Dispose() }
+            }
+            else {
+                [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                    $zip, $entry.Full, $entry.Rel,
+                    [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+            }
         }
     }
     finally { $zip.Dispose() }
+
+    if ($rewritten -gt 0) {
+        Write-Host ("               {0} resource.json manifest(s) rewritten to drop excluded files" -f $rewritten) -ForegroundColor DarkYellow
+    }
 
     $sizeKb = [math]::Round((Get-Item $zipPath).Length / 1KB, 1)
     $hash   = (Get-FileHash $zipPath -Algorithm SHA256).Hash.Substring(0, 16)
