@@ -8,11 +8,16 @@
       "isDeprecated": false,
       "isScrappedSaved": false,
       "rowIndex": 0,
-      "statusCode": "Active"
-    }
+      "statusCode": "Active",
+      "itemId": null
+    },
+    "partOptions": []
   },
   "propConfig": {
     "params.row": {
+      "paramDirection": "input"
+    },
+    "params.partOptions": {
       "paramDirection": "input"
     }
   },
@@ -126,7 +131,7 @@
           "props.enabled": {
             "binding": {
               "config": {
-                "expression": "!{view.params.row.isScrappedSaved} \u0026\u0026 !{view.params.row.isDeprecated}"
+                "expression": "!{view.params.row.isScrappedSaved} && !{view.params.row.isDeprecated}"
               },
               "type": "expr"
             }
@@ -154,6 +159,63 @@
           "component": {
             "onActionPerformed": {
               "config": {
+                "script": "\tsystem.perspective.sendMessage(\"cavityRowItemChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newItemId\": self.props.value}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "PartDropdown"
+        },
+        "position": {
+          "basis": "260px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.row.isScrappedSaved} && !{view.params.row.isDeprecated}"
+              },
+              "type": "expr"
+            }
+          },
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.params.partOptions"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.row.itemId"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "placeholder": {
+            "text": "No part mapped"
+          },
+          "search": true,
+          "style": {
+            "classes": "select",
+            "height": "30px"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
                 "script": "\tsystem.perspective.sendMessage(\"cavityRowStatusChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newStatus\": self.props.value}, scope\u003d\"page\")"
               },
               "scope": "G",
@@ -172,7 +234,7 @@
           "props.enabled": {
             "binding": {
               "config": {
-                "expression": "!{view.params.row.isScrappedSaved} \u0026\u0026 !{view.params.row.isDeprecated}"
+                "expression": "!{view.params.row.isScrappedSaved} && !{view.params.row.isDeprecated}"
               },
               "type": "expr"
             }

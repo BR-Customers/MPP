@@ -493,8 +493,10 @@ def getCavityInstancesForTool(toolId):
     or load failures.
 
     Row shape consumed by CavityRow:
-        Id, Number, StatusCode, Description
-    Mapped from the proc's CavityNumber + StatusCode columns."""
+        Id, Number, StatusCode, Description, ItemId, ItemPartNumber
+    Mapped from the proc's CavityNumber + StatusCode columns. ItemId is the
+    0072 cavity-to-part map (family dies); it is NULLable, so ItemPartNumber
+    comes back None for an unmapped cavity and the row must render that."""
     toolId = _u(toolId)
     BlueRidge.Common.Util.log("toolId=%s" % toolId)
     if toolId is None:
@@ -512,10 +514,12 @@ def getCavityInstancesForTool(toolId):
     for r in rows:
         out.append({
             "cavity": {
-                "Id":          r.get("Id"),
-                "Number":      r.get("CavityNumber"),
-                "StatusCode":  r.get("StatusCode"),
-                "Description": r.get("Description"),
+                "Id":             r.get("Id"),
+                "Number":         r.get("CavityNumber"),
+                "StatusCode":     r.get("StatusCode"),
+                "Description":    r.get("Description"),
+                "ItemId":         r.get("ItemId"),
+                "ItemPartNumber": r.get("ItemPartNumber"),
             }
         })
     return out
@@ -895,7 +899,8 @@ def saveAttributesAll(toolId, rows):
 
 def saveCavitiesAll(toolId, rows):
     """Bundled SaveAll for the Cavities section. `rows` keys: id (BIGINT|None),
-    cavityNumber (int), description (string|None), statusCode (str).
+    cavityNumber (int), description (string|None), statusCode (str),
+    itemId (BIGINT|None -- the 0072 cavity-to-part map, optional).
     Returns {Status, Message, NewId}."""
     toolId = _u(toolId)
     BlueRidge.Common.Util.log("toolId=%s rows=%d" % (toolId, len(rows or [])))
@@ -905,11 +910,20 @@ def saveCavitiesAll(toolId, rows):
     for r in (rows or []):
         r = _u(r) or {}
         num = r.get("cavityNumber")
+        # itemId is genuinely optional: an unmapped cavity, and a cleared
+        # dropdown, must both send null rather than 0 -- the proc treats NULL
+        # as "no mapping" and would reject 0 as a non-existent part.
+        iid = r.get("itemId")
+        if iid is None or iid == "":
+            iid = None
+        else:
+            iid = int(iid)
         cleaned.append({
             "Id":           r.get("id"),
             "CavityNumber": None if num is None else int(num),
             "Description":  r.get("description"),
             "StatusCode":   r.get("statusCode") or "Active",
+            "ItemId":       iid,
         })
     return BlueRidge.Common.Db.execMutation(
         "parts/ToolCavity_SaveAll",

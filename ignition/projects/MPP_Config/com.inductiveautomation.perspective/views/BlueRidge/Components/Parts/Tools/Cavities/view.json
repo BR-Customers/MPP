@@ -149,7 +149,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup('dieCavitiesHowTo',\n\t\t'BlueRidge/Components/Popups/DieCavitiesHowTo',\n\t\tparams={'popupId': 'dieCavitiesHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                    "script": "\tsystem.perspective.openPopup(\u0027dieCavitiesHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/DieCavitiesHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027dieCavitiesHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -226,6 +226,23 @@
           },
           {
             "meta": {
+              "name": "ColPart"
+            },
+            "position": {
+              "basis": "260px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Part",
+              "style": {
+                "color": "var(--mpp-text-muted)",
+                "fontSize": "11px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
               "name": "ColStatus"
             },
             "position": {
@@ -280,7 +297,7 @@
               },
               "transforms": [
                 {
-                  "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout \u003d []\n\tif len(rows) \u003d\u003d 0:\n\t\treturn []\n\t\t\n\tfor i, r in enumerate(rows):\n\t\tr \u003d dict(r or {})\n\t\tr[\u0027rowIndex\u0027] \u003d i\n\t\tout.append({\u0027row\u0027: r})\n\treturn out",
+                  "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tif len(rows) \u003d\u003d 0:\n\t\treturn []\n\topts \u003d BlueRidge.Parts.Item.getForDropdown() or []\n\tout \u003d []\n\tfor i, r in enumerate(rows):\n\t\tr \u003d dict(r or {})\n\t\tr[\u0027rowIndex\u0027] \u003d i\n\t\tout.append({\u0027row\u0027: r, \u0027partOptions\u0027: opts})\n\treturn out",
                   "type": "script"
                 }
               ],
@@ -359,7 +376,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tempty \u003d {\"rows\": []}\n\t\tself.view.custom.state \u003d {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\tinstances \u003d BlueRidge.Parts.Tool.getCavityInstancesForTool(toolId) or []\n\tloaded \u003d []\n\tfor inst in instances:\n\t\tcav \u003d (inst or {}).get(\"cavity\") or {}\n\t\tsc \u003d cav.get(\"StatusCode\") or \"Active\"\n\t\tloaded.append({\n\t\t\t\"id\":              cav.get(\"Id\"),\n\t\t\t\"cavityNumber\":    cav.get(\"Number\"),\n\t\t\t\"description\":     cav.get(\"Description\") if cav.get(\"Description\") is not None else \"\",\n\t\t\t\"statusCode\":      sc,\n\t\t\t\"isScrappedSaved\": (sc \u003d\u003d \"Scrapped\"),\n\t\t\t\"isDeprecated\":    self.view.params.deprecated\n\t\t})\n\tself.view.custom.state \u003d {\"selected\": {\"rows\": loaded}, \"editDraft\": {\"rows\": [dict(r) for r in loaded]}}"
+          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tempty \u003d {\"rows\": []}\n\t\tself.view.custom.state \u003d {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\tinstances \u003d BlueRidge.Parts.Tool.getCavityInstancesForTool(toolId) or []\n\tloaded \u003d []\n\tfor inst in instances:\n\t\tcav \u003d (inst or {}).get(\"cavity\") or {}\n\t\tsc \u003d cav.get(\"StatusCode\") or \"Active\"\n\t\tloaded.append({\n\t\t\t\"id\":              cav.get(\"Id\"),\n\t\t\t\"cavityNumber\":    cav.get(\"Number\"),\n\t\t\t\"description\":     cav.get(\"Description\") if cav.get(\"Description\") is not None else \"\",\n\t\t\t\"statusCode\":      sc,\n\t\t\t\"itemId\":          cav.get(\"ItemId\"),\n\t\t\t\"isScrappedSaved\": (sc \u003d\u003d \"Scrapped\"),\n\t\t\t\"isDeprecated\":    self.view.params.deprecated\n\t\t})\n\tself.view.custom.state \u003d {\"selected\": {\"rows\": loaded}, \"editDraft\": {\"rows\": [dict(r) for r in loaded]}}"
         },
         {
           "name": "handleSave",
@@ -374,7 +391,7 @@
         {
           "name": "addRow",
           "params": [],
-          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":              None,\n\t\t\"cavityNumber\":    None,\n\t\t\"description\":     \"\",\n\t\t\"statusCode\":      \"Active\",\n\t\t\"isScrappedSaved\": False,\n\t\t\"isDeprecated\": self.view.params.deprecated,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":              None,\n\t\t\"cavityNumber\":    None,\n\t\t\"description\":     \"\",\n\t\t\"statusCode\":      \"Active\",\n\t\t\"itemId\":          None,\n\t\t\"isScrappedSaved\": False,\n\t\t\"isDeprecated\": self.view.params.deprecated,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
         },
         {
           "name": "_applyNumberChange",
@@ -406,6 +423,14 @@
             "idx"
           ],
           "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\tdel rows[idx]\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
+        },
+        {
+          "name": "_applyItemChange",
+          "params": [
+            "idx",
+            "newItemId"
+          ],
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\trow \u003d dict(rows[idx])\n\t# a cleared dropdown must persist as NULL, not 0 -- the proc reads NULL\n\t# as \"this cavity has no configured part\"\n\trow[\"itemId\"] \u003d None if newItemId in (None, \"\") else int(newItemId)\n\trows[idx] \u003d row\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
         }
       ],
       "extensionFunctions": null,
@@ -449,6 +474,13 @@
           "messageType": "cavityRowRemove",
           "pageScope": true,
           "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._removeRow(idx)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "cavityRowItemChanged",
+          "pageScope": true,
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._applyItemChange(idx, payload.get(\"newItemId\"))",
           "sessionScope": false,
           "viewScope": false
         }
