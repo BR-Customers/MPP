@@ -1,6 +1,21 @@
 {
   "custom": {
+    "context": {
+      "cellLocationId": null,
+      "dieCreditedThrough": 0,
+      "found": false,
+      "hasAnchor": false,
+      "note": "",
+      "reasonName": "",
+      "recordedAt": null,
+      "recordedBy": "",
+      "shiftId": null,
+      "sourceKind": "None",
+      "toolId": null
+    },
+    "contextLine": "",
     "counterReading": "",
+    "refreshToken": 0,
     "preview": {
       "belowStandardAfter": false,
       "cavityName": "",
@@ -16,7 +31,8 @@
       "pieceCount": 0,
       "projectedPieceCount": 0,
       "readingState": "None",
-      "toolCavityId": null
+      "toolCavityId": null,
+      "toolId": null
     }
   },
   "params": {
@@ -27,10 +43,26 @@
     "shiftId": null
   },
   "propConfig": {
+    "custom.context": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.getCounterContext\", 0, {view.custom.preview.toolId}, {view.params.shiftId}, {view.params.cellLocationId})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.contextLine": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.describeCounterContext\", 0, {view.custom.context})"
+        },
+        "type": "expr"
+      }
+    },
     "custom.preview": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Workorder.DieCast.getReleasePreview\", 0, {view.params.lotId}, {view.params.shiftId}, {view.params.cellLocationId}, {view.custom.counterReading})"
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.getReleasePreview\", 0, {view.params.lotId}, {view.params.shiftId}, {view.params.cellLocationId}, {view.custom.counterReading}, {view.custom.refreshToken})"
         },
         "type": "expr"
       }
@@ -95,6 +127,31 @@
           "style": {
             "classes": "pf-kpi-sub",
             "fontFamily": "var(--mpp-font-mono)"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "ContextLine"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.custom.contextLine"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "fontWeight": 600
           }
         },
         "type": "ia.display.label"
@@ -495,6 +552,37 @@
             "type": "ia.input.button"
           },
           {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t# The way out of a wall the operator cannot otherwise pass: the counter\n\t# was reset, or a wrong number was entered earlier and has blocked this\n\t# die for the rest of the shift. Opens on top of this dialog and replies\n\t# page-scoped, so the release in progress is never lost.\n\tp = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.preview) or {}\n\tsystem.perspective.openPopup(\"mpp-diecast-counter-anchor\",\n\t\t\"BlueRidge/Components/Popups/DieCastCounterAnchor\",\n\t\tparams={\"toolId\": p.get(\"toolId\"), \"shiftId\": self.view.params.shiftId,\n\t\t\t\"cellLocationId\": self.view.params.cellLocationId,\n\t\t\t\"dieName\": p.get(\"cavityName\") or \"\",\n\t\t\t\"popupId\": \"mpp-diecast-counter-anchor\",\n\t\t\t\"replyMessage\": \"dieCastAnchorResult\"},\n\t\tmodal=True, showCloseIcon=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "FixCounterButton"
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.preview.readingState} = \"Behind\", \"pf-btn pf-btn-primary pf-btn-large\", \"pf-btn pf-btn-secondary pf-btn-large\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {},
+              "text": "Counter reset / wrong total?"
+            },
+            "type": "ia.input.button"
+          },
+          {
             "meta": {
               "name": "Spacer"
             },
@@ -561,6 +649,17 @@
     ],
     "meta": {
       "name": "root"
+    },
+    "scripts": {
+      "messageHandlers": [
+        {
+          "messageType": "dieCastAnchorResult",
+          "pageScope": true,
+          "script": "\t# The anchor moved the die watermark without touching any of the\n\t# preview binding's real inputs, so nothing would re-evaluate on\n\t# its own and this dialog would go on quoting the number that had\n\t# just been superseded.\n\tif payload and payload.get(\"action\") == \"anchored\":\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "props": {
       "direction": "column",

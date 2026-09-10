@@ -1127,10 +1127,76 @@ Detailed reject/scrap records.
 | AppUserId | BIGINT | FK → Location.AppUser.Id, NOT NULL | Operator who submitted the shift output. |
 | TerminalLocationId | BIGINT | FK → Location.Location.Id (Terminal), NULL | Terminal where the submission was made. |
 | EventAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | |
+| CellLocationId | BIGINT | FK → Location.Location.Id (Cell), NULL | The PRESS. Added migration `0061`. Load-bearing for the shot-reading chain: both watermarks are scoped by it, so a die moved to another press is a different counter space and a changeover to another die on the same press has different `ToolCavity` rows — both reset the chain with no special-casing. |
+| ShotCounterReading | INT | NULL, CHECK (NULL OR >= 0) | **Added migration `0073` (2026-09-09) — shot-reading chain.** The press-counter reading at which this ledger row was taken. The press counter resets each shift, so the number the operator types is a READING, not an increment; a basket's credit is `(reading − the cavity's watermark)`. Both watermarks derive from this one column — `Workorder.ufn_CavityShotWatermark` scoped `(ToolCavityId, ShiftId, CellLocationId)` for the per-basket credit, `Workorder.ufn_DieShotWatermark` scoped `(ToolId, ShiftId, CellLocationId)` for the `Tools.Tool.ShotCount` increment. NULL means "recorded before migration `0073`"; 0073 backfilled every such row as a running sum of `PieceDelta` per (cavity, shift, press). |
 
-**Indexes:** `IX_DieCastContribution_Lot (LotId)`; `IX_DieCastContribution_Shift (ShiftId, LotId)` (per-shift-per-cavity reads for the tally + breakdown procs).
+**Indexes:** `IX_DieCastContribution_Lot (LotId)`; `IX_DieCastContribution_Shift (ShiftId, LotId)` (per-shift-per-cavity reads for the tally + breakdown procs); `IX_DieCastContribution_Shift_Cell_Reading (ShiftId, CellLocationId) INCLUDE (LotId, ShotCounterReading)` (migration `0073` — the watermark access path).
 
 **Not the same table as `ProductionEvent`.** The 2026-07-23 draft of this design considered extending `Workorder.ProductionEvent` with delta columns; the shipped design (v2, 2026-07-28) instead uses this dedicated table — a contribution is a shift-output ledger entry, not a route/production checkpoint event, and a purpose-built table keeps the shared `ProductionEvent` table untouched.
+
+---
+
+### DieCastCounterAnchor
+
+**Added migration `0074` (2026-09-10) — die cast counter anchor** (spec `docs/superpowers/specs/2026-09-10-diecast-counter-anchor-design.md`). An operator's declaration of the TRUE press-counter reading for a die on a press in a shift.
+
+**Why it exists.** Both shot watermarks were `MAX(ShotCounterReading)` over the shift, and a reading below the die watermark is refused in three places (`Lots.DieCastLot_Release`, `Workorder.DieCastShiftOutput_Record`, and the Release dialog's button). Correct for a typo; a dead end for the two cases the floor actually hits — the press counter was reset mid-shift, or a wrong number was entered earlier and has blocked the die for the rest of the shift. **A `MAX` cannot be lowered by appending**, so there was no way out that did not involve editing the append-only ledger.
+
+**What it does.** The latest anchor for `(ToolId, ShiftId, CellLocationId)` becomes a **floor** under both watermark functions:
+
+```
+watermark = MAX( anchor.DeclaredReading,
+                 MAX(reading) over contributions recorded AFTER the anchor,
+                 0 )
+```
+
+With no anchor the expression collapses to the pre-`0074` `MAX(...)`, so nothing about an unanchored die changes. Contributions at exactly the anchor's `EventAt` are excluded (strict `>`) — an anchor recorded in the same millisecond as a contribution is correcting it.
+
+**Why not a `DieCastContribution` row.** `DieCastContribution.LotId` is `NOT NULL` (migration `0045`), so a contribution can only speak for a cavity that has an open basket. The correction must reach **every** cavity on the die — Closed, Scrapped, or simply empty — because the next basket opened on any of them inherits that cavity's watermark. `Workorder.ufn_CavityShotWatermark` therefore floors every cavity of the anchored die, in **both directions**: down for a poisoned watermark, up for a cavity that never produced (otherwise the next basket invents production out of nothing) or for a die changed over onto a running press. A counter reset is simply `DeclaredReading = 0` and needs no special case.
+
+**Append-only.** Superseding an anchor means recording a later one — no `UPDATE` path and no `DeprecatedAt`; the chain of declarations is the history. A contribution recorded above an anchor supersedes it normally, so the anchor is a floor, not a sticky override.
+
+**Forward-only.** An anchor sets where crediting *resumes*. Pieces already credited to baskets stay on them, and `Tools.Tool.ShotCount` keeps whatever the superseded readings added. Both are recorded facts and this table does not rewrite recorded facts.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| ToolId | BIGINT | FK → Tools.Tool.Id, NOT NULL | The die the declaration is about. |
+| ShiftId | BIGINT | FK → Oee.Shift.Id, NOT NULL | The shift it applies to. NOT NULL (unlike `DieCastContribution.ShiftId`) — the press counter resets per shift, so an anchor outside a shift has no counter space to anchor. |
+| CellLocationId | BIGINT | FK → Location.Location.Id (Cell), NULL | The PRESS — the same three-part scope key the watermarks use. |
+| DeclaredReading | INT | NOT NULL, CHECK (>= 0) | What the press counter actually reads. **Deliberately un-guarded against going backwards** — declaring a lower number is the entire point, and a monotonic guard here would reintroduce the wall inside the tool built to get past it. |
+| ReasonId | BIGINT | FK → Workorder.DieCastCounterAnchorReason.Id, NOT NULL | Why the counter moved. |
+| Note | NVARCHAR(500) | NULL | Free text; **required** when the reason is `Other` (enforced in `Workorder.DieCastCounterAnchor_Record`). |
+| AppUserId | BIGINT | FK → Location.AppUser.Id, NOT NULL | Who declared it. Any signed-in operator — no AD elevation: they are the only person who can see the press counter, and gating on a supervisor strands a night shift at a wall. |
+| TerminalLocationId | BIGINT | FK → Location.Location.Id (Terminal), NULL | |
+| EventAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | Both watermark functions compare contribution `EventAt` against this. |
+
+**Indexes:** `IX_DieCastCounterAnchor_Scope (ToolId, ShiftId, CellLocationId, EventAt DESC, Id DESC) INCLUDE (DeclaredReading)` — the whole access path for both watermark functions.
+
+**Audit:** `Audit.LogEventType` `DieCastCounterAnchored`, against the existing `Tool` entity type (31) — an anchor is a statement about a die on a press, not about any one LOT. Logged at `Warning` severity with the old and new watermark in `OldValue` / `NewValue`.
+
+---
+
+### DieCastCounterAnchorReason
+
+**Added migration `0074` (2026-09-10).** Read-only code table — why a press counter had to be re-anchored. Code-table backed per repo convention: no free-text reason, no magic integers.
+
+| Id | Code | Name | Meaning |
+|---|---|---|---|
+| 1 | `CounterReset` | The counter was reset | Zeroed or rolled over mid-shift (power loss, maintenance, controller swap). |
+| 2 | `WrongReadingEntered` | A wrong reading was entered earlier | An earlier entry recorded a number that was not the counter reading and has blocked this die for the rest of the shift. |
+| 3 | `DieChangeover` | The die was changed over | A different die ran on this press earlier in the shift, so the counter carries its shots. |
+| 4 | `Other` | Other — see the note | Anything else. The note is **required** and is the only record of why. |
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| Code | NVARCHAR(30) | NOT NULL, UNIQUE | |
+| Name | NVARCHAR(100) | NOT NULL | Operator-facing label; drives the reason dropdown. |
+| Description | NVARCHAR(500) | NULL | |
+| SortOrder | INT | NOT NULL, DEFAULT 0 | Dropdown order (`CounterReset` first — the commonest case). |
+
+`Workorder.DieCastCounterAnchorReason_List` derives a `RequiresNote` BIT from `Code = 'Other'` so the dialog can require the note at the button instead of letting the write reject.
 
 ---
 

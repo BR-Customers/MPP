@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCast_GetReleasePreview.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-10
--- Version:     1.0
+-- Version:     1.1
 -- Description: Die-cast shot-reading chain (spec 2026-09-09), release side.
 --              Pure READ: everything the Release dialog has to put in front of
 --              the operator BEFORE they commit, computed here so no arithmetic
@@ -36,7 +36,7 @@
 --              MaxPieceCount, CreditedThrough (this CAVITY's watermark),
 --              DieCreditedThrough (the DIE's -- what the Behind test uses),
 --              NewShots, ProjectedPieceCount, BelowStandardAfter (BIT),
---              ReadingState.
+--              ReadingState, ToolId.
 --
 --              FDS-11-011: no OUTPUT params, one result set, empty set = the
 --              LOT is not an open basket (no invented 404). No mutation, no
@@ -101,7 +101,11 @@ BEGIN
         CAST(CASE WHEN l.MaxPieceCount IS NOT NULL
                        AND (l.PieceCount + @NewShots) * 100 < l.MaxPieceCount * 95
                   THEN 1 ELSE 0 END AS BIT)    AS BelowStandardAfter,
-        @ReadingState                          AS ReadingState
+        @ReadingState                          AS ReadingState,
+        -- v1.1: the die, so the dialog can pull its counter context and record
+        -- a counter anchor without a second lookup. Appended last -- the test
+        -- suite captures this proc via INSERT-EXEC and is position-sensitive.
+        l.ToolId                               AS ToolId
     FROM Lots.Lot l
     INNER JOIN Tools.ToolCavity tc ON tc.Id = l.ToolCavityId
     LEFT  JOIN Parts.Item       it ON it.Id = l.ItemId

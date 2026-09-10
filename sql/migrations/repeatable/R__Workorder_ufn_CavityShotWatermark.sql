@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_ufn_CavityShotWatermark.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-09
--- Version:     1.0
+-- Modified:    2026-09-10
+-- Version:     2.0
 -- Description: Die-cast shot-reading chain (spec 2026-09-09). Returns the
 --              press-counter reading through which a CAVITY has already been
 --              credited in a shift -- its "credited-through watermark".
@@ -30,6 +30,29 @@
 --
 --              Scalar (SQL Server 2022 inlines these). Cardinality is a
 --              handful of rows per cavity per shift.
+--
+--              -------------------------------------------------------------
+--              v2.0 (2026-09-10, migration 0074) -- COUNTER ANCHOR FLOOR.
+--
+--              An anchor is recorded against the DIE, and it floors EVERY
+--              cavity on that die from that moment:
+--
+--                  MAX( anchor.DeclaredReading,
+--                       MAX(reading) for this cavity AFTER the anchor,
+--                       0 )
+--
+--              That the floor reaches every cavity is the whole reason the
+--              anchor is a separate table rather than a contribution row:
+--              Workorder.DieCastContribution.LotId is NOT NULL (0045), so a
+--              cavity that is Closed, Scrapped, or simply has no open basket
+--              could never carry the correction. Flooring here reaches it.
+--
+--              A counter reset is DeclaredReading = 0, which restores exactly
+--              the start-of-shift state for every cavity. No special case.
+--
+--              The cavity's OWN tool is resolved from Tools.ToolCavity, so the
+--              caller does not have to pass it and cannot pass a mismatched
+--              one.
 -- ============================================================
 CREATE OR ALTER FUNCTION Workorder.ufn_CavityShotWatermark
 (
@@ -42,6 +65,16 @@ AS
 BEGIN
     IF @ToolCavityId IS NULL OR @ShiftId IS NULL RETURN 0;
 
+    -- The latest declaration for this cavity's DIE on this press, if any.
+    DECLARE @AnchorReading INT, @AnchorAt DATETIME2(3);
+    SELECT TOP 1 @AnchorReading = a.DeclaredReading, @AnchorAt = a.EventAt
+    FROM Workorder.DieCastCounterAnchor a
+    INNER JOIN Tools.ToolCavity tc ON tc.ToolId = a.ToolId
+    WHERE tc.Id     = @ToolCavityId
+      AND a.ShiftId = @ShiftId
+      AND ISNULL(a.CellLocationId, -1) = ISNULL(@CellLocationId, -1)
+    ORDER BY a.EventAt DESC, a.Id DESC;
+
     DECLARE @Watermark INT;
 
     SELECT @Watermark = MAX(c.ShotCounterReading)
@@ -49,8 +82,13 @@ BEGIN
     INNER JOIN Lots.Lot l ON l.Id = c.LotId
     WHERE l.ToolCavityId = @ToolCavityId
       AND c.ShiftId      = @ShiftId
-      AND ISNULL(c.CellLocationId, -1) = ISNULL(@CellLocationId, -1);
+      AND ISNULL(c.CellLocationId, -1) = ISNULL(@CellLocationId, -1)
+      AND (@AnchorAt IS NULL OR c.EventAt > @AnchorAt);
 
-    RETURN ISNULL(@Watermark, 0);
+    SET @Watermark = ISNULL(@Watermark, 0);
+    IF @AnchorReading IS NOT NULL AND @AnchorReading > @Watermark
+        SET @Watermark = @AnchorReading;
+
+    RETURN @Watermark;
 END
 GO

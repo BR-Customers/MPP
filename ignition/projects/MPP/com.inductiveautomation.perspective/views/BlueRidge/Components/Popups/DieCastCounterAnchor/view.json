@@ -1,0 +1,541 @@
+{
+  "custom": {
+    "context": {
+      "cellLocationId": null,
+      "dieCreditedThrough": 0,
+      "found": false,
+      "hasAnchor": false,
+      "note": "",
+      "reasonName": "",
+      "recordedAt": null,
+      "recordedBy": "",
+      "shiftId": null,
+      "sourceKind": "None",
+      "toolId": null
+    },
+    "contextLine": "",
+    "declaredReading": "",
+    "note": "",
+    "reasonId": null,
+    "reasonOptions": [],
+    "requiresNote": false
+  },
+  "params": {
+    "cellLocationId": null,
+    "dieName": "",
+    "popupId": "mpp-diecast-counter-anchor",
+    "replyMessage": "dieCastAnchorResult",
+    "shiftId": null,
+    "toolId": null
+  },
+  "propConfig": {
+    "custom.context": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.getCounterContext\", 0, {view.params.toolId}, {view.params.shiftId}, {view.params.cellLocationId})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.contextLine": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.describeCounterContext\", 0, {view.custom.context})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.reasonOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.listAnchorReasons\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.requiresNote": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.anchorReasonRequiresNote\", 0, {view.custom.reasonId})"
+        },
+        "type": "expr"
+      }
+    },
+    "params.cellLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.dieName": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.shiftId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.toolId": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 660
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Title"
+        },
+        "props": {
+          "style": {
+            "fontSize": "20px",
+            "fontWeight": 700
+          },
+          "text": "Set the counter total for this die"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Subject"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.dieName} = \"\", \"This die, this shift\", {view.params.dieName})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "fontFamily": "var(--mpp-font-mono)"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Caption"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-label"
+              },
+              "text": "RECORDED FOR THIS SHIFT NOW"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Value"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "numberFormat({view.custom.context.dieCreditedThrough}, \"#,##0\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-value pf-kpi-value-mono"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Provenance"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.contextLine"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "CurrentCard"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-kpi",
+            "gap": "2px",
+            "overflow": "hidden",
+            "padding": "10px 12px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "ReadingLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "WHAT THE COUNTER ACTUALLY READS"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ReadingInput"
+                },
+                "position": {
+                  "basis": "170px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.declaredReading"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "e.g. 12",
+                  "style": {
+                    "classes": "pf-field-input-mono",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
+              },
+              {
+                "meta": {
+                  "name": "ReadingHint"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "The number showing on the press counter right now. If the counter was zeroed, enter 0."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ReadingRow"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "12px",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "ReadingField"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "4px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "ReasonLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "WHY IT MOVED"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ReasonDropdown"
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.reasonOptions"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.reasonId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Pick a reason"
+              },
+              "style": {
+                "width": "100%"
+              }
+            },
+            "type": "ia.input.dropdown"
+          }
+        ],
+        "meta": {
+          "name": "ReasonField"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "4px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "NoteLabel"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.requiresNote}, \"NOTE (REQUIRED)\", \"NOTE (OPTIONAL)\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "NoteInput"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.note"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "deferUpdates": false,
+              "placeholder": "What happened, in your words",
+              "style": {
+                "width": "100%"
+              }
+            },
+            "type": "ia.input.text-field"
+          }
+        ],
+        "meta": {
+          "name": "NoteField"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "4px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "Consequence"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if(len(trim({view.custom.declaredReading})) = 0, \"Crediting will resume from whatever you enter above. Pieces already on the baskets are NOT changed, and the die keeps the shot count it already has.\", \"Crediting resumes from \" + trim({view.custom.declaredReading}) + \". Pieces already on the baskets are NOT changed, and the die keeps the shot count it already has.\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "fontWeight": 600
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"cancel\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary pf-btn-large"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t# This dialog writes its own anchor rather than handing the numbers\n\t# back: it already holds every one of them, and the caller only needs\n\t# to know that the watermark moved so it can re-read.\n\treading = BlueRidge.Common.Util.toIntOrNone(self.view.custom.declaredReading)\n\tif reading is None or reading < 0:\n\t\tBlueRidge.Common.Notify.toast(\"Enter the counter reading\", \"Type the whole number showing on the press counter. Enter 0 if it was zeroed.\", \"warning\")\n\t\treturn\n\tterm = None\n\ttry:\n\t\tterm = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm = None\n\tresult = BlueRidge.Workorder.DieCast.recordCounterAnchor(\n\t\tself.view.params.toolId, self.view.params.shiftId, reading,\n\t\tself.view.custom.reasonId, note=self.view.custom.note,\n\t\tappUserId=self.session.custom.appUserId, terminalLocationId=term,\n\t\tcellLocationId=self.view.params.cellLocationId) or {}\n\t# The proc's Message is the one that says what was NOT changed. Do not\n\t# replace it with something cheerier.\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Counter total set\")\n\tif not result.get(\"Status\"):\n\t\treturn\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\n\t\t\"action\": \"anchored\",\n\t\t\"declaredReading\": reading,\n\t}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "RecordButton"
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "len(trim({view.custom.declaredReading})) > 0 && !isNull({view.custom.reasonId}) && (!{view.custom.requiresNote} || len(trim({view.custom.note})) > 0)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary pf-btn-large"
+              },
+              "text": "Record this reading"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "ButtonRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "10px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "surface-card",
+        "gap": "14px",
+        "overflow": "visible",
+        "padding": "24px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

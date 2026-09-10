@@ -8,7 +8,16 @@
      getShiftOutputBreakdown(toolId, shiftId, counterReading, cellLocationId) -> list[dict]
      recordShiftOutput(data, appUserId=None, terminalLocationId=None)        -> {Status, Message, NewId}
      registerShotLoss(toolId, shiftId, defectCodeId, quantity,
-                       appUserId=None, terminalLocationId=None)              -> {Status, Message, NewId}"""
+                       appUserId=None, terminalLocationId=None)              -> {Status, Message, NewId}
+     getCounterContext(toolId, shiftId, cellLocationId)                      -> dict
+     describeCounterContext(ctx)                                             -> str
+     listAnchorReasons()                                                     -> list[{label, value}]
+     recordCounterAnchor(toolId, shiftId, declaredReading, reasonId, ...)    -> {Status, Message, NewId}"""
+
+# system.date.* raises Java Throwables, which `except Exception` does NOT catch
+# in Jython -- describeCounterContext's timestamp guard needs the Java branch or
+# a bad value takes the whole binding down.
+import java.lang
 
 
 def _u(value):
@@ -98,7 +107,8 @@ _EMPTY_RELEASE_PREVIEW = {
 }
 
 
-def getReleasePreview(lotId, shiftId=None, cellLocationId=None, counterReading=None):
+def getReleasePreview(lotId, shiftId=None, cellLocationId=None, counterReading=None,
+                      _refreshToken=None):
     """Everything the Release dialog shows before the operator commits, for the
        reading they have typed so far (Workorder.DieCast_GetReleasePreview).
 
@@ -112,7 +122,13 @@ def getReleasePreview(lotId, shiftId=None, cellLocationId=None, counterReading=N
 
        ALWAYS returns the full shape, never None (predeclare-bound-props rule):
        a not-found / not-open LOT comes back as _EMPTY_RELEASE_PREVIEW with
-       found=False, so a nested read in a binding cannot go Quality-Bad."""
+       found=False, so a nested read in a binding cannot go Quality-Bad.
+
+       _refreshToken is UNUSED and deliberately so. A counter anchor recorded
+       from inside the Release dialog changes the die watermark without
+       changing any of this binding's real inputs, so the preview would keep
+       quoting the number that had just been superseded. Bumping a token forces
+       the re-read. Same trick as getBulkOpenRowInstances' _optionsToken."""
     lotId = _u(lotId)
     if lotId is None:
         return dict(_EMPTY_RELEASE_PREVIEW)
@@ -149,6 +165,201 @@ def getReleasePreview(lotId, shiftId=None, cellLocationId=None, counterReading=N
         "found":               True,
     })
     return out
+
+
+# =============================================================================
+# Counter anchor (spec 2026-09-10; migration 0074)
+# -----------------------------------------------------------------------------
+# The shift's rolling counter total for a die, and the operator's ability to
+# declare the true one. Both shot watermarks are MAX(reading) over the shift and
+# a reading below the DIE watermark is refused, so a press counter reset -- or a
+# wrong number typed earlier -- blocked the die for the rest of the shift with
+# no way out. A MAX cannot be lowered by appending.
+#
+# EVERY DECISION IS IN SQL. Workorder.DieCastCounterAnchor_Record owns what a
+# valid declaration is; the ufn_*ShotWatermark functions own how it is applied;
+# Workorder.DieCast_GetCounterContext owns what the screen is told. These
+# wrappers pass values through and shape them for bindings -- nothing here
+# decides anything.
+# =============================================================================
+
+_EMPTY_COUNTER_CONTEXT = {
+    "toolId": None, "shiftId": None, "cellLocationId": None,
+    "dieCreditedThrough": 0, "sourceKind": "None", "recordedAt": None,
+    "recordedBy": "", "reasonName": "", "note": "", "hasAnchor": False,
+    "found": False,
+}
+
+
+def getCounterContext(toolId, shiftId, cellLocationId=None, _refreshToken=None):
+    """The shift's rolling press-counter total for a die, and where that number
+       came from (Workorder.DieCast_GetCounterContext).
+
+       This is the number the operator could not see. It was computed everywhere
+       it mattered but only ever DISPLAYED inside the Release dialog's red "that
+       reading is behind ..." advisory -- so it first became visible at the
+       moment it had already blocked them. Both die-cast entry points now state
+       it as plain context before anything is typed.
+
+       sourceKind is 'None' (nothing recorded this shift), 'Entry' (a recorded
+       shift output or basket release), or 'Anchor' (an operator declaration --
+       reasonName / note say why).
+
+       ALWAYS returns the full shape, never None (predeclare-bound-props rule):
+       the proc itself always returns exactly one row, and a failed call comes
+       back as _EMPTY_COUNTER_CONTEXT, so a nested read in a binding cannot go
+       Quality-Bad.
+
+       _refreshToken is UNUSED: recording an anchor or a shift output moves the
+       watermark without changing any real input of this binding, so a token
+       bump is what forces the re-read. Same trick as getReleasePreview."""
+    toolId = _u(toolId)
+    if toolId is None:
+        return dict(_EMPTY_COUNTER_CONTEXT)
+    try:
+        row = BlueRidge.Common.Db.execOne("workorder/DieCast_GetCounterContext", {
+            "toolId": toolId,
+            "shiftId": _u(shiftId),
+            "cellLocationId": _u(cellLocationId),
+        })
+    except Exception as e:
+        BlueRidge.Common.Util.log("getCounterContext failed: %s" % str(e))
+        return dict(_EMPTY_COUNTER_CONTEXT)
+    if not row:
+        return dict(_EMPTY_COUNTER_CONTEXT)
+    out = dict(_EMPTY_COUNTER_CONTEXT)
+    out.update({
+        "toolId":             row.get("ToolId"),
+        "shiftId":            row.get("ShiftId"),
+        "cellLocationId":     row.get("CellLocationId"),
+        "dieCreditedThrough": row.get("DieCreditedThrough") or 0,
+        "sourceKind":         row.get("SourceKind") or "None",
+        "recordedAt":         row.get("RecordedAt"),
+        "recordedBy":         row.get("RecordedBy") or "",
+        "reasonName":         row.get("ReasonName") or "",
+        "note":               row.get("Note") or "",
+        "hasAnchor":          bool(row.get("HasAnchor")),
+        "found":              True,
+    })
+    return out
+
+
+def describeCounterContext(ctx):
+    """The one-line context sentence both die-cast screens show above their
+       reading field. PRESENTATION ONLY -- every number and every branch input
+       was decided in SQL; this chooses wording.
+
+       It lives here rather than in an expression binding because the expression
+       language cannot express it cleanly: three-way branching plus a formatted
+       timestamp, in a literal syntax that rejects escapes."""
+    c = _u(ctx) or {}
+    total = c.get("dieCreditedThrough") or 0
+    kind = c.get("sourceKind") or "None"
+    if kind == "None":
+        return "Nothing recorded for this die yet this shift. Every cavity is credited from 0."
+
+    who = c.get("recordedBy") or ""
+    when = ""
+    at = c.get("recordedAt")
+    if at is not None:
+        try:
+            when = system.date.format(at, "HH:mm")
+        except (Exception, java.lang.Exception):
+            when = ""
+
+    stamp = ""
+    if when and who:
+        stamp = " (recorded %s by %s)" % (when, who)
+    elif when:
+        stamp = " (recorded %s)" % when
+    elif who:
+        stamp = " (recorded by %s)" % who
+
+    if kind == "Anchor":
+        why = c.get("reasonName") or ""
+        tail = (" %s" % why) if why else ""
+        return "This die is at %s for the shift -- set by hand%s.%s" % (
+            _thousands(total), stamp, tail)
+    return "This die is at %s for the shift%s." % (_thousands(total), stamp)
+
+
+def _thousands(n):
+    """1234 -> '1,234'. Jython 2.7 has no format(n, ',d')."""
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        return str(n)
+    sign = "-" if n < 0 else ""
+    digits = str(abs(n))
+    groups = []
+    while len(digits) > 3:
+        groups.insert(0, digits[-3:])
+        digits = digits[:-3]
+    groups.insert(0, digits)
+    return sign + ",".join(groups)
+
+
+def listAnchorReasons():
+    """Dropdown options for the counter-anchor reason
+       (Workorder.DieCastCounterAnchorReason_List), as the {label, value} pairs
+       ia.input.dropdown requires -- any other key shape silently breaks it."""
+    try:
+        rows = BlueRidge.Common.Db.execList("workorder/DieCastCounterAnchorReason_List", {})
+    except Exception as e:
+        BlueRidge.Common.Util.log("listAnchorReasons failed: %s" % str(e))
+        return []
+    return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Id")}
+            for r in (rows or [])]
+
+
+def anchorReasonRequiresNote(reasonId):
+    """True when the chosen reason carries no explanation of its own, so the
+       dialog must require the note at the button instead of letting
+       Workorder.DieCastCounterAnchor_Record reject. The rule is the proc's;
+       this only reads what the proc's own list proc reports."""
+    rid = BlueRidge.Common.Util.toIntOrNone(_u(reasonId))
+    if rid is None:
+        return False
+    try:
+        rows = BlueRidge.Common.Db.execList("workorder/DieCastCounterAnchorReason_List", {})
+    except Exception as e:
+        BlueRidge.Common.Util.log("anchorReasonRequiresNote failed: %s" % str(e))
+        return False
+    for r in (rows or []):
+        if r.get("Id") == rid:
+            return bool(r.get("RequiresNote"))
+    return False
+
+
+def recordCounterAnchor(toolId, shiftId, declaredReading, reasonId, note=None,
+                        appUserId=None, terminalLocationId=None, cellLocationId=None):
+    """Declare the true press-counter reading for a die on a press in a shift
+       (Workorder.DieCastCounterAnchor_Record). Returns {Status, Message, NewId}.
+
+       FORWARD-ONLY, and the proc's Message says so: this sets where crediting
+       resumes from and moves nothing already recorded -- not the pieces on the
+       baskets, not Tools.Tool.ShotCount. Surface that Message rather than
+       inventing a cheerier one."""
+    BlueRidge.Common.Util.log(
+        "recordCounterAnchor toolId=%s shiftId=%s declaredReading=%s reasonId=%s cellLocationId=%s"
+        % (toolId, shiftId, declaredReading, reasonId, cellLocationId)
+    )
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    note = _u(note)
+    if note is not None:
+        note = str(note).strip() or None
+    params = {
+        "toolId":             _u(toolId),
+        "shiftId":            _u(shiftId),
+        "declaredReading":    BlueRidge.Common.Util.toIntOrNone(_u(declaredReading)),
+        "reasonId":           _u(reasonId),
+        "appUserId":          appUserId,
+        "note":               note,
+        "cellLocationId":     _u(cellLocationId),
+        "terminalLocationId": _u(terminalLocationId),
+    }
+    return BlueRidge.Common.Db.execMutation("workorder/DieCastCounterAnchor_Record", params)
 
 
 def cavityDisplayName(cavityNumber, cavityDescription):

@@ -21,6 +21,20 @@
     "cavityOptions": [],
     "cells": [],
     "defaultShiftId": null,
+    "counterContext": {
+      "cellLocationId": null,
+      "dieCreditedThrough": 0,
+      "found": false,
+      "hasAnchor": false,
+      "note": "",
+      "reasonName": "",
+      "recordedAt": null,
+      "recordedBy": "",
+      "shiftId": null,
+      "sourceKind": "None",
+      "toolId": null
+    },
+    "counterContextLine": "",
     "counterReading": "",
     "itemOptions": [],
     "openBasketInstances": [],
@@ -53,6 +67,22 @@
     "cellPickerEnabled": false
   },
   "propConfig": {
+    "custom.counterContext": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.getCounterContext\", 0, {view.custom.activeTool.ToolId}, {view.custom.selectedShiftId}, {session.custom.cell.locationId}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.counterContextLine": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.describeCounterContext\", 0, {view.custom.counterContext})"
+        },
+        "type": "expr"
+      }
+    },
     "custom.activeTool": {
       "binding": {
         "config": {
@@ -1272,6 +1302,77 @@
                     "type": "ia.container.flex"
                   },
                   {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "CounterContextLabel"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 1
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.counterContextLine"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub",
+                            "fontWeight": 600
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\t# The way out when the recorded total is wrong -- the counter was reset,\n\t# or a bad number was entered earlier and is now refusing every honest\n\t# reading for the rest of the shift.\n\ttool = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tif tool.get(\"ToolId\") is None or self.view.custom.selectedShiftId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No die/shift\", \"Mount a die and select a shift first.\", \"warning\")\n\t\treturn\n\tsystem.perspective.openPopup(\"mpp-diecast-counter-anchor\",\n\t\t\"BlueRidge/Components/Popups/DieCastCounterAnchor\",\n\t\tparams={\"toolId\": tool.get(\"ToolId\"), \"shiftId\": self.view.custom.selectedShiftId,\n\t\t\t\"cellLocationId\": cell.get(\"locationId\"),\n\t\t\t\"dieName\": tool.get(\"ToolCode\") or \"\",\n\t\t\t\"popupId\": \"mpp-diecast-counter-anchor\",\n\t\t\t\"replyMessage\": \"dieCastAnchorResult\"},\n\t\tmodal=True, showCloseIcon=True)"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "FixCounterButton"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary"
+                          },
+                          "text": "Counter reset / wrong total?"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "CounterContextRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "10px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
                     "meta": {
                       "name": "BreakdownEmptyHint"
                     },
@@ -2012,6 +2113,13 @@
           "pageScope": false,
           "script": "\tBlueRidge.Common.Notify._handle(self, payload)",
           "sessionScope": true,
+          "viewScope": false
+        },
+        {
+          "messageType": "dieCastAnchorResult",
+          "pageScope": true,
+          "script": "\t# An anchor moves the die watermark, so every proposed per-cavity\n\t# credit on this screen was computed from a floor that no longer\n\t# applies. Drop the stale breakdown rather than leaving numbers on\n\t# screen that a submit would no longer produce.\n\tif payload and payload.get(\"action\") == \"anchored\":\n\t\tself.view.custom.breakdown = []\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
           "viewScope": false
         },
         {

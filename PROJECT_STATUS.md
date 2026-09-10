@@ -80,6 +80,72 @@
 
 ---
 
+## 🔖 2026-09-10 (session 2) — Die cast counter anchor: see the shift total, declare the real one
+
+Day-two feedback from the die cast floor. An operator on basket `10627564` typed a counter reading, got
+
+> *That reading is behind the last reading recorded for this die, 2,124 for this shift.*
+
+and had **no way past it**. Two defects behind one screen.
+
+### The rolling total was invisible until it blocked you
+
+`Workorder.DieCast_GetReleasePreview` has returned `DieCreditedThrough` since it was written, but the only component reading it was the red `Advisory` label — whose `position.display` is `readingState != "Ok" || belowStandardAfter`. So the number governing every reading on the die appeared **only inside the sentence rejecting one**. Nobody could check against it beforehand.
+
+Both die-cast entry points now state it as plain context above the field it explains — *"This die is at 2,124 for the shift (recorded 14:12 by JP)"* — from the new read proc `Workorder.DieCast_GetCounterContext`, which also says whether the number came from a recorded entry or from a hand-set anchor.
+
+### And there was no way past the wall
+
+Three places refuse a reading below the die watermark, and all three are right for a typo. None had an exit for the two cases the floor actually hits: **the press counter was reset mid-shift**, or **a wrong number was entered earlier** and has blocked the die for the rest of the shift. Spec 2026-09-09 named both (E3, E4) and deferred them pending evidence MPP needed them. MPP has now provided it.
+
+The blocker was structural, not an oversight: both watermarks were `MAX(ShotCounterReading)`, and **a MAX cannot be lowered by appending**. Correcting downward meant editing an append-only ledger.
+
+### The fix — a floor, not an override
+
+`Workorder.DieCastCounterAnchor` (migration `0074`) records one new fact: *"as of now, this press counter reads N."* Both `ufn_*ShotWatermark` functions (v2.0) take it as a floor:
+
+```
+watermark = MAX( anchor.DeclaredReading,
+                 MAX(reading) over contributions recorded AFTER it,
+                 0 )
+```
+
+**With no anchor, every number is byte-for-byte what it was** — asserted as test 1 of the new suite, because otherwise every existing die-cast test would be passing for a new reason.
+
+Three properties worth keeping in mind:
+
+- **The floor reaches every cavity on the die, including ones with no basket.** That is why it is its own table: `DieCastContribution.LotId` is `NOT NULL` (`0045`), so a contribution can only speak for a cavity that has an open basket — while the next basket opened on *any* cavity inherits that cavity's watermark. It floors in **both directions**: down for a poisoned watermark, up for a cavity that never produced (else the next basket invents production) or a die changed over onto a running press.
+- **A counter reset is `DeclaredReading = 0`.** E4 needed no code of its own.
+- **A later contribution supersedes the anchor.** The chain resumes normally; it is not sticky.
+
+**Authorization: any signed-in operator, with a mandatory reason** (`CounterReset` / `WrongReadingEntered` / `DieChangeover` / `Other`+note). Deliberately no AD elevation — the operator is the only person who can see the press counter, and gating on a supervisor strands a night shift at a wall. The reason code and a `Warning`-severity audit row carrying old → new watermark are the control.
+
+**Forward-only, and the UI says so out loud.** An anchor sets where crediting *resumes*. Pieces already credited to baskets stay, and so does `Tools.Tool.ShotCount`. The popup and the proc's own success `Message` both state it — if either stops saying it, operators will assume the baskets were fixed too.
+
+### Shipped
+
+| | |
+|---|---|
+| Migration | `0074_diecast_counter_anchor` — `DieCastCounterAnchor` + `DieCastCounterAnchorReason` (4 seeded) + `DieCastCounterAnchored` audit event |
+| Procs | `ufn_DieShotWatermark` **2.0**, `ufn_CavityShotWatermark` **2.0**, `DieCast_GetReleasePreview` **1.1** (+`ToolId`); new `DieCastCounterAnchor_Record`, `DieCast_GetCounterContext`, `DieCastCounterAnchorReason_List` |
+| Named queries | `workorder/DieCastCounterAnchor_Record`, `workorder/DieCast_GetCounterContext`, `workorder/DieCastCounterAnchorReason_List` |
+| Python | `BlueRidge.Workorder.DieCast` — `getCounterContext`, `describeCounterContext`, `listAnchorReasons`, `anchorReasonRequiresNote`, `recordCounterAnchor` |
+| Views | new `Popups/DieCastCounterAnchor`; `Popups/DieCastRelease` + `Views/ShopFloor/DieCastBody` gain the context line and the escape hatch |
+| Tests | `0022_PlantFloor_DieCast/100_CounterAnchor.sql` — **40/40** |
+
+Spec: `docs/superpowers/specs/2026-09-10-diecast-counter-anchor-design.md`. Data model updated (which also documented `DieCastContribution.ShotCounterReading` from `0073`, missed at the time).
+
+### Two things left open
+
+1. **`Tools.Tool.ShotCount` keeps the inflation.** A typo'd `2124` added 2,124 of phantom die life against `ShotLimit`, and a forward-only anchor does not claw it back. A die could run past its limit on shots it never fired. Not addressed — raise it if the die-life numbers start to drift.
+2. **`MPP_MES_Dev` has migration drift, unrelated to this work.** `Update-Prod -Preview` reports `0064_crt_part_scoped`, `0065_crt_label_mark_token`, `0066_crt_banner_label` as pending *and out of order* (the DB is at `0073`). `0074` and its repeatables were therefore applied by hand rather than letting the updater touch those three. Someone should decide whether they were superseded (backfill `SchemaVersion`) or genuinely missed.
+
+### Not verified in the browser
+
+Perspective's **client trial has expired** on the local gateway, so the three views were deployed via `scan.ps1` and are structurally valid, but **no screen was rendered**. The SQL is covered by the 40 passing assertions; the view wiring is not. Reset the trial in the gateway and smoke the Release dialog + Record Shift Output tab before this goes to the floor.
+
+---
+
 ## 🔖 2026-09-10 — `MPP_MES_ERD.html` replaced by the SchemaGen build (generated, not hand-authored)
 
 The repo ERD had been a **hand-authored** HTML file last refreshed **2026-06-08** (`c388863f`) — three months stale, and maintained by transcribing `MPP_MES_DATA_MODEL.md` by hand. It is now the **SchemaGen** output read straight from the live `MPP_MES_Dev` schema, so it can never drift from the built database again.

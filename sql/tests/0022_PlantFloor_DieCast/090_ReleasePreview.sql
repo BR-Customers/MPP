@@ -130,7 +130,7 @@ DECLARE @P TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, Cavit
                   CavityDescription NVARCHAR(500), ItemId BIGINT, PartNumber NVARCHAR(100),
                   PieceCount INT, MaxPieceCount INT, CreditedThrough INT, DieCreditedThrough INT,
                   NewShots INT, ProjectedPieceCount INT, BelowStandardAfter BIT,
-                  ReadingState NVARCHAR(20));
+                  ReadingState NVARCHAR(20), ToolId BIGINT);
 INSERT INTO @P EXEC Workorder.DieCast_GetReleasePreview
     @LotId = @LotA, @ShiftId = @ShiftId, @CellLocationId = @PressA, @CounterReading = 200;
 
@@ -182,7 +182,7 @@ DECLARE @P2 TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, Cavi
                    CavityDescription NVARCHAR(500), ItemId BIGINT, PartNumber NVARCHAR(100),
                    PieceCount INT, MaxPieceCount INT, CreditedThrough INT, DieCreditedThrough INT,
                    NewShots INT, ProjectedPieceCount INT, BelowStandardAfter BIT,
-                   ReadingState NVARCHAR(20));
+                   ReadingState NVARCHAR(20), ToolId BIGINT);
 INSERT INTO @P2 EXEC Workorder.DieCast_GetReleasePreview
     @LotId = @LotA, @ShiftId = @ShiftId, @CellLocationId = @PressA, @CounterReading = NULL;
 DECLARE @v2 NVARCHAR(20) = (SELECT ReadingState FROM @P2);
@@ -289,7 +289,7 @@ DECLARE @P5 TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, Cavi
                    CavityDescription NVARCHAR(500), ItemId BIGINT, PartNumber NVARCHAR(100),
                    PieceCount INT, MaxPieceCount INT, CreditedThrough INT, DieCreditedThrough INT,
                    NewShots INT, ProjectedPieceCount INT, BelowStandardAfter BIT,
-                   ReadingState NVARCHAR(20));
+                   ReadingState NVARCHAR(20), ToolId BIGINT);
 INSERT INTO @P5 EXEC Workorder.DieCast_GetReleasePreview @LotId = @LotA;
 DECLARE @n5 NVARCHAR(10) = CAST((SELECT COUNT(*) FROM @P5) AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[Preview] a closed basket returns no rows',
