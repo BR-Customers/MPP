@@ -192,7 +192,7 @@
         "children": [
           {
             "meta": {
-              "name": "ColNumber"
+              "name": "ColCode"
             },
             "position": {
               "basis": "120px",
@@ -203,7 +203,7 @@
                 "color": "var(--mpp-text-muted)",
                 "fontSize": "11px"
               },
-              "text": "Number"
+              "text": "Code"
             },
             "type": "ia.display.label"
           },
@@ -376,7 +376,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tempty \u003d {\"rows\": []}\n\t\tself.view.custom.state \u003d {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\tinstances \u003d BlueRidge.Parts.Tool.getCavityInstancesForTool(toolId) or []\n\tloaded \u003d []\n\tfor inst in instances:\n\t\tcav \u003d (inst or {}).get(\"cavity\") or {}\n\t\tsc \u003d cav.get(\"StatusCode\") or \"Active\"\n\t\tloaded.append({\n\t\t\t\"id\":              cav.get(\"Id\"),\n\t\t\t\"cavityNumber\":    cav.get(\"Number\"),\n\t\t\t\"description\":     cav.get(\"Description\") if cav.get(\"Description\") is not None else \"\",\n\t\t\t\"statusCode\":      sc,\n\t\t\t\"itemId\":          cav.get(\"ItemId\"),\n\t\t\t\"isScrappedSaved\": (sc \u003d\u003d \"Scrapped\"),\n\t\t\t\"isDeprecated\":    self.view.params.deprecated\n\t\t})\n\tself.view.custom.state \u003d {\"selected\": {\"rows\": loaded}, \"editDraft\": {\"rows\": [dict(r) for r in loaded]}}"
+          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tempty \u003d {\"rows\": []}\n\t\tself.view.custom.state \u003d {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\tinstances \u003d BlueRidge.Parts.Tool.getCavityInstancesForTool(toolId) or []\n\tloaded \u003d []\n\tfor inst in instances:\n\t\tcav \u003d (inst or {}).get(\"cavity\") or {}\n\t\tsc \u003d cav.get(\"StatusCode\") or \"Active\"\n\t\tloaded.append({\n\t\t\t\"id\":              cav.get(\"Id\"),\n\t\t\t\"cavityCode\":      cav.get(\"Code\"),\n\t\t\t\"description\":     cav.get(\"Description\") if cav.get(\"Description\") is not None else \"\",\n\t\t\t\"statusCode\":      sc,\n\t\t\t\"itemId\":          cav.get(\"ItemId\"),\n\t\t\t\"isScrappedSaved\": (sc \u003d\u003d \"Scrapped\"),\n\t\t\t\"isDeprecated\":    self.view.params.deprecated\n\t\t})\n\tself.view.custom.state \u003d {\"selected\": {\"rows\": loaded}, \"editDraft\": {\"rows\": [dict(r) for r in loaded]}}"
         },
         {
           "name": "handleSave",
@@ -391,15 +391,15 @@
         {
           "name": "addRow",
           "params": [],
-          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":              None,\n\t\t\"cavityNumber\":    None,\n\t\t\"description\":     \"\",\n\t\t\"statusCode\":      \"Active\",\n\t\t\"itemId\":          None,\n\t\t\"isScrappedSaved\": False,\n\t\t\"isDeprecated\": self.view.params.deprecated,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":              None,\n\t\t\"cavityCode\":      \"\",\n\t\t\"description\":     \"\",\n\t\t\"statusCode\":      \"Active\",\n\t\t\"itemId\":          None,\n\t\t\"isScrappedSaved\": False,\n\t\t\"isDeprecated\": self.view.params.deprecated,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
         },
         {
-          "name": "_applyNumberChange",
+          "name": "_applyCodeChange",
           "params": [
             "idx",
-            "newNumber"
+            "newCode"
           ],
-          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\trow \u003d dict(rows[idx])\n\trow[\"cavityNumber\"] \u003d None if newNumber is None else int(newNumber)\n\trows[idx] \u003d row\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\trow \u003d dict(rows[idx])\n\trow[\"cavityCode\"] \u003d \"\" if newCode is None else (\"%s\" % newCode).strip().lower()\n\trows[idx] \u003d row\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
         },
         {
           "name": "_applyDescChange",
@@ -450,9 +450,9 @@
           "viewScope": false
         },
         {
-          "messageType": "cavityRowNumberChanged",
+          "messageType": "cavityRowCodeChanged",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._applyNumberChange(idx, payload.get(\"newNumber\"))",
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._applyCodeChange(idx, payload.get(\"newCode\"))",
           "sessionScope": false,
           "viewScope": false
         },

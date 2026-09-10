@@ -2,7 +2,7 @@
   "custom": {},
   "params": {
     "row": {
-      "cavityNumber": null,
+      "cavityCode": "",
       "description": "",
       "id": null,
       "isDeprecated": false,
@@ -34,7 +34,7 @@
           "dom": {
             "onBlur": {
               "config": {
-                "script": "\tv \u003d self.props.value\n\tnewNumber \u003d None if v is None else int(v)\n\tsystem.perspective.sendMessage(\"cavityRowNumberChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newNumber\": newNumber}, scope\u003d\"page\")"
+                "script": "\tsystem.perspective.sendMessage(\"cavityRowCodeChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newCode\": self.props.text}, scope\u003d\"page\")"
               },
               "scope": "G",
               "type": "script"
@@ -42,7 +42,7 @@
           }
         },
         "meta": {
-          "name": "NumberInput"
+          "name": "CodeInput"
         },
         "position": {
           "basis": "120px",
@@ -57,27 +57,27 @@
               "type": "expr"
             }
           },
-          "props.value": {
+          "props.text": {
             "binding": {
               "config": {
-                "path": "view.params.row.cavityNumber"
+                "path": "view.params.row.cavityCode"
               },
               "type": "property"
             }
           }
         },
         "props": {
-          "placeholder": "No.",
+          "placeholder": "Code",
           "style": {
             "classes": "search-input",
             "height": "30px"
           }
         },
-        "type": "ia.input.numeric-entry-field"
+        "type": "ia.input.text-field"
       },
       {
         "meta": {
-          "name": "NumberLabel"
+          "name": "CodeLabel"
         },
         "position": {
           "basis": "120px",
@@ -95,7 +95,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "path": "view.params.row.cavityNumber"
+                "path": "view.params.row.cavityCode"
               },
               "type": "property"
             }

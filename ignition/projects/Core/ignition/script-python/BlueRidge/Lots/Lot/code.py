@@ -31,16 +31,16 @@ def shiftTallyCavityIds(tally):
     return [r.get("ToolCavityId") for r in _tallyRows(tally)]
 
 
-def create(data, appUserId=None, terminalLocationId=None, lotName=None, cavityNote=None):
+def create(data, appUserId=None, terminalLocationId=None, lotName=None):
     """Mint a new LOT. data carries every Lot_Create field (itemId,
        lotOriginTypeId, currentLocationId, pieceCount, weight, weightUomId,
        toolId, toolCavityId, vendorLotNumber, minSerialNumber, maxSerialNumber).
        lotName (D4): None = server mint (default); a value = use it verbatim (the
-       pre-printed LTT). cavityNote (D2): free-text cavity when no active ToolCavity.
+       pre-printed LTT).
        Returns {Status, Message, NewId, MintedLotName}."""
     BlueRidge.Common.Util.log(
-        "create data=%s appUserId=%s terminalLocationId=%s lotName=%s cavityNote=%s"
-        % (data, appUserId, terminalLocationId, lotName, cavityNote)
+        "create data=%s appUserId=%s terminalLocationId=%s lotName=%s"
+        % (data, appUserId, terminalLocationId, lotName)
     )
     d = _u(data) or {}
     if appUserId is None:
@@ -60,7 +60,6 @@ def create(data, appUserId=None, terminalLocationId=None, lotName=None, cavityNo
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
         "lotName":            _u(lotName),
-        "cavityNote":         _u(cavityNote),
         # Die-cast opt-in: after birth at the machine, the proc auto-moves the LOT to
         # the Warehouse (storage). 0/1 -> BIT. Absent/false = no deposit (other origins).
         "depositToStorage":   1 if d.get("depositToStorage") else 0,
@@ -286,7 +285,7 @@ def mapMachiningOutQueue(rows, selectedLotId=None):
 def getLatestForToolCavityOrEmpty(toolId, toolCavityId, _refreshToken=None):
     """The cavity-scoped reject target (Jacques 2026-07-06): the newest open
        LOT cast on (tool, cavity). Always returns the fully-shaped dict
-       {Id, LotName, PieceCount, InventoryAvailable, CavityNumber} with None/0
+       {Id, LotName, PieceCount, InventoryAvailable, CavityCode} with None/0
        values when nothing resolves (pre-declared-bound-props rule).
        _refreshToken is ignored - runScript bindings pass a bumped token to
        force a re-read after a create/reject."""
@@ -294,7 +293,7 @@ def getLatestForToolCavityOrEmpty(toolId, toolCavityId, _refreshToken=None):
     toolCavityId = _u(toolCavityId)
     BlueRidge.Common.Util.log("toolId=%s toolCavityId=%s" % (toolId, toolCavityId))
     empty = {"Id": None, "LotName": "", "PieceCount": 0,
-             "InventoryAvailable": 0, "CavityNumber": None}
+             "InventoryAvailable": 0, "CavityCode": None}
     if not toolId or not toolCavityId:
         return empty
     row = BlueRidge.Common.Db.execOne(
@@ -511,7 +510,7 @@ _EMPTY_LOT = {
     "TotalInProcess": 0, "LotStatusCode": "", "LotStatusName": "",
     "LotOriginTypeCode": "", "CurrentLocationId": None,
     "CurrentLocationName": "", "CrtActive": None, "ToolId": None,
-    "ToolCode": "", "ToolCavityNumber": "",
+    "ToolCode": "", "ToolCavityCode": "",
 }
 
 
@@ -575,7 +574,7 @@ def shiftCavityOptions(tally):
     """[{label, value}] for the right-rail cavity dropdown, built from a tally list
        so every configured cavity appears (value = ToolCavityId). Presentation only."""
     rows = _tallyRows(tally)
-    return [{"label": r.get("CavityLabel") or ("Cavity %s" % r.get("CavityNumber")),
+    return [{"label": r.get("CavityLabel") or ("Cavity %s" % r.get("CavityCode")),
              "value": r.get("ToolCavityId")} for r in rows]
 
 
@@ -821,13 +820,13 @@ def getOpenByToolInstances(toolId, _refreshToken=None):
                 openedDisplay = ("%s" % opened)[:16]
         pieceCount = r.get("PieceCount") or 0
         hasBasket = r.get("LotId") is not None
-        num = r.get("CavityNumber")
+        code = r.get("CavityCode")
         desc = r.get("CavityDescription") or ""
         out.append({
             "toolCavityId":     r.get("ToolCavityId"),
-            "cavityNumber":     num if num is not None else "",
-            "cavityName":       BlueRidge.Workorder.DieCast.cavityDisplayName(num, desc),
-            "cavityOrdinalLabel": "Cavity %s" % (num if num is not None else "?"),
+            "cavityCode":       code if code is not None else "",
+            "cavityName":       BlueRidge.Workorder.DieCast.cavityDisplayName(code, desc),
+            "cavityOrdinalLabel": "Cavity %s" % (code if code is not None else "?"),
             "lotId":            r.get("LotId"),
             "lotName":          r.get("LotName") or "",
             "pieceCount":       pieceCount,

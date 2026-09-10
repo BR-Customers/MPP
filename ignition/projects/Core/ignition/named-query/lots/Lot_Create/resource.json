@@ -102,11 +102,6 @@
       },
       {
         "type": "Parameter",
-        "identifier": "cavityNote",
-        "sqlType": 7
-      },
-      {
-        "type": "Parameter",
         "identifier": "depositToStorage",
         "sqlType": 2
       }

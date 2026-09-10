@@ -1,5 +1,5 @@
 EXEC Tools.ToolCavity_Create
     @ToolId       = :toolId,
-    @CavityNumber = :cavityNumber,
+    @CavityCode   = :cavityCode,
     @Description  = :description,
     @AppUserId    = :appUserId

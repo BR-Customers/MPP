@@ -99,7 +99,7 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None, cellLocatio
 
 _EMPTY_RELEASE_PREVIEW = {
     "lotId": None, "lotName": "", "toolCavityId": None, "toolId": None,
-    "cavityNumber": "", "cavityName": "", "partNumber": "",
+    "cavityCode": "", "cavityName": "", "partNumber": "",
     "pieceCount": 0, "maxPieceCount": None,
     "creditedThrough": 0, "dieCreditedThrough": 0, "newShots": 0,
     "projectedPieceCount": 0, "belowStandardAfter": False,
@@ -145,14 +145,14 @@ def getReleasePreview(lotId, shiftId=None, cellLocationId=None, counterReading=N
         return dict(_EMPTY_RELEASE_PREVIEW)
     if not row:
         return dict(_EMPTY_RELEASE_PREVIEW)
-    num = row.get("CavityNumber")
+    code = row.get("CavityCode")
     out = dict(_EMPTY_RELEASE_PREVIEW)
     out.update({
         "lotId":               row.get("LotId"),
         "lotName":             row.get("LotName") or "",
         "toolCavityId":        row.get("ToolCavityId"),
-        "cavityNumber":        num if num is not None else "",
-        "cavityName":          cavityDisplayName(num, row.get("CavityDescription")),
+        "cavityCode":          code if code is not None else "",
+        "cavityName":          cavityDisplayName(code, row.get("CavityDescription")),
         "partNumber":          row.get("PartNumber") or "",
         "pieceCount":          row.get("PieceCount") or 0,
         "maxPieceCount":       row.get("MaxPieceCount"),
@@ -367,20 +367,21 @@ def recordCounterAnchor(toolId, shiftId, declaredReading, reasonId, note=None,
     return BlueRidge.Common.Db.execMutation("workorder/DieCastCounterAnchor_Record", params)
 
 
-def cavityDisplayName(cavityNumber, cavityDescription):
+def cavityDisplayName(cavityCode, cavityDescription):
     """The operator-facing name of a die cavity.
 
        DECISION (2026-08-19, backlog 2.2): Tools.ToolCavity.Description IS the
-       cavity's name; Tools.ToolCavity.CavityNumber is only its ordinal (the
-       (ToolId, CavityNumber) uniqueness key). So the Description wins whenever
-       it is populated, and the bare ordinal 'Cavity <N>' is the fallback for a
-       cavity nobody has named yet. Same source the Open-Basket cavity dropdown
-       already reads (Parts.Tool.getCavitiesForDropdown), so the two surfaces
-       agree on what a cavity is called."""
+       cavity's name; Tools.ToolCavity.CavityCode is only its per-part
+       identifier (the (ToolId, ItemId, CavityCode) uniqueness key). So the
+       Description wins whenever it is populated, and the bare 'Cavity <code>'
+       is the fallback for a cavity nobody has named yet. Same source the
+       Open-Basket cavity dropdown already reads
+       (Parts.Tool.getCavitiesForDropdown), so the two surfaces agree on what a
+       cavity is called."""
     desc = ("%s" % (cavityDescription or "")).strip()
     if desc:
         return desc
-    return "Cavity %s" % (cavityNumber if cavityNumber is not None else "?")
+    return "Cavity %s" % (cavityCode if cavityCode is not None else "?")
 
 
 def mapBreakdownInstances(rows):
@@ -406,14 +407,14 @@ def mapBreakdownInstances(rows):
     out = []
     for r in rows:
         r = r or {}
-        num = r.get("CavityNumber")
+        code = r.get("CavityCode")
         desc = r.get("CavityDescription") or ""
         out.append({
             "toolCavityId":       r.get("ToolCavityId"),
-            "cavityNumber":       num if num is not None else "",
+            "cavityCode":         code if code is not None else "",
             "cavityDescription":  desc,
-            "cavityName":         cavityDisplayName(num, desc),
-            "cavityOrdinalLabel": "Cavity %s" % (num if num is not None else "?"),
+            "cavityName":         cavityDisplayName(code, desc),
+            "cavityOrdinalLabel": "Cavity %s" % (code if code is not None else "?"),
             "hasCavityName":      bool(("%s" % desc).strip()),
             "lotId":              r.get("LotId"),
             "lotName":            r.get("LotName") or "",
@@ -529,7 +530,7 @@ def registerShotLoss(toolId, shiftId, defectCodeId, quantity, appUserId=None, te
 
 def getBulkOpenRowInstances(toolId, seedToken=None, _optionsToken=None):
     """Bulk-open repeater instances for DieCastBody: ONE row per non-deprecated
-       ACTIVE cavity of the mounted die, in CavityNumber order (the order
+       ACTIVE cavity of the mounted die, in CavityCode order (the order
        Tools.ToolCavity_ListActiveByTool returns).
 
        A cavity that already holds an open accumulator basket comes back with
@@ -588,14 +589,14 @@ def getBulkOpenRowInstances(toolId, seedToken=None, _optionsToken=None):
     for c in (cavities or []):
         c = c or {}
         cavityId = c.get("Id")
-        num = c.get("CavityNumber")
+        code = c.get("CavityCode")
         existing = openByCavity.get("%s" % cavityId)
         statusCode = c.get("StatusCode") or "Active"
         out.append({
             "toolCavityId":       cavityId,
-            "cavityNumber":       num if num is not None else "",
-            "cavityName":         cavityDisplayName(num, c.get("Description")),
-            "cavityOrdinalLabel": "Cavity %s" % (num if num is not None else "?"),
+            "cavityCode":         code if code is not None else "",
+            "cavityName":         cavityDisplayName(code, c.get("Description")),
+            "cavityOrdinalLabel": "Cavity %s" % (code if code is not None else "?"),
             "cavityStatusCode":   statusCode,
             "isActive":           (statusCode == "Active"),
             "alreadyOpen":        existing is not None,

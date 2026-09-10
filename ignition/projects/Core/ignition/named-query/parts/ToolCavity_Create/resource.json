@@ -37,8 +37,8 @@
       },
       {
         "type": "Parameter",
-        "identifier": "cavityNumber",
-        "sqlType": 2
+        "identifier": "cavityCode",
+        "sqlType": 7
       },
       {
         "type": "Parameter",

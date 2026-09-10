@@ -493,8 +493,8 @@ def getCavityInstancesForTool(toolId):
     or load failures.
 
     Row shape consumed by CavityRow:
-        Id, Number, StatusCode, Description, ItemId, ItemPartNumber
-    Mapped from the proc's CavityNumber + StatusCode columns. ItemId is the
+        Id, Code, StatusCode, Description, ItemId, ItemPartNumber
+    Mapped from the proc's CavityCode + StatusCode columns. ItemId is the
     0072 cavity-to-part map (family dies); it is NULLable, so ItemPartNumber
     comes back None for an unmapped cavity and the row must render that."""
     toolId = _u(toolId)
@@ -515,7 +515,7 @@ def getCavityInstancesForTool(toolId):
         out.append({
             "cavity": {
                 "Id":             r.get("Id"),
-                "Number":         r.get("CavityNumber"),
+                "Code":           r.get("CavityCode"),
                 "StatusCode":     r.get("StatusCode"),
                 "Description":    r.get("Description"),
                 "ItemId":         r.get("ItemId"),
@@ -779,23 +779,23 @@ def getCellsForDropdown(toolId=None):
 # Per-tab mutations (Cavity / Attribute / Assignment)
 # -----------------------------------------------------------------------------
 
-def createCavity(toolId, cavityNumber, description=None):
+def createCavity(toolId, cavityCode, description=None):
     """Insert a new ToolCavity. Returns {Status, Message, NewId}."""
     toolId = _u(toolId)
-    cavityNumber = _u(cavityNumber)
+    cavityCode = _u(cavityCode)
     description = _u(description)
-    BlueRidge.Common.Util.log("toolId=%s cavityNumber=%s" % (toolId, cavityNumber))
+    BlueRidge.Common.Util.log("toolId=%s cavityCode=%s" % (toolId, cavityCode))
     if toolId is None:
         return {"Status": 0, "Message": "ToolId is required", "NewId": None}
-    if cavityNumber is None:
-        return {"Status": 0, "Message": "CavityNumber is required", "NewId": None}
+    if not cavityCode:
+        return {"Status": 0, "Message": "CavityCode is required", "NewId": None}
     return BlueRidge.Common.Db.execMutation(
         "parts/ToolCavity_Create",
         {
-            "toolId":       toolId,
-            "cavityNumber": int(cavityNumber),
-            "description":  description,
-            "appUserId":    BlueRidge.Common.Util._currentAppUserId(),
+            "toolId":      toolId,
+            "cavityCode":  ("%s" % cavityCode).strip().lower(),
+            "description": description,
+            "appUserId":   BlueRidge.Common.Util._currentAppUserId(),
         },
     )
 
@@ -899,7 +899,7 @@ def saveAttributesAll(toolId, rows):
 
 def saveCavitiesAll(toolId, rows):
     """Bundled SaveAll for the Cavities section. `rows` keys: id (BIGINT|None),
-    cavityNumber (int), description (string|None), statusCode (str),
+    cavityCode (str), description (string|None), statusCode (str),
     itemId (BIGINT|None -- the 0072 cavity-to-part map, optional).
     Returns {Status, Message, NewId}."""
     toolId = _u(toolId)
@@ -909,7 +909,8 @@ def saveCavitiesAll(toolId, rows):
     cleaned = []
     for r in (rows or []):
         r = _u(r) or {}
-        num = r.get("cavityNumber")
+        code = r.get("cavityCode")
+        code = None if code is None else ("%s" % code).strip().lower()
         # itemId is genuinely optional: an unmapped cavity, and a cleared
         # dropdown, must both send null rather than 0 -- the proc treats NULL
         # as "no mapping" and would reject 0 as a non-existent part.
@@ -920,7 +921,7 @@ def saveCavitiesAll(toolId, rows):
             iid = int(iid)
         cleaned.append({
             "Id":           r.get("id"),
-            "CavityNumber": None if num is None else int(num),
+            "CavityCode":   code,
             "Description":  r.get("description"),
             "StatusCode":   r.get("statusCode") or "Active",
             "ItemId":       iid,
@@ -998,9 +999,9 @@ def getCavitiesForDropdown(toolId):
         return []
     out = []
     for r in (rows or []):
-        num = r.get("CavityNumber")
+        code = r.get("CavityCode")
         desc = (r.get("Description") or "").strip()
-        label = ("Cavity %s - %s" % (num, desc)) if desc else ("Cavity %s" % num)
+        label = ("Cavity %s - %s" % (code, desc)) if desc else ("Cavity %s" % code)
         out.append({"label": label, "value": r.get("Id")})
     return out
 
