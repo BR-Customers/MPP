@@ -1410,7 +1410,7 @@
                           },
                           "transforms": [
                             {
-                              "code": "\t# One shared defect-code fetch for the whole list: the row view used to run its\n\t# own runScript(getForDropdown) binding, i.e. one identical query PER CAVITY.\n\trows \u003d BlueRidge.Workorder.DieCast.mapBreakdownInstances(value)\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.shotLossDefectOptions) or []\n\tfor r in rows:\n\t\tr[\"defectOptions\"] \u003d opts\n\treturn rows",
+                              "code": "\t# One shared defect-code fetch for the whole list: the row view used to run its\n\t# own runScript(getForDropdown) binding, i.e. one identical query PER CAVITY.\n\trows \u003d BlueRidge.Workorder.DieCast.mapBreakdownInstances(value)\n\t# Fetched DIRECTLY rather than read off view.custom.shotLossDefectOptions:\n\t# reaching across to a sibling property from inside a props.instances\n\t# transform takes the WHOLE repeater down if that property is ever\n\t# missing -- which is what a partial deploy did on prod (2026-09-10).\n\topts \u003d BlueRidge.Quality.DefectCode.getForDropdown(\"DieCast\") or []\n\tfor r in rows:\n\t\tr[\"defectOptions\"] \u003d opts\n\treturn rows",
                               "type": "script"
                             }
                           ],
