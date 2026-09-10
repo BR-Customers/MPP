@@ -11,6 +11,8 @@
 --              A NULL OperationCategoryId means the code applies plant-wide
 --              (shows on every reject screen). MPP can reclassify the plant-wide
 --              bucket later (FDS-08-017 stays the refinement vehicle).
+--              Plus MPP-added codes numbered from 260 (see the inline note at
+--              the end of the table -- 2026-09-10, migration 0075).
 --              OperationCategoryId resolved by Code at apply time. Idempotent on
 --              UQ_DefectCode_Code (insert-where-not-exists). ASCII-only.
 -- ============================================================
@@ -177,7 +179,11 @@ INSERT INTO @Defects (Code, Description, OperationCategoryId, IsExcused) VALUES
 (N'142', N'N/G Blast N/G Tumble', @Trim, 0),
 (N'143', N'Surface Roughness', @Trim, 0),
 (N'144', N'White-Rust', @Trim, 0),
-(N'145', N'Drill Damage', @Trim, 0)
+(N'145', N'Drill Damage', @Trim, 0),
+-- MPP additions, numbered from 260 -- above the FRS Appendix E maximum of 256.
+-- The free gaps INSIDE the FRS range (155, 193, 196, 251) sit mid-band where
+-- Flexware could still fill them, so ours start a band of their own.
+(N'260', N'Scale Adjustment', @Trim, 0)
 ;
 
 INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused)
