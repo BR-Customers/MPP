@@ -378,66 +378,6 @@
                         "color": "var(--mpp-text-tertiary)",
                         "fontSize": "12px"
                       },
-                      "text": "Die Rank"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "Value"
-                    },
-                    "position": {
-                      "grow": 1
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "path": "view.custom.summary.DieRankLabel"
-                          },
-                          "type": "property"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "fontSize": "12px"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  }
-                ],
-                "meta": {
-                  "name": "RowRank"
-                },
-                "position": {
-                  "basis": "20px",
-                  "shrink": 0
-                },
-                "props": {
-                  "alignItems": "center",
-                  "style": {
-                    "gap": "8px",
-                    "overflow": "hidden"
-                  }
-                },
-                "type": "ia.container.flex"
-              },
-              {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "Label"
-                    },
-                    "position": {
-                      "basis": "120px",
-                      "shrink": 0
-                    },
-                    "props": {
-                      "style": {
-                        "color": "var(--mpp-text-tertiary)",
-                        "fontSize": "12px"
-                      },
                       "text": "Shot Limit"
                     },
                     "type": "ia.display.label"

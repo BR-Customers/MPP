@@ -1245,10 +1245,9 @@ def tools_source():
         % _b('+ Add Die')))
 
     parts.append(_step(2, 'Set its identity',
-        'Change %s, %s, and %s. %s and %s are read-only, set when the die '
+        'Change %s and %s. %s and %s are read-only, set when the die '
         'or tool was first added.'
-        % (_b('Name'), _b('Die Rank'), _b('Status'), _b('Asset Number'),
-           _b('Tool Type'))))
+        % (_b('Name'), _b('Status'), _b('Asset Number'), _b('Tool Type'))))
 
     parts.append(_step(3, 'Description', 'Update the %s field.'
         % _b('Description')))
@@ -1265,10 +1264,6 @@ def tools_source():
                       'configuration into a new one.' % _b('Duplicate')),
         ('Retire', 'Press %s.' % _b('Retire')),
     ]))
-    parts.append(_note(
-        '%s manages the list of ranks itself, separate from any one die.'
-        % _b('Die Ranks')))
-
     return ''.join(parts)
 
 
@@ -1944,8 +1939,8 @@ def add_die_source():
         'Create a new die.'))
 
     parts.append(_step(1, 'Fill it in',
-        '%s and %s are required. %s defaults to B if you leave it alone.'
-        % (_b('Asset Number'), _b('Name'), _b('Die Rank'))))
+        'Both %s and %s are required.'
+        % (_b('Asset Number'), _b('Name'))))
 
     parts.append(_step(2, 'Create',
         'Press %s.' % _b('Create Die')))
@@ -1969,9 +1964,9 @@ def duplicate_die_source():
     parts.append(_step(2, 'Name the copy',
         'Enter a %s and %s for the new die.' % (_b('New Asset Number'), _b('New Name'))))
     parts.append(_note(
-        'Die Rank, Shot Limit, cavities, attributes, and description all '
-        'carry over from the source die &ndash; cavities copy exactly, '
-        'including any that are Closed or Scrapped.'))
+        'Shot Limit, cavities, attributes, and description all carry over '
+        'from the source die &ndash; cavities copy exactly, including their '
+        'part numbers and any that are Closed or Scrapped.'))
 
     parts.append(_step(3, 'Create',
         'Press %s.' % _b('Duplicate Die')))

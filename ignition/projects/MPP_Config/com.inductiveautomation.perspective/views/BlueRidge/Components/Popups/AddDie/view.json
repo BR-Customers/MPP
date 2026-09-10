@@ -19,16 +19,7 @@
     }
   },
   "params": {},
-  "propConfig": {
-    "custom.rankOptions": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.DieRank.getForDropdown\", 0)"
-        },
-        "type": "expr"
-      }
-    }
-  },
+  "propConfig": {},
   "props": {
     "defaultSize": {
       "height": 380,
@@ -261,65 +252,6 @@
             ],
             "meta": {
               "name": "NameField"
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "gap": "4px",
-                "overflow": "visible"
-              }
-            },
-            "type": "ia.container.flex"
-          },
-          {
-            "children": [
-              {
-                "meta": {
-                  "name": "Label"
-                },
-                "props": {
-                  "style": {
-                    "classes": "field-label"
-                  },
-                  "text": "Die Rank"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "Input"
-                },
-                "propConfig": {
-                  "props.options": {
-                    "binding": {
-                      "config": {
-                        "path": "view.custom.rankOptions"
-                      },
-                      "type": "property"
-                    }
-                  },
-                  "props.value": {
-                    "binding": {
-                      "config": {
-                        "bidirectional": true,
-                        "path": "view.custom.editDraft.meta.DieRankCode"
-                      },
-                      "type": "property"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "boxSizing": "border-box",
-                    "classes": "select",
-                    "width": "100%"
-                  }
-                },
-                "type": "ia.input.dropdown"
-              }
-            ],
-            "meta": {
-              "name": "DieRankField"
             },
             "props": {
               "direction": "column",

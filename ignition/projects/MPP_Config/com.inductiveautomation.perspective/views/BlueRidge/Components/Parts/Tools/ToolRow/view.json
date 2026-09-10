@@ -85,44 +85,6 @@
           }
         },
         "type": "ia.container.flex"
-      },
-      {
-        "meta": {
-          "name": "BadgeRank"
-        },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "config": {
-                "expression": "!isNull({view.params.tool.rank})"
-              },
-              "type": "expr"
-            }
-          },
-          "props.style.classes": {
-            "binding": {
-              "config": {
-                "expression": "if({view.params.tool.rank} \u003d \u0027A\u0027, \u0027badge badge-purple\u0027, \u0027badge badge-muted\u0027)"
-              },
-              "type": "expr"
-            }
-          },
-          "props.text": {
-            "binding": {
-              "config": {
-                "path": "view.params.tool.rank"
-              },
-              "type": "property"
-            }
-          }
-        },
-        "props": {
-          "style": {
-            "fontSize": "10px",
-            "padding": "1px 5px"
-          }
-        },
-        "type": "ia.display.label"
       }
     ],
     "events": {

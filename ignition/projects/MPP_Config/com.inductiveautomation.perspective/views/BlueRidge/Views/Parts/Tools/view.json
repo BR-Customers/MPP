@@ -137,14 +137,6 @@
     "custom.filter.statusCode": {
       "persistent": true
     },
-    "custom.rankOptions": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.DieRank.getForDropdown\", 0)"
-        },
-        "type": "expr"
-      }
-    },
     "custom.statusOptions": {
       "binding": {
         "config": {
@@ -279,40 +271,6 @@
               "grow": 1
             },
             "type": "ia.container.flex"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "draggable": false,
-                    "id": "mpp-die-ranks",
-                    "modal": true,
-                    "overlayDismiss": false,
-                    "resizable": false,
-                    "showCloseIcon": false,
-                    "type": "open",
-                    "viewPath": "BlueRidge/Components/Popups/DieRanks",
-                    "viewportBound": true
-                  },
-                  "scope": "C",
-                  "type": "popup"
-                }
-              }
-            },
-            "meta": {
-              "name": "BtnDieRanks"
-            },
-            "position": {
-              "basis": "92px"
-            },
-            "props": {
-              "style": {
-                "classes": "btn"
-              },
-              "text": "Die Ranks"
-            },
-            "type": "ia.input.button"
           },
           {
             "events": {
@@ -636,35 +594,6 @@
                       },
                       {
                         "meta": {
-                          "name": "SummaryBadgeRank"
-                        },
-                        "propConfig": {
-                          "position.display": {
-                            "binding": {
-                              "config": {
-                                "expression": "!isNull({view.custom.editDraft.meta.DieRankName})"
-                              },
-                              "type": "expr"
-                            }
-                          },
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "path": "view.custom.editDraft.meta.DieRankName"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "badge badge-muted"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
                           "name": "SummaryBadgeMount"
                         },
                         "propConfig": {
@@ -956,76 +885,6 @@
                           "style": {
                             "classes": "field",
                             "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelDieRank"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "Die Rank"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "DropdownDieRank"
-                            },
-                            "propConfig": {
-                              "props.enabled": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "!{view.custom.selected.meta.deprecated}"
-                                  },
-                                  "type": "expr"
-                                }
-                              },
-                              "props.options": {
-                                "binding": {
-                                  "config": {
-                                    "path": "view.custom.rankOptions"
-                                  },
-                                  "type": "property"
-                                }
-                              },
-                              "props.value": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.DieRankCode"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "select"
-                              }
-                            },
-                            "type": "ia.input.dropdown"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldDieRank"
-                        },
-                        "position": {
-                          "basis": "140px",
-                          "grow": 1
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px",
-                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
