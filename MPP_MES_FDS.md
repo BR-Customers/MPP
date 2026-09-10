@@ -882,6 +882,10 @@ At `Lots.Lot_Create` for die-cast-origin LOTs, the caller SHALL supply `@ToolId`
 
 Failure of any check SHALL reject with a specific error code. Non-die-cast origins (Received, Trim / Machining intermediate, Assembly, Serialized) SHALL pass NULL for both and the proc SHALL NOT require them.
 
+**Amended 2026-09-10 (migration `0076`).** `@ToolCavityId` is now **unconditionally required** for a die-cast-origin LOT. The former `@CavityNote` fallback — which accepted free text and stored it in `Lots.Lot.CavityNumber` when no configured `ToolCavity` existed — is **retired**, and that column is dropped. It existed because cavities were not always configured; they now are, with a part mapped to each (`Tools.ToolCavity.ItemId`, migration `0072`), and a LOT whose cavity is untyped free text cannot be rolled up per part, which is the reporting `0072` exists to enable.
+
+A cavity is identified by `Tools.ToolCavity.CavityCode` — 1–4 lowercase letters, unique **per part** on the die, per FDS-05-035 and Data Model v2.3.
+
 #### FDS-05-035 — Tools System of Record — On Lot, Not On ProductionEvent — `MVP`
 
 Tool and Cavity SHALL live on `Lots.Lot`, never on `Workorder.ProductionEvent`. Reports and exports that need Tool context on an event SHALL derive it via `ProductionEvent.LotId → Lot.ToolId / Lot.ToolCavityId`.

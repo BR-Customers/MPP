@@ -2071,23 +2071,6 @@ BEGIN
                          @level2type = N'COLUMN', @level2name = N'DieNumber';
     END
 
-    IF COL_LENGTH(N'[Lots].[Lot]', N'CavityNumber') IS NOT NULL
-    BEGIN
-        IF EXISTS (SELECT 1 FROM sys.extended_properties
-                   WHERE major_id = OBJECT_ID(N'[Lots].[Lot]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Lot]'), N'CavityNumber', 'ColumnId')
-                     AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Legacy as of v1.9 - superseded by ToolCavityId FK. Retained for cutover transition; scheduled for removal.',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Lot',
-                         @level2type = N'COLUMN', @level2name = N'CavityNumber';
-        ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Legacy as of v1.9 - superseded by ToolCavityId FK. Retained for cutover transition; scheduled for removal.',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Lot',
-                         @level2type = N'COLUMN', @level2name = N'CavityNumber';
-    END
-
     IF COL_LENGTH(N'[Lots].[Lot]', N'VendorLotNumber') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
@@ -5663,21 +5646,21 @@ BEGIN
                          @level2type = N'COLUMN', @level2name = N'ToolId';
     END
 
-    IF COL_LENGTH(N'[Tools].[ToolCavity]', N'CavityNumber') IS NOT NULL
+    IF COL_LENGTH(N'[Tools].[ToolCavity]', N'CavityCode') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
                    WHERE major_id = OBJECT_ID(N'[Tools].[ToolCavity]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Tools].[ToolCavity]'), N'CavityNumber', 'ColumnId')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Tools].[ToolCavity]'), N'CavityCode', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'1, 2, 3, ... up to the die''s cavity count',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Per-part cavity identifier: 1-4 lowercase letters (a-z). A 12-cavity family die casting four part numbers carries four cavities called a, one per part, which is how MPP names them (6MA EX 1 cavity a). Unique per (ToolId, ItemId) among non-deprecated rows via UQ_ToolCavity_ActiveToolItemCode. Immutable once saved: correct a mistake by scrapping the cavity and creating a new one. Replaced the die-wide integer ordinal in migration 0076.',
                          @level0type = N'SCHEMA', @level0name = N'Tools',
                          @level1type = N'TABLE',  @level1name = N'ToolCavity',
-                         @level2type = N'COLUMN', @level2name = N'CavityNumber';
+                         @level2type = N'COLUMN', @level2name = N'CavityCode';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'1, 2, 3, ... up to the die''s cavity count',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Per-part cavity identifier: 1-4 lowercase letters (a-z). A 12-cavity family die casting four part numbers carries four cavities called a, one per part, which is how MPP names them (6MA EX 1 cavity a). Unique per (ToolId, ItemId) among non-deprecated rows via UQ_ToolCavity_ActiveToolItemCode. Immutable once saved: correct a mistake by scrapping the cavity and creating a new one. Replaced the die-wide integer ordinal in migration 0076.',
                          @level0type = N'SCHEMA', @level0name = N'Tools',
                          @level1type = N'TABLE',  @level1name = N'ToolCavity',
-                         @level2type = N'COLUMN', @level2name = N'CavityNumber';
+                         @level2type = N'COLUMN', @level2name = N'CavityCode';
     END
 
     IF COL_LENGTH(N'[Tools].[ToolCavity]', N'StatusCodeId') IS NOT NULL
