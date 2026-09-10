@@ -54,8 +54,15 @@ INSERT INTO Tools.Tool (ToolTypeId, Code, Name, StatusCodeId, ShotCount, Created
 VALUES (@DieTypeId, N'SRC-DIE', N'Shot reading chain die', @ActiveTool, 0, @Now, 1);
 DECLARE @ToolId BIGINT = SCOPE_IDENTITY();
 
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 1, @ActiveCav, N'Cav A', @Now, 1), (@ToolId, 2, @ActiveCav, N'Cav B', @Now, 1);
+DECLARE @ClosedCav BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Closed');
+DECLARE @CavItemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+
+-- Cav C is CLOSED and never gets a basket -- the case that produced no row at
+-- all before v2.1, which is why an out-of-service cavity was invisible.
+INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, 1, @ActiveCav, N'Cav A', NULL,       @Now, 1),
+       (@ToolId, 2, @ActiveCav, N'Cav B', NULL,       @Now, 1),
+       (@ToolId, 3, @ClosedCav, N'Cav C', @CavItemId, @Now, 1);
 
 -- two presses: the second exists only to prove the watermark is press-scoped
 DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
@@ -251,6 +258,93 @@ DECLARE @Anchor INT = (SELECT COUNT(*) FROM Workorder.DieCastContribution
                        WHERE LotId = @LotB1 AND PieceDelta = 0 AND ShotCounterReading = 2000);
 EXEC test.Assert_RowCount @TestName=N'[SRC] zero-delta release still wrote the anchor row',
     @ExpectedCount=1, @ActualCount=@Anchor;
+GO
+
+-- =============================================
+-- Test 7: a CLOSED cavity with no basket still appears, carrying its status
+--         and the part it is configured to cut (0072). Before v2.1 the row
+--         source was Lots.Lot, so this cavity produced no row at all.
+-- =============================================
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SRC-DIE');
+DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
+DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'SRC-FIXTURE' ORDER BY Id DESC);
+
+CREATE TABLE #BD (
+    ToolCavityId BIGINT, CavityNumber INT, LotId BIGINT, LotName NVARCHAR(50),
+    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
+    CavityDescription NVARCHAR(500), CreditedThrough INT, NewShots INT,
+    CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50));
+INSERT INTO #BD EXEC Workorder.DieCast_GetShiftOutputBreakdown
+    @ToolId = @ToolId, @ShiftId = @ShiftId, @CounterReading = 2000, @CellLocationId = @PressA;
+
+DECLARE @CavCRows INT = (SELECT COUNT(*) FROM #BD WHERE CavityNumber = 3);
+EXEC test.Assert_RowCount @TestName=N'[SRC] basketless cavity still returns a row',
+    @ExpectedCount=1, @ActualCount=@CavCRows;
+
+DECLARE @CavCStatus NVARCHAR(30) = (SELECT CavityStatusCode FROM #BD WHERE CavityNumber = 3);
+EXEC test.Assert_IsEqual @TestName=N'[SRC] basketless cavity reports its Closed status',
+    @Expected=N'Closed', @Actual=@CavCStatus;
+
+DECLARE @CavCPart NVARCHAR(50) = (SELECT ConfiguredPartNumber FROM #BD WHERE CavityNumber = 3);
+EXEC test.Assert_IsNotNull @TestName=N'[SRC] basketless cavity still names its configured part',
+    @Value=@CavCPart;
+
+-- it proposes nothing (no basket to credit) but DOES report the shots that ran
+DECLARE @CavCProp NVARCHAR(20) = (SELECT CAST(ProposedGood AS NVARCHAR(20)) FROM #BD WHERE CavityNumber = 3);
+EXEC test.Assert_IsEqual @TestName=N'[SRC] basketless cavity proposes 0 good', @Expected=N'0', @Actual=@CavCProp;
+DECLARE @CavCShots NVARCHAR(20) = (SELECT CAST(NewShots AS NVARCHAR(20)) FROM #BD WHERE CavityNumber = 3);
+EXEC test.Assert_IsEqual @TestName=N'[SRC] basketless cavity still reports its shots', @Expected=N'2000', @Actual=@CavCShots;
+DROP TABLE #BD;
+GO
+
+-- =============================================
+-- Test 8: a basket released EARLIER THIS SHIFT still accepts scrap, because
+--         MPP records scrap once, at end of shift, from a paper form.
+-- =============================================
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SRC-DIE');
+DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
+DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'SRC-FIXTURE' ORDER BY Id DESC);
+DECLARE @LotA1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'SRC-A1');
+DECLARE @Defect BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+
+DECLARE @ScrapJson NVARCHAR(MAX) =
+    N'[{"lotId":' + CAST(@LotA1 AS NVARCHAR(20)) + N',"pieceDelta":0,"scrapLines":[{"defectCodeId":'
+  + CAST(@Defect AS NVARCHAR(20)) + N',"quantity":7}]}]';
+CREATE TABLE #R7 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R7 EXEC Workorder.DieCastShiftOutput_Record
+    @ShiftId = @ShiftId, @ToolId = @ToolId, @LinesJson = @ScrapJson,
+    @AppUserId = 1, @CounterReading = 2000, @CellLocationId = @PressA;
+DECLARE @S7 NVARCHAR(1) = CAST((SELECT Status FROM #R7) AS NVARCHAR(1));
+DECLARE @M7 NVARCHAR(500) = (SELECT Message FROM #R7);
+DROP TABLE #R7;
+EXEC test.Assert_IsEqual @TestName=N'[SRC] closed basket accepts scrap at shift end', @Expected=N'1', @Actual=@S7;
+
+DECLARE @Rej INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @LotA1 AND Quantity = 7);
+EXEC test.Assert_RowCount @TestName=N'[SRC] the scrap actually landed on the closed basket',
+    @ExpectedCount=1, @ActualCount=@Rej;
+GO
+
+-- =============================================
+-- Test 9: ...but a closed basket is SETTLED -- it may never take more pieces.
+-- =============================================
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SRC-DIE');
+DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
+DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'SRC-FIXTURE' ORDER BY Id DESC);
+DECLARE @LotA1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'SRC-A1');
+DECLARE @BeforePc NVARCHAR(20) = (SELECT CAST(PieceCount AS NVARCHAR(20)) FROM Lots.Lot WHERE Id = @LotA1);
+
+DECLARE @PieceJson NVARCHAR(MAX) = N'[{"lotId":' + CAST(@LotA1 AS NVARCHAR(20)) + N',"pieceDelta":99,"scrapLines":[]}]';
+CREATE TABLE #R8 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R8 EXEC Workorder.DieCastShiftOutput_Record
+    @ShiftId = @ShiftId, @ToolId = @ToolId, @LinesJson = @PieceJson,
+    @AppUserId = 1, @CounterReading = 2000, @CellLocationId = @PressA;
+DECLARE @S8 NVARCHAR(1) = CAST((SELECT Status FROM #R8) AS NVARCHAR(1));
+DROP TABLE #R8;
+EXEC test.Assert_IsEqual @TestName=N'[SRC] closed basket rejects more pieces', @Expected=N'0', @Actual=@S8;
+
+DECLARE @AfterPc NVARCHAR(20) = (SELECT CAST(PieceCount AS NVARCHAR(20)) FROM Lots.Lot WHERE Id = @LotA1);
+EXEC test.Assert_IsEqual @TestName=N'[SRC] rejected piece add left the closed basket alone',
+    @Expected=@BeforePc, @Actual=@AfterPc;
 GO
 
 -- =============================================

@@ -2,8 +2,23 @@
 -- Repeatable:  R__Workorder_DieCast_GetShiftOutputBreakdown.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-19
--- Version:     2.0
--- Changelog:   2.0 (2026-09-09) SHOT-READING CHAIN. @GrossShots becomes
+-- Version:     2.1
+-- Changelog:   2.1 (2026-09-09) CAVITY-DRIVEN. The row source was
+--              Lots.Lot, so a cavity with no LOT produced no row at all --
+--              which is exactly why a Closed or Scrapped cavity was invisible
+--              on the die cast screens even though Tools.ToolCavityStatusCode
+--              has modelled those states since migration 0010. Rows now come
+--              FROM Tools.ToolCavity with the lots LEFT JOINed, so every
+--              physical cavity of the die appears every time.
+--              A cavity that rolled its basket mid-shift still yields TWO rows
+--              (the closed basket and its successor); a cavity with no basket
+--              yields one row with NULL lot columns, its status, and the part
+--              it is configured to cut (Tools.ToolCavity.ItemId, 0072) -- so
+--              the operator can record its scrap and the screen can roll
+--              production up per part the way sheet DCFM-2077 does.
+--              New trailing columns CavityStatusCode + ConfiguredItemId +
+--              ConfiguredPartNumber (APPENDED LAST).
+--              2.0 (2026-09-09) SHOT-READING CHAIN. @GrossShots becomes
 --              @CounterReading -- the operator now types the PRESS COUNTER
 --              READING, not an increment. The counter resets each shift, so
 --              every cavity carries a credited-through watermark starting at
@@ -106,12 +121,11 @@ BEGIN
         FROM Tools.ToolAssignment ta
         WHERE ta.ToolId = @ToolId AND ta.ReleasedAt IS NULL
         ORDER BY ta.AssignedAt DESC;
-    DECLARE @ShiftStart DATETIME2(3) = (SELECT ActualStart FROM Oee.Shift WHERE Id = @ShiftId);
-    DECLARE @ShiftEnd   DATETIME2(3) = (SELECT ISNULL(ActualEnd, SYSUTCDATETIME()) FROM Oee.Shift WHERE Id = @ShiftId);
 
-    -- All lots for this tool that were open at any point during the shift window: currently Open,
-    -- OR released/closed with a contribution recorded in the shift window.
-    ;WITH Lots AS (
+    -- Lots that matter this shift: currently Open, or closed but credited in
+    -- this shift (those stay visible so their scrap can still be entered at
+    -- shift end -- scrap is recorded once, at the end, on a paper form).
+    ;WITH Relevant AS (
         SELECT l.Id AS LotId, l.LotName, l.ToolCavityId, l.ItemId, l.PieceCount, l.MaxPieceCount,
                CASE WHEN sc.Code = N'Open' THEN 1 ELSE 0 END AS IsOpen
         FROM Lots.Lot l
@@ -126,42 +140,49 @@ BEGIN
         FROM Workorder.DieCastContribution c WHERE c.ShiftId = @ShiftId GROUP BY c.LotId
     )
     SELECT
-        lo.ToolCavityId,
+        tc.Id AS ToolCavityId,
         tc.CavityNumber,
-        lo.LotId, lo.LotName, lo.IsOpen,
+        lo.LotId, lo.LotName,
+        CAST(ISNULL(lo.IsOpen, 0) AS BIT) AS IsOpen,
         ISNULL(p.PriorGood, 0) AS PriorGoodThisShift,
-        -- proposed good (v1.3, ADDITIVE): a closed lot keeps what it already recorded this
-        -- shift; an open lot gets the entered shot count verbatim -- @GrossShots is the
-        -- increment SINCE THE OPERATOR'S LAST ENTRY, die-wide, one part per cavity per shot,
-        -- so nothing is apportioned and no prior claim is subtracted. Floor at 0 is a
-        -- defensive guard only (the write proc rejects a negative gross).
-        -- v2.0: an open basket is credited (reading - its cavity watermark);
-        -- a basket already closed this shift keeps what it was credited and is
-        -- NOT re-credited. Floored at 0 -- the write proc rejects a reading
-        -- behind the die watermark outright.
-        CASE WHEN lo.IsOpen = 0 THEN ISNULL(p.PriorGood, 0)
+        -- v2.0: an open basket is credited (reading - its CAVITY watermark). A
+        -- basket already closed this shift keeps what it was credited and is
+        -- NOT re-credited. A cavity with no basket proposes nothing -- its
+        -- shots show as NewShots below, for the operator to record as scrap.
+        CASE WHEN lo.LotId IS NULL   THEN 0
+             WHEN lo.IsOpen = 0      THEN ISNULL(p.PriorGood, 0)
              ELSE CASE WHEN ISNULL(@CounterReading, 0)
-                          - Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId) < 0
+                          - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId) < 0
                        THEN 0
                        ELSE ISNULL(@CounterReading, 0)
-                          - Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId)
+                          - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId)
                   END
         END AS ProposedGood,
-        CASE WHEN lo.MaxPieceCount IS NULL THEN 2147483647 ELSE lo.MaxPieceCount - lo.PieceCount END AS MaxHeadroom,
+        CASE WHEN lo.LotId IS NULL        THEN 0
+             WHEN lo.MaxPieceCount IS NULL THEN 2147483647
+             ELSE lo.MaxPieceCount - lo.PieceCount END AS MaxHeadroom,
         lo.ItemId AS ItemId,
         tc.Description AS CavityDescription,
-        -- APPENDED LAST (v2.0): what the operator sees as context, so they can
-        -- see the system already did the subtraction and never do it themselves.
-        Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId) AS CreditedThrough,
+        -- APPENDED (v2.0): context, so the operator can see the system already
+        -- did the subtraction and never does it themselves.
+        Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId) AS CreditedThrough,
         CASE WHEN ISNULL(@CounterReading, 0)
-                    - Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId) < 0
+                    - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId) < 0
              THEN 0
              ELSE ISNULL(@CounterReading, 0)
-                    - Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId)
-        END AS NewShots
-    FROM Lots lo
-    INNER JOIN Tools.ToolCavity tc ON tc.Id = lo.ToolCavityId
-    LEFT JOIN Prior p ON p.LotId = lo.LotId
-    ORDER BY tc.CavityNumber, lo.IsOpen DESC;
+                    - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId)
+        END AS NewShots,
+        -- APPENDED (v2.1): a cavity with no basket still has a state and a part.
+        csc.Code       AS CavityStatusCode,
+        tc.ItemId      AS ConfiguredItemId,
+        ci.PartNumber  AS ConfiguredPartNumber
+    FROM Tools.ToolCavity tc
+    INNER JOIN Tools.ToolCavityStatusCode csc ON csc.Id = tc.StatusCodeId
+    LEFT  JOIN Relevant  lo ON lo.ToolCavityId = tc.Id
+    LEFT  JOIN Prior     p  ON p.LotId = lo.LotId
+    LEFT  JOIN Parts.Item ci ON ci.Id = tc.ItemId
+    WHERE tc.ToolId = @ToolId
+      AND tc.DeprecatedAt IS NULL
+    ORDER BY tc.CavityNumber, ISNULL(lo.IsOpen, 0) DESC, lo.LotId;
 END;
 GO

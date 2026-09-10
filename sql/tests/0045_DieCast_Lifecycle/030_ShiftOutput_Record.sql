@@ -139,9 +139,11 @@ END
 DECLARE @B TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
-    -- v2.0 shot-reading chain appended CreditedThrough + NewShots. INSERT-EXEC
-    -- needs an exact column-count match, so the shape must track the proc.
-    CreditedThrough INT, NewShots INT);
+    -- v2.0 appended CreditedThrough + NewShots; v2.1 appended the cavity's own
+    -- state and configured part. INSERT-EXEC needs an exact column-count
+    -- match, so the shape must track the proc.
+    CreditedThrough INT, NewShots INT,
+    CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50));
 INSERT INTO @B EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=100;
 
 DECLARE @rowCount NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @B);
@@ -299,9 +301,11 @@ IF @LotB IS NULL
 DECLARE @B2 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
-    -- v2.0 shot-reading chain appended CreditedThrough + NewShots. INSERT-EXEC
-    -- needs an exact column-count match, so the shape must track the proc.
-    CreditedThrough INT, NewShots INT);
+    -- v2.0 appended CreditedThrough + NewShots; v2.1 appended the cavity's own
+    -- state and configured part. INSERT-EXEC needs an exact column-count
+    -- match, so the shape must track the proc.
+    CreditedThrough INT, NewShots INT,
+    CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50));
 INSERT INTO @B2 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=100;
 
 -- scoped to @Cavity2 -- the tool-wide result also includes @Lot's own
@@ -333,9 +337,11 @@ EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood=100 (entered 
 DECLARE @B3 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
-    -- v2.0 shot-reading chain appended CreditedThrough + NewShots. INSERT-EXEC
-    -- needs an exact column-count match, so the shape must track the proc.
-    CreditedThrough INT, NewShots INT);
+    -- v2.0 appended CreditedThrough + NewShots; v2.1 appended the cavity's own
+    -- state and configured part. INSERT-EXEC needs an exact column-count
+    -- match, so the shape must track the proc.
+    CreditedThrough INT, NewShots INT,
+    CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50));
 INSERT INTO @B3 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=30;
 DECLARE @bProp30 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B3 WHERE LotId=@LotB);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] entry (30) below lot A''s prior claim (40) still proposes 30, not 0', @Expected=N'30', @Actual=@bProp30;
@@ -348,9 +354,11 @@ EXEC test.Assert_IsEqual @TestName=N'[MultiLot] entry (30) below the lot''s OWN 
 DECLARE @B4 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
-    -- v2.0 shot-reading chain appended CreditedThrough + NewShots. INSERT-EXEC
-    -- needs an exact column-count match, so the shape must track the proc.
-    CreditedThrough INT, NewShots INT);
+    -- v2.0 appended CreditedThrough + NewShots; v2.1 appended the cavity's own
+    -- state and configured part. INSERT-EXEC needs an exact column-count
+    -- match, so the shape must track the proc.
+    CreditedThrough INT, NewShots INT,
+    CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50));
 INSERT INTO @B4 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=5;
 DECLARE @bProp5 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B4 WHERE LotId=@LotB);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] small entry (5) against a large prior claim proposes 5, not 0', @Expected=N'5', @Actual=@bProp5;

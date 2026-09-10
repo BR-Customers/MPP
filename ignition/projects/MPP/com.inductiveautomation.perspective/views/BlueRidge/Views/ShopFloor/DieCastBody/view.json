@@ -1334,6 +1334,46 @@
                     "type": "ia.display.flex-repeater"
                   },
                   {
+                    "meta": {
+                      "name": "PartSubtotalsLabel"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.breakdown}) \u003e 0"
+                          }
+                        }
+                      },
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.breakdown"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\treturn BlueRidge.Workorder.DieCast.partSubtotalsText(value)"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub",
+                        "paddingTop": "6px",
+                        "borderTop": "1px solid var(--mpp-border-subtle)"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
                     "children": [
                       {
                         "events": {
@@ -1948,7 +1988,7 @@
         {
           "name": "computeBreakdown",
           "params": [],
-          "script": "\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\ttoolId \u003d tool.get(\"ToolId\")\n\tif toolId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No die mounted\", \"Mount a tool at this cell before recording shift output.\", \"warning\")\n\t\treturn\n\tshiftId \u003d self.view.custom.selectedShiftId\n\tif shiftId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Select a shift\", \"Pick the shift this output is reported against.\", \"warning\")\n\t\treturn\n\tgross \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.counterReading)\n\tif gross is None:\n\t\tBlueRidge.Common.Notify.toast(\"Enter the counter reading\", \"Type the press counter reading before computing.\", \"warning\")\n\t\treturn\n\trows \u003d BlueRidge.Workorder.DieCast.getShiftOutputBreakdown(toolId, shiftId, gross, cell.get(\"locationId\"))\n\t# backlog 2.4: operators only need the baskets they can still add to -- a\n\t# basket released mid-shift is reference-only noise here.\n\trows \u003d BlueRidge.Workorder.DieCast.openRowsOnly(rows)\n\t# Blank first so the row sub-views REMOUNT: params.proposedGood\u0027s onChange is\n\t# what clears a row\u0027s scrap lines, and it only fires on a CHANGE -- so a\n\t# re-Compute at the same gross would otherwise keep the previous scrap.\n\tself.view.custom.breakdown \u003d []\n\tself.view.custom.breakdown \u003d rows\n\tself.view.custom.breakdownEntries \u003d {}\n\tif not rows:\n\t\tBlueRidge.Common.Notify.toast(\"No open baskets\", \"This die has no open baskets to record against.\", \"warning\")"
+          "script": "\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\ttoolId \u003d tool.get(\"ToolId\")\n\tif toolId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No die mounted\", \"Mount a tool at this cell before recording shift output.\", \"warning\")\n\t\treturn\n\tshiftId \u003d self.view.custom.selectedShiftId\n\tif shiftId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Select a shift\", \"Pick the shift this output is reported against.\", \"warning\")\n\t\treturn\n\tgross \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.counterReading)\n\tif gross is None:\n\t\tBlueRidge.Common.Notify.toast(\"Enter the counter reading\", \"Type the press counter reading before computing.\", \"warning\")\n\t\treturn\n\trows \u003d BlueRidge.Workorder.DieCast.getShiftOutputBreakdown(toolId, shiftId, gross, cell.get(\"locationId\"))\n\t# 2026-09-09: NO filtering. A basket released mid-shift must stay on screen\n\t# so its scrap can be entered at shift end, and proc v2.1 also returns\n\t# cavities with no basket so an out-of-service one is visible.\n\t# Blank first so the row sub-views REMOUNT: params.proposedGood\u0027s onChange is\n\t# what clears a row\u0027s scrap lines, and it only fires on a CHANGE -- so a\n\t# re-Compute at the same gross would otherwise keep the previous scrap.\n\tself.view.custom.breakdown \u003d []\n\tself.view.custom.breakdown \u003d rows\n\tself.view.custom.breakdownEntries \u003d {}\n\tif not rows:\n\t\tBlueRidge.Common.Notify.toast(\"No cavities\", \"This die has no cavities configured.\", \"warning\")"
         },
         {
           "name": "submitShiftOutput",

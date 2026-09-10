@@ -17,7 +17,12 @@
     "priorGoodThisShift": 0,
     "proposedGood": 0,
     "maxHeadroom": 2147483647,
-    "defectOptions": []
+    "defectOptions": [],
+    "creditedThrough": 0,
+    "newShots": 0,
+    "cavityStatusCode": "Active",
+    "configuredPart": "",
+    "hasBasket": true
   },
   "propConfig": {
     "params.toolCavityId": {
@@ -59,6 +64,21 @@
         "enabled": true,
         "script": "\t# A fresh proposal replaces the row wholesale: the operator\u0027s scrap lines and\n\t# the derived Good both belong to the PREVIOUS proposal and must not survive.\n\tval \u003d self.view.params.proposedGood\n\tself.view.custom.scrapLines \u003d []\n\tself.view.custom.scrapTotal \u003d 0\n\tself.view.custom.good \u003d str(val) if val is not None else \"\"\n\tself.view.custom.overHeadroom \u003d False"
       }
+    },
+    "params.creditedThrough": {
+      "paramDirection": "input"
+    },
+    "params.newShots": {
+      "paramDirection": "input"
+    },
+    "params.cavityStatusCode": {
+      "paramDirection": "input"
+    },
+    "params.configuredPart": {
+      "paramDirection": "input"
+    },
+    "params.hasBasket": {
+      "paramDirection": "input"
     }
   },
   "props": {
@@ -131,9 +151,9 @@
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "property",
+                  "type": "expr",
                   "config": {
-                    "path": "view.params.lotName"
+                    "expression": "if({view.params.hasBasket}, {view.params.lotName}, if({view.params.configuredPart} \u003d \"\", \"no basket\", \"no basket  -  \" + {view.params.configuredPart}))"
                   }
                 }
               }
@@ -178,6 +198,40 @@
                 "classes": "pf-kpi-sub"
               }
             }
+          },
+          {
+            "meta": {
+              "name": "CavityStateBadge"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.cavityStatusCode} !\u003d \"Active\""
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.cavityStatusCode"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "color": "var(--mpp-state-bad-fg)",
+                "fontWeight": 600
+              }
+            },
+            "type": "ia.display.label"
           }
         ]
       },
@@ -190,16 +244,6 @@
           "basis": "0",
           "grow": 1,
           "shrink": 1
-        },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.params.isOpen"
-              }
-            }
-          }
         },
         "props": {
           "alignItems": "stretch",
@@ -274,7 +318,7 @@
                   "name": "ReferenceLabel"
                 },
                 "position": {
-                  "basis": "150px",
+                  "basis": "210px",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -282,7 +326,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "\"prior \" + toStr({view.params.priorGoodThisShift}) + if({view.params.maxHeadroom} \u003c 2147483647, \"  ·  headroom \" + toStr({view.params.maxHeadroom}), \"\")"
+                        "expression": "\"credited thru \" + toStr({view.params.creditedThrough}) + \"  -  +\" + toStr({view.params.newShots}) + \" shots\""
                       }
                     }
                   }

@@ -2,7 +2,16 @@
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-19
--- Version:     2.0
+-- Version:     2.1
+-- Change:      v2.1 -- SCRAP ON A BASKET CLOSED EARLIER THIS SHIFT. MPP
+--              records scrap ONCE, at end of shift, from a paper form -- so a
+--              basket released mid-shift still needs its scrap entered hours
+--              after it closed. The guard required every submitted lot to be
+--              'Open', which made that impossible. It now accepts a lot that
+--              is Open OR closed-with-a-contribution-in-this-shift (the same
+--              set DieCast_GetShiftOutputBreakdown returns), and a separate
+--              guard rejects adding PIECES to an already-closed basket -- that
+--              one is settled, only its scrap is still outstanding.
 -- Change:      v2.0 -- SHOT-READING CHAIN (spec 2026-09-09). @GrossShots
 --              becomes @CounterReading: the operator types the PRESS COUNTER
 --              READING, not an increment. Renamed rather than reinterpreted.
@@ -122,11 +131,25 @@ BEGIN
         SELECT j.lotId, j.pieceDelta, j.scrapLines
         FROM OPENJSON(@LinesJson) WITH (lotId BIGINT N'$.lotId', pieceDelta INT N'$.pieceDelta', scrapLines NVARCHAR(MAX) N'$.scrapLines' AS JSON) j;
 
-        -- every line lot must be Open and on this tool
-        IF EXISTS (SELECT 1 FROM @Lines ln LEFT JOIN Lots.Lot l ON l.Id=ln.LotId
+        -- v2.1: every line lot must be on this tool, and either Open or a
+        -- basket closed earlier THIS shift -- the latter so its scrap can still
+        -- be entered at shift end. Same set the breakdown read proc returns.
+        IF EXISTS (SELECT 1 FROM @Lines ln
+                   LEFT JOIN Lots.Lot l ON l.Id=ln.LotId
                    LEFT JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId
-                   WHERE l.Id IS NULL OR sc.Code <> N'Open' OR l.ToolId <> @ToolId)
-        BEGIN SET @Message=N'A submitted lot is not an open basket on this tool.'; GOTO Fail; END
+                   WHERE l.Id IS NULL
+                      OR l.ToolId <> @ToolId
+                      OR ( sc.Code <> N'Open'
+                           AND NOT EXISTS (SELECT 1 FROM Workorder.DieCastContribution c
+                                           WHERE c.LotId = l.Id AND c.ShiftId = @ShiftId) ))
+        BEGIN SET @Message=N'A submitted lot is not a basket on this tool for this shift.'; GOTO Fail; END
+
+        -- ...but a closed basket is SETTLED. It may take scrap, never pieces.
+        IF EXISTS (SELECT 1 FROM @Lines ln
+                   INNER JOIN Lots.Lot l ON l.Id=ln.LotId
+                   INNER JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId
+                   WHERE sc.Code <> N'Open' AND ISNULL(ln.PieceDelta, 0) > 0)
+        BEGIN SET @Message=N'A basket released earlier this shift cannot take more pieces; enter its scrap only.'; GOTO Fail; END
         IF EXISTS (SELECT 1 FROM @Lines WHERE PieceDelta < 0) BEGIN SET @Message=N'pieceDelta cannot be negative.'; GOTO Fail; END
 
         -- every scrap/shot-loss defectCodeId must exist and be active -- rejects

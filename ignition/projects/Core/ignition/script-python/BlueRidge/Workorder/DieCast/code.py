@@ -115,15 +115,18 @@ def mapBreakdownInstances(rows):
        arg hits the QualifiedValue[] array bug, feedback_ignition_runscript_
        list_arg_qv_array). Returns list[dict] ([] on empty/None).
 
-       Released/closed lots are already filtered out upstream by the view's
-       computeBreakdown (backlog 2.4) -- openRowsOnly below is the same filter,
-       re-applied here so a stray closed row can never reach the row view."""
+       EVERY ROW IS KEPT (2026-09-09), reversing backlog 2.4's "a basket
+       released mid-shift is reference-only noise". MPP records scrap ONCE, at
+       end of shift, from a paper form -- so a basket closed at 10am still
+       needs its scrap entered at 3pm, and a row that is not on screen cannot
+       receive it. Proc v2.1 is cavity-driven, so the list now also carries
+       cavities with NO basket at all (Closed / Scrapped, or simply unopened);
+       those still report the shots that ran and the part they are configured
+       to cut, so their scrap is recordable too."""
     rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
     out = []
     for r in rows:
         r = r or {}
-        if not r.get("IsOpen"):
-            continue
         num = r.get("CavityNumber")
         desc = r.get("CavityDescription") or ""
         out.append({
@@ -139,15 +142,74 @@ def mapBreakdownInstances(rows):
             "priorGoodThisShift": r.get("PriorGoodThisShift") or 0,
             "proposedGood":       r.get("ProposedGood") or 0,
             "maxHeadroom":        r.get("MaxHeadroom") or 0,
+            # v2.0 reading chain -- context so the operator never subtracts
+            "creditedThrough":    r.get("CreditedThrough") or 0,
+            "newShots":           r.get("NewShots") or 0,
+            # v2.1 cavity-driven
+            "cavityStatusCode":   r.get("CavityStatusCode") or "Active",
+            "configuredPart":     r.get("ConfiguredPartNumber") or "",
+            "hasBasket":          r.get("LotId") is not None,
         })
     return out
+
+
+def partSubtotals(rows):
+    """Per-part totals over a RAW DieCast_GetShiftOutputBreakdown result
+       (PascalCase columns, not the mapped row instances).
+
+       Production sheet DCFM-2077 groups baskets BY PART, with a Sub-Total Qty
+       per part and a Grand Total -- because one family die casts several part
+       numbers at once and that is the shape the operator reconciles against.
+       The screen was organised purely by cavity, so there was nothing to
+       reconcile with. Grouping key is the cavity's CONFIGURED part
+       (Tools.ToolCavity.ItemId, 0072), which is why a cavity with no basket
+       still contributes a group.
+
+       Returns list[dict] {part, cavities, good}, in first-seen cavity order.
+    """
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    acc = {}
+    order = []
+    for r in rows:
+        r = r or {}
+        part = ("%s" % (r.get("ConfiguredPartNumber") or "")).strip()
+        if not part:
+            part = "(no part mapped)"
+        if part not in acc:
+            acc[part] = [0, 0]
+            order.append(part)
+        acc[part][0] += 1
+        acc[part][1] += int(r.get("ProposedGood") or 0)
+    return [{"part": p, "cavities": acc[p][0], "good": acc[p][1]} for p in order]
+
+
+def partSubtotalsText(rows):
+    """One-line rendering of partSubtotals for the shift-output panel. Empty
+       string when there is nothing computed, so the label hides itself."""
+    parts = partSubtotals(rows)
+    if not parts:
+        return ""
+    bits = []
+    for p in parts:
+        bits.append("%s: %d pc (%d cav)" % (p["part"], p["good"], p["cavities"]))
+    total = 0
+    for p in parts:
+        total += p["good"]
+    return "   |   ".join(bits) + "         GRAND TOTAL: %d pc" % total
 
 
 def openRowsOnly(rows):
     """The still-OPEN baskets from a DieCast_GetShiftOutputBreakdown result.
 
-       backlog 2.4: operators recording shift output only need the baskets they
-       can still add to; a basket released mid-shift is reference-only noise.
+       NO LONGER USED BY THE SHIFT-OUTPUT SCREEN (2026-09-09). Kept because the
+       filter itself is still a correct, useful predicate, but the screen must
+       now show closed baskets so their scrap can be entered at shift end, and
+       basketless cavities so an out-of-service cavity is visible at all.
+       Reintroducing this call would silently re-hide both.
+
+       backlog 2.4 (superseded): operators recording shift output only need the
+       baskets they can still add to; a basket released mid-shift is
+       reference-only noise.
 
        Filtered HERE (read side) rather than in the proc on purpose: the proc's
        documented contract is 'one row per LOT open at ANY point during the
