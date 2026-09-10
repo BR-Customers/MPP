@@ -4,8 +4,7 @@
   "restricted": false,
   "overridable": true,
   "files": [
-    "view.json",
-    "thumbnail.png"
+    "view.json"
   ],
   "attributes": {
     "lastModificationSignature": "72e623a8d061bc1686f0a29da4dd7c7861804c8fd4c63761089fff164a09d5ff",
