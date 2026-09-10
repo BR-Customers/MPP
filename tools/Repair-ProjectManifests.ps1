@@ -113,11 +113,26 @@ foreach ($m in $manifests) {
     $absent   = @($declared | Where-Object { -not (Test-Path (Join-Path $dir $_)) })
 
     if ($absent.Count -gt 0) {
+        # WHICH DIRECTION THE REPAIR GOES DEPENDS ENTIRELY ON WHAT IS MISSING.
+        #   thumbnail.png  -- a Gateway-regenerated PREVIEW. Dropping it from
+        #                     the manifest loses nothing; the Designer makes a
+        #                     new one and re-declares it on the next save.
+        #   anything else  -- the resource's actual CONTENT. view.json, code.py,
+        #                     query.sql ARE the resource. Dropping one from the
+        #                     manifest does not repair anything; it deletes the
+        #                     view/script/query from the project. The file has
+        #                     to be PUT BACK, from the repo or the export zip.
+        # Getting this backwards turns a one-file restore into data loss, so
+        # -Fix refuses to touch the second kind.
+        $regenerable = @($absent | Where-Object { $_ -eq 'thumbnail.png' })
+        $content     = @($absent | Where-Object { $_ -ne 'thumbnail.png' })
         $lying += [pscustomobject]@{
-            Manifest = $m.FullName
-            Dir      = $dir
-            Missing  = ($absent -join ', ')
-            Keep     = $present
+            Manifest    = $m.FullName
+            Dir         = $dir
+            Missing     = ($absent -join ', ')
+            Keep        = $present
+            Repairable  = ($content.Count -eq 0)
+            ContentGone = ($content -join ', ')
         }
     }
 }
@@ -149,18 +164,37 @@ $allDirs | ForEach-Object {
 Write-Host ("  {0} manifest(s) scanned" -f $manifests.Count)
 Write-Host ''
 
+$repairable = @($lying | Where-Object { $_.Repairable })
+$lost       = @($lying | Where-Object { -not $_.Repairable })
+
 if ($lying.Count -gt 0) {
     Write-Host ("  {0} MANIFEST(S) NAME A FILE THAT IS NOT ON DISK" -f $lying.Count) -ForegroundColor Red
     Write-Host '  ^ this is what stops the Designer opening the project' -ForegroundColor Red
-    $lying | Group-Object { Split-Path (Split-Path $_.Dir -Parent) -Leaf } | Out-Null
-    $lying | Select-Object -First 8 | ForEach-Object {
-        Write-Host ("     {0}" -f $_.Manifest.Replace($Path, '')) -ForegroundColor DarkYellow
-        Write-Host ("        missing: {0}" -f $_.Missing) -ForegroundColor DarkGray
-    }
-    if ($lying.Count -gt 8) { Write-Host ("     ... and {0} more" -f ($lying.Count - 8)) -ForegroundColor DarkYellow }
-} else {
-    Write-Host '  no lying manifests' -ForegroundColor Green
+    Write-Host ''
 }
+
+if ($lost.Count -gt 0) {
+    Write-Host ("  {0} of them are MISSING CONTENT -- the resource itself is gone:" -f $lost.Count) -ForegroundColor Red
+    $lost | ForEach-Object {
+        Write-Host ("     {0}" -f $_.Manifest.Replace($Path, '')) -ForegroundColor Red
+        Write-Host ("        MISSING: {0}   <-- restore this file; do NOT drop it" -f $_.ContentGone) -ForegroundColor Red
+    }
+    Write-Host ''
+    Write-Host '  Copy each named file back from the repo (or the export zip) into its' -ForegroundColor Cyan
+    Write-Host '  folder. -Fix will NOT touch these: dropping content from a manifest' -ForegroundColor Cyan
+    Write-Host '  deletes the resource from the project instead of repairing it.' -ForegroundColor Cyan
+    Write-Host ''
+}
+
+if ($repairable.Count -gt 0) {
+    Write-Host ("  {0} are a stale thumbnail.png reference (safe to drop):" -f $repairable.Count) -ForegroundColor DarkYellow
+    $repairable | Select-Object -First 8 | ForEach-Object {
+        Write-Host ("     {0}" -f $_.Manifest.Replace($Path, '')) -ForegroundColor DarkYellow
+    }
+    if ($repairable.Count -gt 8) { Write-Host ("     ... and {0} more" -f ($repairable.Count - 8)) -ForegroundColor DarkYellow }
+}
+
+if ($lying.Count -eq 0) { Write-Host '  no lying manifests' -ForegroundColor Green }
 
 if ($orphanDirs.Count -gt 0) {
     Write-Host ''
@@ -192,7 +226,7 @@ if (-not $Fix) {
 
 # ---- repair ---------------------------------------------------------------
 $fixed = 0
-foreach ($item in $lying) {
+foreach ($item in $repairable) {
     $raw = Get-Content $item.Manifest -Raw
     $obj = $raw | ConvertFrom-Json
 
@@ -210,6 +244,9 @@ foreach ($item in $lying) {
 
 Write-Host ''
 Write-Host ("  REPAIRED {0} manifest(s)." -f $fixed) -ForegroundColor Green
+if ($lost.Count -gt 0) {
+    Write-Host ("  LEFT ALONE {0} manifest(s) whose CONTENT is missing -- restore those files by hand." -f $lost.Count) -ForegroundColor Red
+}
 Write-Host ''
 Write-Host '  NEXT: restart the Ignition Gateway service, then open the Designer.' -ForegroundColor Cyan
 Write-Host '        A project scan is NOT enough -- the failed project tree is' -ForegroundColor DarkGray
