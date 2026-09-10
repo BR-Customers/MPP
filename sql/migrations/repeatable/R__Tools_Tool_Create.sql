@@ -2,7 +2,7 @@
 -- Procedure:   Tools.Tool_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-22
--- Version:     1.0
+-- Version:     1.1  (2026-09-10 -- operator-facing 'Code' reads 'Asset Number')
 --
 -- Description:
 --   Creates a new Tool row. Validates ToolTypeId + StatusCodeId FKs,
@@ -129,7 +129,7 @@ BEGIN
         -- Code unique across ALL Tools (deprecated included — UQ constraint is total)
         IF EXISTS (SELECT 1 FROM Tools.Tool WHERE Code = @Code)
         BEGIN
-            SET @Message = N'A Tool with this Code already exists.';
+            SET @Message = N'A Tool with this Asset Number already exists.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Tool',
                 @EntityId = NULL, @LogEventTypeCode = N'Created',

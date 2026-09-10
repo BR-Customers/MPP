@@ -796,7 +796,7 @@
                               "style": {
                                 "classes": "field-label"
                               },
-                              "text": "Code"
+                              "text": "Asset Number"
                             },
                             "type": "ia.display.label"
                           },

@@ -102,6 +102,8 @@
 --                      drop to NULL and are counted, mirroring the DieRank and
 --                      attribute-definition guards. Cavity part number added to
 --                      the Old / New audit JSON.
+--                      Operator-facing messages call Code the Asset
+--                      Number, matching the relabelled form field.
 -- =============================================
 CREATE OR ALTER PROCEDURE Tools.Tool_Duplicate
     @SourceToolId BIGINT,
@@ -163,7 +165,7 @@ BEGIN
 
         IF @Code = N'' OR @Name = N''
         BEGIN
-            SET @Message = N'Code and Name cannot be blank.';
+            SET @Message = N'Asset Number and Name cannot be blank.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Tool',
                 @EntityId = @SourceToolId, @LogEventTypeCode = N'Created',
@@ -203,7 +205,7 @@ BEGIN
         -- a total constraint). Mirrors Tools.Tool_Create.
         IF EXISTS (SELECT 1 FROM Tools.Tool WHERE Code = @Code)
         BEGIN
-            SET @Message = N'A Tool with this Code already exists.';
+            SET @Message = N'A Tool with this Asset Number already exists.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Tool',
                 @EntityId = @SourceToolId, @LogEventTypeCode = N'Created',

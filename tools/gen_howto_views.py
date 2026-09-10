@@ -1247,7 +1247,7 @@ def tools_source():
     parts.append(_step(2, 'Set its identity',
         'Change %s, %s, and %s. %s and %s are read-only, set when the die '
         'or tool was first added.'
-        % (_b('Name'), _b('Die Rank'), _b('Status'), _b('Code'),
+        % (_b('Name'), _b('Die Rank'), _b('Status'), _b('Asset Number'),
            _b('Tool Type'))))
 
     parts.append(_step(3, 'Description', 'Update the %s field.'
@@ -1945,7 +1945,7 @@ def add_die_source():
 
     parts.append(_step(1, 'Fill it in',
         '%s and %s are required. %s defaults to B if you leave it alone.'
-        % (_b('Code'), _b('Name'), _b('Die Rank'))))
+        % (_b('Asset Number'), _b('Name'), _b('Die Rank'))))
 
     parts.append(_step(2, 'Create',
         'Press %s.' % _b('Create Die')))
@@ -1967,7 +1967,7 @@ def duplicate_die_source():
         'there.' % _b('Duplicate')))
 
     parts.append(_step(2, 'Name the copy',
-        'Enter a %s and %s for the new die.' % (_b('New Code'), _b('New Name'))))
+        'Enter a %s and %s for the new die.' % (_b('New Asset Number'), _b('New Name'))))
     parts.append(_note(
         'Die Rank, Shot Limit, cavities, attributes, and description all '
         'carry over from the source die &ndash; cavities copy exactly, '

@@ -249,7 +249,7 @@
                   "style": {
                     "classes": "field-label"
                   },
-                  "text": "New Code"
+                  "text": "New Asset Number"
                 },
                 "type": "ia.display.label"
               },
