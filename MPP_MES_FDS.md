@@ -111,7 +111,7 @@ This FDS describes how Blue Ridge Automation will implement the MES requirements
 | Flexware FRS v1.0 (3/15/2024) | Functional requirements (what the system needs to do) |
 | `MPP_MES_SUMMARY.docx` | System summary with scope flags and data model overview |
 | `MPP_MES_DATA_MODEL.docx` | Column-level data model specification v1.9 (8 schemas, ~73 tables — Location, Parts, Lots, Workorder, Quality, OEE, Tools, Audit) |
-| `MPP_MES_ERD.html` | Interactive ERD with scope badges |
+| `MPP_MES_ERD.html` | Interactive ERD generated from the live schema by SchemaGen (no scope badges — see `reference/MPP_Scope_Matrix.xlsx` for scope) |
 | `MPP_MES_USER_JOURNEYS.docx` | Narrative user journeys with validated assumptions |
 | `sql_best_practices_mes.md` | SQL design conventions guiding the schema |
 | `reference/MPP_Scope_Matrix.xlsx` | Scope authority |

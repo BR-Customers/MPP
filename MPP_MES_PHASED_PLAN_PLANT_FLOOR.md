@@ -1886,7 +1886,7 @@ See `MPP_MES_Open_Issues_Register.docx` v2.16 for full text and decision history
 | `MPP_MES_USER_JOURNEYS.docx` | v0.9 | Arc 2 narrative — this plan is the execution map for the Arc 2 journey |
 | `MPP_MES_Open_Issues_Register.docx` | v2.16 | Open items tracking (OI-XX, UJ-XX) |
 | `MPP_MES_SEEDING_REGISTRY.docx` | v1.0 | External-data items S-01..S-11 and their phase coupling |
-| `MPP_MES_ERD.html` | v1.9i (regen pending v1.9j+l) | Visual ERD — confirm FK linkages |
+| `MPP_MES_ERD.html` | Generated from `MPP_MES_Dev` (no doc version) | Visual ERD — confirm FK linkages |
 | `MPP_MES_PHASED_PLAN_CONFIG_TOOL.docx` | v1.7 | Arc 1 plan — predecessor and source of Cross-Cutting Concerns base + Stored Procedure Template |
 | `sql_best_practices_mes.md` | current | SQL conventions |
 | `sql_version_control_guide.md` | current | Migration + reset workflow |

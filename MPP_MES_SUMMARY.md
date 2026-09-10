@@ -372,7 +372,7 @@ The requirements are implementable. The 7-schema data model addresses the 15 arc
    - `Oee` — downtime events, reason codes, shift schedules, materialized OEE snapshots
    - `audit` — normalized log_event_type / log_entity_type code tables, three log types (operation, config, interface)
 3. **Created three deliverables:**
-   - `MPP_MES_ERD.html` — interactive ERD with 8 tabs (one per schema + master), table descriptions, pan/zoom, dark theme
+   - `MPP_MES_ERD.html` — interactive ERD generated from the live `MPP_MES_Dev` schema by SchemaGen: one tab per schema plus cross-schema overview/focus tabs, stored-procedure and table-dependency graphs, table/column documentation read from SQL Server extended properties, pan/zoom, SVG export, dark/light/print themes
    - `MPP_MES_DATA_MODEL.md` — full column-level specification for every table (DDL-ready)
    - `MPP_MES_SUMMARY.md` — this document
 4. **Read and analyzed all reference** (14 files — see findings below)
@@ -522,7 +522,7 @@ The Blue Ridge Automation **Functional Design Specification (FDS)** v0.2 working
 
 | Document | Purpose |
 |---|---|
-| `MPP_MES_ERD.html` | Interactive ERD with per-schema tabs, table descriptions, and pan/zoom diagrams |
+| `MPP_MES_ERD.html` | Interactive ERD generated from the live `MPP_MES_Dev` schema by SchemaGen — per-schema and cross-schema tabs, proc dependency graphs, DB-sourced documentation, pan/zoom |
 | `MPP_MES_DATA_MODEL.md` | Detailed data model reference — all tables, columns, types, and relationships |
 | `sql_best_practices_mes.md` | SQL design conventions and MES-specific patterns guiding the schema design |
 | `mpp_frs_md/` | Annotated FRS source documents (Flexware v1.0, 22 files) |

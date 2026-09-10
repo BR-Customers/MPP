@@ -560,7 +560,7 @@ The assumptions above don't just affect documentation — they gate screen desig
 |---|---|
 | `MPP_MES_SUMMARY.md` | Primary source for requirements, scope flags, and data model overview |
 | `MPP_MES_DATA_MODEL.md` | Column-level schema backing every table referenced in the narratives |
-| `MPP_MES_ERD.html` | Visual ERD with scope badges showing MVP/Future table status |
+| `MPP_MES_ERD.html` | Visual ERD generated from the live schema by SchemaGen (scope status lives in `reference/MPP_Scope_Matrix.xlsx`, not the ERD) |
 | `reference/5GO_AP4_Automation_Touchpoint_Agreement.md` | Plc handshake protocol for the serialized assembly line described in Arc 2 |
 | `reference/Excel Prod Sheets.xlsx` | Paper forms that Arc 2's screens replace |
 | `reference/MS1FM-*.xlsx` | Line-specific production sheets showing per-line data entry fields |
