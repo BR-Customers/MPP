@@ -80,6 +80,45 @@
 
 ---
 
+## 🔖 2026-09-09 (session 2) — Trim-press seed drift closed: the seed now matches the plant
+
+**Commit `aacf12f7` on `jacques/working`.** `sql/seeds/011_seed_locations_mpp_plant.sql` still created `TRIM1-P01..P03` and `TRIM2-P01..P03` (`LocationTypeDefinitionId 10` = `TrimPress`) plus the dedicated press terminal `TRIM1-P01-T1` as **active** Cell-tier equipment. Both live databases deprecated all seven on **2026-07-30** — MPP tracks trim at the **shop** level, not per press. The Site dump the generator reads is dated 2026-07-23, so it predates the decision and a freshly seeded database did not match the plant it exists to model.
+
+### Why it stopped being cosmetic
+
+`Oee.DowntimeScope_ListForTerminal` (added earlier the same day, `105c097b`) offers a per-machine downtime dropdown whenever an Area has **active** equipment cells beneath it, and the trim shop scope depends on `TRIM1` having none. On any DB built from the seed, trim got a **three-press machine dropdown instead of shop scope**. The drift had quietly become load-bearing.
+
+### The decision — seed them deprecated, not delete them
+
+Three options were on the table: drop the rows, seed them already-deprecated, or document and leave. **Seeded already-deprecated.** Prod and Dev both *carry* these rows, so deleting them would make a fresh DB diverge from the live tree in the other direction; a deprecated row also records that the presses existed and were retired, where a deleted one invites someone to re-add it. The proc filters `DeprecatedAt` at every level of its descendant walk, so trim collapses to shop scope with **no code change** — and if MPP ever runs trim per press again, clearing `DeprecatedAt` brings the dropdown back by itself.
+
+`011` is **generated**, so the fix lives in `sql/seeds/gen_locations_mpp.js` as a `RETIRED` set consulted by `loc()`. That is a deliberately **different axis** from the TSV's `Deprecated` column, which `skip()` reads as *"omit entirely"* — these rows must exist. `sql/scripts/reconcile_location_dev.sql` picks the change up from the same emitter (it only adds rows that are missing, so prod is a no-op). Regenerating produced exactly the 7 rows + header, which also confirms the committed seed was still in sync with its generator.
+
+### The test fallout was real, not incidental
+
+`Lots.Lot_Create` refuses a deprecated `@CurrentLocationId` (`R__Lots_Lot_Create.sql:128`), and `0024_PlantFloor_Movement_Trim` staged its fixtures at `TRIM1-P01` across **14 call sites in two files** — 29 assertions failed. Worth recording: **this churn was unavoidable either way.** Deleting the rows would have broken the same 14 sites, because both options end with `TRIM1-P01` unusable as a LOT location. The fixtures were modelling a configuration that can no longer exist; live trim LOTs sit at `TRIM1` itself (Dev: 4 LOTs at `TRIM1`, 1 at `TRIM1-STORE`, **none at any press**). Restaged on the shop.
+
+One case needed thought rather than a rename. Test 4 exercises guard **3b** (*"not at this Trim station"*), which needs a source that is **not** an ancestor of the LOT's location — exactly what a press used to provide. It now records the second OUT from the **sibling shop `TRIM2`**. Guard 3b fires before the already-trimmed guard (5), so the reason it asserts is unchanged, and Test 6 still covers the same-shop re-entry that falls through to guard 5.
+
+### Test 120 keeps its synthetic area — on purpose
+
+`0026_PlantFloor_Downtime_Shift/120_DowntimeScope_ListForTerminal.sql` built a synthetic area rather than using `TRIM1`, and its header called the seed stale. The synthetic fixture **stays**: it is the only way to assert both halves of the rule (no active cells → the area; flip back to a machine list the moment one appears) without mutating the plant seed. Its comments no longer describe the seed as drifted, and a new **Test 10** asserts the real seeded `TRIM1` resolves to shop scope — the part that actually drifted. It deliberately names `TRIM1` where every other test in that file is structural, because the thing under test *is* the seed.
+
+### Verification
+
+| Run | Result |
+|---|---|
+| Baseline, original seed, `-Filter Trim` | 87 / 87 pass |
+| Seed fixed, tests not yet updated | 3246 / 3275 — **29 failures**, all trim |
+| Tests restaged, `-Filter Trim` | 87 / 87 pass |
+| **Full suite, final** | **3275 / 3275 pass** |
+
+Run against a throwaway `MPP_MES_Test_TrimSeed` (since dropped) after the shared `MPP_MES_Test` hit a concurrent-session reset failure — worth remembering that DB is shared across worktrees. **`MPP_MES_Dev` was never reset**; read-only queries only, its 7 press rows unchanged.
+
+**Untouched deliberately:** the `TrimPress` LocationTypeDefinition, the `TrimDedicated` view and the `/shop-floor/trim/dedicated` page all remain — the *capability* is still valid, only the terminal that used it is retired.
+
+---
+
 ## 🔖 2026-09-09 — `hunter/explore` merged + prod deploy to `0071`
 
 **Target:** `MPP_MES_Prod` on `MESDBSRV` / `172.17.10.148`, SQL login `Ignition`. Prod still not in use; customer go-live imminent.
