@@ -134,6 +134,11 @@ ALLOW_PREFIXES = [
 ]
 ALLOW_FILES = [
     'MPP_MES_FDS_CHANGELOG.md',
+    # This test asserts the old columns are GONE, which it can only do by
+    # naming them: sys.columns ... WHERE name = N'CavityNumber'. The mention
+    # is the assertion. Removing it would delete the proof that 0076 dropped
+    # them.
+    os.path.join('sql', 'tests', '0015_Tools_Cavity', '040_CavityCode_migration.sql'),
     os.path.join('tools', 'verify_cavity_rename.py'),   # this file names the tokens
 ]
 
@@ -156,6 +161,34 @@ def read(path):
         return ''
 
 
+def strip_sql_comments(text):
+    """Remove -- line comments and /* */ blocks from T-SQL.
+
+    A proc's Change Log SHOULD say "CavityNumber INT becomes CavityCode
+    NVARCHAR(4)" -- that is the record of the rename, and rewriting it would
+    erase why the column changed. What must not survive is a reference in
+    EXECUTABLE code. Scanning the stripped text asks that question instead of
+    the cruder "does the file contain the string".
+    """
+    out = []
+    i, n, in_block = 0, len(text), 0
+    while i < n:
+        if not in_block and text.startswith('--', i):
+            j = text.find(chr(10), i)
+            i = n if j == -1 else j
+        elif text.startswith('/*', i):
+            in_block += 1
+            i += 2
+        elif in_block and text.startswith('*/', i):
+            in_block -= 1
+            i += 2
+        else:
+            if not in_block:
+                out.append(text[i])
+            i += 1
+    return ''.join(out)
+
+
 def scan_file(path, relpath):
     """Return ({token_id: count}, pickled) for one file, honouring SCOPED_TOKENS.
 
@@ -171,14 +204,19 @@ def scan_file(path, relpath):
     if not text:
         return {}, False
     pickled = relpath.endswith('view.json') and '"$ts"' in text
+    code = strip_sql_comments(text) if relpath.endswith('.sql') else text
     hits = {}
     for tid, pattern, _desc in TOKENS:
         scope = SCOPED_TOKENS.get(tid)
         if scope and not any(s.replace('/', os.sep) in relpath for s in scope):
             continue
-        n = len(re.findall(pattern, text, re.IGNORECASE if tid == 'orderby' else 0))
+        flags = re.IGNORECASE if tid == 'orderby' else 0
+        n = len(re.findall(pattern, code, flags))
         if n:
             hits[tid] = n
+    # A .sql file whose ONLY hits are in comments is history, not a leftover.
+    if not hits and relpath.endswith('.sql') and re.search(r'CavityNumber', text):
+        return {'comment_only': len(re.findall(r'CavityNumber', text))}, pickled
     return hits, pickled
 
 
@@ -312,13 +350,16 @@ def do_verify(rows):
     # -- "Pre-v1.9 Lot.CavityNumber columns are now legacy", and so on. Those are
     # records, not leftovers; rewriting them would be falsification. Only the LIVE
     # spec rows are renamed, and a reviewer checks those by reading the diff.
-    advisory = [r for r in rows if r['scope'] == 'docs']
-    blocking = [r for r in rows if r['scope'] != 'docs']
+    def is_history(r):
+        return r['scope'] == 'docs' or list(r['hits']) == ['comment_only']
+    advisory = [r for r in rows if is_history(r)]
+    blocking = [r for r in rows if not is_history(r)]
 
     if advisory:
-        print('ADVISORY -- %d doc file(s) still mention the old name. Confirm each is '
-              'a dated Revision History entry (legitimate), not a live spec row:'
-              % len(advisory))
+        print('ADVISORY -- %d file(s) mention the old name only in prose or a '
+              'comment (Change Log entries, Revision History). That is the record '
+              'of the rename and should stay. Skim to confirm none is a live '
+              'spec row:' % len(advisory))
         for r in advisory:
             print('  %-40s %d mention(s)' % (r['path'], r['total']))
         print('')
@@ -329,9 +370,9 @@ def do_verify(rows):
 
     rows = blocking
 
-    print('FAIL -- %d file%s still carry the old cavity identifier '
+    print('FAIL -- %d file%s the old cavity identifier '
           '(%d occurrence%s).\n'
-          % (len(rows), '' if len(rows) == 1 else 's',
+          % (len(rows), ' still carries' if len(rows) == 1 else 's still carry',
              sum(r['total'] for r in rows),
              '' if sum(r['total'] for r in rows) == 1 else 's'))
 
