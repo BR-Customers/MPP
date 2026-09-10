@@ -4,21 +4,22 @@
 
 **Goal:** Replace the die-wide integer `Tools.ToolCavity.CavityNumber` with a per-part lowercase alphabetic `CavityCode`, so a 12-cavity family die carries four cavities called `a` — one per part — the way MPP names them on the floor.
 
-**Architecture:** Two forward-only migrations bracket the rename. `0075` is **additive** — it adds `CavityCode`, backfills letters per `(Tool, Item)` group, cross-checks each derived letter against the one operators already typed into `Description`, re-scopes the unique index to `(ToolId, ItemId, CavityCode)`, and makes `CavityNumber` nullable. Procs, named queries, Python and views then migrate across a green test suite. `0076` drops `CavityNumber` and `Lots.Lot.CavityNumber` once nothing reads them. Both migrations ship in the same deployment.
+**Architecture:** Two forward-only migrations bracket the rename. `0076` is **additive** — it adds `CavityCode`, backfills letters per `(Tool, Item)` group, cross-checks each derived letter against the one operators already typed into `Description`, re-scopes the unique index to `(ToolId, ItemId, CavityCode)`, and makes `CavityNumber` nullable. Procs, named queries, Python and views then migrate across a green test suite. `0077` drops `CavityNumber` and `Lots.Lot.CavityNumber` once nothing reads them. Both migrations ship in the same deployment.
 
 **Tech Stack:** SQL Server 2022, T-SQL stored procedures (repeatable `R__` files), Ignition 8.3 Perspective (file-based project, Jython 2.7 script modules, named queries), PowerShell test runner, Python 3 audit script.
 
 ---
 
-## Deviation from the spec — read this first
+## Execution note — the split was tried and reverted
 
-The spec (§3.1) describes **one** migration `0075` that adds `CavityCode` *and* drops `CavityNumber`. This plan splits that into `0075` (additive) + `0076` (drop).
+An earlier revision of this plan split the migration into `0076` (additive) + `0077` (drop) to keep the test suite green mid-rename. **It was implemented, tested, and reverted.** It does not work:
 
-**Why:** dropping `CavityNumber` in the first migration puts the entire SQL test suite red from Task 2 until Task 6 — four tasks with no signal, because every read proc and 26 test files reference the dropped column. Splitting keeps the suite **green at every task boundary**: both columns coexist during the window, so a task's tests either pass or the task isn't done.
+- The re-scoped unique index `(ToolId, ItemId, CavityCode)` treats two `NULL` codes on one `(Tool, Item)` as a **collision**, because SQL Server compares NULLs as equal for uniqueness. Any proc creating a second cavity before the write procs are migrated throws — and a `ROLLBACK` inside an `INSERT-EXEC` raises **Msg 3915**, which is the hazard `CLAUDE.md` calls out. Observed in `ToolCavity_Create` line 130 and `ToolCavity_SaveAll` line 274.
+- Keeping the window green would mean dual-writing a `CavityNumber` (derived `MAX+1` per tool) that is deleted four commits later — inventing throwaway logic to serve the plan rather than the product.
 
-**Cost:** none at deploy. `Update-Prod.ps1` applies both in one run, in order. The transient state where old rows carry a `CavityNumber` and new rows carry `NULL` never reaches a deployed system on its own.
+**One migration, `0076_toolcavity_alpha_code.sql`, does everything** — add, gate, backfill, advisory, `NOT NULL`, re-scope the index, drop `Tools.ToolCavity.CavityNumber` and `Lots.Lot.CavityNumber`. The suite is red from the moment it applies until the write and read procs land. **That is inherent to a rename**, and Tasks 2–6 are therefore one wave that must land together to be green. Do not run the full suite expecting green until the end of that wave.
 
-Spec §6.3 already contemplated this for `Lots.Lot.CavityNumber` ("splittable"). This applies the same reasoning to the main column. **If you'd rather have the single migration, collapse Tasks 2 and 8 and accept the red window** — nothing else in the plan changes.
+Migration number is `0076`: the punch list took `0075_defectcode_scale_adjustment.sql` while this plan was being written.
 
 ---
 
@@ -51,7 +52,7 @@ These five already error on a stale `ToolAssignment.CellLocationId` fixture (the
 
 | File | Responsibility | Task |
 |---|---|---|
-| `sql/migrations/versioned/0075_toolcavity_alpha_code.sql` | **Create.** Add `CavityCode`, backfill, cross-check, re-scope unique index, relax `CavityNumber` | 2 |
+| `sql/migrations/versioned/0076_toolcavity_alpha_code.sql` | **Create.** Add `CavityCode`, backfill, cross-check, re-scope unique index, relax `CavityNumber` | 2 |
 | `sql/tests/0015_Tools_Cavity/040_CavityCode_migration.sql` | **Create.** Asserts the backfill, the index scope, the guard | 2 |
 | `R__Tools_ToolCavity_Create.sql` | Modify. `@CavityCode NVARCHAR(4)`, format check, per-part uniqueness | 3 |
 | `R__Tools_ToolCavity_SaveAll.sql` | Modify. Same rules, set-based, plus the ItemId-collision rejection | 3 |
@@ -63,7 +64,7 @@ These five already error on a stale `ToolAssignment.CellLocationId` fixture (the
 | `Parts/Tool/code.py`, `Workorder/DieCast/code.py`, `Lots/Lot/code.py` | Modify. Rename; delete both `int()` coercions | 7 |
 | `Parts/Tools/Cavities`, `_Tools/CavityRow` views | Modify **in Designer**. Numeric → text input | 8 |
 | 13 plant-floor views | Modify **in Designer**. Param / key / binding renames | 9 |
-| `sql/migrations/versioned/0076_drop_cavity_number.sql` | **Create.** Drop both legacy columns | 10 |
+| *(the drop lives in `0076`)* | Folded into Task 2 — see the execution note | — |
 | `MPP_MES_DATA_MODEL.md`, `MPP_MES_SUMMARY.md`, `MPP_MES_FDS.md`, `R__Descriptions_ExtendedProperties.sql` | Modify. Prose + extended properties | 11 |
 
 ---
@@ -167,10 +168,10 @@ re-baselined against the post-punch-list tree."
 
 ---
 
-## Task 2: Migration 0075 — additive schema
+## Task 2: Migration 0076 — additive schema
 
 **Files:**
-- Create: `sql/migrations/versioned/0075_toolcavity_alpha_code.sql`
+- Create: `sql/migrations/versioned/0076_toolcavity_alpha_code.sql`
 - Create: `sql/tests/0015_Tools_Cavity/040_CavityCode_migration.sql`
 
 **Interfaces:**
@@ -187,7 +188,7 @@ Create `sql/tests/0015_Tools_Cavity/040_CavityCode_migration.sql`:
 -- Author:       Blue Ridge Automation
 -- Created:      2026-09-10
 -- Description:
---   Migration 0075 -- Tools.ToolCavity.CavityCode.
+--   Migration 0076 -- Tools.ToolCavity.CavityCode.
 --   Asserts the column exists and is NOT NULL, that the unique index is
 --   scoped (ToolId, ItemId, CavityCode), that CavityNumber is now nullable,
 --   and that per-part duplicate codes are rejected while cross-part
@@ -205,14 +206,14 @@ DECLARE @IsNullable INT = (
     WHERE c.object_id = OBJECT_ID(N'Tools.ToolCavity') AND c.name = N'CavityCode');
 EXEC test.Assert_IsEqual
     @Actual = @IsNullable, @Expected = 0,
-    @TestName = N'0075: CavityCode is NOT NULL';
+    @TestName = N'0076: CavityCode is NOT NULL';
 
 DECLARE @MaxLen INT = (
     SELECT c.max_length / 2 FROM sys.columns c
     WHERE c.object_id = OBJECT_ID(N'Tools.ToolCavity') AND c.name = N'CavityCode');
 EXEC test.Assert_IsEqual
     @Actual = @MaxLen, @Expected = 4,
-    @TestName = N'0075: CavityCode is NVARCHAR(4)';
+    @TestName = N'0076: CavityCode is NVARCHAR(4)';
 GO
 
 -- =============================================
@@ -224,7 +225,7 @@ DECLARE @NewIdx INT = (
       AND name = N'UQ_ToolCavity_ActiveToolItemCode');
 EXEC test.Assert_IsEqual
     @Actual = @NewIdx, @Expected = 1,
-    @TestName = N'0075: UQ_ToolCavity_ActiveToolItemCode exists';
+    @TestName = N'0076: UQ_ToolCavity_ActiveToolItemCode exists';
 
 DECLARE @OldIdx INT = (
     SELECT COUNT(*) FROM sys.indexes
@@ -232,7 +233,7 @@ DECLARE @OldIdx INT = (
       AND name = N'UQ_ToolCavity_ActiveToolCavity');
 EXEC test.Assert_IsEqual
     @Actual = @OldIdx, @Expected = 0,
-    @TestName = N'0075: old die-wide unique index is gone';
+    @TestName = N'0076: old die-wide unique index is gone';
 
 DECLARE @IdxCols INT = (
     SELECT COUNT(*) FROM sys.index_columns ic
@@ -242,7 +243,7 @@ DECLARE @IdxCols INT = (
       AND c.name IN (N'ToolId', N'ItemId', N'CavityCode'));
 EXEC test.Assert_IsEqual
     @Actual = @IdxCols, @Expected = 3,
-    @TestName = N'0075: unique index keys on ToolId + ItemId + CavityCode';
+    @TestName = N'0076: unique index keys on ToolId + ItemId + CavityCode';
 GO
 
 -- =============================================
@@ -253,7 +254,7 @@ DECLARE @NumNullable INT = (
     WHERE c.object_id = OBJECT_ID(N'Tools.ToolCavity') AND c.name = N'CavityNumber');
 EXEC test.Assert_IsEqual
     @Actual = @NumNullable, @Expected = 1,
-    @TestName = N'0075: CavityNumber relaxed to nullable';
+    @TestName = N'0076: CavityNumber relaxed to nullable';
 GO
 
 -- =============================================
@@ -284,7 +285,7 @@ DECLARE @CrossPart INT = (
     WHERE ToolId = @ToolId AND CavityCode = N'a' AND DeprecatedAt IS NULL);
 EXEC test.Assert_IsEqual
     @Actual = @CrossPart, @Expected = 2,
-    @TestName = N'0075: cavity a allowed on two different parts of one tool';
+    @TestName = N'0076: cavity a allowed on two different parts of one tool';
 
 DECLARE @Dup INT = 0;
 BEGIN TRY
@@ -296,7 +297,7 @@ BEGIN CATCH
 END CATCH
 EXEC test.Assert_IsEqual
     @Actual = @Dup, @Expected = 1,
-    @TestName = N'0075: duplicate cavity a on the SAME part is rejected';
+    @TestName = N'0076: duplicate cavity a on the SAME part is rejected';
 
 -- Case-insensitive collation: 'A' collides with 'a'
 DECLARE @Case INT = 0;
@@ -309,7 +310,7 @@ BEGIN CATCH
 END CATCH
 EXEC test.Assert_IsEqual
     @Actual = @Case, @Expected = 1,
-    @TestName = N'0075: uppercase A collides with a (CI collation)';
+    @TestName = N'0076: uppercase A collides with a (CI collation)';
 
 DELETE FROM Tools.ToolCavity WHERE ToolId = @ToolId;
 DELETE FROM Tools.Tool WHERE Id = @ToolId;
@@ -329,11 +330,11 @@ Expected: FAIL — `Invalid column name 'CavityCode'`, because the migration doe
 
 - [ ] **Step 3: Write the migration**
 
-Create `sql/migrations/versioned/0075_toolcavity_alpha_code.sql`:
+Create `sql/migrations/versioned/0076_toolcavity_alpha_code.sql`:
 
 ```sql
 -- ============================================================
--- Migration:   0075_toolcavity_alpha_code.sql
+-- Migration:   0076_toolcavity_alpha_code.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-09-10
 -- Description: Cavity identity moves from a die-wide INT ordinal to a
@@ -356,9 +357,9 @@ Create `sql/migrations/versioned/0075_toolcavity_alpha_code.sql`:
 --              see 0067).
 -- ============================================================
 
-IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0075_toolcavity_alpha_code')
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0076_toolcavity_alpha_code')
 BEGIN
-    PRINT 'Migration 0075 already applied -- skipping.';
+    PRINT 'Migration 0076 already applied -- skipping.';
     RETURN;
 END
 GO
@@ -377,7 +378,7 @@ GO
 IF EXISTS (SELECT 1 FROM Tools.ToolCavity
            GROUP BY ToolId, ISNULL(ItemId, -1) HAVING COUNT(*) > 26)
 BEGIN
-    RAISERROR(N'Migration 0075 aborted: a (Tool, Item) group has more than 26 cavities. Configure Tools.ToolCavity.ItemId before migrating.', 16, 1);
+    RAISERROR(N'Migration 0076 aborted: a (Tool, Item) group has more than 26 cavities. Configure Tools.ToolCavity.ItemId before migrating.', 16, 1);
     RETURN;
 END
 GO
@@ -423,7 +424,7 @@ DECLARE @Mismatch NVARCHAR(MAX) = (
 IF @Mismatch IS NOT NULL
 BEGIN
     DECLARE @Msg NVARCHAR(2044) = LEFT(
-        N'Migration 0075 aborted: derived cavity code disagrees with the letter in Description -- ' + @Mismatch, 2044);
+        N'Migration 0076 aborted: derived cavity code disagrees with the letter in Description -- ' + @Mismatch, 2044);
     RAISERROR(@Msg, 16, 1);
     RETURN;
 END
@@ -465,15 +466,15 @@ GO
 -- ============================================================
 -- == Record migration ========================================
 -- ============================================================
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0075_toolcavity_alpha_code')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0076_toolcavity_alpha_code')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
     VALUES (
-        N'0075_toolcavity_alpha_code',
+        N'0076_toolcavity_alpha_code',
         N'Cavity identity: per-part lowercase alphabetic Tools.ToolCavity.CavityCode NVARCHAR(4) NOT NULL, backfilled per (Tool, Item) group in ordinal order and cross-checked against the letter in Description. Unique index re-scoped to (ToolId, ItemId, CavityCode). CavityNumber relaxed to nullable; dropped in 0076.'
     );
 GO
 
-PRINT 'Migration 0075 completed: Tools.ToolCavity.CavityCode.';
+PRINT 'Migration 0076 completed: Tools.ToolCavity.CavityCode.';
 GO
 ```
 
@@ -496,8 +497,8 @@ Expected: assertion failures **0**. The runner may still exit 1 from the five pr
 - [ ] **Step 6: Commit**
 
 ```bash
-git add sql/migrations/versioned/0075_toolcavity_alpha_code.sql sql/tests/0015_Tools_Cavity/040_CavityCode_migration.sql
-git commit -m "feat(sql): 0075 -- per-part alphabetic Tools.ToolCavity.CavityCode
+git add sql/migrations/versioned/0076_toolcavity_alpha_code.sql sql/tests/0015_Tools_Cavity/040_CavityCode_migration.sql
+git commit -m "feat(sql): 0076 -- per-part alphabetic Tools.ToolCavity.CavityCode
 
 Additive. Adds CavityCode NVARCHAR(4) NOT NULL, backfills a letter per
 (Tool, Item) group in ordinal order, and re-scopes uniqueness to
@@ -535,7 +536,7 @@ Append to `sql/tests/0015_Tools_Cavity/020_ToolCavity_SaveAll.sql`, before `EXEC
 
 ```sql
 -- =============================================
--- Test: per-part code rules (0075)
+-- Test: per-part code rules (0076)
 -- =============================================
 DECLARE @T3 BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CAV-SAVE-DIE');
 DECLARE @P1 BIGINT = (SELECT MIN(Id) FROM Parts.Item WHERE DeprecatedAt IS NULL);
@@ -796,7 +797,7 @@ The `STRING_AGG` narrative loses its cast — the code is already a string:
         SELECT @AddSpec = STRING_AGG(N'+#' + CavityCode + N' (' + ISNULL(NewStatus,N'Active') + N')', N', ')
 ```
 
-Apply the same to `@UpdSpec`. Every `ORDER BY … CavityNumber` in this file becomes `ORDER BY … CavityCode`. Update the `UPDATE` and `INSERT` legs to write `CavityCode`. Do **not** write `CavityNumber` — it is nullable now and `0076` drops it.
+Apply the same to `@UpdSpec`. Every `ORDER BY … CavityNumber` in this file becomes `ORDER BY … CavityCode`. Update the `UPDATE` and `INSERT` legs to write `CavityCode`. Do **not** write `CavityNumber` — it is nullable now and `0077` drops it.
 
 Bump the header to v1.3 with a Change Log entry.
 
@@ -860,7 +861,7 @@ Append to `sql/tests/0014_Tools_Tool/020_Tool_duplicate.sql`, before `EXEC test.
 
 ```sql
 -- =============================================
--- Test: family-die cavities order by part, then code (0075)
+-- Test: family-die cavities order by part, then code (0076)
 -- =============================================
 DECLARE @DupTool BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'DUP-SRC-DIE');
 CREATE TABLE #Ord (
@@ -1494,7 +1495,7 @@ ToolCavityNumber alias."
 ## Task 10: Migration 0076 — drop the legacy columns
 
 **Files:**
-- Create: `sql/migrations/versioned/0076_drop_cavity_number.sql`
+- Create: `sql/migrations/versioned/0077_drop_cavity_number.sql`
 - Modify: `sql/tests/0015_Tools_Cavity/040_CavityCode_migration.sql`
 
 **Interfaces:**
@@ -1537,14 +1538,14 @@ Expected: FAIL — both counts are 1.
 
 ```sql
 -- ============================================================
--- Migration:   0076_drop_cavity_number.sql
+-- Migration:   0077_drop_cavity_number.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-09-10
 -- Description: Drops the two legacy cavity columns, now that every proc,
 --              named query, script module and view reads CavityCode.
 --
 --              Tools.ToolCavity.CavityNumber -- the die-wide INT ordinal,
---              superseded by the per-part CavityCode in 0075.
+--              superseded by the per-part CavityCode in 0076.
 --
 --              Lots.Lot.CavityNumber -- the D2 free-text manual-cavity note,
 --              retired with the fallback itself: @ToolCavityId is now
@@ -1561,7 +1562,7 @@ Expected: FAIL — both counts are 1.
 --              restore-from-backup.
 -- ============================================================
 
-IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0076_drop_cavity_number')
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0077_drop_cavity_number')
 BEGIN
     PRINT 'Migration 0076 already applied -- skipping.';
     RETURN;
@@ -1584,11 +1585,11 @@ IF COL_LENGTH('Lots.Lot', 'CavityNumber') IS NOT NULL
     ALTER TABLE Lots.Lot DROP COLUMN CavityNumber;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0076_drop_cavity_number')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0077_drop_cavity_number')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
     VALUES (
-        N'0076_drop_cavity_number',
-        N'Drops Tools.ToolCavity.CavityNumber (die-wide ordinal, superseded by CavityCode in 0075) and Lots.Lot.CavityNumber (D2 free-text cavity note, retired with the manual-cavity fallback). Guarded: aborts if the Lot column holds data.'
+        N'0077_drop_cavity_number',
+        N'Drops Tools.ToolCavity.CavityNumber (die-wide ordinal, superseded by CavityCode in 0076) and Lots.Lot.CavityNumber (D2 free-text cavity note, retired with the manual-cavity fallback). Guarded: aborts if the Lot column holds data.'
     );
 GO
 
@@ -1607,7 +1608,7 @@ Expected: PASS; assertion failures 0 apart from the five known stale-fixture err
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sql/migrations/versioned/0076_drop_cavity_number.sql sql/tests/0015_Tools_Cavity/040_CavityCode_migration.sql
+git add sql/migrations/versioned/0077_drop_cavity_number.sql sql/tests/0015_Tools_Cavity/040_CavityCode_migration.sql
 git commit -m "feat(sql): 0076 -- drop both legacy CavityNumber columns
 
 Tools.ToolCavity.CavityNumber (die-wide ordinal) and Lots.Lot.CavityNumber
@@ -1645,7 +1646,7 @@ In `R__Descriptions_ExtendedProperties.sql`, replace the `Tools.ToolCavity.Cavit
 with description text:
 
 ```
-The cavity's identifier, scoped to the part it cuts: lowercase letters a-z, 1-4 characters. Unique per (ToolId, ItemId) among non-deprecated rows via UQ_ToolCavity_ActiveToolItemCode. A 12-cavity family die casting four part numbers carries four cavities called a, one per part -- which is how MPP names them ("6MA EX 1 cavity a"). Immutable once saved; correct a mistake by scrapping the cavity and creating a new one. Replaced the die-wide INT CavityNumber in migration 0075.
+The cavity's identifier, scoped to the part it cuts: lowercase letters a-z, 1-4 characters. Unique per (ToolId, ItemId) among non-deprecated rows via UQ_ToolCavity_ActiveToolItemCode. A 12-cavity family die casting four part numbers carries four cavities called a, one per part -- which is how MPP names them ("6MA EX 1 cavity a"). Immutable once saved; correct a mistake by scrapping the cavity and creating a new one. Replaced the die-wide INT CavityNumber in migration 0076.
 ```
 
 **ASCII only** — no em-dashes or middle dots; `sqlcmd` reads this file in the Windows codepage and would store mojibake.
@@ -1718,7 +1719,7 @@ Expected: `PASS -- no cavity-rename leftovers outside the allowlist.` and `exit=
 powershell -File sql/tests/Run-Tests.ps1
 ```
 
-Expected: assertion failures 0 apart from the five known stale-fixture errors. A clean reset also proves `0075` and `0076` replay correctly from `0010`'s original `CavityNumber INT` — the forward-only path prod will take.
+Expected: assertion failures 0 apart from the five known stale-fixture errors. A clean reset also proves `0076` and `0076` replay correctly from `0010`'s original `CavityNumber INT` — the forward-only path prod will take.
 
 - [ ] **Step 3: Confirm the versioned migrations were not edited**
 
@@ -1726,7 +1727,7 @@ Expected: assertion failures 0 apart from the five known stale-fixture errors. A
 git diff --stat main -- sql/migrations/versioned/
 ```
 
-Expected: only `0075_toolcavity_alpha_code.sql` and `0076_drop_cavity_number.sql` appear as **new** files. `0010` and `0020` must be untouched — they are history, and editing them would make a replayed schema disagree with every deployed database.
+Expected: only `0076_toolcavity_alpha_code.sql` and `0077_drop_cavity_number.sql` appear as **new** files. `0010` and `0020` must be untouched — they are history, and editing them would make a replayed schema disagree with every deployed database.
 
 - [ ] **Step 4: Gateway scan and manifest check**
 
@@ -1758,7 +1759,7 @@ Add an entry at the top recording: both migrations, the rename's blast radius (6
 git add PROJECT_STATUS.md
 git commit -m "docs(status): cavity alpha-code rename complete on Dev
 
-Two migrations (0075 additive, 0076 drop), 67 files, D2 manual-cavity
+Two migrations (0076 additive, 0076 drop), 67 files, D2 manual-cavity
 fallback retired. verify_cavity_rename --mode verify passes.
 
 Prod is NOT done: re-run the Task 1 pre-flight against MPP_MES_Prod
@@ -1774,6 +1775,6 @@ Prod went live 2026-09-09 and holds real die-cast LOTs. When this ships:
 
 1. **Back up** `MPP_MES_Prod` and `RESTORE VERIFYONLY` it.
 2. **Re-run Task 1's pre-flight** against prod immediately before deploying — `ItemId` coverage can regress between now and then.
-3. `Update-Prod.ps1` applies migrations then repeatables, which is the correct order. `0075` and `0076` go in the same run.
+3. `Update-Prod.ps1` applies migrations then repeatables, which is the correct order. `0076` and `0076` go in the same run.
 4. **Rebuild the Ignition project exports after the Designer work** and import them in step with the DB. A gateway serving the old views against the new schema shows blank cavity fields on every die-cast screen.
 5. `0076` is **not reversible**. Rollback is restore-from-backup.
