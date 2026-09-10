@@ -24,13 +24,13 @@
         "children": [
           {
             "meta": {
-              "name": "LabelCode"
+              "name": "LabelName"
             },
             "propConfig": {
               "props.text": {
                 "binding": {
                   "config": {
-                    "path": "view.params.tool.code"
+                    "path": "view.params.tool.name"
                   },
                   "type": "property"
                 }
@@ -46,13 +46,13 @@
           },
           {
             "meta": {
-              "name": "LabelName"
+              "name": "LabelCode"
             },
             "propConfig": {
               "props.text": {
                 "binding": {
                   "config": {
-                    "path": "view.params.tool.name"
+                    "path": "view.params.tool.code"
                   },
                   "type": "property"
                 }
