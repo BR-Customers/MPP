@@ -1512,7 +1512,7 @@ def die_cavities_source():
 
     parts.append(_step(1, 'Add a cavity',
         'Press %s and set its %s. %s locks once the cavity is saved.'
-        % (_b('+ Add cavity'), _b('Number'), _b('Number'))))
+        % (_b('+ Add cavity'), _b('Code'), _b('Code'))))
 
     parts.append(_step(2, 'Fill it in',
         'Set its %s and %s.' % (_b('Description'), _b('Status'))))
