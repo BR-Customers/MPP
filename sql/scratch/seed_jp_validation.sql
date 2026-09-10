@@ -423,7 +423,7 @@ DECLARE @drA   BIGINT = (SELECT Id FROM Tools.DieRank WHERE Code = N'A');
 DECLARE @scAct BIGINT = (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active');
 IF @ttDie IS NULL OR @scAct IS NULL RAISERROR(N'Prereq missing: Die tool type or Active status.', 16, 1);
 DECLARE @tr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-DECLARE @i INT, @n INT, @code NVARCHAR(50), @name NVARCHAR(100), @tid BIGINT, @cnum INT, @cdesc NVARCHAR(500), @cell NVARCHAR(50), @cid BIGINT;
+DECLARE @i INT, @n INT, @code NVARCHAR(50), @name NVARCHAR(100), @tid BIGINT, @ccode NVARCHAR(4), @cdesc NVARCHAR(500), @cell NVARCHAR(50), @cid BIGINT;
 
 -- 7a. Tools (Code-guarded)
 DECLARE @tools TABLE (Seq INT IDENTITY(1,1), Code NVARCHAR(50), Name NVARCHAR(100));
@@ -441,21 +441,21 @@ BEGIN
     SET @i += 1;
 END
 
--- 7b. Cavities ((Tool,CavityNumber)-guarded)
-DECLARE @cav TABLE (Seq INT IDENTITY(1,1), ToolCode NVARCHAR(50), CavNum INT, Descr NVARCHAR(500));
-INSERT INTO @cav (ToolCode, CavNum, Descr) VALUES
-    (N'59B', 1, N'In 1'), (N'59B', 2, N'In 2'), (N'59B', 3, N'ex 1'),
-    (N'5G0', 1, N'A'), (N'5G0', 2, N'B'),
-    (N'6NA', 1, N'A');
+-- 7b. Cavities ((Tool,ItemId,CavityCode)-guarded, migration 0076)
+DECLARE @cav TABLE (Seq INT IDENTITY(1,1), ToolCode NVARCHAR(50), CavCode NVARCHAR(4), Descr NVARCHAR(500));
+INSERT INTO @cav (ToolCode, CavCode, Descr) VALUES
+    (N'59B', N'a', N'In 1'), (N'59B', N'b', N'In 2'), (N'59B', N'c', N'ex 1'),
+    (N'5G0', N'a', N'A'), (N'5G0', N'b', N'B'),
+    (N'6NA', N'a', N'A');
 SET @i = 1; SET @n = (SELECT ISNULL(MAX(Seq),0) FROM @cav);
 WHILE @i <= @n
 BEGIN
-    SELECT @code=ToolCode, @cnum=CavNum, @cdesc=Descr FROM @cav WHERE Seq=@i;
+    SELECT @code=ToolCode, @ccode=CavCode, @cdesc=Descr FROM @cav WHERE Seq=@i;
     SET @tid = (SELECT Id FROM Tools.Tool WHERE Code = @code);
-    IF @tid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Tools.ToolCavity WHERE ToolId=@tid AND CavityNumber=@cnum)
+    IF @tid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Tools.ToolCavity WHERE ToolId=@tid AND CavityCode=@ccode)
     BEGIN
         DELETE FROM @tr;
-        INSERT INTO @tr EXEC Tools.ToolCavity_Create @ToolId=@tid, @CavityNumber=@cnum, @Description=@cdesc, @AppUserId=@U;
+        INSERT INTO @tr EXEC Tools.ToolCavity_Create @ToolId=@tid, @CavityCode=@ccode, @Description=@cdesc, @AppUserId=@U;
     END
     SET @i += 1;
 END

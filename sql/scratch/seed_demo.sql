@@ -90,8 +90,8 @@ IF NOT EXISTS (SELECT 1 FROM Tools.Tool WHERE Code = N'DEMO-DC-6NA')
     VALUES (@ToolTypeDie, N'DEMO-DC-6NA', N'Demo Die - 6NA Fuel Pump Base', @ToolStatusActive, @U, SYSUTCDATETIME());
 SET @ToolId6NA = (SELECT Id FROM Tools.Tool WHERE Code = N'DEMO-DC-6NA');
 IF NOT EXISTS (SELECT 1 FROM Tools.ToolCavity WHERE ToolId = @ToolId6NA)
-    INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedByUserId, CreatedAt)
-    VALUES (@ToolId6NA, 1, @CavActive, @U, SYSUTCDATETIME()), (@ToolId6NA, 2, @CavActive, @U, SYSUTCDATETIME());
+    INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedByUserId, CreatedAt)
+    VALUES (@ToolId6NA, N'a', @CavActive, @U, SYSUTCDATETIME()), (@ToolId6NA, N'b', @CavActive, @U, SYSUTCDATETIME());
 IF NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment WHERE ToolId = @ToolId6NA AND CellLocationId = @L_DC3M01 AND ReleasedAt IS NULL)
     INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
     VALUES (@ToolId6NA, @L_DC3M01, SYSUTCDATETIME(), @U);
@@ -103,8 +103,8 @@ IF NOT EXISTS (SELECT 1 FROM Tools.Tool WHERE Code = N'DEMO-DC-5G0')
     VALUES (@ToolTypeDie, N'DEMO-DC-5G0', N'Demo Die - 5G0 Front Cover', @ToolStatusActive, @U, SYSUTCDATETIME());
 SET @ToolId5G0 = (SELECT Id FROM Tools.Tool WHERE Code = N'DEMO-DC-5G0');
 IF NOT EXISTS (SELECT 1 FROM Tools.ToolCavity WHERE ToolId = @ToolId5G0)
-    INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedByUserId, CreatedAt)
-    VALUES (@ToolId5G0, 1, @CavActive, @U, SYSUTCDATETIME()), (@ToolId5G0, 2, @CavActive, @U, SYSUTCDATETIME());
+    INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedByUserId, CreatedAt)
+    VALUES (@ToolId5G0, N'a', @CavActive, @U, SYSUTCDATETIME()), (@ToolId5G0, N'b', @CavActive, @U, SYSUTCDATETIME());
 IF NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment WHERE ToolId = @ToolId5G0 AND CellLocationId = @L_DC1M01 AND ReleasedAt IS NULL)
     INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
     VALUES (@ToolId5G0, @L_DC1M01, SYSUTCDATETIME(), @U);
@@ -150,9 +150,9 @@ DECLARE @I_pin     BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'2100
 
 -- ---- Tools (mounted in Step 2) ----
 DECLARE @ToolId6NA BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'DEMO-DC-6NA');
-DECLARE @CavId6NA  BIGINT = (SELECT TOP 1 Id FROM Tools.ToolCavity WHERE ToolId = @ToolId6NA ORDER BY CavityNumber);
+DECLARE @CavId6NA  BIGINT = (SELECT TOP 1 Id FROM Tools.ToolCavity WHERE ToolId = @ToolId6NA ORDER BY CavityCode);
 DECLARE @ToolId5G0 BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'DEMO-DC-5G0');
-DECLARE @CavId5G0  BIGINT = (SELECT TOP 1 Id FROM Tools.ToolCavity WHERE ToolId = @ToolId5G0 ORDER BY CavityNumber);
+DECLARE @CavId5G0  BIGINT = (SELECT TOP 1 Id FROM Tools.ToolCavity WHERE ToolId = @ToolId5G0 ORDER BY CavityCode);
 
 -- ---- Code-table lookups ----
 DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');

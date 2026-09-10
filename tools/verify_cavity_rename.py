@@ -110,7 +110,12 @@ DOC_FILES = [
 # when written. Rewriting them is falsification, not maintenance.
 ALLOW_PREFIXES = [
     os.path.join('sql', 'migrations', 'versioned'),
-    os.path.join('sql', 'scratch'),
+    # sql/scratch is NOT allowlisted, despite the name. Reset-DevDatabase.ps1
+    # runs seed_demo.sql by default and seed_jp_validation.sql under
+    # -JpValidation ("Jacques's canonical Dev config"), so those two are the
+    # dev-database bootstrap, not scratch. Allowlisting the folder hid both
+    # from this audit while the rename broke them, and Run-Tests could not
+    # catch it because it resets with -SkipDemoSeed.
     os.path.join('docs', 'superpowers', 'specs'),
     os.path.join('docs', 'superpowers', 'plans'),
     os.path.join('docs', 'handoffs'),
