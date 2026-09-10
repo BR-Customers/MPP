@@ -77,9 +77,10 @@ Single letters sort lexicographically in the order a human expects, so the lette
 | D3 | **`CavityCode` immutable** once saved; **`ItemId` editable**, collision-checked | Preserves the existing immutability rule. `0072` shipped 2026-09-09, so `ItemId` values are freshly entered and will need correcting without deprecating rows. |
 | D4 | **`Description` unchanged** — still the display name per the 2026-08-19 decision, existing values untouched | Jacques, 2026-09-10: *"keep it as is. no need for a change there."* No parsing of free text, no backfill from it, no change to `cavityDisplayName()`. |
 | D5 | Rename carried **all the way through to the Perspective views** | Chosen over stopping at the Python boundary. One name at every layer; cost is 15 Designer view edits (§7.4). |
-| D6 | `Lots.Lot.CavityNumber` → **`CavityNote`** | The legacy free-text D2 column, already fed by `@CavityNote`. Leaving a second `CavityNumber` behind would defeat the audit in §8. |
-| D7 | `Tools.Tool_Duplicate`'s missing `ItemId` copy **fixed in scope** | Pre-existing defect in the exact statement being edited; per-part identity makes it materially worse. See §6. |
-| D8 | Codes stored **lowercase**, 1–4 letters | Matches `0072`'s *"cavity 'a'"*. Collation is `SQL_Latin1_General_CP1_CI_AS`, so `'A'`/`'a'` collide in the unique index regardless — case is a display choice, not a correctness one. |
+| D6 | `Lots.Lot.CavityNumber` **dropped**, and the D2 manual-cavity fallback retired with it | Jacques, 2026-09-10 (Q4): drop it, *"so long as that's not the description"* — it is not; it is the free-text cavity note on the LOT. Dev has **0** LOTs using it and **0** die-cast LOTs without a proper `ToolCavityId`. See §6.2. |
+| D7 | `Tools.Tool_Duplicate`'s missing `ItemId` copy **fixed in scope** | Pre-existing defect in the exact statement being edited; per-part identity makes it materially worse. See §6.1. |
+| D8 | Codes stored **lowercase**, 1–4 letters — **confirmed by Jacques 2026-09-10 (Q1)** | Matches `0072`'s *"cavity 'a'"* and prod's own descriptions (`In 1 Da` / `Db` / `Dc` — the `D` is part of the *die* identifier, the trailing lowercase letter is the cavity). Collation is `SQL_Latin1_General_CP1_CI_AS`, so `'A'`/`'a'` collide in the unique index regardless. |
+| D9 | A **Scrapped cavity's `ItemId` must be mappable** — UI defect fixed in scope | Found on prod 2026-09-10 answering Q2. `CavityRow` disables the whole row for a Scrapped cavity, so `DMO124` cavity 7 can never be mapped — which mis-letters two of its peers in the backfill. See §6.2. |
 
 ### 2.1 Explicitly out of scope
 
@@ -113,6 +114,13 @@ Forward-only, additive-then-cutover, idempotent-guarded per repo convention. **N
          FROM Tools.ToolCavity) x ...
    -- Deprecated rows included: the unique index is filtered, but the column is NOT NULL.
 
+3b. -- CROSS-CHECK, not a source. Operators already typed the letter as the last
+    -- character of Description ('In 1 Da', 'Ex 1 Db', 'Exhaust 1 Aa'). Where the
+    -- Description ends in a lowercase letter, it must equal the derived code;
+    -- RAISERROR listing every mismatch. Descriptions with no trailing letter
+    -- (single-cavity dies -- '6MA oil Pan') are skipped, not failed.
+    -- D4 stands: Description is never PARSED INTO the column, only compared to it.
+
 4. ALTER TABLE Tools.ToolCavity ALTER COLUMN CavityCode NVARCHAR(4) NOT NULL;
 
 5. DROP INDEX UQ_ToolCavity_ActiveToolCavity ON Tools.ToolCavity;
@@ -121,7 +129,7 @@ Forward-only, additive-then-cutover, idempotent-guarded per repo convention. **N
 
 6. ALTER TABLE Tools.ToolCavity DROP COLUMN CavityNumber;
 
-7. EXEC sp_rename 'Lots.Lot.CavityNumber', 'CavityNote', 'COLUMN';   -- D6
+7. ALTER TABLE Lots.Lot DROP COLUMN CavityNumber;   -- D6, see 6.2 (verify 0 rows first)
 ```
 
 **Why the backfill is safe on Dev, and must be reviewed on Prod.** The letter is derived from the *ordinal*, not from the paper sheet. On Dev it reproduces exactly what operators typed into `Description`: `6MA-B` part `12231` nums 1,2,3 → `a,b,c` against descriptions `Aa/Ab/Ac`; `6MA-A` part `12232` nums 1,2 → `a,b` against `-A/-B`. **On Prod this correspondence is an assumption, not a fact** — see §9.1.
@@ -164,7 +172,11 @@ Without this, a 12-cavity/4-part die renders `a, a, a, a, b, b, b, b, c, c, c, c
 
 ---
 
-## 6. `Tool_Duplicate` — pre-existing defect, fixed here
+## 6. Adjacent changes fixed in scope
+
+Three changes ride along because they sit inside the exact code this rename edits, and two of them block the cutover.
+
+### 6.1 `Tool_Duplicate` — missing `ItemId` copy (D7)
 
 ```sql
 -- R__Tools_Tool_Duplicate.sql:325
@@ -178,6 +190,53 @@ SELECT @NewId, c.CavityNumber, c.StatusCodeId, c.Description, ...
 Under per-part identity it also becomes a *correctness* problem: every copied cavity lands in the single `NULL`-item group, so a 12-cavity family die needs 12 distinct letters instead of 3, and the backfill/insert can collide.
 
 `ItemId` is added to both the copy `SELECT` and the JSON preview at lines 289 and 369. A regression test is added (§7.2).
+
+---
+
+### 6.2 The Scrapped-cavity part-map defect (D9) — found on prod
+
+Answering Q2, Jacques found `DMO124` (`6MA IN 1&5 EX 1&5 - D`, 12 cavities, 4 parts, mounted on Machine 11) has **one cavity that cannot be mapped**:
+
+> *"all except one cavity that was marked scrapped prior to the part mapping. NOW i cannot update it."*
+
+Cavity 7 (`Exhaust 1 Aa`) was set Scrapped before `0072` shipped. `CavityRow` binds three components — Description, **Part** and Status — to a single expression:
+
+```
+enabled: !{view.params.row.isScrappedSaved} && !{view.params.row.isDeprecated}
+```
+
+so the entire row greys out. **The proc is not the blocker.** `ToolCavity_SaveAll`'s `UPDATE` leg already sets `ItemId`, and its Scrapped guard only fires on a status *change* (`sc.Code = 'Scrapped' AND i.StatusCode <> 'Scrapped'`). Submitting the row with `StatusCode` still `Scrapped` and a new `ItemId` would be accepted. The UI simply never lets it be submitted.
+
+The disable is over-applied. Which cavity cuts which part is a **physical property of the die** — it does not stop being true when the cavity is taken out of service, and `0072` exists precisely so the shift-output screen can *name a cavity that has no LOT on it*. A scrapped cavity is the strongest case for having the map, not a reason to forbid it.
+
+**Fix:** drop `ItemId` from the disable expression — the Part dropdown stays enabled on a Scrapped row. Status stays disabled (the proc enforces immutability anyway). Description is a label and should follow; called out separately so it can be declined.
+
+#### 6.2.1 Why this blocks the backfill
+
+The backfill partitions by `(ToolId, ISNULL(ItemId, -1))`. With cavity 7 unmapped it falls into the `NULL` group **alone**, and part `12241-6MA`'s group shrinks to cavities 8 and 9:
+
+| Cavity | Description | `ItemId` | Group | Derived | Correct |
+|---|---|---|---|---|---|
+| 1, 2, 3 | `In 1 Da/Db/Dc` | `12231-6MA` | 12231 | `a, b, c` | ✅ |
+| 4, 5, 6 | `In 5 Da/Db/Dc` | `12235-6MA` | 12235 | `a, b, c` | ✅ |
+| **7** | `Exhaust 1 Aa` | **NULL** | NULL | `a` | ⚠️ should be `a` **of 12241** |
+| **8** | `Ex 1 Db` | `12241-6MA` | 12241 | **`a`** | ❌ should be **`b`** |
+| **9** | `Ex 1 Dc` | `12241-6MA` | 12241 | **`b`** | ❌ should be **`c`** |
+| 10, 11, 12 | `Ex 5 D…` | `12245-6MA` | 12245 | `a, b, c` | ✅ |
+
+One unmapped cavity silently mis-letters two of its peers. **Map cavity 7 before running `0075`** — via the D9 fix, or directly in the database.
+
+### 6.3 Dropping `Lots.Lot.CavityNumber` (D6)
+
+The column is the D2 *manual-cavity* fallback: when a die-cast-origin `Lot_Create` gets no `@ToolCavityId`, it demands a free-text `@CavityNote` and stores it here. Dropping the column therefore **retires that fallback** — `@ToolCavityId` becomes unconditionally required for a die-cast-origin LOT. That is a behaviour change, not a schema tidy, and is called out so it is chosen rather than absorbed.
+
+It is the right change now: cavities are properly configured with parts on prod, and a die-cast LOT whose cavity is untyped free text cannot be rolled up per part, which is the whole point of `0072`.
+
+Dev evidence: **0** LOTs with a non-empty `CavityNumber`, **0** die-cast LOTs with `ToolId` set but `ToolCavityId` NULL. The same two counts must be run on prod before the drop (§9.1).
+
+**Blast radius — 6 files, no views:** `R__Lots_Lot_Create.sql` (drop `@CavityNote`, drop the D2 branch, require `@ToolCavityId`), `R__Lots_Lot_GetTerminalRecentCreations.sql` (drop the `COALESCE` fallback), `lots/Lot_Create` NQ (`query.sql` + `resource.json`, drop the `cavityNote` param), `Lots/Lot/code.py` (drop the `cavityNote` argument), and `sql/tests/0023_.../030_Lot_Create_LotName_and_Cavity.sql` (Tests 5 and 6 are the D2 accept/reject pair — Test 5 is deleted, Test 6 becomes *"die-cast origin without `@ToolCavityId` is rejected"*).
+
+**Splittable.** If this is more change than wanted in one migration, `0075` can rename the column to `CavityNote` instead and a later migration can drop it. The audit in §8 passes either way.
 
 ---
 
@@ -215,7 +274,7 @@ A rename of the column that misses the alias leaves four screens rendering a bla
 |---|---|
 | `R__Tools_ToolCavity_SaveAll.sql` (30 refs) | `@Incoming.CavityCode NVARCHAR(4)`; `TRY_CAST(… AS INT)` → `JSON_VALUE` string; `< 1` → format check; **new ItemId-collision rejection**; uniqueness pre-check re-scoped to `(Tool, Item, Code)`; audit `+#1` → `+#a`; ordering |
 | `R__Tools_ToolCavity_Create.sql` (11 refs) | `@CavityNumber INT` → `@CavityCode NVARCHAR(4)`; `< 1` → format check; uniqueness re-scoped |
-| `R__Tools_Tool_Duplicate.sql` (8 refs) | Rename + **`ItemId` added to the copy** (§6) |
+| `R__Tools_Tool_Duplicate.sql` (8 refs) | Rename + **`ItemId` added to the copy** (§6.1) |
 | `R__Lots_Lot_Get.sql` (2 refs) | Result alias `tc.CavityNumber AS ToolCavityNumber` → `ToolCavityCode` — consumed by 4 views and `Lot/code.py`'s `_EMPTY` shape (§7.1.1) |
 | `R__Lots_Lot_GetTerminalRecentCreations.sql` (4 refs) | Reads both `tc.CavityCode` and the renamed `l.CavityNote`; drops `CAST(… AS NVARCHAR(20))` |
 | `R__Lots_Lot_Create.sql` (7 refs) | `@CavityNum` now naturally a string; `@CavityNumberToStore` → `@CavityNoteToStore`; audit prose unchanged |
@@ -350,7 +409,16 @@ WHERE tc.DeprecatedAt IS NULL
 ORDER BY t.Code, i.PartNumber, tc.CavityNumber;
 ```
 
-**Query 3 is a gate, not a check.** The letters come from the ordinal, not from the die. On Dev they happen to reproduce what operators typed; on Prod that is an assumption. If `0072`'s `ItemId` map is still unpopulated on Prod, every cavity falls into the `NULL` group and the derived letters will be *die-wide* `a..l` — wrong, and exactly the thing this change exists to stop. **If `Unmapped > 0` on a family die, configure `ItemId` first and re-run query 3.**
+```sql
+-- 4. D6 only: the drop must not destroy data or strand a LOT.
+SELECT COUNT(*) FROM Lots.Lot WHERE NULLIF(LTRIM(RTRIM(CavityNumber)), '') IS NOT NULL;
+SELECT COUNT(*) FROM Lots.Lot WHERE ToolId IS NOT NULL AND ToolCavityId IS NULL;
+-- Both must be 0 (they are on Dev). Non-zero -> do not drop; rename per §6.3.
+```
+
+**Query 3 is a gate, not a check — and it has already failed once.** Answering Q2 on 2026-09-10, `DMO124` cavity 7 was found unmapped (Scrapped before `0072` shipped, and unmappable through the UI — D9). That single unmapped row mis-letters cavities 8 and 9 of part `12241-6MA`; the full working is in §6.2.1.
+
+So the rule is concrete: **`Unmapped` must be 0 on every family die before `0075` runs.** Fix D9 first, map the stragglers, re-run query 3, and diff `DerivedCode` against the trailing letter in `Description` — step 3b automates exactly that comparison inside the migration, so a miss aborts rather than corrupts.
 
 `CavityCode` is immutable after save (D3), so a wrong letter means deprecating and re-creating the row — with live LOTs already pointing at it. Get this right before, not after.
 
@@ -369,12 +437,22 @@ Not reversible by a down-migration — `CavityNumber` is dropped in step 6 and t
 
 ## 10. Open questions
 
-| # | Question | Owner | Blocking? |
+All four opened with this spec were **answered by Jacques on 2026-09-10** against live prod data.
+
+| # | Question | Resolution |
+|---|---|---|
+| Q1 | Lowercase `a` or uppercase `A`? | **Lowercase.** Prod's own descriptions confirm it: `In 1 Da` / `Db` / `Dc` — the `D` belongs to the *die* identifier (`DMO124`, `… - D`), the **trailing lowercase letter is the cavity**. Folded into D8. |
+| Q2 | Is `ItemId` populated on prod's family dies? | **Yes, except one** — `DMO124` cavity 7, Scrapped before `0072` shipped and unmappable through the UI. Promoted to defect **D9** (§6.2) and to a blocking pre-flight rule (§9.1). |
+| Q3 | Do the paper sheets letter cavities in the current ordinal order? | **Yes, and better than asked.** *"they group production by part, where each row represents a cavity"* — which independently confirms the §5 ordering change (`ORDER BY PartNumber, CavityCode`). Prod's descriptions run `Da, Db, Dc` in ordinal order on every mapped group, so the ordinal→letter derivation is sound; step 3b now asserts it per row rather than trusting it. |
+| Q4 | Drop `Lots.Lot.CavityNumber` rather than rename it? | **Drop.** *"so long as that's not the description"* — it is not; it is the free-text cavity note on the LOT. Folded into D6, scoped in §6.3, gated by pre-flight query 4. |
+
+### 10.1 Still open
+
+| # | Item | Owner | Blocking? |
 |---|---|---|---|
-| Q1 | Lowercase (`a`) or uppercase (`A`)? Spec assumes lowercase per `0072`. Dev's descriptions are mixed. | MPP / Jacques | No — one-line change, uniqueness unaffected |
-| Q2 | Is `ItemId` populated on Prod's family dies yet? `0072` shipped 2026-09-09. | Jacques | **Yes** — gates §9.1 query 3 |
-| Q3 | Do MPP's paper production sheets letter cavities in the same order as the current `CavityNumber` ordinal? | MPP | **Yes** — gates the backfill |
-| Q4 | Should `Lots.Lot.CavityNote` be dropped outright rather than renamed? It is marked *"legacy as of v1.9, scheduled for removal"*. | Jacques | No — rename now, drop separately |
+| O1 | Should a Scrapped cavity's **Description** also become editable, or only its Part? D9 fixes Part; Description is a label and arguably follows. | Jacques | No |
+| O2 | `Views/Audit/AuditLog/view.json` carries 19 pickled QualifiedValue rows (§7.5). Pre-existing and unrelated, but `--mode verify` cannot reach zero until they are stripped. | Jacques | Only for the audit's exit code |
+| O3 | Single-cavity dies (`DMO126 — 6MA Oil Pan E`) get code `a` and a Description with no letter to cross-check. Confirmed intended (*"these cavities would just be a"*); noted so step 3b's skip is not read as a gap. | — | No |
 
 ---
 
@@ -382,4 +460,5 @@ Not reversible by a down-migration — `CavityNumber` is dropped in step 6 and t
 
 | Version | Date | Author | Change |
 |---|---|---|---|
-| 0.1 | 2026-09-10 | Blue Ridge (with Claude) | Initial design. Decisions D1–D8 taken in session with Jacques. |
+| 0.1 | 2026-09-10 | Blue Ridge (with Claude) | Initial design. Decisions D1–D8 taken in session with Jacques. Blast radius measured by `tools/verify_cavity_rename.py`: 67 files, 366 occurrences. |
+| 0.2 | 2026-09-10 | Blue Ridge (with Claude) | Q1–Q4 answered against live prod (§10). **D9 added** — a Scrapped cavity's `ItemId` is unmappable through `CavityRow`, found on `DMO124` cavity 7, and it mis-letters two peer cavities in the backfill (§6.2). **D6 hardened** from rename to drop, retiring the D2 manual-cavity fallback (§6.3). Backfill gains step 3b, a per-row cross-check of the derived code against the trailing letter already in `Description` (validate, never source — D4 stands). Pre-flight gains query 4 and a concrete blocking rule. §6 restructured into three adjacent in-scope changes. |
