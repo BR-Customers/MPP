@@ -355,6 +355,12 @@ def getBulkOpenRowInstances(toolId, seedToken=None, _optionsToken=None):
             # overlaid by the repeater transform -- shaped here so every key the
             # row's params traverse always exists (predeclare-bound-props rule).
             "itemId":             None,
+            # 0072: the part this cavity is configured to cut. The operator no
+            # longer picks it -- the repeater transform seeds itemId from this
+            # when the draft is untouched, and the row locks the dropdown so a
+            # configured cavity cannot be opened against the wrong part.
+            "configuredItemId":   c.get("ItemId"),
+            "configuredPart":     c.get("ItemPartNumber") or "",
             "scannedLtt":         "",
             "resultState":        "",
             "resultMessage":      "",

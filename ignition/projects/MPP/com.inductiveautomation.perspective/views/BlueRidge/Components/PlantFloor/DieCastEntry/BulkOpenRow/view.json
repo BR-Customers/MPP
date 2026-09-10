@@ -16,7 +16,7 @@
     "itemOptions": [],
     "resultState": "",
     "resultMessage": "",
-    "seedToken": -1
+    "configuredItemId": null, "configuredPart": "", "seedToken": -1
   },
   "propConfig": {
     "params.toolCavityId": {
@@ -53,6 +53,12 @@
       "paramDirection": "input"
     },
     "params.resultMessage": {
+      "paramDirection": "input"
+    },
+    "params.configuredItemId": {
+      "paramDirection": "input"
+    },
+    "params.configuredPart": {
       "paramDirection": "input"
     },
     "params.seedToken": {
@@ -156,6 +162,14 @@
           "shrink": 1
         },
         "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "isNull({view.params.configuredItemId})"
+              }
+            }
+          },
           "position.display": {
             "binding": {
               "config": {
