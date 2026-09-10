@@ -158,5 +158,89 @@ EXEC test.Assert_RowCount
 DROP TABLE #L;
 GO
 
+-- =============================================
+-- Test 6: @ItemId -- a family die may carry a cavity 'a' on every part
+--         it casts. Its own tool, so the ListByTool counts above stay put.
+-- =============================================
+DECLARE @DieTypeId2 BIGINT = (SELECT Id FROM Tools.ToolType WHERE Code = N'Die');
+DECLARE @ActiveId2  BIGINT = (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active');
+
+CREATE TABLE #RFam (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RFam EXEC Tools.Tool_Create
+    @ToolTypeId = @DieTypeId2, @Code = N'CAV-ITEM-DIE', @Name = N'Cavity ItemId Test Die',
+    @StatusCodeId = @ActiveId2, @AppUserId = 1;
+DECLARE @FamToolId BIGINT = (SELECT NewId FROM #RFam);
+DROP TABLE #RFam;
+
+DECLARE @PartA BIGINT = (SELECT MIN(Id) FROM Parts.Item WHERE DeprecatedAt IS NULL);
+DECLARE @PartB BIGINT = (SELECT MIN(Id) FROM Parts.Item WHERE DeprecatedAt IS NULL AND Id > @PartA);
+
+-- 6a: cavity 'a' on part A
+CREATE TABLE #F1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #F1 EXEC Tools.ToolCavity_Create
+    @ToolId = @FamToolId, @CavityCode = N'a', @Description = N'Intake a',
+    @ItemId = @PartA, @AppUserId = 1;
+DECLARE @F1S BIT = (SELECT Status FROM #F1);
+DROP TABLE #F1;
+EXEC test.Assert_IsEqual @Actual = @F1S, @Expected = 1,
+    @TestName = N'[Create ItemId] cavity a on part A accepted';
+
+-- 6b: THE POINT -- cavity 'a' again, different part, same tool
+CREATE TABLE #F2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #F2 EXEC Tools.ToolCavity_Create
+    @ToolId = @FamToolId, @CavityCode = N'a', @Description = N'Exhaust a',
+    @ItemId = @PartB, @AppUserId = 1;
+DECLARE @F2S BIT = (SELECT Status FROM #F2);
+DROP TABLE #F2;
+EXEC test.Assert_IsEqual @Actual = @F2S, @Expected = 1,
+    @TestName = N'[Create ItemId] cavity a on a SECOND part accepted';
+
+-- 6c: same part, same code -> rejected
+CREATE TABLE #F3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #F3 EXEC Tools.ToolCavity_Create
+    @ToolId = @FamToolId, @CavityCode = N'a', @Description = N'dupe',
+    @ItemId = @PartA, @AppUserId = 1;
+DECLARE @F3S BIT = (SELECT Status FROM #F3);
+DROP TABLE #F3;
+EXEC test.Assert_IsEqual @Actual = @F3S, @Expected = 0,
+    @TestName = N'[Create ItemId] duplicate cavity a on the same part rejected';
+
+-- 6d: unmapped 'a' is its own group -- must NOT collide with the mapped ones
+CREATE TABLE #F4 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #F4 EXEC Tools.ToolCavity_Create
+    @ToolId = @FamToolId, @CavityCode = N'a', @Description = N'unmapped a',
+    @AppUserId = 1;
+DECLARE @F4S BIT = (SELECT Status FROM #F4);
+DROP TABLE #F4;
+EXEC test.Assert_IsEqual @Actual = @F4S, @Expected = 1,
+    @TestName = N'[Create ItemId] unmapped cavity a does not collide with mapped ones';
+
+-- 6e: a second unmapped 'a' DOES collide (NULLs compare equal for uniqueness)
+CREATE TABLE #F5 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #F5 EXEC Tools.ToolCavity_Create
+    @ToolId = @FamToolId, @CavityCode = N'a', @Description = N'second unmapped a',
+    @AppUserId = 1;
+DECLARE @F5S BIT = (SELECT Status FROM #F5);
+DROP TABLE #F5;
+EXEC test.Assert_IsEqual @Actual = @F5S, @Expected = 0,
+    @TestName = N'[Create ItemId] a second unmapped cavity a is rejected';
+
+-- 6f: a part that does not exist -> rejected, mirroring ToolCavity_SaveAll
+CREATE TABLE #F6 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #F6 EXEC Tools.ToolCavity_Create
+    @ToolId = @FamToolId, @CavityCode = N'z', @Description = N'bad part',
+    @ItemId = 999999999, @AppUserId = 1;
+DECLARE @F6S BIT = (SELECT Status FROM #F6);
+DROP TABLE #F6;
+EXEC test.Assert_IsEqual @Actual = @F6S, @Expected = 0,
+    @TestName = N'[Create ItemId] a part that does not exist is rejected';
+
+-- 6g: the map actually persisted
+DECLARE @MappedA INT = (SELECT COUNT(*) FROM Tools.ToolCavity
+                        WHERE ToolId = @FamToolId AND CavityCode = N'a' AND ItemId = @PartA);
+EXEC test.Assert_IsEqual @Actual = @MappedA, @Expected = 1,
+    @TestName = N'[Create ItemId] ItemId persisted on the created cavity';
+GO
+
 EXEC test.PrintSummary;
 GO

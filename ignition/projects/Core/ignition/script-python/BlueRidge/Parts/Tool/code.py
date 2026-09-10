@@ -779,11 +779,17 @@ def getCellsForDropdown(toolId=None):
 # Per-tab mutations (Cavity / Attribute / Assignment)
 # -----------------------------------------------------------------------------
 
-def createCavity(toolId, cavityCode, description=None):
-    """Insert a new ToolCavity. Returns {Status, Message, NewId}."""
+def createCavity(toolId, cavityCode, description=None, itemId=None):
+    """Insert a new ToolCavity. Returns {Status, Message, NewId}.
+
+       itemId is the OPTIONAL cavity-to-part map for family dies (0072).
+       Omit it on a die whose cavities all cut the same part. Supplying it
+       matters on a family die: cavity codes are unique per PART, so four
+       cavities called 'a' are legal only if each carries its own itemId."""
     toolId = _u(toolId)
     cavityCode = _u(cavityCode)
     description = _u(description)
+    itemId = _u(itemId)
     BlueRidge.Common.Util.log("toolId=%s cavityCode=%s" % (toolId, cavityCode))
     if toolId is None:
         return {"Status": 0, "Message": "ToolId is required", "NewId": None}
@@ -795,6 +801,7 @@ def createCavity(toolId, cavityCode, description=None):
             "toolId":      toolId,
             "cavityCode":  ("%s" % cavityCode).strip().lower(),
             "description": description,
+            "itemId":      itemId,
             "appUserId":   BlueRidge.Common.Util._currentAppUserId(),
         },
     )
