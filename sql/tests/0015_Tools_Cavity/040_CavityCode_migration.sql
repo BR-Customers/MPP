@@ -139,39 +139,30 @@ DELETE FROM Tools.Tool WHERE Id = @ToolId;
 GO
 
 -- =============================================
--- Test 5: the backfill lettered every existing row, and did so per part.
---         Seeded family dies (6MA-A, 6MA-B) must start each part at 'a'.
---         6MA-B is the 12-cavity / 4-part die from prod.
+-- Test 5: DELIBERATELY ABSENT -- the backfill cannot be asserted here.
+--
+-- Run-Tests resets with -SkipDemoSeed, so the versioned migrations run
+-- against a database with ZERO Tools.ToolCavity rows. The backfill in
+-- migration 0076 letters rows that already EXIST when it runs, so in this
+-- database it letters nothing and there is nothing to assert. Every cavity
+-- visible here was created by a test file AFTER the migration, through
+-- ToolCavity_Create / ToolCavity_SaveAll -- which is proc behaviour, and is
+-- covered by 010 / 020 / 030.
+--
+-- An earlier revision asserted "6MA-B letters as 4 parts x 3 cavities" and
+-- failed for exactly this reason (Expected 4, Actual 0); its sibling
+-- assertion passed only because it ran over an empty set, which is worse --
+-- a test that cannot fail. Both removed rather than gated, because a
+-- silently-skipped assertion reads as coverage it does not provide.
+--
+-- Where the backfill IS verified:
+--   * migration 0076 step 3 -- ABORTS if a family die has an unmapped
+--     cavity, the case that mis-letters peers (prod DMO124 cavity 7)
+--   * migration 0076 step 5 -- PRINTS where a derived letter disagrees with
+--     the letter operators already typed at the end of Description
+--   * the pre-flight dry-run in the plan's Task 1, run against the real
+--     data (MPP_MES_Dev reproduces 6MA-A / 6MA-B correctly; prod is a gate)
 -- =============================================
--- Scoped to the SEEDED tools only. An unscoped count would also see rows
--- that other test files create through the procs, which is whole-DB state,
--- not a property of the migration.
-DECLARE @BadGroups INT = (
-    SELECT COUNT(*) FROM (
-        SELECT tc.ToolId, ISNULL(tc.ItemId, -1) AS ItemGrp
-        FROM Tools.ToolCavity tc
-        INNER JOIN Tools.Tool t ON t.Id = tc.ToolId
-        WHERE tc.DeprecatedAt IS NULL
-          AND t.Code IN (N'6MA-A', N'6MA-B', N'59B', N'5G0', N'5G0-F-A', N'6NA')
-        GROUP BY tc.ToolId, ISNULL(tc.ItemId, -1)
-        HAVING MIN(tc.CavityCode) <> N'a'
-    ) g);
-EXEC test.Assert_IsEqual
-    @Actual = @BadGroups, @Expected = 0,
-    @TestName = N'0076: every seeded (Tool, Item) group starts at a';
-
--- 6MA-B is the family die: 12 cavities, 4 parts, so exactly 4 groups of a,b,c
-DECLARE @FamilyGroups INT = (
-    SELECT COUNT(*) FROM (
-        SELECT tc.ItemId FROM Tools.ToolCavity tc
-        INNER JOIN Tools.Tool t ON t.Id = tc.ToolId
-        WHERE t.Code = N'6MA-B' AND tc.DeprecatedAt IS NULL
-        GROUP BY tc.ItemId HAVING COUNT(*) = 3
-    ) g);
-EXEC test.Assert_IsEqual
-    @Actual = @FamilyGroups, @Expected = 4,
-    @TestName = N'0076: 6MA-B letters as 4 parts x 3 cavities';
-GO
 
 EXEC test.PrintSummary;
 GO
