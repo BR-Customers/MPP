@@ -85,7 +85,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "expression": "{view.custom.preview}.cavityName + \"  ·  \" + {view.custom.preview}.lotName + if({view.custom.preview}.partNumber \u003d \"\", \"\", \"  ·  \" + {view.custom.preview}.partNumber)"
+                "expression": "{view.custom.preview.cavityName} + \"  ·  \" + {view.custom.preview.lotName} + if({view.custom.preview.partNumber} \u003d \"\", \"\", \"  ·  \" + {view.custom.preview.partNumber})"
               },
               "type": "expr"
             }
@@ -209,7 +209,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "numberFormat({view.custom.preview}.pieceCount, \"#,##0\") + \" pc\""
+                        "expression": "numberFormat({view.custom.preview.pieceCount}, \"#,##0\") + \" pc\""
                       },
                       "type": "expr"
                     }
@@ -282,7 +282,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "numberFormat({view.custom.preview}.newShots, \"#,##0\") + \" pc\""
+                        "expression": "numberFormat({view.custom.preview.newShots}, \"#,##0\") + \" pc\""
                       },
                       "type": "expr"
                     }
@@ -355,7 +355,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "numberFormat({view.custom.preview}.projectedPieceCount, \"#,##0\") + \" pc\""
+                        "expression": "numberFormat({view.custom.preview.projectedPieceCount}, \"#,##0\") + \" pc\""
                       },
                       "type": "expr"
                     }
@@ -415,7 +415,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "expression": "\"This cavity is already credited through counter \" + numberFormat({view.custom.preview}.creditedThrough, \"#,##0\") + \". The system subtracts it -- you never do.\""
+                "expression": "\"This cavity is already credited through counter \" + numberFormat({view.custom.preview.creditedThrough}, \"#,##0\") + \". The system subtracts it -- you never do.\""
               },
               "type": "expr"
             }
@@ -439,7 +439,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.preview}.readingState !\u003d \"Ok\" || {view.custom.preview}.belowStandardAfter"
+                "expression": "{view.custom.preview.readingState} !\u003d \"Ok\" || {view.custom.preview.belowStandardAfter}"
               },
               "type": "expr"
             }
@@ -447,7 +447,7 @@
           "props.style.color": {
             "binding": {
               "config": {
-                "expression": "if({view.custom.preview}.readingState \u003d \"Behind\", \"var(--mpp-state-bad-fg)\", \"var(--mpp-state-warn-fg)\")"
+                "expression": "if({view.custom.preview.readingState} \u003d \"Behind\", \"var(--mpp-state-bad-fg)\", \"var(--mpp-state-warn-fg)\")"
               },
               "type": "expr"
             }
@@ -455,7 +455,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "expression": "if({view.custom.preview}.readingState \u003d \"Behind\", \"That reading is behind the last reading recorded for this die, \" + numberFormat({view.custom.preview}.dieCreditedThrough, \"#,##0\") + \" for this shift. Check the number you wrote down.\", if({view.custom.preview}.readingState \u003d \"None\", \"No reading entered. Releasing now closes the basket at its current count and credits this cavity nothing further.\", \"This basket will close under the standard fill of \" + numberFormat({view.custom.preview}.maxPieceCount, \"#,##0\") + \" pc.\"))"
+                "expression": "if({view.custom.preview.readingState} \u003d \"Behind\", \"That reading is behind the last reading recorded for this die, \" + numberFormat({view.custom.preview.dieCreditedThrough}, \"#,##0\") + \" for this shift. Check the number you wrote down.\", if({view.custom.preview.readingState} \u003d \"None\", \"No reading entered. Releasing now closes the basket at its current count and credits this cavity nothing further.\", \"This basket will close under the standard fill of \" + numberFormat(if(isNull({view.custom.preview.maxPieceCount}), 0, {view.custom.preview.maxPieceCount}), \"#,##0\") + \" pc.\"))"
               },
               "type": "expr"
             }
@@ -522,7 +522,7 @@
               "props.enabled": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.preview}.readingState !\u003d \"Behind\""
+                    "expression": "{view.custom.preview.readingState} !\u003d \"Behind\""
                   },
                   "type": "expr"
                 }
@@ -530,7 +530,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.preview}.belowStandardAfter || {view.custom.preview}.readingState \u003d \"None\", \"pf-btn pf-btn-danger pf-btn-large\", \"pf-btn pf-btn-primary pf-btn-large\")"
+                    "expression": "if({view.custom.preview.belowStandardAfter} || {view.custom.preview.readingState} \u003d \"None\", \"pf-btn pf-btn-danger pf-btn-large\", \"pf-btn pf-btn-primary pf-btn-large\")"
                   },
                   "type": "expr"
                 }
