@@ -98,7 +98,7 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None, cellLocatio
 
 
 _EMPTY_RELEASE_PREVIEW = {
-    "lotId": None, "lotName": "", "toolCavityId": None,
+    "lotId": None, "lotName": "", "toolCavityId": None, "toolId": None,
     "cavityNumber": "", "cavityName": "", "partNumber": "",
     "pieceCount": 0, "maxPieceCount": None,
     "creditedThrough": 0, "dieCreditedThrough": 0, "newShots": 0,
@@ -162,6 +162,11 @@ def getReleasePreview(lotId, shiftId=None, cellLocationId=None, counterReading=N
         "projectedPieceCount": row.get("ProjectedPieceCount") or 0,
         "belowStandardAfter":  bool(row.get("BelowStandardAfter")),
         "readingState":        row.get("ReadingState") or "None",
+        # proc v1.1 -- the dialog's counter-context binding and its anchor
+        # popup both key off this. Leaving it unmapped is not visibly broken:
+        # the context line just quietly reports "nothing recorded" while the
+        # rest of the dialog quotes the real watermark.
+        "toolId":              row.get("ToolId"),
         "found":               True,
     })
     return out

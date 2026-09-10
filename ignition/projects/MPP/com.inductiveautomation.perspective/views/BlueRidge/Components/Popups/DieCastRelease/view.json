@@ -90,8 +90,8 @@
   },
   "props": {
     "defaultSize": {
-      "height": 470,
-      "width": 640
+      "height": 520,
+      "width": 760
     }
   },
   "root": {
@@ -570,7 +570,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.preview.readingState} = \"Behind\", \"pf-btn pf-btn-primary pf-btn-large\", \"pf-btn pf-btn-secondary pf-btn-large\")"
+                    "expression": "if({view.custom.preview.readingState} = \"Behind\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
                   },
                   "type": "expr"
                 }

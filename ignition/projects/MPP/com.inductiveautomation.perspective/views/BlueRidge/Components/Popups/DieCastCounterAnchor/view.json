@@ -88,8 +88,8 @@
   },
   "props": {
     "defaultSize": {
-      "height": 560,
-      "width": 660
+      "height": 660,
+      "width": 680
     }
   },
   "root": {
