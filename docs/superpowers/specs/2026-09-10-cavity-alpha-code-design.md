@@ -78,9 +78,9 @@ Single letters sort lexicographically in the order a human expects, so the lette
 | D4 | **`Description` unchanged** — still the display name per the 2026-08-19 decision, existing values untouched | Jacques, 2026-09-10: *"keep it as is. no need for a change there."* No parsing of free text, no backfill from it, no change to `cavityDisplayName()`. |
 | D5 | Rename carried **all the way through to the Perspective views** | Chosen over stopping at the Python boundary. One name at every layer; cost is 15 Designer view edits (§7.4). |
 | D6 | `Lots.Lot.CavityNumber` **dropped**, and the D2 manual-cavity fallback retired with it | Jacques, 2026-09-10 (Q4): drop it, *"so long as that's not the description"* — it is not; it is the free-text cavity note on the LOT. Dev has **0** LOTs using it and **0** die-cast LOTs without a proper `ToolCavityId`. See §6.2. |
-| D7 | `Tools.Tool_Duplicate`'s missing `ItemId` copy **fixed in scope** | Pre-existing defect in the exact statement being edited; per-part identity makes it materially worse. See §6.1. |
+| D7 | `Tools.Tool_Duplicate`'s missing `ItemId` copy — **NOT in scope; owned by the punch list** | Independently found and specified the same day in `docs/superpowers/specs/2026-09-10-tools-screen-punch-list-design.md` §1, more thoroughly than here (deprecated-part guard, audit JSON, `@Message` reporting, two test assertions). This spec **depends on** it, it does not re-specify it. See §6.1. |
 | D8 | Codes stored **lowercase**, 1–4 letters — **confirmed by Jacques 2026-09-10 (Q1)** | Matches `0072`'s *"cavity 'a'"* and prod's own descriptions (`In 1 Da` / `Db` / `Dc` — the `D` is part of the *die* identifier, the trailing lowercase letter is the cavity). Collation is `SQL_Latin1_General_CP1_CI_AS`, so `'A'`/`'a'` collide in the unique index regardless. |
-| D9 | A **Scrapped cavity's `ItemId` must be mappable** — UI defect fixed in scope | Found on prod 2026-09-10 answering Q2. `CavityRow` disables the whole row for a Scrapped cavity, so `DMO124` cavity 7 can never be mapped — which mis-letters two of its peers in the backfill. See §6.2. |
+| D9 | A Scrapped cavity's `ItemId` must be mappable — **NOT in scope; owned by the punch list** | Found here on prod answering Q2 and, the same day, specified in `2026-09-10-tools-screen-punch-list-design.md` §2 with a broader fix (both locks removed, SQL *and* UI). What this spec contributes is the **consequence**: until that lands, the `0075` backfill mis-letters peer cavities. See §6.2. |
 
 ### 2.1 Explicitly out of scope
 
@@ -89,6 +89,7 @@ Single letters sort lexicographically in the order a human expects, so the lette
 - Making `ToolCavity.ItemId` `NOT NULL`. It stays nullable; see §3.2.
 - Renaming Perspective **component** names (`CavityOrdinal`, `KpiCavity`, …). Cosmetic, no functional effect.
 - The five pre-existing stale-fixture test failures (§7.3).
+- `Tool_Duplicate`'s missing `ItemId` copy and the Scrapped-cavity lock — both owned by the Tools punch list (§6.0). Dependencies, not scope.
 
 ---
 
@@ -154,7 +155,7 @@ Replacing the current `CavityNumber < 1` check:
 | Uniqueness | `UQ_ToolCavity_ActiveToolItemCode` + pre-check in both procs | One `CavityCode` per `(Tool, Item)` among non-deprecated rows. Pre-check so the operator gets a message, not a constraint violation. |
 | Code immutability | `ToolCavity_SaveAll` | Unchanged rule, retargeted: `CavityCode` may not change on a saved row. Message: *"Cavity code is immutable on existing cavities."* |
 | **ItemId collision** *(new)* | `ToolCavity_SaveAll` | An `ItemId` edit that would produce a duplicate `(Tool, newItemId, CavityCode)` is rejected before mutation. This rejection does not exist today and is the direct consequence of D1 + D3. |
-| Scrapped transition | `ToolCavity_SaveAll` | Unchanged. |
+| ~~Scrapped transition~~ | — | **Removed** by punch-list §2, which deletes the `-- No transition OUT of Scrapped` block and frees status in both directions. This spec must not re-assert it (§6.0). |
 
 All rejections run **before `BEGIN TRANSACTION`** per the `INSERT-EXEC` co-requirement in `CLAUDE.md`.
 
@@ -172,46 +173,36 @@ Without this, a 12-cavity/4-part die renders `a, a, a, a, b, b, b, b, c, c, c, c
 
 ---
 
-## 6. Adjacent changes fixed in scope
+## 6. Dependencies and adjacent changes
 
-Three changes ride along because they sit inside the exact code this rename edits, and two of them block the cutover.
+### 6.0 This spec sits on top of the Tools punch list
 
-### 6.1 `Tool_Duplicate` — missing `ItemId` copy (D7)
+`2026-09-10-tools-screen-punch-list-design.md` was committed to `jacques/working` the same day (`7ddf1f83`), from the post-go-live plant-floor testing session. It independently found **both** of the adjacent defects this spec had picked up, and specifies them better. They are **removed from this scope** and become a **merge-order dependency** instead.
 
-```sql
--- R__Tools_Tool_Duplicate.sql:325
-INSERT INTO Tools.ToolCavity
-    (ToolId, CavityNumber, StatusCodeId, Description, CreatedAt, CreatedByUserId)
-SELECT @NewId, c.CavityNumber, c.StatusCodeId, c.Description, ...
-```
+| Defect | Punch list | This spec |
+|---|---|---|
+| `Tool_Duplicate` drops `ItemId` | §1 — owns the fix, incl. deprecated-part guard, resolved-FK audit JSON, `@Message` count, 2 new assertions, `DuplicateDie` popup text | §6.1 — records only *why `0075` needs it* |
+| Scrapped cavity is unmappable | §2 — owns the fix, and goes further: **both** locks removed (the SQL `-- No transition OUT of Scrapped` block **and** all three `CavityRow` `props.enabled` bindings), no gate replacing them | §6.2 — records only the **backfill consequence**, which the punch list does not cover |
 
-`ItemId` is absent. Migration `0072` added the column on 2026-09-09 and this proc was never updated, so **duplicating a family die silently discards the entire cavity-to-part map**. The duplicate's cavities all come back unmapped, and the shift-output screen cannot name them — precisely the failure `0072` was written to fix.
+**Order: punch list first, then `0075`.** They edit the same four files — `R__Tools_ToolCavity_SaveAll.sql`, `R__Tools_Tool_Duplicate.sql`, `_Tools/CavityRow/view.json`, `Tools/Cavities/view.json`. Landing the rename first would force the punch list to re-derive its edits against renamed columns and a swapped input component, for no gain. Re-run `--mode baseline` (§8) after the punch list lands so the rename measures against the corrected tree.
 
-Under per-part identity it also becomes a *correctness* problem: every copied cavity lands in the single `NULL`-item group, so a 12-cavity family die needs 12 distinct letters instead of 3, and the backfill/insert can collide.
+One rule in §4 changes as a result: **"no transition out of Scrapped" is deleted by the punch list**, so this spec must not re-assert it.
 
-`ItemId` is added to both the copy `SELECT` and the JSON preview at lines 289 and 369. A regression test is added (§7.2).
+### 6.1 Why `0075` needs punch-list §1
 
----
+`Tool_Duplicate`'s cavity `INSERT` omits `ItemId`. Under **die-wide** identity that loses the part map — bad, but recoverable by re-entering it. Under **per-part** identity (D1) it is worse than data loss: every copied cavity lands in the single `NULL`-`ItemId` group, so a 12-cavity family die needs 12 distinct letters instead of 3 per part, and the insert can collide against `UQ_ToolCavity_ActiveToolItemCode`. A duplicated die would fail to save rather than merely come back unmapped.
 
-### 6.2 The Scrapped-cavity part-map defect (D9) — found on prod
+### 6.2 Why `0075` needs punch-list §2 — the backfill consequence
 
-Answering Q2, Jacques found `DMO124` (`6MA IN 1&5 EX 1&5 - D`, 12 cavities, 4 parts, mounted on Machine 11) has **one cavity that cannot be mapped**:
+Answering Q2, Jacques found `DMO124` (`6MA IN 1&5 EX 1&5 - D`, 12 cavities, 4 parts, mounted on Machine 11) has one cavity that cannot be mapped:
 
-> *"all except one cavity that was marked scrapped prior to the part mapping. NOW i cannot update it."*
+> *"all except one cavity that was marked scrapped prior to the part maping. NOW i cannot update it."*
 
-Cavity 7 (`Exhaust 1 Aa`) was set Scrapped before `0072` shipped. `CavityRow` binds three components — Description, **Part** and Status — to a single expression:
+Cavity 7 (`Exhaust 1 Aa`) was set Scrapped before `0072` shipped. `CavityRow` binds Description, **Part** and Status to one expression — `!{view.params.row.isScrappedSaved} && !{view.params.row.isDeprecated}` — so the whole row greys out. Worth noting for the punch list: **the proc was never the blocker.** `ToolCavity_SaveAll`'s `UPDATE` leg already sets `ItemId`, and its Scrapped guard only fires on a status *change* (`sc.Code = 'Scrapped' AND i.StatusCode <> 'Scrapped'`). A row submitted still-Scrapped with a new `ItemId` would have been accepted. Punch-list §2 removes both locks regardless, which resolves it either way.
 
-```
-enabled: !{view.params.row.isScrappedSaved} && !{view.params.row.isDeprecated}
-```
+**The part this spec adds:** that stuck row is not just an annoyance, it silently corrupts the backfill.
 
-so the entire row greys out. **The proc is not the blocker.** `ToolCavity_SaveAll`'s `UPDATE` leg already sets `ItemId`, and its Scrapped guard only fires on a status *change* (`sc.Code = 'Scrapped' AND i.StatusCode <> 'Scrapped'`). Submitting the row with `StatusCode` still `Scrapped` and a new `ItemId` would be accepted. The UI simply never lets it be submitted.
-
-The disable is over-applied. Which cavity cuts which part is a **physical property of the die** — it does not stop being true when the cavity is taken out of service, and `0072` exists precisely so the shift-output screen can *name a cavity that has no LOT on it*. A scrapped cavity is the strongest case for having the map, not a reason to forbid it.
-
-**Fix:** drop `ItemId` from the disable expression — the Part dropdown stays enabled on a Scrapped row. Status stays disabled (the proc enforces immutability anyway). Description is a label and should follow; called out separately so it can be declined.
-
-#### 6.2.1 Why this blocks the backfill
+#### 6.2.1 One unmapped cavity mis-letters two others
 
 The backfill partitions by `(ToolId, ISNULL(ItemId, -1))`. With cavity 7 unmapped it falls into the `NULL` group **alone**, and part `12241-6MA`'s group shrinks to cavities 8 and 9:
 
@@ -224,7 +215,7 @@ The backfill partitions by `(ToolId, ISNULL(ItemId, -1))`. With cavity 7 unmappe
 | **9** | `Ex 1 Dc` | `12241-6MA` | 12241 | **`b`** | ❌ should be **`c`** |
 | 10, 11, 12 | `Ex 5 D…` | `12245-6MA` | 12245 | `a, b, c` | ✅ |
 
-One unmapped cavity silently mis-letters two of its peers. **Map cavity 7 before running `0075`** — via the D9 fix, or directly in the database.
+`CavityCode` is immutable once saved (D3), so a wrong letter means deprecating and re-creating a row that live LOTs already point at. **Map cavity 7 before `0075` runs** — which is what the punch list unblocks. Backfill step 3b (§3.1) then catches any remaining case automatically by comparing the derived code against the trailing letter already in `Description`.
 
 ### 6.3 Dropping `Lots.Lot.CavityNumber` (D6)
 
@@ -272,9 +263,9 @@ A rename of the column that misses the alias leaves four screens rendering a bla
 
 | File | Change |
 |---|---|
-| `R__Tools_ToolCavity_SaveAll.sql` (30 refs) | `@Incoming.CavityCode NVARCHAR(4)`; `TRY_CAST(… AS INT)` → `JSON_VALUE` string; `< 1` → format check; **new ItemId-collision rejection**; uniqueness pre-check re-scoped to `(Tool, Item, Code)`; audit `+#1` → `+#a`; ordering |
+| `R__Tools_ToolCavity_SaveAll.sql` (30 refs) | `@Incoming.CavityCode NVARCHAR(4)`; `TRY_CAST(… AS INT)` → `JSON_VALUE` string; `< 1` → format check; **new ItemId-collision rejection**; uniqueness pre-check re-scoped to `(Tool, Item, Code)`; audit `+#1` → `+#a`; ordering. Rebase onto punch-list §2, which deletes the Scrapped guard from this same proc |
 | `R__Tools_ToolCavity_Create.sql` (11 refs) | `@CavityNumber INT` → `@CavityCode NVARCHAR(4)`; `< 1` → format check; uniqueness re-scoped |
-| `R__Tools_Tool_Duplicate.sql` (8 refs) | Rename + **`ItemId` added to the copy** (§6.1) |
+| `R__Tools_Tool_Duplicate.sql` (8 refs) | Rename **only** — the `ItemId` copy is punch-list §1's (§6.0). Rebase onto it. |
 | `R__Lots_Lot_Get.sql` (2 refs) | Result alias `tc.CavityNumber AS ToolCavityNumber` → `ToolCavityCode` — consumed by 4 views and `Lot/code.py`'s `_EMPTY` shape (§7.1.1) |
 | `R__Lots_Lot_GetTerminalRecentCreations.sql` (4 refs) | Reads both `tc.CavityCode` and the renamed `l.CavityNote`; drops `CAST(… AS NVARCHAR(20))` |
 | `R__Lots_Lot_Create.sql` (7 refs) | `@CavityNum` now naturally a string; `@CavityNumberToStore` → `@CavityNoteToStore`; audit prose unchanged |
@@ -450,7 +441,7 @@ All four opened with this spec were **answered by Jacques on 2026-09-10** agains
 
 | # | Item | Owner | Blocking? |
 |---|---|---|---|
-| O1 | Should a Scrapped cavity's **Description** also become editable, or only its Part? D9 fixes Part; Description is a label and arguably follows. | Jacques | No |
+| ~~O1~~ | Resolved by punch-list §2 — Description, Part **and** Status all become editable on a Scrapped row; the `isScrappedSaved` term comes out of all three bindings. | — | Closed |
 | O2 | `Views/Audit/AuditLog/view.json` carries 19 pickled QualifiedValue rows (§7.5). Pre-existing and unrelated, but `--mode verify` cannot reach zero until they are stripped. | Jacques | Only for the audit's exit code |
 | O3 | Single-cavity dies (`DMO126 — 6MA Oil Pan E`) get code `a` and a Description with no letter to cross-check. Confirmed intended (*"these cavities would just be a"*); noted so step 3b's skip is not read as a gap. | — | No |
 
@@ -461,4 +452,5 @@ All four opened with this spec were **answered by Jacques on 2026-09-10** agains
 | Version | Date | Author | Change |
 |---|---|---|---|
 | 0.1 | 2026-09-10 | Blue Ridge (with Claude) | Initial design. Decisions D1–D8 taken in session with Jacques. Blast radius measured by `tools/verify_cavity_rename.py`: 67 files, 366 occurrences. |
+| 0.3 | 2026-09-10 | Blue Ridge (with Claude) | **Reconciled with `2026-09-10-tools-screen-punch-list-design.md`** (`7ddf1f83`, committed the same day from the post-go-live testing session), which independently specifies both adjacent defects and goes further on the Scrapped lock. D7 and D9 **removed from scope** and restated as merge-order dependencies (§6.0): punch list first, then `0075`, because they edit the same four files. §4's "no transition out of Scrapped" rule struck — the punch list deletes it. §6 retitled *Dependencies and adjacent changes*; §6.2.1 (the backfill mis-lettering) retained as this spec's own contribution, which the punch list does not cover. O1 closed. |
 | 0.2 | 2026-09-10 | Blue Ridge (with Claude) | Q1–Q4 answered against live prod (§10). **D9 added** — a Scrapped cavity's `ItemId` is unmappable through `CavityRow`, found on `DMO124` cavity 7, and it mis-letters two peer cavities in the backfill (§6.2). **D6 hardened** from rename to drop, retiring the D2 manual-cavity fallback (§6.3). Backfill gains step 3b, a per-row cross-check of the derived code against the trailing letter already in `Description` (validate, never source — D4 stands). Pre-flight gains query 4 and a concrete blocking rule. §6 restructured into three adjacent in-scope changes. |
