@@ -1,11 +1,21 @@
 {
   "custom": {
     "rows": [],
-    "scopeLocationId": 3,
+    "scopeLocationId": null,
+    "scopeName": "",
+    "scopeOptions": [],
     "shiftId": null
   },
   "params": {},
   "propConfig": {
+    "custom.scopeOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Downtime.getScopeOptionsForTerminal\", 0, {session.custom.terminal.terminalLocationId}, {session.custom.cell.locationId})"
+        },
+        "type": "expr"
+      }
+    },
     "custom.shiftOptions": {
       "binding": {
         "config": {
@@ -55,7 +65,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} \u003d \"\", \"(no scope)\", {session.custom.terminal.zoneName})"
+                        "expression": "if(isNull({view.custom.scopeName}) || {view.custom.scopeName} \u003d \"\", \"(no scope - pick a machine)\", {view.custom.scopeName})"
                       },
                       "type": "expr"
                     }
@@ -82,6 +92,66 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.applyScope(self.props.value)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ScopeSelect"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "len({view.custom.scopeOptions}) \u003e 1"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.scopeOptions"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": o.get(\"label\"), \"value\": o.get(\"value\")} for o in opts]",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.scopeLocationId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Select machine"
+              },
+              "style": {
+                "width": "260px"
+              }
+            },
+            "type": "ia.input.dropdown"
           },
           {
             "events": {
@@ -334,6 +404,14 @@
                   },
                   "type": "expr"
                 }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({view.custom.scopeLocationId}), \"Pick a machine above to see and start its downtime.\", \"No downtime events for this scope / shift.\")"
+                  },
+                  "type": "expr"
+                }
               }
             },
             "props": {
@@ -404,7 +482,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tsid \u003d self.view.custom.scopeLocationId\n\tif sid is None:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"No terminal scope - select a cell first.\"}, \"\")\n\t\treturn\n\tres \u003d DE.start(sid)\n\tUi.notifyResult(res, \"Downtime started\")\n\tself.view.rootContainer.refreshRows()"
+                    "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tsid \u003d self.view.custom.scopeLocationId\n\tif sid is None:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"Pick a machine at the top of this window first.\"}, \"\")\n\t\treturn\n\tres \u003d DE.start(sid)\n\tUi.notifyResult(res, \"Downtime started\")\n\tself.view.rootContainer.refreshRows()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -416,6 +494,16 @@
             },
             "position": {
               "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.scopeLocationId})"
+                  },
+                  "type": "expr"
+                }
+              }
             },
             "props": {
               "style": {
@@ -442,6 +530,16 @@
             },
             "position": {
               "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.scopeLocationId})"
+                  },
+                  "type": "expr"
+                }
+              }
             },
             "props": {
               "style": {
@@ -510,7 +608,7 @@
       "system": {
         "onStartup": {
           "config": {
-            "script": "\tself.refreshRows()"
+            "script": "\tc \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tself.applyScope(c.get(\"locationId\"))"
           },
           "scope": "G",
           "type": "script"
@@ -531,9 +629,16 @@
     "scripts": {
       "customMethods": [
         {
+          "name": "applyScope",
+          "params": [
+            "activeCellLocationId"
+          ],
+          "script": "\t# Day-one feedback item 3. The downtime unit is resolved by SQL from the\n\t# TERMINAL, not from session.custom.cell -- the Trim screen deliberately\n\t# CLEARS that cell (no Trim Press context cells exist), which is why the\n\t# manager used to open at trim with no scope and no rows. Feeding the\n\t# operator pick back in as the active cell re-flags it IsDefault, so one\n\t# proc serves both the initial seed and every subsequent pick.\n\timport BlueRidge.Oee.Downtime as D\n\tt \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.terminal) or {}\n\td \u003d D.getDefaultScopeForTerminal(t.get(\"terminalLocationId\"), activeCellLocationId)\n\tself.view.custom.scopeLocationId \u003d d.get(\"ScopeLocationId\")\n\tself.view.custom.scopeName \u003d d.get(\"Name\") or \"\"\n\tself.refreshRows()"
+        },
+        {
           "name": "refreshRows",
           "params": [],
-          "script": "\timport BlueRidge.Oee.Downtime as D\n\tc \u003d self.session.custom.cell\n\tcellId \u003d c.get(\"locationId\") if c else None\n\tscope \u003d D.resolveScope(cellId)\n\tself.view.custom.scopeLocationId \u003d scope\n\tself.view.custom.rows \u003d D.getByScope(scope, True, self.view.custom.shiftId)"
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\tself.view.custom.rows \u003d D.getByScope(self.view.custom.scopeLocationId, True, self.view.custom.shiftId)"
         }
       ],
       "extensionFunctions": null,
