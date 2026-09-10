@@ -5,7 +5,7 @@
    -scrap fan-out all live in the procs.
 
    Public surface:
-     getShiftOutputBreakdown(toolId, shiftId, grossShots)                    -> list[dict]
+     getShiftOutputBreakdown(toolId, shiftId, counterReading, cellLocationId) -> list[dict]
      recordShiftOutput(data, appUserId=None, terminalLocationId=None)        -> {Status, Message, NewId}
      registerShotLoss(toolId, shiftId, defectCodeId, quantity,
                        appUserId=None, terminalLocationId=None)              -> {Status, Message, NewId}"""
@@ -15,33 +15,40 @@ def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
 
 
-def getShiftOutputBreakdown(toolId, shiftId, grossShots):
-    """Proposed per-cavity-lot good-piece counts for an entered shot count
+def getShiftOutputBreakdown(toolId, shiftId, counterReading, cellLocationId=None):
+    """Proposed per-cavity-lot good-piece counts for a PRESS COUNTER READING
        (Workorder.DieCast_GetShiftOutputBreakdown) -- the read-side proposal the
        recording flow presents to the operator for confirmation/adjustment
        before recordShiftOutput writes the contribution rows. Returns list[dict]
        ([] when the tool has no lots open/contributing this shift).
 
-       grossShots IS ADDITIVE -- IT IS THIS ENTRY, NOT A SHIFT TOTAL (proc v1.3,
-       2026-08-19). Operators count shots SINCE THEIR LAST ENTRY, so the number
-       passed here is already the increment. Gross is die-wide and each cavity
-       yields one part per shot, so every OPEN lot proposes the same entered
-       number; a lot already released this shift keeps its recorded credit.
-       Nothing is apportioned and no prior claim is subtracted -- the old
-       cumulative "remainder of gross" behaviour zeroed the proposal whenever
-       prior claims on a cavity exceeded the entry."""
+       counterReading IS A READING, NOT AN INCREMENT (proc v2.0, 2026-09-09).
+       The press counter resets each shift, so every cavity carries a
+       credited-through watermark starting at 0 and a basket's credit is
+       (reading - watermark). A cavity that never rolled its basket has a
+       watermark of 0 and is credited the whole reading -- exactly v1.3's
+       behaviour. Uniform fan-out is not replaced; it becomes the case where
+       nothing rolled over. A cavity that DID roll gets only the remainder,
+       which v1.3 could not express at all.
+
+       cellLocationId is the PRESS. The watermark is scoped by it, so a die
+       moved to another press (or a changeover to another die on the same
+       press) resets the chain. The proc falls back to the die's currently
+       mounted cell when it is not supplied."""
     toolId = _u(toolId)
     shiftId = _u(shiftId)
-    grossShots = _u(grossShots)
+    counterReading = _u(counterReading)
+    cellLocationId = _u(cellLocationId)
     BlueRidge.Common.Util.log(
-        "getShiftOutputBreakdown toolId=%s shiftId=%s grossShots=%s"
-        % (toolId, shiftId, grossShots)
+        "getShiftOutputBreakdown toolId=%s shiftId=%s counterReading=%s cellLocationId=%s"
+        % (toolId, shiftId, counterReading, cellLocationId)
     )
     if toolId is None or shiftId is None:
         return []
     return BlueRidge.Common.Db.execList(
         "workorder/DieCast_GetShiftOutputBreakdown",
-        {"toolId": toolId, "shiftId": shiftId, "grossShots": grossShots},
+        {"toolId": toolId, "shiftId": shiftId,
+         "counterReading": counterReading, "cellLocationId": cellLocationId},
     )
 
 
@@ -75,7 +82,7 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None, cellLocatio
         "shotLossJson":       BlueRidge.Common.Util.convertWrapperObjectToJson(shotLoss) if shotLoss else None,
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
-        "grossShots":         d.get("grossShots"),
+        "counterReading":     d.get("counterReading"),
         "cellLocationId":     cellLocationId,
     }
     return BlueRidge.Common.Db.execMutation("workorder/DieCastShiftOutput_Record", params)
@@ -159,23 +166,23 @@ def registerShotLoss(toolId, shiftId, defectCodeId, quantity, appUserId=None, te
        line with no per-cavity lines and calls recordShiftOutput /
        Workorder.DieCastShiftOutput_Record. Returns {Status, Message, NewId}.
 
-       backlog 3.2 (2026-08-19): the lost shots now ALSO advance the die's
-       materialized shot counter (Tools.Tool.ShotCount). A shot-loss quantity is
-       a count of CYCLES the die ran and lost -- one lost shot spoils one piece
-       in every open cavity, which is exactly why the proc fans the RejectEvent
-       across every open lot -- so those cycles are die wear and must be counted.
-       They are threaded through the existing @GrossShots parameter, which is
-       the proc's one shot-counter increment path (no SQL change needed).
+       NO COUNTER READING IS SENT (2026-09-09). backlog 3.2 threaded the loss
+       quantity through @GrossShots so the lost cycles would advance
+       Tools.Tool.ShotCount, and left this note: "If MPP instead reads gross
+       straight off the machine counter, this bump double-counts and should be
+       REVERTED rather than patched."
 
-       NOTE FOR REVIEW: the 2026-08-04 tool-shot-count design deliberately chose
-       'shot-loss path does NOT increment -- gross already counts those cycles,
-       a separate bump would double-count'. That holds only if the shift-end
-       gross the operator types INCLUDES the cycles they already registered as
-       shot loss. MPP reports the counter not moving, so the field convention is
-       evidently the other way round (gross = cycles not already accounted for).
-       If MPP instead reads gross straight off the machine counter, this bump
-       double-counts and should be reverted rather than patched -- flagged for
-       Hunter."""
+       That condition is now confirmed -- MPP reads a press counter that resets
+       each shift -- so the bump is reverted, which restores the 2026-08-04
+       tool-shot-count design's original choice. The press counter already
+       counts every cycle the die ran, lost shots included, so those cycles
+       reach ShotCount via the next reading. Sending the loss QUANTITY as a
+       READING would be far worse than double-counting: a quantity of 5 would
+       be read as "the counter now says 5" and rejected as behind the
+       watermark, or would corrupt the chain outright.
+
+       A shot loss is therefore purely a RejectEvent fan-out across every
+       currently-open basket. It moves no watermark and no shot count."""
     BlueRidge.Common.Util.log(
         "registerShotLoss toolId=%s shiftId=%s defectCodeId=%s quantity=%s"
         % (toolId, shiftId, defectCodeId, quantity)
@@ -186,7 +193,7 @@ def registerShotLoss(toolId, shiftId, defectCodeId, quantity, appUserId=None, te
         "toolId":     _u(toolId),
         "lines":      [],
         "shotLoss":   [{"defectCodeId": _u(defectCodeId), "quantity": qty}],
-        "grossShots": qty,
+        # deliberately NO counterReading -- see the docstring above
     }
     return recordShiftOutput(data, appUserId=appUserId, terminalLocationId=terminalLocationId)
 

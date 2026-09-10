@@ -2,7 +2,21 @@
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-19
--- Version:     1.4
+-- Version:     2.0
+-- Change:      v2.0 -- SHOT-READING CHAIN (spec 2026-09-09). @GrossShots
+--              becomes @CounterReading: the operator types the PRESS COUNTER
+--              READING, not an increment. Renamed rather than reinterpreted.
+--                * every contribution row now records ShotCounterReading;
+--                * a reading BEHIND the die's watermark for this shift+press
+--                  is rejected pre-transaction. That guard catches a typo
+--                  (200 for 2000, which would silently under-credit every
+--                  cavity) and an out-of-order entry (releasing a basket at a
+--                  remembered earlier reading AFTER a shift-output entry
+--                  already credited it, which would double-count it);
+--                * Tools.ToolCount advances by the DELTA
+--                  (@CounterReading - die watermark), never by the raw
+--                  reading -- otherwise a second entry in one shift inflates
+--                  die life by the whole reading.
 -- Change:      v1.4 -- shift-override ATTRIBUTION (OI-2 / spec sec 5): every
 --              Workorder.DieCastContribution row now carries CellLocationId --
 --              the PRESS -- taken from @CellLocationId, else from the die's
@@ -86,7 +100,7 @@
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftOutput_Record
     @ShiftId BIGINT, @ToolId BIGINT, @LinesJson NVARCHAR(MAX),
     @ShotLossJson NVARCHAR(MAX) = NULL, @AppUserId BIGINT, @TerminalLocationId BIGINT = NULL,
-    @GrossShots INT = NULL,
+    @CounterReading INT = NULL,
     @CellLocationId BIGINT = NULL
 AS
 BEGIN
@@ -101,7 +115,7 @@ BEGIN
         IF ISJSON(@LinesJson) <> 1 OR (@ShotLossJson IS NOT NULL AND ISJSON(@ShotLossJson) <> 1)
         BEGIN SET @Message=N'LinesJson/ShotLossJson not valid JSON.'; GOTO Fail; END
         IF NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id=@AppUserId) BEGIN SET @Message=N'AppUser not found.'; GOTO Fail; END
-        IF @GrossShots IS NOT NULL AND @GrossShots < 0 BEGIN SET @Message=N'GrossShots cannot be negative.'; GOTO Fail; END
+        IF @CounterReading IS NOT NULL AND @CounterReading < 0 BEGIN SET @Message=N'Counter reading cannot be negative.'; GOTO Fail; END
 
         DECLARE @Lines TABLE (LotId BIGINT, PieceDelta INT, ScrapLines NVARCHAR(MAX));
         INSERT INTO @Lines (LotId, PieceDelta, ScrapLines)
@@ -149,6 +163,21 @@ BEGIN
             ORDER BY a.AssignedAt DESC, a.Id DESC;
 
         -- ===== mutation =====
+        -- v2.0: the counter climbs within a shift, so a reading behind what is
+        -- already recorded for this die on this press is a typo or an
+        -- out-of-order entry. Reject with BOTH numbers -- an operator cannot
+        -- act on "invalid reading". Pre-transaction, per the Msg-3915 rule.
+        DECLARE @DieWatermark INT =
+            Workorder.ufn_DieShotWatermark(@ToolId, @ShiftId, @ResolvedCellLocationId);
+        IF @CounterReading IS NOT NULL AND @CounterReading < @DieWatermark
+        BEGIN
+            SET @Message = N'Counter reading ' + CAST(@CounterReading AS NVARCHAR(20))
+                         + N' is behind this die''s last recorded reading of '
+                         + CAST(@DieWatermark AS NVARCHAR(20))
+                         + N' for this shift. Check the reading, or release the basket first.';
+            GOTO Fail;
+        END
+
         BEGIN TRANSACTION;
         DECLARE @LotId BIGINT, @Delta INT, @Scrap NVARCHAR(MAX);
         DECLARE cur CURSOR LOCAL FAST_FORWARD FOR SELECT LotId, PieceDelta, ScrapLines FROM @Lines;
@@ -157,8 +186,8 @@ BEGIN
         BEGIN
             IF @Delta > 0
             BEGIN
-                INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId)
-                VALUES (@LotId, @ShiftId, @Delta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId);
+                INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId, ShotCounterReading)
+                VALUES (@LotId, @ShiftId, @Delta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId, @CounterReading);
                 UPDATE Lots.Lot WITH (UPDLOCK, HOLDLOCK)
                 SET PieceCount = PieceCount + @Delta, InventoryAvailable = InventoryAvailable + @Delta,
                     UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
@@ -191,9 +220,13 @@ BEGIN
         -- count for this die/shift is the authoritative cycle count; bump it in
         -- the same txn (B5 materialized-quantity pattern, row-locked). NULL/0 =
         -- no-op, so the standalone shot-loss path never double-counts.
-        IF @GrossShots > 0
+        -- v2.0: DELTA, not the raw reading. The watermark advances with every
+        -- recorded reading, so release-then-shift-end sums to the shift's
+        -- actual shots (1450 + 550 = 2000) and never double-counts.
+        DECLARE @ShotDelta INT = ISNULL(@CounterReading, 0) - @DieWatermark;
+        IF @ShotDelta > 0
             UPDATE Tools.Tool WITH (UPDLOCK, HOLDLOCK)
-            SET ShotCount = ShotCount + @GrossShots,
+            SET ShotCount = ShotCount + @ShotDelta,
                 UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
             WHERE Id = @ToolId;
 

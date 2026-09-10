@@ -62,8 +62,8 @@
       },
       {
         "type": "Parameter",
-        "identifier": "grossShots",
-        "sqlType": 3
+        "identifier": "counterReading",
+        "sqlType": 2
       },
       {
         "type": "Parameter",

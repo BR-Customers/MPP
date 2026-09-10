@@ -2,8 +2,22 @@
 -- Repeatable:  R__Workorder_DieCast_GetShiftOutputBreakdown.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-19
--- Version:     1.3
--- Changelog:   1.3 (2026-08-19) @GrossShots is ADDITIVE, not cumulative. The
+-- Version:     2.0
+-- Changelog:   2.0 (2026-09-09) SHOT-READING CHAIN. @GrossShots becomes
+--              @CounterReading -- the operator now types the PRESS COUNTER
+--              READING, not an increment. The counter resets each shift, so
+--              every cavity carries a credited-through watermark starting at
+--              0 and a basket's credit is (reading - watermark).
+--              Renamed rather than reinterpreted: silently changing what a
+--              parameter MEANS is exactly how v1.3 came about.
+--              A cavity that never rolled has watermark 0 and is credited the
+--              whole reading -- v1.3's behaviour exactly. Uniform fan-out is
+--              not replaced, it becomes the case where nothing rolled over.
+--              New trailing columns CreditedThrough + NewShots (APPENDED LAST;
+--              positional INSERT-EXEC consumers only add trailing columns).
+--              New @CellLocationId -- the press -- because the watermark is
+--              scoped by press so a die move / changeover resets the chain.
+--              1.3 (2026-08-19) @GrossShots is ADDITIVE, not cumulative. The
 --              open lot on each cavity now proposes @GrossShots DIRECTLY; the
 --              old "subtract what every OTHER lot on this cavity already
 --              claimed this shift" term is REMOVED. Confirmed with MPP: the
@@ -77,10 +91,21 @@
 --              Otherwise verbatim.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCast_GetShiftOutputBreakdown
-    @ToolId BIGINT, @ShiftId BIGINT, @GrossShots INT
+    @ToolId BIGINT, @ShiftId BIGINT, @CounterReading INT,
+    @CellLocationId BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    -- The press. Watermarks are scoped by it (see ufn_CavityShotWatermark).
+    -- Fall back to the die's currently-mounted cell when a caller does not
+    -- supply one -- correct by construction, since output can only be recorded
+    -- on the press the die is on.
+    IF @CellLocationId IS NULL
+        SELECT TOP 1 @CellLocationId = ta.CellLocationId
+        FROM Tools.ToolAssignment ta
+        WHERE ta.ToolId = @ToolId AND ta.ReleasedAt IS NULL
+        ORDER BY ta.AssignedAt DESC;
     DECLARE @ShiftStart DATETIME2(3) = (SELECT ActualStart FROM Oee.Shift WHERE Id = @ShiftId);
     DECLARE @ShiftEnd   DATETIME2(3) = (SELECT ISNULL(ActualEnd, SYSUTCDATETIME()) FROM Oee.Shift WHERE Id = @ShiftId);
 
@@ -110,13 +135,30 @@ BEGIN
         -- increment SINCE THE OPERATOR'S LAST ENTRY, die-wide, one part per cavity per shot,
         -- so nothing is apportioned and no prior claim is subtracted. Floor at 0 is a
         -- defensive guard only (the write proc rejects a negative gross).
+        -- v2.0: an open basket is credited (reading - its cavity watermark);
+        -- a basket already closed this shift keeps what it was credited and is
+        -- NOT re-credited. Floored at 0 -- the write proc rejects a reading
+        -- behind the die watermark outright.
         CASE WHEN lo.IsOpen = 0 THEN ISNULL(p.PriorGood, 0)
-             WHEN ISNULL(@GrossShots, 0) < 0 THEN 0
-             ELSE ISNULL(@GrossShots, 0)
+             ELSE CASE WHEN ISNULL(@CounterReading, 0)
+                          - Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId) < 0
+                       THEN 0
+                       ELSE ISNULL(@CounterReading, 0)
+                          - Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId)
+                  END
         END AS ProposedGood,
         CASE WHEN lo.MaxPieceCount IS NULL THEN 2147483647 ELSE lo.MaxPieceCount - lo.PieceCount END AS MaxHeadroom,
         lo.ItemId AS ItemId,
-        tc.Description AS CavityDescription
+        tc.Description AS CavityDescription,
+        -- APPENDED LAST (v2.0): what the operator sees as context, so they can
+        -- see the system already did the subtraction and never do it themselves.
+        Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId) AS CreditedThrough,
+        CASE WHEN ISNULL(@CounterReading, 0)
+                    - Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId) < 0
+             THEN 0
+             ELSE ISNULL(@CounterReading, 0)
+                    - Workorder.ufn_CavityShotWatermark(lo.ToolCavityId, @ShiftId, @CellLocationId)
+        END AS NewShots
     FROM Lots lo
     INNER JOIN Tools.ToolCavity tc ON tc.Id = lo.ToolCavityId
     LEFT JOIN Prior p ON p.LotId = lo.LotId

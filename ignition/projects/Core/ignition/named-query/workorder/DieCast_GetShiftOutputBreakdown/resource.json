@@ -42,8 +42,13 @@
       },
       {
         "type": "Parameter",
-        "identifier": "grossShots",
+        "identifier": "counterReading",
         "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "cellLocationId",
+        "sqlType": 3
       }
     ]
   }

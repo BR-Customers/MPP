@@ -2,7 +2,25 @@
 -- Repeatable:  R__Lots_DieCastLot_Release.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-19
--- Version:     1.2
+-- Version:     2.0
+-- Change:      v2.0 -- SHOT-READING CHAIN (spec 2026-09-09). New
+--              @CounterReading: the press counter reading at the moment the
+--              basket was swapped. The operator writes it down at the press
+--              and types it here even if they reach the terminal later.
+--                * @FinalPieceDelta is now DERIVED from it
+--                  (@CounterReading - this CAVITY's watermark) unless the
+--                  caller supplies one explicitly, which stays as an override;
+--                * the contribution row is written even when the delta is 0,
+--                  because that row ANCHORS the cavity watermark -- without it
+--                  the next basket on this cavity is credited from the stale
+--                  watermark and over-counted;
+--                * Tools.Tool.ShotCount now advances here too, by the DELTA.
+--                  v1.x deliberately did not touch ShotCount, and that was
+--                  right while release dealt only in pieces. Under the reading
+--                  model a changeover closes every lot WITHOUT a shift-output
+--                  entry ever being made for the outgoing die, so its shots
+--                  since the last entry would vanish from its life. Advancing
+--                  by (reading - die watermark) cannot double-count.
 -- Change:      v1.2 -- shift-override ATTRIBUTION (OI-2 / spec sec 5): new
 --              @CellLocationId param (default NULL, backward-compatible) and the
 --              final-delta Workorder.DieCastContribution row now stamps
@@ -63,6 +81,7 @@
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.DieCastLot_Release
     @LotId BIGINT, @StorageLocationId BIGINT = NULL, @FinalPieceDelta INT = NULL,
+    @CounterReading INT = NULL,
     @ScrapLinesJson NVARCHAR(MAX) = NULL, @ShiftId BIGINT = NULL,
     @AppUserId BIGINT, @TerminalLocationId BIGINT = NULL,
     @CellLocationId BIGINT = NULL
@@ -110,9 +129,46 @@ BEGIN
         )
         BEGIN SET @Message = N'One or more scrap defect codes are invalid or deprecated.'; GOTO Fail; END
 
+        -- v2.0: resolve the PRESS first -- both watermarks are scoped by it,
+        -- and the derived delta below depends on them. (Moved up from after the
+        -- projected-count check, which now consumes the derived delta.)
+        DECLARE @ResolvedCellLocationId BIGINT = @CellLocationId;
+        IF @ResolvedCellLocationId IS NULL
+            SELECT TOP 1 @ResolvedCellLocationId = a.CellLocationId
+            FROM Tools.ToolAssignment a
+            INNER JOIN Lots.Lot l ON l.Id = @LotId
+            WHERE a.ToolId = l.ToolId AND a.ReleasedAt IS NULL
+            ORDER BY a.AssignedAt DESC, a.Id DESC;
+
+        DECLARE @RelToolId BIGINT, @RelToolCavityId BIGINT;
+        SELECT @RelToolId = ToolId, @RelToolCavityId = ToolCavityId FROM Lots.Lot WHERE Id = @LotId;
+
+        IF @CounterReading IS NOT NULL AND @CounterReading < 0
+        BEGIN SET @Message = N'Counter reading cannot be negative.'; GOTO Fail; END
+
+        DECLARE @RelDieWatermark INT =
+            Workorder.ufn_DieShotWatermark(@RelToolId, @ShiftId, @ResolvedCellLocationId);
+        IF @CounterReading IS NOT NULL AND @CounterReading < @RelDieWatermark
+        BEGIN
+            SET @Message = N'Counter reading ' + CAST(@CounterReading AS NVARCHAR(20))
+                         + N' is behind this die'' last recorded reading of '
+                         + CAST(@RelDieWatermark AS NVARCHAR(20))
+                         + N' for this shift. Check the reading you wrote down.';
+            GOTO Fail;
+        END
+
+        -- Derive the final delta from the CAVITY watermark unless the caller
+        -- overrode it. The operator never subtracts anything.
+        IF @CounterReading IS NOT NULL AND @FinalPieceDelta IS NULL
+        BEGIN
+            SET @FinalPieceDelta = @CounterReading
+                - Workorder.ufn_CavityShotWatermark(@RelToolCavityId, @ShiftId, @ResolvedCellLocationId);
+            IF @FinalPieceDelta < 0 SET @FinalPieceDelta = 0;
+        END
+
         -- mirrors DieCastShiftOutput_Record's negative-delta guard + DieCastContribution's
         -- CHECK (PieceDelta >= 0): a negative @FinalPieceDelta must reject, not silently
-        -- no-op (the mutation below only applies the delta when > 0).
+        -- no-op.
         IF @FinalPieceDelta IS NOT NULL AND @FinalPieceDelta < 0
         BEGIN SET @Message = N'FinalPieceDelta cannot be negative.'; GOTO Fail; END
 
@@ -124,31 +180,30 @@ BEGIN
         DECLARE @FromLocationId BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @LotId);
         DECLARE @LotName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = @LotId);
 
-        -- v1.2: resolve the PRESS for the contribution row (mirrors
-        -- R__Workorder_DieCastShiftOutput_Record.sql v1.4's identical block).
-        -- @CellLocationId when the screen supplied it, else the cell this LOT's
-        -- die is currently mounted on. NULL stays NULL -- excluded from
-        -- equipment-scoped restamps rather than guessed at (spec sec 5).
-        DECLARE @ResolvedCellLocationId BIGINT = @CellLocationId;
-        IF @ResolvedCellLocationId IS NULL
-            SELECT TOP 1 @ResolvedCellLocationId = a.CellLocationId
-            FROM Tools.ToolAssignment a
-            INNER JOIN Lots.Lot l ON l.Id = @LotId
-            WHERE a.ToolId = l.ToolId AND a.ReleasedAt IS NULL
-            ORDER BY a.AssignedAt DESC, a.Id DESC;
-
         -- ===== mutation =====
         BEGIN TRANSACTION;
 
         -- final good-piece delta (inline, mirrors DieCastShiftOutput_Record's contribution block)
-        IF @FinalPieceDelta IS NOT NULL AND @FinalPieceDelta > 0
+        -- v2.0: written whenever a reading was supplied, even for a ZERO delta --
+        -- the row anchors this cavity's watermark. Skipping it would leave the
+        -- watermark stale and over-credit the next basket on this cavity.
+        IF @CounterReading IS NOT NULL OR (@FinalPieceDelta IS NOT NULL AND @FinalPieceDelta > 0)
         BEGIN
-            INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId)
-            VALUES (@LotId, @ShiftId, @FinalPieceDelta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId);
+            INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId, ShotCounterReading)
+            VALUES (@LotId, @ShiftId, ISNULL(@FinalPieceDelta, 0), @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId, @CounterReading);
+            IF ISNULL(@FinalPieceDelta, 0) > 0
             UPDATE Lots.Lot WITH (UPDLOCK, HOLDLOCK)
             SET PieceCount = PieceCount + @FinalPieceDelta, InventoryAvailable = InventoryAvailable + @FinalPieceDelta,
                 UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
             WHERE Id = @LotId;
+
+            -- die life advances with the reading (see header)
+            DECLARE @RelShotDelta INT = ISNULL(@CounterReading, 0) - @RelDieWatermark;
+            IF @RelShotDelta > 0
+                UPDATE Tools.Tool WITH (UPDLOCK, HOLDLOCK)
+                SET ShotCount = ShotCount + @RelShotDelta,
+                    UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
+                WHERE Id = @RelToolId;
             DECLARE @ContribAct NVARCHAR(500) = Audit.ufn_TruncateActivity(@LotName + N' ' + Audit.ufn_MidDot()
                 + N' Die Cast ' + Audit.ufn_MidDot() + N' Added ' + CAST(@FinalPieceDelta AS NVARCHAR(10)) + N' pc (final)');
             EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=NULL,

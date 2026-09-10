@@ -32,7 +32,7 @@ DECLARE @W TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 
 -- first submission: gross 500 -> ShotCount 500
 INSERT INTO @W EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool,
-    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @GrossShots=500;
+    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @CounterReading=500;
 DECLARE @s1 NVARCHAR(5) = (SELECT CAST(Status AS NVARCHAR(5)) FROM @W);
 EXEC test.Assert_IsEqual @TestName=N'[Inc] gross 500 -> Status 1', @Expected=N'1', @Actual=@s1;
 DECLARE @c1 NVARCHAR(20) = (SELECT CAST(ShotCount AS NVARCHAR(20)) FROM Tools.Tool WHERE Id=@Tool);
@@ -41,28 +41,28 @@ EXEC test.Assert_IsEqual @TestName=N'[Inc] ShotCount = 500 after first submit', 
 -- second submission: gross 300 -> accumulates to 800
 DELETE FROM @W;
 INSERT INTO @W EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool,
-    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @GrossShots=300;
+    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @CounterReading=300;
 DECLARE @c2 NVARCHAR(20) = (SELECT CAST(ShotCount AS NVARCHAR(20)) FROM Tools.Tool WHERE Id=@Tool);
 EXEC test.Assert_IsEqual @TestName=N'[Inc] ShotCount accumulates to 800', @Expected=N'800', @Actual=@c2;
 
 -- NULL gross: no-op (mirrors registerShotLoss's no-gross path)
 DELETE FROM @W;
 INSERT INTO @W EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool,
-    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @GrossShots=NULL;
+    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @CounterReading=NULL;
 DECLARE @c3 NVARCHAR(20) = (SELECT CAST(ShotCount AS NVARCHAR(20)) FROM Tools.Tool WHERE Id=@Tool);
 EXEC test.Assert_IsEqual @TestName=N'[Inc] NULL gross leaves ShotCount at 800', @Expected=N'800', @Actual=@c3;
 
 -- zero gross: no-op
 DELETE FROM @W;
 INSERT INTO @W EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool,
-    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @GrossShots=0;
+    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @CounterReading=0;
 DECLARE @c4 NVARCHAR(20) = (SELECT CAST(ShotCount AS NVARCHAR(20)) FROM Tools.Tool WHERE Id=@Tool);
 EXEC test.Assert_IsEqual @TestName=N'[Inc] zero gross leaves ShotCount at 800', @Expected=N'800', @Actual=@c4;
 
 -- negative gross: rejected pre-transaction, no increment
 DELETE FROM @W;
 INSERT INTO @W EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool,
-    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @GrossShots=-1;
+    @LinesJson=N'[]', @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @CounterReading=-1;
 DECLARE @s5 NVARCHAR(5) = (SELECT CAST(Status AS NVARCHAR(5)) FROM @W);
 EXEC test.Assert_IsEqual @TestName=N'[Inc] negative gross -> Status 0', @Expected=N'0', @Actual=@s5;
 DECLARE @c5 NVARCHAR(20) = (SELECT CAST(ShotCount AS NVARCHAR(20)) FROM Tools.Tool WHERE Id=@Tool);
@@ -72,7 +72,7 @@ EXEC test.Assert_IsEqual @TestName=N'[Inc] negative gross leaves ShotCount at 80
 DELETE FROM @W;
 INSERT INTO @W EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool,
     @LinesJson=N'[{"lotId":999999999,"pieceDelta":1,"scrapLines":null}]',
-    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @GrossShots=100;
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL, @CounterReading=100;
 DECLARE @s6 NVARCHAR(5) = (SELECT CAST(Status AS NVARCHAR(5)) FROM @W);
 EXEC test.Assert_IsEqual @TestName=N'[Inc] gross + bad lot -> Status 0', @Expected=N'0', @Actual=@s6;
 DECLARE @c6 NVARCHAR(20) = (SELECT CAST(ShotCount AS NVARCHAR(20)) FROM Tools.Tool WHERE Id=@Tool);

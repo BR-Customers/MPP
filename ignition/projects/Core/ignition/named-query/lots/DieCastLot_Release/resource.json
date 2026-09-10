@@ -47,6 +47,11 @@
       },
       {
         "type": "Parameter",
+        "identifier": "counterReading",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
         "identifier": "scrapLinesJson",
         "sqlType": 7
       },

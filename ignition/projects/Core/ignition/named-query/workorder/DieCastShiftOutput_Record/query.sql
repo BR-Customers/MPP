@@ -5,5 +5,5 @@ EXEC Workorder.DieCastShiftOutput_Record
     @ShotLossJson       = :shotLossJson,
     @AppUserId          = :appUserId,
     @TerminalLocationId = :terminalLocationId,
-    @GrossShots         = :grossShots,
+    @CounterReading     = :counterReading,
     @CellLocationId     = :cellLocationId

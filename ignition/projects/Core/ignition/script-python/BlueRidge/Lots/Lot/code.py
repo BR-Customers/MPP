@@ -742,6 +742,10 @@ def releaseDieCast(data):
         "lotId":              d.get("lotId"),
         "storageLocationId":  d.get("storageLocationId"),
         "finalPieceDelta":    d.get("finalPieceDelta"),
+        # v2.0 shot-reading chain: the press counter reading the operator wrote
+        # down at the swap. The proc DERIVES finalPieceDelta from it (reading
+        # minus this cavity's watermark) unless one is explicitly supplied.
+        "counterReading":     d.get("counterReading"),
         "scrapLinesJson":     BlueRidge.Common.Util.convertWrapperObjectToJson(scrapLines) if scrapLines else None,
         "shiftId":            d.get("shiftId"),
         "appUserId":          appUserId,

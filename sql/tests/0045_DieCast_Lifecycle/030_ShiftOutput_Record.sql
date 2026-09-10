@@ -138,8 +138,11 @@ END
 -- =============================================
 DECLARE @B TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
-    CavityDescription NVARCHAR(500));
-INSERT INTO @B EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=100;
+    CavityDescription NVARCHAR(500),
+    -- v2.0 shot-reading chain appended CreditedThrough + NewShots. INSERT-EXEC
+    -- needs an exact column-count match, so the shape must track the proc.
+    CreditedThrough INT, NewShots INT);
+INSERT INTO @B EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=100;
 
 DECLARE @rowCount NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @B);
 EXEC test.Assert_IsEqual @TestName=N'[Breakdown] one row for the tool''s single cavity', @Expected=N'1', @Actual=@rowCount;
@@ -295,8 +298,11 @@ IF @LotB IS NULL
 
 DECLARE @B2 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
-    CavityDescription NVARCHAR(500));
-INSERT INTO @B2 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=100;
+    CavityDescription NVARCHAR(500),
+    -- v2.0 shot-reading chain appended CreditedThrough + NewShots. INSERT-EXEC
+    -- needs an exact column-count match, so the shape must track the proc.
+    CreditedThrough INT, NewShots INT);
+INSERT INTO @B2 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=100;
 
 -- scoped to @Cavity2 -- the tool-wide result also includes @Lot's own
 -- closed-out row on @Cavity (that lot/cavity pair is asserted separately in
@@ -326,8 +332,11 @@ EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood=100 (entered 
 -- ProposedGood = 0 for every realistic entry, which looks like a dead binding.
 DECLARE @B3 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
-    CavityDescription NVARCHAR(500));
-INSERT INTO @B3 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=30;
+    CavityDescription NVARCHAR(500),
+    -- v2.0 shot-reading chain appended CreditedThrough + NewShots. INSERT-EXEC
+    -- needs an exact column-count match, so the shape must track the proc.
+    CreditedThrough INT, NewShots INT);
+INSERT INTO @B3 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=30;
 DECLARE @bProp30 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B3 WHERE LotId=@LotB);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] entry (30) below lot A''s prior claim (40) still proposes 30, not 0', @Expected=N'30', @Actual=@bProp30;
 -- @Lot itself carries a 95-piece claim on @Cavity this same shift; a 30-shot
@@ -338,8 +347,11 @@ EXEC test.Assert_IsEqual @TestName=N'[MultiLot] entry (30) below the lot''s OWN 
 -- and a deliberately tiny entry against those same large prior claims
 DECLARE @B4 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
-    CavityDescription NVARCHAR(500));
-INSERT INTO @B4 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=5;
+    CavityDescription NVARCHAR(500),
+    -- v2.0 shot-reading chain appended CreditedThrough + NewShots. INSERT-EXEC
+    -- needs an exact column-count match, so the shape must track the proc.
+    CreditedThrough INT, NewShots INT);
+INSERT INTO @B4 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=5;
 DECLARE @bProp5 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B4 WHERE LotId=@LotB);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] small entry (5) against a large prior claim proposes 5, not 0', @Expected=N'5', @Actual=@bProp5;
 -- the released lot A is unaffected by the entered number -- it keeps its credit
