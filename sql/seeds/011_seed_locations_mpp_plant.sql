@@ -4,6 +4,14 @@
 --              Names authoritative; codes corrected to name-role; printers only on
 --              OUT terminals; DefaultScreen/closure/scanner/confirm attributes seeded.
 --              ASCII-only Names/Descriptions. Idempotent by Code.
+--
+--              Retired rows: the six TRIM1/TRIM2 presses and the dedicated press
+--              terminal TRIM1-P01-T1 are seeded ALREADY DEPRECATED (2026-07-30), which
+--              is how both live databases hold them -- MPP tracks trim at the shop
+--              level, not per press. Keep them deprecated: Oee.DowntimeScope_
+--              ListForTerminal counts only ACTIVE equipment cells beneath an Area, so
+--              TRIM1 having none is what scopes trim downtime to the shop rather than
+--              offering a three-press machine dropdown. See RETIRED in the generator.
 -- ============================================================
 SET NOCOUNT ON;
 
@@ -129,14 +137,14 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-T1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Terminal', N'TRIM1-T1', N'TRIM1-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P01')
-    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 01', N'TRIM1-P01', N'TRIM1-P01', 1;
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, DeprecatedAt)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 01', N'TRIM1-P01', N'TRIM1-P01', 1, CAST(N'2026-07-30T18:34:00' AS DATETIME2(3));
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P02')
-    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 02', N'TRIM1-P02', N'TRIM1-P02', 2;
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, DeprecatedAt)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 02', N'TRIM1-P02', N'TRIM1-P02', 2, CAST(N'2026-07-30T18:34:00' AS DATETIME2(3));
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P03')
-    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 03', N'TRIM1-P03', N'TRIM1-P03', 3;
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, DeprecatedAt)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 03', N'TRIM1-P03', N'TRIM1-P03', 3, CAST(N'2026-07-30T18:34:00' AS DATETIME2(3));
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Trim Shop 2', N'TRIM2', N'TRIM2', 6;
@@ -144,14 +152,14 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-T1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Terminal', N'TRIM2-T1', N'TRIM2-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-P01')
-    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 01', N'TRIM2-P01', N'TRIM2-P01', 1;
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, DeprecatedAt)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 01', N'TRIM2-P01', N'TRIM2-P01', 1, CAST(N'2026-07-30T18:34:00' AS DATETIME2(3));
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-P02')
-    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 02', N'TRIM2-P02', N'TRIM2-P02', 2;
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, DeprecatedAt)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 02', N'TRIM2-P02', N'TRIM2-P02', 2, CAST(N'2026-07-30T18:34:00' AS DATETIME2(3));
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-P03')
-    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 03', N'TRIM2-P03', N'TRIM2-P03', 3;
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, DeprecatedAt)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 03', N'TRIM2-P03', N'TRIM2-P03', 3, CAST(N'2026-07-30T18:34:00' AS DATETIME2(3));
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Machining & Assembly 1', N'MA1', N'MA1', 7;
@@ -486,8 +494,8 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'DC1-M01-T1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'DC1-M01'), N'Terminal', N'DC1-M01-T1', N'DC1-M01-T1', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P01-T1')
-    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01'), N'Terminal', N'TRIM1-P01-T1', N'TRIM1-P01-T1', 1;
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, DeprecatedAt)
+    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01'), N'Terminal', N'TRIM1-P01-T1', N'TRIM1-P01-T1', 1, CAST(N'2026-07-30T18:34:00' AS DATETIME2(3));
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'6ma-CH-L2')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 5, (SELECT Id FROM Location.Location WHERE Code = N'MA2'), N'6MA Cam Holder Line 2', N'6ma-CH-L2', N'6ma-CH-L2', 9;

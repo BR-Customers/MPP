@@ -11,8 +11,10 @@
 --                 - double checkout rejects (source-location guard) - after OUT the LOT
 --                   sits in Trim Storage, so a 2nd OUT from the trim press rejects
 --                 - combined shot + scrap above the LOT piece count rejects; boundary passes
---               Fixture item = 1 (5G0), origin Received, source = TRIM1-P01 (Trim Storage
---               = TRIM1-STORE resolved internally).
+--               Fixture item = 1 (5G0), origin Received, source = TRIM1, the trim SHOP
+--               (Trim Storage = TRIM1-STORE resolved internally). Was TRIM1-P01 until
+--               2026-07-30, when MPP deprecated the trim presses -- trim is tracked at
+--               the shop, and Lot_Create refuses a deprecated location.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -58,7 +60,7 @@ GO
 -- =============================================
 -- Test 2: blocked (Hold) LOT rejects (B2)
 -- =============================================
-DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');   -- the trim SHOP: where a trim LOT actually sits
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @L2 BIGINT;
@@ -78,7 +80,7 @@ GO
 -- =============================================
 -- Test 3: counter regression (< prior cumulative) rejects (D1)
 -- =============================================
-DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');   -- the trim SHOP: where a trim LOT actually sits
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @DcOt BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'DieCastShot');
@@ -98,11 +100,16 @@ EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] counter regression rejected 
 GO
 
 -- =============================================
--- Test 4: double checkout rejects (source-location guard). First OUT deposits into
---   Trim Storage; the LOT then sits in TRIM1-STORE (not under TRIM1-P01), so a 2nd OUT
---   from the same trim press rejects.
+-- Test 4: double checkout rejects (source-location guard 3b). First OUT deposits the
+--   LOT into TRIM1-STORE; a 2nd OUT recorded from the OTHER trim shop (TRIM2) rejects,
+--   because TRIM2 is not in the ancestor set of TRIM1-STORE.
+--   Guard 3b fires before the already-trimmed guard (5), so that is the reason reached
+--   here; Test 6 covers the same-shop re-entry that falls through to guard 5.
+--   (Until 2026-07-30 this used TRIM1-P01 as the non-ancestor source. The presses are
+--   deprecated now -- Lot_Create refuses a deprecated location -- so the sibling shop
+--   plays that role.)
 -- =============================================
-DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');   -- the trim SHOP: where a trim LOT actually sits
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @L4 BIGINT;
@@ -115,8 +122,9 @@ INSERT INTO #T4a EXEC Workorder.TrimOut_Record @ParentLotId = @L4, @OperationTem
 SELECT @S4a = Status FROM #T4a; DROP TABLE #T4a;
 DECLARE @S4aStr NVARCHAR(10) = CAST(@S4a AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] first checkout succeeds (control)', @Expected = N'1', @Actual = @S4aStr;
+DECLARE @OtherShop BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM2');
 CREATE TABLE #T4b (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #T4b EXEC Workorder.TrimOut_Record @ParentLotId = @L4, @OperationTemplateId = @OtId, @ShotCount = 20, @SourceLocationId = @Src, @AppUserId = 1;
+INSERT INTO #T4b EXEC Workorder.TrimOut_Record @ParentLotId = @L4, @OperationTemplateId = @OtId, @ShotCount = 20, @SourceLocationId = @OtherShop, @AppUserId = 1;
 SELECT @S4b = Status, @M4b = Message FROM #T4b; DROP TABLE #T4b;
 DECLARE @S4bStr NVARCHAR(10) = CAST(@S4b AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] double checkout rejected', @Expected = N'0', @Actual = @S4bStr;
@@ -126,7 +134,7 @@ GO
 -- =============================================
 -- Test 5: combined shot + scrap above the LOT piece count rejects; boundary passes
 -- =============================================
-DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
+DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');   -- the trim SHOP: where a trim LOT actually sits
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 -- @ScrapCount param retired v1.3 (FAT #2); equivalent single scrap line, same total qty=2
@@ -155,21 +163,21 @@ GO
 -- =============================================
 -- Test 6: same-shop re-entry via AREA-level source (FAT #22, 2026-08-04).
 --   The real Trim terminal records with @SourceLocationId = the trim AREA (its
---   zoneLocationId), NOT a press. Trim Storage (TRIM1-STORE) is a CHILD of that
---   area, so the source-ancestor guard (3b) still passes after the first OUT --
---   the LOT sits in the store, whose ancestor set includes TRIM1 = the source.
+--   zoneLocationId). Trim Storage (TRIM1-STORE) is a CHILD of that area, so the
+--   source-ancestor guard (3b) still passes after the first OUT -- the LOT sits
+--   in the store, whose ancestor set includes TRIM1 = the source. Guard 5 is the
+--   one that has to reject it.
 --   The explicit already-in-Trim-Storage guard must reject the 2nd OUT.
 -- =============================================
 DECLARE @Area BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
-DECLARE @Press BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @L6 BIGINT;
 CREATE TABLE #C6 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C6 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Press, @PieceCount = 20, @AppUserId = 1;
+INSERT INTO #C6 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Area, @PieceCount = 20, @AppUserId = 1;
 SELECT @L6 = NewId FROM #C6; DROP TABLE #C6;
 DECLARE @S6a BIT, @S6b BIT, @M6b NVARCHAR(500);
--- First OUT via AREA-level source succeeds (LOT is at a press under TRIM1).
+-- First OUT via AREA-level source succeeds (LOT is at TRIM1 itself).
 CREATE TABLE #T6a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #T6a EXEC Workorder.TrimOut_Record @ParentLotId = @L6, @OperationTemplateId = @OtId, @ShotCount = 20, @SourceLocationId = @Area, @AppUserId = 1;
 SELECT @S6a = Status FROM #T6a; DROP TABLE #T6a;
@@ -188,7 +196,6 @@ GO
 -- Test 7: multi-line scrap -> N RejectEvent rows + PieceCount decremented by Sigma-qty (once)
 -- =============================================
 DECLARE @Area7 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
-DECLARE @Press7 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
 DECLARE @Rcv7 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @Ot7 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 -- two DISTINCT active defect codes; resolved dynamically (proc validates active-ness, not category)
@@ -196,7 +203,7 @@ DECLARE @D1 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt
 DECLARE @D2 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL AND Id <> @D1 ORDER BY Id);
 DECLARE @L7 BIGINT;
 CREATE TABLE #C7 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C7 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv7, @CurrentLocationId = @Press7, @PieceCount = 20, @AppUserId = 1;
+INSERT INTO #C7 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv7, @CurrentLocationId = @Area7, @PieceCount = 20, @AppUserId = 1;
 SELECT @L7 = NewId FROM #C7; DROP TABLE #C7;
 DECLARE @RejBefore7 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L7);
 DECLARE @Json7 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D1 AS NVARCHAR(20)) + N',"quantity":3},{"defectCodeId":' + CAST(@D2 AS NVARCHAR(20)) + N',"quantity":2}]';
@@ -229,12 +236,11 @@ GO
 -- Test 8: invalid/deprecated defectCodeId in a line -> Status 0, nothing written
 -- =============================================
 DECLARE @Area8 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
-DECLARE @Press8 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
 DECLARE @Rcv8 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @Ot8 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @L8 BIGINT;
 CREATE TABLE #C8 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C8 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv8, @CurrentLocationId = @Press8, @PieceCount = 20, @AppUserId = 1;
+INSERT INTO #C8 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv8, @CurrentLocationId = @Area8, @PieceCount = 20, @AppUserId = 1;
 SELECT @L8 = NewId FROM #C8; DROP TABLE #C8;
 DECLARE @BadJson8 NVARCHAR(MAX) = N'[{"defectCodeId":99999999,"quantity":2}]';
 DECLARE @S8 BIT, @M8 NVARCHAR(500);
@@ -253,13 +259,12 @@ GO
 -- Test 9: shots + Sigma-scrap > PieceCount -> reject; boundary (= PieceCount) passes
 -- =============================================
 DECLARE @Area9 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
-DECLARE @Press9 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
 DECLARE @Rcv9 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @Ot9 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @D9 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
 DECLARE @L9 BIGINT;
 CREATE TABLE #C9 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C9 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv9, @CurrentLocationId = @Press9, @PieceCount = 20, @AppUserId = 1;
+INSERT INTO #C9 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv9, @CurrentLocationId = @Area9, @PieceCount = 20, @AppUserId = 1;
 SELECT @L9 = NewId FROM #C9; DROP TABLE #C9;
 -- shots 19 + scrap 2 = 21 > 20 -> reject
 DECLARE @OverJson9 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D9 AS NVARCHAR(20)) + N',"quantity":2}]';
@@ -282,12 +287,11 @@ GO
 -- Test 10: empty/absent @ScrapLinesJson -> success, 0 rejects, no decrement (scrap-free Trim OUT)
 -- =============================================
 DECLARE @Area10 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
-DECLARE @Press10 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
 DECLARE @Rcv10 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @Ot10 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @L10 BIGINT;
 CREATE TABLE #C10 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C10 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv10, @CurrentLocationId = @Press10, @PieceCount = 20, @AppUserId = 1;
+INSERT INTO #C10 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv10, @CurrentLocationId = @Area10, @PieceCount = 20, @AppUserId = 1;
 SELECT @L10 = NewId FROM #C10; DROP TABLE #C10;
 DECLARE @RejBefore10 INT = (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE LotId = @L10);
 DECLARE @S10 BIT;
@@ -308,13 +312,12 @@ GO
 -- Test 11: non-positive quantity in a line -> reject
 -- =============================================
 DECLARE @Area11 BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
-DECLARE @Press11 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
 DECLARE @Rcv11 BIGINT   = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @Ot11 BIGINT    = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @D11 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
 DECLARE @L11 BIGINT;
 CREATE TABLE #C11 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C11 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv11, @CurrentLocationId = @Press11, @PieceCount = 20, @AppUserId = 1;
+INSERT INTO #C11 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv11, @CurrentLocationId = @Area11, @PieceCount = 20, @AppUserId = 1;
 SELECT @L11 = NewId FROM #C11; DROP TABLE #C11;
 DECLARE @ZeroJson11 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D11 AS NVARCHAR(20)) + N',"quantity":0}]';
 DECLARE @S11 BIT, @M11 NVARCHAR(500);
@@ -330,12 +333,11 @@ GO
 -- Test 12: malformed @ScrapLinesJson -> reject (Status 0, no decrement)
 -- =============================================
 DECLARE @Area12 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
-DECLARE @Press12 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
 DECLARE @Rcv12 BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @Ot12 BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @L12 BIGINT;
 CREATE TABLE #C12 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C12 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv12, @CurrentLocationId = @Press12, @PieceCount = 20, @AppUserId = 1;
+INSERT INTO #C12 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv12, @CurrentLocationId = @Area12, @PieceCount = 20, @AppUserId = 1;
 SELECT @L12 = NewId FROM #C12; DROP TABLE #C12;
 DECLARE @S12 BIT, @M12 NVARCHAR(500);
 CREATE TABLE #T12 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -353,13 +355,12 @@ GO
 -- Test 13: negative quantity in a line -> reject (Status 0)
 -- =============================================
 DECLARE @Area13 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
-DECLARE @Press13 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');
 DECLARE @Rcv13 BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @Ot13 BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 DECLARE @D13 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
 DECLARE @L13 BIGINT;
 CREATE TABLE #C13 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C13 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv13, @CurrentLocationId = @Press13, @PieceCount = 20, @AppUserId = 1;
+INSERT INTO #C13 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @Rcv13, @CurrentLocationId = @Area13, @PieceCount = 20, @AppUserId = 1;
 SELECT @L13 = NewId FROM #C13; DROP TABLE #C13;
 DECLARE @NegJson13 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@D13 AS NVARCHAR(20)) + N',"quantity":-1}]';
 DECLARE @S13 BIT, @M13 NVARCHAR(500);

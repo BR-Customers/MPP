@@ -30,7 +30,7 @@ DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots
 DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%';
 GO
 
-DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');   -- trim press under TRIM1
+DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');   -- the trim SHOP (presses deprecated 2026-07-30; trim is tracked at the shop)
 DECLARE @TrimStore BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-STORE');
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');

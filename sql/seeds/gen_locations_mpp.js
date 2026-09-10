@@ -116,15 +116,41 @@ for (const [loc, name, val] of attrRows) {
   (attrByCode[loc] = attrByCode[loc] || {})[name] = val;
 }
 
+// ---- retired in the live plant model: seeded, but born DEPRECATED --------------
+// MPP tracks trim at the SHOP level, not per press. The six trim presses and the one
+// dedicated press terminal were deprecated in BOTH live databases on 2026-07-30; the
+// Site dump this generator reads predates that (2026-07-23), so it still carries them
+// as active. They are still emitted -- prod and Dev both hold the rows, and dropping
+// them would make a fresh DB diverge from the live tree in the other direction -- but
+// they are seeded already-deprecated so a fresh DB behaves like the live plant.
+//
+// This is load-bearing, not cosmetic: Oee.DowntimeScope_ListForTerminal counts only
+// ACTIVE equipment cells beneath an Area, so TRIM1 having none is what earns the trim
+// shop its shop-level downtime scope. Seeded active, trim would instead get a
+// three-press machine dropdown. If MPP ever runs trim per press again, clear the
+// DeprecatedAt (or drop the code from RETIRED) and the dropdown returns by itself.
+//
+// NOT the same axis as the TSV's Deprecated column, which means "omit entirely"
+// (see skip()); these rows must exist.
+const RETIRED = new Set([
+  'TRIM1-P01', 'TRIM1-P02', 'TRIM1-P03',
+  'TRIM2-P01', 'TRIM2-P02', 'TRIM2-P03',
+  'TRIM1-P01-T1',            // the dedicated press terminal that drove /shop-floor/trim/dedicated
+]);
+const RETIRED_AT = '2026-07-30T18:34:00';   // UTC, per the live databases
+
 // ---------------- emit ----------------
 const out = [];
 function loc(defId, parentCode, name, code, desc, sort) {
   const parent = parentCode === null ? 'NULL'
     : `(SELECT Id FROM Location.Location WHERE Code = N'${sq(parentCode)}')`;
+  const retired = RETIRED.has(code);
+  const depCol = retired ? ', DeprecatedAt' : '';
+  const depVal = retired ? `, CAST(N'${RETIRED_AT}' AS DATETIME2(3))` : '';
   out.push(
 `IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'${sq(code)}')
-    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT ${defId}, ${parent}, N'${sq(name)}', N'${sq(code)}', N'${sq(desc)}', ${sort};`);
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder${depCol})
+    SELECT ${defId}, ${parent}, N'${sq(name)}', N'${sq(code)}', N'${sq(desc)}', ${sort}${depVal};`);
 }
 function attr(code, attrName, val) {
   out.push(
@@ -143,6 +169,14 @@ out.push(`-- ============================================================
 --              Names authoritative; codes corrected to name-role; printers only on
 --              OUT terminals; DefaultScreen/closure/scanner/confirm attributes seeded.
 --              ASCII-only Names/Descriptions. Idempotent by Code.
+--
+--              Retired rows: the six TRIM1/TRIM2 presses and the dedicated press
+--              terminal TRIM1-P01-T1 are seeded ALREADY DEPRECATED (2026-07-30), which
+--              is how both live databases hold them -- MPP tracks trim at the shop
+--              level, not per press. Keep them deprecated: Oee.DowntimeScope_
+--              ListForTerminal counts only ACTIVE equipment cells beneath an Area, so
+--              TRIM1 having none is what scopes trim downtime to the shop rather than
+--              offering a three-press machine dropdown. See RETIRED in the generator.
 -- ============================================================
 SET NOCOUNT ON;
 

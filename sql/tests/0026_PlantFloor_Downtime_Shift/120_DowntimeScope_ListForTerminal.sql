@@ -22,14 +22,18 @@
 --                 * An AREA-tier scope is a usable downtime location end to
 --                   end (Start/End accept it; a missing shift schedule at that
 --                   tier does not reject the event -- ShiftId is nullable).
+--                 * SEED CONFORMANCE: the real seeded trim shop resolves to
+--                   shop scope (guards the 2026-07-30 press deprecation).
 --               Plant-seed fixtures are STRUCTURAL (resolved by zone tier +
 --               equipment-cell presence), never by hard-coded Location.Id or
---               Code. The empty-area case is a SYNTHETIC area/terminal built
---               and torn down here, because 011_seed_locations_mpp_plant.sql
---               still seeds TRIM1-P01..P03 that the live plant model has since
---               deprecated -- the seed drift must not decide what this rule is.
---               Pure read proc apart from that last case; the synthetic
---               locations and the one downtime event are torn down at the end.
+--               Code. The empty-area case stays a SYNTHETIC area/terminal built
+--               and torn down here: it is the only way to assert BOTH halves of
+--               the rule -- no active cells -> the area, and the flip back to a
+--               machine list the moment one appears -- without mutating the
+--               plant seed. Test 10 then checks the seed itself has the shape
+--               this rule expects, which is the part that actually drifted.
+--               Pure read proc apart from those cases; the synthetic locations
+--               and the one downtime event are torn down at the end.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -162,7 +166,9 @@ GO
 -- Test 4: area with NO ACTIVE equipment cells -> the AREA itself, defaulted.
 --         This is the live trim shop: TRIM1's presses were deprecated
 --         2026-07-30, so downtime is "scoped to the Trim shop". Built
---         synthetically so the (stale) trim-press seed cannot decide the rule.
+--         synthetically because the assertion needs an area whose equipment
+--         cells this test controls -- Test 5 flips a live press in to prove the
+--         rule reverses. Test 10 asserts the real TRIM1 has the same shape.
 -- =============================================
 DECLARE @Facility BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
     INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
@@ -325,6 +331,61 @@ DELETE FROM #ScOut;
 DECLARE @seen INT = (SELECT COUNT(*) FROM Oee.DowntimeEvent WHERE LocationId = @SynArea);
 EXEC test.Assert_RowCount @TestName = N'[DtScope] exactly one event now sits at the Area scope',
     @ExpectedCount = 1, @ActualCount = @seen;
+GO
+
+-- =============================================
+-- Test 10: SEED CONFORMANCE -- the trim shop as 011_seed_locations_mpp_plant.sql
+--         actually builds it resolves to shop scope, with no synthetic help.
+--         Every other test here is deliberately structural; this one names TRIM1
+--         on purpose, because the thing under test IS the seed.
+--
+--         History: the seed shipped TRIM1-P01..P03 ACTIVE while both live
+--         databases had deprecated them on 2026-07-30 (MPP tracks trim at the
+--         shop, not per press). On a freshly seeded DB that drift handed trim a
+--         three-press machine dropdown instead of shop scope -- the seed now
+--         emits those rows already-deprecated. If someone reactivates a press,
+--         or drops the rows entirely, this test says so.
+-- =============================================
+DECLARE @Trim1   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'    AND DeprecatedAt IS NULL);
+DECLARE @Trim1T1 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-T1' AND DeprecatedAt IS NULL);
+EXEC test.Assert_IsNotNull @TestName = N'[DtScope] seed: the TRIM1 trim shop is present and active', @Value = @Trim1;
+EXEC test.Assert_IsNotNull @TestName = N'[DtScope] seed: the shared TRIM1-T1 terminal is present and active', @Value = @Trim1T1;
+
+-- The presses are still SEEDED (prod and Dev both carry the rows) but DEPRECATED.
+DECLARE @seededPresses INT = (SELECT COUNT(*) FROM Location.Location
+    WHERE Code IN (N'TRIM1-P01', N'TRIM1-P02', N'TRIM1-P03', N'TRIM2-P01', N'TRIM2-P02', N'TRIM2-P03'));
+EXEC test.Assert_RowCount @TestName = N'[DtScope] seed: all six trim presses still exist as rows',
+    @ExpectedCount = 6, @ActualCount = @seededPresses;
+
+DECLARE @activePresses INT = (SELECT COUNT(*) FROM Location.Location
+    WHERE Code IN (N'TRIM1-P01', N'TRIM1-P02', N'TRIM1-P03', N'TRIM2-P01', N'TRIM2-P02', N'TRIM2-P03')
+      AND DeprecatedAt IS NULL);
+EXEC test.Assert_RowCount @TestName = N'[DtScope] seed: none of the trim presses is active (deprecated 2026-07-30)',
+    @ExpectedCount = 0, @ActualCount = @activePresses;
+
+-- ...so TRIM1 owns no active equipment cell, which is what earns it shop scope.
+DECLARE @trimEquip INT = (SELECT COUNT(*)
+    FROM Location.Location e
+    INNER JOIN Location.LocationTypeDefinition eltd ON eltd.Id = e.LocationTypeDefinitionId
+    INNER JOIN Location.LocationType elt            ON elt.Id  = eltd.LocationTypeId
+    WHERE e.ParentLocationId = @Trim1
+      AND e.DeprecatedAt IS NULL
+      AND elt.Code = N'Cell'
+      AND eltd.Code NOT IN (N'Terminal', N'Printer', N'InventoryLocation', N'Scale'));
+EXEC test.Assert_RowCount @TestName = N'[DtScope] seed: TRIM1 has no ACTIVE equipment cell beneath it',
+    @ExpectedCount = 0, @ActualCount = @trimEquip;
+
+-- End to end through the proc: one row, the shop itself, preselected.
+DELETE FROM #ScOut;
+INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @Trim1T1;
+
+DECLARE @trimRows INT = (SELECT COUNT(*) FROM #ScOut);
+EXEC test.Assert_RowCount @TestName = N'[DtScope] seed: the trim terminal offers exactly ONE scope (no press dropdown)',
+    @ExpectedCount = 1, @ActualCount = @trimRows;
+
+DECLARE @trimIsShop INT = (SELECT COUNT(*) FROM #ScOut WHERE ScopeLocationId = @Trim1 AND IsDefault = 1);
+EXEC test.Assert_RowCount @TestName = N'[DtScope] seed: that scope IS the trim shop and is preselected',
+    @ExpectedCount = 1, @ActualCount = @trimIsShop;
 GO
 
 -- ---- cleanup: downtime + its audit rows, then locations (children first) ----
