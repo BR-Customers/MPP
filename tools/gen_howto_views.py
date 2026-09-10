@@ -265,11 +265,15 @@ def die_cast_shift_output_source():
     parts.append(_step(3, 'Compute it',
         'Press %s. Every cavity of the die gets a row.' % _b('Compute / Preview')))
     parts.append(_note(
-        'Each row says %s &ndash; the reading that cavity was last settled at, '
-        'and the shots it is being credited now. A cavity whose basket was '
-        'released earlier in the shift is credited only from that point on, '
-        'which is why its number can differ from its neighbours.'
-        % _b('credited thru')))
+        'A row for an open basket says %s &ndash; the reading that cavity was '
+        'last settled at, and the shots it is being credited now. A cavity '
+        'whose basket was released earlier in the shift is credited only from '
+        'that point on, which is why its number can differ from its '
+        'neighbours.' % _b('credited thru')))
+    parts.append(_note(
+        'A basket you already released this shift keeps the count it closed '
+        'at and says %s. It is listed so you can still enter its scrap; it '
+        'will not be given any more pieces.' % _b('scrap only')))
 
     parts.append(_step(4, 'Log any scrap',
         'Press %s on any cavity that had scrap. %s updates on its own as you '

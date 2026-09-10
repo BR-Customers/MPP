@@ -326,7 +326,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "\"credited thru \" + toStr({view.params.creditedThrough}) + \"  -  +\" + toStr({view.params.newShots}) + \" shots\""
+                        "expression": "if(!{view.params.hasBasket}, \"no basket  -  \" + toStr({view.params.newShots}) + \" shots ran\", if({view.params.isOpen}, \"credited thru \" + toStr({view.params.creditedThrough}) + \"  -  +\" + toStr({view.params.newShots}) + \" shots\", \"released earlier this shift  -  scrap only\"))"
                       }
                     }
                   }
