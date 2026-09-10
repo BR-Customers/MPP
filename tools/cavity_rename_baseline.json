@@ -1,0 +1,632 @@
+{
+  "files": 67,
+  "occurrences": 366,
+  "rows": [
+    {
+      "class": "prose",
+      "hits": {
+        "col": 10,
+        "colalias": 1
+      },
+      "path": "MPP_MES_DATA_MODEL.md",
+      "scope": "docs",
+      "total": 11
+    },
+    {
+      "class": "prose",
+      "hits": {
+        "col": 1
+      },
+      "path": "MPP_MES_SUMMARY.md",
+      "scope": "docs",
+      "total": 1
+    },
+    {
+      "class": "rename + sqlType",
+      "hits": {
+        "col": 1,
+        "param": 1
+      },
+      "path": "ignition/projects/Core/ignition/named-query/parts/ToolCavity_Create/query.sql",
+      "scope": "named-query",
+      "total": 2
+    },
+    {
+      "class": "rename + sqlType",
+      "hits": {
+        "param": 1,
+        "sqltype2": 1
+      },
+      "path": "ignition/projects/Core/ignition/named-query/parts/ToolCavity_Create/resource.json",
+      "scope": "named-query",
+      "total": 2
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "param": 2
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/PlantFloor/DieCastEntry/BulkOpenRow/view.json",
+      "scope": "perspective views",
+      "total": 2
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "param": 2
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/PlantFloor/DieCastEntry/CavityLotRow/view.json",
+      "scope": "perspective views",
+      "total": 2
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "param": 2
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/PlantFloor/DieCastEntry/OpenBasketRow/view.json",
+      "scope": "perspective views",
+      "total": 2
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "col": 1
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/PlantFloor/DieCastEntry/RejectPanel/view.json",
+      "scope": "perspective views",
+      "total": 1
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "colalias": 1
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/PlantFloor/LotDetail/CountPanel/view.json",
+      "scope": "perspective views",
+      "total": 1
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "colalias": 1
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/PlantFloor/LotDetail/ScrapPanel/view.json",
+      "scope": "perspective views",
+      "total": 1
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "param": 2
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/Popups/DieCastOverflow/view.json",
+      "scope": "perspective views",
+      "total": 2
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "param": 3
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/Popups/DieCastOverflowRow/view.json",
+      "scope": "perspective views",
+      "total": 3
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "param": 1
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Components/Popups/DieCastRelease/view.json",
+      "scope": "perspective views",
+      "total": 1
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "col": 1,
+        "param": 1
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/DieCastBody/view.json",
+      "scope": "perspective views",
+      "total": 2
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "colalias": 1
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/InspectionEntry/view.json",
+      "scope": "perspective views",
+      "total": 1
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "colalias": 3
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/LotDetail/view.json",
+      "scope": "perspective views",
+      "total": 3
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "col": 1
+      },
+      "path": "ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/LotSearch/view.json",
+      "scope": "perspective views",
+      "total": 1
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "int_new": 1,
+        "param": 3
+      },
+      "path": "ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/Tools/Cavities/view.json",
+      "scope": "perspective views",
+      "total": 4
+    },
+    {
+      "class": "DESIGNER EDIT",
+      "hits": {
+        "numinput": 1,
+        "param": 3
+      },
+      "path": "ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/Tools/_Tools/CavityRow/view.json",
+      "scope": "perspective views",
+      "total": 4
+    },
+    {
+      "class": "PICKLED DATA -- strip",
+      "hits": {
+        "col": 16
+      },
+      "path": "ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Views/Audit/AuditLog/view.json",
+      "scope": "perspective views",
+      "total": 16
+    },
+    {
+      "class": "rename + drop int()",
+      "hits": {
+        "col": 4,
+        "colalias": 1,
+        "param": 1
+      },
+      "path": "ignition/projects/Core/ignition/script-python/BlueRidge/Lots/Lot/code.py",
+      "scope": "script-python",
+      "total": 6
+    },
+    {
+      "class": "rename + drop int()",
+      "hits": {
+        "col": 5,
+        "int_cav": 1,
+        "int_num": 1,
+        "param": 10
+      },
+      "path": "ignition/projects/Core/ignition/script-python/BlueRidge/Parts/Tool/code.py",
+      "scope": "script-python",
+      "total": 17
+    },
+    {
+      "class": "rename + drop int()",
+      "hits": {
+        "col": 6,
+        "param": 7
+      },
+      "path": "ignition/projects/Core/ignition/script-python/BlueRidge/Workorder/DieCast/code.py",
+      "scope": "script-python",
+      "total": 13
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 8
+      },
+      "path": "sql/migrations/repeatable/R__Descriptions_ExtendedProperties.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 8
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 2
+      },
+      "path": "sql/migrations/repeatable/R__Lots_DieCastLot_Open.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 2
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 7
+      },
+      "path": "sql/migrations/repeatable/R__Lots_Lot_Create.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 7
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 1,
+        "colalias": 1
+      },
+      "path": "sql/migrations/repeatable/R__Lots_Lot_Get.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 2
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 1
+      },
+      "path": "sql/migrations/repeatable/R__Lots_Lot_GetLatestForToolCavity.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 1
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 4,
+        "orderby": 1
+      },
+      "path": "sql/migrations/repeatable/R__Lots_Lot_GetOpenByTool.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 5
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 5,
+        "orderby": 1
+      },
+      "path": "sql/migrations/repeatable/R__Lots_Lot_GetShiftCavityTally.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 6
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 4
+      },
+      "path": "sql/migrations/repeatable/R__Lots_Lot_GetTerminalRecentCreations.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 4
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 3
+      },
+      "path": "sql/migrations/repeatable/R__Lots_Lot_SearchAdvanced.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 3
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 11,
+        "ge1": 1
+      },
+      "path": "sql/migrations/repeatable/R__Tools_ToolCavity_Create.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 12
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 3,
+        "orderby": 1
+      },
+      "path": "sql/migrations/repeatable/R__Tools_ToolCavity_ListActiveByTool.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 4
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 3,
+        "orderby": 1
+      },
+      "path": "sql/migrations/repeatable/R__Tools_ToolCavity_ListByTool.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 4
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 30,
+        "ge1": 1,
+        "orderby": 4
+      },
+      "path": "sql/migrations/repeatable/R__Tools_ToolCavity_SaveAll.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 35
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 8,
+        "orderby": 2
+      },
+      "path": "sql/migrations/repeatable/R__Tools_Tool_Duplicate.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 10
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 1
+      },
+      "path": "sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 1
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 3
+      },
+      "path": "sql/migrations/repeatable/R__Workorder_DieCast_GetReleasePreview.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 3
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 2,
+        "orderby": 1
+      },
+      "path": "sql/migrations/repeatable/R__Workorder_DieCast_GetShiftOutputBreakdown.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 3
+    },
+    {
+      "class": "rename in place",
+      "hits": {
+        "col": 1
+      },
+      "path": "sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql",
+      "scope": "sql/migrations/repeatable",
+      "total": 1
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 9
+      },
+      "path": "sql/tests/0014_Tools_Tool/020_Tool_duplicate.sql",
+      "scope": "sql/tests",
+      "total": 9
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 7
+      },
+      "path": "sql/tests/0015_Tools_Cavity/010_Cavity_crud.sql",
+      "scope": "sql/tests",
+      "total": 7
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 9
+      },
+      "path": "sql/tests/0015_Tools_Cavity/020_ToolCavity_SaveAll.sql",
+      "scope": "sql/tests",
+      "total": 9
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 17
+      },
+      "path": "sql/tests/0015_Tools_Cavity/030_ToolCavity_ItemId.sql",
+      "scope": "sql/tests",
+      "total": 17
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 5
+      },
+      "path": "sql/tests/0020_PlantFloor_Foundation/040_Lot_Create.sql",
+      "scope": "sql/tests",
+      "total": 5
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "colalias": 3
+      },
+      "path": "sql/tests/0020_PlantFloor_Foundation/050_Lot_Get_List.sql",
+      "scope": "sql/tests",
+      "total": 3
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "colalias": 1
+      },
+      "path": "sql/tests/0021_PlantFloor_Lot_Lifecycle/076_LotDetail_LotGet_shape.sql",
+      "scope": "sql/tests",
+      "total": 1
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 4
+      },
+      "path": "sql/tests/0022_PlantFloor_DieCast/030_DieCast_walkthrough.sql",
+      "scope": "sql/tests",
+      "total": 4
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 17
+      },
+      "path": "sql/tests/0022_PlantFloor_DieCast/040_CavityParallel_peers.sql",
+      "scope": "sql/tests",
+      "total": 17
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 10
+      },
+      "path": "sql/tests/0022_PlantFloor_DieCast/050_Lot_GetShiftCavityTally.sql",
+      "scope": "sql/tests",
+      "total": 10
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 7
+      },
+      "path": "sql/tests/0022_PlantFloor_DieCast/070_Lot_GetLatestForToolCavity.sql",
+      "scope": "sql/tests",
+      "total": 7
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 15
+      },
+      "path": "sql/tests/0022_PlantFloor_DieCast/080_ShotReadingChain.sql",
+      "scope": "sql/tests",
+      "total": 15
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 7
+      },
+      "path": "sql/tests/0022_PlantFloor_DieCast/090_ReleasePreview.sql",
+      "scope": "sql/tests",
+      "total": 7
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 11
+      },
+      "path": "sql/tests/0022_PlantFloor_DieCast/100_CounterAnchor.sql",
+      "scope": "sql/tests",
+      "total": 11
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 6
+      },
+      "path": "sql/tests/0023_PlantFloor_DieCast_Deltas/030_Lot_Create_LotName_and_Cavity.sql",
+      "scope": "sql/tests",
+      "total": 6
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 1
+      },
+      "path": "sql/tests/0045_DieCast_Lifecycle/020_DieCastLot_Open.sql",
+      "scope": "sql/tests",
+      "total": 1
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 6
+      },
+      "path": "sql/tests/0045_DieCast_Lifecycle/030_ShiftOutput_Record.sql",
+      "scope": "sql/tests",
+      "total": 6
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 4
+      },
+      "path": "sql/tests/0045_DieCast_Lifecycle/040_Release_and_queue.sql",
+      "scope": "sql/tests",
+      "total": 4
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 2
+      },
+      "path": "sql/tests/0045_DieCast_Lifecycle/050_Void.sql",
+      "scope": "sql/tests",
+      "total": 2
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 3
+      },
+      "path": "sql/tests/0045_DieCast_Lifecycle/060_Tally_history_openbytool.sql",
+      "scope": "sql/tests",
+      "total": 3
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 1
+      },
+      "path": "sql/tests/0045_DieCast_Lifecycle/070_ShiftOutput_RejectEvent_NullProductionEventId.sql",
+      "scope": "sql/tests",
+      "total": 1
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 2
+      },
+      "path": "sql/tests/0045_DieCast_Lifecycle/080_open_lot_write_guard.sql",
+      "scope": "sql/tests",
+      "total": 2
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 2
+      },
+      "path": "sql/tests/0064_Crt_PartScoped/050_mint_procs.sql",
+      "scope": "sql/tests",
+      "total": 2
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 1
+      },
+      "path": "sql/tests/0067_Lot_SearchAdvanced/010_filters.sql",
+      "scope": "sql/tests",
+      "total": 1
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 1
+      },
+      "path": "sql/tests/0067_Lot_SearchAdvanced/020_date_boundary.sql",
+      "scope": "sql/tests",
+      "total": 1
+    },
+    {
+      "class": "rename + new cases",
+      "hits": {
+        "col": 6
+      },
+      "path": "sql/tests/0067_Lot_SearchAdvanced/030_origin_conditional.sql",
+      "scope": "sql/tests",
+      "total": 6
+    }
+  ],
+  "spec": "docs/superpowers/specs/2026-09-10-cavity-alpha-code-design.md"
+}
