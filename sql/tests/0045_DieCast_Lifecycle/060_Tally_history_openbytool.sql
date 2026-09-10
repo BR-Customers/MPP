@@ -126,7 +126,11 @@ EXEC test.Assert_IsEqual @TestName=N'[Fixture] shift output recorded, Status 1',
 -- Test 1: Lots.Lot_GetOpenByTool returns the open basket with running
 -- PieceCount 40 + ContributorCount 1
 -- =============================================
-DECLARE @OB TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50), PieceCount INT, MaxPieceCount INT, BelowStandardRelease BIT, OpenedAt DATETIME2(3), ContributorCount INT);
+-- v2.0 (2026-09-10) is CAVITY-DRIVEN: one row per non-deprecated cavity,
+-- not one per open basket, plus four APPENDED columns. Every assertion
+-- below filters on LotId, so the extra basketless-cavity rows are inert
+-- here; the table variable just has to carry the new trailing columns.
+DECLARE @OB TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50), PieceCount INT, MaxPieceCount INT, BelowStandardRelease BIT, OpenedAt DATETIME2(3), ContributorCount INT, CavityDescription NVARCHAR(500), CavityStatusCode NVARCHAR(50), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(100));
 INSERT INTO @OB EXEC Lots.Lot_GetOpenByTool @ToolId=@Tool;
 DECLARE @obpc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM @OB WHERE LotId=@Lot);
 EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] running PieceCount 40', @Expected=N'40', @Actual=@obpc;

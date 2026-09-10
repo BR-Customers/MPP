@@ -16,7 +16,7 @@
     "itemOptions": [],
     "resultState": "",
     "resultMessage": "",
-    "configuredItemId": null, "configuredPart": "", "seedToken": -1
+    "configuredItemId": null, "configuredPart": "", "cavityStatusCode": "Active", "isActive": true, "seedToken": -1
   },
   "propConfig": {
     "params.toolCavityId": {
@@ -61,23 +61,29 @@
     "params.configuredPart": {
       "paramDirection": "input"
     },
+    "params.cavityStatusCode": {
+      "paramDirection": "input"
+    },
+    "params.isActive": {
+      "paramDirection": "input"
+    },
     "params.seedToken": {
       "paramDirection": "input",
       "onChange": {
         "enabled": true,
-        "script": "\t# seedToken changes ONLY when the parent rebuilds the repeater (it carries\n\t# the view\u0027s refreshToken), so this is the reseed hook: take the values the\n\t# parent just handed down -- the retained draft for a row that failed to\n\t# open, or blanks for a row that succeeded and is now read-only. Mirrors\n\t# CavityLotRow\u0027s params.proposedGood reseed.\n\tself.view.custom.itemId \u003d self.view.params.itemId\n\tself.view.custom.scannedLtt \u003d self.view.params.scannedLtt or \"\""
+        "script": "\t# seedToken changes ONLY when the parent rebuilds the repeater (it carries\n\t# the view\u0027s refreshToken), so this is the reseed hook: take the values the\n\t# parent just handed down -- the retained draft for a row that failed to\n\t# open, or blanks for a row that succeeded and is now read-only. Mirrors\n\t# CavityLotRow\u0027s params.proposedGood reseed.\n\t# The part falls back to the cavity\u0027s CONFIGURED part (0072): the operator\n\t# does not pick it any more, so it has to be put on the screen for them.\n\t# This is a DISPLAY seed -- the TICKET, never the part, is what stages a\n\t# row for opening.\n\titemId \u003d self.view.params.itemId\n\tif itemId is None:\n\t\titemId \u003d self.view.params.configuredItemId\n\tself.view.custom.itemId \u003d itemId\n\tself.view.custom.scannedLtt \u003d self.view.params.scannedLtt or \"\"\n\t# Report UNCONDITIONALLY. Writing null over null fires no onChange, so a\n\t# row that has just become read-only can never tell the parent it is empty\n\t# through the value path -- and the parent went on counting it.\n\tself.rootContainer.report()"
       }
     },
     "custom.itemId": {
       "onChange": {
         "enabled": true,
-        "script": "\t# Cross the embed boundary the only way an input-only param allows: a\n\t# page-scoped message up to DieCastBody, which owns the authoritative\n\t# bulkOpenDraft map (feedback_ignition_embed_params_input_only).\n\tsystem.perspective.sendMessage(\"bulkOpenRowChanged\", payload\u003d{\n\t\t\"toolCavityId\": self.view.params.toolCavityId,\n\t\t\"itemId\": self.view.custom.itemId,\n\t\t\"scannedLtt\": self.view.custom.scannedLtt or \"\",\n\t}, scope\u003d\"page\")"
+        "script": "\tself.rootContainer.report()"
       }
     },
     "custom.scannedLtt": {
       "onChange": {
         "enabled": true,
-        "script": "\t# Cross the embed boundary the only way an input-only param allows: a\n\t# page-scoped message up to DieCastBody, which owns the authoritative\n\t# bulkOpenDraft map (feedback_ignition_embed_params_input_only).\n\tsystem.perspective.sendMessage(\"bulkOpenRowChanged\", payload\u003d{\n\t\t\"toolCavityId\": self.view.params.toolCavityId,\n\t\t\"itemId\": self.view.custom.itemId,\n\t\t\"scannedLtt\": self.view.custom.scannedLtt or \"\",\n\t}, scope\u003d\"page\")"
+        "script": "\tself.rootContainer.report()"
       }
     }
   },
@@ -88,6 +94,15 @@
     }
   },
   "root": {
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "report",
+          "params": [],
+          "script": "\t# Cross the embed boundary the only way an input-only param allows: a\n\t# page-scoped message up to DieCastBody, which owns the authoritative\n\t# bulkOpenDraft map (feedback_ignition_embed_params_input_only).\n\t# alreadyOpen / isActive travel with it so the parent can DROP the entry\n\t# for a cavity this row can no longer stage.\n\tsystem.perspective.sendMessage(\"bulkOpenRowChanged\", payload\u003d{\n\t\t\"toolCavityId\": self.view.params.toolCavityId,\n\t\t\"itemId\": self.view.custom.itemId,\n\t\t\"scannedLtt\": self.view.custom.scannedLtt or \"\",\n\t\t\"alreadyOpen\": bool(self.view.params.alreadyOpen),\n\t\t\"isActive\": bool(self.view.params.isActive),\n\t}, scope\u003d\"page\")"
+        }
+      ]
+    },
     "children": [
       {
         "children": [
@@ -152,6 +167,43 @@
         },
         "type": "ia.container.flex"
       },
+{
+        "meta": {
+          "name": "CavityStateLabel"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!{view.params.isActive}"
+              }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.cavityStatusCode} + \" -- out of service, no basket can be opened\""
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "color": "var(--mpp-state-bad-fg)",
+            "fontWeight": 600,
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.display.label"
+      },
       {
         "meta": {
           "name": "ItemDropdown"
@@ -173,7 +225,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "!{view.params.alreadyOpen}"
+                "expression": "!{view.params.alreadyOpen} \u0026\u0026 {view.params.isActive}"
               },
               "type": "expr"
             }
@@ -219,7 +271,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "!{view.params.alreadyOpen}"
+                "expression": "!{view.params.alreadyOpen} \u0026\u0026 {view.params.isActive}"
               },
               "type": "expr"
             }

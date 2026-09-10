@@ -720,7 +720,7 @@
                     },
                     "transforms": [
                       {
-                        "code": "\t# The script module can only be handed SCALARS (a container prop crossing a\n\t# runScript arg comes back as an unusable ImmutableList on re-eval), so the\n\t# three container pieces are overlaid here, where self.view is in scope:\n\t#   itemOptions    - one shared fetch for the whole grid, not one per row\n\t#   bulkOpenDraft  - the operator\u0027s retained entries (survives a rebuild)\n\t#   bulkOpenResult - the last submission\u0027s per-row outcome\n\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.itemOptions) or []\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenDraft) or {}\n\tresults \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenResult) or {}\n\tout \u003d []\n\tfor r in rows:\n\t\tr \u003d dict(r or {})\n\t\tkey \u003d \"%s\" % r.get(\"toolCavityId\")\n\t\tr[\"itemOptions\"] \u003d opts\n\t\tif not r.get(\"alreadyOpen\"):\n\t\t\td \u003d draft.get(key) or {}\n\t\t\t# seed from the cavity CONFIGURED part when the operator has not\n\t\t\t# touched this row; the draft still wins once they do.\n\t\t\tr[\"itemId\"] \u003d d.get(\"itemId\") if d.get(\"itemId\") is not None else r.get(\"configuredItemId\")\n\t\t\tr[\"scannedLtt\"] \u003d d.get(\"scannedLtt\") or \"\"\n\t\tres \u003d results.get(key) or {}\n\t\tr[\"resultState\"] \u003d res.get(\"state\") or \"\"\n\t\tr[\"resultMessage\"] \u003d res.get(\"message\") or \"\"\n\t\tout.append(r)\n\treturn out",
+                        "code": "\t# The script module can only be handed SCALARS (a container prop crossing a\n\t# runScript arg comes back as an unusable ImmutableList on re-eval), so the\n\t# three container pieces are overlaid here, where self.view is in scope:\n\t#   itemOptions    - one shared fetch for the whole grid, not one per row\n\t#   bulkOpenDraft  - the operator\u0027s retained entries (survives a rebuild)\n\t#   bulkOpenResult - the last submission\u0027s per-row outcome\n\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.itemOptions) or []\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenDraft) or {}\n\tresults \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenResult) or {}\n\tout \u003d []\n\tfor r in rows:\n\t\tr \u003d dict(r or {})\n\t\tkey \u003d \"%s\" % r.get(\"toolCavityId\")\n\t\tr[\"itemOptions\"] \u003d opts\n\t\tif not r.get(\"alreadyOpen\"):\n\t\t\td \u003d draft.get(key) or {}\n\t\t\t# ONLY what the OPERATOR entered. The cavity CONFIGURED part rides\n\t\t\t# the row as configuredItemId and the row displays it; copying it\n\t\t\t# in here made every untouched row look like a staged submission.\n\t\t\tr[\"itemId\"] \u003d d.get(\"itemId\")\n\t\t\tr[\"scannedLtt\"] \u003d d.get(\"scannedLtt\") or \"\"\n\t\tres \u003d results.get(key) or {}\n\t\tr[\"resultState\"] \u003d res.get(\"state\") or \"\"\n\t\tr[\"resultMessage\"] \u003d res.get(\"message\") or \"\"\n\t\tout.append(r)\n\treturn out",
                         "type": "script"
                       }
                     ],
@@ -1334,46 +1334,6 @@
                     "type": "ia.display.flex-repeater"
                   },
                   {
-                    "meta": {
-                      "name": "PartSubtotalsLabel"
-                    },
-                    "position": {
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "len({view.custom.breakdown}) \u003e 0"
-                          }
-                        }
-                      },
-                      "props.text": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.breakdown"
-                          },
-                          "transforms": [
-                            {
-                              "type": "script",
-                              "code": "\treturn BlueRidge.Workorder.DieCast.partSubtotalsText(value)"
-                            }
-                          ]
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-sub",
-                        "paddingTop": "6px",
-                        "borderTop": "1px solid var(--mpp-border-subtle)"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
                     "children": [
                       {
                         "events": {
@@ -1519,7 +1479,7 @@
                       "style": {
                         "classes": "pf-kpi-sub"
                       },
-                      "text": "No open baskets for this die."
+                      "text": "This die has no cavities configured."
                     },
                     "type": "ia.display.label"
                   },
@@ -1973,7 +1933,7 @@
         {
         "name": "submitBulkOpen",
         "params": [],
-        "script": "\t# Bulk open (backlog 3.4). bulkOpenDraft is the authoritative per-cavity\n\t# entry map: the repeater rows are input-only embeds and can only report\n\t# upward via the page-scoped bulkOpenRowChanged message, so nothing is\n\t# ever read back out of the repeater here.\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenDraft) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\trows \u003d []\n\tfor key in draft.keys():\n\t\td \u003d draft.get(key) or {}\n\t\trows.append({\"toolCavityId\": d.get(\"toolCavityId\"), \"itemId\": d.get(\"itemId\"), \"scannedLtt\": d.get(\"scannedLtt\")})\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\tres \u003d BlueRidge.Workorder.DieCast.submitBulkOpen(rows, tool.get(\"ToolId\"), cell.get(\"locationId\"), self.session.custom.appUserId, term) or {}\n\t# Per-row outcomes live on the VIEW, not inside the rows: the repeater\u0027s\n\t# instances transform overlays them, so they survive the rebuild below.\n\tself.view.custom.bulkOpenResult \u003d res.get(\"Rows\") or {}\n\tif res.get(\"Rejected\"):\n\t\t# A batch gate fired -- NOTHING was written, so the operator\u0027s entries\n\t\t# stay exactly as they are and no rebuild happens.\n\t\tBlueRidge.Common.Notify.toast(\"Nothing opened\", res.get(\"Message\") or \"\", \"warning\")\n\t\treturn res\n\t# Partial submission: keep only the rows that did NOT open, so the operator\n\t# re-enters the failures alone and never a cavity that already succeeded.\n\trowResults \u003d res.get(\"Rows\") or {}\n\tkept \u003d {}\n\tpending \u003d 0\n\tfor key in draft.keys():\n\t\tif (rowResults.get(key) or {}).get(\"state\") \u003d\u003d \"ok\":\n\t\t\tcontinue\n\t\td \u003d draft.get(key) or {}\n\t\tkept[key] \u003d d\n\t\tif d.get(\"itemId\") is not None or (\"%s\" % (d.get(\"scannedLtt\") or \"\")).strip() !\u003d \"\":\n\t\t\tpending +\u003d 1\n\tself.view.custom.bulkOpenDraft \u003d kept\n\tself.view.custom.bulkOpenPendingCount \u003d pending\n\tlevel \u003d \"success\"\n\tif res.get(\"Failed\"):\n\t\tlevel \u003d \"warning\" if res.get(\"Opened\") else \"error\"\n\tBlueRidge.Common.Notify.toast(\"Bulk open\", res.get(\"Message\") or \"\", level)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t# D9: ONE CRT notice per SUBMIT, naming every basket that opened CRT --\n\t# never one dialog per cavity, which trains operators to dismiss dialogs.\n\t# LAST, after the refresh bump: every basket has already committed.\n\tBlueRidge.Common.Ui.crtNotice(res.get(\"CrtLots\"), res.get(\"Opened\"))\n\treturn res"
+        "script": "\t# Bulk open (backlog 3.4). bulkOpenDraft is the authoritative per-cavity\n\t# entry map: the repeater rows are input-only embeds and can only report\n\t# upward via the page-scoped bulkOpenRowChanged message, so nothing is\n\t# ever read back out of the repeater here.\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenDraft) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\trows \u003d []\n\tfor key in draft.keys():\n\t\td \u003d draft.get(key) or {}\n\t\trows.append({\"toolCavityId\": d.get(\"toolCavityId\"), \"itemId\": d.get(\"itemId\"), \"scannedLtt\": d.get(\"scannedLtt\")})\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\tres \u003d BlueRidge.Workorder.DieCast.submitBulkOpen(rows, tool.get(\"ToolId\"), cell.get(\"locationId\"), self.session.custom.appUserId, term) or {}\n\t# Per-row outcomes live on the VIEW, not inside the rows: the repeater\u0027s\n\t# instances transform overlays them, so they survive the rebuild below.\n\tself.view.custom.bulkOpenResult \u003d res.get(\"Rows\") or {}\n\tif res.get(\"Rejected\"):\n\t\t# A batch gate fired -- NOTHING was written, so the operator\u0027s entries\n\t\t# stay exactly as they are and no rebuild happens.\n\t\tBlueRidge.Common.Notify.toast(\"Nothing opened\", res.get(\"Message\") or \"\", \"warning\")\n\t\treturn res\n\t# Partial submission: keep only the rows that did NOT open, so the operator\n\t# re-enters the failures alone and never a cavity that already succeeded.\n\trowResults \u003d res.get(\"Rows\") or {}\n\tkept \u003d {}\n\tfor key in draft.keys():\n\t\tif (rowResults.get(key) or {}).get(\"state\") \u003d\u003d \"ok\":\n\t\t\tcontinue\n\t\tkept[key] \u003d draft.get(key) or {}\n\tself.view.custom.bulkOpenDraft \u003d kept\n\tself.view.custom.bulkOpenPendingCount \u003d BlueRidge.Workorder.DieCast.bulkOpenPending(kept)\n\tlevel \u003d \"success\"\n\tif res.get(\"Failed\"):\n\t\tlevel \u003d \"warning\" if res.get(\"Opened\") else \"error\"\n\tBlueRidge.Common.Notify.toast(\"Bulk open\", res.get(\"Message\") or \"\", level)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t# D9: ONE CRT notice per SUBMIT, naming every basket that opened CRT --\n\t# never one dialog per cavity, which trains operators to dismiss dialogs.\n\t# LAST, after the refresh bump: every basket has already committed.\n\tBlueRidge.Common.Ui.crtNotice(res.get(\"CrtLots\"), res.get(\"Opened\"))\n\treturn res"
       },
       {
         "name": "copyPartToEmptyRows",
@@ -2009,12 +1969,14 @@
             "maxPieceCount",
             "belowStandard"
           ],
-          "script": "\tself.view.custom.pendingReleaseLotId \u003d lotId\n\tself.view.custom.pendingReleaseLotName \u003d lotName or \"\"\n\tnm \u003d lotName or \"\"\n\tpc \u003d BlueRidge.Common.Util.toIntOrNone(pieceCount) or 0\n\tmx \u003d BlueRidge.Common.Util.toIntOrNone(maxPieceCount)\n\tif belowStandard and mx:\n\t\tpct \u003d int(round(100.0 * pc / mx))\n\t\ttitle \u003d \"Release under-filled basket\"\n\t\tconfirmText \u003d \"Release anyway\"\n\t\tdanger \u003d True\n\t\tmessage \u003d \"Basket \" + nm + \" holds only \" + str(pc) + \" of \" + str(mx) + \" pc (\" + str(pct) + \"% of standard basket size). Release under-filled?\"\n\telse:\n\t\ttitle \u003d \"Release basket\"\n\t\tconfirmText \u003d \"Release\"\n\t\tdanger \u003d False\n\t\tmessage \u003d \"Release basket \" + nm + \" to storage?\"\n\tsystem.perspective.openPopup(\"mpp-confirm-release\",\n\t\t\"BlueRidge/Components/Popups/ConfirmAction\",\n\t\tparams\u003d{\"replyMessage\": \"releaseConfirmResult\", \"popupId\": \"mpp-confirm-release\",\n\t\t\t\"title\": title, \"confirmText\": confirmText, \"danger\": danger,\n\t\t\t\"message\": message},\n\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)"
+          "script": "\tself.view.custom.pendingReleaseLotId \u003d lotId\n\tself.view.custom.pendingReleaseLotName \u003d lotName or \"\"\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tsystem.perspective.openPopup(\"mpp-diecast-release\",\n\t\t\"BlueRidge/Components/Popups/DieCastRelease\",\n\t\tparams\u003d{\"lotId\": lotId, \"shiftId\": self.view.custom.selectedShiftId,\n\t\t\t\"cellLocationId\": cell.get(\"locationId\"),\n\t\t\t\"popupId\": \"mpp-diecast-release\",\n\t\t\t\"replyMessage\": \"releaseConfirmResult\"},\n\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)"
         },
         {
           "name": "releaseBasket",
-          "params": [],
-          "script": "\tlotId \u003d self.view.custom.pendingReleaseLotId\n\tif lotId is None:\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\tdata \u003d {\n\t\t\"lotId\": lotId,\n\t\t\"shiftId\": self.view.custom.selectedShiftId,\n\t\t\"appUserId\": self.session.custom.appUserId,\n\t\t\"terminalLocationId\": term,\n\t}\n\tresult \u003d BlueRidge.Lots.Lot.releaseDieCast(data)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Basket released\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pendingReleaseLotId \u003d None\n\t\tself.view.custom.pendingReleaseLotName \u003d \"\"\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+          "params": [
+            "counterReading"
+          ],
+          "script": "\tlotId \u003d self.view.custom.pendingReleaseLotId\n\tif lotId is None:\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\t# The PRESS: Lots.DieCastLot_Release scopes both watermarks by it, so\n\t# sending it explicitly keeps the write on the same chain the dialog\n\t# previewed rather than on whatever the proc\u0027s fallback resolves.\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tdata \u003d {\n\t\t\"lotId\": lotId,\n\t\t\"shiftId\": self.view.custom.selectedShiftId,\n\t\t\"counterReading\": BlueRidge.Common.Util.toIntOrNone(counterReading),\n\t\t\"cellLocationId\": cell.get(\"locationId\"),\n\t\t\"appUserId\": self.session.custom.appUserId,\n\t\t\"terminalLocationId\": term,\n\t}\n\tresult \u003d BlueRidge.Lots.Lot.releaseDieCast(data)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Basket released\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pendingReleaseLotId \u003d None\n\t\tself.view.custom.pendingReleaseLotName \u003d \"\"\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "name": "requestVoid",
@@ -2062,7 +2024,7 @@
       {
         "messageType": "bulkOpenRowChanged",
         "pageScope": true,
-        "script": "\t# The only channel a repeater row has back to this view: params are\n\t# input-only, so every keystroke/selection is reported up here and folded\n\t# into the authoritative bulkOpenDraft map (read whole, mutate, write whole).\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenDraft) or {}\n\tdraft \u003d dict(draft)\n\tdraft[\"%s\" % payload.get(\"toolCavityId\")] \u003d {\n\t\t\"toolCavityId\": payload.get(\"toolCavityId\"),\n\t\t\"itemId\": payload.get(\"itemId\"),\n\t\t\"scannedLtt\": payload.get(\"scannedLtt\") or \"\",\n\t}\n\tpending \u003d 0\n\tfor k in draft.keys():\n\t\td \u003d draft.get(k) or {}\n\t\tif d.get(\"itemId\") is not None or (\"%s\" % (d.get(\"scannedLtt\") or \"\")).strip() !\u003d \"\":\n\t\t\tpending +\u003d 1\n\tself.view.custom.bulkOpenDraft \u003d draft\n\tself.view.custom.bulkOpenPendingCount \u003d pending",
+        "script": "\t# The only channel a repeater row has back to this view: params are\n\t# input-only, so every keystroke/selection AND every repeater rebuild is\n\t# reported up here. The fold is the single place that decides what counts\n\t# as staged, and it can DELETE an entry -- which is how a cavity that has\n\t# since been opened stops being counted on the button.\n\tres \u003d BlueRidge.Workorder.DieCast.foldBulkOpenRowChange(self.view.custom.bulkOpenDraft, payload)\n\tself.view.custom.bulkOpenDraft \u003d res[\"draft\"]\n\tself.view.custom.bulkOpenPendingCount \u003d res[\"pending\"]",
         "sessionScope": false,
         "viewScope": false
       },
@@ -2083,7 +2045,7 @@
         {
           "messageType": "releaseConfirmResult",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"action\") \u003d\u003d \"confirm\":\n\t\tself.releaseBasket()",
+          "script": "\tif payload and payload.get(\"action\") \u003d\u003d \"confirm\":\n\t\tself.releaseBasket(payload.get(\"counterReading\"))",
           "sessionScope": false,
           "viewScope": false
         },

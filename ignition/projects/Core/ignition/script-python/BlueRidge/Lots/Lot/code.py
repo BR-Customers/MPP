@@ -328,7 +328,7 @@ def getLinkedContainer(lotId):
        when the LOT is not linked to a container (raw / in-process / not assembled)."""
     lotId = _u(lotId)
     BlueRidge.Common.Util.log("lotId=%s" % lotId)
-    return BlueRidge.Common.Db.execOne("lots\Lot_GetLinkedContainer", {"lotId": lotId})
+    return BlueRidge.Common.Db.execOne("lots/Lot_GetLinkedContainer", {"lotId": lotId})
 
 
 def getLinkedContainerOrEmpty(lotId):
@@ -792,7 +792,19 @@ def getOpenByToolInstances(toolId, _refreshToken=None):
        the row's Void-button visibility. Scalar args only -- fetches inside
        (mirrors getLineInventoryCards; a list arg re-evaluates as a Java
        QualifiedValue[] that neither _u nor the JSON round-trip survive).
-       Returns list[dict]."""
+       Returns list[dict].
+
+       ONE ROW PER CAVITY (2026-09-10), not per open basket: proc v2.0 is
+       cavity-driven, so a cavity with no basket -- Closed, Scrapped, or simply
+       between baskets -- comes back with a NULL LotId and appears on the list
+       with its state instead of vanishing out of it. A gap in the cavity
+       numbers now means a DEPRECATED cavity and nothing else, which is the
+       only reading an operator can act on.
+
+       The row is titled by the cavity's NAME (Tools.ToolCavity.Description),
+       never the bare ordinal: 'Cavity 7' is a database key, 'Exhaust 1 Aa' is
+       what is written on the die and on the paper sheet. Same rule, same
+       helper, as every other die-cast surface (cavityDisplayName)."""
     toolId = _u(toolId)
     if toolId is None:
         return []
@@ -808,9 +820,14 @@ def getOpenByToolInstances(toolId, _refreshToken=None):
             except:
                 openedDisplay = ("%s" % opened)[:16]
         pieceCount = r.get("PieceCount") or 0
+        hasBasket = r.get("LotId") is not None
+        num = r.get("CavityNumber")
+        desc = r.get("CavityDescription") or ""
         out.append({
             "toolCavityId":     r.get("ToolCavityId"),
-            "cavityNumber":     r.get("CavityNumber") or "",
+            "cavityNumber":     num if num is not None else "",
+            "cavityName":       BlueRidge.Workorder.DieCast.cavityDisplayName(num, desc),
+            "cavityOrdinalLabel": "Cavity %s" % (num if num is not None else "?"),
             "lotId":            r.get("LotId"),
             "lotName":          r.get("LotName") or "",
             "pieceCount":       pieceCount,
@@ -818,7 +835,11 @@ def getOpenByToolInstances(toolId, _refreshToken=None):
             "belowStandard":    bool(r.get("BelowStandardRelease")),
             "contributorCount": r.get("ContributorCount") or 0,
             "openedAtDisplay":  openedDisplay,
-            "voidEligible":     (pieceCount == 0),
+            # a basketless cavity can be neither released nor voided
+            "voidEligible":     hasBasket and (pieceCount == 0),
+            "hasBasket":        hasBasket,
+            "cavityStatusCode": r.get("CavityStatusCode") or "Active",
+            "configuredPart":   r.get("ConfiguredPartNumber") or "",
         })
     return out
 # =============================================================================

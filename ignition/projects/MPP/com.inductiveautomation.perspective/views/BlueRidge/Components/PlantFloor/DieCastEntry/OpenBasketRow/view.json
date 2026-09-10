@@ -3,6 +3,11 @@
   "params": {
     "belowStandard": false,
     "cavityNumber": "",
+    "cavityName": "",
+    "cavityOrdinalLabel": "",
+    "cavityStatusCode": "Active",
+    "configuredPart": "",
+    "hasBasket": true,
     "contributorCount": 0,
     "lotId": null,
     "lotName": "",
@@ -17,6 +22,21 @@
       "paramDirection": "input"
     },
     "params.cavityNumber": {
+      "paramDirection": "input"
+    },
+    "params.cavityName": {
+      "paramDirection": "input"
+    },
+    "params.cavityOrdinalLabel": {
+      "paramDirection": "input"
+    },
+    "params.cavityStatusCode": {
+      "paramDirection": "input"
+    },
+    "params.configuredPart": {
+      "paramDirection": "input"
+    },
+    "params.hasBasket": {
       "paramDirection": "input"
     },
     "params.contributorCount": {
@@ -62,7 +82,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Cavity \" + toStr({view.params.cavityNumber}) + \"  ·  \" + {view.params.lotName}"
+                    "expression": "if({view.params.hasBasket}, {view.params.cavityName} + \"  ·  \" + {view.params.lotName}, {view.params.cavityName} + \"  ·  no open basket\")"
                   },
                   "type": "expr"
                 }
@@ -84,7 +104,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "toStr({view.params.pieceCount}) + \" pc  ·  \" + toStr({view.params.contributorCount}) + \" contributor(s)  ·  opened \" + {view.params.openedAtDisplay}"
+                    "expression": "if({view.params.hasBasket}, toStr({view.params.pieceCount}) + \" pc  ·  \" + toStr({view.params.contributorCount}) + \" contributor(s)  ·  opened \" + {view.params.openedAtDisplay}, if({view.params.cavityStatusCode} \u003d \"Active\", \"ready for a new basket\", {view.params.cavityStatusCode} + \" -- out of service\") + if({view.params.configuredPart} \u003d \"\", \"\", \"  ·  \" + {view.params.configuredPart}))"
                   },
                   "type": "expr"
                 }
@@ -129,6 +149,16 @@
         },
         "meta": {
           "name": "ReleaseButton"
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.hasBasket"
+              },
+              "type": "property"
+            }
+          }
         },
         "position": {
           "shrink": 0

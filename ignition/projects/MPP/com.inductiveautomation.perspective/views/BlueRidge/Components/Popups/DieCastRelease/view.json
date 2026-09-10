@@ -1,0 +1,576 @@
+{
+  "custom": {
+    "counterReading": "",
+    "preview": {
+      "belowStandardAfter": false,
+      "cavityName": "",
+      "cavityNumber": "",
+      "creditedThrough": 0,
+      "dieCreditedThrough": 0,
+      "found": false,
+      "lotId": null,
+      "lotName": "",
+      "maxPieceCount": null,
+      "newShots": 0,
+      "partNumber": "",
+      "pieceCount": 0,
+      "projectedPieceCount": 0,
+      "readingState": "None",
+      "toolCavityId": null
+    }
+  },
+  "params": {
+    "cellLocationId": null,
+    "lotId": null,
+    "popupId": "mpp-diecast-release",
+    "replyMessage": "releaseConfirmResult",
+    "shiftId": null
+  },
+  "propConfig": {
+    "custom.preview": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.getReleasePreview\", 0, {view.params.lotId}, {view.params.shiftId}, {view.params.cellLocationId}, {view.custom.counterReading})"
+        },
+        "type": "expr"
+      }
+    },
+    "params.cellLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.lotId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.shiftId": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 470,
+      "width": 640
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Title"
+        },
+        "props": {
+          "style": {
+            "fontSize": "20px",
+            "fontWeight": 700
+          },
+          "text": "Release basket"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Subject"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.preview}.cavityName + \"  ·  \" + {view.custom.preview}.lotName + if({view.custom.preview}.partNumber \u003d \"\", \"\", \"  ·  \" + {view.custom.preview}.partNumber)"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "fontFamily": "var(--mpp-font-mono)"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "ReadingLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "PRESS COUNTER READING NOW"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ReadingInput"
+                },
+                "position": {
+                  "basis": "170px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.counterReading"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "e.g. 1600",
+                  "style": {
+                    "classes": "pf-field-input-mono",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
+              },
+              {
+                "meta": {
+                  "name": "ReadingHint"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "The number on the press counter right now -- the one you wrote down at the swap."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ReadingRow"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "12px",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "ReadingField"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "4px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Caption"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-label"
+                  },
+                  "text": "ON THE BASKET NOW"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Value"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "numberFormat({view.custom.preview}.pieceCount, \"#,##0\") + \" pc\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "OnBasketCell"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-kpi",
+                "gap": "2px",
+                "overflow": "hidden",
+                "padding": "10px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "Plus"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "alignSelf": "center",
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "20px",
+                "fontWeight": 700
+              },
+              "text": "+"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Caption"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-label"
+                  },
+                  "text": "THIS RELEASE ADDS"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Value"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "numberFormat({view.custom.preview}.newShots, \"#,##0\") + \" pc\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value pf-kpi-value-mono"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "NewCell"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-kpi",
+                "gap": "2px",
+                "overflow": "hidden",
+                "padding": "10px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "Equals"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "alignSelf": "center",
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "20px",
+                "fontWeight": 700
+              },
+              "text": "\u003d"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Caption"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-label"
+                  },
+                  "text": "BASKET CLOSES AT"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Value"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "numberFormat({view.custom.preview}.projectedPieceCount, \"#,##0\") + \" pc\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value pf-kpi-value-good"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ClosesAtCell"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-kpi",
+                "gap": "2px",
+                "overflow": "hidden",
+                "padding": "10px 12px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "MathStrip"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "stretch",
+          "style": {
+            "gap": "8px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "ChainNote"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "\"This cavity is already credited through counter \" + numberFormat({view.custom.preview}.creditedThrough, \"#,##0\") + \". The system subtracts it -- you never do.\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Advisory"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.preview}.readingState !\u003d \"Ok\" || {view.custom.preview}.belowStandardAfter"
+              },
+              "type": "expr"
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "config": {
+                "expression": "if({view.custom.preview}.readingState \u003d \"Behind\", \"var(--mpp-state-bad-fg)\", \"var(--mpp-state-warn-fg)\")"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({view.custom.preview}.readingState \u003d \"Behind\", \"That reading is behind the last reading recorded for this die, \" + numberFormat({view.custom.preview}.dieCreditedThrough, \"#,##0\") + \" for this shift. Check the number you wrote down.\", if({view.custom.preview}.readingState \u003d \"None\", \"No reading entered. Releasing now closes the basket at its current count and credits this cavity nothing further.\", \"This basket will close under the standard fill of \" + numberFormat({view.custom.preview}.maxPieceCount, \"#,##0\") + \" pc.\"))"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "fontWeight": 600
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"cancel\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary pf-btn-large"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t# The reading rides the reply so the caller writes exactly the\n\t# number this dialog showed the arithmetic for.\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\n\t\t\"action\": \"confirm\",\n\t\t\"counterReading\": self.view.custom.counterReading,\n\t}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ReleaseButton"
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.preview}.readingState !\u003d \"Behind\""
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.preview}.belowStandardAfter || {view.custom.preview}.readingState \u003d \"None\", \"pf-btn pf-btn-danger pf-btn-large\", \"pf-btn pf-btn-primary pf-btn-large\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {},
+              "text": "Release basket"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "ButtonRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "10px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "surface-card",
+        "gap": "14px",
+        "overflow": "visible",
+        "padding": "24px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

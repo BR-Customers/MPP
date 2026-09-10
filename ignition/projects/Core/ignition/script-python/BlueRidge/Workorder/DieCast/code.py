@@ -88,6 +88,69 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None, cellLocatio
     return BlueRidge.Common.Db.execMutation("workorder/DieCastShiftOutput_Record", params)
 
 
+_EMPTY_RELEASE_PREVIEW = {
+    "lotId": None, "lotName": "", "toolCavityId": None,
+    "cavityNumber": "", "cavityName": "", "partNumber": "",
+    "pieceCount": 0, "maxPieceCount": None,
+    "creditedThrough": 0, "dieCreditedThrough": 0, "newShots": 0,
+    "projectedPieceCount": 0, "belowStandardAfter": False,
+    "readingState": "None", "found": False,
+}
+
+
+def getReleasePreview(lotId, shiftId=None, cellLocationId=None, counterReading=None):
+    """Everything the Release dialog shows before the operator commits, for the
+       reading they have typed so far (Workorder.DieCast_GetReleasePreview).
+
+       The dialog exists because Lots.DieCastLot_Release derives the closing
+       piece delta from a press-counter reading and the screen used to neither
+       ask for the reading nor show what it did with it -- so closing a basket
+       mid-shift either lost that cavity's shots since the last entry, or
+       forced a trip through Record Shift Output that nothing on the screen
+       asked for. Every number here comes from SQL; nothing is recomputed in a
+       binding or a handler, so the preview and the write can never disagree.
+
+       ALWAYS returns the full shape, never None (predeclare-bound-props rule):
+       a not-found / not-open LOT comes back as _EMPTY_RELEASE_PREVIEW with
+       found=False, so a nested read in a binding cannot go Quality-Bad."""
+    lotId = _u(lotId)
+    if lotId is None:
+        return dict(_EMPTY_RELEASE_PREVIEW)
+    reading = BlueRidge.Common.Util.toIntOrNone(_u(counterReading))
+    try:
+        row = BlueRidge.Common.Db.execOne("workorder/DieCast_GetReleasePreview", {
+            "lotId": lotId,
+            "shiftId": _u(shiftId),
+            "cellLocationId": _u(cellLocationId),
+            "counterReading": reading,
+        })
+    except Exception as e:
+        BlueRidge.Common.Util.log("getReleasePreview failed: %s" % str(e))
+        return dict(_EMPTY_RELEASE_PREVIEW)
+    if not row:
+        return dict(_EMPTY_RELEASE_PREVIEW)
+    num = row.get("CavityNumber")
+    out = dict(_EMPTY_RELEASE_PREVIEW)
+    out.update({
+        "lotId":               row.get("LotId"),
+        "lotName":             row.get("LotName") or "",
+        "toolCavityId":        row.get("ToolCavityId"),
+        "cavityNumber":        num if num is not None else "",
+        "cavityName":          cavityDisplayName(num, row.get("CavityDescription")),
+        "partNumber":          row.get("PartNumber") or "",
+        "pieceCount":          row.get("PieceCount") or 0,
+        "maxPieceCount":       row.get("MaxPieceCount"),
+        "creditedThrough":     row.get("CreditedThrough") or 0,
+        "dieCreditedThrough":  row.get("DieCreditedThrough") or 0,
+        "newShots":            row.get("NewShots") or 0,
+        "projectedPieceCount": row.get("ProjectedPieceCount") or 0,
+        "belowStandardAfter":  bool(row.get("BelowStandardAfter")),
+        "readingState":        row.get("ReadingState") or "None",
+        "found":               True,
+    })
+    return out
+
+
 def cavityDisplayName(cavityNumber, cavityDescription):
     """The operator-facing name of a die cavity.
 
@@ -151,51 +214,6 @@ def mapBreakdownInstances(rows):
             "hasBasket":          r.get("LotId") is not None,
         })
     return out
-
-
-def partSubtotals(rows):
-    """Per-part totals over a RAW DieCast_GetShiftOutputBreakdown result
-       (PascalCase columns, not the mapped row instances).
-
-       Production sheet DCFM-2077 groups baskets BY PART, with a Sub-Total Qty
-       per part and a Grand Total -- because one family die casts several part
-       numbers at once and that is the shape the operator reconciles against.
-       The screen was organised purely by cavity, so there was nothing to
-       reconcile with. Grouping key is the cavity's CONFIGURED part
-       (Tools.ToolCavity.ItemId, 0072), which is why a cavity with no basket
-       still contributes a group.
-
-       Returns list[dict] {part, cavities, good}, in first-seen cavity order.
-    """
-    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
-    acc = {}
-    order = []
-    for r in rows:
-        r = r or {}
-        part = ("%s" % (r.get("ConfiguredPartNumber") or "")).strip()
-        if not part:
-            part = "(no part mapped)"
-        if part not in acc:
-            acc[part] = [0, 0]
-            order.append(part)
-        acc[part][0] += 1
-        acc[part][1] += int(r.get("ProposedGood") or 0)
-    return [{"part": p, "cavities": acc[p][0], "good": acc[p][1]} for p in order]
-
-
-def partSubtotalsText(rows):
-    """One-line rendering of partSubtotals for the shift-output panel. Empty
-       string when there is nothing computed, so the label hides itself."""
-    parts = partSubtotals(rows)
-    if not parts:
-        return ""
-    bits = []
-    for p in parts:
-        bits.append("%s: %d pc (%d cav)" % (p["part"], p["good"], p["cavities"]))
-    total = 0
-    for p in parts:
-        total += p["good"]
-    return "   |   ".join(bits) + "         GRAND TOTAL: %d pc" % total
 
 
 def openRowsOnly(rows):
@@ -323,8 +341,15 @@ def getBulkOpenRowInstances(toolId, seedToken=None, _optionsToken=None):
     if toolId is None:
         return []
     try:
+        # EVERY non-deprecated cavity (2026-09-10), not just the Active ones.
+        # ToolCavity_ListActiveByTool filtered on StatusCode = 'Active', so a
+        # Closed or Scrapped cavity simply was not on the grid -- the operator
+        # saw 11 rows on a 12-cavity die with no explanation, which reads as a
+        # broken screen rather than as a cavity that is out of service. The row
+        # renders its state and offers nothing; Lots.DieCastLot_Open rejects a
+        # non-Active cavity server-side regardless.
         cavities = BlueRidge.Common.Db.execList(
-            "parts/ToolCavity_ListActiveByTool", {"toolId": toolId}) or []
+            "parts/ToolCavity_ListByTool", {"toolId": toolId, "includeDeprecated": False}) or []
     except Exception as e:
         BlueRidge.Common.Util.log("getBulkOpenRowInstances cavities failed: %s" % str(e))
         return []
@@ -336,6 +361,11 @@ def getBulkOpenRowInstances(toolId, seedToken=None, _optionsToken=None):
     openByCavity = {}
     for r in openRows:
         r = r or {}
+        # Lots.Lot_GetOpenByTool is cavity-driven since v2.0, so a row with a
+        # NULL LotId means "this cavity has NO basket" -- keying on the row
+        # itself would mark every cavity already-open.
+        if r.get("LotId") is None:
+            continue
         openByCavity["%s" % r.get("ToolCavityId")] = r
 
     out = []
@@ -344,11 +374,14 @@ def getBulkOpenRowInstances(toolId, seedToken=None, _optionsToken=None):
         cavityId = c.get("Id")
         num = c.get("CavityNumber")
         existing = openByCavity.get("%s" % cavityId)
+        statusCode = c.get("StatusCode") or "Active"
         out.append({
             "toolCavityId":       cavityId,
             "cavityNumber":       num if num is not None else "",
             "cavityName":         cavityDisplayName(num, c.get("Description")),
             "cavityOrdinalLabel": "Cavity %s" % (num if num is not None else "?"),
+            "cavityStatusCode":   statusCode,
+            "isActive":           (statusCode == "Active"),
             "alreadyOpen":        existing is not None,
             "openLotName":        (existing or {}).get("LotName") or "",
             "openPieceCount":     (existing or {}).get("PieceCount") or 0,
@@ -356,9 +389,13 @@ def getBulkOpenRowInstances(toolId, seedToken=None, _optionsToken=None):
             # row's params traverse always exists (predeclare-bound-props rule).
             "itemId":             None,
             # 0072: the part this cavity is configured to cut. The operator no
-            # longer picks it -- the repeater transform seeds itemId from this
-            # when the draft is untouched, and the row locks the dropdown so a
-            # configured cavity cannot be opened against the wrong part.
+            # longer picks it -- the row DISPLAYS this and locks the dropdown so
+            # a configured cavity cannot be opened against the wrong part.
+            # It is deliberately NOT copied into the draft: the draft is the
+            # record of what the OPERATOR entered, and seeding it made all 12
+            # untouched rows count as pending submissions (the "OPEN 12
+            # BASKET(S)" button on an empty grid, 2026-09-10). The proc resolves
+            # the cavity's part itself when the row carries none.
             "configuredItemId":   c.get("ItemId"),
             "configuredPart":     c.get("ItemPartNumber") or "",
             "scannedLtt":         "",
@@ -370,26 +407,78 @@ def getBulkOpenRowInstances(toolId, seedToken=None, _optionsToken=None):
     return out
 
 
+def bulkOpenPending(draft):
+    """How many cavity rows the operator has actually staged to open.
+
+       The count on the OPEN N BASKET(S) button. It is the number of draft
+       entries carrying a SCANNED TICKET -- the same intent test
+       _bulkOpenIntents uses, so the button can never promise a different
+       number of baskets than the submit will attempt. Counting anything else
+       is what produced "OPEN 12 BASKET(S)" on a grid nobody had touched."""
+    draft = BlueRidge.Common.Util.extractQualifiedValues(draft) or {}
+    n = 0
+    for k in draft.keys():
+        d = draft.get(k) or {}
+        if ("%s" % (d.get("scannedLtt") or "")).strip() != "":
+            n += 1
+    return n
+
+
+def foldBulkOpenRowChange(draft, payload):
+    """Fold one BulkOpenRow's report into the authoritative draft map.
+
+       Returns {"draft": {...}, "pending": N} -- the caller writes both back.
+
+       Rows report on every keystroke AND on every repeater rebuild, and the
+       rebuild report is what keeps the draft honest: a cavity that is now
+       already-open, or is not Active, has its entry REMOVED here. Without that
+       the draft kept entries for cavities the operator can no longer even see
+       (their row is read-only), and the button went on counting them -- the
+       "OPEN 11 BASKET(S)" with every slot full, 2026-09-10. A row cannot
+       report its own emptiness through the value-changed path, because writing
+       null over null fires no onChange, so the rebuild report has to be
+       unconditional and this fold has to be able to delete."""
+    draft = BlueRidge.Common.Util.extractQualifiedValues(draft) or {}
+    draft = dict(draft)
+    payload = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}
+    key = "%s" % payload.get("toolCavityId")
+    ltt = ("%s" % (payload.get("scannedLtt") or "")).strip()
+    itemId = payload.get("itemId")
+    unusable = bool(payload.get("alreadyOpen")) or (payload.get("isActive") is False)
+    if unusable or (ltt == "" and itemId is None):
+        if key in draft:
+            del draft[key]
+    else:
+        draft[key] = {"toolCavityId": payload.get("toolCavityId"),
+                      "itemId": itemId, "scannedLtt": ltt}
+    return {"draft": draft, "pending": bulkOpenPending(draft)}
+
+
 def _bulkOpenIntents(rows):
     """Normalize the raw draft rows into the submission set.
 
-       A row counts as SUBMITTED as soon as the operator touched either field.
-       A completely untouched row is not part of the submission at all (it is
-       not a failure -- the operator simply had no ticket for that cavity); a
-       half-filled row IS submitted and fails on its missing half, per the
-       requirement that a row with no part is a validation failure and not a
-       silent skip. Returns list[dict{toolCavityId, itemId, lotName}]."""
+       THE LTT IS THE INTENT (2026-09-10). A row is submitted when it carries a
+       scanned ticket, and only then. Until 0072 the part was operator input, so
+       "either field touched" was a fair reading of intent; now the part comes
+       from the cavity's configuration and is on screen without anyone touching
+       anything, which made every cavity on the die look submitted. A basket
+       cannot exist without a ticket, so the ticket is the one unambiguous
+       signal that the operator means to open one.
+
+       A ticket with no resolvable part is still a validation FAILURE and not a
+       silent skip -- it just fails in Lots.DieCastLot_Open, which is the only
+       place that knows whether the cavity has a configured part.
+       Returns list[dict{toolCavityId, itemId, lotName}]."""
     out = []
     for r in (rows or []):
         r = _u(r) or {}
         cavityId = r.get("toolCavityId")
         if cavityId is None:
             continue
-        itemId = r.get("itemId")
         lotName = ("%s" % (r.get("scannedLtt") or "")).strip()
-        if itemId is None and lotName == "":
+        if lotName == "":
             continue
-        out.append({"toolCavityId": cavityId, "itemId": itemId, "lotName": lotName})
+        out.append({"toolCavityId": cavityId, "itemId": r.get("itemId"), "lotName": lotName})
     return out
 
 

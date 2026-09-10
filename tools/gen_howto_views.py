@@ -202,23 +202,39 @@ def die_cast_open_source():
 
     parts.append(_step(1, 'Check the die',
         'The %s box at the top names the tool mounted on this machine, and '
-        'the cavity rows below come from it.' % _b('Die')))
+        'the cavity rows below come from it. Every cavity of the die has a '
+        'row, in the order they are numbered on the die.' % _b('Die')))
 
-    parts.append(_step(2, 'Pick the part',
-        'Each row is one cavity. Pick the %s for the cavity.'
+    parts.append(_step(2, 'Check the part',
+        'Each row already shows the %s that cavity is set up to cast. You do '
+        'not pick it &ndash; it comes from the die\'s configuration, and the '
+        'box is locked so a basket cannot be opened against the wrong part.'
         % _b('Part')))
     parts.append(_note(
-        'If every cavity on this die runs the same part, %s fills the empty '
-        'rows for you instead of picking the part on each one.'
-        % _b('Copy part to empty rows')))
+        'A cavity that has never been set up shows an open %s box. Pick the '
+        'part, then tell a supervisor so the die gets configured properly.'
+        % _b('Part')))
 
     parts.append(_step(3, 'Scan the basket',
-        'Scan the %s from the basket into that row.' % _b('LTT Barcode')))
+        'Scan the %s from the basket into that row. %s'
+        % (_b('LTT Barcode'),
+           'Scanning the ticket is what stages the row &ndash; the button at '
+           'the bottom counts the tickets you have scanned, nothing else.')))
 
-    parts.append(_step(4, 'Open it',
-        'Press %s to open every row you filled in.' % _b('OPEN BASKETS')))
+    parts.append(_step(4, 'Open them',
+        'Press %s. Every row you scanned a ticket into is opened at once.'
+        % _b('OPEN BASKETS')))
 
     parts.append(_rule())
+
+    parts.append(_points('ROWS THAT OFFER NOTHING', [
+        ('Already open', 'The cavity is holding a basket. Release it on the '
+                         '%s tab before opening another.' % _b('Lot Release')),
+        ('Out of service', 'The cavity is Closed or Scrapped in the die\'s '
+                           'configuration. It still runs shots, and they '
+                           'still get recorded as scrap on %s &ndash; it just '
+                           'cannot hold a basket.' % _b('Record Shift Output')),
+    ]))
 
     parts.append(_callout(WARN_BG, WARN_EDGE,
         'If the die is wrong',
@@ -231,24 +247,48 @@ def die_cast_open_source():
 def die_cast_shift_output_source():
     parts = []
     parts.append(_lead(
-        'Record what the die made during your shift.'))
+        'Record what the die made during your shift. You enter the number '
+        'showing on the press counter &ndash; the system works out what each '
+        'cavity is owed. You never subtract anything.'))
 
     parts.append(_step(1, 'Pick the shift',
         'Choose your %s.' % _b('Reporting shift')))
 
-    parts.append(_step(2, 'Enter the shot count',
-        'Enter %s.' % _b('Shots this entry (die-wide)')))
+    parts.append(_step(2, 'Read the press counter',
+        'Type the number showing on the press counter right now into %s. '
+        'It is the counter\'s own reading, not a count of shots since your '
+        'last entry.' % _b('Press counter reading now')))
+    parts.append(_note(
+        'The counter resets at the end of every shift, so it starts from zero '
+        'each shift and only ever climbs.'))
 
     parts.append(_step(3, 'Compute it',
-        'Press %s to break it down by cavity.' % _b('Compute / Preview')))
+        'Press %s. Every cavity of the die gets a row.' % _b('Compute / Preview')))
+    parts.append(_note(
+        'Each row says %s &ndash; the reading that cavity was last settled at, '
+        'and the shots it is being credited now. A cavity whose basket was '
+        'released earlier in the shift is credited only from that point on, '
+        'which is why its number can differ from its neighbours.'
+        % _b('credited thru')))
 
     parts.append(_step(4, 'Log any scrap',
-        'Press %s on any cavity that had scrap &ndash; %s updates on its '
-        'own as you log it.' % (_b('Add scrap reason'), _b('Good (pc)'))))
+        'Press %s on any cavity that had scrap. %s updates on its own as you '
+        'log it.' % (_b('Add scrap reason'), _b('Good (pc)'))))
 
     parts.append(_step(5, 'Submit',
-        'Press %s when the rows look right.'
-        % _b('SUBMIT SHIFT OUTPUT')))
+        'Press %s when the rows look right.' % _b('SUBMIT SHIFT OUTPUT')))
+
+    parts.append(_rule())
+
+    parts.append(_points('WHAT ELSE IS ON THIS TAB', [
+        ('Shot loss (all cavities)', 'Shots the die made that produced no '
+                                     'good part in ANY cavity &ndash; a short '
+                                     'shot, a purge. Logged once for the die, '
+                                     'not per cavity.'),
+        ('Cavities with no basket', 'They still appear, with the part they '
+                                    'are set up to cast, so their scrap can '
+                                    'be recorded.'),
+    ]))
 
     return ''.join(parts)
 
@@ -256,15 +296,52 @@ def die_cast_shift_output_source():
 def die_cast_lot_release_source():
     parts = []
     parts.append(_lead(
-        'Release a full basket, or void an empty one.'))
+        'Release a full basket, or void an empty one. Every cavity of the die '
+        'is listed, whether or not it is holding a basket.'))
 
-    parts.append(_points('', [
-        ('Release', 'Press %s on a basket that is full. It leaves the '
-                    'cavity, moves on to its next step, and frees the '
-                    'cavity for a new basket.' % _b('Release')),
-        ('Void', 'Press %s. It only appears on an empty basket and '
-                 'discards it.' % _b('Void')),
+    parts.append(_callout(INFO_BG, INFO_EDGE,
+        'You do not have to record shift output first',
+        'Releasing asks you for the press counter reading and credits that '
+        'cavity everything it is owed up to that reading. Record the rest of '
+        'the die at the end of the shift as usual &ndash; the cavity you just '
+        'released is picked up from where it left off, so nothing is counted '
+        'twice and nothing is lost.'))
+
+    parts.append(_step(1, 'Press Release on the basket',
+        'The row names the cavity, its ticket and what is on it now.'))
+
+    parts.append(_step(2, 'Enter the press counter reading',
+        'Type the number showing on the press counter into %s. If you swapped '
+        'the basket at the machine and came to the terminal later, use the '
+        'number you wrote down at the swap, not the number showing now.'
+        % _b('Press counter reading now')))
+
+    parts.append(_step(3, 'Check the three boxes',
+        'They read %s. The middle number is the reading you typed minus what '
+        'this cavity has already been credited &ndash; the subtraction is '
+        'done for you and shown to you.'
+        % _b('on the basket now + this release adds = basket closes at')))
+
+    parts.append(_step(4, 'Release it',
+        'Press %s. The basket leaves the cavity, moves on to its next step, '
+        'and the cavity is free for a new one.' % _b('Release basket')))
+
+    parts.append(_rule())
+
+    parts.append(_points('THE OTHER THINGS ON THIS TAB', [
+        ('Void', 'Only appears on a basket with nothing on it. It discards '
+                 'the basket.'),
+        ('no open basket', 'That cavity is free &ndash; open one on the %s '
+                           'tab.' % _b('Open Basket')),
+        ('out of service', 'The cavity is Closed or Scrapped in the die\'s '
+                           'configuration and cannot hold a basket.'),
     ]))
+
+    parts.append(_callout(WARN_BG, WARN_EDGE,
+        'If the reading is refused',
+        'A reading lower than one already recorded for this die this shift is '
+        'rejected &ndash; the counter only ever climbs during a shift, so a '
+        'lower number means a digit went astray. Check what you wrote down.'))
 
     return ''.join(parts)
 
