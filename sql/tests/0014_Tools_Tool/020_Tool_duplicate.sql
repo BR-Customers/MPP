@@ -8,12 +8,14 @@
 --   Covers the COPY / RESET contract documented in
 --   R__Tools_Tool_Duplicate.sql:
 --     COPIED  - ToolTypeId, Description, DieRankId, ShotLimit,
---               ToolCavity layout, ToolAttribute values
+--               ToolCavity layout, ToolCavity.ItemId (the family-die
+--               cavity-to-part map, 0072), ToolAttribute values
 --     RESET   - Code, Name, StatusCodeId ('Active'), ShotCount (0),
 --               ToolCavity.StatusCodeId (copied as-is), DeprecatedAt (NULL),
 --               ToolAssignment (not copied at all)
 --     GUARDS  - deprecated source DieRank -> NULL (not an error)
 --               deprecated attribute definition -> value skipped
+--               deprecated cavity Item -> ItemId NULL, cavity still copies
 --               duplicate Code / missing source / blank Code rejected
 --
 --   Pre-conditions:
@@ -75,6 +77,7 @@ INSERT INTO #C EXEC Tools.ToolCavity_Create
     @ToolId = @SrcId, @CavityNumber = 3, @Description = N'Cav three', @AppUserId = 1;
 DROP TABLE #C;
 
+DECLARE @Cav1Id BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityNumber = 1);
 DECLARE @Cav2Id BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityNumber = 2);
 DECLARE @Cav3Id BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityNumber = 3);
 
@@ -85,6 +88,32 @@ DELETE FROM #CS;
 INSERT INTO #CS EXEC Tools.ToolCavity_UpdateStatus
     @Id = @Cav3Id, @StatusCode = N'Scrapped', @AppUserId = 1;
 DROP TABLE #CS;
+
+-- Two parts for the family-die cavity-to-part map (0072). PART-A stays active
+-- and must clone; PART-Z is deprecated after mapping and must drop to NULL.
+-- Cavity 2 carries PART-Z deliberately: it is also Closed, proving the two
+-- carry-forward rules are independent (the cavity clones, its part does not).
+CREATE TABLE #PI (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #PI EXEC Parts.Item_Create
+    @ItemTypeId = 4, @PartNumber = N'DUP-PART-A', @Description = N'Dup part A',
+    @UomId = 1, @AppUserId = 1;
+DELETE FROM #PI;
+INSERT INTO #PI EXEC Parts.Item_Create
+    @ItemTypeId = 4, @PartNumber = N'DUP-PART-Z', @Description = N'Dup part Z',
+    @UomId = 1, @AppUserId = 1;
+DROP TABLE #PI;
+
+DECLARE @PartAId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'DUP-PART-A');
+DECLARE @PartZId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'DUP-PART-Z');
+
+-- Set directly: ToolCavity_Create takes no ItemId (the map is authored through
+-- ToolCavity_SaveAll from the Cavities editor). Cavity 3 stays unmapped.
+UPDATE Tools.ToolCavity SET ItemId = @PartAId WHERE Id = @Cav1Id;
+UPDATE Tools.ToolCavity SET ItemId = @PartZId WHERE Id = @Cav2Id;
+
+CREATE TABLE #PD (Status BIT, Message NVARCHAR(500));
+INSERT INTO #PD EXEC Parts.Item_Deprecate @Id = @PartZId, @AppUserId = 1;
+DROP TABLE #PD;
 
 -- Two attribute definitions; the second is deprecated after its value is set.
 CREATE TABLE #AD (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -265,6 +294,50 @@ DECLARE @Cav2Desc NVARCHAR(500) = (SELECT Description FROM Tools.ToolCavity
 EXEC test.Assert_IsEqual
     @TestName = N'[Duplicate cavities] Cavity description carried over',
     @Expected = N'Cav two', @Actual = @Cav2Desc;
+GO
+
+-- =============================================
+-- Test 4b: Cavity-to-part map (0072) clones; a deprecated part drops to NULL
+--
+-- Regression guard. Tools.Tool_Duplicate v1.0 predated ToolCavity.ItemId, so a
+-- duplicated FAMILY die came back with every cavity's part number blank -- on a
+-- 12-cavity die casting four part numbers that is the entire configuration.
+-- =============================================
+DECLARE @NewId  BIGINT = (SELECT Id FROM Tools.Tool  WHERE Code = N'DUP-NEW');
+DECLARE @PartAId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'DUP-PART-A');
+
+DECLARE @Cav1Part NVARCHAR(1) =
+    (SELECT CASE WHEN ItemId = @PartAId THEN N'1' ELSE N'0' END
+     FROM Tools.ToolCavity WHERE ToolId = @NewId AND CavityNumber = 1);
+EXEC test.Assert_IsEqual
+    @TestName = N'[Duplicate cavity part] Active part carried onto the clone',
+    @Expected = N'1', @Actual = @Cav1Part;
+
+-- Cavity 2 is Closed AND carried the now-deprecated part: the cavity clones,
+-- its part does not. Carrying a deprecated ItemId forward would produce a row
+-- ToolCavity_SaveAll then refuses to re-save, stranding the Cavities editor.
+DECLARE @Cav2Part NVARCHAR(10) =
+    (SELECT CASE WHEN ItemId IS NULL THEN N'null' ELSE N'set' END
+     FROM Tools.ToolCavity WHERE ToolId = @NewId AND CavityNumber = 2);
+EXEC test.Assert_IsEqual
+    @TestName = N'[Duplicate cavity part] Deprecated part drops to NULL',
+    @Expected = N'null', @Actual = @Cav2Part;
+
+DECLARE @Cav3Part NVARCHAR(10) =
+    (SELECT CASE WHEN ItemId IS NULL THEN N'null' ELSE N'set' END
+     FROM Tools.ToolCavity WHERE ToolId = @NewId AND CavityNumber = 3);
+EXEC test.Assert_IsEqual
+    @TestName = N'[Duplicate cavity part] Unmapped cavity stays unmapped',
+    @Expected = N'null', @Actual = @Cav3Part;
+
+-- The source must be untouched -- the guard NULLs the CLONE, never the original.
+DECLARE @SrcId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'DUP-SRC');
+DECLARE @SrcCav2Part NVARCHAR(10) =
+    (SELECT CASE WHEN ItemId IS NULL THEN N'null' ELSE N'set' END
+     FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityNumber = 2);
+EXEC test.Assert_IsEqual
+    @TestName = N'[Duplicate cavity part] Source cavity part left intact',
+    @Expected = N'set', @Actual = @SrcCav2Part;
 GO
 
 -- =============================================

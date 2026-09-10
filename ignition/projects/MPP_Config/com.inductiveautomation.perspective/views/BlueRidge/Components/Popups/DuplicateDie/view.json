@@ -709,7 +709,7 @@
                     "fontSize": "12px",
                     "lineHeight": "1.5"
                   },
-                  "text": "Shot count resets to 0 and status is set to Active. Cell mount history is not copied. Cavities carry over exactly, including Closed and Scrapped ones."
+                  "text": "Shot count resets to 0 and status is set to Active. Cell mount history is not copied. Cavities carry over exactly, including their part numbers and any Closed or Scrapped ones."
                 },
                 "type": "ia.display.label"
               }

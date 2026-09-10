@@ -2,7 +2,7 @@
 -- Procedure:   Tools.Tool_Duplicate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-18
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Clones an existing Tool's CONFIGURATION onto a brand-new Tool row with
@@ -14,9 +14,15 @@
 --     * DieRankId           - MPP Quality's rank for this die design
 --     * ShotLimit           - design life (shots before rebuild), NOT a counter
 --     * Tools.ToolCavity    - every NON-deprecated cavity on the source, copied
---                             WHOLE: CavityNumber, Description AND StatusCodeId.
---                             A Closed / Scrapped cavity is a decision about the
---                             die DESIGN, not wear, so it carries over.
+--                             WHOLE: CavityNumber, Description, StatusCodeId AND
+--                             ItemId. A Closed / Scrapped cavity is a decision
+--                             about the die DESIGN, not wear, so it carries over.
+--                             ItemId (0072) is the configured cavity-to-part map
+--                             for family dies -- which cavity cuts which part is
+--                             a fixed physical property of the steel, so a
+--                             duplicate of a family die inherits it. Losing it
+--                             would leave a 12-cavity, 4-part-number die with no
+--                             knowable part on any cavity.
 --     * Tools.ToolAttribute - every attribute value whose definition is still
 --                             active (tonnage, cycle time, insert count, ...).
 --
@@ -39,7 +45,14 @@
 --                                     success @Message says so.
 --     * Attribute definition deprecated -> that attribute value is skipped, and
 --                                     the success @Message reports the count.
---   Neither is an error: the source's configuration is still worth cloning.
+--     * Cavity Item deprecated     -> that cavity gets ItemId = NULL, the count
+--                                     is reported, and the cavity itself still
+--                                     copies. Carrying a deprecated ItemId
+--                                     forward would create a row that
+--                                     Tools.ToolCavity_SaveAll then refuses to
+--                                     re-save, stranding the editor.
+--   None of the three is an error: the source's configuration is still worth
+--   cloning.
 --
 --   The SOURCE may itself be deprecated. Duplicating a retired die to build its
 --   replacement is the main reason this proc exists, and the Tools list feeds
@@ -83,6 +96,12 @@
 --
 -- Change Log:
 --   2026-08-18 - 1.0 - Initial version.
+--   2026-09-10 - 1.1 - Copy Tools.ToolCavity.ItemId (migration 0072, which
+--                      postdated 1.0 -- duplicating a family die silently
+--                      dropped every cavity's part number). Deprecated Items
+--                      drop to NULL and are counted, mirroring the DieRank and
+--                      attribute-definition guards. Cavity part number added to
+--                      the Old / New audit JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Tools.Tool_Duplicate
     @SourceToolId BIGINT,
@@ -121,6 +140,7 @@ BEGIN
     DECLARE @CavityCount          INT    = 0;
     DECLARE @AttributeCount       INT    = 0;
     DECLARE @AttributeSkipped     INT    = 0;
+    DECLARE @ItemDropped          INT    = 0;
 
     BEGIN TRY
         -- ====================
@@ -225,6 +245,15 @@ BEGIN
         FROM Tools.ToolCavity
         WHERE ToolId = @SourceToolId AND DeprecatedAt IS NULL;
 
+        -- Cavities whose configured part has since been deprecated. They still
+        -- copy; their ItemId does not (see header).
+        SELECT @ItemDropped = COUNT(*)
+        FROM Tools.ToolCavity c
+        INNER JOIN Parts.Item i ON i.Id = c.ItemId
+        WHERE c.ToolId = @SourceToolId
+          AND c.DeprecatedAt IS NULL
+          AND i.DeprecatedAt IS NOT NULL;
+
         SELECT @AttributeCount = COUNT(*)
         FROM Tools.ToolAttribute ta
         INNER JOIN Tools.ToolAttributeDefinition tad
@@ -259,6 +288,10 @@ BEGIN
             + CASE WHEN @AttributeSkipped > 0
                    THEN N'; -' + CAST(@AttributeSkipped AS NVARCHAR(10))
                         + N' attributes skipped (definition deprecated)'
+                   ELSE N'' END
+            + CASE WHEN @ItemDropped > 0
+                   THEN N'; ~' + CAST(@ItemDropped AS NVARCHAR(10))
+                        + N' cavity parts ' + @Arrow + N' null (part deprecated)'
                    ELSE N'' END;
 
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
@@ -282,7 +315,10 @@ BEGIN
                  FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))               AS Status,
                 t.ShotCount,
                 t.ShotLimit,
-                JSON_QUERY((SELECT c.CavityNumber, csc.Code AS Status, c.Description
+                JSON_QUERY((SELECT c.CavityNumber, csc.Code AS Status, c.Description,
+                        JSON_QUERY((SELECT i.Id, i.PartNumber FROM Parts.Item i
+                         WHERE i.Id = c.ItemId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))       AS Item
                  FROM Tools.ToolCavity c
                  INNER JOIN Tools.ToolCavityStatusCode csc ON csc.Id = c.StatusCodeId
                  WHERE c.ToolId = t.Id AND c.DeprecatedAt IS NULL
@@ -318,16 +354,22 @@ BEGIN
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
         -- --- INLINE mirror of Tools.ToolCavity_SaveAll (insert leg only).
-        -- The WHOLE cavity row is design: layout (CavityNumber + Description)
-        -- AND status carry over as-is. A Closed / Scrapped cavity reflects a
-        -- decision about the die DESIGN (a cavity blanked off in the drawing),
-        -- not wear on one piece of steel, so the duplicate inherits it.
+        -- The WHOLE cavity row is design: layout (CavityNumber + Description),
+        -- status AND the configured part carry over as-is. A Closed / Scrapped
+        -- cavity reflects a decision about the die DESIGN (a cavity blanked off
+        -- in the drawing), not wear on one piece of steel, so the duplicate
+        -- inherits it. ItemId likewise: which cavity cuts which part is fixed
+        -- until the die is re-cut. A part deprecated since the source was
+        -- configured drops to NULL rather than blocking the duplicate.
         INSERT INTO Tools.ToolCavity
-            (ToolId, CavityNumber, StatusCodeId, Description,
+            (ToolId, CavityNumber, StatusCodeId, Description, ItemId,
              CreatedAt, CreatedByUserId)
         SELECT @NewId, c.CavityNumber, c.StatusCodeId, c.Description,
+               CASE WHEN i.Id IS NOT NULL AND i.DeprecatedAt IS NULL
+                    THEN c.ItemId ELSE NULL END,
                SYSUTCDATETIME(), @AppUserId
         FROM Tools.ToolCavity c
+        LEFT JOIN Parts.Item i ON i.Id = c.ItemId
         WHERE c.ToolId = @SourceToolId AND c.DeprecatedAt IS NULL;
 
         -- --- INLINE mirror of Tools.ToolAttribute_SaveAll (insert leg only).
@@ -362,7 +404,10 @@ BEGIN
                  FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))               AS Status,
                 t.ShotCount,
                 t.ShotLimit,
-                JSON_QUERY((SELECT c.CavityNumber, csc.Code AS Status, c.Description
+                JSON_QUERY((SELECT c.CavityNumber, csc.Code AS Status, c.Description,
+                        JSON_QUERY((SELECT i.Id, i.PartNumber FROM Parts.Item i
+                         WHERE i.Id = c.ItemId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))       AS Item
                  FROM Tools.ToolCavity c
                  INNER JOIN Tools.ToolCavityStatusCode csc ON csc.Id = c.StatusCodeId
                  WHERE c.ToolId = t.Id AND c.DeprecatedAt IS NULL
@@ -405,6 +450,10 @@ BEGIN
                      + CASE WHEN @AttributeSkipped > 0
                             THEN N' ' + CAST(@AttributeSkipped AS NVARCHAR(10))
                                  + N' attribute(s) skipped (definition deprecated).'
+                            ELSE N'' END
+                     + CASE WHEN @ItemDropped > 0
+                            THEN N' ' + CAST(@ItemDropped AS NVARCHAR(10))
+                                 + N' cavity part(s) not carried over (part deprecated).'
                             ELSE N'' END;
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
     END TRY
