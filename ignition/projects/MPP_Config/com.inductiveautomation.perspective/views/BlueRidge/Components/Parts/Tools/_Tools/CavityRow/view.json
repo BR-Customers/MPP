@@ -131,7 +131,7 @@
           "props.enabled": {
             "binding": {
               "config": {
-                "expression": "!{view.params.row.isScrappedSaved} && !{view.params.row.isDeprecated}"
+                "expression": "!{view.params.row.isDeprecated}"
               },
               "type": "expr"
             }
@@ -177,7 +177,7 @@
           "props.enabled": {
             "binding": {
               "config": {
-                "expression": "!{view.params.row.isScrappedSaved} && !{view.params.row.isDeprecated}"
+                "expression": "!{view.params.row.isDeprecated}"
               },
               "type": "expr"
             }
@@ -234,7 +234,7 @@
           "props.enabled": {
             "binding": {
               "config": {
-                "expression": "!{view.params.row.isScrappedSaved} && !{view.params.row.isDeprecated}"
+                "expression": "!{view.params.row.isDeprecated}"
               },
               "type": "expr"
             }

@@ -44,7 +44,11 @@ DECLARE @StatusCode NVARCHAR(20) = (SELECT sc.Code FROM Tools.ToolCavity c INNER
 EXEC test.Assert_IsEqual @TestName=N'[CavSaveScrap] Status is Scrapped', @Expected=N'Scrapped', @Actual=@StatusCode;
 GO
 
--- Test 3: try to un-scrap #1 -> Status=0 (Scrapped lock)
+-- Test 3: un-scrap #1 back to Active -> Status=1, and it really persists.
+-- Was asserted the other way until 2026-09-10 (proc v1.2). Scrapped is not
+-- terminal on the floor: a cavity gets scrapped, the die is repaired, and it
+-- comes back producing. The one-way lock left no route back except a hand-edit,
+-- because UQ_ToolCavity_ActiveToolCavity blocks re-adding the same number.
 DECLARE @S BIT, @SStr NVARCHAR(1);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-TOOL');
 DECLARE @CavId BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityNumber=1);
@@ -53,7 +57,9 @@ CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R3 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R3; DROP TABLE #R3;
 SET @SStr = CAST(@S AS NVARCHAR(1));
-EXEC test.Assert_IsEqual @TestName=N'[CavSaveUnscrap] Status is 0', @Expected=N'0', @Actual=@SStr;
+EXEC test.Assert_IsEqual @TestName=N'[CavSaveUnscrap] Un-scrap accepted', @Expected=N'1', @Actual=@SStr;
+DECLARE @BackTo NVARCHAR(20) = (SELECT sc.Code FROM Tools.ToolCavity c INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id=c.StatusCodeId WHERE c.Id=@CavId);
+EXEC test.Assert_IsEqual @TestName=N'[CavSaveUnscrap] Cavity is Active again', @Expected=N'Active', @Actual=@BackTo;
 GO
 
 -- Test 4: change CavityNumber on existing row -> Status=0 (immutable)

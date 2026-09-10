@@ -2,13 +2,14 @@
 -- Procedure:   Tools.ToolCavity_SaveAll
 -- Author:      Blue Ridge Automation
 -- Created:     2026-06-08
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   Bundled SaveAll for a Tool's cavities. Insert + update ONLY -- cavities
 --   persist (no deprecate-on-absent; end-of-life via Scrapped status). On
---   existing rows CavityNumber is immutable and a row already Scrapped may
---   not transition to another status. Audit: <Tool> . Cavities . ACTION.
+--   existing rows CavityNumber is immutable. Status is freely editable in
+--   BOTH directions, including back out of Scrapped -- see the change log for
+--   why the one-way lock was removed. Audit: <Tool> . Cavities . ACTION.
 --
 -- Parameters: @ToolId BIGINT, @RowsJson NVARCHAR(MAX), @AppUserId BIGINT
 --   RowsJson element: {Id, CavityNumber, Description, StatusCode, ItemId}
@@ -23,6 +24,17 @@
 --                      deprecated in Parts.Item), persisted on insert+update,
 --                      and carried in the audit narrative / Old+New JSON with
 --                      the part number resolved per the audit convention.
+--   2026-09-10 - 1.2 - Removed the one-way 'no transition OUT of Scrapped'
+--                      lock. It assumed Scrapped is terminal, but the floor
+--                      treats it as a working state: a cavity gets scrapped,
+--                      the die goes out for repair, and it comes back
+--                      producing. With no way back, the only recovery was a
+--                      new cavity row -- which UQ_ToolCavity_ActiveToolCavity
+--                      forbids on the same number -- or a hand-edit in SSMS.
+--                      Deliberately replaced with NOTHING: no elevation, no
+--                      confirmation. The audit trail already records who
+--                      changed a cavity's status and when, which is the
+--                      accountability that matters here.
 -- =============================================
 CREATE OR ALTER PROCEDURE Tools.ToolCavity_SaveAll
     @ToolId    BIGINT,
@@ -141,18 +153,6 @@ BEGIN
             WHERE i.Id IS NOT NULL AND c.CavityNumber <> i.CavityNumber)
         BEGIN
             SET @Message = N'Cavity number is immutable on existing cavities.';
-            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
-        END
-
-        -- No transition OUT of Scrapped
-        IF EXISTS (
-            SELECT 1 FROM @Incoming i
-            INNER JOIN Tools.ToolCavity c ON c.Id = i.Id
-            INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = c.StatusCodeId
-            WHERE i.Id IS NOT NULL AND sc.Code = N'Scrapped' AND i.StatusCode <> N'Scrapped')
-        BEGIN
-            SET @Message = N'A scrapped cavity cannot change status.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
