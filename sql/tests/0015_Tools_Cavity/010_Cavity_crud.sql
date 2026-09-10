@@ -40,7 +40,7 @@ DECLARE @DieToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CAV-TEST-D
 
 CREATE TABLE #C1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #C1 EXEC Tools.ToolCavity_Create
-    @ToolId = @DieToolId, @CavityNumber = 1, @Description = N'Cavity 1',
+    @ToolId = @DieToolId, @CavityCode = N'a', @Description = N'Cavity a',
     @AppUserId = 1;
 DECLARE @S BIT = (SELECT Status FROM #C1);
 DECLARE @SStr NVARCHAR(1) = CAST(@S AS NVARCHAR(1));
@@ -58,7 +58,7 @@ DECLARE @CutToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CAV-TEST-C
 
 CREATE TABLE #C2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #C2 EXEC Tools.ToolCavity_Create
-    @ToolId = @CutToolId, @CavityNumber = 1, @AppUserId = 1;
+    @ToolId = @CutToolId, @CavityCode = N'a', @AppUserId = 1;
 DECLARE @S BIT = (SELECT Status FROM #C2);
 DECLARE @SStr NVARCHAR(1) = CAST(@S AS NVARCHAR(1));
 DROP TABLE #C2;
@@ -69,13 +69,13 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
--- Test 3: Duplicate CavityNumber on same Die — rejected
+-- Test 3: Duplicate CavityCode on same Die — rejected
 -- =============================================
 DECLARE @DieToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CAV-TEST-DIE');
 
 CREATE TABLE #C3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #C3 EXEC Tools.ToolCavity_Create
-    @ToolId = @DieToolId, @CavityNumber = 1, @AppUserId = 1;
+    @ToolId = @DieToolId, @CavityCode = N'a', @AppUserId = 1;
 DECLARE @S BIT = (SELECT Status FROM #C3);
 DECLARE @SStr NVARCHAR(1) = CAST(@S AS NVARCHAR(1));
 DROP TABLE #C3;
@@ -90,7 +90,7 @@ GO
 -- =============================================
 DECLARE @DieToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CAV-TEST-DIE');
 DECLARE @CavityId BIGINT = (
-    SELECT Id FROM Tools.ToolCavity WHERE ToolId = @DieToolId AND CavityNumber = 1);
+    SELECT Id FROM Tools.ToolCavity WHERE ToolId = @DieToolId AND CavityCode = N'a');
 
 CREATE TABLE #C4 (Status BIT, Message NVARCHAR(500));
 INSERT INTO #C4 EXEC Tools.ToolCavity_UpdateStatus
@@ -121,7 +121,7 @@ DECLARE @DieToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CAV-TEST-D
 -- Add a second cavity then deprecate it
 CREATE TABLE #Cx (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Cx EXEC Tools.ToolCavity_Create
-    @ToolId = @DieToolId, @CavityNumber = 2, @AppUserId = 1;
+    @ToolId = @DieToolId, @CavityCode = N'b', @AppUserId = 1;
 DECLARE @Cav2Id BIGINT = (SELECT NewId FROM #Cx);
 DROP TABLE #Cx;
 
@@ -131,7 +131,7 @@ INSERT INTO #Dx EXEC Tools.ToolCavity_Deprecate
 DROP TABLE #Dx;
 
 CREATE TABLE #L (
-    Id BIGINT, ToolId BIGINT, CavityNumber INT,
+    Id BIGINT, ToolId BIGINT, CavityCode NVARCHAR(4),
     StatusCodeId BIGINT, StatusCode NVARCHAR(30), StatusName NVARCHAR(100),
     Description NVARCHAR(500),
     CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3),

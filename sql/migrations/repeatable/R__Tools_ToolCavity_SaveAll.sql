@@ -2,17 +2,24 @@
 -- Procedure:   Tools.ToolCavity_SaveAll
 -- Author:      Blue Ridge Automation
 -- Created:     2026-06-08
--- Version:     1.2
+-- Version:     1.3
 --
 -- Description:
 --   Bundled SaveAll for a Tool's cavities. Insert + update ONLY -- cavities
 --   persist (no deprecate-on-absent; end-of-life via Scrapped status). On
---   existing rows CavityNumber is immutable. Status is freely editable in
+--   existing rows CavityCode is immutable. Status is freely editable in
 --   BOTH directions, including back out of Scrapped -- see the change log for
 --   why the one-way lock was removed. Audit: <Tool> . Cavities . ACTION.
 --
+--   Cavity identity is a PER-PART lowercase alphabetic code (0076): a family
+--   die casting four part numbers carries four cavities called 'a', one per
+--   part. Uniqueness is therefore (ToolId, ItemId, CavityCode) among active
+--   rows, and the collision check is run against the PROJECTED post-save
+--   state so an ItemId edit that moves a cavity onto an occupied letter is
+--   caught as well as a colliding new row.
+--
 -- Parameters: @ToolId BIGINT, @RowsJson NVARCHAR(MAX), @AppUserId BIGINT
---   RowsJson element: {Id, CavityNumber, Description, StatusCode, ItemId}
+--   RowsJson element: {Id, CavityCode, Description, StatusCode, ItemId}
 --   ItemId is OPTIONAL and NULLable -- the configured cavity-to-part map for
 --   family dies (0072). Omit it or send null on a die whose cavities all cut
 --   the same part; the part is then derived from the LOT as before.
@@ -35,6 +42,19 @@
 --                      confirmation. The audit trail already records who
 --                      changed a cavity's status and when, which is the
 --                      accountability that matters here.
+--   2026-09-10 - 1.3 - CavityNumber INT becomes CavityCode NVARCHAR(4)
+--                      (migration 0076). The payload value is read as a
+--                      string, trimmed and lowercased, and validated as 1-4
+--                      letters (a-z) instead of '>= 1'. Both duplicate
+--                      checks are now scoped PER PART: the intra-payload
+--                      check groups by (ItemId, CavityCode), and the
+--                      against-the-database check is replaced by a
+--                      projected-final-state check -- submitted rows plus
+--                      the existing rows this payload does not touch --
+--                      which catches a colliding new row AND an ItemId edit
+--                      that moves a cavity onto a letter that part already
+--                      uses. That second rejection is new; per-die
+--                      uniqueness could not express it.
 -- =============================================
 CREATE OR ALTER PROCEDURE Tools.ToolCavity_SaveAll
     @ToolId    BIGINT,
@@ -57,7 +77,12 @@ BEGIN
     DECLARE @Incoming TABLE (
         RowIndex     INT PRIMARY KEY,
         Id           BIGINT NULL,
-        CavityNumber INT NULL,
+        -- Deliberately WIDER than the NVARCHAR(4) column. An over-length code
+        -- must be REJECTED with a status row, and staging it into NVARCHAR(4)
+        -- would instead throw Msg 8152 on the way in -- an exception, inside a
+        -- proc that callers capture with INSERT-EXEC. Validation below proves
+        -- the value is 1-4 letters before anything is written.
+        CavityCode   NVARCHAR(200) NULL,
         Description  NVARCHAR(500) NULL,
         StatusCode   NVARCHAR(20) NULL,
         StatusCodeId BIGINT NULL,
@@ -90,10 +115,10 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
 
-        INSERT INTO @Incoming (RowIndex, Id, CavityNumber, Description, StatusCode, ItemId)
+        INSERT INTO @Incoming (RowIndex, Id, CavityCode, Description, StatusCode, ItemId)
         SELECT CAST([key] AS INT) + 1,
                TRY_CAST(JSON_VALUE([value], '$.Id') AS BIGINT),
-               TRY_CAST(JSON_VALUE([value], '$.CavityNumber') AS INT),
+               LEFT(LOWER(LTRIM(RTRIM(JSON_VALUE([value], '$.CavityCode')))), 200),
                JSON_VALUE([value], '$.Description'),
                JSON_VALUE([value], '$.StatusCode'),
                TRY_CAST(JSON_VALUE([value], '$.ItemId') AS BIGINT)
@@ -123,16 +148,22 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
 
-        IF EXISTS (SELECT 1 FROM @Incoming WHERE CavityNumber IS NULL OR CavityNumber < 1)
+        IF EXISTS (SELECT 1 FROM @Incoming
+                   WHERE CavityCode IS NULL OR CavityCode = N''
+                      OR LEN(CavityCode) > 4
+                      OR CavityCode LIKE N'%[^a-z]%')
         BEGIN
-            SET @Message = N'CavityNumber must be >= 1 on every row.';
+            SET @Message = N'Cavity code must be 1-4 letters (a-z) on every row.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
 
-        IF EXISTS (SELECT CavityNumber FROM @Incoming GROUP BY CavityNumber HAVING COUNT(*) > 1)
+        -- Per-part, not per-die: a family die may carry a cavity 'a' on every
+        -- part it casts, but not two 'a' cavities on the SAME part.
+        IF EXISTS (SELECT 1 FROM @Incoming
+                   GROUP BY ISNULL(ItemId, -1), CavityCode HAVING COUNT(*) > 1)
         BEGIN
-            SET @Message = N'Duplicate cavity number in submitted rows.';
+            SET @Message = N'Duplicate cavity code for the same part in submitted rows.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
@@ -147,23 +178,34 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
 
-        -- CavityNumber immutable on existing rows
+        -- CavityCode immutable on existing rows
         IF EXISTS (
             SELECT 1 FROM @Incoming i INNER JOIN Tools.ToolCavity c ON c.Id = i.Id
-            WHERE i.Id IS NOT NULL AND c.CavityNumber <> i.CavityNumber)
+            WHERE i.Id IS NOT NULL AND c.CavityCode <> i.CavityCode)
         BEGIN
-            SET @Message = N'Cavity number is immutable on existing cavities.';
+            SET @Message = N'Cavity code is immutable on existing cavities.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
 
-        -- New cavity number must not collide with an existing active cavity
-        IF EXISTS (
-            SELECT 1 FROM @Incoming i WHERE i.Id IS NULL
-            AND EXISTS (SELECT 1 FROM Tools.ToolCavity c
-                        WHERE c.ToolId = @ToolId AND c.CavityNumber = i.CavityNumber AND c.DeprecatedAt IS NULL))
+        -- Projected post-save state: every submitted row, plus every existing
+        -- row this payload does not touch. A duplicate (ItemGrp, CavityCode)
+        -- in that projection is a collision -- whether it came from a new row
+        -- or from an ItemId edit that moved a cavity onto an occupied letter.
+        DECLARE @Final TABLE (ItemGrp BIGINT NOT NULL, CavityCode NVARCHAR(4) NOT NULL);
+
+        INSERT INTO @Final (ItemGrp, CavityCode)
+        SELECT ISNULL(i.ItemId, -1), i.CavityCode FROM @Incoming i;
+
+        INSERT INTO @Final (ItemGrp, CavityCode)
+        SELECT ISNULL(c.ItemId, -1), c.CavityCode
+        FROM Tools.ToolCavity c
+        WHERE c.ToolId = @ToolId AND c.DeprecatedAt IS NULL
+          AND NOT EXISTS (SELECT 1 FROM @Incoming i2 WHERE i2.Id = c.Id);
+
+        IF EXISTS (SELECT 1 FROM @Final GROUP BY ItemGrp, CavityCode HAVING COUNT(*) > 1)
         BEGIN
-            SET @Message = N'A cavity with this number already exists on the tool.';
+            SET @Message = N'A cavity with this code already exists for that part on the tool.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
@@ -176,20 +218,20 @@ BEGIN
 
         DECLARE @Changes TABLE (
             ChangeKind NCHAR(1) NOT NULL, SortKey INT NOT NULL,
-            CavityNumber INT NOT NULL,
+            CavityCode NVARCHAR(4) NOT NULL,
             OldStatus NVARCHAR(20) NULL, NewStatus NVARCHAR(20) NULL,
             OldDesc NVARCHAR(500) NULL, NewDesc NVARCHAR(500) NULL,
             OldItem NVARCHAR(50) NULL, NewItem NVARCHAR(50) NULL
         );
 
-        INSERT INTO @Changes (ChangeKind, SortKey, CavityNumber, NewStatus, NewDesc, NewItem)
-        SELECT N'+', ROW_NUMBER() OVER (ORDER BY i.CavityNumber), i.CavityNumber, i.StatusCode, i.Description, nit.PartNumber
+        INSERT INTO @Changes (ChangeKind, SortKey, CavityCode, NewStatus, NewDesc, NewItem)
+        SELECT N'+', ROW_NUMBER() OVER (ORDER BY i.CavityCode), i.CavityCode, i.StatusCode, i.Description, nit.PartNumber
         FROM @Incoming i
         LEFT JOIN Parts.Item nit ON nit.Id = i.ItemId
         WHERE i.Id IS NULL;
 
-        INSERT INTO @Changes (ChangeKind, SortKey, CavityNumber, OldStatus, NewStatus, OldDesc, NewDesc, OldItem, NewItem)
-        SELECT N'~', ROW_NUMBER() OVER (ORDER BY c.CavityNumber), c.CavityNumber,
+        INSERT INTO @Changes (ChangeKind, SortKey, CavityCode, OldStatus, NewStatus, OldDesc, NewDesc, OldItem, NewItem)
+        SELECT N'~', ROW_NUMBER() OVER (ORDER BY c.CavityCode), c.CavityCode,
                oldsc.Code, i.StatusCode, c.Description, i.Description,
                oit.PartNumber, nit.PartNumber
         FROM @Incoming i
@@ -205,12 +247,12 @@ BEGIN
         DECLARE @TotalRows INT = (SELECT COUNT(*) FROM @Incoming);
 
         ;WITH r AS (SELECT *, ROW_NUMBER() OVER (ORDER BY SortKey) rn FROM @Changes WHERE ChangeKind=N'+')
-        SELECT @AddSpec = STRING_AGG(N'+#' + CAST(CavityNumber AS NVARCHAR) + N' (' + ISNULL(NewStatus,N'Active') + N')', N', ')
+        SELECT @AddSpec = STRING_AGG(N'+#' + CavityCode + N' (' + ISNULL(NewStatus,N'Active') + N')', N', ')
                           WITHIN GROUP (ORDER BY rn) FROM r WHERE rn <= 3;
         SELECT @AddOv = COUNT(*) - 3 FROM @Changes WHERE ChangeKind=N'+'; IF @AddOv<0 SET @AddOv=0;
 
         ;WITH r AS (SELECT *, ROW_NUMBER() OVER (ORDER BY SortKey) rn FROM @Changes WHERE ChangeKind=N'~')
-        SELECT @UpdSpec = STRING_AGG(N'~#' + CAST(CavityNumber AS NVARCHAR) + N' ' +
+        SELECT @UpdSpec = STRING_AGG(N'~#' + CavityCode + N' ' +
                               CASE WHEN ISNULL(OldStatus,N'') <> ISNULL(NewStatus,N'')
                                    THEN ISNULL(OldStatus,N'null') + NCHAR(8594) + ISNULL(NewStatus,N'null')
                                    WHEN ISNULL(OldItem,N'') <> ISNULL(NewItem,N'')
@@ -232,19 +274,19 @@ BEGIN
             N' ' + @ActionParts + N'; ' + CAST(@TotalRows AS NVARCHAR) + N' rows');
 
         DECLARE @OldValueResolved NVARCHAR(MAX) = (
-            SELECT c.Id, c.CavityNumber, sc.Code AS Status, c.Description,
+            SELECT c.Id, c.CavityCode, sc.Code AS Status, c.Description,
                    it.Id AS 'Item.Id', it.PartNumber AS 'Item.PartNumber'
             FROM Tools.ToolCavity c
             INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = c.StatusCodeId
             LEFT  JOIN Parts.Item it ON it.Id = c.ItemId
             WHERE c.ToolId = @ToolId AND c.DeprecatedAt IS NULL
-            ORDER BY c.CavityNumber FOR JSON PATH);
+            ORDER BY c.CavityCode FOR JSON PATH);
         DECLARE @NewValueResolved NVARCHAR(MAX) = (
-            SELECT i.Id, i.CavityNumber, i.StatusCode AS Status, i.Description,
+            SELECT i.Id, i.CavityCode, i.StatusCode AS Status, i.Description,
                    it.Id AS 'Item.Id', it.PartNumber AS 'Item.PartNumber'
             FROM @Incoming i
             LEFT JOIN Parts.Item it ON it.Id = i.ItemId
-            ORDER BY i.CavityNumber FOR JSON PATH);
+            ORDER BY i.CavityCode FOR JSON PATH);
 
         -- ===== Mutation (atomic) -- insert + update only =====
         BEGIN TRANSACTION;
@@ -255,8 +297,8 @@ BEGIN
         FROM Tools.ToolCavity c INNER JOIN @Incoming i ON i.Id = c.Id
         WHERE c.ToolId = @ToolId AND c.DeprecatedAt IS NULL;
 
-        INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
-        SELECT @ToolId, i.CavityNumber, i.StatusCodeId, i.Description, i.ItemId, SYSUTCDATETIME(), @AppUserId
+        INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
+        SELECT @ToolId, i.CavityCode, i.StatusCodeId, i.Description, i.ItemId, SYSUTCDATETIME(), @AppUserId
         FROM @Incoming i WHERE i.Id IS NULL;
 
         EXEC Audit.Audit_LogConfigChange

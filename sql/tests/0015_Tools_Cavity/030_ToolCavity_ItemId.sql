@@ -50,9 +50,9 @@ DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CI-CAV-TOOL')
 DECLARE @P1 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'CI-PART-1');
 DECLARE @P2 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'CI-PART-2');
 DECLARE @Json NVARCHAR(MAX) =
-    N'[{"Id":null,"CavityNumber":1,"Description":"Da","StatusCode":"Active","ItemId":' + CAST(@P1 AS NVARCHAR(20)) + N'},'
-  + N'{"Id":null,"CavityNumber":2,"Description":"Db","StatusCode":"Active","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'},'
-  + N'{"Id":null,"CavityNumber":3,"Description":"Dc","StatusCode":"Active","ItemId":null}]';
+    N'[{"Id":null,"CavityCode":"a","Description":"Da","StatusCode":"Active","ItemId":' + CAST(@P1 AS NVARCHAR(20)) + N'},'
+  + N'{"Id":null,"CavityCode":"b","Description":"Db","StatusCode":"Active","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'},'
+  + N'{"Id":null,"CavityCode":"c","Description":"Dc","StatusCode":"Active","ItemId":null}]';
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R1 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R1; DROP TABLE #R1;
@@ -61,11 +61,11 @@ EXEC test.Assert_IsEqual @TestName=N'[CavItemAdd] Status is 1', @Expected=N'1', 
 
 DECLARE @P1Str NVARCHAR(20) = CAST(@P1 AS NVARCHAR(20));
 DECLARE @Cav1 NVARCHAR(20) = (SELECT CAST(ISNULL(ItemId,-1) AS NVARCHAR(20))
-                              FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityNumber=1);
+                              FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'a');
 EXEC test.Assert_IsEqual @TestName=N'[CavItemAdd] Cavity 1 persisted its ItemId', @Expected=@P1Str, @Actual=@Cav1;
 
 DECLARE @Cav3 NVARCHAR(20) = (SELECT CAST(ISNULL(ItemId,-1) AS NVARCHAR(20))
-                              FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityNumber=3);
+                              FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'c');
 EXEC test.Assert_IsEqual @TestName=N'[CavItemAdd] Unmapped cavity keeps NULL ItemId', @Expected=N'-1', @Actual=@Cav3;
 GO
 
@@ -74,7 +74,7 @@ GO
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CI-CAV-TOOL');
 CREATE TABLE #L (
-    Id BIGINT, ToolId BIGINT, CavityNumber INT,
+    Id BIGINT, ToolId BIGINT, CavityCode NVARCHAR(4),
     StatusCodeId BIGINT, StatusCode NVARCHAR(30), StatusName NVARCHAR(100),
     Description NVARCHAR(500),
     CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3),
@@ -83,7 +83,7 @@ CREATE TABLE #L (
 );
 INSERT INTO #L EXEC Tools.ToolCavity_ListByTool @ToolId = @ToolId;
 
-DECLARE @PN NVARCHAR(50) = (SELECT ItemPartNumber FROM #L WHERE CavityNumber = 2);
+DECLARE @PN NVARCHAR(50) = (SELECT ItemPartNumber FROM #L WHERE CavityCode = N'b');
 EXEC test.Assert_IsEqual @TestName=N'[CavItemList] ListByTool resolves ItemPartNumber', @Expected=N'CI-PART-2', @Actual=@PN;
 
 -- LEFT JOIN, not INNER: the unmapped cavity must not be dropped from the list
@@ -97,9 +97,9 @@ GO
 -- =============================================
 DECLARE @S BIT, @SStr NVARCHAR(1);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CI-CAV-TOOL');
-DECLARE @C1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityNumber=1);
+DECLARE @C1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'a');
 DECLARE @Json NVARCHAR(MAX) =
-    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityNumber":1,"Description":"Da","StatusCode":"Active","ItemId":999999999}]';
+    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Da","StatusCode":"Active","ItemId":999999999}]';
 CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R3 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R3; DROP TABLE #R3;
@@ -112,10 +112,10 @@ GO
 -- =============================================
 DECLARE @S BIT, @SStr NVARCHAR(1);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CI-CAV-TOOL');
-DECLARE @C1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityNumber=1);
+DECLARE @C1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'a');
 DECLARE @Dead BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'CI-PART-DEAD');
 DECLARE @Json NVARCHAR(MAX) =
-    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityNumber":1,"Description":"Da","StatusCode":"Active","ItemId":' + CAST(@Dead AS NVARCHAR(20)) + N'}]';
+    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Da","StatusCode":"Active","ItemId":' + CAST(@Dead AS NVARCHAR(20)) + N'}]';
 CREATE TABLE #R4 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R4 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R4; DROP TABLE #R4;
@@ -133,12 +133,12 @@ GO
 -- =============================================
 DECLARE @S BIT, @SStr NVARCHAR(1);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CI-CAV-TOOL');
-DECLARE @C1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityNumber=1);
-DECLARE @C2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityNumber=2);
+DECLARE @C1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'a');
+DECLARE @C2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'b');
 DECLARE @P2 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'CI-PART-2');
 DECLARE @Json NVARCHAR(MAX) =
-    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityNumber":1,"Description":"Da","StatusCode":"Active","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'},'
-  + N'{"Id":' + CAST(@C2 AS NVARCHAR(20)) + N',"CavityNumber":2,"Description":"Db","StatusCode":"Active","ItemId":null}]';
+    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Da","StatusCode":"Active","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'},'
+  + N'{"Id":' + CAST(@C2 AS NVARCHAR(20)) + N',"CavityCode":"b","Description":"Db","StatusCode":"Active","ItemId":null}]';
 CREATE TABLE #R5 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R5 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R5; DROP TABLE #R5;
@@ -157,10 +157,10 @@ GO
 -- Test 6: a CLOSED cavity still names its part -- the whole point of 0072
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CI-CAV-TOOL');
-DECLARE @C1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityNumber=1);
+DECLARE @C1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'a');
 DECLARE @P2 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'CI-PART-2');
 DECLARE @Json NVARCHAR(MAX) =
-    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityNumber":1,"Description":"Da","StatusCode":"Closed","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'}]';
+    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Da","StatusCode":"Closed","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'}]';
 CREATE TABLE #R6 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R6 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 DROP TABLE #R6;
