@@ -17,6 +17,8 @@ The content is technology-specific (Ignition 8.3 file-based projects, Perspectiv
 | `07_conventions_and_antipatterns.md` | View authoring rules ("root" container, no `psc-` prefix, `position.display` for conditional flex visibility, underscore folder convention, no drag-and-drop). Save semantics (`editDraft` + explicit Save, no auto-save, no nav guard, dirty indicator). Versioned-entity workflow (Draft / Published / Deprecated, optimistic locking via `RowVersion`, `EffectiveFrom` scheduled-publish). Audit user attribution via `session.custom.appUserId`. Mutation feedback via `notifyResult`. Anti-patterns to flag rather than silently propagate. |
 | `08_custom_icon_libraries.md` | Custom icon library setup (8.3 path moved from 8.1's `data/modules/...`); SVG sprite format; viewBox + no-fill-on-path rules; recolor mechanism; Material Symbols GitHub source URL pattern for non-default axes. |
 | `09_repo_gateway_sync.md` | Repo-as-source-of-truth dev workflow: Gateway project folders as directory junctions into the repo working tree, the scan-to-register loop (`POST /data/api/v1/scan/projects`), the one-time elevated link setup (incl. converting Designer-created real folders), and the deploy-box `pull.ps1` mechanism. |
+| `10_reporting_module.md` | Reporting Module PDF reports as file-based binary `data.bin` resources: the codec, parameters and SQL data sources, the ReportMill page layout, nesting rules, and render-verification against a running Gateway. |
+| `11_project_exports.md` | Packaging project resources into a `.zip` a human imports through the Designer: the verified archive shape, why a resource is a FOLDER not a file, the manifest-must-match-payload rule and the two incidents that prove it, excluded files, the PS 5.1 one-element-array trap, scoped vs full-project archives, and import order. |
 
 Read in order if you're new to Ignition projects. Skim by topic if you're solving a specific problem.
 
@@ -43,6 +45,7 @@ When writing or editing anything under `ignition/projects/`, read the
 - Project lifecycle / timers        → 05_lifecycle_and_timers.md
 - Custom icon libraries             → 08_custom_icon_libraries.md
 - Repo ↔ Gateway sync / linking      → 09_repo_gateway_sync.md
+- Exporting resources for import   → 11_project_exports.md
 - All view authoring (always read)  → 07_conventions_and_antipatterns.md
 ```
 

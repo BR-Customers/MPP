@@ -198,6 +198,7 @@ The `ignition-context-pack/` folder contains a vendor-neutral, DevTools-verified
 - Custom icon libraries             → `ignition-context-pack/08_custom_icon_libraries.md`
 - Repo ↔ Gateway sync / linking      → `ignition-context-pack/09_repo_gateway_sync.md`
 - Reporting Module (PDF reports)     → `ignition-context-pack/10_reporting_module.md` (+ global `ignition-reporting` skill)
+- Exporting resources for import    → `ignition-context-pack/11_project_exports.md` (+ `tools/Build-ChangeExport.ps1`)
 - All view authoring (always read)  → `ignition-context-pack/07_conventions_and_antipatterns.md`
 
 Pack pattern is "read it when relevant, don't preload" — most tasks need only one or two files. Project-specific overlays (this section's MPP-specific subsections) take precedence over the pack where they conflict.
