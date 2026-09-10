@@ -31,7 +31,7 @@
 --                                         not after)
 --                            'Ok'      -- usable
 --
---              Columns: LotId, LotName, ToolCavityId, CavityNumber,
+--              Columns: LotId, LotName, ToolCavityId, CavityCode,
 --              CavityDescription, ItemId, PartNumber, PieceCount,
 --              MaxPieceCount, CreditedThrough (this CAVITY's watermark),
 --              DieCreditedThrough (the DIE's -- what the Behind test uses),
@@ -88,7 +88,7 @@ BEGIN
         l.Id                                   AS LotId,
         l.LotName                              AS LotName,
         tc.Id                                  AS ToolCavityId,
-        tc.CavityNumber                        AS CavityNumber,
+        tc.CavityCode                          AS CavityCode,
         tc.Description                         AS CavityDescription,
         l.ItemId                               AS ItemId,
         it.PartNumber                          AS PartNumber,

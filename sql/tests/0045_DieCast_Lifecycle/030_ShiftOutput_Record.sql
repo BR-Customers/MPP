@@ -94,8 +94,8 @@ VALUES (@ToolTypeId, N'TEST-DCB-TOOL', N'ShiftOutputBreakdown test die', @ToolSt
 DECLARE @Tool BIGINT = SCOPE_IDENTITY();
 
 DECLARE @CavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@Tool, 1, @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, N'a', @CavActive, SYSUTCDATETIME(), 1);
 DECLARE @Cavity BIGINT = SCOPE_IDENTITY();
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
@@ -136,7 +136,7 @@ END
 -- =============================================
 -- Part A: Workorder.DieCast_GetShiftOutputBreakdown (read)
 -- =============================================
-DECLARE @B TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
+DECLARE @B TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
     -- v2.0 appended CreditedThrough + NewShots; v2.1 appended the cavity's own
@@ -266,8 +266,8 @@ DECLARE @LotAName NVARCHAR(50) = N'303030302', @LotBName NVARCHAR(50) = N'303030
 DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
 
 DECLARE @Cav2Active BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@Tool, 2, @Cav2Active, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, N'b', @Cav2Active, SYSUTCDATETIME(), 1);
 DECLARE @Cavity2 BIGINT = SCOPE_IDENTITY();
 
 DECLARE @OA TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -298,7 +298,7 @@ DECLARE @LotB BIGINT = (SELECT NewId FROM @OB);
 IF @LotB IS NULL
     RAISERROR(N'0045/030 Part B multi-lot fixture: DieCastLot_Open failed to mint lot B (cavity should be free after A''s release) -- BLOCKED.', 16, 1);
 
-DECLARE @B2 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
+DECLARE @B2 TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
     -- v2.0 appended CreditedThrough + NewShots; v2.1 appended the cavity's own
@@ -334,7 +334,7 @@ EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood=100 (entered 
 -- Under the removed cumulative model these both floored at 0 -- the real-world
 -- symptom was a cavity already carrying thousands of pieces showing
 -- ProposedGood = 0 for every realistic entry, which looks like a dead binding.
-DECLARE @B3 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
+DECLARE @B3 TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
     -- v2.0 appended CreditedThrough + NewShots; v2.1 appended the cavity's own
@@ -351,7 +351,7 @@ DECLARE @lotProp30 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FRO
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] entry (30) below the lot''s OWN prior claim (95) still proposes 30', @Expected=N'30', @Actual=@lotProp30;
 
 -- and a deliberately tiny entry against those same large prior claims
-DECLARE @B4 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
+DECLARE @B4 TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500),
     -- v2.0 appended CreditedThrough + NewShots; v2.1 appended the cavity's own

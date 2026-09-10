@@ -71,17 +71,17 @@ INSERT INTO Tools.Tool (ToolTypeId, Code, Name, StatusCodeId, ShotCount, Created
 VALUES (@DieTypeId, N'CAN-DIE', N'Counter anchor die', @ActiveTool, 0, @Now, 1);
 DECLARE @ToolId BIGINT = SCOPE_IDENTITY();
 
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 1, @ActiveCav, N'Intake 2-A',   @CavItemId, @Now, 1),
-       (@ToolId, 2, @ActiveCav, N'Intake 2-B',   @CavItemId, @Now, 1),
-       (@ToolId, 3, @ActiveCav, N'Exhaust 5 Ab', @CavItemId, @Now, 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'a', @ActiveCav, N'Intake 2-A', @CavItemId, @Now, 1),
+       (@ToolId, N'b', @ActiveCav, N'Intake 2-B', @CavItemId, @Now, 1),
+       (@ToolId, N'c', @ActiveCav, N'Exhaust 5 Ab', @CavItemId, @Now, 1);
 
 DECLARE @PressA   BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ItemId   BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
 DECLARE @OriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @OpenId   BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Open');
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
-DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 2);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
+DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'b');
 
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
                       InventoryAvailable, CurrentLocationId, ToolId, ToolCavityId, CreatedAt, CreatedByUserId)
@@ -128,8 +128,8 @@ GO
 DECLARE @ToolId  BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CAN-DIE');
 DECLARE @PressA  BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'CAN-FIXTURE' ORDER BY Id DESC);
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
-DECLARE @CavC BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 3);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
+DECLARE @CavC BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'c');
 
 DECLARE @v NVARCHAR(20) = CAST(Workorder.ufn_DieShotWatermark(@ToolId, @ShiftId, @PressA) AS NVARCHAR(20));
 EXEC test.Assert_IsEqual @TestName = N'[Anchor] no anchor -> die watermark is the recorded MAX',
@@ -153,7 +153,7 @@ DECLARE @PressA  BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'CAN-FIXTURE' ORDER BY Id DESC);
 DECLARE @LotA BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'CAN-A1');
 
-DECLARE @P TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityNumber INT,
+DECLARE @P TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityCode NVARCHAR(4),
                   CavityDescription NVARCHAR(500), ItemId BIGINT, PartNumber NVARCHAR(100),
                   PieceCount INT, MaxPieceCount INT, CreditedThrough INT, DieCreditedThrough INT,
                   NewShots INT, ProjectedPieceCount INT, BelowStandardAfter BIT,
@@ -208,7 +208,7 @@ DECLARE @LedgerAfterS  NVARCHAR(20) = CAST(@LedgerAfter  AS NVARCHAR(20));
 EXEC test.Assert_IsEqual @TestName = N'[Anchor] the contribution ledger is not edited',
     @Expected = @LedgerBeforeS, @Actual = @LedgerAfterS;
 
-DECLARE @P TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityNumber INT,
+DECLARE @P TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityCode NVARCHAR(4),
                   CavityDescription NVARCHAR(500), ItemId BIGINT, PartNumber NVARCHAR(100),
                   PieceCount INT, MaxPieceCount INT, CreditedThrough INT, DieCreditedThrough INT,
                   NewShots INT, ProjectedPieceCount INT, BelowStandardAfter BIT,
@@ -232,8 +232,8 @@ GO
 DECLARE @ToolId  BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CAN-DIE');
 DECLARE @PressA  BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'CAN-FIXTURE' ORDER BY Id DESC);
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
-DECLARE @CavC BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 3);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
+DECLARE @CavC BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'c');
 
 DECLARE @v NVARCHAR(20) = CAST(Workorder.ufn_CavityShotWatermark(@CavA, @ShiftId, @PressA) AS NVARCHAR(20));
 EXEC test.Assert_IsEqual @TestName = N'[Anchor] a settled cavity is floored DOWN to the anchor',
@@ -253,8 +253,8 @@ GO
 DECLARE @ToolId  BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CAN-DIE');
 DECLARE @PressA  BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'CAN-FIXTURE' ORDER BY Id DESC);
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
-DECLARE @CavC BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 3);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
+DECLARE @CavC BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'c');
 DECLARE @Reset BIGINT = (SELECT Id FROM Workorder.DieCastCounterAnchorReason WHERE Code = N'CounterReset');
 
 DECLARE @A TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);

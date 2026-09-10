@@ -4,14 +4,19 @@
 -- Created:      2026-06-16
 -- Description:  Tests for Lots.Lot_Create additive params (Phase 3 delta, Change 3):
 --               D4 @LotName (mint-by-default; supplied = use verbatim, no counter
---               burn; duplicate/blank rejected) and D2 @CavityNote (manual cavity
---               when no active ToolCavity). Backward-compat: NULL params behave as
---               today (the 0021/0022 LOT tests run unmodified).
+--               burn; duplicate/blank rejected) and the cavity requirement on a
+--               die-cast-origin LOT. Backward-compat: NULL params behave as today
+--               (the 0021/0022 LOT tests run unmodified).
+--
+--               2026-09-10 (0076): the D2 @CavityNote free-text fallback is
+--               RETIRED. Its accept case (old Test 5) is deleted and Test 6 is now
+--               the sole rejection case -- a die-cast-origin LOT without a
+--               configured @ToolCavityId is refused outright.
 --
 --               Self-contained tool fixture: a Tool 'ZZ-DC-TEST' + one Active
 --               ToolCavity, mounted on an eligible Cell. LotName tests use Received
---               origin (die-cast branch skipped); D2 tests use Manufactured origin
---               (die-cast branch fires).
+--               origin (die-cast branch skipped); cavity tests use Manufactured
+--               origin (die-cast branch fires).
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -43,8 +48,8 @@ INSERT INTO Tools.Tool (ToolTypeId, Code, Name, StatusCodeId, CreatedByUserId, C
 VALUES (@ToolTypeId, N'ZZ-DC-TEST', N'Phase3 delta test die', @ToolStatusId, 1, SYSUTCDATETIME());
 DECLARE @ToolId BIGINT = SCOPE_IDENTITY();
 
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedByUserId, CreatedAt)
-VALUES (@ToolId, 1, @CavActiveId, 1, SYSUTCDATETIME());
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedByUserId, CreatedAt)
+VALUES (@ToolId, N'a', @CavActiveId, 1, SYSUTCDATETIME());
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
 VALUES (@ToolId, @CellId, SYSUTCDATETIME(), 1);
@@ -122,45 +127,29 @@ EXEC test.Assert_IsEqual @TestName = N'[LC] blank LotName rejected', @Expected =
 GO
 
 -- =============================================
--- Test 5: D2 manual cavity (Manufactured origin, ToolCavityId NULL + CavityNote)
+-- Test 6: die-cast origin without @ToolCavityId is rejected (D2 retired, 0076)
+--
+-- The deleted Test 5 asserted the opposite -- that a free-text @CavityNote made
+-- a cavity-less die-cast LOT acceptable. That escape hatch is gone: a LOT whose
+-- cavity is untyped free text cannot be rolled up per part.
 -- =============================================
 DECLARE @CellId BIGINT = (SELECT TOP 1 CellLocationId FROM Tools.ToolAssignment ta
     INNER JOIN Tools.Tool t ON t.Id = ta.ToolId WHERE t.Code = N'ZZ-DC-TEST' AND ta.ReleasedAt IS NULL);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST');
 DECLARE @ItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @CellId ORDER BY ItemId);
 DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
-DECLARE @S5 BIT, @New5 BIGINT;
-CREATE TABLE #C5 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C5 EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginMfg, @CurrentLocationId=@CellId,
-    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=NULL, @CavityNote=N'C3', @LotName=N'900000005';
-SELECT @S5 = Status, @New5 = NewId FROM #C5; DROP TABLE #C5;
-DECLARE @S5Str NVARCHAR(10) = CAST(@S5 AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[LC][D2] manual cavity accepted', @Expected = N'1', @Actual = @S5Str;
-DECLARE @CavNum NVARCHAR(50) = (SELECT CavityNumber FROM Lots.Lot WHERE Id = @New5);
-EXEC test.Assert_IsEqual @TestName = N'[LC][D2] CavityNumber stored', @Expected = N'C3', @Actual = @CavNum;
-DECLARE @TcNull NVARCHAR(10) = CASE WHEN (SELECT ToolCavityId FROM Lots.Lot WHERE Id = @New5) IS NULL THEN N'1' ELSE N'0' END;
-EXEC test.Assert_IsEqual @TestName = N'[LC][D2] ToolCavityId NULL on manual path', @Expected = N'1', @Actual = @TcNull;
-GO
-
--- =============================================
--- Test 6: D2 reject (Manufactured, ToolCavityId NULL + CavityNote NULL) -> Status=0
--- =============================================
-DECLARE @CellId BIGINT = (SELECT TOP 1 CellLocationId FROM Tools.ToolAssignment ta
-    INNER JOIN Tools.Tool t ON t.Id = ta.ToolId WHERE t.Code = N'ZZ-DC-TEST' AND ta.ReleasedAt IS NULL);
-DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST');
-DECLARE @ItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @CellId ORDER BY ItemId);
-DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
-DECLARE @S6 BIT;
-CREATE TABLE #C6 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C6 EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginMfg, @CurrentLocationId=@CellId,
-    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=NULL, @CavityNote=NULL, @LotName=N'900000006';
-SELECT @S6 = Status FROM #C6; DROP TABLE #C6;
+CREATE TABLE #R6 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #R6 EXEC Lots.Lot_Create
+    @ItemId=@ItemId, @LotOriginTypeId=@OriginMfg, @CurrentLocationId=@CellId,
+    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=NULL, @LotName=N'900000006';
+DECLARE @S6 BIT = (SELECT Status FROM #R6);
+DROP TABLE #R6;
 DECLARE @S6Str NVARCHAR(10) = CAST(@S6 AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[LC][D2] no cavity + no note rejected', @Expected = N'0', @Actual = @S6Str;
+EXEC test.Assert_IsEqual @TestName = N'[LC] die-cast origin without a configured cavity is rejected', @Expected = N'0', @Actual = @S6Str;
 GO
 
 -- =============================================
--- Test 7: D2 validated path unchanged (Manufactured + valid cavity) -> Status=1, CavityNumber NULL
+-- Test 7: validated cavity path (Manufactured + valid cavity) -> Status=1
 -- =============================================
 DECLARE @CellId BIGINT = (SELECT TOP 1 CellLocationId FROM Tools.ToolAssignment ta
     INNER JOIN Tools.Tool t ON t.Id = ta.ToolId WHERE t.Code = N'ZZ-DC-TEST' AND ta.ReleasedAt IS NULL);
@@ -176,9 +165,9 @@ INSERT INTO #C7 EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginMf
     @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=@CavId, @LotName=N'900000007';
 SELECT @S7 = Status, @New7 = NewId FROM #C7; DROP TABLE #C7;
 DECLARE @S7Str NVARCHAR(10) = CAST(@S7 AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[LC][D2] validated cavity path still works', @Expected = N'1', @Actual = @S7Str;
-DECLARE @CavNull NVARCHAR(10) = CASE WHEN (SELECT CavityNumber FROM Lots.Lot WHERE Id = @New7) IS NULL THEN N'1' ELSE N'0' END;
-EXEC test.Assert_IsEqual @TestName = N'[LC][D2] validated path leaves CavityNumber NULL', @Expected = N'1', @Actual = @CavNull;
+EXEC test.Assert_IsEqual @TestName = N'[LC] validated cavity path still works', @Expected = N'1', @Actual = @S7Str;
+DECLARE @CavSet NVARCHAR(10) = CASE WHEN (SELECT ToolCavityId FROM Lots.Lot WHERE Id = @New7) = @CavId THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[LC] validated path stamps the ToolCavityId', @Expected = N'1', @Actual = @CavSet;
 GO
 
 -- =============================================

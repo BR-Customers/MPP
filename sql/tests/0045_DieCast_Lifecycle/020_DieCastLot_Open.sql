@@ -96,8 +96,8 @@ VALUES (@ToolTypeId, N'TEST-DCO-TOOL', N'DieCastLot_Open test die', @ToolStatusA
 DECLARE @Tool BIGINT = SCOPE_IDENTITY();
 
 DECLARE @CavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@Tool, 1, @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, N'a', @CavActive, SYSUTCDATETIME(), 1);
 DECLARE @Cavity BIGINT = SCOPE_IDENTITY();
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)

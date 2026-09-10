@@ -1,13 +1,20 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Get.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-09
--- Version:     1.0
+-- Modified:    2026-09-10
+-- Version:     1.1
 -- Description: Returns a single LOT row by @LotId or @LotName (Id wins if
 --              both supplied). Returns the materialized B5 quantities
 --              (TotalInProcess / InventoryAvailable) directly from Lots.Lot.
 --              Empty result set = not found (FDS-11-011 read-proc convention;
 --              no OUTPUT params, one result set). Read-only, no audit.
+--
+-- Change Log:
+--   1.1 (2026-09-10) Cavity alpha code (0076): the cavity column AND its
+--       result alias rename together -- tc.CavityNumber AS ToolCavityNumber
+--       becomes tc.CavityCode AS ToolCavityCode. Renaming only the column
+--       would leave every consumer of the alias rendering a blank cell with
+--       no error at all.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.Lot_Get
@@ -51,7 +58,7 @@ BEGIN
         sc.Name            AS LotStatusName,
         loc.Name           AS CurrentLocationName,
         t.Code             AS ToolCode,
-        tc.CavityNumber    AS ToolCavityNumber,
+        tc.CavityCode      AS ToolCavityCode,
         bom.VersionNumber  AS BomVersionNumber
     FROM Lots.Lot l
     INNER JOIN Parts.Item            i   ON i.Id   = l.ItemId

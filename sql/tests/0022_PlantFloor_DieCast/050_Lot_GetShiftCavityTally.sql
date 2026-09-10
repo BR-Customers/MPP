@@ -101,12 +101,12 @@ DECLARE @ToolId BIGINT = SCOPE_IDENTITY();
 
 DECLARE @CavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
 DECLARE @CavClosed BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Closed');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 1, @CavActive, SYSUTCDATETIME(), 1);
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 2, @CavActive, SYSUTCDATETIME(), 1);
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 3, @CavClosed, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'a', @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'b', @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'c', @CavClosed, SYSUTCDATETIME(), 1);
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
 VALUES (@ToolId, @DieCellId, SYSUTCDATETIME(), 1);
@@ -114,8 +114,8 @@ GO
 
 -- ---- fixture: 2 lots on cavity 1 (10 + 8 pc), 1 lot on cavity 2 (5 pc), reject 3 from the 10-pc lot ----
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-TLY-TOOL');
-DECLARE @Cav1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
-DECLARE @Cav2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 2);
+DECLARE @Cav1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
+DECLARE @Cav2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'b');
 DECLARE @DieCellId BIGINT = (SELECT CellLocationId FROM Tools.ToolAssignment WHERE ToolId = @ToolId AND ReleasedAt IS NULL);
 DECLARE @DieItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @DieCellId AND Source = N'Direct');
 DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
@@ -161,22 +161,22 @@ DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-TLY-TOOL
 -- added 2026-07-21) -- INSERT ... EXEC requires an exact column-count match;
 -- a 6-column temp table here silently threw Msg 213 and skipped every assert
 -- in this batch (see file header).
-CREATE TABLE #T (ToolCavityId BIGINT, CavityNumber INT, CavityLabel NVARCHAR(60), PieceSum INT, RejectSum INT, ShiftShots INT, ShiftGoodTotal INT, ShiftScrapTotal INT);
+CREATE TABLE #T (ToolCavityId BIGINT, CavityCode NVARCHAR(4), CavityLabel NVARCHAR(60), PieceSum INT, RejectSum INT, ShiftShots INT, ShiftGoodTotal INT, ShiftScrapTotal INT);
 INSERT INTO #T EXEC Lots.Lot_GetShiftCavityTally @ToolId = @ToolId;
 
 DECLARE @RowCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #T);
 EXEC test.Assert_IsEqual @TestName = N'[Tally] one row per ACTIVE cavity (Closed excluded)', @Expected = N'2', @Actual = @RowCnt;
 
-DECLARE @P1 NVARCHAR(10) = (SELECT CAST(PieceSum AS NVARCHAR(10)) FROM #T WHERE CavityNumber = 1);
+DECLARE @P1 NVARCHAR(10) = (SELECT CAST(PieceSum AS NVARCHAR(10)) FROM #T WHERE CavityCode = N'a');
 EXEC test.Assert_IsEqual @TestName = N'[Tally] cavity 1 PieceSum is good pieces 18 (10+8, additive scrap not double-counted)', @Expected = N'18', @Actual = @P1;
 
-DECLARE @R1 NVARCHAR(10) = (SELECT CAST(RejectSum AS NVARCHAR(10)) FROM #T WHERE CavityNumber = 1);
+DECLARE @R1 NVARCHAR(10) = (SELECT CAST(RejectSum AS NVARCHAR(10)) FROM #T WHERE CavityCode = N'a');
 EXEC test.Assert_IsEqual @TestName = N'[Tally] cavity 1 RejectSum is 3', @Expected = N'3', @Actual = @R1;
 
-DECLARE @P2 NVARCHAR(10) = (SELECT CAST(PieceSum AS NVARCHAR(10)) FROM #T WHERE CavityNumber = 2);
+DECLARE @P2 NVARCHAR(10) = (SELECT CAST(PieceSum AS NVARCHAR(10)) FROM #T WHERE CavityCode = N'b');
 EXEC test.Assert_IsEqual @TestName = N'[Tally] cavity 2 PieceSum is 5', @Expected = N'5', @Actual = @P2;
 
-DECLARE @R2 NVARCHAR(10) = (SELECT CAST(RejectSum AS NVARCHAR(10)) FROM #T WHERE CavityNumber = 2);
+DECLARE @R2 NVARCHAR(10) = (SELECT CAST(RejectSum AS NVARCHAR(10)) FROM #T WHERE CavityCode = N'b');
 EXEC test.Assert_IsEqual @TestName = N'[Tally] cavity 2 RejectSum is 0', @Expected = N'0', @Actual = @R2;
 
 DECLARE @ShotsDistinct NVARCHAR(10) = (SELECT CAST(COUNT(DISTINCT ShiftShots) AS NVARCHAR(10)) FROM #T);

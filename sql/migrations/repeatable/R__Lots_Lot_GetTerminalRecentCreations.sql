@@ -1,18 +1,24 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetTerminalRecentCreations.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0 (2026-07-21)
+-- Version:     1.1 (2026-09-10)
 -- Description: Die-cast right-rail activity log. Returns the most recent @TopN
 --              die-cast LOTs CREATED AT a terminal (CreatedAtTerminalId), newest
 --              first -- across ALL presses the terminal controls, NOT scoped to the
 --              currently-selected die-cast machine. Replaces the old session-local
 --              "logged this run" list.
 --
---              CavityText = the cavity's Number + Description (e.g. "1 - In 1"),
---              resolved from Tools.ToolCavity; falls back to the manual free-text
---              cavity note (legacy Lot.CavityNumber) when no configured ToolCavity
---              was chosen. The consuming row view prepends "Cavity " so this column
---              carries only "<number> - <description>". ASCII-only.
+--              CavityText = the cavity's per-part Code + Description (e.g.
+--              "a - In 1"), resolved from Tools.ToolCavity. The consuming row
+--              view prepends "Cavity " so this column carries only
+--              "<code> - <description>". ASCII-only.
+--
+--              v1.1 (2026-09-10, cavity alpha code / 0076): CavityNumber ->
+--              CavityCode, so the CONCAT loses its INT->string CAST. The
+--              free-text fallback arm is gone with the D2 fallback itself --
+--              it read Lots.Lot.CavityNumber, which 0076 dropped. A die-cast
+--              LOT now always has a configured cavity, so '-' is unreachable
+--              in practice and survives only as a defensive floor.
 --
 --              Die-cast scope: CreatedAtTerminalId + Lot.ToolId IS NOT NULL (every
 --              die-cast birth stamps a ToolId; non-die-cast LOTs are not created at
@@ -39,11 +45,9 @@ BEGIN
         CASE
             WHEN tc.Id IS NOT NULL
                 THEN CONCAT(
-                        CAST(tc.CavityNumber AS NVARCHAR(20)),
+                        tc.CavityCode,
                         CASE WHEN NULLIF(LTRIM(RTRIM(tc.Description)), N'') IS NOT NULL
                              THEN N' - ' + tc.Description ELSE N'' END)
-            WHEN NULLIF(LTRIM(RTRIM(l.CavityNumber)), N'') IS NOT NULL
-                THEN l.CavityNumber
             ELSE N'-'
         END           AS CavityText,
         CAST(l.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CreatedAt

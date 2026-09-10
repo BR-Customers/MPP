@@ -68,10 +68,10 @@ DECLARE @ToolId BIGINT = SCOPE_IDENTITY();
 
 DECLARE @CavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
 DECLARE @CavClosed BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Closed');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 1, @CavActive, SYSUTCDATETIME(), 1);
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 2, @CavClosed, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'a', @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'b', @CavClosed, SYSUTCDATETIME(), 1);
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
 VALUES (@ToolId, @DieCellId, SYSUTCDATETIME(), 1);
@@ -83,7 +83,7 @@ GO
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-DC-TOOL');
 CREATE TABLE #Cav (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50), ToolName NVARCHAR(100),
-    CavityNumber INT, StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
+    CavityCode NVARCHAR(4), StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
     Description NVARCHAR(500),
     -- 0072: ItemId / ItemPartNumber / ItemDescription appended by
     -- Tools.ToolCavity_ListActiveByTool. INSERT-EXEC requires an exact
@@ -104,7 +104,7 @@ GO
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-DC-TOOL');
 DECLARE @DieCellId BIGINT = (SELECT CellLocationId FROM Tools.ToolAssignment WHERE ToolId = @ToolId AND ReleasedAt IS NULL);
-DECLARE @CavId BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
+DECLARE @CavId BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
 DECLARE @DieItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @DieCellId AND Source = N'Direct');
 DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 

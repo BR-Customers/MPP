@@ -6,7 +6,7 @@
 --               (Arc 2 Phase 3 §4.3) plus the parallel-cavity LOT shape.
 --               A die has N cavities that run in parallel; the operator station
 --               picks the active cavity to attribute a cast LOT to. Covers:
---                 - multiple Active cavities listed, ordered by CavityNumber
+--                 - multiple Active cavities listed, ordered by CavityCode
 --                 - a Closed cavity is excluded
 --                 - a soft-deleted (DeprecatedAt) cavity is excluded
 --                 - a tool with zero active cavities -> empty rowset (no error)
@@ -44,25 +44,25 @@ DECLARE @MultiTool BIGINT = SCOPE_IDENTITY();
 
 DECLARE @CavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
 DECLARE @CavClosed BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Closed');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId) VALUES (@MultiTool, 2, @CavActive, SYSUTCDATETIME(), 1);  -- inserted out of order
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId) VALUES (@MultiTool, 1, @CavActive, SYSUTCDATETIME(), 1);
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId) VALUES (@MultiTool, 3, @CavClosed, SYSUTCDATETIME(), 1);
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId, DeprecatedAt) VALUES (@MultiTool, 4, @CavActive, SYSUTCDATETIME(), 1, SYSUTCDATETIME());
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId) VALUES (@MultiTool, N'b', @CavActive, SYSUTCDATETIME(), 1);  -- inserted out of order
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId) VALUES (@MultiTool, N'a', @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId) VALUES (@MultiTool, N'c', @CavClosed, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId, DeprecatedAt) VALUES (@MultiTool, N'd', @CavActive, SYSUTCDATETIME(), 1, SYSUTCDATETIME());
 
 -- a tool with no active cavities at all (one Closed only)
 INSERT INTO Tools.Tool (ToolTypeId, Code, Name, StatusCodeId, CreatedAt, CreatedByUserId)
 VALUES (@ToolTypeId, N'TEST-CP-EMPTY', N'No active cavities die', @ToolStatusActive, SYSUTCDATETIME(), 1);
 DECLARE @EmptyTool BIGINT = SCOPE_IDENTITY();
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId) VALUES (@EmptyTool, 1, @CavClosed, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId) VALUES (@EmptyTool, N'a', @CavClosed, SYSUTCDATETIME(), 1);
 GO
 
 -- =============================================
--- Test 1: only the two Active non-deprecated cavities listed, ordered 1,2
+-- Test 1: only the two Active non-deprecated cavities listed, ordered a,b
 -- =============================================
 DECLARE @MultiTool BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-CP-MULTI');
 CREATE TABLE #L1 (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50), ToolName NVARCHAR(100),
-    CavityNumber INT, StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
+    CavityCode NVARCHAR(4), StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
     Description NVARCHAR(500),
     -- 0072: ItemId / ItemPartNumber / ItemDescription appended by
     -- Tools.ToolCavity_ListActiveByTool. INSERT-EXEC requires an exact
@@ -78,18 +78,18 @@ DECLARE @NonActive INT = (SELECT COUNT(*) FROM #L1 WHERE StatusCode <> N'Active'
 DECLARE @NonActiveStr NVARCHAR(10) = CAST(@NonActive AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[CpMulti] No non-Active rows', @Expected = N'0', @Actual = @NonActiveStr;
 
--- ordered ascending by CavityNumber -> the first physical row is cavity 1
-DECLARE @TopRowCav INT = (SELECT CavityNumber FROM (SELECT CavityNumber, ROW_NUMBER() OVER (ORDER BY (SELECT 0)) rn FROM #L1) z WHERE rn = 1);
+-- ordered ascending by CavityCode -> the first physical row is cavity 'a'
+DECLARE @TopRowCav NVARCHAR(4) = (SELECT CavityCode FROM (SELECT CavityCode, ROW_NUMBER() OVER (ORDER BY (SELECT 0)) rn FROM #L1) z WHERE rn = 1);
 DECLARE @TopRowCavStr NVARCHAR(10) = CAST(@TopRowCav AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[CpMulti] Result ordered by CavityNumber (first=1)', @Expected = N'1', @Actual = @TopRowCavStr;
+EXEC test.Assert_IsEqual @TestName = N'[CpMulti] Result ordered by CavityCode (first=a)', @Expected = N'a', @Actual = @TopRowCavStr;
 
--- cavity 3 (Closed) excluded; cavity 4 (deprecated) excluded
-DECLARE @HasClosed INT = (SELECT COUNT(*) FROM #L1 WHERE CavityNumber = 3);
+-- cavity 'c' (Closed) excluded; cavity 'd' (deprecated) excluded
+DECLARE @HasClosed INT = (SELECT COUNT(*) FROM #L1 WHERE CavityCode = N'c');
 DECLARE @HasClosedStr NVARCHAR(10) = CAST(@HasClosed AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[CpMulti] Closed cavity 3 excluded', @Expected = N'0', @Actual = @HasClosedStr;
-DECLARE @HasDeprecated INT = (SELECT COUNT(*) FROM #L1 WHERE CavityNumber = 4);
+EXEC test.Assert_IsEqual @TestName = N'[CpMulti] Closed cavity c excluded', @Expected = N'0', @Actual = @HasClosedStr;
+DECLARE @HasDeprecated INT = (SELECT COUNT(*) FROM #L1 WHERE CavityCode = N'd');
 DECLARE @HasDeprStr NVARCHAR(10) = CAST(@HasDeprecated AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[CpMulti] Deprecated cavity 4 excluded', @Expected = N'0', @Actual = @HasDeprStr;
+EXEC test.Assert_IsEqual @TestName = N'[CpMulti] Deprecated cavity d excluded', @Expected = N'0', @Actual = @HasDeprStr;
 
 -- 0072 REVERSAL of the 2026-06-15 no-per-cavity-Item decision: the produced
 -- part IS now modeled per cavity (family dies), so the column must be present.
@@ -105,7 +105,7 @@ GO
 DECLARE @EmptyTool BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-CP-EMPTY');
 CREATE TABLE #L2 (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50), ToolName NVARCHAR(100),
-    CavityNumber INT, StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
+    CavityCode NVARCHAR(4), StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
     Description NVARCHAR(500),
     -- 0072: ItemId / ItemPartNumber / ItemDescription appended by
     -- Tools.ToolCavity_ListActiveByTool. INSERT-EXEC requires an exact
@@ -123,7 +123,7 @@ GO
 -- =============================================
 CREATE TABLE #L3 (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50), ToolName NVARCHAR(100),
-    CavityNumber INT, StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
+    CavityCode NVARCHAR(4), StatusCodeId BIGINT, StatusCode NVARCHAR(50), StatusName NVARCHAR(100),
     Description NVARCHAR(500),
     -- 0072: ItemId / ItemPartNumber / ItemDescription appended by
     -- Tools.ToolCavity_ListActiveByTool. INSERT-EXEC requires an exact
@@ -155,8 +155,8 @@ VALUES (@MultiTool, @DieCellId, SYSUTCDATETIME(), 1);
 
 DECLARE @DieItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @DieCellId AND Source = N'Direct');
 DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
-DECLARE @Cav1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @MultiTool AND CavityNumber = 1 AND DeprecatedAt IS NULL);
-DECLARE @Cav2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @MultiTool AND CavityNumber = 2 AND DeprecatedAt IS NULL);
+DECLARE @Cav1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @MultiTool AND CavityCode = N'a' AND DeprecatedAt IS NULL);
+DECLARE @Cav2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @MultiTool AND CavityCode = N'b' AND DeprecatedAt IS NULL);
 
 DECLARE @Lot1 BIGINT, @Lot2 BIGINT, @S1 BIT, @S2 BIT;
 CREATE TABLE #LA (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));

@@ -30,7 +30,7 @@ BEGIN
         l.LotName,
         l.PieceCount,
         l.InventoryAvailable,
-        tc.CavityNumber
+        tc.CavityCode
     FROM Lots.Lot l
     INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
     INNER JOIN Tools.ToolCavity   tc ON tc.Id = l.ToolCavityId

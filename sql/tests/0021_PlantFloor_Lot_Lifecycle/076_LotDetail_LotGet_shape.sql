@@ -15,7 +15,7 @@ CREATE TABLE #lg (
     CrtActive BIT, TotalInProcess INT, InventoryAvailable INT, BomId BIGINT, CreatedByUserId BIGINT, CreatedAtTerminalId BIGINT,
     CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), UpdatedByUserId BIGINT, RowVersion BIGINT,
     ItemPartNumber NVARCHAR(50), LotOriginTypeCode NVARCHAR(30), LotStatusCode NVARCHAR(30), LotStatusName NVARCHAR(100),
-    CurrentLocationName NVARCHAR(200), ToolCode NVARCHAR(50), ToolCavityNumber NVARCHAR(20), BomVersionNumber INT);
+    CurrentLocationName NVARCHAR(200), ToolCode NVARCHAR(50), ToolCavityCode NVARCHAR(4), BomVersionNumber INT);
 INSERT INTO #lg EXEC Lots.Lot_Get @LotId=@Lot, @LotName=NULL;
 DECLARE @n INT=(SELECT COUNT(*) FROM #lg);
 EXEC test.Assert_RowCount @TestName=N'[LotGet] extended shape returns the LOT', @ExpectedCount=1, @ActualCount=@n;

@@ -59,10 +59,10 @@ DECLARE @CavItemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt 
 
 -- Cav C is CLOSED and never gets a basket -- the case that produced no row at
 -- all before v2.1, which is why an out-of-service cavity was invisible.
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 1, @ActiveCav, N'Cav A', NULL,       @Now, 1),
-       (@ToolId, 2, @ActiveCav, N'Cav B', NULL,       @Now, 1),
-       (@ToolId, 3, @ClosedCav, N'Cav C', @CavItemId, @Now, 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'a', @ActiveCav, N'Cav A', NULL, @Now, 1),
+       (@ToolId, N'b', @ActiveCav, N'Cav B', NULL, @Now, 1),
+       (@ToolId, N'c', @ClosedCav, N'Cav C', @CavItemId, @Now, 1);
 
 -- two presses: the second exists only to prove the watermark is press-scoped
 DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
@@ -72,8 +72,8 @@ DECLARE @ItemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS 
 DECLARE @OriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @OpenId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Open');
 
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
-DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 2);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
+DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'b');
 
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable,
                       CurrentLocationId, ToolId, ToolCavityId, CreatedAt, CreatedByUserId)
@@ -103,7 +103,7 @@ GO
 --         This is the pre-change behaviour and must not regress.
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SRC-DIE');
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
 DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'SRC-FIXTURE' ORDER BY Id DESC);
 
@@ -116,8 +116,8 @@ GO
 --         while the untouched cavity is still credited the full 2000.
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SRC-DIE');
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
-DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 2);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
+DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'b');
 DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'SRC-FIXTURE' ORDER BY Id DESC);
 DECLARE @LotA1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'SRC-A1');
@@ -150,7 +150,7 @@ GO
 -- Test 3: successor basket on the rolled cavity gets only the remainder.
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SRC-DIE');
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
 DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'SRC-FIXTURE' ORDER BY Id DESC);
 DECLARE @ItemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
@@ -220,7 +220,7 @@ GO
 --         special-casing.
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SRC-DIE');
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
 DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @PressB BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE Id <> @PressA ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'SRC-FIXTURE' ORDER BY Id DESC);
@@ -240,7 +240,7 @@ GO
 --         anchor row, so the next basket is not over-credited.
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SRC-DIE');
-DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 2);
+DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'b');
 DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'SRC-FIXTURE' ORDER BY Id DESC);
 DECLARE @LotB1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'SRC-B1');
@@ -270,29 +270,29 @@ DECLARE @PressA BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'SRC-FIXTURE' ORDER BY Id DESC);
 
 CREATE TABLE #BD (
-    ToolCavityId BIGINT, CavityNumber INT, LotId BIGINT, LotName NVARCHAR(50),
+    ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500), CreditedThrough INT, NewShots INT,
     CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50));
 INSERT INTO #BD EXEC Workorder.DieCast_GetShiftOutputBreakdown
     @ToolId = @ToolId, @ShiftId = @ShiftId, @CounterReading = 2000, @CellLocationId = @PressA;
 
-DECLARE @CavCRows INT = (SELECT COUNT(*) FROM #BD WHERE CavityNumber = 3);
+DECLARE @CavCRows INT = (SELECT COUNT(*) FROM #BD WHERE CavityCode = N'c');
 EXEC test.Assert_RowCount @TestName=N'[SRC] basketless cavity still returns a row',
     @ExpectedCount=1, @ActualCount=@CavCRows;
 
-DECLARE @CavCStatus NVARCHAR(30) = (SELECT CavityStatusCode FROM #BD WHERE CavityNumber = 3);
+DECLARE @CavCStatus NVARCHAR(30) = (SELECT CavityStatusCode FROM #BD WHERE CavityCode = N'c');
 EXEC test.Assert_IsEqual @TestName=N'[SRC] basketless cavity reports its Closed status',
     @Expected=N'Closed', @Actual=@CavCStatus;
 
-DECLARE @CavCPart NVARCHAR(50) = (SELECT ConfiguredPartNumber FROM #BD WHERE CavityNumber = 3);
+DECLARE @CavCPart NVARCHAR(50) = (SELECT ConfiguredPartNumber FROM #BD WHERE CavityCode = N'c');
 EXEC test.Assert_IsNotNull @TestName=N'[SRC] basketless cavity still names its configured part',
     @Value=@CavCPart;
 
 -- it proposes nothing (no basket to credit) but DOES report the shots that ran
-DECLARE @CavCProp NVARCHAR(20) = (SELECT CAST(ProposedGood AS NVARCHAR(20)) FROM #BD WHERE CavityNumber = 3);
+DECLARE @CavCProp NVARCHAR(20) = (SELECT CAST(ProposedGood AS NVARCHAR(20)) FROM #BD WHERE CavityCode = N'c');
 EXEC test.Assert_IsEqual @TestName=N'[SRC] basketless cavity proposes 0 good', @Expected=N'0', @Actual=@CavCProp;
-DECLARE @CavCShots NVARCHAR(20) = (SELECT CAST(NewShots AS NVARCHAR(20)) FROM #BD WHERE CavityNumber = 3);
+DECLARE @CavCShots NVARCHAR(20) = (SELECT CAST(NewShots AS NVARCHAR(20)) FROM #BD WHERE CavityCode = N'c');
 EXEC test.Assert_IsEqual @TestName=N'[SRC] basketless cavity still reports its shots', @Expected=N'2000', @Actual=@CavCShots;
 DROP TABLE #BD;
 GO

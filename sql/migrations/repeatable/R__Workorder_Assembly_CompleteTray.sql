@@ -315,13 +315,13 @@ BEGIN
         -- die-cast; no ToolAssignment at an assembly cell), B5 materialized 0/@PieceCount.
         INSERT INTO Lots.Lot (
             LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
-            Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber,
+            Weight, WeightUomId, ToolId, ToolCavityId, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
             CreatedByUserId, CreatedAtTerminalId, CreatedAt, BomId, CrtActive)
         VALUES (
             @MintedName, @FinishedGoodItemId, @ManufacturedOriginId, @GoodStatusId, @PieceCount, @MaxLotSize,
-            NULL, NULL, NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL, NULL,
             NULL, NULL, @CellLocationId,
             0, @PieceCount,
             @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @BomId, @CrtActive);

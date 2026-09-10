@@ -45,18 +45,18 @@ VALUES (@ToolTypeId, N'TEST-RTC-TOOL', N'Reject-target test die', @ToolStatusAct
 DECLARE @ToolId BIGINT = SCOPE_IDENTITY();
 
 DECLARE @CavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 1, @CavActive, SYSUTCDATETIME(), 1);
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 2, @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'a', @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'b', @CavActive, SYSUTCDATETIME(), 1);
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
 VALUES (@ToolId, @DieCellId, SYSUTCDATETIME(), 1);
 GO
 
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-RTC-TOOL');
-DECLARE @Cav1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
-DECLARE @Cav2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 2);
+DECLARE @Cav1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
+DECLARE @Cav2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'b');
 DECLARE @DieCellId BIGINT = (SELECT CellLocationId FROM Tools.ToolAssignment WHERE ToolId = @ToolId AND ReleasedAt IS NULL);
 DECLARE @DieItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @DieCellId AND Source = N'Direct');
 DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
@@ -79,7 +79,7 @@ INSERT INTO #L2 EXEC Lots.Lot_Create
 SELECT @LotNew = NewId FROM #L2; DROP TABLE #L2;
 
 -- ---- newest open lot on cavity 1 is returned ----
-CREATE TABLE #T1 (Id BIGINT, LotName NVARCHAR(50), PieceCount INT, InventoryAvailable INT, CavityNumber INT);
+CREATE TABLE #T1 (Id BIGINT, LotName NVARCHAR(50), PieceCount INT, InventoryAvailable INT, CavityCode NVARCHAR(4));
 INSERT INTO #T1 EXEC Lots.Lot_GetLatestForToolCavity @ToolId = @ToolId, @ToolCavityId = @Cav1;
 DECLARE @Got NVARCHAR(20) = (SELECT CAST(Id AS NVARCHAR(20)) FROM #T1);
 DECLARE @Want NVARCHAR(20) = CAST(@LotNew AS NVARCHAR(20));
@@ -90,7 +90,7 @@ EXEC test.Assert_IsEqual @TestName = N'[RejTarget] newest open cavity-1 LOT retu
 DECLARE @ClosedId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
 UPDATE Lots.Lot SET LotStatusId = @ClosedId WHERE Id = @LotNew;
 
-CREATE TABLE #T2 (Id BIGINT, LotName NVARCHAR(50), PieceCount INT, InventoryAvailable INT, CavityNumber INT);
+CREATE TABLE #T2 (Id BIGINT, LotName NVARCHAR(50), PieceCount INT, InventoryAvailable INT, CavityCode NVARCHAR(4));
 INSERT INTO #T2 EXEC Lots.Lot_GetLatestForToolCavity @ToolId = @ToolId, @ToolCavityId = @Cav1;
 DECLARE @Got2 NVARCHAR(20) = (SELECT CAST(Id AS NVARCHAR(20)) FROM #T2);
 DECLARE @Want2 NVARCHAR(20) = CAST(@LotOld AS NVARCHAR(20));
@@ -98,7 +98,7 @@ DROP TABLE #T2;
 EXEC test.Assert_IsEqual @TestName = N'[RejTarget] Closed LOT skipped, next-latest returned', @Expected = @Want2, @Actual = @Got2;
 
 -- ---- empty cavity returns no rows ----
-CREATE TABLE #T3 (Id BIGINT, LotName NVARCHAR(50), PieceCount INT, InventoryAvailable INT, CavityNumber INT);
+CREATE TABLE #T3 (Id BIGINT, LotName NVARCHAR(50), PieceCount INT, InventoryAvailable INT, CavityCode NVARCHAR(4));
 INSERT INTO #T3 EXEC Lots.Lot_GetLatestForToolCavity @ToolId = @ToolId, @ToolCavityId = @Cav2;
 DECLARE @Cnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #T3);
 DROP TABLE #T3;

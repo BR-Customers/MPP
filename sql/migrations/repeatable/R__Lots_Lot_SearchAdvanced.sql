@@ -34,8 +34,9 @@
 --              does NOT do this -- it displays Eastern but filters raw UTC, so
 --              near midnight its filter and column disagree. Do not copy it.)
 --
---              The legacy Lot.DieNumber / Lot.CavityNumber columns are used
---              NOWHERE here -- superseded by ToolId / ToolCavityId.
+--              The legacy Lot.DieNumber column is used NOWHERE here --
+--              superseded by ToolId / ToolCavityId. (Lot.CavityNumber, the D2
+--              free-text manual-cavity note, was dropped outright by 0076.)
 -- =============================================
 CREATE OR ALTER PROCEDURE Lots.Lot_SearchAdvanced
     @Query             NVARCHAR(100) = NULL,
@@ -85,7 +86,7 @@ BEGIN
         loc.Name             AS CurrentLocationName,
         lastop.OperationName AS LastOperationName,
         t.Code               AS ToolCode,
-        tc.CavityNumber      AS CavityNumber,
+        tc.CavityCode        AS CavityCode,
         press.MachineName    AS OriginMachineName,
         COUNT(*) OVER()      AS TotalCount
     FROM Lots.Lot l

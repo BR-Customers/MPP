@@ -66,17 +66,17 @@ VALUES (@DieTypeId, N'RPV-DIE', N'Release preview die', @ActiveTool, 0, @Now, 1)
 DECLARE @ToolId BIGINT = SCOPE_IDENTITY();
 
 -- Cav C is CLOSED and holds no basket: the row that did not exist before v2.0.
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, 1, @ActiveCav, N'Intake 2-A', @CavItemId, @Now, 1),
-       (@ToolId, 2, @ActiveCav, N'Intake 2-B', @CavItemId, @Now, 1),
-       (@ToolId, 3, @ClosedCav, N'Exhaust 5 Ab', @CavItemId, @Now, 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'a', @ActiveCav, N'Intake 2-A', @CavItemId, @Now, 1),
+       (@ToolId, N'b', @ActiveCav, N'Intake 2-B', @CavItemId, @Now, 1),
+       (@ToolId, N'c', @ClosedCav, N'Exhaust 5 Ab', @CavItemId, @Now, 1);
 
 DECLARE @PressA  BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ItemId  BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
 DECLARE @OriginId BIGINT = (SELECT Id FROM Lots.LotOriginType   WHERE Code = N'Manufactured');
 DECLARE @OpenId   BIGINT = (SELECT Id FROM Lots.LotStatusCode   WHERE Code = N'Open');
-DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 1);
-DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = 2);
+DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a');
+DECLARE @CavB BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'b');
 
 -- MaxPieceCount 200 so the under-fill advisory has something to test against.
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
@@ -126,7 +126,7 @@ DECLARE @PressA  BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'RPV-FIXTURE' ORDER BY Id DESC);
 DECLARE @LotA BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'RPV-A1');
 
-DECLARE @P TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityNumber INT,
+DECLARE @P TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityCode NVARCHAR(4),
                   CavityDescription NVARCHAR(500), ItemId BIGINT, PartNumber NVARCHAR(100),
                   PieceCount INT, MaxPieceCount INT, CreditedThrough INT, DieCreditedThrough INT,
                   NewShots INT, ProjectedPieceCount INT, BelowStandardAfter BIT,
@@ -178,7 +178,7 @@ GO
 DECLARE @PressA  BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
 DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'RPV-FIXTURE' ORDER BY Id DESC);
 DECLARE @LotA BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'RPV-A1');
-DECLARE @P2 TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityNumber INT,
+DECLARE @P2 TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityCode NVARCHAR(4),
                    CavityDescription NVARCHAR(500), ItemId BIGINT, PartNumber NVARCHAR(100),
                    PieceCount INT, MaxPieceCount INT, CreditedThrough INT, DieCreditedThrough INT,
                    NewShots INT, ProjectedPieceCount INT, BelowStandardAfter BIT,
@@ -249,7 +249,7 @@ GO
 --         what made the screen look like it was hiding things.
 -- =============================================
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'RPV-DIE');
-DECLARE @OB TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
+DECLARE @OB TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
                    PieceCount INT, MaxPieceCount INT, BelowStandardRelease BIT, OpenedAt DATETIME2(3),
                    ContributorCount INT, CavityDescription NVARCHAR(500), CavityStatusCode NVARCHAR(50),
                    ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(100));
@@ -285,7 +285,7 @@ GO
 --         empty shape, never an invented 404 (FDS-11-011).
 -- =============================================
 DECLARE @LotA BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'RPV-A1');   -- released in Test 3
-DECLARE @P5 TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityNumber INT,
+DECLARE @P5 TABLE (LotId BIGINT, LotName NVARCHAR(50), ToolCavityId BIGINT, CavityCode NVARCHAR(4),
                    CavityDescription NVARCHAR(500), ItemId BIGINT, PartNumber NVARCHAR(100),
                    PieceCount INT, MaxPieceCount INT, CreditedThrough INT, DieCreditedThrough INT,
                    NewShots INT, ProjectedPieceCount INT, BelowStandardAfter BIT,

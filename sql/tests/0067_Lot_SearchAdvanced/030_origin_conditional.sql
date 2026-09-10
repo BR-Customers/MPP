@@ -25,7 +25,7 @@ CREATE TABLE #LS (
     CurrentLocationId BIGINT, CreatedAt DATETIME2(3), ItemPartNumber NVARCHAR(100),
     LotStatusCode NVARCHAR(50), LotOriginTypeCode NVARCHAR(50),
     CurrentLocationName NVARCHAR(200), LastOperationName NVARCHAR(100),
-    ToolCode NVARCHAR(50), CavityNumber INT, OriginMachineName NVARCHAR(200),
+    ToolCode NVARCHAR(50), CavityCode NVARCHAR(4), OriginMachineName NVARCHAR(200),
     TotalCount INT
 );
 GO
@@ -49,7 +49,7 @@ INSERT INTO @res EXEC Tools.Tool_Create @ToolTypeId = @ToolTypeId, @Code = N'TES
 SELECT @ToolId = NewId FROM @res;
 DELETE FROM @res;
 
-INSERT INTO @res EXEC Tools.ToolCavity_Create @ToolId = @ToolId, @CavityNumber = 1,
+INSERT INTO @res EXEC Tools.ToolCavity_Create @ToolId = @ToolId, @CavityCode = N'a',
     @AppUserId = @UserId;
 SELECT @CavityId = NewId FROM @res;
 
@@ -80,14 +80,14 @@ EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] both tooled and NULL-Tool LOT
 
 -- 2. The NULL-Tool LOT renders NULL Die / Cavity rather than erroring.
 SELECT @n = COUNT(*) FROM #LS
-WHERE LotName = N'TEST-NULLTOOL-01' AND (ToolCode IS NOT NULL OR CavityNumber IS NOT NULL);
-EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] NULL-Tool LOT yields NULL ToolCode and CavityNumber',
+WHERE LotName = N'TEST-NULLTOOL-01' AND (ToolCode IS NOT NULL OR CavityCode IS NOT NULL);
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] NULL-Tool LOT yields NULL ToolCode and CavityCode',
     @Expected = N'0', @Actual = @n;
 
--- 3. The tooled LOT resolves its Die code and cavity number.
+-- 3. The tooled LOT resolves its Die code and cavity code.
 SELECT @n = COUNT(*) FROM #LS
-WHERE LotName = N'TEST-TOOLED-01' AND ToolCode = N'TEST-ADV-DIE' AND CavityNumber = 1;
-EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] tooled LOT resolves ToolCode and CavityNumber',
+WHERE LotName = N'TEST-TOOLED-01' AND ToolCode = N'TEST-ADV-DIE' AND CavityCode = N'a';
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] tooled LOT resolves ToolCode and CavityCode',
     @Expected = N'1', @Actual = @n;
 DELETE FROM #LS;
 

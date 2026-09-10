@@ -537,11 +537,11 @@ SELECT (SELECT Id FROM Tools.ToolType WHERE Code = N'Die'), N'TEST-CRTDC-TOOL', 
 DECLARE @DcTool BIGINT = SCOPE_IDENTITY();
 
 DECLARE @DcCavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@DcTool, 1, @DcCavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@DcTool, N'a', @DcCavActive, SYSUTCDATETIME(), 1);
 DECLARE @DcCav1 BIGINT = SCOPE_IDENTITY();
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@DcTool, 2, @DcCavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@DcTool, N'b', @DcCavActive, SYSUTCDATETIME(), 1);
 DECLARE @DcCav2 BIGINT = SCOPE_IDENTITY();
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)

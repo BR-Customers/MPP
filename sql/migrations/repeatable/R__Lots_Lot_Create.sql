@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Create.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-20
--- Version:     1.1
+-- Modified:    2026-09-10
+-- Version:     1.2
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
 --              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +
 --              FDS-05-034/-035).
@@ -34,6 +34,16 @@
 --              No OUTPUT params (FDS-11-011). Single terminal result row:
 --              Status, Message, NewId, MintedLotName.
 --
+--              v1.2 (2026-09-10, cavity alpha code / 0076): the D2 free-text
+--              manual-cavity fallback is RETIRED. @CavityNote is gone and
+--              @ToolCavityId is now unconditionally required for a die-cast
+--              -origin LOT. The escape hatch existed because cavities were not
+--              always configured; they are now, with parts mapped, and a LOT
+--              whose cavity is untyped free text cannot be rolled up per part.
+--              The legacy Lots.Lot.CavityNumber column it wrote to was dropped
+--              by 0076, so the INSERT no longer names it. The audit prose reads
+--              the cavity's per-part Tools.ToolCavity.CavityCode.
+--
 --              Die-cast determination (FDS-05-034): origin 'Manufactured' AND
 --              an active Tools.ToolAssignment (ReleasedAt IS NULL) exists for
 --              the Cell -> Tool/Cavity REQUIRED and validated. Other origins
@@ -55,7 +65,6 @@ CREATE OR ALTER PROCEDURE Lots.Lot_Create
     @AppUserId          BIGINT,
     @TerminalLocationId BIGINT        = NULL,
     @LotName            NVARCHAR(50)  = NULL,   -- D4: caller-supplied identity (pre-printed LTT); NULL = mint server-side (today's behavior)
-    @CavityNote         NVARCHAR(50)  = NULL,   -- D2: free-text cavity when no active ToolCavity exists; stored in legacy Lot.CavityNumber
     @DepositToStorage   BIT           = 0       -- die-cast: after birth at the machine, auto-move to the Warehouse (storage). OFF by default -> other origins (receiving, etc.) unaffected.
 AS
 BEGIN
@@ -305,55 +314,52 @@ BEGIN
                 RETURN;
             END
 
+            -- Cavity is unconditionally required (0076). The D2 free-text
+            -- escape hatch is retired: it existed because cavities were not
+            -- always configured, and a LOT whose cavity is untyped free text
+            -- cannot be rolled up per part -- which is what per-cavity
+            -- lifecycle exists for.
             IF @ToolCavityId IS NULL
             BEGIN
-                -- D2 manual-cavity path: no configured ToolCavity row to validate.
-                -- Require a free-text note; it is stored in the legacy Lot.CavityNumber
-                -- column (auditable, distinguishable from the validated case).
-                IF @CavityNote IS NULL OR LTRIM(RTRIM(@CavityNote)) = N''
-                BEGIN
-                    SET @Message = N'Die-cast-origin LOT requires a Cavity (select a configured cavity or enter one manually) (FDS-05-034).';
-                    EXEC Audit.Audit_LogFailure
-                        @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
-                        @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
-                        @FailureReason = @Message, @ProcedureName = @ProcName,
-                        @AttemptedParameters = @Params;
-                    SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
-                    RETURN;
-                END
+                SET @Message = N'Die-cast-origin LOT requires a configured Cavity (FDS-05-034).';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                    @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                RETURN;
             END
-            ELSE
-            BEGIN
-                -- Validated path (unchanged): cavity must belong to the Tool and be Active.
-                IF NOT EXISTS (
-                    SELECT 1 FROM Tools.ToolCavity WHERE Id = @ToolCavityId AND ToolId = @ToolId
-                )
-                BEGIN
-                    SET @Message = N'Cavity does not belong to the specified Tool.';
-                    EXEC Audit.Audit_LogFailure
-                        @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
-                        @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
-                        @FailureReason = @Message, @ProcedureName = @ProcName,
-                        @AttemptedParameters = @Params;
-                    SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
-                    RETURN;
-                END
 
-                IF NOT EXISTS (
-                    SELECT 1 FROM Tools.ToolCavity tc
-                    INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = tc.StatusCodeId
-                    WHERE tc.Id = @ToolCavityId AND sc.Code = N'Active'
-                )
-                BEGIN
-                    SET @Message = N'Cavity is not in Active status.';
-                    EXEC Audit.Audit_LogFailure
-                        @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
-                        @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
-                        @FailureReason = @Message, @ProcedureName = @ProcName,
-                        @AttemptedParameters = @Params;
-                    SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
-                    RETURN;
-                END
+            -- Validated path (unchanged): cavity must belong to the Tool and be Active.
+            IF NOT EXISTS (
+                SELECT 1 FROM Tools.ToolCavity WHERE Id = @ToolCavityId AND ToolId = @ToolId
+            )
+            BEGIN
+                SET @Message = N'Cavity does not belong to the specified Tool.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                    @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                RETURN;
+            END
+
+            IF NOT EXISTS (
+                SELECT 1 FROM Tools.ToolCavity tc
+                INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = tc.StatusCodeId
+                WHERE tc.Id = @ToolCavityId AND sc.Code = N'Active'
+            )
+            BEGIN
+                SET @Message = N'Cavity is not in Active status.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                    @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                RETURN;
             END
         END
 
@@ -505,12 +511,6 @@ BEGIN
                 ELSE @SeqPrefix + RIGHT(REPLICATE(N'0', @SeqPad) + CAST(@SeqLast AS NVARCHAR(20)), @SeqPad) END;
         END
 
-        -- D2: free-text cavity stored in the legacy Lot.CavityNumber when no validated
-        -- ToolCavityId was supplied (precomputed local; SP template forbids inline CASE
-        -- in the VALUES list).
-        DECLARE @CavityNumberToStore NVARCHAR(50) =
-            CAST(CASE WHEN @ToolCavityId IS NULL THEN @CavityNote ELSE NULL END AS NVARCHAR(50));
-
         -- D1/D2: CRT at mint. Resolved in ONE place (Lots.ufn_CrtForMint): the part's
         -- Parts.Item.CrtEnabled flag OR the minting terminal's CrtEnabled attribute.
         -- No input LOTs at a die-cast birth (or a loose receive), so the propagation
@@ -520,14 +520,14 @@ BEGIN
 
         INSERT INTO Lots.Lot (
             LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
-            Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber,
+            Weight, WeightUomId, ToolId, ToolCavityId, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
             CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive
         )
         VALUES (
             @MintedLotName, @ItemId, @LotOriginTypeId, @GoodStatusId, @PieceCount, @MaxLotSize,
-            @Weight, @WeightUomId, @ToolId, @ToolCavityId, @CavityNumberToStore, @VendorLotNumber,
+            @Weight, @WeightUomId, @ToolId, @ToolCavityId, @VendorLotNumber,
             @MinSerialNumber, @MaxSerialNumber, @CurrentLocationId,
             0, @PieceCount,                          -- B5 materialized: TotalInProcess / InventoryAvailable
             @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive
@@ -551,13 +551,13 @@ BEGIN
         DECLARE @PartNumber NVARCHAR(50)  = (SELECT PartNumber FROM Parts.Item WHERE Id = @ItemId);
         DECLARE @LocName    NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @CurrentLocationId);
         DECLARE @ToolCode   NVARCHAR(50)  = (SELECT Code FROM Tools.Tool WHERE Id = @ToolId);
-        DECLARE @CavityNum  NVARCHAR(50)  = (SELECT CavityNumber FROM Tools.ToolCavity WHERE Id = @ToolCavityId);
+        DECLARE @CavityNum  NVARCHAR(50)  = (SELECT CavityCode FROM Tools.ToolCavity WHERE Id = @ToolCavityId);
 
-        -- Cavity prose: validated cavity number, else the free-text manual note (D2), else '?'.
+        -- Cavity prose: the validated cavity's per-part code. The D2 '(manual)'
+        -- arm is gone with the free-text fallback itself (0076).
         DECLARE @ToolSuffix NVARCHAR(200) =
             CASE WHEN @ToolId IS NOT NULL
-                 THEN N'; Tool ' + ISNULL(@ToolCode, N'?') + N', Cavity '
-                      + ISNULL(@CavityNum, ISNULL(@CavityNote + N' (manual)', N'?'))
+                 THEN N'; Tool ' + ISNULL(@ToolCode, N'?') + N', Cavity ' + ISNULL(@CavityNum, N'?')
                  ELSE N'' END;
 
         DECLARE @ActivityRaw NVARCHAR(MAX) =

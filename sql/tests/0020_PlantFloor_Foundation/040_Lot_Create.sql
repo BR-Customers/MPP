@@ -61,10 +61,10 @@ DECLARE @ToolId BIGINT = SCOPE_IDENTITY();
 -- Two cavities: one Active, one Closed
 DECLARE @CavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
 DECLARE @CavClosed BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Closed');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, N'1', @CavActive, SYSUTCDATETIME(), 1);
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@ToolId, N'2', @CavClosed, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'a', @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@ToolId, N'b', @CavClosed, SYSUTCDATETIME(), 1);
 
 -- Mount on the die-cast cell
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
@@ -78,7 +78,7 @@ DECLARE @DieCellId BIGINT, @DieItemId BIGINT, @ToolId BIGINT, @CavId BIGINT;
 DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 SELECT @ToolId = Id FROM Tools.Tool WHERE Code = N'TEST-LC-TOOL';
 SELECT @DieCellId = CellLocationId FROM Tools.ToolAssignment WHERE ToolId = @ToolId AND ReleasedAt IS NULL;
-SELECT @CavId = Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = N'1';
+SELECT @CavId = Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'a';
 SELECT TOP 1 @DieItemId = ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @DieCellId AND Source = N'Direct';
 
 DECLARE @S BIT, @SStr NVARCHAR(1), @NewId BIGINT, @Minted NVARCHAR(50);
@@ -137,8 +137,8 @@ INSERT INTO Tools.Tool (ToolTypeId, Code, Name, StatusCodeId, CreatedAt, Created
 VALUES (@TT, N'TEST-LC-TOOL2', N'Unmounted die', @TA, SYSUTCDATETIME(), 1);
 DECLARE @Tool2 BIGINT = SCOPE_IDENTITY();
 DECLARE @CavA BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@Tool2, N'1', @CavA, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool2, N'a', @CavA, SYSUTCDATETIME(), 1);
 DECLARE @Cav2 BIGINT = SCOPE_IDENTITY();
 
 DECLARE @DieCellId BIGINT, @DieItemId BIGINT;
@@ -187,7 +187,7 @@ DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Ma
 SELECT @ToolId = Id FROM Tools.Tool WHERE Code = N'TEST-LC-TOOL';
 SELECT @DieCellId = CellLocationId FROM Tools.ToolAssignment WHERE ToolId = @ToolId AND ReleasedAt IS NULL;
 SELECT TOP 1 @DieItemId = ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @DieCellId AND Source = N'Direct';
-SELECT @ClosedCav = Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityNumber = N'2';  -- the Closed cavity
+SELECT @ClosedCav = Id FROM Tools.ToolCavity WHERE ToolId = @ToolId AND CavityCode = N'b';  -- the Closed cavity
 
 DECLARE @S BIT, @SStr NVARCHAR(1);
 CREATE TABLE #T5 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));

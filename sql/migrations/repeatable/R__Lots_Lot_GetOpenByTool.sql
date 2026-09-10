@@ -2,8 +2,12 @@
 -- Repeatable:  R__Lots_Lot_GetOpenByTool.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-07-29
--- Version:     2.0
--- Changelog:   2.0 (2026-09-10) CAVITY-DRIVEN, the same correction v2.1 made
+-- Version:     2.1
+-- Changelog:   2.1 (2026-09-10) Cavity alpha code (0076): CavityNumber ->
+--              CavityCode NVARCHAR(4), and the ordering gains the part key.
+--              A 12-cavity family die cutting four parts would otherwise
+--              render a,a,a,a,b,b,b,b -- four unrelated parts interleaved.
+--              2.0 (2026-09-10) CAVITY-DRIVEN, the same correction v2.1 made
 --              to Workorder.DieCast_GetShiftOutputBreakdown. v1.0 selected
 --              FROM Lots.Lot, so a cavity with no open basket produced no row
 --              -- which is why a Closed or Scrapped cavity was invisible on
@@ -26,7 +30,7 @@
 --              many distinct operators have contributed to it this basket's
 --              life (Workorder.DieCastContribution, not shift-scoped).
 --
---              Columns: ToolCavityId, CavityNumber, LotId, LotName, PieceCount,
+--              Columns: ToolCavityId, CavityCode, LotId, LotName, PieceCount,
 --              MaxPieceCount (basket size, from Lot.MaxPieceCount; NULL = uncapped),
 --              BelowStandardRelease (BIT -- 1 when this basket holds < 95% of its
 --              basket size, i.e. releasing it now is under the standard fill;
@@ -49,7 +53,7 @@ BEGIN
 
     SELECT
         tc.Id                                          AS ToolCavityId,
-        tc.CavityNumber                                AS CavityNumber,
+        tc.CavityCode                                  AS CavityCode,
         l.Id                                            AS LotId,
         l.LotName                                       AS LotName,
         ISNULL(l.PieceCount, 0)                         AS PieceCount,
@@ -77,6 +81,6 @@ BEGIN
     LEFT  JOIN Parts.Item ci ON ci.Id = tc.ItemId
     WHERE tc.ToolId = @ToolId
       AND tc.DeprecatedAt IS NULL
-    ORDER BY tc.CavityNumber;
+    ORDER BY ci.PartNumber, tc.CavityCode;
 END;
 GO

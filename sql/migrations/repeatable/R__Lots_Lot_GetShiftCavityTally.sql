@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetShiftCavityTally.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-29
--- Version:     1.2
+-- Modified:    2026-09-10
+-- Version:     1.3
 -- Description: Arc 2 Phase 3 die-cast right-rail "shots this shift" tally.
 --              For the die mounted at a machine, returns ONE ROW PER ACTIVE
 --              (configured) ToolCavity with the sum of GOOD Lot.PieceCount for
@@ -65,6 +65,12 @@
 --              LEFT JOIN to Lot so a configured cavity with zero shots this
 --              shift still returns a row (the dropdown lists every cavity).
 --
+--              v1.3 (2026-09-10, cavity alpha code / 0076): CavityNumber ->
+--              CavityCode NVARCHAR(4). CavityLabel's CONCAT loses its implicit
+--              INT->string cast, and the ordering gains the part key -- a
+--              12-cavity family die cutting four parts would otherwise render
+--              a,a,a,a,b,b,b,b with four unrelated parts interleaved.
+--
 --              Read proc: single result set, no status row, no OUTPUT params
 --              (FDS-11-011). Empty result set = the tool has no active cavities.
 --              No mutation, no transaction, no audit.
@@ -86,8 +92,8 @@ BEGIN
 
     SELECT
         tc.Id                                          AS ToolCavityId,
-        tc.CavityNumber                                AS CavityNumber,
-        CONCAT(N'Cavity ', tc.CavityNumber)            AS CavityLabel,
+        tc.CavityCode                                  AS CavityCode,
+        CONCAT(N'Cavity ', tc.CavityCode)              AS CavityLabel,
         ISNULL(SUM(l.PieceCount), 0)                   AS PieceSum,
         ISNULL(SUM(rj.RejectedQty), 0)                 AS RejectSum,
         ISNULL(MAX(SUM(l.PieceCount)) OVER (), 0)       AS ShiftShots,
@@ -99,6 +105,7 @@ BEGIN
         ISNULL(SUM(SUM(ISNULL(rj.RejectedQty, 0))) OVER (), 0)                AS ShiftScrapTotal
     FROM Tools.ToolCavity tc
     INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = tc.StatusCodeId
+    LEFT JOIN Parts.Item it ON it.Id = tc.ItemId
     LEFT JOIN (
         SELECT ll.Id, ll.ToolId, ll.ToolCavityId, ll.PieceCount, ll.CreatedAt, ll.UpdatedAt, lsc.Code AS StatusCode
         FROM Lots.Lot ll
@@ -116,7 +123,7 @@ BEGIN
                  WHERE re.LotId = l.Id) rj
     WHERE tc.ToolId = @ToolId
       AND sc.Code   = N'Active'
-    GROUP BY tc.Id, tc.CavityNumber
-    ORDER BY tc.CavityNumber;
+    GROUP BY tc.Id, tc.CavityCode, it.PartNumber
+    ORDER BY it.PartNumber, tc.CavityCode;
 END;
 GO

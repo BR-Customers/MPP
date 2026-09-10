@@ -1,9 +1,14 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCast_GetShiftOutputBreakdown.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-19
--- Version:     2.1
--- Changelog:   2.1 (2026-09-09) CAVITY-DRIVEN. The row source was
+-- Modified:    2026-09-10
+-- Version:     2.2
+-- Changelog:   2.2 (2026-09-10) Cavity alpha code (0076): CavityNumber ->
+--              CavityCode NVARCHAR(4), and the ordering gains the configured
+--              part key. A 12-cavity family die cutting four parts would
+--              otherwise render a,a,a,a,b,b,b,b -- four unrelated parts
+--              interleaved on the shift-output grid.
+--              2.1 (2026-09-09) CAVITY-DRIVEN. The row source was
 --              Lots.Lot, so a cavity with no LOT produced no row at all --
 --              which is exactly why a Closed or Scrapped cavity was invisible
 --              on the die cast screens even though Tools.ToolCavityStatusCode
@@ -141,7 +146,7 @@ BEGIN
     )
     SELECT
         tc.Id AS ToolCavityId,
-        tc.CavityNumber,
+        tc.CavityCode,
         lo.LotId, lo.LotName,
         CAST(ISNULL(lo.IsOpen, 0) AS BIT) AS IsOpen,
         ISNULL(p.PriorGood, 0) AS PriorGoodThisShift,
@@ -183,6 +188,6 @@ BEGIN
     LEFT  JOIN Parts.Item ci ON ci.Id = tc.ItemId
     WHERE tc.ToolId = @ToolId
       AND tc.DeprecatedAt IS NULL
-    ORDER BY tc.CavityNumber, ISNULL(lo.IsOpen, 0) DESC, lo.LotId;
+    ORDER BY ci.PartNumber, tc.CavityCode, ISNULL(lo.IsOpen, 0) DESC, lo.LotId;
 END;
 GO

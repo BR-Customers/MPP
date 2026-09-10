@@ -88,11 +88,11 @@ VALUES (@ToolTypeId, N'TEST-DCG-TOOL', N'Open-LOT write-guard test die', @ToolSt
 DECLARE @Tool BIGINT = SCOPE_IDENTITY();
 
 DECLARE @CavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@Tool, 1, @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, N'a', @CavActive, SYSUTCDATETIME(), 1);
 DECLARE @Cavity1 BIGINT = SCOPE_IDENTITY();
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@Tool, 2, @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, N'b', @CavActive, SYSUTCDATETIME(), 1);
 DECLARE @Cavity2 BIGINT = SCOPE_IDENTITY();
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)

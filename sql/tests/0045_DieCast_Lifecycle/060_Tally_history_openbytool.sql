@@ -79,8 +79,8 @@ VALUES (@ToolTypeId, N'TEST-DCT-TOOL', N'Tally/History/OpenByTool test die', @To
 DECLARE @Tool BIGINT = SCOPE_IDENTITY();
 
 DECLARE @CavActive BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
-VALUES (@Tool, 1, @CavActive, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, N'a', @CavActive, SYSUTCDATETIME(), 1);
 DECLARE @Cavity BIGINT = SCOPE_IDENTITY();
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
@@ -130,7 +130,7 @@ EXEC test.Assert_IsEqual @TestName=N'[Fixture] shift output recorded, Status 1',
 -- not one per open basket, plus four APPENDED columns. Every assertion
 -- below filters on LotId, so the extra basketless-cavity rows are inert
 -- here; the table variable just has to carry the new trailing columns.
-DECLARE @OB TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50), PieceCount INT, MaxPieceCount INT, BelowStandardRelease BIT, OpenedAt DATETIME2(3), ContributorCount INT, CavityDescription NVARCHAR(500), CavityStatusCode NVARCHAR(50), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(100));
+DECLARE @OB TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50), PieceCount INT, MaxPieceCount INT, BelowStandardRelease BIT, OpenedAt DATETIME2(3), ContributorCount INT, CavityDescription NVARCHAR(500), CavityStatusCode NVARCHAR(50), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(100));
 INSERT INTO @OB EXEC Lots.Lot_GetOpenByTool @ToolId=@Tool;
 DECLARE @obpc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM @OB WHERE LotId=@Lot);
 EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] running PieceCount 40', @Expected=N'40', @Actual=@obpc;
@@ -170,7 +170,7 @@ EXEC test.Assert_IsEqual @TestName=N'[OpenByTool] uncapped (NULL max) -> 0', @Ex
 -- Test 2: Lots.Lot_GetShiftCavityTally counts good WITHOUT double-counting
 -- the additive scrap (PieceSum=40, RejectSum=5 -- separate metrics)
 -- =============================================
-DECLARE @T TABLE (ToolCavityId BIGINT, CavityNumber INT, CavityLabel NVARCHAR(100), PieceSum INT, RejectSum INT, ShiftShots INT, ShiftGoodTotal INT, ShiftScrapTotal INT);
+DECLARE @T TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), CavityLabel NVARCHAR(100), PieceSum INT, RejectSum INT, ShiftShots INT, ShiftGoodTotal INT, ShiftScrapTotal INT);
 INSERT INTO @T EXEC Lots.Lot_GetShiftCavityTally @ToolId=@Tool;
 DECLARE @good NVARCHAR(10) = (SELECT CAST(PieceSum AS NVARCHAR(10)) FROM @T WHERE ToolCavityId=@Cavity);
 EXEC test.Assert_IsEqual @TestName=N'[Tally] good = 40 (additive scrap NOT double-counted)', @Expected=N'40', @Actual=@good;
