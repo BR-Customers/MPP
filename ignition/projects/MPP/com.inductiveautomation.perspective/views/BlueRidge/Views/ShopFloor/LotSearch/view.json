@@ -2149,7 +2149,7 @@
                   "boolean": "checkbox",
                   "dateFormat": "MM/DD/YYYY",
                   "editable": false,
-                  "field": "CavityNumber",
+                  "field": "CavityCode",
                   "filter": {
                     "boolean": {
                       "condition": ""

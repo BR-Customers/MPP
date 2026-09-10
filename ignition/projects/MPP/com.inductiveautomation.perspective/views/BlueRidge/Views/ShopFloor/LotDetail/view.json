@@ -53,7 +53,7 @@
       "PieceCount": 0,
       "RowVersion": null,
       "ToolCavityId": null,
-      "ToolCavityNumber": null,
+      "ToolCavityCode": null,
       "ToolCode": null,
       "ToolId": null,
       "TotalInProcess": 0,
@@ -739,7 +739,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({view.custom.lot.ToolCavityNumber}), \"\", toStr({view.custom.lot.ToolCavityNumber}))"
+                        "expression": "if(isNull({view.custom.lot.ToolCavityCode}), \"\", toStr({view.custom.lot.ToolCavityCode}))"
                       },
                       "type": "expr"
                     }

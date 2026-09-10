@@ -69,7 +69,7 @@
               },
               "transforms": [
                 {
-                  "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"lotId\": r.get(\"lotId\"), \"lotName\": r.get(\"lotName\") or \"\", \"cavityNumber\": r.get(\"cavityNumber\") or \"\", \"headroom\": r.get(\"headroom\") or 0, \"good\": r.get(\"good\") or 0, \"remainder\": r.get(\"remainder\") or 0} for r in rows]",
+                  "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"lotId\": r.get(\"lotId\"), \"lotName\": r.get(\"lotName\") or \"\", \"cavityCode\": r.get(\"cavityCode\") or \"\", \"headroom\": r.get(\"headroom\") or 0, \"good\": r.get(\"good\") or 0, \"remainder\": r.get(\"remainder\") or 0} for r in rows]",
                   "type": "script"
                 }
               ],

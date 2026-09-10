@@ -4,7 +4,7 @@
     "overfill": false
   },
   "params": {
-    "cavityNumber": "",
+    "cavityCode": "",
     "good": 0,
     "headroom": 0,
     "lotId": null,
@@ -12,7 +12,7 @@
     "remainder": 0
   },
   "propConfig": {
-    "params.cavityNumber": {
+    "params.cavityCode": {
       "paramDirection": "input"
     },
     "params.good": {
@@ -47,7 +47,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "expression": "\"Cavity \" + toStr({view.params.cavityNumber}) + \"  ·  \" + {view.params.lotName} + \" — basket full. Submitting \" + toStr({view.params.good}) + \" pc: \" + toStr({view.params.headroom}) + \" fits, \" + toStr({view.params.remainder}) + \" overflow.\""
+                "expression": "\"Cavity \" + toStr({view.params.cavityCode}) + \"  ·  \" + {view.params.lotName} + \" — basket full. Submitting \" + toStr({view.params.good}) + \" pc: \" + toStr({view.params.headroom}) + \" fits, \" + toStr({view.params.remainder}) + \" overflow.\""
               },
               "type": "expr"
             }

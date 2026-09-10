@@ -7,7 +7,7 @@
   },
   "params": {
     "toolCavityId": null,
-    "cavityNumber": "",
+    "cavityCode": "",
     "cavityName": "",
     "cavityOrdinalLabel": "",
     "hasCavityName": false,
@@ -28,7 +28,7 @@
     "params.toolCavityId": {
       "paramDirection": "input"
     },
-    "params.cavityNumber": {
+    "params.cavityCode": {
       "paramDirection": "input"
     },
     "params.cavityName": {

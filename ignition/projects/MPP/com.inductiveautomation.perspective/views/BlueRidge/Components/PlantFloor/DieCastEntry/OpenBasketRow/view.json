@@ -2,7 +2,7 @@
   "custom": {},
   "params": {
     "belowStandard": false,
-    "cavityNumber": "",
+    "cavityCode": "",
     "cavityName": "",
     "cavityOrdinalLabel": "",
     "cavityStatusCode": "Active",
@@ -21,7 +21,7 @@
     "params.belowStandard": {
       "paramDirection": "input"
     },
-    "params.cavityNumber": {
+    "params.cavityCode": {
       "paramDirection": "input"
     },
     "params.cavityName": {
