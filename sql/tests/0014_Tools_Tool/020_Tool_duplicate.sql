@@ -65,21 +65,22 @@ DROP TABLE #SRC;
 -- ShotCount is only ever written by the die-cast shift-output proc.
 UPDATE Tools.Tool SET ShotLimit = 50000, ShotCount = 1234 WHERE Id = @SrcId;
 
--- Three cavities. #2 Closed and #3 Scrapped -- wear states that must NOT clone.
+-- Three cavities a / b / c (0076: the code is a per-part letter, not a die-wide
+-- ordinal). 'b' Closed and 'c' Scrapped -- wear states that must NOT clone.
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #C EXEC Tools.ToolCavity_Create
-    @ToolId = @SrcId, @CavityNumber = 1, @Description = N'Cav one', @AppUserId = 1;
+    @ToolId = @SrcId, @CavityCode = N'a', @Description = N'Cav one', @AppUserId = 1;
 DELETE FROM #C;
 INSERT INTO #C EXEC Tools.ToolCavity_Create
-    @ToolId = @SrcId, @CavityNumber = 2, @Description = N'Cav two', @AppUserId = 1;
+    @ToolId = @SrcId, @CavityCode = N'b', @Description = N'Cav two', @AppUserId = 1;
 DELETE FROM #C;
 INSERT INTO #C EXEC Tools.ToolCavity_Create
-    @ToolId = @SrcId, @CavityNumber = 3, @Description = N'Cav three', @AppUserId = 1;
+    @ToolId = @SrcId, @CavityCode = N'c', @Description = N'Cav three', @AppUserId = 1;
 DROP TABLE #C;
 
-DECLARE @Cav1Id BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityNumber = 1);
-DECLARE @Cav2Id BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityNumber = 2);
-DECLARE @Cav3Id BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityNumber = 3);
+DECLARE @Cav1Id BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityCode = N'a');
+DECLARE @Cav2Id BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityCode = N'b');
+DECLARE @Cav3Id BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityCode = N'c');
 
 CREATE TABLE #CS (Status BIT, Message NVARCHAR(500));
 INSERT INTO #CS EXEC Tools.ToolCavity_UpdateStatus
@@ -91,7 +92,7 @@ DROP TABLE #CS;
 
 -- Two parts for the family-die cavity-to-part map (0072). PART-A stays active
 -- and must clone; PART-Z is deprecated after mapping and must drop to NULL.
--- Cavity 2 carries PART-Z deliberately: it is also Closed, proving the two
+-- Cavity 'b' carries PART-Z deliberately: it is also Closed, proving the two
 -- carry-forward rules are independent (the cavity clones, its part does not).
 CREATE TABLE #PI (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #PI EXEC Parts.Item_Create
@@ -107,7 +108,7 @@ DECLARE @PartAId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'DUP-PA
 DECLARE @PartZId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'DUP-PART-Z');
 
 -- Set directly: ToolCavity_Create takes no ItemId (the map is authored through
--- ToolCavity_SaveAll from the Cavities editor). Cavity 3 stays unmapped.
+-- ToolCavity_SaveAll from the Cavities editor). Cavity 'c' stays unmapped.
 UPDATE Tools.ToolCavity SET ItemId = @PartAId WHERE Id = @Cav1Id;
 UPDATE Tools.ToolCavity SET ItemId = @PartZId WHERE Id = @Cav2Id;
 
@@ -265,32 +266,32 @@ EXEC test.Assert_RowCount
     @TestName = N'[Duplicate cavities] All 3 cavities cloned',
     @ExpectedCount = 3, @ActualCount = @CavCount;
 
--- The source fixture is deliberately mixed: cavity 1 Active, cavity 2 Closed,
--- cavity 3 Scrapped. Each must land on the clone with the SAME status -- a
+-- The source fixture is deliberately mixed: cavity 'a' Active, 'b' Closed,
+-- 'c' Scrapped. Each must land on the clone with the SAME status -- a
 -- Closed / Scrapped cavity is a die-DESIGN decision, not wear, so it carries.
 DECLARE @Cav1Status NVARCHAR(30) = (SELECT sc.Code FROM Tools.ToolCavity c
                                     INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = c.StatusCodeId
-                                    WHERE c.ToolId = @NewId AND c.CavityNumber = 1);
+                                    WHERE c.ToolId = @NewId AND c.CavityCode = N'a');
 EXEC test.Assert_IsEqual
     @TestName = N'[Duplicate cavities] Active cavity stays Active',
     @Expected = N'Active', @Actual = @Cav1Status;
 
 DECLARE @Cav2Status NVARCHAR(30) = (SELECT sc.Code FROM Tools.ToolCavity c
                                     INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = c.StatusCodeId
-                                    WHERE c.ToolId = @NewId AND c.CavityNumber = 2);
+                                    WHERE c.ToolId = @NewId AND c.CavityCode = N'b');
 EXEC test.Assert_IsEqual
     @TestName = N'[Duplicate cavities] Closed cavity carries over as Closed',
     @Expected = N'Closed', @Actual = @Cav2Status;
 
 DECLARE @Cav3Status NVARCHAR(30) = (SELECT sc.Code FROM Tools.ToolCavity c
                                     INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = c.StatusCodeId
-                                    WHERE c.ToolId = @NewId AND c.CavityNumber = 3);
+                                    WHERE c.ToolId = @NewId AND c.CavityCode = N'c');
 EXEC test.Assert_IsEqual
     @TestName = N'[Duplicate cavities] Scrapped cavity carries over as Scrapped',
     @Expected = N'Scrapped', @Actual = @Cav3Status;
 
 DECLARE @Cav2Desc NVARCHAR(500) = (SELECT Description FROM Tools.ToolCavity
-                                   WHERE ToolId = @NewId AND CavityNumber = 2);
+                                   WHERE ToolId = @NewId AND CavityCode = N'b');
 EXEC test.Assert_IsEqual
     @TestName = N'[Duplicate cavities] Cavity description carried over',
     @Expected = N'Cav two', @Actual = @Cav2Desc;
@@ -308,24 +309,24 @@ DECLARE @PartAId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'DUP-PA
 
 DECLARE @Cav1Part NVARCHAR(1) =
     (SELECT CASE WHEN ItemId = @PartAId THEN N'1' ELSE N'0' END
-     FROM Tools.ToolCavity WHERE ToolId = @NewId AND CavityNumber = 1);
+     FROM Tools.ToolCavity WHERE ToolId = @NewId AND CavityCode = N'a');
 EXEC test.Assert_IsEqual
     @TestName = N'[Duplicate cavity part] Active part carried onto the clone',
     @Expected = N'1', @Actual = @Cav1Part;
 
--- Cavity 2 is Closed AND carried the now-deprecated part: the cavity clones,
+-- Cavity 'b' is Closed AND carried the now-deprecated part: the cavity clones,
 -- its part does not. Carrying a deprecated ItemId forward would produce a row
 -- ToolCavity_SaveAll then refuses to re-save, stranding the Cavities editor.
 DECLARE @Cav2Part NVARCHAR(10) =
     (SELECT CASE WHEN ItemId IS NULL THEN N'null' ELSE N'set' END
-     FROM Tools.ToolCavity WHERE ToolId = @NewId AND CavityNumber = 2);
+     FROM Tools.ToolCavity WHERE ToolId = @NewId AND CavityCode = N'b');
 EXEC test.Assert_IsEqual
     @TestName = N'[Duplicate cavity part] Deprecated part drops to NULL',
     @Expected = N'null', @Actual = @Cav2Part;
 
 DECLARE @Cav3Part NVARCHAR(10) =
     (SELECT CASE WHEN ItemId IS NULL THEN N'null' ELSE N'set' END
-     FROM Tools.ToolCavity WHERE ToolId = @NewId AND CavityNumber = 3);
+     FROM Tools.ToolCavity WHERE ToolId = @NewId AND CavityCode = N'c');
 EXEC test.Assert_IsEqual
     @TestName = N'[Duplicate cavity part] Unmapped cavity stays unmapped',
     @Expected = N'null', @Actual = @Cav3Part;
@@ -334,7 +335,7 @@ EXEC test.Assert_IsEqual
 DECLARE @SrcId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'DUP-SRC');
 DECLARE @SrcCav2Part NVARCHAR(10) =
     (SELECT CASE WHEN ItemId IS NULL THEN N'null' ELSE N'set' END
-     FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityNumber = 2);
+     FROM Tools.ToolCavity WHERE ToolId = @SrcId AND CavityCode = N'b');
 EXEC test.Assert_IsEqual
     @TestName = N'[Duplicate cavity part] Source cavity part left intact',
     @Expected = N'set', @Actual = @SrcCav2Part;
@@ -549,6 +550,102 @@ DECLARE @RCav INT = (SELECT COUNT(*) FROM Tools.ToolCavity WHERE ToolId = @RId A
 EXEC test.Assert_RowCount
     @TestName = N'[Duplicate retired-source] cavity layout still cloned',
     @ExpectedCount = 3, @ActualCount = @RCav;
+GO
+
+-- =============================================
+-- Test 12: family-die cavities read back ordered by PART, then code (0076)
+--
+-- Since 0076 the cavity code is scoped to the part, so a 12-cavity family die
+-- casting four part numbers carries four cavities called 'a'. Ordered by code
+-- alone that grid reads a,a,a,a,b,b,b,b,c,c,c,c -- four unrelated parts
+-- interleaved. Tools.ToolCavity_ListActiveByTool must order by PartNumber
+-- first, which is how the paper production sheets group them.
+--
+-- The fixture is built so the two orderings DISAGREE: DUP-PART-A owns codes
+-- 'b','c' and DUP-PART-B owns 'a'. Ordering by code alone would put 'a' first;
+-- ordering by part first puts 'b' first. Codes are assigned at create time
+-- while every cavity is still unmapped (ToolCavity_Create takes no ItemId), so
+-- they must be distinct in that one NULL group; the part map is applied after,
+-- exactly as the Cavities editor does it.
+-- =============================================
+DECLARE @DieTypeId BIGINT = (SELECT Id FROM Tools.ToolType       WHERE Code = N'Die');
+DECLARE @ActiveId  BIGINT = (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active');
+
+CREATE TABLE #O1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #O1 EXEC Tools.Tool_Create
+    @ToolTypeId = @DieTypeId, @Code = N'DUP-ORD', @Name = N'Cavity Order Die',
+    @StatusCodeId = @ActiveId, @AppUserId = 1;
+DECLARE @OrdToolId BIGINT = (SELECT NewId FROM #O1);
+DROP TABLE #O1;
+
+CREATE TABLE #O2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #O2 EXEC Parts.Item_Create
+    @ItemTypeId = 4, @PartNumber = N'DUP-PART-B', @Description = N'Dup part B',
+    @UomId = 1, @AppUserId = 1;
+DROP TABLE #O2;
+
+DECLARE @OrdPartA BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'DUP-PART-A');
+DECLARE @OrdPartB BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'DUP-PART-B');
+
+CREATE TABLE #O3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #O3 EXEC Tools.ToolCavity_Create
+    @ToolId = @OrdToolId, @CavityCode = N'a', @Description = N'B side one', @AppUserId = 1;
+DELETE FROM #O3;
+INSERT INTO #O3 EXEC Tools.ToolCavity_Create
+    @ToolId = @OrdToolId, @CavityCode = N'b', @Description = N'A side one', @AppUserId = 1;
+DELETE FROM #O3;
+INSERT INTO #O3 EXEC Tools.ToolCavity_Create
+    @ToolId = @OrdToolId, @CavityCode = N'c', @Description = N'A side two', @AppUserId = 1;
+DROP TABLE #O3;
+
+UPDATE Tools.ToolCavity SET ItemId = @OrdPartB
+ WHERE ToolId = @OrdToolId AND CavityCode = N'a';
+UPDATE Tools.ToolCavity SET ItemId = @OrdPartA
+ WHERE ToolId = @OrdToolId AND CavityCode IN (N'b', N'c');
+
+-- Seq IDENTITY captures the proc's own row order: a heap SELECT is not obliged
+-- to hand rows back in insertion order, so the ordering is asserted explicitly.
+CREATE TABLE #Ord (
+    Seq             INT IDENTITY(1,1),
+    Id              BIGINT,
+    ToolId          BIGINT,
+    ToolCode        NVARCHAR(50),
+    ToolName        NVARCHAR(100),
+    CavityCode      NVARCHAR(4),
+    StatusCodeId    BIGINT,
+    StatusCode      NVARCHAR(50),
+    StatusName      NVARCHAR(100),
+    Description     NVARCHAR(500),
+    ItemId          BIGINT,
+    ItemPartNumber  NVARCHAR(50),
+    ItemDescription NVARCHAR(500));
+
+INSERT INTO #Ord
+    (Id, ToolId, ToolCode, ToolName, CavityCode, StatusCodeId, StatusCode,
+     StatusName, Description, ItemId, ItemPartNumber, ItemDescription)
+EXEC Tools.ToolCavity_ListActiveByTool @ToolId = @OrdToolId;
+
+DECLARE @OrdCount INT = (SELECT COUNT(*) FROM #Ord);
+EXEC test.Assert_RowCount
+    @TestName = N'[Cavity order] all 3 active cavities returned',
+    @ExpectedCount = 3, @ActualCount = @OrdCount;
+
+DECLARE @OrdRow1 NVARCHAR(60) = (SELECT ItemPartNumber + N'/' + CavityCode FROM #Ord WHERE Seq = 1);
+EXEC test.Assert_IsEqual
+    @TestName = N'[Cavity order] row 1 is the first part''s lowest code',
+    @Expected = N'DUP-PART-A/b', @Actual = @OrdRow1;
+
+DECLARE @OrdRow2 NVARCHAR(60) = (SELECT ItemPartNumber + N'/' + CavityCode FROM #Ord WHERE Seq = 2);
+EXEC test.Assert_IsEqual
+    @TestName = N'[Cavity order] row 2 keeps the first part together',
+    @Expected = N'DUP-PART-A/c', @Actual = @OrdRow2;
+
+DECLARE @OrdRow3 NVARCHAR(60) = (SELECT ItemPartNumber + N'/' + CavityCode FROM #Ord WHERE Seq = 3);
+EXEC test.Assert_IsEqual
+    @TestName = N'[Cavity order] row 3 starts the second part, not code a first',
+    @Expected = N'DUP-PART-B/a', @Actual = @OrdRow3;
+
+DROP TABLE #Ord;
 GO
 
 EXEC test.EndTestFile;

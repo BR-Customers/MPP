@@ -2,7 +2,7 @@
 -- Procedure:   Tools.Tool_Duplicate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-18
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   Clones an existing Tool's CONFIGURATION onto a brand-new Tool row with
@@ -14,7 +14,7 @@
 --     * DieRankId           - MPP Quality's rank for this die design
 --     * ShotLimit           - design life (shots before rebuild), NOT a counter
 --     * Tools.ToolCavity    - every NON-deprecated cavity on the source, copied
---                             WHOLE: CavityNumber, Description, StatusCodeId AND
+--                             WHOLE: CavityCode, Description, StatusCodeId AND
 --                             ItemId. A Closed / Scrapped cavity is a decision
 --                             about the die DESIGN, not wear, so it carries over.
 --                             ItemId (0072) is the configured cavity-to-part map
@@ -104,6 +104,12 @@
 --                      the Old / New audit JSON.
 --                      Operator-facing messages call Code the Asset
 --                      Number, matching the relabelled form field.
+--   2026-09-10 - 1.2 - Tools.ToolCavity.CavityNumber INT becomes CavityCode
+--                      NVARCHAR(4) (migration 0076, per-part alphabetic cavity
+--                      identity). The clone copies the letter verbatim: the
+--                      code is per (Tool, Item), so a copy onto a brand-new
+--                      ToolId can never collide. Cavity ordering in the Old /
+--                      New audit JSON follows the code.
 -- =============================================
 CREATE OR ALTER PROCEDURE Tools.Tool_Duplicate
     @SourceToolId BIGINT,
@@ -317,14 +323,14 @@ BEGIN
                  FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))               AS Status,
                 t.ShotCount,
                 t.ShotLimit,
-                JSON_QUERY((SELECT c.CavityNumber, csc.Code AS Status, c.Description,
+                JSON_QUERY((SELECT c.CavityCode, csc.Code AS Status, c.Description,
                         JSON_QUERY((SELECT i.Id, i.PartNumber FROM Parts.Item i
                          WHERE i.Id = c.ItemId
                          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))       AS Item
                  FROM Tools.ToolCavity c
                  INNER JOIN Tools.ToolCavityStatusCode csc ON csc.Id = c.StatusCodeId
                  WHERE c.ToolId = t.Id AND c.DeprecatedAt IS NULL
-                 ORDER BY c.CavityNumber
+                 ORDER BY c.CavityCode
                  FOR JSON PATH))                                      AS Cavities,
                 JSON_QUERY((SELECT tad.Code AS AttributeCode, tad.Name AS AttributeName, ta.Value
                  FROM Tools.ToolAttribute ta
@@ -356,7 +362,7 @@ BEGIN
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
         -- --- INLINE mirror of Tools.ToolCavity_SaveAll (insert leg only).
-        -- The WHOLE cavity row is design: layout (CavityNumber + Description),
+        -- The WHOLE cavity row is design: layout (CavityCode + Description),
         -- status AND the configured part carry over as-is. A Closed / Scrapped
         -- cavity reflects a decision about the die DESIGN (a cavity blanked off
         -- in the drawing), not wear on one piece of steel, so the duplicate
@@ -364,9 +370,9 @@ BEGIN
         -- until the die is re-cut. A part deprecated since the source was
         -- configured drops to NULL rather than blocking the duplicate.
         INSERT INTO Tools.ToolCavity
-            (ToolId, CavityNumber, StatusCodeId, Description, ItemId,
+            (ToolId, CavityCode, StatusCodeId, Description, ItemId,
              CreatedAt, CreatedByUserId)
-        SELECT @NewId, c.CavityNumber, c.StatusCodeId, c.Description,
+        SELECT @NewId, c.CavityCode, c.StatusCodeId, c.Description,
                CASE WHEN i.Id IS NOT NULL AND i.DeprecatedAt IS NULL
                     THEN c.ItemId ELSE NULL END,
                SYSUTCDATETIME(), @AppUserId
@@ -406,14 +412,14 @@ BEGIN
                  FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))               AS Status,
                 t.ShotCount,
                 t.ShotLimit,
-                JSON_QUERY((SELECT c.CavityNumber, csc.Code AS Status, c.Description,
+                JSON_QUERY((SELECT c.CavityCode, csc.Code AS Status, c.Description,
                         JSON_QUERY((SELECT i.Id, i.PartNumber FROM Parts.Item i
                          WHERE i.Id = c.ItemId
                          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))       AS Item
                  FROM Tools.ToolCavity c
                  INNER JOIN Tools.ToolCavityStatusCode csc ON csc.Id = c.StatusCodeId
                  WHERE c.ToolId = t.Id AND c.DeprecatedAt IS NULL
-                 ORDER BY c.CavityNumber
+                 ORDER BY c.CavityCode
                  FOR JSON PATH))                                      AS Cavities,
                 JSON_QUERY((SELECT tad.Code AS AttributeCode, tad.Name AS AttributeName, ta.Value
                  FROM Tools.ToolAttribute ta

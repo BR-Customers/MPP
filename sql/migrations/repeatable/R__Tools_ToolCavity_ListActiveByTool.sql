@@ -4,11 +4,12 @@
 -- Created:     2026-06-15
 --
 -- Description:
---   Arc 2 Phase 3 (§4.3). Returns the ACTIVE (DeprecatedAt IS NULL) cavities of
---   a Tool whose ToolCavityStatusCode is 'Active', ordered by CavityNumber — the
---   die-cast operator station's cavity picker (only cavities a LOT may be cast
---   from). Read proc: NO status row, NO OUTPUT params; an empty rowset means the
---   Tool has no active cavities (mirrors Tools.ToolAssignment_ListActiveByCell).
+--   Arc 2 Phase 3 (4.3). Returns the ACTIVE (DeprecatedAt IS NULL) cavities of
+--   a Tool whose ToolCavityStatusCode is 'Active', ordered by part number then
+--   cavity code -- the die-cast operator station's cavity picker (only cavities
+--   a LOT may be cast from). Read proc: NO status row, NO OUTPUT params; an
+--   empty rowset means the Tool has no active cavities (mirrors
+--   Tools.ToolAssignment_ListActiveByCell).
 --
 --   PRODUCED-ITEM NOTE -- SUPERSEDED 2026-09-09 by migration 0072.
 --     This proc used to record that Tools.ToolCavity carried no ItemId, and
@@ -21,6 +22,16 @@
 --     cavity's part changes only when the die is re-cut) and this proc now
 --     returns it. Still NULLable: a non-family die may leave it unset and
 --     keep deriving the part from the LOT.
+--
+-- Change Log:
+--   2026-09-10 - CavityNumber INT becomes CavityCode NVARCHAR(4) (migration
+--                0076, per-part alphabetic cavity identity). Same column
+--                POSITION -- trailing-column-only is the 0072 convention and
+--                positional INSERT-EXEC consumers depend on it.
+--                ORDER BY gains the part: a family die now has a cavity 'a'
+--                per part, so ordering by code alone interleaves four
+--                unrelated part numbers down the picker. A NULL PartNumber
+--                sorts first, which is right: a non-family die is one group.
 -- =============================================
 CREATE OR ALTER PROCEDURE Tools.ToolCavity_ListActiveByTool
     @ToolId BIGINT
@@ -33,7 +44,7 @@ BEGIN
         tc.ToolId,
         t.Code            AS ToolCode,
         t.Name            AS ToolName,
-        tc.CavityNumber,
+        tc.CavityCode,
         tc.StatusCodeId,
         sc.Code           AS StatusCode,
         sc.Name           AS StatusName,
@@ -50,6 +61,6 @@ BEGIN
     WHERE tc.ToolId = @ToolId
       AND tc.DeprecatedAt IS NULL
       AND sc.Code = N'Active'
-    ORDER BY tc.CavityNumber;
+    ORDER BY it.PartNumber, tc.CavityCode;
 END;
 GO
