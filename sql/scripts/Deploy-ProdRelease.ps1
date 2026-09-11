@@ -389,6 +389,23 @@ ORDER BY t.Code, Part, tc.CavityNumber
         $_.Description -cmatch '[^a-zA-Z][A-Z][a-z]$' -and $_.Description.Substring($_.Description.Length - 1) -cne $_.NewCode })
     foreach ($a in $adv) { Finding "WARN" "0076" "$($a.Die) '$($a.Description)' becomes '$($a.NewCode)' -- the letter typed in the description disagrees" }
 }
+if (& $has "0077_downtime_approximate_utc_repair") {
+    # Exactly the rows the migration's UPDATE matches, shown before and after.
+    $apx = Q @"
+SELECT de.Id, loc.Code AS Location, ss.Name AS Shift, sh.ActualStart AS ShiftStartET,
+       CAST(de.StartedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(0)) AS ShownNowET,
+       CAST(sh.ActualStart AS DATETIME2(0)) AS ShownAfterET, de.DurationMinutes AS Minutes
+FROM Oee.DowntimeEvent de
+JOIN Oee.Shift sh ON sh.Id = de.ShiftId
+LEFT JOIN Oee.ShiftSchedule ss ON ss.Id = sh.ShiftScheduleId
+JOIN Location.Location loc ON loc.Id = de.LocationId
+WHERE de.IsApproximate = 1 AND de.DurationMinutes IS NOT NULL AND de.StartedAt = sh.ActualStart
+ORDER BY de.Id
+"@
+    Finding "INFO" "0077" "moves $($apx.Count) approximate downtime event(s) from Eastern wall-clock to UTC (times below)"
+    Save-Csv $apx "0077_approximate_repair.csv"
+    Table $apx @("Id", "Location", "Shift", "ShownNowET", "ShownAfterET", "Minutes")
+}
 if (@($Findings | Where-Object { $_.Gate -match '^00\d\d$' }).Count -eq 0 -and $pending.Count -gt 0) { Log "  No gates fired." "Green" }
 
 # ---------- [6] live activity + backups ----------
@@ -567,7 +584,7 @@ $out = & sqlcmd -S $ServerInstance @SqlcmdAuth -d $DatabaseName -i $deploySql -b
 $code = $LASTEXITCODE
 $sw.Stop()
 $out | ForEach-Object { "$_" } | Set-Content -Encoding UTF8 $logFile
-$out | ForEach-Object { "$_" } | Where-Object { $_ -match '^==|Msg \d+|Migration|0073|0076|ADVISORY|abort|error' } | ForEach-Object { Log "    $_" $(if ($_ -match 'Msg \d+|abort|error') { "Red" } else { "Gray" }) }
+$out | ForEach-Object { "$_" } | Where-Object { $_ -match '^==|Msg \d+|Migration|^\d{4}[: ]|ADVISORY|abort|error' } | ForEach-Object { Log "    $_" $(if ($_ -match 'Msg \d+|abort|error') { "Red" } else { "Gray" }) }
 Log ("  sqlcmd exit {0} after {1:N1}s (full log: deploy.log)" -f $code, $sw.Elapsed.TotalSeconds)
 if ($code -ne 0) {
     Log "  FAILED -- the transaction was rolled back; $DatabaseName is unchanged." "Red"
