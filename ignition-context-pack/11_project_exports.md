@@ -79,6 +79,15 @@ Only the modification metadata:
 
 It maps each changed file to its owning resource folder (nearest ancestor containing a `resource.json`), ships that folder's manifest plus every file the manifest declares, rewrites manifests that name an excluded file, and then **re-opens the archive it just wrote** to verify: root `project.json`, zero backslash entries, zero thumbnails or bytecode, and every manifest promise kept.
 
+It builds from **git at `-Until`, not the working tree** (`git archive` into a temp folder). The working tree is junctioned into the dev Gateway, which rewrites manifests on scan, and concurrent sessions leave uncommitted edits there — an archive must be exactly what is committed. Two consequences, both learned on the 2026-09-10 prod release:
+
+- **Run `git archive` with `-c core.autocrlf=false`.** On a Windows checkout with `autocrlf=true`, `git archive` emits CRLF, so every `view.json` / `code.py` / `query.sql` in the zip differs from the committed blob. Harmless to parse, but it defeats a byte-for-byte check against HEAD — which is the check that proves the archive is what was reviewed.
+- **Manifest-only churn is skipped.** A resource whose only change in the range is its `resource.json` dropping `thumbnail.png` is left out; the target already has that shape (the export rewrites manifests the same way), and shipping it would re-import an unchanged `view.json` over whatever is on the Gateway.
+
+It also writes a `<label>_<stamp>_CONTENTS.txt` beside the zips — every resource, NEW/MOD, and the commits that touched it — as the import checklist, and lists any **deleted** resources loudly (an import cannot remove them; delete by hand in the Designer).
+
+**Import through Designer → File → Import**, not the Gateway web page's project import: a scoped archive is a partial project.
+
 ---
 
 ## Import order
