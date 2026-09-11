@@ -50,16 +50,24 @@ SELECT AimBaseUrl, AimCompanyCode,
 FROM Lots.AimPoolConfig;
 
 -- 3. AIM serial pool ----------------------------------------------------------------
-PRINT '--- 3. AIM shipper-ID pool (unconsumed)';
+-- NOTE: provenance cannot be proven from the pool. AimPoolGateway.topupTick pools a
+-- fetched serial WITHOUT FetchedInterfaceLogId, and AimHttp's success log does not
+-- record the serial, so a genuinely fetched id and a hand-seeded 9-digit id look
+-- identical. Compare the ids listed below against AIM's own counter.
+PRINT '--- 3. AIM shipper-ID pool (unconsumed) - claim order is FetchedAt, Id';
 SELECT COUNT(*) AS Unconsumed,
-       SUM(CASE WHEN FetchedInterfaceLogId IS NOT NULL THEN 1 ELSE 0 END) AS FetchedFromAim,
        SUM(CASE WHEN AimShipperId NOT LIKE N'[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]' THEN 1 ELSE 0 END) AS NotNineDigits,
-       MIN(AimShipperId) AS FirstToBeClaimed,
+       MIN(FetchedAt) AS OldestFetchedAtUtc, MAX(FetchedAt) AS NewestFetchedAtUtc,
        CASE WHEN COUNT(*) = 0 THEN 'EMPTY - Container_Complete will refuse (container left open)'
-            WHEN SUM(CASE WHEN FetchedInterfaceLogId IS NULL THEN 1 ELSE 0 END) > 0
-                 THEN 'CONTAINS IDS NOT FETCHED FROM AIM - labels would carry a synthetic serial'
-            ELSE 'OK' END AS Verdict
+            WHEN SUM(CASE WHEN AimShipperId NOT LIKE N'[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]' THEN 1 ELSE 0 END) > 0
+                 THEN 'CONTAINS NON-AIM-FORMAT IDS - they will be claimed and fail the AIM post'
+            ELSE 'REVIEW - confirm the ids below came from the intended AIM company' END AS Verdict
 FROM Lots.AimShipperIdPool WHERE ConsumedAt IS NULL;
+SELECT TOP 10 Id, AimShipperId, FetchedAt AS FetchedAtUtc
+FROM Lots.AimShipperIdPool WHERE ConsumedAt IS NULL ORDER BY FetchedAt, Id;
+SELECT COUNT(*) AS AimNextserialCallsOk, MAX(il.LoggedAt) AS LastOkCall
+FROM Audit.InterfaceLog il
+WHERE il.SystemName = N'AIM' AND il.Description = N'AIM nextserial' AND il.ErrorCondition IS NULL;
 
 -- 4. Honda container label template -------------------------------------------------
 PRINT '--- 4. Active Container (Honda shipping) label template';
