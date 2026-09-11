@@ -1,8 +1,14 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Container_Complete.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.1
+-- Version:     1.2
 -- Description: Atomic container close (Arc 2 Phase 6; FDS-06-014/06-028/07-010a).
+--              v1.2 (2026-09-11, Migration 0079): when @TerminalLocationId carries
+--              SuppressAimAndLabel = true (parallel run beside legacy), the empty-pool
+--              check, the AIM claim and the ShippingLabel row are all skipped. The
+--              container still completes and closes its FG LOTs; ShippingLabelId and
+--              AimShipperId come back NULL, so Container.complete neither prints nor
+--              posts.
 --              Validates the container is Open + full (accumulated tray parts >= target
 --              TraysPerContainer*PartsPerTray), enforces the RequiresCompletionConfirm
 --              terminal gate (OI-16), then INLINES the AIM-ID claim (FIFO from the
@@ -47,6 +53,7 @@ BEGIN
             @ClaimedPoolId BIGINT, @LabelTypeId BIGINT, @Activity NVARCHAR(500), @NewValue NVARCHAR(MAX);
     DECLARE @claimed TABLE (Id BIGINT, AimShipperId NVARCHAR(50));
     DECLARE @FgLotId BIGINT;
+    DECLARE @Suppress BIT = 0;
 
     BEGIN TRY
         -- ---- Tier 1 ----
@@ -115,8 +122,17 @@ BEGIN
             END
         END
 
+        -- ---- v1.2 parallel run: terminal SuppressAimAndLabel (Migration 0079) ----
+        -- Read like RequiresCompletionConfirm: an absent attribute is false.
+        SET @Suppress = CASE WHEN LOWER(ISNULL((
+            SELECT TOP 1 la.AttributeValue
+            FROM Location.LocationAttribute la
+            INNER JOIN Location.LocationAttributeDefinition lad ON lad.Id = la.LocationAttributeDefinitionId
+            WHERE la.LocationId = @TerminalLocationId AND lad.AttributeName = N'SuppressAimAndLabel'
+              AND lad.DeprecatedAt IS NULL), N'')) IN (N'true', N'1', N'yes') THEN 1 ELSE 0 END;
+
         -- ---- OI-33 empty-pool hard-fail (BEFORE tran: container stays Open) ----
-        IF NOT EXISTS (SELECT 1 FROM Lots.AimShipperIdPool WHERE ConsumedAt IS NULL)
+        IF @Suppress = 0 AND NOT EXISTS (SELECT 1 FROM Lots.AimShipperIdPool WHERE ConsumedAt IS NULL)
         BEGIN
             SET @Message = N'AIM shipper ID pool is empty. Container left open.';
             EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'Container', @EntityId = @ContainerId,
@@ -130,50 +146,54 @@ BEGIN
         -- ---- Mutation (atomic): inline AIM claim -> ShippingLabel -> status flip ----
         BEGIN TRANSACTION;
 
-        ;WITH c AS (
-            SELECT TOP 1 Id, AimShipperId, ConsumedAt, ConsumedByContainerId, ConsumedByUserId
-            FROM Lots.AimShipperIdPool WITH (ROWLOCK, UPDLOCK, READPAST)
-            WHERE ConsumedAt IS NULL
-            ORDER BY FetchedAt, Id)
-        UPDATE c
-            SET ConsumedAt = SYSUTCDATETIME(), ConsumedByContainerId = @ContainerId, ConsumedByUserId = @AppUserId
-        OUTPUT inserted.Id, inserted.AimShipperId INTO @claimed (Id, AimShipperId);
-
-        SELECT @ClaimedPoolId = Id, @AimShipperId = AimShipperId FROM @claimed;
-
-        -- AIM post-back payload, frozen at completion. Written in the same transaction
-        -- as the claim: a rolled-back container never leaves a row owed to AIM.
-        DECLARE @PostQty  INT = (SELECT ISNULL(SUM(t.PartsClosedCount), 0)
-                                 FROM Lots.ContainerTray t
-                                 WHERE t.ContainerId = @ContainerId AND t.ClosedAt IS NOT NULL);
-        DECLARE @PostLot  NVARCHAR(50) = (SELECT TOP 1 l.LotName
-                                          FROM Lots.ContainerTray t
-                                          INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
-                                          WHERE t.ContainerId = @ContainerId
-                                          ORDER BY t.TrayPosition);
-        -- 2026-08-04: AIM customer part is derived from Item.PartNumber (dash-strip),
-        -- not a stored per-item column (Migration 0054; Parts.ufn_AimCustomerPartNumber
-        -- header has the evidence). PartNumber is NOT NULL, so this can never be NULL
-        -- for a real item.
-        DECLARE @PostPart NVARCHAR(50) = (SELECT Parts.ufn_AimCustomerPartNumber(i.PartNumber)
-                                          FROM Lots.Container c
-                                          INNER JOIN Parts.Item i ON i.Id = c.ItemId
-                                          WHERE c.Id = @ContainerId);
-
-        UPDATE Lots.AimShipperIdPool
-           SET CustomerPartNumber = @PostPart,
-               Quantity           = @PostQty,
-               LotNumber          = @PostLot
-         WHERE Id = @ClaimedPoolId;
-
-        IF @ClaimedPoolId IS NULL
+        -- v1.2: a suppressed terminal claims nothing (the pool is left untouched).
+        IF @Suppress = 0
         BEGIN
-            -- lost the race: no-op COMMIT (never ROLLBACK in an INSERT-EXEC-captured proc)
-            COMMIT TRANSACTION;
-            SET @Status = 0;
-            SET @Message = N'AIM shipper ID pool is empty. Container left open.';
-            SELECT @Status AS Status, @Message AS Message, @ShippingLabelId AS ShippingLabelId, @AimShipperId AS AimShipperId;
-            RETURN;
+            ;WITH c AS (
+                SELECT TOP 1 Id, AimShipperId, ConsumedAt, ConsumedByContainerId, ConsumedByUserId
+                FROM Lots.AimShipperIdPool WITH (ROWLOCK, UPDLOCK, READPAST)
+                WHERE ConsumedAt IS NULL
+                ORDER BY FetchedAt, Id)
+            UPDATE c
+                SET ConsumedAt = SYSUTCDATETIME(), ConsumedByContainerId = @ContainerId, ConsumedByUserId = @AppUserId
+            OUTPUT inserted.Id, inserted.AimShipperId INTO @claimed (Id, AimShipperId);
+
+            SELECT @ClaimedPoolId = Id, @AimShipperId = AimShipperId FROM @claimed;
+
+            -- AIM post-back payload, frozen at completion. Written in the same transaction
+            -- as the claim: a rolled-back container never leaves a row owed to AIM.
+            DECLARE @PostQty  INT = (SELECT ISNULL(SUM(t.PartsClosedCount), 0)
+                                     FROM Lots.ContainerTray t
+                                     WHERE t.ContainerId = @ContainerId AND t.ClosedAt IS NOT NULL);
+            DECLARE @PostLot  NVARCHAR(50) = (SELECT TOP 1 l.LotName
+                                              FROM Lots.ContainerTray t
+                                              INNER JOIN Lots.Lot l ON l.Id = t.FinishedGoodLotId
+                                              WHERE t.ContainerId = @ContainerId
+                                              ORDER BY t.TrayPosition);
+            -- 2026-08-04: AIM customer part is derived from Item.PartNumber (dash-strip),
+            -- not a stored per-item column (Migration 0054; Parts.ufn_AimCustomerPartNumber
+            -- header has the evidence). PartNumber is NOT NULL, so this can never be NULL
+            -- for a real item.
+            DECLARE @PostPart NVARCHAR(50) = (SELECT Parts.ufn_AimCustomerPartNumber(i.PartNumber)
+                                              FROM Lots.Container c
+                                              INNER JOIN Parts.Item i ON i.Id = c.ItemId
+                                              WHERE c.Id = @ContainerId);
+
+            UPDATE Lots.AimShipperIdPool
+               SET CustomerPartNumber = @PostPart,
+                   Quantity           = @PostQty,
+                   LotNumber          = @PostLot
+             WHERE Id = @ClaimedPoolId;
+
+            IF @ClaimedPoolId IS NULL
+            BEGIN
+                -- lost the race: no-op COMMIT (never ROLLBACK in an INSERT-EXEC-captured proc)
+                COMMIT TRANSACTION;
+                SET @Status = 0;
+                SET @Message = N'AIM shipper ID pool is empty. Container left open.';
+                SELECT @Status AS Status, @Message AS Message, @ShippingLabelId AS ShippingLabelId, @AimShipperId AS AimShipperId;
+                RETURN;
+            END
         END
 
         -- Mark the container Complete FIRST so the label render resolves CompletedAt ({MfgDate}).
@@ -183,11 +203,16 @@ BEGIN
         -- LabelTemplate + tokens (deterministic; a missing template resolves to '') and
         -- persist it on the row so the async dispatcher + stranded-sweep re-send the exact
         -- bytes without re-rendering (survives a Gateway restart between complete and print).
-        DECLARE @ShipZpl NVARCHAR(MAX) = Lots.ufn_ShippingLabelZpl(@ContainerId, @AimShipperId);
+        -- v1.2: no label row on a suppressed terminal -- nothing for the dispatcher or the
+        -- stranded-print sweep to pick up.
+        IF @Suppress = 0
+        BEGIN
+            DECLARE @ShipZpl NVARCHAR(MAX) = Lots.ufn_ShippingLabelZpl(@ContainerId, @AimShipperId);
 
-        INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId, Initial, PrintedByUserId, TerminalLocationId, ZplContent)
-        VALUES (@ContainerId, @AimShipperId, @LabelTypeId, 1, @AppUserId, @TerminalLocationId, @ShipZpl);
-        SET @ShippingLabelId = SCOPE_IDENTITY();
+            INSERT INTO Lots.ShippingLabel (ContainerId, AimShipperId, LabelTypeCodeId, Initial, PrintedByUserId, TerminalLocationId, ZplContent)
+            VALUES (@ContainerId, @AimShipperId, @LabelTypeId, 1, @AppUserId, @TerminalLocationId, @ShipZpl);
+            SET @ShippingLabelId = SCOPE_IDENTITY();
+        END
 
         -- FG close (FAT #21): close every linked finished-good LOT (tray = LOT) that is
         -- still Good, now that the container is Complete. Delegates the Good->Closed
@@ -217,9 +242,11 @@ BEGIN
         CLOSE fg_cur; DEALLOCATE fg_cur;
 
         SET @Activity = Audit.ufn_TruncateActivity(N'Container #' + CAST(@ContainerId AS NVARCHAR(20)) + N' ' + Audit.ufn_MidDot()
-            + N' AIM ' + @AimShipperId + N' ' + Audit.ufn_MidDot() + N' Completed');
+            + CASE WHEN @Suppress = 1 THEN N' AIM + label suppressed ' ELSE N' AIM ' + @AimShipperId + N' ' END
+            + Audit.ufn_MidDot() + N' Completed');
         SET @NewValue = (SELECT @ContainerId AS ContainerId, @AimShipperId AS AimShipperId, @ShippingLabelId AS ShippingLabelId,
-            @Accum AS AccumulatedParts FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+            @Accum AS AccumulatedParts, CAST(@Suppress AS BIT) AS SuppressedAimAndLabel
+            FOR JSON PATH, INCLUDE_NULL_VALUES, WITHOUT_ARRAY_WRAPPER);
 
         EXEC Audit.Audit_LogOperation
             @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = NULL,
@@ -229,7 +256,9 @@ BEGIN
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'Container completed; AIM ' + @AimShipperId + N' claimed.';
+        SET @Message = CASE WHEN @Suppress = 1
+                            THEN N'Container completed; AIM and label suppressed at this terminal.'
+                            ELSE N'Container completed; AIM ' + @AimShipperId + N' claimed.' END;
         SELECT @Status AS Status, @Message AS Message, @ShippingLabelId AS ShippingLabelId, @AimShipperId AS AimShipperId;
     END TRY
     BEGIN CATCH

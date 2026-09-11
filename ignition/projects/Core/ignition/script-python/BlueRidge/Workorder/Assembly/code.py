@@ -398,6 +398,10 @@ def completeBoxToPrinter(containerId, terminalLocationId, printerLocationId, app
     # Brief D: dispatch the persisted shipping label (rendered + stored by Container_Complete)
     # by its row id -- the dispatcher reads ShippingLabel.ZplContent and prints async.
     slId = res.get("ShippingLabelId")
+    if slId is None:
+        # SuppressAimAndLabel terminal (parallel run, Container_Complete v1.2): the box
+        # completed with no AIM serial and no label row -- nothing to print.
+        return {"Status": 1, "Message": res.get("Message") or "Box completed; label suppressed at this terminal."}
     disp = BlueRidge.Lots.ShippingDispatcher.dispatch(
         shippingLabelId=slId, terminalLocationId=terminalLocationId, printerLocationId=printerLocationId)
     if disp and disp.get("Status"):
