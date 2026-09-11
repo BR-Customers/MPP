@@ -152,7 +152,10 @@ function Invoke-SqlScalar {
     param([string]$Query)
     $out = & sqlcmd -S $ServerInstance @AuthArgs -d $DatabaseName -Q $Query -b -I -C -W -h -1 2>&1
     if ($LASTEXITCODE -ne 0) { throw "sqlcmd query failed: $out" }
-    return ($out | Where-Object { $_ -notmatch '^\s*$' } | Select-Object -First 1).ToString().Trim()
+    # Skip informational "Warning: ..." lines -- sqlcmd interleaves them with
+    # results, and a warning must never be mistaken for the value.
+    return ($out | Where-Object { $_ -notmatch '^\s*$' -and $_ -notmatch '^Warning:' } |
+            Select-Object -First 1).ToString().Trim()
 }
 
 function Invoke-SqlTable {
@@ -198,7 +201,7 @@ Write-Host "  0072 (ToolCavity.ItemId) applied." -ForegroundColor Green
 
 $already = Invoke-SqlScalar "SET NOCOUNT ON; SELECT CAST(COUNT(*) AS NVARCHAR(2)) FROM dbo.SchemaVersion WHERE MigrationId = N'$MigrationId';"
 if ($already -eq "1") {
-    Write-Host "  0076 is ALREADY recorded -- the migration will self-skip; repeatables still re-apply." -ForegroundColor DarkYellow
+    Write-Host "  0076 is ALREADY recorded -- the migration file is skipped; repeatables still re-apply." -ForegroundColor DarkYellow
 }
 
 # ------------------------------------------------------------
@@ -220,8 +223,31 @@ if ($over26 -ne "0") { throw "$over26 (Tool, Item) group(s) carry more than 26 c
 Write-Host "  No (Tool, Item) group exceeds 26." -ForegroundColor Green
 
 # The one that actually bites.
-$unmapped = Invoke-SqlTable @"
-SET NOCOUNT ON;
+#
+# GATE ON A NUMBER, NOT ON PARSED TEXT. An earlier version counted the rows
+# sqlcmd printed -- and COUNT(DISTINCT ItemId) makes SQL Server emit
+# "Warning: Null value is eliminated by an aggregate" whenever ANY cavity has
+# a NULL ItemId, which every single-part die legitimately does. The warning
+# line was counted as an offending die, so the gate false-fired on every
+# database with a single-part die: MPP_MES_Dev, and prod. The decision is now
+# a scalar; the table is printed only to name the offenders once we know
+# there are some. ANSI_WARNINGS OFF keeps the warning out of both.
+$familyGateSql = @"
+SET NOCOUNT ON; SET ANSI_WARNINGS OFF;
+SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM (
+  SELECT tc.ToolId
+  FROM Tools.ToolCavity tc
+  WHERE tc.DeprecatedAt IS NULL
+  GROUP BY tc.ToolId
+  HAVING COUNT(DISTINCT tc.ItemId) >= 2
+     AND SUM(CASE WHEN tc.ItemId IS NULL THEN 1 ELSE 0 END) > 0) x;
+"@
+$offenderCount = Invoke-SqlScalar $familyGateSql
+if ($offenderCount -ne "0") {
+    Write-Host ""
+    Write-Host "  $offenderCount FAMILY DIE(S) WITH AN UNMAPPED CAVITY:" -ForegroundColor Red
+    Invoke-SqlTable @"
+SET NOCOUNT ON; SET ANSI_WARNINGS OFF;
 SELECT t.Code AS Tool,
        COUNT(DISTINCT tc.ItemId) AS Parts,
        SUM(CASE WHEN tc.ItemId IS NULL THEN 1 ELSE 0 END) AS Unmapped
@@ -231,12 +257,7 @@ WHERE tc.DeprecatedAt IS NULL
 GROUP BY t.Code
 HAVING COUNT(DISTINCT tc.ItemId) >= 2
    AND SUM(CASE WHEN tc.ItemId IS NULL THEN 1 ELSE 0 END) > 0;
-"@
-$offenders = @($unmapped | Where-Object { $_ -match '\S' -and $_ -notmatch '^Tool\s*\||^-+' })
-if ($offenders.Count -gt 0) {
-    Write-Host ""
-    Write-Host "  FAMILY DIE(S) WITH AN UNMAPPED CAVITY:" -ForegroundColor Red
-    $offenders | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
+"@ | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
     Write-Host ""
     throw "An unmapped cavity on a family die falls into the NULL group alone and mis-letters its peers. Map every cavity to its part in the Tool Cavities editor, then re-run. (The migration itself aborts on this too -- this check just tells you sooner, and by name.)"
 }
@@ -308,7 +329,10 @@ if (-not $Force) {
 
 Write-Host ""
 Write-Host "[5/6] Applying..." -ForegroundColor Cyan
-Invoke-SqlFile $MigrationFile
+# Only when pending. The migration's top-of-file RETURN exits its FIRST batch
+# only; re-run after it is recorded, the later batches still execute and name
+# the dropped CavityNumber column (Msg 207). It does not self-skip.
+if ($already -ne "1") { Invoke-SqlFile $MigrationFile }
 foreach ($f in $RepeatableFiles) {
     Write-Host "  ~ $f"
     Invoke-SqlFile (Join-Path $Repeatable $f)
