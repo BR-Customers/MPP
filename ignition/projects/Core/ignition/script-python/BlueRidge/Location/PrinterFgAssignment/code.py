@@ -27,14 +27,20 @@ def listCardsForStation(stationTerminalLocationId, cellLocationId, _refreshToken
        OPEN-container fill at the cell (Container.getOpenByCell, matched on ItemId).
        Each row gets OpenContainerId / FillAccum / FillTarget / IsFull (0 when the
        printer is unassigned or its FG has no open container). Always a list, so a
-       runScript-bound panel prop is never overwritten with null."""
+       runScript-bound panel prop is never overwritten with null.
+
+       2026-09-11 (migration 0078): the box is THIS station's (else an unowned one),
+       ByCount only -- the same resolution Assembly_CompleteTray files the card's
+       tray into. Reading the whole line let a card show, and Complete, another
+       METTs station's box of the same part."""
     tid  = BlueRidge.Common.Util.extractQualifiedValues(stationTerminalLocationId)
     cell = BlueRidge.Common.Util.extractQualifiedValues(cellLocationId)
     cards = listForStation(tid) or []
     openByItem = {}
-    for c in (BlueRidge.Lots.Container.getOpenByCell(cell) or []):
+    for c in (BlueRidge.Workorder.Assembly.getStationContainerRows(cell, tid, "ByCount") or []):
         c = c or {}
-        openByItem[c.get("ItemId")] = c
+        if c.get("ItemId") not in openByItem:     # own box sorts first
+            openByItem[c.get("ItemId")] = c
     out = []
     for r in cards:
         r = dict(r or {})

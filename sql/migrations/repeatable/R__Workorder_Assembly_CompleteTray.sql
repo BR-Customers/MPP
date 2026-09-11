@@ -1,6 +1,18 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_CompleteTray.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.4 (2026-09-11, migration 0078) - the open box is scoped to the
+--              STATION. When @TerminalLocationId is a Terminal it is the station:
+--              the tray goes to that station's open box for (line, part); failing
+--              that it CLAIMS an unowned open box for (line, part) (stamps
+--              Lots.Container.StationLocationId -- every pre-0078 box is unowned,
+--              so none is stranded); failing that it opens a box owned by the
+--              station. The full-box guard (step 8) uses the same resolution, so
+--              one station's full box never blocks another. A NULL or non-Terminal
+--              @TerminalLocationId keeps the pre-0078 line-wide rule (oldest open
+--              box for (line, part), whoever owns it). WHY: METTs A and METTs B on
+--              line MA2-6MACH run the same part numbers at once into physically
+--              separate boxes, and each switches between several part boxes.
 -- Version:     1.3 (2026-08-20) - result set now also returns @TraysPerContainer.
 --              Additive only (no behavior change here): lets the ByCount caller
 --              (BlueRidge.Workorder.Assembly.handleTrayComplete) decide whether a
@@ -105,6 +117,15 @@ BEGIN
     DECLARE @Accum INT, @Target INT, @TrayPosition INT;
     DECLARE @OpenedContainer BIT = 0;
     DECLARE @OpenCid BIGINT, @OpenAccum INT, @FullTarget INT;
+
+    -- Station (0078): the terminal filling the box, or NULL for the pre-0078
+    -- line-wide rule. Only a Terminal-type location counts -- callers that pass
+    -- the line or a cell as the "terminal" stay line-wide.
+    DECLARE @StationLocationId BIGINT = (
+        SELECT l.Id FROM Location.Location l
+        INNER JOIN Location.LocationTypeDefinition d ON d.Id = l.LocationTypeDefinitionId
+        WHERE l.Id = @TerminalLocationId AND d.Code = N'Terminal');
+    DECLARE @ClaimUnowned BIT = 0;
 
     -- FG-LOT mint locals (mirror R__Lots_Lot_Create)
     DECLARE @MintedName NVARCHAR(50),
@@ -245,9 +266,24 @@ BEGIN
         IF @TraysPerContainer IS NOT NULL AND @PartsPerTray IS NOT NULL
         BEGIN
             SET @FullTarget = @TraysPerContainer * @PartsPerTray;
-            SELECT TOP 1 @OpenCid = Id FROM Lots.Container
-            WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
-            ORDER BY OpenedAt, Id;
+            -- Same box resolution as B2 (0078): own box, else the unowned box it
+            -- would claim; line-wide when there is no station.
+            IF @StationLocationId IS NOT NULL
+            BEGIN
+                SELECT TOP 1 @OpenCid = Id FROM Lots.Container
+                WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+                  AND StationLocationId = @StationLocationId
+                ORDER BY OpenedAt, Id;
+                IF @OpenCid IS NULL
+                    SELECT TOP 1 @OpenCid = Id FROM Lots.Container
+                    WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+                      AND StationLocationId IS NULL
+                    ORDER BY OpenedAt, Id;
+            END
+            ELSE
+                SELECT TOP 1 @OpenCid = Id FROM Lots.Container
+                WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+                ORDER BY OpenedAt, Id;
             IF @OpenCid IS NOT NULL
             BEGIN
                 SET @OpenAccum = (SELECT ISNULL(SUM(PartsClosedCount), 0) FROM Lots.ContainerTray WHERE ContainerId = @OpenCid AND ClosedAt IS NOT NULL);
@@ -346,22 +382,46 @@ BEGIN
             @LogEntityTypeCode = N'Lot', @EntityId = @FinishedGoodLotId, @LogEventTypeCode = N'LotCreated',
             @LogSeverityCode = N'Info', @Description = @Activity, @OldValue = NULL, @NewValue = @NewValue;
 
-        -- ---- B2. Container: find the cell's open container for this Item, else
-        --      auto-open one (mirror R__Lots_Container_Open) ----
-        SELECT TOP 1 @ContainerId = Id FROM Lots.Container
-        WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
-        ORDER BY OpenedAt, Id;
+        -- ---- B2. Container: find the open box for this Item, else auto-open one
+        --      (mirror R__Lots_Container_Open). 0078: with a station, its OWN box,
+        --      else CLAIM an unowned one, else open one owned by the station.
+        --      UPDLOCK+HOLDLOCK so two stations cannot claim the same unowned box. ----
+        IF @StationLocationId IS NOT NULL
+        BEGIN
+            SELECT TOP 1 @ContainerId = Id FROM Lots.Container WITH (UPDLOCK, HOLDLOCK)
+            WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+              AND StationLocationId = @StationLocationId
+            ORDER BY OpenedAt, Id;
+            IF @ContainerId IS NULL
+            BEGIN
+                SELECT TOP 1 @ContainerId = Id FROM Lots.Container WITH (UPDLOCK, HOLDLOCK)
+                WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+                  AND StationLocationId IS NULL
+                ORDER BY OpenedAt, Id;
+                IF @ContainerId IS NOT NULL
+                BEGIN
+                    UPDATE Lots.Container SET StationLocationId = @StationLocationId WHERE Id = @ContainerId;
+                    SET @ClaimUnowned = 1;
+                END
+            END
+        END
+        ELSE
+            SELECT TOP 1 @ContainerId = Id FROM Lots.Container
+            WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+            ORDER BY OpenedAt, Id;
 
         IF @ContainerId IS NULL
         BEGIN
-            INSERT INTO Lots.Container (ItemId, ContainerConfigId, CurrentLocationId, ContainerStatusCodeId, OpenedAt, CreatedByUserId)
-            VALUES (@FinishedGoodItemId, @ContainerConfigId, @CellLocationId, 1, SYSUTCDATETIME(), @AppUserId);
+            INSERT INTO Lots.Container (ItemId, ContainerConfigId, CurrentLocationId, ContainerStatusCodeId, OpenedAt, CreatedByUserId, StationLocationId)
+            VALUES (@FinishedGoodItemId, @ContainerConfigId, @CellLocationId, 1, SYSUTCDATETIME(), @AppUserId, @StationLocationId);
             SET @ContainerId = SCOPE_IDENTITY();
             SET @OpenedContainer = 1;
 
             SET @Activity = Audit.ufn_TruncateActivity(ISNULL(@CellCode, N'?') + N' ' + Audit.ufn_MidDot() + N' Container ' + Audit.ufn_MidDot() + N' Opened');
             SET @NewValue = (SELECT JSON_QUERY((SELECT i.Id, i.PartNumber AS Code, i.Description AS Name FROM Parts.Item i WHERE i.Id = @FinishedGoodItemId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Item,
-                    @ContainerConfigId AS ContainerConfigId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+                    @ContainerConfigId AS ContainerConfigId,
+                    JSON_QUERY((SELECT s.Id, s.Code, s.Name FROM Location.Location s WHERE s.Id = @StationLocationId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Station
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
             EXEC Audit.Audit_LogOperation @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = @CellLocationId,
                 @LogEntityTypeCode = N'Container', @EntityId = @ContainerId, @LogEventTypeCode = N'ContainerOpened',
                 @LogSeverityCode = N'Info', @Description = @Activity, @OldValue = NULL, @NewValue = @NewValue;
@@ -465,7 +525,9 @@ BEGIN
         SET @NewValue = (SELECT @ContainerId AS ContainerId, @TrayPosition AS TrayPosition, @PieceCount AS PartsClosedCount,
                 @ClosureMethod AS ClosureMethod,
                 JSON_QUERY((SELECT fl.Id, fl.LotName FROM Lots.Lot fl WHERE fl.Id = @FinishedGoodLotId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS FinishedGoodLot,
-                @Accum AS ContainerAccumulatedParts, @ContainerFull AS ContainerFull
+                @Accum AS ContainerAccumulatedParts, @ContainerFull AS ContainerFull,
+                JSON_QUERY((SELECT s.Id, s.Code, s.Name FROM Location.Location s WHERE s.Id = @StationLocationId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Station,
+                @ClaimUnowned AS ClaimedUnownedContainer
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
         EXEC Audit.Audit_LogOperation @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = @CellLocationId,
             @LogEntityTypeCode = N'ContainerTray', @EntityId = @ContainerTrayId, @LogEventTypeCode = N'TrayClosed',

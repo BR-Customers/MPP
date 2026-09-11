@@ -126,7 +126,7 @@
     "custom.container": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Workorder.Assembly.getStationContainerRows\", 0, {session.custom.cell.locationId}, {session.custom.terminal.terminalLocationId}, {session.custom.closureMethod}, {view.custom.selectedFinishedGoodItemId}, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -832,6 +832,27 @@
                               }
                             },
                             "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "OpenBoxes"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "runScript(\"BlueRidge.Workorder.Assembly.getStationOpenBoxesText\", 0, {session.custom.cell.locationId}, {session.custom.terminal.terminalLocationId}, {session.custom.closureMethod}, {view.custom.refreshToken})"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-sub"
+                              }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
                         "meta": {
@@ -1214,7 +1235,7 @@
                                   "component": {
                                     "onActionPerformed": {
                                       "config": {
-                                        "script": "\tresult \u003d BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId, self.session.custom.closureMethod)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part\u0027s config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft \u003d {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerComplete\") is not None:\n\t\t\tcc \u003d result.get(\"ContainerComplete\")\n\t\t\tif cc and cc.get(\"Status\"):\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container complete\", \"Single-tray container shipped automatically.\", \"success\")\n\t\t\telse:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container complete failed\", (cc.get(\"Message\") if cc else \"Unknown error\"), \"error\")\n\t\telif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")\n\t\t# D9 notice LAST. The tray has already committed in its own transaction,\n\t\t# so this cosmetic read-back must not be able to cost the operator the\n\t\t# next-tray re-prime, the refresh, or the container-full prompt.\n\t\tBlueRidge.Common.Ui.crtNotice(BlueRidge.Lots.Lot.crtNamesFor([result.get(\"FinishedGoodLotId\")]))"
+                                        "script": "\tresult \u003d BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId, self.session.custom.closureMethod, self.session.custom.terminal.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part\u0027s config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft \u003d {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerComplete\") is not None:\n\t\t\tcc \u003d result.get(\"ContainerComplete\")\n\t\t\tif cc and cc.get(\"Status\"):\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container complete\", \"Single-tray container shipped automatically.\", \"success\")\n\t\t\telse:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Container complete failed\", (cc.get(\"Message\") if cc else \"Unknown error\"), \"error\")\n\t\telif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")\n\t\t# D9 notice LAST. The tray has already committed in its own transaction,\n\t\t# so this cosmetic read-back must not be able to cost the operator the\n\t\t# next-tray re-prime, the refresh, or the container-full prompt.\n\t\tBlueRidge.Common.Ui.crtNotice(BlueRidge.Lots.Lot.crtNamesFor([result.get(\"FinishedGoodLotId\")]))"
                                       },
                                       "scope": "G",
                                       "type": "script"
@@ -1328,7 +1349,7 @@
                               "component": {
                                 "onActionPerformed": {
                                   "config": {
-                                    "script": "\tc \u003d self.view.custom.container\n\tcellId \u003d self.session.custom.cell.locationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed\u003dTrue, terminalLocationId\u003dcellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                                    "script": "\tc \u003d self.view.custom.container\n\tcellId \u003d self.session.custom.cell.locationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed\u003dTrue, terminalLocationId\u003dself.session.custom.terminal.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                                   },
                                   "scope": "G",
                                   "type": "script"
@@ -1579,7 +1600,7 @@
       "system": {
         "onStartup": {
           "config": {
-            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal\u0027s parent line.\n\tt \u003d self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell \u003d {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\t\t# Pre-select the recommended finished good (best BOM match against ready line inventory).\n\t\tself.view.custom.selectedFinishedGoodItemId \u003d BlueRidge.Workorder.Assembly.getRecommendedFinishedGoodId(t.get(\"zoneLocationId\"))\n\ttry:\n\t\tself.session.custom.presence.policy \u003d \"confirm\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal\u0027s parent line.\n\tt \u003d self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell \u003d {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\t\t# Pre-select the part of this station\u0027s open box, else the recommended finished good.\n\t\tself.view.custom.selectedFinishedGoodItemId \u003d BlueRidge.Workorder.Assembly.getDefaultFinishedGoodId(t.get(\"zoneLocationId\"), t.get(\"terminalLocationId\"), self.session.custom.closureMethod)\n\ttry:\n\t\tself.session.custom.presence.policy \u003d \"confirm\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
           },
           "scope": "G",
           "type": "script"

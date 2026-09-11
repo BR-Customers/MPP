@@ -46,14 +46,86 @@ def completeTray(finishedGoodItemId, pieceCount, cellLocationId,
     return BlueRidge.Common.Db.execMutation("workorder/Assembly_CompleteTray", params)
 
 
-def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocationId, closureMethod=None):
+def _asId(value):
+    """A BIGINT id from whatever a binding/runScript hands over (QualifiedValue, Long,
+       int, numeric string), or None."""
+    v = BlueRidge.Common.Util.extractQualifiedValues(value)
+    if v is None or ("%s" % v).strip() == "":
+        return None
+    try:
+        return long(v)
+    except (ValueError, TypeError):
+        return None
+
+
+def getStationContainerRows(cellLocationId, terminalLocationId, closureMethod,
+                            selectedFinishedGoodItemId=None, _refreshToken=None):
+    """The assembly screen's box, as a list the view's transform takes [0] of.
+
+       Open boxes at the line this STATION may fill (its own + unowned, migration
+       0078) for the terminal's closure method; narrowed to the selected finished
+       good when one is chosen, so the part dropdown decides which box is shown and
+       filled. Own boxes sort before unowned ones -- the same order
+       Workorder.Assembly_CompleteTray v1.4 resolves in, so what the screen shows is
+       the box the next tray lands in. Empty = no box yet for that part (the first
+       tray opens one). `_refreshToken` is the ignored runScript re-read arg."""
+    tid = _asId(terminalLocationId)
+    rows = BlueRidge.Lots.Container.listOpenForStation(cellLocationId, tid, closureMethod) or []
+    fg = _asId(selectedFinishedGoodItemId)
+    if fg is not None:
+        rows = [r for r in rows if _asId(r.get("ItemId")) == fg]
+    rows.sort(key=lambda r: 0 if (tid is not None and _asId(r.get("StationLocationId")) == tid) else 1)
+    return rows
+
+
+def getStationOpenBoxesText(cellLocationId, terminalLocationId, closureMethod, _refreshToken=None):
+    """One line naming every open box this station may fill, with its fill, so an
+       operator switching parts can see which partial boxes are waiting:
+       'Open boxes: 12231-6MAA-J000 5/10 | 12241-6MAA-J000 2/10 (unclaimed)'.
+       '' when there are none. ASCII-only."""
+    tid = _asId(terminalLocationId)
+    rows = getStationContainerRows(cellLocationId, tid, closureMethod)
+    if not rows:
+        return ""
+    parts = []
+    for r in rows:
+        text = "%s %s/%s" % (r.get("ItemPartNumber") or "?",
+                             r.get("AccumulatedParts") or 0, r.get("TargetParts") or 0)
+        if tid is not None and _asId(r.get("StationLocationId")) != tid:
+            text += " (unclaimed)"
+        parts.append(text)
+    return "Open boxes: " + " | ".join(parts)
+
+
+def getDefaultFinishedGoodId(cellLocationId, terminalLocationId=None, closureMethod=None):
+    """The part to pre-select when the assembly screen loads: the part of this
+       station's oldest open box, so a returning operator lands on the box they were
+       filling; with no box of its own, the recommended finished good."""
+    tid = _asId(terminalLocationId)
+    if tid is not None:
+        for r in getStationContainerRows(cellLocationId, tid, closureMethod):
+            if _asId(r.get("StationLocationId")) == tid:
+                return r.get("ItemId")
+    return getRecommendedFinishedGoodId(cellLocationId)
+
+
+def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocationId, closureMethod=None,
+                       terminalLocationId=None):
     """View helper for the assembly tray-complete button. Resolves the finished-good
-       Item (the open container's Item, or the operator-selected FG when no container
-       is open yet - completeTray auto-opens one), validates the parts count, and mints
-       the FG LOT via completeTray. closureMethod is the terminal's active mode
-       (session.custom.closureMethod) - it selects the part's per-method ContainerConfig
-       and is REQUIRED by the proc. Returns the completeTray result dict, or a Status-0
-       dict on a validation miss (surfaced by notifyResult).
+       Item, validates the parts count, and mints the FG LOT via completeTray.
+       closureMethod is the terminal's active mode (session.custom.closureMethod) - it
+       selects the part's per-method ContainerConfig and is REQUIRED by the proc.
+       Returns the completeTray result dict, or a Status-0 dict on a validation miss
+       (surfaced by notifyResult).
+
+       2026-09-11 (migration 0078): the SELECTED part decides -- the screen's box is
+       derived from the selection (getStationContainerRows), so the two agree, and an
+       operator switching parts switches boxes instead of being forced into the
+       oldest open box on the line. The open box's part is only the fallback when
+       nothing is selected. terminalLocationId is the TERMINAL (it scopes the box to
+       this station and is what the shipping label, CRT switch and audit are stamped
+       with); the line id was passed here before, which silently kept boxes
+       line-wide. None keeps that old behaviour for any caller not yet passing it.
 
        Backlog: "for a by-count completion, if the tray count is one tray per
        container it should also complete the container so they don't have to
@@ -68,22 +140,24 @@ def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocatio
        multi-tray container is never auto-completed here)."""
     cnt = BlueRidge.Common.Util.toIntOrNone(draft.get("partsCount")) if draft else None
     closureMethod = BlueRidge.Common.Util.extractQualifiedValues(closureMethod)
-    if container and container.get("Id") is not None:
+    fgItem = _asId(selectedFinishedGoodItemId)
+    if fgItem is None and container and container.get("Id") is not None:
         fgItem = container.get("ItemId")
-    else:
-        fgItem = selectedFinishedGoodItemId
     if fgItem is None:
         return {"Status": False, "Message": "Select a finished good (or open a container) first."}
     if cnt is None:
         return {"Status": False, "Message": "Enter the parts count for the tray."}
     if not closureMethod:
         return {"Status": False, "Message": "No closure mode set for this terminal."}
+    term = _asId(terminalLocationId)
+    if term is None:
+        term = cellLocationId
     result = completeTray(fgItem, cnt, cellLocationId, closureMethod=closureMethod,
-                          terminalLocationId=cellLocationId)
+                          terminalLocationId=term)
     if (result and result.get("Status") and result.get("ContainerFull")
             and result.get("ContainerId") is not None and result.get("TraysPerContainer") == 1):
         result["ContainerComplete"] = BlueRidge.Lots.Container.complete(
-            result.get("ContainerId"), operatorConfirmed=True, terminalLocationId=cellLocationId)
+            result.get("ContainerId"), operatorConfirmed=True, terminalLocationId=term)
     if result and result.get("Status"):
         warnLowInventory(cellLocationId, fgItem, closureMethod)
     return result
@@ -98,7 +172,15 @@ def resolvePlcCloseContext(terminalLocationId, closureMethod):
          pieceCount        = the (item, method) ContainerConfig.PartsPerTray;
          containerId       = the open container's Id, or None (proc auto-opens).
        Returns that dict, or {"error": <str>} on any missing input -- never a faked
-       default, so the caller logs + alarms instead of minting a wrong LOT."""
+       default, so the caller logs + alarms instead of minting a wrong LOT.
+
+       2026-09-11 (migration 0078): scoped to THIS terminal and closure method. The
+       6MA line carries METTs A/B (ByCount) and the vision cell on one line; reading
+       "the first open box on the line" let a camera tray resolve to a METTs box, and
+       with no box the ranked list could pick a single METTs part (its one-line BOM
+       ties the set and sorts first). Now: this station's own box (else an unowned
+       one) with a pack-out for closureMethod, else the top-ranked finished good that
+       HAS a closureMethod pack-out."""
     tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
     if tid is None:
         return {"error": "No terminal bound to the PLC device."}
@@ -107,14 +189,15 @@ def resolvePlcCloseContext(terminalLocationId, closureMethod):
     if cell is None:
         return {"error": "Terminal %s has no zone cell." % tid}
     containerId = None
-    openRows = BlueRidge.Lots.Container.getOpenByCell(cell) or []
+    openRows = getStationContainerRows(cell, tid, closureMethod)
     if openRows:
         fgItem = openRows[0].get("ItemId")
         containerId = openRows[0].get("Id")
     else:
-        fgItem = getRecommendedFinishedGoodId(cell)
+        fgItem = _recommendedWithPackout(cell, closureMethod)
     if fgItem is None:
-        return {"error": "No open container and no eligible finished good at cell %s." % cell}
+        return {"error": "No open %s box and no eligible finished good with a %s pack-out at cell %s."
+                % (closureMethod, closureMethod, cell)}
     cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(fgItem, closureMethod) or {}
     ppt = cfg.get("PartsPerTray")
     try:
@@ -258,6 +341,17 @@ def getEligibleFinishedGoodsForDropdown(cellLocationId):
         label = ("%s - %s" % (part, desc)) if desc else part
         out.append({"label": label, "value": r.get("Id")})
     return out
+
+
+def _recommendedWithPackout(cellLocationId, closureMethod):
+    """The highest-ranked eligible finished good at the cell that has a pack-out
+       for closureMethod (ranking is SQL -- Item_ListEligibleFinishedGoodsRanked;
+       this only skips parts that cannot be packed this way), or None."""
+    for r in _rankedFinishedGoods(cellLocationId):
+        cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(r.get("Id"), closureMethod) or {}
+        if cfg.get("PartsPerTray"):
+            return r.get("Id")
+    return None
 
 
 def getRecommendedFinishedGoodId(cellLocationId):

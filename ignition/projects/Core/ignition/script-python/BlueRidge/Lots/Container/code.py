@@ -207,6 +207,20 @@ def getOpenByCell(cellLocationId, _refreshToken=None):
     return BlueRidge.Common.Db.execList("lots/Container_GetOpenByCell", params)
 
 
+def listOpenForStation(cellLocationId, stationLocationId, closureMethod=None, _refreshToken=None):
+    """OPEN boxes at a line that a STATION may fill (migration 0078): its own boxes
+       plus unowned ones (every pre-0078 box; the next tray claims it), optionally
+       only those whose pack-out uses closureMethod. stationLocationId None = every
+       box on the line (the pre-0078 view). Same row shape as getOpenByCell plus
+       StationLocationId / StationCode, oldest first. Returns list[dict]."""
+    ex = BlueRidge.Common.Util.extractQualifiedValues
+    params = {"cellLocationId": ex(cellLocationId),
+              "stationLocationId": ex(stationLocationId),
+              "closureMethod": ex(closureMethod) or None}
+    BlueRidge.Common.Util.log("listOpenForStation %s" % params)
+    return BlueRidge.Common.Db.execList("lots/Container_ListOpenForStation", params)
+
+
 # ---------------------------------------------------------------------------
 # FDS-12-003 Container Search -- Global Trace detail panel
 # ---------------------------------------------------------------------------
