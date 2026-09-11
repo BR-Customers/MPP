@@ -24,6 +24,16 @@ against `MPP_Sim` (Step C), then against real devices (Step D).
 > and ready for the Sim acceptance pass (Step C) — no Designer work outstanding for
 > 59B. The `/plc-devices` editor is now linked in the Config Tool nav (System).
 
+> **Update 2026-09-10:** **`6MA_CH` commissioned on the DIRECT Allen-Bradley driver**
+> (not TOPServer), so its members point at SLC words (`N7:0` / `N7:1` / `N7:2` / `N7:30`
+> / `N7:10..27`), not friendly names. That PLC owns its triggers and waits for
+> `OkToContinue` before inspecting, so it needs a different handshake:
+> `TrayInspectionStation.Protocol = SlcTray` on that instance (default `SkuVerify` keeps
+> the original watcher behaviour). The expected recipe is now the finished good's
+> `Item.PlcId` for both protocols, and `PlcWatcher.dispatch` no longer replays
+> already-high triggers on subscription except `TrayLocked`. Address map, ladder
+> evidence and first-tray checks: `notes/2026-09-10_6ma-ch-camera-plc-host-interface.md`.
+
 ---
 
 ## A. Wiring edits
