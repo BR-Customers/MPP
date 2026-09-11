@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_AimShipperIdPool_ListUnposted.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.3
+-- Version:     1.4
 -- Description: Rows owed to AIM - consumed but not yet reported. Serves BOTH the
 --              retry sweep (BlueRidge.Lots.AimPost.retryTick) and the supervisor
 --              list on /aim-pool. Oldest-first; order is a fairness choice only,
@@ -19,6 +19,14 @@
 --              alarmTick's age escalation, so excluding CRT-held serials here holds
 --              the post back in all three at once. Without this the 60s sweep posts
 --              a CRT container within a minute of completion, defeating the feature.
+--              v1.4 (2026-09-11): orphans excluded. A consumed serial whose
+--              container no longer exists is not owed to anyone -- there is no
+--              shipment behind it. The 2026-09-09 prod FAT purge left exactly
+--              that shape (999000001-007: consumed, unposted, container FK NULLed,
+--              frozen Quantity/LotNumber intact), and v1.3 listed them, so the
+--              retry sweep would have POSTed never-issued serials with FAT data to
+--              live AIM the moment AimPostTimer was enabled. The rows are left as
+--              they are (still consumed, still unposted) -- only no longer offered.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.AimShipperIdPool_ListUnposted
     @Top INT = 50
@@ -47,6 +55,9 @@ BEGIN
     LEFT JOIN Lots.Container c ON c.Id = p.ConsumedByContainerId
     LEFT JOIN Parts.Item i ON i.Id = c.ItemId
     WHERE p.ConsumedAt IS NOT NULL AND p.PostedAt IS NULL
+      -- Orphan guard (v1.4): no container, nothing owed. c is the LEFT JOIN above,
+      -- so this also covers a dangling id, not just a NULLed one.
+      AND c.Id IS NOT NULL
       -- Controlled Run Tag hold. This proc is the SINGLE query behind AimPost.retryTick,
       -- the owed-to-AIM backlog screen and alarmTick's age escalation, so excluding held
       -- serials here holds the post back in all three at once. Without this the 60s sweep
