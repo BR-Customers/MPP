@@ -142,6 +142,21 @@ def _closeTray(instancePath, terminalLocationId, recipe):
         msg = (result or {}).get("Message") or "Tray close failed"
         W.writeDisplay(instancePath, {"MESAlarmType": 1, "MESAlarmText": msg})
         W.notifyAlarm(terminalLocationId, "ByVision tray close failed", msg)
+        return result
+    # The tray booked, but a FULL container whose completion was refused (empty
+    # AIM pool, ...) stays open -- no serial, no label -- and the very next tray
+    # is rejected as "Container is full". plcCompleteTray reports that only
+    # inside ContainerComplete, so without this the operator hears nothing until
+    # a tray later, and then not the cause. (Label print failures alarm on their
+    # own in Container.complete.)
+    cc = result.get("ContainerComplete")
+    if cc is not None and not cc.get("Status"):
+        msg = "%s Fix it, then press Complete at the terminal." % (
+            cc.get("Message") or "Container completion failed.")
+        W.logInterface(_device(instancePath), "Container completion refused",
+                       requestPayload="container=%s" % result.get("ContainerId"),
+                       responsePayload=str(cc), ok=False, errorDescription=msg)
+        W.notifyAlarm(terminalLocationId, "Container not completed", msg)
     return result
 
 
