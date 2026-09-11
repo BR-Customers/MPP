@@ -49,13 +49,18 @@ SELECT Id, AimShipperId, FetchedAt AS FetchedAtUtc,
             ELSE 'confirm it came from AIM company ' + @AimCompanyCode END AS Note
 FROM Lots.AimShipperIdPool WHERE ConsumedAt IS NULL ORDER BY FetchedAt, Id;
 
-PRINT '--- Hazard 2: serials consumed but never posted. AimPostTimer (retry sweep) would';
-PRINT '    POST every one of these to company ' + @AimCompanyCode + ' - including rows whose container no longer exists.';
+PRINT '--- Hazard 2: serials consumed but never posted. AimPostTimer (retry sweep) POSTs every';
+PRINT '    row Lots.AimShipperIdPool_ListUnposted returns to company ' + @AimCompanyCode + '.';
+PRINT '    v1.4 of that proc drops ORPHANS (container deleted); v1.3 did not. ProcHasOrphanGuard below says which is live.';
+SELECT CASE WHEN OBJECT_DEFINITION(OBJECT_ID(N'Lots.AimShipperIdPool_ListUnposted')) LIKE N'%AND c.Id IS NOT NULL%'
+            THEN 'YES (v1.4) - orphans are not posted'
+            ELSE 'NO - DEPLOY v1.4 BEFORE ENABLING AimPostTimer' END AS ProcHasOrphanGuard;
 SELECT p.Id, p.AimShipperId, p.ConsumedAt AS ConsumedAtUtc, p.ConsumedByContainerId,
        p.CustomerPartNumber, p.Quantity, p.LotNumber, p.PostAttempts, p.LastPostError,
-       CASE WHEN p.ConsumedByContainerId IS NULL THEN 'ORPHAN - container deleted (FAT purge?) - must NOT be posted'
-            ELSE 'owed' END AS Note
+       CASE WHEN c.Id IS NULL THEN 'ORPHAN - container gone; excluded from the sweep by ListUnposted v1.4'
+            ELSE 'owed - the sweep WILL post this' END AS Note
 FROM Lots.AimShipperIdPool p
+LEFT JOIN Lots.Container c ON c.Id = p.ConsumedByContainerId
 WHERE p.ConsumedAt IS NOT NULL AND p.PostedAt IS NULL
 ORDER BY p.ConsumedAt, p.Id;
 
