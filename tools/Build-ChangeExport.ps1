@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # Build-ChangeExport.ps1 -- package ONLY the resources a change touched, in the
 #                           shape the Designer's Import expects.
 #
@@ -49,7 +49,22 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $RepoRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $RepoRoot
 
-$ProjectsRoot = Join-Path $RepoRoot "ignition\projects"
+# BUILD FROM GIT, NOT THE WORKING TREE. The working copy under ignition/projects
+# is junctioned into the live dev Gateway, which rewrites manifests on scan, and
+# concurrent sessions leave uncommitted edits there. The archive must be exactly
+# what is committed at $Until -- so the tree is extracted from git into a temp
+# folder and everything below reads from that.
+$resolved = (& git rev-parse --short $Until).Trim()
+if ($LASTEXITCODE -ne 0) { throw "Cannot resolve $Until" }
+$Snapshot = Join-Path ([IO.Path]::GetTempPath()) ("mpp-export-" + $resolved + "-" + [guid]::NewGuid().ToString("N").Substring(0, 6))
+New-Item -ItemType Directory -Force $Snapshot | Out-Null
+# autocrlf=false: ship the committed bytes (LF), not this machine's checkout form.
+& git -c core.autocrlf=false archive --format=tar -o "$Snapshot.tar" $Until -- ignition/projects
+if ($LASTEXITCODE -ne 0) { throw "git archive failed for $Until" }
+& tar -xf "$Snapshot.tar" -C $Snapshot
+Remove-Item "$Snapshot.tar" -Force
+
+$ProjectsRoot = Join-Path $Snapshot "ignition\projects"
 $Projects     = @("Core", "MPP", "MPP_Config")   # Core first -- see header
 
 # Same exclusions as build-project-exports.ps1, for the same reasons.
@@ -71,14 +86,51 @@ if (-not $changed) { Write-Host "  Nothing changed under ignition/projects in th
 
 # Map each changed FILE to the resource folder that owns it: the nearest
 # ancestor directory containing a resource.json.
+$deleted = @(& git diff --name-only --diff-filter=D "$Since..$Until" -- "ignition/projects")
+if ($deleted.Count -gt 0) {
+    Write-Host "  DELETED in range -- an import cannot remove these; delete them in the Designer:" -ForegroundColor Red
+    $deleted | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
+}
+
 $resourceDirs = New-Object 'System.Collections.Generic.HashSet[string]'
+$dirFiles = @{}
 foreach ($rel in $changed) {
-    $full = Join-Path $RepoRoot ($rel -replace '/', '\')
+    $full = Join-Path $Snapshot ($rel -replace '/', '\')
     $dir  = Split-Path -Parent $full
     while ($dir -and $dir.StartsWith($ProjectsRoot)) {
-        if (Test-Path (Join-Path $dir "resource.json")) { [void]$resourceDirs.Add($dir); break }
+        if (Test-Path (Join-Path $dir "resource.json")) {
+            [void]$resourceDirs.Add($dir)
+            if (-not $dirFiles.ContainsKey($dir)) { $dirFiles[$dir] = @() }
+            $dirFiles[$dir] += $rel
+            break
+        }
         $dir = Split-Path -Parent $dir
     }
+}
+
+# Skip MANIFEST-ONLY churn: a resource whose only change in the range is its
+# resource.json dropping "thumbnail.png" from files[] (421402da repaired 86 of
+# these). The export rewrites manifests that way anyway, so the target already
+# has the same shape -- shipping the resource would re-import an unchanged
+# view.json over whatever is on the Gateway, for nothing.
+function Norm-Manifest([string]$json) {
+    $j = $json -replace '\s', ''
+    $j = $j -replace ',"thumbnail\.png"', '' -replace '"thumbnail\.png",?', ''
+    $j = $j -replace '"lastModificationSignature":"[^"]*",?', '' -replace '"lastModification":\{[^}]*\},?', ''
+    return ($j -replace ',\}', '}' -replace ',\]', ']')
+}
+$skipped = @()
+foreach ($dir in @($resourceDirs)) {
+    $rels = @($dirFiles[$dir])
+    if ($rels.Count -ne 1 -or $rels[0] -notlike '*/resource.json') { continue }
+    $before = (& git show "${Since}:$($rels[0])" 2>$null) -join "`n"
+    $after  = (& git show "${Until}:$($rels[0])") -join "`n"
+    if ($before -and (Norm-Manifest $before) -eq (Norm-Manifest $after)) {
+        [void]$resourceDirs.Remove($dir); $skipped += $rels[0]
+    }
+}
+if ($skipped.Count -gt 0) {
+    Write-Host ("  Skipped {0} resource(s) whose only change was dropping thumbnail.png from the manifest." -f $skipped.Count) -ForegroundColor DarkGray
 }
 
 if ($resourceDirs.Count -eq 0) { Write-Host "  No owning resource folders found." -ForegroundColor Yellow; return }
@@ -195,8 +247,30 @@ foreach ($proj in $Projects) {
     $built += $zipPath
 }
 
+# Import checklist: every shipped resource, new or modified, and which commits
+# touched it -- what the person at the Designer ticks off.
+$contents = Join-Path $outFull ("{0}_{1}_CONTENTS.txt" -f $Label, $stamp)
+$lines = @("Scoped Ignition export  $Since..$Until ($resolved)  built $stamp", "Import order: Core, then MPP, then MPP_Config. SQL first.", "")
+foreach ($proj in $Projects) {
+    $projRoot = Join-Path $ProjectsRoot $proj
+    $mine = @($resourceDirs | Where-Object { $_.StartsWith($projRoot + [IO.Path]::DirectorySeparatorChar) } | Sort-Object)
+    if ($mine.Count -eq 0) { continue }
+    $lines += "== $proj ($($mine.Count) resources)"
+    foreach ($dir in $mine) {
+        $relRepo = "ignition/projects/$proj/" + $dir.Substring($projRoot.Length + 1).Replace('\', '/')
+        $isNew = -not (& git ls-tree --name-only $Since -- "$relRepo/resource.json")
+        $commits = (& git log --format=%h "$Since..$Until" -- $relRepo) -join ' '
+        $lines += ("  {0}  {1}   [{2}]" -f $(if ($isNew) { 'NEW' } else { 'MOD' }), $dir.Substring($projRoot.Length + 1).Replace('\', '/'), $commits)
+    }
+    $lines += ""
+}
+if ($deleted.Count -gt 0) { $lines += "== DELETED in range (remove by hand in the Designer)"; $lines += $deleted }
+$lines | Set-Content -Encoding UTF8 $contents
+Remove-Item -Recurse -Force $Snapshot -ErrorAction SilentlyContinue
+
 Write-Host ""
 Write-Host "  Built $($built.Count) archive(s) in $OutDir" -ForegroundColor Cyan
+Write-Host "  Contents / import checklist: $contents" -ForegroundColor Cyan
 if ($rewritten -gt 0) {
     Write-Host "  $rewritten manifest(s) rewritten to drop an excluded file (thumbnail.png)." -ForegroundColor DarkGray
 }
@@ -207,3 +281,4 @@ Write-Host ""
 Write-Host "  DEPLOY THE SQL FIRST. These views and named queries call procs and" -ForegroundColor Yellow
 Write-Host "  read columns that must already exist." -ForegroundColor Yellow
 Write-Host ""
+
