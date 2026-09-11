@@ -56,6 +56,8 @@
 # Usage:
 #   .\Deploy-0076-CavityAlphaCode.ps1 -ServerInstance "SQLHOST" -Preview
 #   .\Deploy-0076-CavityAlphaCode.ps1 -ServerInstance "SQLHOST" -Username Ignition -Password ***
+#   .\Deploy-0076-CavityAlphaCode.ps1 -ServerInstance "SQLHOST" -Username Ignition
+#       (prompts for the password, masked -- it does NOT hand sqlcmd a bare -U)
 #   .\Deploy-0076-CavityAlphaCode.ps1 -ServerInstance "SQLHOST" -DatabaseName MPP_MES_Prod -Force
 #
 # AUTH: trusted (Windows) by default, matching Deploy-Prod / Update-Prod.
@@ -114,9 +116,24 @@ $RepeatableFiles = @(
 # Built ONCE at script scope, matching Deploy-0074. A function returning this
 # array does not splat reliably -- PowerShell unrolls the return value and
 # sqlcmd sees a bare ' ' it cannot parse.
+#
+# PROMPT FOR A MISSING PASSWORD OURSELVES. Handing sqlcmd a -U with no -P makes
+# IT prompt -- and every helper below captures output with `& sqlcmd ... 2>&1`,
+# which swallows that prompt. The script then hangs on stdin the operator
+# cannot see. PROJECT_STATUS records the same trap in Update-Prod.ps1; it is
+# fixed here rather than inherited.
+#
+# -AsSecureString because the last prod deploy echoed this password in clear
+# text and it still has not been rotated.
 if ($Username -ne "") {
-    if ($Password -ne "") { $AuthArgs = @("-U", $Username, "-P", $Password) }
-    else                  { $AuthArgs = @("-U", $Username) }
+    if ($Password -eq "") {
+        $secure   = Read-Host "  SQL password for '$Username'" -AsSecureString
+        $bstr     = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+        try     { $Password = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr) }
+        finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+        if ($Password -eq "") { throw "No password entered for SQL login '$Username'." }
+    }
+    $AuthArgs = @("-U", $Username, "-P", $Password)
 }
 else { $AuthArgs = @("-E") }
 
