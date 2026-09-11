@@ -69,6 +69,11 @@ TRAY = (
     + [("PartDisposition%02d" % i, "bool") for i in range(1, 19)]
     + [("OkToContinue", "bool"), ("ContainerName", "str")]
 )
+# Which handshake the device speaks -- read by TrayInspectionWatcher._protocol.
+# SkuVerify (default): vision SKU-ID cells. SlcTray: MicroLogix tray cells on
+# the direct AB driver (6MA_CH). Appended in CATALOG rather than here because
+# memory_member is defined below.
+TRAY_PROTOCOL_DEFAULT = "SkuVerify"
 
 def opc_member(name, kind, address=None):
     """One OPC AtomicTag member -- opcServer + opcItemPath are parameter binds.
@@ -248,7 +253,8 @@ CATALOG = {
     "ScaleStation":            (scale_members(), False),
     "SerializedMipStation":    (SERIALIZED, True),
     "NonSerializedMipStation": (NONSERIALIZED, True),
-    "TrayInspectionStation":   (TRAY, True),
+    "TrayInspectionStation":   (TRAY + [memory_member("Protocol", "str",
+                                                       TRAY_PROTOCOL_DEFAULT)], True),
 }
 
 

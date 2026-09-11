@@ -211,8 +211,38 @@ def _val(qvOrVal):
 def isRisingEdge(previousValue, currentValue):
     """Boolean rising-edge guard: act only on false->true. Legacy events fire on
        data-change then bail if 0, so the watcher must gate on the rising edge
-       (spec Sec 3.3)."""
-    return bool(_val(currentValue)) and not bool(_val(previousValue))
+       (spec Sec 3.3).
+
+       An UNKNOWN previous value is not a transition -- see isInitialHigh."""
+    prev = _val(previousValue)
+    if previousValue is None or prev is None:
+        return False
+    return bool(_val(currentValue)) and not bool(prev)
+
+
+def isInitialHigh(previousValue, currentValue):
+    """True when the trigger is already high on the FIRST event we see for it.
+
+       The tag-change script also fires on subscription (initialChange --
+       gateway restart, script reload, project scan) with previousValue None.
+       bool(None) is False, so this used to pass as a rising edge and replay
+       the handshake. Harmless while every watcher reset its own trigger;
+       not once an SlcTray PLC owns its triggers and holds them high -- a
+       replayed InspectionComplete books the same tray twice. dispatch routes
+       an initial-high trigger only when _REPLAY_SAFE says re-running that
+       handler is idempotent."""
+    return (previousValue is None or _val(previousValue) is None) and bool(_val(currentValue))
+
+
+# Triggers whose handler may safely run again for a state we already handled.
+# TrayLocked: both tray protocols re-write the recipe and (SlcTray) the
+# go-ahead -- idempotent, and without it an SlcTray tray locked across a
+# gateway restart would wait forever for an OkToContinue nobody sends.
+# Everything else (inspection verdicts, serial mints, scale captures) books
+# something, so an initial-high value is logged and dropped.
+_REPLAY_SAFE = {
+    "TrayInspectionStation": ("TrayLocked",),
+}
 
 
 # ---- interface logging (FDS-01-014) -----------------------------------------
@@ -284,10 +314,13 @@ def resolveInstance(udtInstancePath):
 
 def dispatch(tagPath, previousValue, currentValue):
     """Entrypoint for a Designer project Tag Change script on a trigger member.
-       Rising-edge only; resolves the instance's terminal + type and routes to the
-       matching watcher. Fully guarded -- a tag-change script must never throw."""
+       Rising edges, plus an already-high trigger on subscription when its
+       handler is replay-safe (isInitialHigh / _REPLAY_SAFE); resolves the
+       instance's terminal + type and routes to the matching watcher. Fully
+       guarded -- a tag-change script must never throw."""
     try:
-        if not isRisingEdge(previousValue, currentValue):
+        initial = isInitialHigh(previousValue, currentValue)
+        if not (initial or isRisingEdge(previousValue, currentValue)):
             return
         instancePath, member, row = None, None, None
         for candidatePath, candidateMember in _splitCandidates(tagPath):
@@ -302,6 +335,11 @@ def dispatch(tagPath, previousValue, currentValue):
             return
         code = row.get("DeviceTypeCode")
         terminalLocationId = row.get("TerminalLocationId")
+        if initial and member not in _REPLAY_SAFE.get(code, ()):
+            BlueRidge.Common.Util.log(
+                "initial value of %s on %s is already high -- not replayed"
+                % (member, instancePath), level="warn")
+            return
         BlueRidge.Common.Util.log(
             "edge %s on %s -> %s (terminal %s)"
             % (member, instancePath, code, terminalLocationId))

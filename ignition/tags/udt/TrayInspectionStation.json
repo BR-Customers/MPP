@@ -353,6 +353,13 @@
       "valueSource": "opc"
     },
     {
+      "dataType": "String",
+      "defaultValue": "SkuVerify",
+      "name": "Protocol",
+      "tagType": "AtomicTag",
+      "valueSource": "memory"
+    },
+    {
       "dataType": "Boolean",
       "defaultValue": false,
       "name": "WriteDisplayEnabled",
