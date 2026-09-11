@@ -1,5 +1,12 @@
 # 6MA CH camera PLC — host interface + the SlcTray handshake
 
+> **Wrong for 6MA — superseded 2026-09-11.** The real 6MA program (`reference/6MA_PLC Logic`,
+> PLC 172.17.21.213) is not MPPMACH (PLC 172.17.20.30). On 6MA, N7:0 never makes a per-tray
+> edge, N7:1 does not gate the camera, N7:30 is unobservable, and N7:11..27 are never written,
+> so `SlcTray` booked nothing. 6MA_CH now uses **`SlcPassPulse`**. See
+> [2026-09-11_6ma-ch-real-ladder-slcpasspulse.md](2026-09-11_6ma-ch-real-ladder-slcpasspulse.md).
+> What follows is still an accurate reading of the MPPMACH ladder.
+
 **2026-09-10.** First run of 6MA Cam Holder Assembly Out (`MA2-6MACH-AOUT3`, ByVision)
 against its real PLC, the night before production. The PLC is wired **straight to
 Ignition's Allen-Bradley driver** (device `6MA CH Camera`), not through TOPServer, so
