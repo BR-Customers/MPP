@@ -518,7 +518,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-downtime-editor\", view\u003d\"BlueRidge/Components/Popups/DowntimeEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\"mode\": \"create\", \"editId\": None, \"scopeLocationId\": self.view.custom.scopeLocationId})"
+                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-downtime-editor\", view\u003d\"BlueRidge/Components/Popups/DowntimeEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\"mode\": \"create\", \"editId\": None, \"scopeLocationId\": self.view.custom.scopeLocationId, \"shiftId\": self.view.custom.shiftId})"
                   },
                   "scope": "G",
                   "type": "script"

@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Oee_DowntimeEvent_RecordApproximate.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-04
--- Version:     1.0
+-- Modified:    2026-09-11
+-- Version:     1.1
 -- Description: Records a duration-only ("approximate") past downtime event from the
 --              Downtime Manager / editor. The end-of-shift case: the operator knows
 --              "down ~45 min this shift" but not the exact window. Stores a NOMINAL
@@ -14,6 +14,12 @@
 --              Source = 'Operator'. Audits 'DowntimeRecordedHistorical' (row's
 --              IsApproximate flag distinguishes it). Returns SELECT @Status,
 --              @Message, @NewId. All rejects before BEGIN TRANSACTION.
+--
+--   v1.1 (2026-09-11): the nominal start is the shift start CONVERTED
+--              Eastern -> UTC. Oee.Shift.ActualStart is Eastern wall-clock;
+--              v1.0 stored it straight into the UTC StartedAt column, so every
+--              approximate event sat 4 h early in EDT (5 h in EST) -- 03:00 for
+--              a 07:00 shift on prod. Existing rows repaired by migration 0077.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Oee.DowntimeEvent_RecordApproximate
     @ScopeLocationId      BIGINT,
@@ -84,7 +90,10 @@ BEGIN
         END
 
         -- Nominal anchor: shift start (fallback: now - duration when no shift is known).
-        SELECT @StartUtc = ActualStart FROM Oee.Shift WHERE Id = @Shift;
+        -- ActualStart is Eastern wall-clock; StartedAt is UTC.
+        SELECT @StartUtc = CAST(ActualStart AT TIME ZONE 'Eastern Standard Time'
+                                            AT TIME ZONE 'UTC' AS DATETIME2(3))
+        FROM Oee.Shift WHERE Id = @Shift;
         IF @StartUtc IS NULL
             SET @StartUtc = DATEADD(MINUTE, -@DurationMinutes, SYSUTCDATETIME());
         SET @EndUtc = DATEADD(MINUTE, @DurationMinutes, @StartUtc);

@@ -84,12 +84,101 @@ EXEC test.Assert_RowCount @TestName = N'[DowntimeApx] RecordHistorical stamps Du
     @ExpectedCount = 1, @ActualCount = @hist;
 GO
 
--- ---- cleanup (FK-safe: audit rows before events) ----
+-- =============================================
+-- Fixture: a CLOSED past shift. Oee.Shift.ActualStart is Eastern WALL-CLOCK;
+-- 2026-08-20 23:00 EDT = 2026-08-21 03:00 UTC.
+-- =============================================
+-- A seeded test database carries no schedules or shifts, so this file brings
+-- its own: one schedule, the closed past shift, and -- only if nothing is
+-- open -- a running "current" shift for the current-shift view to resolve.
+INSERT INTO Oee.ShiftSchedule (Name, StartTime, EndTime, DaysOfWeekBitmask, EffectiveFrom, CreatedAt, CreatedByUserId)
+VALUES (N'test 110 schedule', '23:00', '07:00', 127, '2026-01-01', SYSUTCDATETIME(), 1);
+DECLARE @Sched BIGINT = SCOPE_IDENTITY();
+INSERT INTO #DtApx (Tag, Val) VALUES (N'SCHED', @Sched);
+INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks, CreatedAt)
+VALUES (@Sched, '2026-08-20 23:00:00', '2026-08-21 07:00:00', N'test 110 past shift', SYSUTCDATETIME());
+INSERT INTO #DtApx (Tag, Val) VALUES (N'OLDSHIFT', SCOPE_IDENTITY());
+IF NOT EXISTS (SELECT 1 FROM Oee.Shift WHERE ActualEnd IS NULL)
+BEGIN
+    INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks, CreatedAt)
+    VALUES (@Sched, CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)),
+            NULL, N'test 110 current shift', SYSUTCDATETIME());
+    INSERT INTO #DtApx (Tag, Val) VALUES (N'CURSHIFT', SCOPE_IDENTITY());
+END
+GO
+
+-- =============================================
+-- Test 4: an approximate event honours an explicit (past) shift, and its
+--         nominal start is that shift's start converted Eastern -> UTC.
+--         Regression: the shift picked in the Downtime Manager was dropped,
+--         and ActualStart was stored as if it were UTC (4 h early in EDT).
+-- =============================================
+DECLARE @Cell BIGINT = (SELECT Val FROM #DtApx WHERE Tag = N'CELL');
+DECLARE @Old  BIGINT = (SELECT Val FROM #DtApx WHERE Tag = N'OLDSHIFT');
+DECLARE @s4 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @s4 EXEC Oee.DowntimeEvent_RecordApproximate
+    @ScopeLocationId = @Cell, @DurationMinutes = 20, @ShiftId = @Old, @AppUserId = 1;
+DECLARE @id4 BIGINT = (SELECT NewId FROM @s4);
+INSERT INTO #DtApx (Tag, Val) VALUES (N'EVT4', @id4);
+DECLARE @onOld INT = (SELECT COUNT(*) FROM Oee.DowntimeEvent WHERE Id = @id4 AND ShiftId = @Old);
+EXEC test.Assert_RowCount @TestName = N'[DowntimeApx] explicit past shift is stamped, not the current one',
+    @ExpectedCount = 1, @ActualCount = @onOld;
+DECLARE @utc INT = (SELECT COUNT(*) FROM Oee.DowntimeEvent
+    WHERE Id = @id4 AND StartedAt = '2026-08-21 03:00:00' AND EndedAt = '2026-08-21 03:20:00');
+EXEC test.Assert_RowCount @TestName = N'[DowntimeApx] nominal start = shift start converted ET->UTC (03:00Z, not 23:00Z)',
+    @ExpectedCount = 1, @ActualCount = @utc;
+GO
+
+-- =============================================
+-- Test 5: "Current shift" (@ShiftId NULL) also lists an event that is still
+--         OPEN from an earlier shift -- and still hides CLOSED ones from it.
+-- =============================================
+DECLARE @Cell BIGINT = (SELECT Val FROM #DtApx WHERE Tag = N'CELL');
+DECLARE @Old  BIGINT = (SELECT Val FROM #DtApx WHERE Tag = N'OLDSHIFT');
+DECLARE @id4  BIGINT = (SELECT Val FROM #DtApx WHERE Tag = N'EVT4');
+DECLARE @Src  BIGINT = (SELECT Id FROM Oee.DowntimeSourceCode WHERE Code = N'Operator');
+INSERT INTO Oee.DowntimeEvent (LocationId, ShiftId, StartedAt, DowntimeSourceCodeId, AppUserId)
+VALUES (@Cell, @Old, '2026-08-21 04:00:00', @Src, 1);
+DECLARE @open BIGINT = SCOPE_IDENTITY();
+INSERT INTO #DtApx (Tag, Val) VALUES (N'OPEN', @open);
+
+DECLARE @r5 TABLE (DowntimeEventId BIGINT, LocationId BIGINT, LocationCode NVARCHAR(100), ScopeLocationId BIGINT,
+    DowntimeReasonCodeId BIGINT, ReasonCode NVARCHAR(100), ReasonDescription NVARCHAR(500), SourceCode NVARCHAR(100),
+    StartedAtEt DATETIME2(3), EndedAtEt DATETIME2(3), DurationMinutes INT, IsApproximate BIT, Remarks NVARCHAR(MAX),
+    AppUserId BIGINT, OperatorInitials NVARCHAR(50), IsOpen BIT, IsVoided BIT, VoidReason NVARCHAR(500));
+INSERT INTO @r5 EXEC Oee.DowntimeEvent_GetByScope @ScopeLocationId = @Cell, @IncludeDescendants = 1, @ShiftId = NULL;
+DECLARE @seeOpen INT   = (SELECT COUNT(*) FROM @r5 WHERE DowntimeEventId = @open AND IsOpen = 1);
+DECLARE @seeClosed INT = (SELECT COUNT(*) FROM @r5 WHERE DowntimeEventId = @id4);
+EXEC test.Assert_RowCount @TestName = N'[DowntimeApx] current-shift view includes an OPEN event from an earlier shift',
+    @ExpectedCount = 1, @ActualCount = @seeOpen;
+EXEC test.Assert_RowCount @TestName = N'[DowntimeApx] current-shift view still hides a CLOSED event from an earlier shift',
+    @ExpectedCount = 0, @ActualCount = @seeClosed;
+GO
+
+-- =============================================
+-- Test 6: picking the past shift explicitly shows both of its events.
+-- =============================================
+DECLARE @Cell BIGINT = (SELECT Val FROM #DtApx WHERE Tag = N'CELL');
+DECLARE @Old  BIGINT = (SELECT Val FROM #DtApx WHERE Tag = N'OLDSHIFT');
+DECLARE @r6 TABLE (DowntimeEventId BIGINT, LocationId BIGINT, LocationCode NVARCHAR(100), ScopeLocationId BIGINT,
+    DowntimeReasonCodeId BIGINT, ReasonCode NVARCHAR(100), ReasonDescription NVARCHAR(500), SourceCode NVARCHAR(100),
+    StartedAtEt DATETIME2(3), EndedAtEt DATETIME2(3), DurationMinutes INT, IsApproximate BIT, Remarks NVARCHAR(MAX),
+    AppUserId BIGINT, OperatorInitials NVARCHAR(50), IsOpen BIT, IsVoided BIT, VoidReason NVARCHAR(500));
+INSERT INTO @r6 EXEC Oee.DowntimeEvent_GetByScope @ScopeLocationId = @Cell, @IncludeDescendants = 1, @ShiftId = @Old;
+DECLARE @both INT = (SELECT COUNT(*) FROM @r6 WHERE DowntimeEventId IN
+    ((SELECT Val FROM #DtApx WHERE Tag = N'EVT4'), (SELECT Val FROM #DtApx WHERE Tag = N'OPEN')));
+EXEC test.Assert_RowCount @TestName = N'[DowntimeApx] explicit past-shift view shows its closed + open events',
+    @ExpectedCount = 2, @ActualCount = @both;
+GO
+
+-- ---- cleanup (FK-safe: audit rows before events, events before the shift) ----
 DECLARE @Cell BIGINT = (SELECT Val FROM #DtApx WHERE Tag = N'CELL');
 DELETE ol FROM Audit.OperationLog ol
     INNER JOIN Oee.DowntimeEvent de ON de.Id = ol.EntityId
     WHERE de.LocationId = @Cell
       AND ol.LogEntityTypeId = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DowntimeEvent');
 DELETE FROM Oee.DowntimeEvent WHERE LocationId = @Cell;
+DELETE FROM Oee.Shift WHERE Id IN (SELECT Val FROM #DtApx WHERE Tag IN (N'OLDSHIFT', N'CURSHIFT'));
+DELETE FROM Oee.ShiftSchedule WHERE Id = (SELECT Val FROM #DtApx WHERE Tag = N'SCHED');
 IF OBJECT_ID(N'tempdb..#DtApx') IS NOT NULL DROP TABLE #DtApx;
 GO

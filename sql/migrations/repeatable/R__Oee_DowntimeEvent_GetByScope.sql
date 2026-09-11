@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Oee_DowntimeEvent_GetByScope.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-21
--- Version:     1.0
+-- Modified:    2026-09-11
+-- Version:     1.1
 -- Description: Terminal-scoped downtime read for the Downtime Manager popup
 --              (Increment 1). Returns OPEN and CLOSED (and voided, flagged) events
 --              whose LocationId is @ScopeLocationId (or a descendant when
@@ -15,6 +15,12 @@
 --              Scope grain note (blast radius): new manager events log at the
 --              resolved line; legacy/break/PLC events may be at descendant cells --
 --              @IncludeDescendants=1 reads BOTH.
+--
+--   v1.1 (2026-09-11): the current-shift view (@ShiftId NULL) ALSO lists
+--              every event still OPEN (not ended, not voided) in scope,
+--              whatever shift it started in -- a machine that went down last
+--              shift must not vanish from the list at the shift change. An
+--              explicit @ShiftId is unchanged: that shift's events only.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Oee.DowntimeEvent_GetByScope
     @ScopeLocationId    BIGINT,
@@ -60,7 +66,9 @@ BEGIN
     LEFT  JOIN Oee.DowntimeReasonCode rc  ON rc.Id  = de.DowntimeReasonCodeId
     LEFT  JOIN Location.AppUser u         ON u.Id   = de.AppUserId
     WHERE de.LocationId IN (SELECT Id FROM Scope)
-      AND (@Shift IS NULL OR de.ShiftId = @Shift)
+      AND (   @Shift IS NULL
+           OR de.ShiftId = @Shift
+           OR (@ShiftId IS NULL AND de.EndedAt IS NULL AND de.VoidedAt IS NULL))
     ORDER BY de.StartedAt DESC, de.Id DESC
     OPTION (MAXRECURSION 32);
 END;
