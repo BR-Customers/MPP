@@ -70,10 +70,14 @@ TRAY = (
     + [("OkToContinue", "bool"), ("ContainerName", "str")]
 )
 # Which handshake the device speaks -- read by TrayInspectionWatcher._protocol.
-# SkuVerify (default): vision SKU-ID cells. SlcTray: MicroLogix tray cells on
-# the direct AB driver (6MA_CH). Appended in CATALOG rather than here because
-# memory_member is defined below.
+# SkuVerify (default): vision SKU-ID cells. SlcTray: MicroLogix tray cells
+# running the MPPMACH ladder. SlcPassPulse: the 6MA_CH ladder (direct AB
+# driver; the PLC runs autonomously and pulses N7:10 per good tray).
+# Appended in CATALOG rather than here because memory_member is defined below.
 TRAY_PROTOCOL_DEFAULT = "SkuVerify"
+# DisableWriteback = True makes the tray watcher observe-only: it still reads
+# and books, but writes nothing to the PLC (parallel run beside the legacy
+# host, which keeps owning the handshake). Missing/False = normal writes.
 
 def opc_member(name, kind, address=None):
     """One OPC AtomicTag member -- opcServer + opcItemPath are parameter binds.
@@ -254,7 +258,8 @@ CATALOG = {
     "SerializedMipStation":    (SERIALIZED, True),
     "NonSerializedMipStation": (NONSERIALIZED, True),
     "TrayInspectionStation":   (TRAY + [memory_member("Protocol", "str",
-                                                       TRAY_PROTOCOL_DEFAULT)], True),
+                                                       TRAY_PROTOCOL_DEFAULT),
+                                        memory_member("DisableWriteback", "bool", False)], True),
 }
 
 

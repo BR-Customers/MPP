@@ -235,9 +235,10 @@ def isInitialHigh(previousValue, currentValue):
 
 
 # Triggers whose handler may safely run again for a state we already handled.
-# TrayLocked: both tray protocols re-write the recipe and (SlcTray) the
+# TrayLocked: every tray protocol re-writes the recipe and (SlcTray) the
 # go-ahead -- idempotent, and without it an SlcTray tray locked across a
 # gateway restart would wait forever for an OkToContinue nobody sends.
+# (SlcPassPulse's TrayLocked is tray-present; it only converges the recipe.)
 # Everything else (inspection verdicts, serial mints, scale captures) books
 # something, so an initial-high value is logged and dropped.
 _REPLAY_SAFE = {

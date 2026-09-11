@@ -362,6 +362,13 @@
     {
       "dataType": "Boolean",
       "defaultValue": false,
+      "name": "DisableWriteback",
+      "tagType": "AtomicTag",
+      "valueSource": "memory"
+    },
+    {
+      "dataType": "Boolean",
+      "defaultValue": false,
       "name": "WriteDisplayEnabled",
       "tagType": "AtomicTag",
       "valueSource": "memory"

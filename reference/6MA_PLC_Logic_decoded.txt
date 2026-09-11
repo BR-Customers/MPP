@@ -1,0 +1,323 @@
+
+=== LAD MAIN (53 rungs incl. END)
+  000: XIC S:4/12  |  XIC B3:1/9  |  MSG MG11:5 (N17:0 / N20:0)
+         ; MG11:5 = READ RESULTS DATA FROM VISION SYSTEM
+         ; N17:0 = PART#1 FROM VISION
+         ; N20:0 = ALWAYS KEEP 104. WORDS TO GET FROM VISION CONTROLLER
+  001: XIC S:4/12  |  MSG MG11:10 (L101:0 / L19:0)
+         ; MG11:10 = SEND PALLET SERIAL NUMBER TO VISION SYSTEM
+  002: XIO I:0.0/0  |  MOV 0 -> N17:0  |  MOV 0 -> N17:2  |  MOV 0 -> N17:2  |  MOV 0 -> N17:4  |  MOV 0 -> N17:6  |  MOV 0 -> N17:8  |  MOV 0 -> N17:10  |  MOV 0 -> N17:12  |  MOV 0 -> N17:14  |  MOV 0 -> N17:16  |  MOV 0 -> N17:18  |  MOV 0 -> N17:20  |  MOV 0 -> N17:22  |  MOV 0 -> N17:24  |  MOV 0 -> N17:26  |  MOV 0 -> N17:28  |  MOV 0 -> N17:30  |  MOV 0 -> N17:32  |  MOV 0 -> N17:34  |  MOV 0 -> N17:36  |  MOV 0 -> N17:38  |  MOV 0 -> N17:40  |  MOV 0 -> N17:42  |  MOV 0 -> N17:44  |  MOV 0 -> N17:46
+         ; N17:0 = PART#1 FROM VISION
+         ; N17:2 = PART#2 FROM VISION
+         ; N17:4 = PART#3 FROM VISION
+         ; N17:6 = PART#4 FROM VISION
+         ; N17:8 = PART#5 FROM VISION
+         ; N17:10 = PART#6 FROM VISION
+         ; N17:12 = PART#7 FROM VISION
+         ; N17:14 = PART#8 FROM VISION
+         ; N17:16 = PART#9 FROM VISION
+         ; N17:18 = PART#10 FROM VISION
+         ; N17:20 = PART#11 FROM VISION
+         ; N17:22 = PART#12 FROM VISION
+         ; N17:24 = PART#13 FROM VISION
+         ; N17:26 = PART#14 FROM VISION
+         ; N17:28 = PART#15 FROM VISION
+         ; N17:30 = PART#16 FROM VISION
+         ; N17:32 = PART#17 FROM VISION
+         ; N17:34 = PART#18 FROM VISION
+         ; N17:36 = TRAY COLOR
+  003: XIC I:0.0/5  |  MOV 1 -> N17:0  |  MOV 1 -> N17:2  |  MOV 1 -> N17:2  |  MOV 1 -> N17:4  |  MOV 1 -> N17:6  |  MOV 1 -> N17:8  |  MOV 1 -> N17:10  |  MOV 1 -> N17:12  |  MOV 1 -> N17:14  |  MOV 1 -> N17:16  |  MOV 1 -> N17:18  |  MOV 1 -> N17:20  |  MOV 1 -> N17:22  |  MOV 1 -> N17:24  |  MOV 1 -> N17:26  |  MOV 1 -> N17:28  |  MOV 1 -> N17:30  |  MOV 1 -> N17:32  |  MOV 1 -> N17:34  |  MOV 1 -> N17:36  |  MOV 1 -> N17:38  |  MOV 1 -> N17:40  |  MOV 1 -> N17:42  |  MOV 1 -> N17:44  |  MOV 1 -> N17:46
+         ; N17:0 = PART#1 FROM VISION
+         ; N17:2 = PART#2 FROM VISION
+         ; N17:4 = PART#3 FROM VISION
+         ; N17:6 = PART#4 FROM VISION
+         ; N17:8 = PART#5 FROM VISION
+         ; N17:10 = PART#6 FROM VISION
+         ; N17:12 = PART#7 FROM VISION
+         ; N17:14 = PART#8 FROM VISION
+         ; N17:16 = PART#9 FROM VISION
+         ; N17:18 = PART#10 FROM VISION
+         ; N17:20 = PART#11 FROM VISION
+         ; N17:22 = PART#12 FROM VISION
+         ; N17:24 = PART#13 FROM VISION
+         ; N17:26 = PART#14 FROM VISION
+         ; N17:28 = PART#15 FROM VISION
+         ; N17:30 = PART#16 FROM VISION
+         ; N17:32 = PART#17 FROM VISION
+         ; N17:34 = PART#18 FROM VISION
+         ; N17:36 = TRAY COLOR
+  004: MOV L9:5 -> L19:1
+         ; L9:5 = SERIAL NUMBER FROM HOST
+         ; L19:1 = SERIAL NUMBER TO VISION SYSTEM
+  005: XIC B3:8/0  |  TON T4:4 base 0.01 pre 250
+         ; B3:8/0 = DELAY TO CHECK FOR VISION CONTROLLER STRING
+         ; T4:4 = DELAY TO CHECK VISION OUTPUT STRING
+  006: MOV 104 -> N20:0
+         ; N20:0 = ALWAYS KEEP 104. WORDS TO GET FROM VISION CONTROLLER
+  007: XIC I:0.1/3  |  XIC B3:0/1  |  XIC B3:0/0  |  XIO B3:0/2  |  OTE B3:0/0
+         ; B3:0/1 = START FROM HMI
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:0/2 = STOP FROM HMI
+  008: XIO I:0.1/3  |  OTE B3:1/14
+         ; B3:1/14 = ESTOP PUSHED TO HMI
+  009: XIC B3:3/1  |  CTU C5:1 pre 20  |  XIC C5:1/DN  |  ONS B3:0/13  |  OTL B3:0/11  |  XIC B3:0/11  |  XIC B3:0/12  |  RES C5:1  |  OTU B3:0/11
+         ; B3:3/1 = TURN MOTOR ON TO GO TO BAD SIDE
+         ; C5:1 = 3 BAD TRAYS IN A ROW COUNTER
+         ; B3:0/13 = ONE-SHOT
+         ; B3:0/11 = 3 FAILURES IN A ROW TO HMI
+         ; B3:0/12 = RESET 3 FAILURES IN A ROW FROM HMI
+  010: XIC I:0.0/5  |  RES C5:1
+         ; C5:1 = 3 BAD TRAYS IN A ROW COUNTER
+  011: XIC B3:0/0  |  XIC I:0.0/0  |  XIO O:0.0/6  |  XIO O:0.0/5  |  XIO B3:0/11  |  OTE O:0.0/3
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:0/11 = 3 FAILURES IN A ROW TO HMI
+  012: XIC B3:0/0  |  XIO I:0.0/0  |  XIO O:0.0/3  |  XIO B3:0/11  |  OTE O:0.0/4
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:0/11 = 3 FAILURES IN A ROW TO HMI
+  013: XIC B3:0/0  |  XIC B3:2/1  |  XIC B3:0/11  |  XIC S:4/12  |  OTE O:0.0/1
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:2/1 = TRAY BAD GOTO BAD SIDE
+         ; B3:0/11 = 3 FAILURES IN A ROW TO HMI
+  014: XIC I:0.0/0  |  ONS B3:0/7  |  OTE B3:0/8
+         ; B3:0/7 = ONE-SHOT
+         ; B3:0/8 = TRAY PRESENT ONE SHOT
+  015: XIC I:0.0/0  |  TON T4:12 base 0.01 pre 100
+         ; T4:12 = TRAY PRESENT DWELL TIMER
+  016: XIC B3:0/0  |  OTE O:0.0/0
+         ; B3:0/0 = SYSTEM STARTED
+  017: XIC B3:0/0  |  XIC I:0.1/0  |  XIC I:0.1/1  |  XIC B3:0/14  |  XIC B3:4/0  |  XIO O:0.0/9  |  OTE O:0.0/8
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:0/14 = RESET RESET ALL IN PROGRESS
+         ; B3:4/0 = EXTEND TRAY GUIDES
+  018: XIC B3:0/0  |  XIC I:0.1/0  |  XIC I:0.1/1  |  XIO O:0.0/8  |  XIC B3:2/2  |  OTE O:0.0/9
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:2/2 = RETRACT TRAY GUIDES
+  019: XIC B3:0/0  |  XIC I:0.0/1  |  XIC T4:12/DN  |  XIC T4:10/DN  |  XIC T4:11/DN  |  XIO B3:1/1  |  XIO B3:2/0  |  XIO B3:2/1  |  XIC I:0.1/0  |  XIC I:0.1/1  |  OTL B3:1/0
+         ; B3:0/0 = SYSTEM STARTED
+         ; T4:12 = TRAY PRESENT DWELL TIMER
+         ; T4:10 = GOOD SIDE CLEAR TIMER
+         ; T4:11 = BAD SIDE CLEAR TIMER
+         ; B3:1/1 = "KEEP" TRAY MEMORY
+         ; B3:2/0 = TRAY GOOD GOTO GOOD SIDE
+         ; B3:2/1 = TRAY BAD GOTO BAD SIDE
+         ; B3:1/0 = TRAY PRESENT START INSPECTION PROCESS
+  020: XIO I:0.0/0  |  OTU B3:1/0
+         ; B3:1/0 = TRAY PRESENT START INSPECTION PROCESS
+  021: XIC B3:1/0  |  XIC T4:10/DN  |  XIC T4:11/DN  |  TON T4:1 base 0.01 pre 300
+         ; B3:1/0 = TRAY PRESENT START INSPECTION PROCESS
+         ; T4:10 = GOOD SIDE CLEAR TIMER
+         ; T4:11 = BAD SIDE CLEAR TIMER
+         ; T4:1 = DWELL TIMER TO LOCK TRAY
+  022: XIC T4:1/DN  |  OTL B3:1/1  |  OTU B3:1/0
+         ; T4:1 = DWELL TIMER TO LOCK TRAY
+         ; B3:1/1 = "KEEP" TRAY MEMORY
+         ; B3:1/0 = TRAY PRESENT START INSPECTION PROCESS
+  023: XIC B3:1/2  |  ONS B3:0/9  |  ADD 1 + L9:9 -> L9:9
+         ; B3:1/2 = TRIGGER INSPECTION
+         ; B3:0/9 = ONE-SHOT
+         ; L9:9 = LIFE COUNTER
+  024: XIC B3:0/0  |  XIC I:0.1/0  |  XIC I:0.1/1  |  XIC I:0.0/0  |  XIC I:0.0/1  |  ONS B3:1/4  |  OTL B3:1/2  |  OTU B3:1/1
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:1/4 = ONE-SHOT
+         ; B3:1/2 = TRIGGER INSPECTION
+         ; B3:1/1 = "KEEP" TRAY MEMORY
+  025: EQU? N7:1 , 1  |  CTU C5:2 pre 32767
+  026: XIC B3:0/0  |  XIC B3:1/2  |  TON(1s) T4:2 base 1.0 pre 1  |  XIC T4:2/DN  |  TON T4:3 base 0.01 pre 20  |  XIC T4:3/DN  |  OTL B3:1/3  |  OTL B3:8/0  |  OTU B3:1/2
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:1/2 = TRIGGER INSPECTION
+         ; T4:2 = DWELL FOR TRIGGER TIME
+         ; T4:3 = TRIGGER VISION PULSE TIME
+         ; B3:1/3 = CHECK VISION RESULTS
+         ; B3:8/0 = DELAY TO CHECK FOR VISION CONTROLLER STRING
+  027: XIC T4:3/TT  |  OTE O:0.0/7
+         ; T4:3 = TRIGGER VISION PULSE TIME
+  028: XIC I:0.0/0  |  XIO T4:7/DN  |  OTE O:0.0/2
+         ; T4:7 = ENERGY MANAGEMENT TIMER
+  029: XIO I:0.0/0  |  TON(1s) T4:7 base 1.0 pre 300
+         ; T4:7 = ENERGY MANAGEMENT TIMER
+  030: XIC I:0.0/5  |  ONS B3:19/2  |  OTL B3:19/0  |  XIC I:0.0/6  |  ONS B3:19/3  |  OTL B3:19/1
+         ; B3:19/2 = ONE-SHOT
+         ; B3:19/0 = PASS MEMORY
+         ; B3:19/3 = ONE-SHOT
+         ; B3:19/1 = FAIL MEMORY
+  031: XIC B3:0/0  |  XIC B3:1/3  |  XIC T4:4/DN  |  XIC B3:19/0  |  XIO B3:19/1  |  OTL B3:2/0  |  OTU B3:1/3  |  OTU B3:1/1  |  XIO B3:9/0  |  MOV 1 -> N7:30  |  OTU B3:19/0  |  OTU B3:8/0  |  XIC B3:19/1  |  XIO B3:19/0  |  OTL B3:2/1  |  OTU B3:1/3  |  OTU B3:1/1  |  XIO B3:9/0  |  MOV 1 -> N7:30  |  OTU B3:19/1  |  OTU B3:8/0
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:1/3 = CHECK VISION RESULTS
+         ; T4:4 = DELAY TO CHECK VISION OUTPUT STRING
+         ; B3:19/0 = PASS MEMORY
+         ; B3:19/1 = FAIL MEMORY
+         ; B3:2/0 = TRAY GOOD GOTO GOOD SIDE
+         ; B3:1/1 = "KEEP" TRAY MEMORY
+         ; B3:9/0 = RABBIT TEST IN PROGRESS
+         ; B3:8/0 = DELAY TO CHECK FOR VISION CONTROLLER STRING
+         ; B3:2/1 = TRAY BAD GOTO BAD SIDE
+  032: XIC B3:2/0  |  ONS B3:1/6  |  MOV 1 -> N7:10  |  OTL B3:1/7
+         ; B3:2/0 = TRAY GOOD GOTO GOOD SIDE
+         ; B3:1/6 = ONE-SHOT
+         ; N7:10 = PASSED TO HOST COMPUTER
+         ; B3:1/7 = GOOD TO HOST MEMORY
+  033: XIC B3:1/7  |  TON(1s) T4:9 base 1.0 pre 3  |  XIC T4:9/DN  |  MOV 0 -> N7:10  |  OTU B3:1/7
+         ; B3:1/7 = GOOD TO HOST MEMORY
+         ; T4:9 = GOOD SIGNAL TO HOST DURATION TIMER
+         ; N7:10 = PASSED TO HOST COMPUTER
+  034: XIC B3:0/0  |  XIC B3:2/0  |  XIC B3:2/1  |  OTL B3:2/2
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:2/0 = TRAY GOOD GOTO GOOD SIDE
+         ; B3:2/1 = TRAY BAD GOTO BAD SIDE
+         ; B3:2/2 = RETRACT TRAY GUIDES
+  035: XIC B3:1/1  |  ONS B3:1/5  |  OTU B3:8/0
+         ; B3:1/1 = "KEEP" TRAY MEMORY
+         ; B3:1/5 = ONE-SHOT
+         ; B3:8/0 = DELAY TO CHECK FOR VISION CONTROLLER STRING
+  036: XIC I:0.0/1  |  ONS B3:0/4  |  OTU B3:4/0
+         ; B3:0/4 = ONE-SHOT
+         ; B3:4/0 = EXTEND TRAY GUIDES
+  037: XIC I:0.0/0  |  MOV 0 -> N7:30
+  038: XIO I:0.0/3  |  TON T4:10 base 0.01 pre 50  |  XIO I:0.0/4  |  TON T4:11 base 0.01 pre 50
+         ; T4:10 = GOOD SIDE CLEAR TIMER
+         ; T4:11 = BAD SIDE CLEAR TIMER
+  039: XIC I:0.0/3  |  OTE B3:16/0  |  XIC I:0.0/4  |  OTE B3:16/1
+         ; B3:16/0 = BAD SIDE BLOCKED TO HMI
+         ; B3:16/1 = GOOD SIDE BLOCKED TO HMI
+  040: XIC B3:0/0  |  XIC B3:2/2  |  XIC I:0.0/2  |  XIC T4:10/DN  |  XIC T4:11/DN  |  XIO I:0.0/3  |  XIO I:0.0/4  |  XIC B3:2/0  |  OTL B3:3/0  |  OTU B3:2/0  |  XIC B3:2/1  |  OTL B3:3/1  |  OTU B3:2/1
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:2/2 = RETRACT TRAY GUIDES
+         ; T4:10 = GOOD SIDE CLEAR TIMER
+         ; T4:11 = BAD SIDE CLEAR TIMER
+         ; B3:2/0 = TRAY GOOD GOTO GOOD SIDE
+         ; B3:3/0 = TURN MOTOR ON TO GO TO GOOD SIDE
+         ; B3:2/1 = TRAY BAD GOTO BAD SIDE
+         ; B3:3/1 = TURN MOTOR ON TO GO TO BAD SIDE
+  041: XIC B3:0/0  |  XIC I:0.0/2  |  XIC B3:11/0  |  XIC B3:11/1  |  XIC I:0.1/1  |  XIC I:0.1/0  |  XIC B3:3/0  |  XIO O:0.0/5  |  XIO T4:5/DN  |  XIC B3:11/0  |  OTE O:0.0/6  |  XIC B3:3/1  |  XIO O:0.0/6  |  XIO T4:6/DN  |  XIC B3:11/1  |  OTE O:0.0/5
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:3/0 = TURN MOTOR ON TO GO TO GOOD SIDE
+         ; T4:5 = GOOD SIDE BLOCKED TIMER
+         ; B3:3/1 = TURN MOTOR ON TO GO TO BAD SIDE
+         ; T4:6 = BAD SIDE BLOCKED TIMER
+  042: XIO I:0.0/0  |  XIC B3:0/14  |  MOV 0 -> N7:1
+         ; B3:0/14 = RESET RESET ALL IN PROGRESS
+  043: XIC B3:0/14  |  MOV 0 -> N7:0  |  OTU B3:1/0  |  OTU B3:1/1
+         ; B3:0/14 = RESET RESET ALL IN PROGRESS
+         ; B3:1/0 = TRAY PRESENT START INSPECTION PROCESS
+         ; B3:1/1 = "KEEP" TRAY MEMORY
+  044: XIO I:0.1/0  |  XIO I:0.1/1  |  OTE B3:0/10
+         ; B3:0/10 = LIGHT CURTAIN BLOCKED TO HMI
+  045: MOV N7:200 -> T4:5.PRE  |  MOV N7:201 -> T4:6.PRE
+         ; N7:200 = BAD SIDE TIME
+         ; T4:5 = GOOD SIDE BLOCKED TIMER
+         ; N7:201 = GOOD SIDE TIME
+         ; T4:6 = BAD SIDE BLOCKED TIMER
+  046: XIC B3:3/0  |  XIC I:0.0/3  |  TON T4:5 base 0.01 pre 30  |  XIC B3:3/1  |  XIC I:0.0/4  |  TON T4:6 base 0.01 pre 1
+         ; B3:3/0 = TURN MOTOR ON TO GO TO GOOD SIDE
+         ; T4:5 = GOOD SIDE BLOCKED TIMER
+         ; B3:3/1 = TURN MOTOR ON TO GO TO BAD SIDE
+         ; T4:6 = BAD SIDE BLOCKED TIMER
+  047: XIC B3:0/0  |  XIC B3:3/0  |  XIC T4:5/DN  |  XIC B3:3/1  |  XIC T4:6/DN  |  XIO I:0.0/0  |  OTL B3:4/0  |  OTU B3:2/2  |  OTU B3:3/1  |  OTU B3:3/0
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:3/0 = TURN MOTOR ON TO GO TO GOOD SIDE
+         ; T4:5 = GOOD SIDE BLOCKED TIMER
+         ; B3:3/1 = TURN MOTOR ON TO GO TO BAD SIDE
+         ; T4:6 = BAD SIDE BLOCKED TIMER
+         ; B3:4/0 = EXTEND TRAY GUIDES
+         ; B3:2/2 = RETRACT TRAY GUIDES
+  048: XIC B3:0/15  |  OTL B3:0/14
+         ; B3:0/15 = RESET ALL FROM HMI
+         ; B3:0/14 = RESET RESET ALL IN PROGRESS
+  049: XIC B3:0/14  |  XIC I:0.0/1  |  XIO B3:0/15  |  OTU B3:0/14
+         ; B3:0/14 = RESET RESET ALL IN PROGRESS
+         ; B3:0/15 = RESET ALL FROM HMI
+  050: XIC B3:0/14  |  OTU B3:1/0  |  MOV 0 -> N7:1  |  OTU B3:19/0  |  OTU B3:19/1  |  OTU B3:8/0  |  OTU B3:1/1  |  OTU B3:1/2  |  OTU B3:1/3  |  OTU B3:2/0  |  OTU B3:2/1  |  OTU B3:2/2  |  OTU B3:3/0  |  OTU B3:3/1
+         ; B3:0/14 = RESET RESET ALL IN PROGRESS
+         ; B3:1/0 = TRAY PRESENT START INSPECTION PROCESS
+         ; B3:19/0 = PASS MEMORY
+         ; B3:19/1 = FAIL MEMORY
+         ; B3:8/0 = DELAY TO CHECK FOR VISION CONTROLLER STRING
+         ; B3:1/1 = "KEEP" TRAY MEMORY
+         ; B3:1/2 = TRIGGER INSPECTION
+         ; B3:1/3 = CHECK VISION RESULTS
+         ; B3:2/0 = TRAY GOOD GOTO GOOD SIDE
+         ; B3:2/1 = TRAY BAD GOTO BAD SIDE
+         ; B3:2/2 = RETRACT TRAY GUIDES
+         ; B3:3/0 = TURN MOTOR ON TO GO TO GOOD SIDE
+         ; B3:3/1 = TURN MOTOR ON TO GO TO BAD SIDE
+  051: JSR U:3  |  JSR U:4
+
+=== LAD VISION (13 rungs incl. END)
+  000: XIC B3:0/0  |  XIO B3:9/0  |  LIM? 0 <= N16:2 <= 2  |  NEQ? N16:2 , N7:2  |  ONS B3:0/3  |  MOV N7:2 -> N16:2  |  OTL B3:24/0
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:9/0 = RABBIT TEST IN PROGRESS
+         ; N16:2 = PROGRAM NUMBER TO VISION CONTROLLER
+         ; B3:0/3 = ONE-SHOT
+         ; B3:24/0 = CHANGE PRG IN VISION CONTROLLER
+  001: XIO B3:9/0  |  ONS B3:9/1  |  MOV 0 -> N16:2
+         ; B3:9/0 = RABBIT TEST IN PROGRESS
+         ; B3:9/1 = ONE-SHOT
+         ; N16:2 = PROGRAM NUMBER TO VISION CONTROLLER
+  002: NEQ? B3:25 , 0  |  OTL B3:24/0  |  XIC B3:24/0  |  TON T4:34 base 0.01 pre 15  |  XIC T4:34/DN  |  TON T4:35 base 0.01 pre 25  |  XIC T4:35/TT  |  OTE B3:6/0  |  XIC T4:35/DN  |  OTU B3:24/0
+         ; B3:25 = PART SELECTION FROM HMI
+         ; B3:24/0 = CHANGE PRG IN VISION CONTROLLER
+         ; T4:34 = DWELL TIMER
+         ; T4:35 = CHANGE PRG TIMER IN VISION SYSTEM
+         ; B3:6/0 = CHANGE PRG TO VISION CONTROLLER
+  003: XIC B3:6/0  |  ONS B3:24/3  |  MSG MG11:2 (L100:0 / N16:0)
+         ; B3:6/0 = CHANGE PRG TO VISION CONTROLLER
+         ; B3:24/3 = ONE-SHOT
+         ; MG11:2 = CHANGE PROGRAM TO 1ST INSPECTION CONTROLLER
+         ; N16:0 = COMMAND NUMBER TO VISION SYSTEM
+  004: XIC B3:25/3  |  MOV 3 -> N16:2  |  XIC B3:25/4  |  MOV 4 -> N16:2  |  XIC B3:25/5  |  MOV 5 -> N16:2  |  XIC B3:25/6  |  MOV 6 -> N16:2  |  XIC B3:25/7  |  MOV 7 -> N16:2  |  XIC B3:25/8  |  MOV 8 -> N16:2  |  XIC B3:25/9  |  MOV 9 -> N16:2  |  XIC B3:25/10  |  MOV 10 -> N16:2  |  XIC B3:25/11  |  MOV 11 -> N16:2  |  XIC B3:25/12  |  MOV 12 -> N16:2  |  XIC B3:25/13  |  MOV 13 -> N16:2  |  XIC B3:25/14  |  MOV 14 -> N16:2  |  XIC B3:25/15  |  MOV 15 -> N16:2
+         ; N16:2 = PROGRAM NUMBER TO VISION CONTROLLER
+         ; B3:25/11 = MASTER TRAY #1
+         ; B3:25/12 = MASTER TRAY #2
+         ; B3:25/13 = MASTER TRAY #3
+         ; B3:25/14 = MASTER TRAY #4
+         ; B3:25/15 = MASTER TRAY #5
+  005: MOV 2 -> N16:0
+         ; N16:0 = COMMAND NUMBER TO VISION SYSTEM
+  006: XIC B3:7/0  |  OTL B3:7/1
+         ; B3:7/0 = CLEAR COUNTS FROM HMI
+         ; B3:7/1 = COUNTS CLEARED MESSAGE TO HMI
+  007: XIC B3:7/1  |  TON(1s) T4:0 base 1.0 pre 5  |  XIC T4:0/DN  |  OTU B3:7/1
+         ; B3:7/1 = COUNTS CLEARED MESSAGE TO HMI
+         ; T4:0 = MESSAGE TIMER TO HMI SCREEN TIMER
+  008: XIC I:0.0/5  |  ONS B3:0/5  |  ADD 1 + L9:0 -> L9:0
+         ; B3:0/5 = ONE-SHOT
+         ; L9:0 = GOOD PARTS
+  009: XIC I:0.0/6  |  ONS B3:0/6  |  ADD 1 + L9:1 -> L9:1
+         ; B3:0/6 = ONE-SHOT
+         ; L9:1 = BAD PARTS
+  010: XIC B3:7/0  |  COP #L9:10 #L9:0 1  |  COP #L9:10 #L9:1 1
+         ; B3:7/0 = CLEAR COUNTS FROM HMI
+         ; L9:10 = CLEAR BUFFER DO NOT USE!!!!
+         ; L9:0 = GOOD PARTS
+         ; L9:1 = BAD PARTS
+  011: ADD L9:0 + L9:1 -> L9:2
+         ; L9:0 = GOOD PARTS
+         ; L9:1 = BAD PARTS
+         ; L9:2 = TOTAL PARTS
+
+=== LAD HOST (8 rungs incl. END)
+  000: XIC B3:0/0  |  XIO B3:9/0  |  MOV 1 -> N7:0
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:9/0 = RABBIT TEST IN PROGRESS
+  001: XIC T4:10/DN  |  XIC T4:11/DN  |  ONS B3:10/1  |  OTL B3:10/0  |  XIC B3:10/0  |  TON(1s) T4:8 base 1.0 pre 1  |  XIC T4:8/DN  |  MOV 0 -> N7:0  |  OTU B3:10/0
+         ; T4:10 = GOOD SIDE CLEAR TIMER
+         ; T4:11 = BAD SIDE CLEAR TIMER
+         ; B3:10/1 = ONE-SHOT
+         ; B3:10/0 = CLEAR TO HOST MEMORY
+         ; T4:8 = CLEAR TO HOST
+  002: XIC B3:2/0  |  ONS B3:20/3  |  CTU C5:10 pre 48
+         ; B3:2/0 = TRAY GOOD GOTO GOOD SIDE
+         ; B3:20/3 = ONE-SHOT
+  003: XIC C5:10/DN  |  ONS B3:20/4  |  OTL B3:20/0
+         ; B3:20/4 = ONE-SHOT
+         ; B3:20/0 = SEND MESSAGE TO OFFLINE COMPUTER
+  004: XIC B3:20/0  |  ONS B3:20/10  |  ARL 2 ST10:0 R6:1 70 66 00h  |  OTL B3:5/12  |  OTU B3:20/0  |  RES C5:10
+         ; B3:20/0 = SEND MESSAGE TO OFFLINE COMPUTER
+         ; B3:20/10 = ONE-SHOT
+         ; B3:5/12 = CLEAR PORT LATCH
+  005: XIC B3:5/12  |  TON T4:28 base 0.01 pre 200  |  XIC T4:28/DN  |  OTL B3:5/4  |  OTU B3:5/12
+         ; B3:5/12 = CLEAR PORT LATCH
+         ; T4:28 = RESET PORT DATA AFTER SEND
+         ; B3:5/4 = CLEAR PORT
+  006: XIC B3:5/4  |  ACL 2 No Yes  |  OTU B3:5/4
+         ; B3:5/4 = CLEAR PORT

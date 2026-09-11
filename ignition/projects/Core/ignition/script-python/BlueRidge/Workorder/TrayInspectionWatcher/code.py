@@ -17,10 +17,12 @@
                      operator alarm.
          match    -> OkToContinue = true, then the ByVision tray close.
 
-   SlcTray  (MicroLogix tray cells wired DIRECT to the AB driver: 6MA_CH)
-     Mirrors the PLC's own host interface (the MPPMACH ladder's "LAD 4 - HOST"
-     file; address map + rung references in
-     notes/2026-09-10_6ma-ch-camera-plc-host-interface.md):
+   SlcTray  (MicroLogix tray cells running the MPPMACH ladder)
+     Mirrors the MPPMACH ladder's host interface ("LAD 4 - HOST"; address map +
+     rung references in notes/2026-09-10_6ma-ch-camera-plc-host-interface.md).
+     MPPMACH is PLC 172.17.20.30 / vision 172.17.20.32 -- NOT 6MA_CH, which
+     this protocol was first written for on a structural guess and which runs
+     a different ladder (see SlcPassPulse). Not yet verified on a live PLC.
        N7:0  TrayLocked          PLC -> MES  re-asserted EVERY scan while the
                                              tray is locked; cleared by the PLC
        N7:1  OkToContinue        MES -> PLC  "ok to trigger": the camera will
@@ -44,6 +46,39 @@
      both read-only), and TrayLocked is re-asserted every scan -- an MES reset
      would bounce straight back and every bounce is a fresh rising edge.
 
+   SlcPassPulse  (6MA_CH: processor "6MA", PLC 172.17.21.213)
+     This PLC runs the cell on its own. The camera fires without the MES, the
+     tray goes to the good or bad side, and the only per-tray signal it gives
+     the host is a PASS pulse. Nothing the MES does can hold a tray. Ladder
+     decoded from the real .RSS in
+     notes/2026-09-11_6ma-ch-real-ladder-slcpasspulse.md. Instance members:
+       TrayLocked          I:0.0/0  tray present (input). Rising edge -> sync
+                                    the recipe before the camera fires (~4 s).
+       InspectionComplete  N7:10    "PASSED TO HOST COMPUTER": 1 for 2-3 s on
+                                    each GOOD tray, 0 otherwise. Never pulses
+                                    for a failed tray.
+       VisionPartNumber    N16:2    the program the vision controller is
+                                    actually running (the PLC copies N7:2 into
+                                    it; the HMI's master-tray buttons put
+                                    11..15 there).
+       PartNumber          N7:2     recipe, MES -> PLC.
+     TrayLocked rising edge -> write the finished good's Item.PlcId to
+       PartNumber if it differs. Logged, never alarmed (the booking below is
+       where the operator hears about a problem).
+     InspectionComplete rising edge -> a tray just passed. Book it only when
+       VisionPartNumber equals the finished good's PlcId. Anything else is a
+       master tray / rabbit test, an HMI part override, or a changeover the
+       recipe has not reached yet. Warn and do not book. Then sync the recipe.
+     No other writes: N7:1 (OkToContinue) and N7:30 have no effect or cannot
+     be observed on this ladder.
+
+   Observe-only (any protocol): set the instance's DisableWriteback memory
+   member and the watcher still reads and books but writes NOTHING to the PLC
+   -- no recipe, no go-ahead, no trigger acks. Each skipped write is logged to
+   InterfaceLog as "<member> write suppressed". For running beside the legacy
+   host, which then keeps owning the handshake. On SkuVerify/SlcTray cells
+   that means the MES relies on that host to release trays and ack triggers.
+
    The comparisons here are protocol decoding of PLC words, not business rules.
    The finished good, pack-out and tray close all resolve through
    Assembly.resolvePlcCloseContext / plcCompleteTray -- the same path the
@@ -54,6 +89,7 @@ import java.lang
 
 PROTOCOL_SKU_VERIFY = "SkuVerify"
 PROTOCOL_SLC_TRAY = "SlcTray"
+PROTOCOL_SLC_PASS_PULSE = "SlcPassPulse"
 
 _DISPOSITIONS = ["PartDisposition%02d" % i for i in range(1, 19)]
 
@@ -62,7 +98,12 @@ def handleEdge(instancePath, terminalLocationId, member):
     if member not in ("TrayLocked", "InspectionComplete"):
         return
     protocol = _protocol(instancePath)
-    if protocol == PROTOCOL_SLC_TRAY:
+    if protocol == PROTOCOL_SLC_PASS_PULSE:
+        if member == "TrayLocked":
+            _pulseOnTrayPresent(instancePath, terminalLocationId)
+        else:
+            _pulseOnTrayPassed(instancePath, terminalLocationId)
+    elif protocol == PROTOCOL_SLC_TRAY:
         if member == "TrayLocked":
             _slcOnTrayLocked(instancePath, terminalLocationId)
         else:
@@ -74,8 +115,8 @@ def handleEdge(instancePath, terminalLocationId, member):
             _onInspectionComplete(instancePath, terminalLocationId)
     else:
         W = BlueRidge.Workorder.PlcWatcher
-        msg = "Unknown tray Protocol '%s' (expected %s or %s)" % (
-            protocol, PROTOCOL_SKU_VERIFY, PROTOCOL_SLC_TRAY)
+        msg = "Unknown tray Protocol '%s' (expected %s, %s or %s)" % (
+            protocol, PROTOCOL_SKU_VERIFY, PROTOCOL_SLC_TRAY, PROTOCOL_SLC_PASS_PULSE)
         W.logInterface(_device(instancePath), "%s ignored" % member,
                        requestPayload="terminal=%s" % terminalLocationId,
                        ok=False, errorDescription=msg)
@@ -101,6 +142,30 @@ def _writeOk(result):
         return bool(result) and result[0].isGood()
     except (Exception, java.lang.Exception):
         return False
+
+
+def _writebackDisabled(instancePath):
+    """The instance's DisableWriteback memory member. A missing member reads as
+       bad quality -> None -> False, so instances without it write as before."""
+    return bool(BlueRidge.Workorder.PlcWatcher.readMember(instancePath, "DisableWriteback"))
+
+
+def _plcWrite(instancePath, member, value, detail=None):
+    """Every MES -> PLC write in this module goes through here.
+
+       Returns True (written, Good quality), False (the write failed) or None
+       (suppressed: DisableWriteback is set). Observe-only is for running
+       beside the legacy host, which keeps owning the handshake -- two hosts
+       writing N7:2 at a changeover would flip the vision program back and
+       forth. A suppressed write is logged with what the MES WOULD have
+       written, so a parallel run shows every point where the two disagree."""
+    W = BlueRidge.Workorder.PlcWatcher
+    if _writebackDisabled(instancePath):
+        W.logInterface(_device(instancePath),
+                       "%s write suppressed (DisableWriteback)" % member,
+                       requestPayload=detail or "%s=%s" % (member, value), ok=True)
+        return None
+    return _writeOk(W.writeMember(instancePath, member, value))
 
 
 def _expectedRecipe(terminalLocationId):
@@ -172,7 +237,7 @@ def _onTrayLocked(instancePath, terminalLocationId):
     # one-shot-then-permanently-silent device, easy to mistake for "nothing
     # happened" on click N+1 (2026-08-20, found practicing ByVision closures).
     # SkuVerify only: an SlcTray PLC owns its triggers (see module docstring).
-    W.writeMember(instancePath, "TrayLocked", False)
+    _plcWrite(instancePath, "TrayLocked", False)
     ctx, plcId, err = _expectedRecipe(terminalLocationId)
     if err:
         W.logInterface(device, "Tray locked -> recipe select failed",
@@ -183,7 +248,7 @@ def _onTrayLocked(instancePath, terminalLocationId):
         W.notifyAlarm(terminalLocationId, "Recipe select failed", err)
         return
     # Select the vision recipe in the PLC (control write, not display).
-    W.writeMember(instancePath, "PartNumber", plcId)
+    _plcWrite(instancePath, "PartNumber", plcId)
     W.logInterface(device, "Tray locked -> recipe select",
                    requestPayload="item=%s" % ctx.get("finishedGoodItemId"),
                    responsePayload="PartNumber=%s" % plcId, ok=True)
@@ -193,7 +258,7 @@ def _onInspectionComplete(instancePath, terminalLocationId):
     W = BlueRidge.Workorder.PlcWatcher
     device = _device(instancePath)
     # Ack the trigger immediately (see _onTrayLocked) -- same one-shot latch bug.
-    W.writeMember(instancePath, "InspectionComplete", False)
+    _plcWrite(instancePath, "InspectionComplete", False)
     ctx, expected, err = _expectedRecipe(terminalLocationId)
     vision = W.readMember(instancePath, "VisionPartNumber")
 
@@ -218,7 +283,7 @@ def _onInspectionComplete(instancePath, terminalLocationId):
         return
 
     # Match -> release the tray (physical handshake first; the DB record follows).
-    W.writeMember(instancePath, "OkToContinue", True)
+    _plcWrite(instancePath, "OkToContinue", True)
     W.logInterface(device, "Inspection complete -> tray released",
                    requestPayload="item=%s recipe=%s" % (ctx.get("finishedGoodItemId"), expected),
                    responsePayload="OkToContinue=True", ok=True)
@@ -244,14 +309,14 @@ def _slcOnTrayLocked(instancePath, terminalLocationId):
         return
     # Two separate writes, recipe first: the PLC loads a changed recipe into
     # the vision controller before it honours the trigger.
-    if not _writeOk(W.writeMember(instancePath, "PartNumber", plcId)):
+    if _plcWrite(instancePath, "PartNumber", plcId) is False:
         msg = "Could not write recipe %s to the PLC" % plcId
         W.logInterface(device, "Tray locked -> recipe write failed",
                        requestPayload="item=%s" % ctx.get("finishedGoodItemId"),
                        ok=False, errorDescription=msg)
         W.notifyAlarm(terminalLocationId, "Tray held - PLC write failed", msg)
         return
-    if not _writeOk(W.writeMember(instancePath, "OkToContinue", True)):
+    if _plcWrite(instancePath, "OkToContinue", True) is False:
         msg = "Could not write OkToContinue to the PLC"
         W.logInterface(device, "Tray locked -> release write failed",
                        requestPayload="item=%s recipe=%s" % (ctx.get("finishedGoodItemId"), plcId),
@@ -296,3 +361,91 @@ def _slcOnInspectionComplete(instancePath, terminalLocationId):
                    ok=False, errorDescription=msg)
     BlueRidge.Common.Util.log("tray %s: %s" % (instancePath, msg), level="warn")
     W.notifyAlarm(terminalLocationId, "Tray verdict unreadable", msg)
+
+
+# ---- SlcPassPulse -----------------------------------------------------------------
+def _sameNumber(a, b):
+    """Two PLC words / ids compared as integers. None or junk never matches."""
+    try:
+        return a is not None and b is not None and int(a) == int(b)
+    except (ValueError, TypeError):
+        return False
+
+
+def _pulseSyncRecipe(instancePath, terminalLocationId, trigger, plcId=None, itemId=None):
+    """Point the PLC's recipe word (N7:2) at the finished good's PlcId. Writes
+       only when it differs, so a steady line costs one read per tray and no
+       write. The PLC itself pushes a changed N7:2 to the vision controller.
+       Logged, never alarmed: the cell keeps running regardless, and a recipe
+       the vision system never got shows up as a refused booking, which does
+       alarm."""
+    W = BlueRidge.Workorder.PlcWatcher
+    device = _device(instancePath)
+    if plcId is None:
+        ctx, plcId, err = _expectedRecipe(terminalLocationId)
+        if err:
+            W.logInterface(device, "%s -> recipe not synced" % trigger,
+                           requestPayload="terminal=%s" % terminalLocationId,
+                           ok=False, errorDescription=err)
+            return
+        itemId = ctx.get("finishedGoodItemId")
+    current = W.readMember(instancePath, "PartNumber")
+    if _sameNumber(current, plcId):
+        return
+    ok = _plcWrite(instancePath, "PartNumber", plcId,
+                   detail="item=%s PartNumber %s -> %s" % (itemId, current, plcId))
+    if ok is None:
+        return
+    W.logInterface(device, "%s -> recipe %s" % (trigger, "written" if ok else "write FAILED"),
+                   requestPayload="item=%s" % itemId,
+                   responsePayload="PartNumber %s -> %s" % (current, plcId), ok=ok,
+                   errorDescription=None if ok else "Could not write recipe %s to the PLC" % plcId)
+
+
+def _pulseOnTrayPresent(instancePath, terminalLocationId):
+    """Tray arrived (I:0.0/0). Get the recipe right before the camera fires.
+       Replay-safe (PlcWatcher._REPLAY_SAFE): it only ever converges N7:2."""
+    _pulseSyncRecipe(instancePath, terminalLocationId, "Tray present")
+
+
+def _pulseOnTrayPassed(instancePath, terminalLocationId):
+    """N7:10 rose: the PLC has sent a good tray down the good side. Book it,
+       unless the vision controller was not running this finished good's
+       program -- then it was a master tray / rabbit test or an override, and
+       booking it would mint parts that were never built. Not replay-safe: an
+       N7:10 already high at gateway start is dropped by dispatch rather than
+       booked twice."""
+    W = BlueRidge.Workorder.PlcWatcher
+    device = _device(instancePath)
+    ctx, expected, err = _expectedRecipe(terminalLocationId)
+    if err:
+        W.logInterface(device, "Tray passed -> NOT booked (no finished good)",
+                       requestPayload="terminal=%s" % terminalLocationId,
+                       ok=False, errorDescription=err)
+        W.notifyAlarm(terminalLocationId, "Tray passed but not booked", err)
+        return
+    itemId = ctx.get("finishedGoodItemId")
+    loaded = W.readMember(instancePath, "VisionPartNumber")
+
+    if loaded is None:
+        msg = ("Tray passed but not booked: the vision program (VisionPartNumber, "
+               "N16:2) could not be read.")
+        W.logInterface(device, "Tray passed -> NOT booked (vision program unreadable)",
+                       requestPayload="item=%s expected=%s" % (itemId, expected),
+                       ok=False, errorDescription=msg)
+        W.notifyAlarm(terminalLocationId, "Tray not booked", msg)
+        return
+
+    if not _sameNumber(loaded, expected):
+        msg = ("The camera passed this tray on vision program %s, but this finished "
+               "good needs program %s. Not booked (master tray, HMI part override, "
+               "or a changeover still loading)." % (loaded, expected))
+        W.logInterface(device, "Tray passed -> NOT booked (vision program mismatch)",
+                       requestPayload="item=%s expected=%s loaded=%s" % (itemId, expected, loaded),
+                       ok=False, errorDescription=msg)
+        W.notifyAlarm(terminalLocationId, "Tray not booked", msg, level="warning")
+        _pulseSyncRecipe(instancePath, terminalLocationId, "Program mismatch",
+                         plcId=expected, itemId=itemId)
+        return
+
+    _closeTray(instancePath, terminalLocationId, expected)
