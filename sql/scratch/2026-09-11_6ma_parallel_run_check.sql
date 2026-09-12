@@ -20,6 +20,28 @@ DECLARE @CellId     BIGINT = (SELECT ParentLocationId FROM Location.Location WHE
 DECLARE @FgId       BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = @Fg AND DeprecatedAt IS NULL);
 DECLARE @Since      DATETIME2(3) = DATEADD(DAY, -@Days, SYSUTCDATETIME());
 
+-- 0. Plant-wide: every terminal that can complete a box ------------------------
+-- During the parallel run every one of these should be suppressed. A terminal counts
+-- if it has a printer beneath it or a CurrentClosureMethod, i.e. it packs boxes.
+PRINT '--- 0. Plant-wide SuppressAimAndLabel (parallel run: all should be ON)';
+SELECT line.Name AS Line, t.Code, t.Name,
+       ISNULL(cm.AttributeValue, N'') AS ClosureMethod,
+       CASE WHEN LOWER(ISNULL(sup.AttributeValue, N'')) IN (N'1', N'true', N'yes') THEN 'ON  - suppressed'
+            ELSE 'OFF - will claim AIM + print' END AS Verdict
+FROM Location.Location t
+LEFT JOIN Location.Location line ON line.Id = t.ParentLocationId
+LEFT JOIN Location.LocationAttributeDefinition supd
+       ON supd.LocationTypeDefinitionId = t.LocationTypeDefinitionId AND supd.AttributeName = N'SuppressAimAndLabel' AND supd.DeprecatedAt IS NULL
+LEFT JOIN Location.LocationAttribute sup ON sup.LocationId = t.Id AND sup.LocationAttributeDefinitionId = supd.Id
+LEFT JOIN Location.LocationAttributeDefinition cmd
+       ON cmd.LocationTypeDefinitionId = t.LocationTypeDefinitionId AND cmd.AttributeName = N'CurrentClosureMethod' AND cmd.DeprecatedAt IS NULL
+LEFT JOIN Location.LocationAttribute cm ON cm.LocationId = t.Id AND cm.LocationAttributeDefinitionId = cmd.Id
+WHERE t.LocationTypeDefinitionId = 7 AND t.DeprecatedAt IS NULL
+  AND (NULLIF(LTRIM(RTRIM(cm.AttributeValue)), N'') IS NOT NULL
+       OR EXISTS (SELECT 1 FROM Location.Location p
+                  WHERE p.ParentLocationId = t.Id AND p.LocationTypeDefinitionId = 16 AND p.DeprecatedAt IS NULL))
+ORDER BY CASE WHEN LOWER(ISNULL(sup.AttributeValue, N'')) IN (N'1', N'true', N'yes') THEN 1 ELSE 0 END, line.Name, t.Code;
+
 -- 1. The release landed ---------------------------------------------------------
 PRINT '--- 1. Release: migrations 0078/0079 + Container_Complete v1.2';
 SELECT m.MigrationId,
