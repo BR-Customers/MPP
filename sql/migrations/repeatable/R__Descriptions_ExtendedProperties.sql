@@ -2155,6 +2155,57 @@ BEGIN
                          @level1type = N'TABLE',  @level1name = N'Lot',
                          @level2type = N'COLUMN', @level2name = N'CrtActive';
     END
+
+    IF COL_LENGTH(N'[Lots].[Lot]', N'EntryRouteSequence') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Lot]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Lot]'), N'EntryRouteSequence', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. Route step SequenceNumber at which this LOT joined its route. Steps below this value are NOT part of the LOT journey and are never pending (Lots.ufn_NextPendingRouteStep). NULL = entered at the route start, which is every normally minted LOT. Set by the inventory cutover scan so physically counted stock surfaces at the terminal where it actually sits instead of at the first route step. Chosen over writing synthetic ProductionEvent rows, which would assert operations we never performed and pollute OEE and operator attribution.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'EntryRouteSequence';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. Route step SequenceNumber at which this LOT joined its route. Steps below this value are NOT part of the LOT journey and are never pending (Lots.ufn_NextPendingRouteStep). NULL = entered at the route start, which is every normally minted LOT. Set by the inventory cutover scan so physically counted stock surfaces at the terminal where it actually sits instead of at the first route step. Chosen over writing synthetic ProductionEvent rows, which would assert operations we never performed and pollute OEE and operator attribution.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'EntryRouteSequence';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Lot]', N'CastDate') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Lot]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Lot]'), N'CastDate', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. Cast date read off the physical LTT at cutover scan time. Drives FIFO ordering for migrated stock via COALESCE(CastDate, last LotMovement). NULL for normally minted LOTs, whose arrival order already is their FIFO order. Deliberately not backdated onto Lots.LotMovement.MovedAt, which is partitioned on MovedAt under the sliding-window TRUNCATE retention -- a backdated row would land in a partition maintenance is designed to sweep and the FIFO position would change silently.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'CastDate';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. Cast date read off the physical LTT at cutover scan time. Drives FIFO ordering for migrated stock via COALESCE(CastDate, last LotMovement). NULL for normally minted LOTs, whose arrival order already is their FIFO order. Deliberately not backdated onto Lots.LotMovement.MovedAt, which is partitioned on MovedAt under the sliding-window TRUNCATE retention -- a backdated row would land in a partition maintenance is designed to sweep and the FIFO position would change silently.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'CastDate';
+    END
+
+    IF COL_LENGTH(N'[Location].[Location]', N'DefaultStockLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Location].[Location]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Location].[Location]'), N'DefaultStockLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. On a Line, the Location where inventory scanned for this line is deposited. NULL = the line itself, which is how M&A inventory works today (LOTs are line-resident). Present so warehouse-held stock for a line is expressible without reworking the cutover scan. Self-FK to Location.Location.',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'Location',
+                         @level2type = N'COLUMN', @level2name = N'DefaultStockLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. On a Line, the Location where inventory scanned for this line is deposited. NULL = the line itself, which is how M&A inventory works today (LOTs are line-resident). Present so warehouse-held stock for a line is expressible without reworking the cutover scan. Self-FK to Location.Location.',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'Location',
+                         @level2type = N'COLUMN', @level2name = N'DefaultStockLocationId';
+    END
 END
 GO
 
