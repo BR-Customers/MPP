@@ -299,7 +299,8 @@ selecting the status row and returning with no open transaction (Msg 3915).
 These are not changes, but they will be hit during cutover and must be verified per line
 beforehand (see §10):
 
-- `Item.MaxLotSize` and `Item.MaxParts` caps. Tag `10625131` carries **3298** pieces.
+- `Item.MaxParts` caps, and the consumption-point `ItemLocation.MaxQuantity` below.
+  (`Item.MaxLotSize` no longer rejects -- see below.)
 - Consumption-point `Parts.ItemLocation.MaxQuantity`.
 - Item-location eligibility via `Parts.v_EffectiveItemLocation` — a **casting** must be
   eligible at the **machining line** or the create is refused.
@@ -351,15 +352,24 @@ elevation gate** — this is operator work, and nothing in it is a protected act
 "which dies can run this part" is one indexed lookup. Measured against Dev:
 
 ```
-Dies per part:            1 die -> 13 parts      6 dies -> 1 part
-Cavities per (part,die):  1 -> 4   2 -> 8   3 -> 5   4 -> 2
+Dies per part (mapped parts):   1 die -> 13 parts   (none maps to more than one)
+Cavities per (part,die):        1 -> 4   2 -> 8   3 -> 5   4 -> 2
 ```
 
+> **Corrected 2026-09-12.** An earlier draft of this section reported "6 dies -> 1 part".
+> That bucket was `ItemId IS NULL` — cavities with no part mapped — not a part. The query
+> grouped by `ToolCavity.ItemId` without joining `Parts.Item`, so every unmapped cavity
+> collapsed into one phantom row. Re-measured with the join: **every mapped part resolves
+> to exactly one die.** This strengthens the auto-resolve case rather than weakening it.
+
 This is the family-die model — `6MA-A` runs six different part numbers, each with cavities
-`a`/`b`. So **part -> die is 1:1 for all but one part**, even though die -> part is 1:many.
+`a`/`b`. So **part -> die is 1:1 for every mapped part**, even though die -> part is 1:many.
 
 The die therefore renders as a **resolved value with an AUTO marker**, not an input. The
-picker appears only when the lookup returns more than one row.
+picker appears only when the lookup returns more than one row — which nothing in Dev
+currently does. It is retained because the real MPP part list has not been measured and
+may not be so uniform; a screen that silently picks the wrong die would be worse than one
+that occasionally asks.
 
 New read proc: `Tools.Tool_ListForItem(@ItemId)` and
 `Tools.ToolCavity_ListForItemTool(@ItemId, @ToolId)`.
@@ -531,8 +541,12 @@ Not code — checks to run against production config before a line is scanned:
 
 - [ ] Every casting to be scanned is **eligible at its machining line** in
       `Parts.v_EffectiveItemLocation`.
-- [ ] `Item.MaxLotSize` / `MaxParts` / `ItemLocation.MaxQuantity` admit real basket
-      quantities (3000+).
+- [ ] `Item.MaxParts` and `ItemLocation.MaxQuantity` admit real basket quantities
+      (3000+). These still REJECT: they cap what may accumulate at a location, which
+      is a physical constraint.
+- [ ] `Item.MaxLotSize` is advisory only as of 2026-09-12 -- an over-size basket is
+      created with a note appended to the result Message. Raising caps that sit far
+      below real basket sizes is optional tidying, not a gate.
 - [ ] Every part to be scanned has an active published route whose `MachiningIn` (or
       `AssemblyIn`) step sequence is known — that number is `@EntryRouteSequence`.
 - [ ] `Tools.ToolCavity` rows exist for every (part, die) pair on the line.
@@ -595,4 +609,5 @@ first.
 | Version | Date | Author | Change |
 |---|---|---|---|
 | 0.1 (draft) | 2026-09-12 | Jacques + Claude | Initial design: `EntryRouteSequence` + `CastDate`, `ufn_NextPendingRouteStep` extraction as prerequisite, two-flow mobile scan surface, rejected alternatives, pre-cutover verification list. |
+| 0.3 (draft) | 2026-09-12 | Jacques + Claude | Corrected the dies-per-part measurement in 6.3: the reported "6 dies -> 1 part" was the unmapped `ItemId IS NULL` bucket, not a part. Every mapped part resolves to exactly one die. `Item.MaxLotSize` is now informational rather than a rejection. |
 | 0.2 (draft) | 2026-09-12 | Jacques + Claude | Open questions resolved. Cavity `Da`/`Db` = die revision + cavity, maps 1:1 to `CavityCode`, no translation needed. Added `Location.DefaultStockLocationId` (§3.5). Operator access, no elevation gate. New §3.4 scoping `EntryRouteSequence` to castings only, with the SubAssembly placement rule. §11 replaced with the `ConsumeMint` wart analysis. |

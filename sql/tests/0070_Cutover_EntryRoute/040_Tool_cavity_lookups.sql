@@ -6,7 +6,8 @@
 --
 --               A part resolving to exactly ONE die is what lets the scan screen
 --               show the die as a resolved value instead of a picker -- measured
---               against Dev, that is 13 of 14 parts under the family-die model.
+--               against Dev 2026-09-12, ALL 13 mapped parts do, under the
+--               family-die model (a die runs many parts; a part has one die).
 --
 --               This file builds its OWN tool + cavities rather than leaning on
 --               whatever ToolCavity rows other test files happen to have left

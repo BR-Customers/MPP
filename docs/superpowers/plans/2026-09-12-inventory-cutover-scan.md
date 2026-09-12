@@ -1242,7 +1242,7 @@ git add sql/migrations/repeatable/R__Tools_Tool_ListForItem.sql sql/migrations/r
 git commit -m "feat(sql): part -> die and (part,die) -> cavity lookups for cutover scan
 
 One row from Tool_ListForItem means the scan screen resolves the die with no
-operator input -- true for 13 of 14 parts under the family-die model."
+operator input -- true for every mapped part under the family-die model (measured on Dev 2026-09-12: all 13)."
 ```
 
 ---

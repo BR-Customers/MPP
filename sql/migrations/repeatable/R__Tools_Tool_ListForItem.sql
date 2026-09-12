@@ -8,11 +8,12 @@
 --              indexed read.
 --
 --              Under the family-die model a die runs SEVERAL part numbers at
---              once, but a part maps to exactly ONE die in almost every case --
---              measured against Dev, 13 of 14 parts. The inventory cutover scan
+--              once, but a part maps to exactly ONE die -- measured against Dev
+--              2026-09-12, all 13 mapped parts do. The inventory cutover scan
 --              screen relies on that asymmetry: a single row means the die is
 --              RESOLVED and displayed, not chosen, and the operator never sees a
---              picker. More than one row means show the picker.
+--              picker. More than one row means show the picker -- kept because
+--              the real MPP part list may not be so uniform.
 --
 --              DISTINCT because a die carries one ToolCavity row PER CAVITY for
 --              the part; the caller wants a die list, not a cavity list.
