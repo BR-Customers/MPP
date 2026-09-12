@@ -2098,10 +2098,11 @@ git commit -m "feat(ignition): cutover scan -- breakpoint host and three size vi
 - Produces: one result grid per check. An empty grid means ready.
 
 > Spec section 10 as runnable SQL, to be run against **production** before each line is
-> scanned. **Check 3 is not hypothetical:** the `5G0-c` fixture carries
-> `Item.MaxLotSize = 24`, and a realistic 3298-piece basket was rejected outright during
-> Task 5 with "PieceCount 3298 exceeds Item MaxLotSize 24." Real cutover parts need caps
-> that admit their real basket sizes, and that is config, not code.
+> scanned. **Check 3 changed on 2026-09-12:** `Item.MaxLotSize` is now INFORMATIONAL, not
+> a rejection -- an over-size basket creates successfully and `Lot_Create` returns a note
+> in `Message`. So check 3 no longer finds a blocker; it finds parts whose configured cap
+> is far below their real basket size, which will make every scan carry an advisory toast.
+> Keep it, and label it as noise-reduction rather than a gate.
 
 - [ ] **Step 1: Write the script**
 
@@ -2143,7 +2144,7 @@ WHERE e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@
   AND it.Code = N'Casting'
   AND NOT EXISTS (SELECT 1 FROM Tools.ToolCavity tc WHERE tc.ItemId = i.Id AND tc.DeprecatedAt IS NULL);
 
-PRINT '=== 3. Parts whose MaxLotSize would reject a real basket (< 4000) ===';
+PRINT '=== 3. Parts whose MaxLotSize is below a real basket (advisory noise, not a blocker) ===';
 SELECT DISTINCT i.Id, i.PartNumber, i.MaxLotSize
 FROM Parts.v_EffectiveItemLocation e
 INNER JOIN Parts.Item i ON i.Id = e.ItemId

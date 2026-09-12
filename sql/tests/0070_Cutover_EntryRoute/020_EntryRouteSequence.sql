@@ -51,18 +51,20 @@ CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber 
 -- (1) Migrated LOT: entry point at MachiningIn, no ProductionEvents at all.
 DECLARE @Mig BIGINT;
 DELETE FROM #C;
--- PieceCount is 20, NOT a realistic 3298-piece basket: the 5G0-c fixture carries
--- Item.MaxLotSize = 24 and Lot_Create rightly rejects anything above it. That cap
--- is covered by 0020_PlantFloor_Foundation/041_Lot_Create_maxparts.sql; this file
--- is about the route entry point and must not entangle the two. (Real cutover
--- parts DO need caps that admit ~3000 -- that is a pre-cutover config check, not
--- a code change. See the readiness script in sql/scratch/.)
+-- A realistic basket: tag 10625131 carries 3298 pieces. The 5G0-c fixture's
+-- Item.MaxLotSize is 24, and as of 2026-09-12 that cap is INFORMATIONAL -- the
+-- create succeeds and returns a note. Using the real number here keeps the test
+-- honest about what cutover actually scans, and guards the relaxation.
 INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Origin,
-    @CurrentLocationId = @Line, @PieceCount = 20, @AppUserId = @U,
+    @CurrentLocationId = @Line, @PieceCount = 3298, @AppUserId = @U,
     @LotName = N'10625131', @EntryRouteSequence = @MinSeq, @CastDate = '2026-08-04';
 SELECT @Mig = NewId FROM #C;
 DECLARE @b0 NVARCHAR(20) = CAST(@Mig AS NVARCHAR(20));
 EXEC test.Assert_IsNotNull @TestName = N'[Entry] migrated LOT created', @Value = @b0;
+
+DECLARE @bAdv NVARCHAR(500) = (SELECT Message FROM #C);
+EXEC test.Assert_Contains @TestName = N'[Entry] over-size basket is accepted with an advisory note',
+    @HaystackStr = @bAdv, @NeedleStr = N'max lot size';
 
 DECLARE @b1 NVARCHAR(30) = (SELECT OperationTypeCode FROM Lots.ufn_NextPendingRouteStep(@Mig));
 EXEC test.Assert_IsEqual @TestName = N'[Entry] next pending skips to MachiningIn',

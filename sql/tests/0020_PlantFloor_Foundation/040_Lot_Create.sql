@@ -262,19 +262,31 @@ ORDER BY eil.LocationId;
 DECLARE @PriorMax INT = (SELECT MaxLotSize FROM Parts.Item WHERE Id = @ItemId);
 UPDATE Parts.Item SET MaxLotSize = 4 WHERE Id = @ItemId;
 
-DECLARE @S BIT, @SStr NVARCHAR(1);
+DECLARE @S BIT, @SStr NVARCHAR(1), @M NVARCHAR(500), @NewLot BIGINT;
 CREATE TABLE #T8 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #T8 EXEC Lots.Lot_Create
     @ItemId = @ItemId, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @CellId,
     @PieceCount = 99, @AppUserId = 1;
-SELECT @S = Status FROM #T8;
+SELECT @S = Status, @M = Message, @NewLot = NewId FROM #T8;
 DROP TABLE #T8;
 
 -- restore MaxLotSize
 UPDATE Parts.Item SET MaxLotSize = @PriorMax WHERE Id = @ItemId;
 
+-- MaxLotSize is INFORMATIONAL as of 2026-09-12: it describes the expected basket
+-- size, not a physical limit, so an over-size basket is real stock rather than an
+-- error. The create SUCCEEDS and carries a note. (MaxParts and the
+-- consumption-point cap still reject -- see 041.)
 SET @SStr = CAST(@S AS NVARCHAR(1));
-EXEC test.Assert_IsEqual @TestName = N'[LcOverMax] Reject piece count over MaxLotSize', @Expected = N'0', @Actual = @SStr;
+EXEC test.Assert_IsEqual @TestName = N'[LcOverMax] piece count over MaxLotSize is accepted', @Expected = N'1', @Actual = @SStr;
+EXEC test.Assert_Contains @TestName = N'[LcOverMax] message carries the max-lot-size note', @HaystackStr = @M, @NeedleStr = N'max lot size';
+
+-- Clean up the LOT this case now creates (it used to be rejected).
+DELETE FROM Lots.LotEventLog WHERE LotId = @NewLot;
+DELETE FROM Lots.LotMovement WHERE LotId = @NewLot;
+DELETE FROM Lots.LotStatusHistory WHERE LotId = @NewLot;
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId = @NewLot OR DescendantLotId = @NewLot;
+DELETE FROM Lots.Lot WHERE Id = @NewLot;
 GO
 
 -- =============================================

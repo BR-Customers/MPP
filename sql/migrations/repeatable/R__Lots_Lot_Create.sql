@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_Lot_Create.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-09-10
--- Version:     1.3
+-- Version:     1.4
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
 --              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +
 --              FDS-05-034/-035).
@@ -14,6 +14,13 @@
 --              consumption points only; no configured row = unrestricted. Nearest
 --              ancestor tier wins when more than one ItemLocation row applies.
 --
+--              v1.4 (2026-09-12): Parts.Item.MaxLotSize is now INFORMATIONAL.
+--              It describes the expected basket size, not a physical limit, and a
+--              basket that exceeds it is real stock someone is holding -- not an
+--              error. The create succeeds and returns a note in @Message.
+--              Item.MaxParts and ItemLocation.MaxQuantity still REJECT: those cap
+--              what may accumulate at a location, which is a real constraint.
+--
 --              v1.3 (2026-09-12, migration 0080): @EntryRouteSequence + @CastDate
 --              for the inventory cutover scan. Both default NULL, so every
 --              existing caller is unaffected. @EntryRouteSequence must name a
@@ -24,7 +31,7 @@
 --
 --              Flow: validate params/FKs -> validate business rules
 --              (eligibility via Parts.v_EffectiveItemLocation Direct U
---              BomDerived; PieceCount <= Parts.Item.MaxLotSize; die-cast
+--              BomDerived; PieceCount vs Parts.Item.MaxLotSize is advisory only; die-cast
 --              Tool/Cavity per FDS-05-034) -> BEGIN TRAN -> mint LotName via
 --              Lots.IdentifierSequence_Next @Code='Lot' INSIDE the tran (so a
 --              rolled-back create does not burn a counter, the point of B6) ->
@@ -255,19 +262,25 @@ BEGIN
             RETURN;
         END
 
+        -- ---- 3b. MaxLotSize: INFORMATIONAL, not a rejection (2026-09-12) ----
+        -- Parts.Item.MaxLotSize describes the expected basket size; it is not a
+        -- physical limit and a LOT that exceeds it is a real basket someone is
+        -- holding, not an error. Rejecting the create turned a data-quality
+        -- signal into a hard stop on the floor -- and would have blocked
+        -- inventory cutover outright, where real castings run into the
+        -- thousands against seed caps in the tens. The create now succeeds and
+        -- carries a note back in @Message so the operator still sees it.
+        --
+        -- Deliberately NOT relaxed alongside it: Item.MaxParts and the
+        -- consumption-point ItemLocation.MaxQuantity (6 / 6b below). Those cap
+        -- how much may ACCUMULATE at a location, which is a genuine physical
+        -- constraint, and they still reject.
+        DECLARE @Advisory   NVARCHAR(300) = N'';
         DECLARE @MaxLotSize INT = (SELECT MaxLotSize FROM Parts.Item WHERE Id = @ItemId);
         IF @MaxLotSize IS NOT NULL AND @PieceCount > @MaxLotSize
-        BEGIN
-            SET @Message = N'PieceCount ' + CAST(@PieceCount AS NVARCHAR(20))
-                         + N' exceeds Item MaxLotSize ' + CAST(@MaxLotSize AS NVARCHAR(20)) + N'.';
-            EXEC Audit.Audit_LogFailure
-                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
-                @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
-                @FailureReason = @Message, @ProcedureName = @ProcName,
-                @AttemptedParameters = @Params;
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
-            RETURN;
-        END
+            SET @Advisory = N' Note: piece count ' + CAST(@PieceCount AS NVARCHAR(20))
+                          + N' is above the configured max lot size of '
+                          + CAST(@MaxLotSize AS NVARCHAR(20)) + N'.';
 
         -- ---- 4. Eligibility (Direct U BomDerived, FDS-03-014 hierarchy cascade) ----
         -- Eligible if configured at the Cell OR any ancestor tier (Cell -> WorkCenter
@@ -705,7 +718,8 @@ BEGIN
         SET @Message = N'LOT ' + @MintedLotName + N' created.'
                      + CASE WHEN @StorageDepositSkipped = 1
                             THEN N' (storage deposit skipped: no warehouse configured)'
-                            ELSE N'' END;
+                            ELSE N'' END
+                     + @Advisory;
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
     END TRY
     BEGIN CATCH
