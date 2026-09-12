@@ -736,7 +736,7 @@
               "style": {
                 "classes": "pf-kpi-sub"
               },
-              "text": "Pick a LOT from the Trim inventory below (or scan its LTT), choose the production line, record counters."
+              "text": "Pick a LOT from the Trim inventory below (or scan its LTT), enter the count, record any scrap."
             },
             "type": "ia.display.label"
           },
