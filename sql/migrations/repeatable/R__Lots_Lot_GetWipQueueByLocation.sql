@@ -96,7 +96,10 @@ BEGIN
     INNER JOIN Parts.OperationType oty  ON oty.Id = ot.OperationTypeId
     LEFT  JOIN LastMove lm              ON lm.LotId = l.Id
     WHERE (@OperationTypeCode IS NULL OR oty.Code = @OperationTypeCode)
-    ORDER BY lm.LastMovementAt ASC, l.Id ASC
+    -- FIFO for migrated stock: CastDate (0080) is the real age of inventory
+    -- counted in at cutover; NULL on every normally minted LOT, whose arrival
+    -- order already IS its FIFO order, so this is inert for existing data.
+    ORDER BY COALESCE(CAST(l.CastDate AS DATETIME2(3)), lm.LastMovementAt) ASC, l.Id ASC
     OPTION (MAXRECURSION 8);
 END;
 GO

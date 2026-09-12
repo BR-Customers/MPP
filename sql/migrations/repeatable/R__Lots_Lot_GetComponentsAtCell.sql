@@ -56,6 +56,13 @@ BEGIN
         WHERE ( (@IncludeDescendants = 1 AND l.CurrentLocationId IN (SELECT Id FROM Descendants))
              OR (@IncludeDescendants = 0 AND l.CurrentLocationId = @CellLocationId) )
     )
+    -- Both legs are wrapped in a derived table so they can share one FIFO
+    -- ordering expression (the UNION's single trailing ORDER BY can only see
+    -- output columns). FifoAt is projected here and dropped by the outer SELECT,
+    -- so the public column shape stays identical to Lot_GetWipQueueByLocation.
+    SELECT Id, LotName, ItemId, ItemPartNumber, ItemDescription, PieceCount,
+           LotStatusId, LotStatusCode, LastMovementAt, NextOperationTypeCode, NextSequenceNumber
+    FROM (
     -- Leg 1 result rows
     SELECT
         l.Id, l.LotName, l.ItemId,
@@ -64,7 +71,8 @@ BEGIN
         l.PieceCount, l.LotStatusId, sc.Code AS LotStatusCode,
         CAST(lm.LastMovementAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS LastMovementAt,
         oty.Code          AS NextOperationTypeCode,
-        ns.SequenceNumber AS NextSequenceNumber
+        ns.SequenceNumber AS NextSequenceNumber,
+        COALESCE(CAST(l.CastDate AS DATETIME2(3)), lm.LastMovementAt) AS FifoAt
     -- Leg 1: routeful -- lowest-SequenceNumber PENDING route step, via the one
     -- shared definition. AtCell already carries the status + location filter.
     FROM AtCell ac
@@ -86,7 +94,8 @@ BEGIN
         l.PieceCount, l.LotStatusId, sc.Code AS LotStatusCode,
         CAST(lm.LastMovementAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS LastMovementAt,
         CAST(NULL AS NVARCHAR(30)) AS NextOperationTypeCode,
-        CAST(NULL AS INT)          AS NextSequenceNumber
+        CAST(NULL AS INT)          AS NextSequenceNumber,
+        COALESCE(CAST(l.CastDate AS DATETIME2(3)), lm.LastMovementAt) AS FifoAt
     FROM AtCell ac
     INNER JOIN Lots.Lot l            ON l.Id = ac.Id
     INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
@@ -101,7 +110,11 @@ BEGIN
                 AND e.Source = N'BomDerived'
                 AND e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@CellLocationId)))
 
-    ORDER BY LastMovementAt ASC, Id ASC
+    ) u
+    -- FIFO for migrated stock: CastDate (0080) is the real age of inventory
+    -- counted in at cutover; NULL on every normally minted LOT, whose arrival
+    -- order already IS its FIFO order, so this is inert for existing data.
+    ORDER BY u.FifoAt ASC, u.Id ASC
     OPTION (MAXRECURSION 8);
 END;
 GO

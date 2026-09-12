@@ -257,7 +257,10 @@ BEGIN
         LEFT JOIN (SELECT LotId, MAX(MovedAt) AS LastMovementAt FROM Lots.LotMovement GROUP BY LotId) lm ON lm.LotId=l.Id
         WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0 AND l.PieceCount > 0
           AND ns.OperationTypeCode = @OpTypeCode
-        ORDER BY lm.LastMovementAt ASC, l.Id ASC;
+        -- FIFO for migrated stock: CastDate (0080) is the real age of inventory
+        -- counted in at cutover; NULL on every normally minted LOT, whose arrival
+        -- order already IS its FIFO order, so this is inert for existing data.
+        ORDER BY COALESCE(CAST(l.CastDate AS DATETIME2(3)), lm.LastMovementAt) ASC, l.Id ASC;
 
         SET @OldestName = (SELECT LotName FROM Lots.Lot WHERE Id = (SELECT LotId FROM @Queue WHERE Ord=1));
         SET @NextOrd = ISNULL((SELECT MAX(TRY_CAST(RIGHT(LotName,2) AS INT)) FROM Lots.Lot WHERE LotName LIKE @OldestName + N'-[0-9][0-9]'),0)+1;
