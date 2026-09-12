@@ -111,8 +111,9 @@ resources:
 2. `MPP_6ma-parallel-run_2026-09-11_1409.zip`
 
 **Do not** use the Gateway web page's project import. These are partial exports, not
-whole projects. After the import, **reload every open terminal (F5)** (lesson from this
-morning's downtime release).
+whole projects. After the import, **reload the open Perspective sessions**: F5 on each
+shop-floor workstation screen (not the Designer) — a session left open across a project
+update can come back with stale bindings (lesson from the downtime release).
 
 At this point the 6MA CH watcher is still on its old `SlcTray` mapping. That mapping is
 dormant on this PLC, so nothing changes on the line yet.
@@ -122,11 +123,22 @@ dormant on this PLC, so nothing changes on the line yet.
 The order matters: the switches that stop writes and stop AIM/labels go on **before** the
 members that make the watcher act.
 
-1. **Config Tool → Plant Hierarchy → `MA2-6MACH-AOUT3` (Assembly Out) → tick
-   `SuppressAimAndLabel` → Save.** From now on a box that fills at the camera cell
-   completes without an AIM serial or a label.
-2. **Designer → Tag Browser → `[MPP]PlcDevices/6MA_CH`** (instance of
-   `TrayInspectionStation`):
+1. **Tick `SuppressAimAndLabel` on the camera terminal — in the Config Tool
+   (`MPP_Config`), not the Designer.**
+   - Page: **Plant Hierarchy** (route `/plant`).
+   - Tree: Madison facility → **MA2** → **6MA Cam Holder Line 1**.
+   - Select the terminal named **"Assembly Out"** = `MA2-6MACH-AOUT3`. Its siblings are
+     METTs Assembly Out A and B; printer **P - 037** sits beneath it.
+   - Right panel **Location Details → Attributes**. Scroll to the **bottom**: it is the
+     newest attribute so it sorts last, and renders as a **checkbox** (BIT).
+   - Tick it → **Save**. No row at all = the Config Tool is pointed at a database
+     without migration `0079`.
+
+   From now on a box that fills at the camera cell completes without an AIM serial or a
+   label.
+2. **Designer on the prod Gateway → Tag Browser → `[MPP]` provider → `PlcDevices` folder
+   → `6MA_CH`** (instance of `TrayInspectionStation`). Memory members take a value; OPC
+   members take an OPC Item Path:
    1. Confirm the UDT definition has **`DisableWriteback`** (Boolean, Memory). You have
       added it already.
    2. `DisableWriteback` = **true**.
