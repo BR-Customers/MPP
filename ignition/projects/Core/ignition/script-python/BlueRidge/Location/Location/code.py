@@ -75,7 +75,12 @@
 #                      the new Location.Location_SaveAll bundled proc.
 #                      _refreshAfterMutation now also expands the path to
 #                      the target so deep new nodes are visible.
+#   2026-09-12 - 1.8 - Cutover scan: getStockDestination / getStockDestinationOrEmpty
+#                      (line -> deposit-location resolution via
+#                      Location.Location_GetStockDestination).
 # =============================================================================
+
+import java.lang
 
 
 def getOne(locationId):
@@ -979,3 +984,35 @@ def handleDeprecate(locationId, userId=None,
         "selectedPath": None,
         "selected":     None,
     }
+
+
+_EMPTY_STOCK_DEST = {"DestinationLocationId": None,
+                     "DestinationCode": "",
+                     "DestinationName": ""}
+
+
+def getStockDestination(lineLocationId):
+    """Where inventory scanned for this line is deposited. Returns a dict with
+       DestinationLocationId / DestinationCode / DestinationName, or None when the
+       line is unknown. Use getStockDestinationOrEmpty for binding sources."""
+    lineLocationId = _u(lineLocationId)
+    if lineLocationId is None:
+        return None
+    try:
+        rows = BlueRidge.Common.Db.execList("location/Location_GetStockDestination",
+                                            {"lineLocationId": lineLocationId}) or []
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("getStockDestination failed: %s" % str(e))
+        return None
+    if not rows:
+        return None
+    return rows[0]
+
+
+def getStockDestinationOrEmpty(lineLocationId):
+    """Binding-safe getStockDestination: always returns the full shape so a
+       nested-path binding never reads a non-existent property."""
+    row = getStockDestination(lineLocationId)
+    if not row:
+        return dict(_EMPTY_STOCK_DEST)
+    return row

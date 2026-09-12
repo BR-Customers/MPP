@@ -18,7 +18,7 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
-    "lastModificationSignature": "",
+    "lastModificationSignature": "825d868098fa82f270ce99b277641fd91bf445b59d0d03673c061ab0b71c72ee",
     "permissions": [
       {
         "zone": "",
@@ -26,8 +26,8 @@
       }
     ],
     "lastModification": {
-      "actor": "claude",
-      "timestamp": "2026-06-09T12:00:00Z"
+      "actor": "admin",
+      "timestamp": "2026-09-11T01:33:56Z"
     },
     "parameters": [
       {
@@ -104,6 +104,16 @@
         "type": "Parameter",
         "identifier": "depositToStorage",
         "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "entryRouteSequence",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "castDate",
+        "sqlType": 8
       }
     ]
   }

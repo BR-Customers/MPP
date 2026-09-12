@@ -13,4 +13,6 @@ EXEC Lots.Lot_Create
     @AppUserId          = :appUserId,
     @TerminalLocationId = :terminalLocationId,
     @LotName            = :lotName,
-    @DepositToStorage   = :depositToStorage
+    @DepositToStorage   = :depositToStorage,
+    @EntryRouteSequence = :entryRouteSequence,
+    @CastDate           = :castDate

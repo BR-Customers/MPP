@@ -27,7 +27,11 @@
 #                      getOperationTemplatesByArea, createNewVersion,
 #                      saveAll, publish, discardDraft, deprecate,
 #                      publishWithSave (chained save+publish).
+#   2026-09-12 - 2.1 - Cutover scan: getSequenceForItemRole (route-role ->
+#                      SequenceNumber, for Lot_Create @EntryRouteSequence).
 # =============================================================================
+
+import java.lang
 
 
 def _u(value):
@@ -413,3 +417,25 @@ def publishWithSave(id, name, effectiveFrom, stepsList):
         effectiveFrom = effectiveFrom,
         name          = name,
     )
+
+
+def getSequenceForItemRole(itemId, roleCode):
+    """The route SequenceNumber at which an OperationType ROLE sits on this
+       part's active published route -- the value the cutover scan passes as
+       Lot_Create @EntryRouteSequence. Resolution is by ROLE, never by
+       OperationTemplate code. Returns int, or None when the route has no such
+       step."""
+    itemId = _u(itemId)
+    roleCode = _u(roleCode)
+    if itemId is None or not roleCode:
+        return None
+    try:
+        rows = BlueRidge.Common.Db.execList("parts/RouteStep_GetSequenceForItemRole",
+                                            {"itemId": itemId,
+                                             "operationTypeCode": roleCode}) or []
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("getSequenceForItemRole failed: %s" % str(e))
+        return None
+    if not rows:
+        return None
+    return rows[0].get("SequenceNumber")

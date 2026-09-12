@@ -34,7 +34,8 @@ def shiftTallyCavityIds(tally):
 def create(data, appUserId=None, terminalLocationId=None, lotName=None):
     """Mint a new LOT. data carries every Lot_Create field (itemId,
        lotOriginTypeId, currentLocationId, pieceCount, weight, weightUomId,
-       toolId, toolCavityId, vendorLotNumber, minSerialNumber, maxSerialNumber).
+       toolId, toolCavityId, vendorLotNumber, minSerialNumber, maxSerialNumber,
+       entryRouteSequence, castDate).
        lotName (D4): None = server mint (default); a value = use it verbatim (the
        pre-printed LTT).
        Returns {Status, Message, NewId, MintedLotName}."""
@@ -63,6 +64,10 @@ def create(data, appUserId=None, terminalLocationId=None, lotName=None):
         # Die-cast opt-in: after birth at the machine, the proc auto-moves the LOT to
         # the Warehouse (storage). 0/1 -> BIT. Absent/false = no deposit (other origins).
         "depositToStorage":   1 if d.get("depositToStorage") else 0,
+        # Cutover scan: where this LOT joined its route, and the date off the
+        # physical LTT. Both None for every normal mint.
+        "entryRouteSequence": d.get("entryRouteSequence"),
+        "castDate":           d.get("castDate"),
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_Create", params)
 
