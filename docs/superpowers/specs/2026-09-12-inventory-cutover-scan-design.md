@@ -65,6 +65,10 @@ partway through its life. The model should say so.
 8. **The session list is the only error check that exists.** Nothing in the plant holds
    trustworthy inventory to reconcile against, so void-last and a live running total are
    in scope, not nice-to-have.
+9. **`EntryRouteSequence` is a castings-only mechanism.** Sub-assemblies and purchased
+   components need no entry point — see §3.4.
+10. **Scan destination is a property of the Line**, defaulting to the line itself. §3.5.
+11. **No elevation gate.** An operator does this with a plain PIN sign-in.
 
 ---
 
@@ -122,6 +126,52 @@ LOT's FIFO position changes silently — with no error and no audit trail. Putti
 FIFO-critical data in a retention-swept partition is the wrong place for it.
 
 `Lots.Lot` is not partitioned. `CastDate` lives there and survives.
+
+### 3.4 Scope — `EntryRouteSequence` applies to castings only
+
+Traced through the three item shapes cutover will scan:
+
+| Scanned item | Route shape | Entry point needed? |
+|---|---|---|
+| **Casting** | `DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut` | **Yes.** Without it the first pending step is `TrimIn` and the LOT lands in the Trim queues. |
+| **SubAssembly** | one step — `MachiningOut` (`ConsumeMint`), sequence 1 | **No.** There is no earlier step to skip; any value is a no-op. |
+| **Purchased component** | no published route at all | **No.** `Lot_GetWipQueueByLocation` drops it on the `INNER JOIN` to `RouteTemplate`. |
+
+A scanned **SubAssembly** surfaces correctly with no entry point at all, through
+`Lots.Lot_GetComponentsAtCell` **Leg 1** (routeful): the leg returns any open LOT at the
+cell at its lowest pending step, and a `ConsumeMint` is unconditionally pending while the
+LOT is open — so the SubAssembly appears as an assembly component. Correct behaviour,
+arrived at incidentally.
+
+A scanned **purchased component** surfaces through **Leg 2** (routeless), which requires
+`Parts.v_EffectiveItemLocation` to show it as `BomDerived`-eligible at the cell — i.e. that
+it is genuinely a BOM child of a finished good Direct-eligible there. That is a
+**pre-cutover config check**, not code (§10).
+
+**Hard rule — where SubAssembly stock is scanned.** `Lot_GetWipQueueByLocation` filters on
+`CurrentLocationId`. A SubAssembly's pending step is permanently its `MachiningOut`
+`ConsumeMint`, so if a scanned SubAssembly is placed at a **machining-line** location it
+appears in that terminal's Machining OUT queue as a **mint source**, alongside the raw
+castings awaiting machining — an operator could select an already-machined LOT as input.
+SubAssembly cutover stock **must** be scanned to an assembly-side location. See §11.1.
+
+### 3.5 `Location.DefaultStockLocationId`
+
+```sql
+ALTER TABLE Location.Location ADD DefaultStockLocationId BIGINT NULL
+    REFERENCES Location.Location(Id);
+```
+
+Inventory for an M&A line lives on the line itself, so a cutover session's
+`@CurrentLocationId` is the line. That will not always hold — warehouse stock for a line is
+foreseeable. A nullable self-FK on the Line names where its scanned stock is deposited;
+`NULL` means the line itself, which is today's behaviour and needs no backfill.
+
+Everything else in this spec is unchanged by the value — only the destination moves.
+
+> Note, out of scope: `Lot_Create`'s existing `@DepositToStorage` resolves the warehouse by
+> a hard-coded `Code = N'WHSE'` lookup. This column is the eventual right home for that
+> too, but converting it is a separate change and is **not** bundled here.
 
 ---
 
@@ -196,10 +246,12 @@ Ignition change. If anything in those tests moves, the extraction is wrong.
 
 - `ALTER TABLE Lots.Lot ADD EntryRouteSequence INT NULL;`
 - `ALTER TABLE Lots.Lot ADD CastDate DATE NULL;`
-- Extended-property descriptions for both in `R__Descriptions_ExtendedProperties.sql`
+- `ALTER TABLE Location.Location ADD DefaultStockLocationId BIGINT NULL REFERENCES Location.Location(Id);`
+- Extended-property descriptions for all three in `R__Descriptions_ExtendedProperties.sql`
   (these feed the generated ERD).
 
-No index on either: both are read from an already-fetched `Lot` row.
+No index on the two `Lot` columns: both are read from an already-fetched `Lot` row.
+`DefaultStockLocationId` is read once per session.
 
 ### 5.2 `Lots.ufn_NextPendingRouteStep` gains the clause
 
@@ -285,6 +337,14 @@ Chosen at session start and displayed persistently in a header that never scroll
 A wrong part is then visible on every basket, rather than buried in a field filled twenty
 minutes earlier.
 
+**Destination.** `@CurrentLocationId` resolves as
+`ISNULL(Line.DefaultStockLocationId, Line.Id)` (§3.5) — the line itself today. Resolved
+once at session start and shown in the latched header, so the operator can always see where
+stock is landing.
+
+**Access.** Plain operator PIN sign-in via the existing `InitialsEntry` path. **No
+elevation gate** — this is operator work, and nothing in it is a protected action.
+
 ### 6.3 Die resolution
 
 `Tools.ToolCavity` is keyed `(ToolId, ItemId, CavityCode)` with a unique index, so
@@ -309,13 +369,20 @@ New read proc: `Tools.Tool_ListForItem(@ItemId)` and
 | Field | Behaviour on submit |
 |---|---|
 | **Scan LTT** | clears, refocuses |
-| **Cavity** — 2–4 segmented buttons | **latches** |
+| **Cavity** — 2–4 segmented buttons, labelled with `ToolCavity.CavityCode` | **latches** |
 | **Cast date** — stepper, §6.5 | **latches** |
 | **Piece count** | clears |
 
 Cavity and cast date latch because baskets come off the rack grouped by both. They are
 rendered large and permanently visible rather than as filled form controls, because a stale
 latched value is silently wrong in exactly the way a stale part would be.
+
+**Cavity notation.** The tags write `CAV` as `Da` / `Db`. The **capital** letter is the die
+**revision**; the **lowercase** letter is the cavity, and maps 1:1 to
+`ToolCavity.CavityCode` (migration `0076`). This is well understood on the floor and needs
+no translation layer — the buttons carry the lowercase code and the operator taps the
+letter they read. The capital revision letter is not captured; die identity is already
+carried by `@ToolId`.
 
 ### 6.5 The cast-date stepper
 
@@ -412,6 +479,12 @@ New folder `sql/tests/0070_Cutover_EntryRoute/`:
 6. `NULL EntryRouteSequence` behaves exactly as today (explicit regression).
 7. `Lot_Create` rejects: an `EntryRouteSequence` matching no step; a future `CastDate`;
    a duplicate `@LotName`.
+8. A SubAssembly LOT created at an **assembly cell** with no `EntryRouteSequence` appears in
+   `Lot_GetComponentsAtCell` (Leg 1) and is consumable by `Assembly_CompleteTray`.
+9. A routeless purchased component created at the same cell appears in
+   `Lot_GetComponentsAtCell` (Leg 2) and is absent from `Lot_GetWipQueueByLocation`.
+10. `DefaultStockLocationId` set on a Line routes a scanned LOT to the named location;
+    `NULL` routes it to the line itself.
 
 Test teardown deletes `LotGenealogyClosure` before LOTs (Msg 547) per the established
 Arc 2 pattern.
@@ -464,24 +537,56 @@ Not code — checks to run against production config before a line is scanned:
       `AssemblyIn`) step sequence is known — that number is `@EntryRouteSequence`.
 - [ ] `Tools.ToolCavity` rows exist for every (part, die) pair on the line.
 - [ ] No legacy LTT about to be scanned already exists in `Lots.Lot`.
+- [ ] Every **purchased component** to be scanned resolves as `BomDerived` in
+      `Parts.v_EffectiveItemLocation` at its assembly cell — otherwise it is created
+      successfully and then never appears in Leg 2 (§3.4).
+- [ ] `Location.DefaultStockLocationId` is correct for the line (or deliberately `NULL`).
+- [ ] **No SubAssembly stock is scanned to a machining-line location** (§3.4, §11.1).
 
 ---
 
-## 11. Open questions
+## 11. Known interaction — the `ConsumeMint` always-pending wart
 
-1. **Cavity notation.** The tags write `CAV` as `Da` / `Db`. Migration `0076` made
-   `ToolCavity.CavityCode` per-part lowercase alphabetic (`a`, `b`, `c`). If the floor's
-   `D` prefix simply means "die", the operator reads the tag and taps the matching letter
-   with no translation. **Confirm with MPP before build** — if it means something else, the
-   cavity buttons are mislabelled and every basket records wrong die genealogy silently.
-2. **Warehouse stock location.** Stock in the warehouse belonging to a line — does it scan
-   in *at* the warehouse location and move later, or directly to the line? Affects
-   `@CurrentLocationId` and whether `@DepositToStorage` is used.
-3. **Who scans.** Operator PIN sign-in, or is this a supervisor-only surface? Affects
-   whether the view needs an elevation gate.
-4. **Sub-assemblies.** Already-machined stock waiting at Assembly — same cast-part flow
-   with `AssemblyIn` entry, or does it need its own handling? Note the known
-   `ConsumeMint`-always-pending wart in `CLAUDE.md` may interact here.
+### 11.1 What it is
+
+`Lot_GetWipQueueByLocation` treats a `ConsumeMint` step as **unconditionally pending while
+the LOT is open**. That is deliberate: it keeps a *decrementing casting* in the Machining
+OUT queue across repeated partial mints, so the FIFO pool stays visible until the casting
+is exhausted.
+
+The side effect is that a **minted SubAssembly**, whose entire route is one `MachiningOut`
+`ConsumeMint` step, has that step pending *forever*. It is therefore eligible for the
+Machining OUT queue for the rest of its life. When such a LOT sits at a location the
+Machining OUT terminal reads, it appears in the mint **source** pick-list beside the raw
+castings still awaiting machining — and an operator can select an already-machined LOT as
+mint input.
+
+Verified 2026-08-12, not yet fixed. Latent only because Dev carries two SubAssemblies
+(`5G0-SA`, `12270-6NA-M`) with no live LOTs. The real MPP part list adds 26 more.
+
+### 11.2 Why cutover does not trigger it
+
+`Lot_GetWipQueueByLocation` filters on `CurrentLocationId`. SubAssembly cutover stock is
+scanned to an **assembly-side** location, where the Machining OUT terminal never looks — and
+where `Lot_GetComponentsAtCell` Leg 1 surfaces it correctly as an assembly component (§3.4).
+
+The mitigation is therefore a **placement rule, not code**, and it is on the pre-cutover
+checklist (§10). Scanning SubAssembly stock to a machining-line location is the one action
+that trips the wart, and there is no reason to do it.
+
+### 11.3 But cutover is likely the event that exposes it
+
+Cutover is the first time live SubAssembly LOTs exist in quantity in production. Any
+SubAssembly that later *moves* through a machining-line location — by normal operation, not
+by cutover — will surface in the mint pick-list.
+
+**Recommendation: do not bundle the fix.** It is a distinct behavioural change to a proc
+every terminal reads, and folding it into cutover work couples two risks that should be
+taken separately. The fix belongs in its own task, and the shape is: a `ConsumeMint` step is
+pending for a LOT only when that LOT is an **input** to the step, never when the LOT is the
+step's own **output**. Post-Phase-A that is a single edit inside
+`Lots.ufn_NextPendingRouteStep` — which is a further argument for doing the extraction
+first.
 
 ---
 
@@ -490,3 +595,4 @@ Not code — checks to run against production config before a line is scanned:
 | Version | Date | Author | Change |
 |---|---|---|---|
 | 0.1 (draft) | 2026-09-12 | Jacques + Claude | Initial design: `EntryRouteSequence` + `CastDate`, `ufn_NextPendingRouteStep` extraction as prerequisite, two-flow mobile scan surface, rejected alternatives, pre-cutover verification list. |
+| 0.2 (draft) | 2026-09-12 | Jacques + Claude | Open questions resolved. Cavity `Da`/`Db` = die revision + cavity, maps 1:1 to `CavityCode`, no translation needed. Added `Location.DefaultStockLocationId` (§3.5). Operator access, no elevation gate. New §3.4 scoping `EntryRouteSequence` to castings only, with the SubAssembly placement rule. §11 replaced with the `ConsumeMint` wart analysis. |
