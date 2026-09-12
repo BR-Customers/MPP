@@ -37,7 +37,17 @@
 --              + scrap can never over-draw; the scrap decrement is applied in-txn
 --              BEFORE the FIFO walk, which reads lock-fresh MIN(InvAvail,PieceCount).
 -- Version:     2.2 (2026-07-21) - bound each draw by MIN(InventoryAvailable, PieceCount).
--- Description: Machining OUT consume-mint. @SourceLotId is the FIFO HANDLE (its cell +
+-- Description:
+--              v2.3 (2026-09-12): all THREE inline pending-step CTEs replaced by
+--              CROSS APPLY Lots.ufn_NextPendingRouteStep. The three had to agree
+--              exactly -- availability (@TotalAvail), source eligibility
+--              (@SrcEligible) and the FIFO walk (@Queue) -- and drift between
+--              them would have produced wrong QUANTITIES, not an error. They now
+--              share one definition. The old CTEs also carried sc.Code <> 'Closed';
+--              every outer query already requires LotStatusId = @GoodStatusId,
+--              which is strictly narrower, so dropping it changes nothing.
+--
+--              Machining OUT consume-mint. @SourceLotId is the FIFO HANDLE (its cell +
 --              casting part). Consumes strict oldest-first (arrival order) across ALL
 --              open same-part castings at that cell, rolling into the next as each
 --              empties; each draw is bounded by the casting's lock-fresh
@@ -52,7 +62,7 @@
 --              v2.1: the FIFO candidate set (@TotalAvail select AND the @Queue
 --              INSERT...SELECT) now requires Good/non-blocking status (LotStatusId =
 --              @GoodStatusId, matching the walk's own guard) AND that the casting's
---              next PENDING route step (mirrors the NextStep CTE in
+--              next PENDING route step (via Lots.ufn_NextPendingRouteStep, shared with
 --              R__Lots_Lot_GetWipQueueByLocation.sql) is THIS MachiningOut ConsumeMint
 --              step -- i.e. the exact set Lots.Lot_GetWipQueueByLocation would surface
 --              for this cell/role. Prevents consuming a same-part casting that is still
@@ -170,59 +180,27 @@ BEGIN
         SET @Consumed = CAST(@QtyPer * @PieceCount AS INT);
 
         -- FIFO source total: Good/non-blocking, same part, same cell, AND next-pending route
-        -- step is THIS MachiningOut ConsumeMint step (mirrors NextStep CTE in
+        -- step is THIS MachiningOut ConsumeMint step (via ufn_NextPendingRouteStep, as in
         -- R__Lots_Lot_GetWipQueueByLocation.sql) -- i.e. exactly the set the terminal's
         -- WIP queue would display. @Available = max producible sub-assemblies.
-        ;WITH NextStep AS (
-            SELECT l.Id AS LotId, rs.SequenceNumber, oty2.Code AS OpCode,
-                   ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
-            FROM Lots.Lot l
-            INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
-            INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId
-                 AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
-            INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
-            INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
-            INNER JOIN Parts.OperationType oty2 ON oty2.Id = ot2.OperationTypeId
-            INNER JOIN Parts.OperationRoleKind rk ON rk.Id = oty2.OperationRoleKindId
-            WHERE l.ItemId = @SrcItem AND l.CurrentLocationId = @SrcLoc
-              AND ( rk.Code = N'ConsumeMint'
-                    OR (rk.Code = N'Advance' AND NOT EXISTS (
-                           SELECT 1 FROM Workorder.ProductionEvent pe
-                           WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId)) )
-        )
         -- v2.2: consumable per casting = MIN(InventoryAvailable, PieceCount). Upstream
         -- data can leave InvAvail > PieceCount (Trim scrap historically decremented
         -- PieceCount but not InvAvail); bounding by the MIN keeps every casting >= 0.
         SELECT @TotalAvail = ISNULL(SUM(CASE WHEN l.InventoryAvailable < l.PieceCount THEN l.InventoryAvailable ELSE l.PieceCount END),0)
         FROM Lots.Lot l
+        CROSS APPLY Lots.ufn_NextPendingRouteStep(l.Id) ns
         WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0 AND l.PieceCount > 0
-          AND EXISTS (SELECT 1 FROM NextStep ns WHERE ns.LotId=l.Id AND ns.rn=1 AND ns.OpCode=@OpTypeCode);
+          AND ns.OperationTypeCode = @OpTypeCode;
         -- Scrap decrements @SourceLotId (FAT-MACH-140). If @SourceLotId is itself in the
         -- FIFO eligible set, that scrap reduces the mintable pool -- so the availability
         -- the mint sees is NET of scrap. @SrcEligible mirrors the @TotalAvail predicate
         -- restricted to @SourceLotId; the source-covers-scrap guard above already ensures
         -- its eligible contribution (MIN(InvAvail,PieceCount)) >= @ScrapTotal.
-        ;WITH NextStep AS (
-            SELECT l.Id AS LotId, rs.SequenceNumber, oty2.Code AS OpCode,
-                   ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
-            FROM Lots.Lot l
-            INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
-            INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId
-                 AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
-            INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
-            INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
-            INNER JOIN Parts.OperationType oty2 ON oty2.Id = ot2.OperationTypeId
-            INNER JOIN Parts.OperationRoleKind rk ON rk.Id = oty2.OperationRoleKindId
-            WHERE l.Id = @SourceLotId
-              AND ( rk.Code = N'ConsumeMint'
-                    OR (rk.Code = N'Advance' AND NOT EXISTS (
-                           SELECT 1 FROM Workorder.ProductionEvent pe
-                           WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId)) )
-        )
         SELECT @SrcEligible = CASE WHEN EXISTS (
             SELECT 1 FROM Lots.Lot l
+            CROSS APPLY Lots.ufn_NextPendingRouteStep(l.Id) ns
             WHERE l.Id=@SourceLotId AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0 AND l.PieceCount > 0
-              AND EXISTS (SELECT 1 FROM NextStep ns WHERE ns.LotId=l.Id AND ns.rn=1 AND ns.OpCode=@OpTypeCode)
+              AND ns.OperationTypeCode = @OpTypeCode
         ) THEN 1 ELSE 0 END;
 
         SET @NetAvail = @TotalAvail - (CASE WHEN @SrcEligible = 1 THEN @ScrapTotal ELSE 0 END);
@@ -272,29 +250,13 @@ BEGIN
         -- Same predicate as @TotalAvail above: Good/non-blocking status AND next-pending
         -- route step is THIS MachiningOut ConsumeMint step.
         DECLARE @Queue TABLE (Ord INT IDENTITY(1,1), LotId BIGINT);
-        ;WITH NextStep AS (
-            SELECT l.Id AS LotId, rs.SequenceNumber, oty2.Code AS OpCode,
-                   ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
-            FROM Lots.Lot l
-            INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
-            INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId
-                 AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
-            INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
-            INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
-            INNER JOIN Parts.OperationType oty2 ON oty2.Id = ot2.OperationTypeId
-            INNER JOIN Parts.OperationRoleKind rk ON rk.Id = oty2.OperationRoleKindId
-            WHERE l.ItemId = @SrcItem AND l.CurrentLocationId = @SrcLoc
-              AND ( rk.Code = N'ConsumeMint'
-                    OR (rk.Code = N'Advance' AND NOT EXISTS (
-                           SELECT 1 FROM Workorder.ProductionEvent pe
-                           WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId)) )
-        )
         INSERT INTO @Queue (LotId)
         SELECT l.Id
         FROM Lots.Lot l
+        CROSS APPLY Lots.ufn_NextPendingRouteStep(l.Id) ns
         LEFT JOIN (SELECT LotId, MAX(MovedAt) AS LastMovementAt FROM Lots.LotMovement GROUP BY LotId) lm ON lm.LotId=l.Id
         WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0 AND l.PieceCount > 0
-          AND EXISTS (SELECT 1 FROM NextStep ns WHERE ns.LotId=l.Id AND ns.rn=1 AND ns.OpCode=@OpTypeCode)
+          AND ns.OperationTypeCode = @OpTypeCode
         ORDER BY lm.LastMovementAt ASC, l.Id ASC;
 
         SET @OldestName = (SELECT LotName FROM Lots.Lot WHERE Id = (SELECT LotId FROM @Queue WHERE Ord=1));
