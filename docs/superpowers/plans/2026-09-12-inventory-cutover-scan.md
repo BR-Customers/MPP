@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status (2026-09-12):** Tasks 1-8 complete and committed on `jacques/working`; suite green at 3487 assertions. Tasks 9-12 remain.
+
 **Goal:** Build a mobile scan surface that counts existing plant inventory into the new MES line-by-line, backed by a LOT-level route entry point so migrated stock lands at the terminal where it physically sits.
 
 **Architecture:** Three phases. **Phase A** extracts the pending-route-step predicate — currently copy-pasted seven times across five procs — into one inline table-valued function, with zero behaviour change, proven by the existing test suite passing unmodified. **Phase B** adds `Lots.Lot.EntryRouteSequence` (where a migrated LOT joined its route), `Lots.Lot.CastDate` (real FIFO), and `Location.DefaultStockLocationId` (where a line's scanned stock lands) — each nullable, so every existing row keeps today's behaviour. **Phase C** builds the Perspective view.
@@ -38,7 +40,7 @@ Every task's requirements implicitly include this section.
 - Run with `.\Run-Tests.ps1` from `sql/tests/`. It **resets (DROPs)** its target, which defaults to `MPP_MES_Test`. **Never point it at `MPP_MES_Dev`** — that is Jacques's hand-built working data with no backups.
 - Capture a status-row proc via `INSERT ... EXEC` into a temp table matching the `SELECT` shape.
 - Teardown order: `LotEventLog` -> `LotMovement` -> `LotStatusHistory` -> `LotGenealogyClosure` -> `Lot`. Deleting a LOT before its closure rows raises Msg 547.
-- Every test file opens with `EXEC test.BeginTestFile @FileName = N'<relative path>';` and asserts through `test.Assert_IsEqual` / `Assert_IsTrue` / `Assert_IsNull` / `Assert_IsNotNull` / `Assert_RowCount` / `Assert_Contains`.
+- Every test file opens with `EXEC test.BeginTestFile @FileName = N'<relative path>';` and asserts through `test.Assert_IsEqual` / `Assert_IsTrue` / `Assert_IsNull` / `Assert_IsNotNull` / `Assert_RowCount` / `Assert_Contains` (takes `@HaystackStr` + `@NeedleStr`).
 - An exit code of 1 with zero reported failures means a test's `sqlcmd` errored outright — usually a teardown FK ordering mistake.
 
 **Ignition**
@@ -1681,557 +1683,425 @@ cavity, route-role sequence and line stock destination."
 
 ---
 
-### Task 10: The cutover scan view — cast-part flow
+### Task 10: Scan logic as a Core script module
+
+> **Phase C was re-planned on 2026-09-12** after Jacques delivered the
+> `Breakpoint Example` view (MPP project). It is a **nested `ia.container.breakpt`**:
+> an outer container at `breakpoint: 900` whose `large` child is the desktop view, and
+> whose small side is an inner container at `breakpoint: 500` with a phone child and a
+> `large` tablet child. Net: `<500` phone, `500-899` tablet, `>=900` desktop, under ONE
+> page configuration. `position.size: "large"` marks the large-side child; a child
+> without it is the small-side one.
+>
+> Two consequences drove the re-plan:
+>
+> 1. **Only the active branch renders.** State held in a size view's own
+>    `view.custom` would be lost the moment the viewport crossed a breakpoint. The
+>    scan session is genuinely session-scoped anyway (one operator, one line, one
+>    walk of the rack), so it lives in `session.custom.cutover`.
+> 2. **Three size views must not triplicate the logic.** All behaviour goes into a
+>    Core script module; each size view is presentation plus one-line calls. That is
+>    the repo's standing three-layer rule (View -> entity script -> Common helpers),
+>    not a special case.
 
 **Files:**
-- Create: `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/view.json`
-- Create: `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/resource.json`
-- Modify: `ignition/projects/MPP/com.inductiveautomation.perspective/page-config/config.json`
+- Create: `ignition/projects/Core/ignition/script-python/BlueRidge/Cutover/Scan/{code.py,resource.json}`
+- Modify: `ignition/projects/Core/com.inductiveautomation.perspective/session-props/props.json`
 
 **Interfaces:**
-- Consumes: every wrapper from Task 9.
-- Produces: the page `/shop-floor/cutover-scan`.
+- Consumes: the named queries and wrappers from Task 9.
+- Produces `BlueRidge.Cutover.Scan`:
+  - `loadSession(lineLocationId, itemId, entryRoleCode, machineNumber)` -> writes
+    `session.custom.cutover.session`; returns `{Status, Message}`.
+  - `addBasket(draft, appUserId, terminalLocationId)` -> `{Status, Message, NewId}`;
+    appends to `session.custom.cutover.rows` and recomputes totals.
+  - `addBox(draft, appUserId, terminalLocationId)` -> same shape, purchased path.
+  - `voidEntry(lotId, appUserId)` -> `{Status, Message}`; closes the LOT, drops the row.
+  - `stepCastDate(days)` -> the new date, capped at today.
+  - `getState()` -> the full `session.custom.cutover` shape, every key present.
 
-> This is a **new** view, so file authoring is correct and safe — there is no Designer cache to fight. Do not hand-edit it afterwards; subsequent changes go through Designer.
-
-**`view.custom` block — every property a binding reads, fully shaped:**
+`session.custom.cutover` default shape, declared in `session-props/props.json` fully
+shaped -- a binding that traverses a nested path against a missing property renders a
+Component Error:
 
 ```json
-"custom": {
+"cutover": {
   "session": {
-    "lineLocationId": null,
-    "lineName": "",
-    "destinationLocationId": null,
-    "destinationName": "",
-    "entryRoleCode": "MachiningIn",
-    "entryRouteSequence": null,
-    "itemId": null,
-    "partNumber": "",
-    "partDescription": "",
-    "toolId": null,
-    "toolCode": "",
-    "toolIsAmbiguous": false,
-    "machineNumber": ""
+    "lineLocationId": null, "lineName": "", "destinationLocationId": null,
+    "destinationName": "", "entryRoleCode": "MachiningIn", "entryRouteSequence": null,
+    "itemId": null, "partNumber": "", "partDescription": "",
+    "toolId": null, "toolCode": "", "toolIsAmbiguous": false, "machineNumber": ""
   },
-  "entry": {
-    "lotName": "",
-    "toolCavityId": null,
-    "cavityCode": "",
-    "castDate": null,
-    "pieceCount": ""
-  },
-  "cavityOptions": [],
-  "toolOptions": [],
-  "sessionRows": [],
-  "sessionTotals": {"baskets": 0, "pieces": 0},
-  "mode": "cast"
+  "entry":     {"lotName": "", "toolCavityId": null, "cavityCode": "", "castDate": null, "pieceCount": ""},
+  "purchased": {"partNumber": "", "partDescription": "", "itemId": null, "qty": "", "vendorLot": ""},
+  "cavityOptions": [], "toolOptions": [], "rows": [],
+  "totals": {"baskets": 0, "pieces": 0}, "mode": "cast"
 }
 ```
 
-- [ ] **Step 1: Create `resource.json`**
+- [ ] **Step 1: Declare the session-prop shape**
+
+Add the `cutover` block above under `custom` in `session-props/props.json`, every key
+present. Run `.\scan.ps1` and confirm a session starts with no Component Error.
+
+- [ ] **Step 2: Write `getState` / `_write` and `loadSession`**
+
+`_write` assigns the whole dict in ONE statement. Never key by key -- a binding
+re-evaluates between sequential writes and sees half-built state.
+
+```python
+_EMPTY = {
+    "session": {"lineLocationId": None, "lineName": "", "destinationLocationId": None,
+                "destinationName": "", "entryRoleCode": "MachiningIn",
+                "entryRouteSequence": None, "itemId": None, "partNumber": "",
+                "partDescription": "", "toolId": None, "toolCode": "",
+                "toolIsAmbiguous": False, "machineNumber": ""},
+    "entry": {"lotName": "", "toolCavityId": None, "cavityCode": "",
+              "castDate": None, "pieceCount": ""},
+    "purchased": {"partNumber": "", "partDescription": "", "itemId": None,
+                  "qty": "", "vendorLot": ""},
+    "cavityOptions": [], "toolOptions": [], "rows": [],
+    "totals": {"baskets": 0, "pieces": 0}, "mode": "cast",
+}
+
+
+def getState():
+    """The whole cutover session state, always fully shaped."""
+    raw = system.perspective.getSessionInfo()["custom"].get("cutover")
+    st = BlueRidge.Common.Util.extractQualifiedValues(raw) or {}
+    out = dict(_EMPTY)
+    for k, v in st.items():
+        out[k] = v
+    return out
+
+
+def _write(state, session):
+    """ONE assignment. Key-by-key writes let a binding see half-built state."""
+    session.custom.cutover = state
+
+
+def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
+    """Latch the scan session. Every domain question is asked of SQL; this only
+       assembles the answers. Returns {Status, Message}."""
+    item = BlueRidge.Parts.Item.getById(itemId) or {}
+    line = BlueRidge.Location.Location.getById(lineLocationId) or {}
+    dest = BlueRidge.Location.Location.getStockDestinationOrEmpty(lineLocationId)
+    seq = BlueRidge.Parts.RouteTemplate.getSequenceForItemRole(itemId, entryRoleCode)
+    if seq is None:
+        return {"Status": 0,
+                "Message": "%s has no %s step on its active route."
+                           % (item.get("PartNumber"), entryRoleCode)}
+
+    tools = BlueRidge.Tools.Tool.listForItem(itemId)
+    toolId, toolCode, ambiguous = None, "", False
+    if len(tools) == 1:
+        toolId, toolCode = tools[0].get("Id"), tools[0].get("Code")
+    elif len(tools) > 1:
+        ambiguous = True
+
+    cavities = BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId) if toolId else []
+
+    st = getState()
+    st["session"] = {
+        "lineLocationId": lineLocationId, "lineName": line.get("Name") or "",
+        "destinationLocationId": dest.get("DestinationLocationId"),
+        "destinationName": dest.get("DestinationName") or "",
+        "entryRoleCode": entryRoleCode, "entryRouteSequence": seq,
+        "itemId": itemId, "partNumber": item.get("PartNumber") or "",
+        "partDescription": item.get("Description") or "",
+        "toolId": toolId, "toolCode": toolCode, "toolIsAmbiguous": ambiguous,
+        "machineNumber": machineNumber or "",
+    }
+    st["toolOptions"], st["cavityOptions"] = tools, cavities
+    st["rows"], st["totals"] = [], {"baskets": 0, "pieces": 0}
+    _write(st, session)
+    return {"Status": 1, "Message": "Session ready"}
+```
+
+- [ ] **Step 3: Write `addBasket`**
+
+```python
+def addBasket(appUserId, terminalLocationId, session):
+    """Create one migrated casting LOT. The scanned LTT becomes the LOT name
+       verbatim -- no re-tagging. Returns {Status, Message, NewId}."""
+    st = getState()
+    s, e = st["session"], st["entry"]
+
+    lotName = (e.get("lotName") or "").strip()
+    if not lotName:
+        return {"Status": 0, "Message": "Scan the LTT barcode."}
+    if e.get("toolCavityId") is None:
+        return {"Status": 0, "Message": "Tap the cavity shown on the tag."}
+    if e.get("castDate") is None:
+        return {"Status": 0, "Message": "Set the cast date from the tag."}
+    try:
+        pieces = int(("%s" % e.get("pieceCount")).strip())
+    except (ValueError, TypeError):
+        return {"Status": 0, "Message": "Enter a whole number."}
+    if pieces <= 0:
+        return {"Status": 0, "Message": "Enter how many are in the basket."}
+
+    res = BlueRidge.Lots.Lot.create({
+        "itemId": s.get("itemId"),
+        "lotOriginTypeId": BlueRidge.Lots.Lot.getOriginTypeIdByCode("Manufactured"),
+        "currentLocationId": s.get("destinationLocationId"),
+        "pieceCount": pieces,
+        "toolId": s.get("toolId"),
+        "toolCavityId": e.get("toolCavityId"),
+        "entryRouteSequence": s.get("entryRouteSequence"),
+        "castDate": e.get("castDate"),
+    }, appUserId, terminalLocationId, lotName)
+    if not (res and res.get("Status")):
+        return res
+
+    # Only the LTT and the count clear. Cavity and cast date LATCH, because
+    # baskets come off the rack grouped by both.
+    e["lotName"], e["pieceCount"] = "", ""
+    rows = list(st.get("rows") or [])
+    rows.insert(0, {"LotId": res.get("NewId"), "LotName": lotName,
+                    "PartNumber": s.get("partNumber"), "CavityCode": e.get("cavityCode"),
+                    "CastDate": e.get("castDate"), "PieceCount": pieces})
+    st["entry"], st["rows"] = e, rows
+    st["totals"] = {"baskets": len(rows),
+                    "pieces": sum([r.get("PieceCount") or 0 for r in rows])}
+    _write(st, session)
+    return res
+```
+
+- [ ] **Step 4: Write `addBox`, `voidEntry`, `stepCastDate`**
+
+```python
+def addBox(appUserId, terminalLocationId, session):
+    """Create one received purchased-component LOT. The box has no LTT, so the
+       LOT name is minted server-side and the supplier lot goes to
+       VendorLotNumber. Returns {Status, Message, NewId}."""
+    st = getState()
+    s, p = st["session"], st["purchased"]
+
+    itemId = p.get("itemId")
+    if itemId is None:
+        row = BlueRidge.Parts.Item.getByPartNumber((p.get("partNumber") or "").strip())
+        if row is None:
+            return {"Status": 0,
+                    "Message": "No active item matches '%s'." % p.get("partNumber")}
+        itemId = row.get("Id")
+    try:
+        qty = int(("%s" % p.get("qty")).strip())
+    except (ValueError, TypeError):
+        return {"Status": 0, "Message": "Enter a whole number."}
+    if qty <= 0:
+        return {"Status": 0, "Message": "Enter how many are in the box."}
+
+    res = BlueRidge.Lots.Lot.create({
+        "itemId": itemId,
+        "lotOriginTypeId": BlueRidge.Lots.Lot.getOriginTypeIdByCode("Received"),
+        "currentLocationId": s.get("destinationLocationId"),
+        "pieceCount": qty,
+        "vendorLotNumber": (p.get("vendorLot") or "").strip() or None,
+    }, appUserId, terminalLocationId)
+    if not (res and res.get("Status")):
+        return res
+
+    rows = list(st.get("rows") or [])
+    rows.insert(0, {"LotId": res.get("NewId"), "LotName": res.get("MintedLotName"),
+                    "PartNumber": p.get("partNumber"), "CavityCode": "",
+                    "CastDate": None, "PieceCount": qty})
+    st["purchased"] = {"partNumber": "", "partDescription": "", "itemId": None,
+                       "qty": "", "vendorLot": ""}
+    st["rows"] = rows
+    st["totals"] = {"baskets": len(rows),
+                    "pieces": sum([r.get("PieceCount") or 0 for r in rows])}
+    _write(st, session)
+    return res
+
+
+def voidEntry(lotId, appUserId, session):
+    """Undo a mis-scanned entry. The LOT is CLOSED with a cutover-correction
+       reason, never deleted -- nothing in the plant holds trustworthy inventory
+       to reconcile against, so the correction itself is the record."""
+    res = BlueRidge.Lots.Lot.updateStatus(
+        lotId, "Closed",
+        "Voided during inventory cutover scan (mis-scan correction).", appUserId)
+    if not (res and res.get("Status")):
+        return res
+    st = getState()
+    rows = [r for r in (st.get("rows") or []) if r.get("LotId") != lotId]
+    st["rows"] = rows
+    st["totals"] = {"baskets": len(rows),
+                    "pieces": sum([r.get("PieceCount") or 0 for r in rows])}
+    _write(st, session)
+    return res
+
+
+def stepCastDate(days, session):
+    """Move the cast date by whole days, capped at today. Seeded from the last
+       basket scanned, so consecutive baskets are zero or one tap."""
+    st = getState()
+    cur = st["entry"].get("castDate") or system.date.now()
+    nxt = system.date.addDays(cur, days)
+    if system.date.isAfter(system.date.midnight(nxt),
+                           system.date.midnight(system.date.now())):
+        return cur
+    st["entry"]["castDate"] = nxt
+    _write(st, session)
+    return nxt
+```
+
+- [ ] **Step 5: Verify from the Designer script console**
+
+```python
+print BlueRidge.Cutover.Scan.getState()["session"]["entryRouteSequence"]
+```
+
+Expected: the full shape returns with every key present even before any session is
+loaded -- that is what keeps the first paint free of Component Errors.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add ignition/projects/Core/ignition/script-python/BlueRidge/Cutover ignition/projects/Core/com.inductiveautomation.perspective/session-props
+git commit -m "feat(ignition): cutover scan logic as a Core script module
+
+State lives in session.custom.cutover because only the active breakpoint branch
+renders -- per-view state would be lost crossing a breakpoint."
+```
+
+---
+
+### Task 11: The three size views and the breakpoint host
+
+**Files:**
+- Create: `.../views/BlueRidge/Views/ShopFloor/CutoverScan/{view.json,resource.json}` (host)
+- Create: `.../views/BlueRidge/Views/ShopFloor/_CutoverScan/Phone/{view.json,resource.json}`
+- Create: `.../views/BlueRidge/Views/ShopFloor/_CutoverScan/Tablet/{view.json,resource.json}`
+- Create: `.../views/BlueRidge/Views/ShopFloor/_CutoverScan/Desktop/{view.json,resource.json}`
+- Modify: `.../page-config/config.json`
+
+> `_<Name>/` is the repo convention for "internals of `<Name>`" -- these three are not
+> independently addressable pages.
+
+**Interfaces:**
+- Consumes: `BlueRidge.Cutover.Scan` (Task 10).
+- Produces: the page `/shop-floor/cutover-scan`.
+
+- [ ] **Step 1: Build the host, mirroring `Breakpoint Example`**
 
 ```json
 {
-  "scope": "G",
-  "version": 1,
-  "restricted": false,
-  "overridable": true,
-  "files": ["view.json"],
-  "attributes": {}
+  "custom": {}, "params": {}, "props": {},
+  "root": {
+    "type": "ia.container.breakpt",
+    "meta": { "name": "root" },
+    "props": { "breakpoint": 900, "currentBreakpoint": "large" },
+    "children": [
+      { "type": "ia.container.breakpt",
+        "meta": { "name": "BreakpointContainer" },
+        "props": { "breakpoint": 500, "currentBreakpoint": "large" },
+        "children": [
+          { "type": "ia.display.view", "meta": { "name": "phone" },
+            "props": { "path": "BlueRidge/Views/ShopFloor/_CutoverScan/Phone" } },
+          { "type": "ia.display.view", "meta": { "name": "tablet" },
+            "position": { "size": "large" },
+            "props": { "path": "BlueRidge/Views/ShopFloor/_CutoverScan/Tablet" } }
+        ] },
+      { "type": "ia.display.view", "meta": { "name": "desktop" },
+        "position": { "size": "large" },
+        "props": { "path": "BlueRidge/Views/ShopFloor/_CutoverScan/Desktop" } }
+    ]
+  }
 }
 ```
 
-- [ ] **Step 2: Build the component tree**
+`Breakpoint Example`'s embeds carry no `props.path` -- it is a skeleton; add them. Keep
+`meta.name` exactly `root` on the outer container. Each view folder needs its own
+`resource.json` with `"scope": "G"` or the page reports "View Not Found".
 
-Root is an `ia.container.flex` in `column` direction. **`meta.name` must be exactly `"root"`** —
-binding paths and the `self.view.rootContainer.*` addressing used by the customMethods below
-both assume it.
+- [ ] **Step 2: Build the three size views**
 
-**Style classes are referenced by SUFFIX ONLY.** Perspective prepends `psc-` at render time, so
-the stylesheet defines `.psc-pf-panel` and the view writes `"classes": "pf-panel"`. Writing
-`psc-pf-panel` renders as `psc-psc-pf-panel` and matches nothing.
+All three bind to `session.custom.cutover.*` and call `BlueRidge.Cutover.Scan.*` as
+one-liners. Layout per the mockups
+(https://claude.ai/code/artifact/b198811e-e705-4754-98b7-fec93aeddafb):
 
-**Reuse the existing vocabulary — do not invent classes.** The Core stylesheet already carries
-everything this screen needs:
-
-| Element | Existing class |
+| View | Layout |
 |---|---|
-| Shell / header | `pf-terminal`, `pf-terminal-header`, `pf-terminal-title`, `pf-terminal-subtitle` |
-| Mode tabs | `pf-tab-strip`, `pf-tab`, `pf-tab-active` |
-| Latched context + session panel | `pf-panel`, `pf-panel-header`, `pf-section-title` |
-| Each form field | `pf-field`, `pf-field-label`, `pf-field-input`, `pf-field-input-mono` |
-| Cavity segmented buttons | `pf-toggle-group`, `pf-toggle-btn`, `pf-toggle-btn-selected`, `pf-toggle-btn-label` |
-| Buttons | `pf-btn pf-btn-primary`, `pf-btn pf-btn-secondary`, `pf-btn-large` |
-| Running totals | `pf-kpi`, `pf-kpi-label`, `pf-kpi-value`, `pf-kpi-value-mono`, `pf-kpi-sub` |
-| Session rows | `pf-queue`, `pf-queue-row`, `pf-queue-name`, `pf-queue-detail` |
-| Empty state | `pf-empty-state`, `pf-empty-hint` |
+| Phone | single column; session list collapsed to a pinned summary bar |
+| Tablet | two columns -- entry left (~390px), session panel right |
+| Desktop | latched header full width; entry (~420px) + session side by side |
 
-Task 12 therefore adds only the responsive column wrapper, not a parallel set of look-alikes.
+Rules that apply to all three:
 
-Children, in order:
+- Style classes by **suffix only** (`pf-panel`, not `psc-pf-panel`). Reuse the existing
+  vocabulary: `pf-terminal*`, `pf-tab-strip`/`pf-tab`/`pf-tab-active`, `pf-panel`,
+  `pf-field`/`pf-field-label`/`pf-field-input`/`pf-field-input-mono`,
+  `pf-toggle-group`/`pf-toggle-btn`/`pf-toggle-btn-selected`,
+  `pf-btn pf-btn-primary`, `pf-kpi*`, `pf-queue*`, `pf-empty-state`.
+- Conditional mode containers bind **`position.display`**, never `meta.visible`.
+- Inputs set `props.deferUpdates: false` -- they otherwise commit on blur and a button
+  press reads an empty value.
+- `ia.input.numeric-entry-field` is the numeric input; `numeric-entry` does not exist.
+- Any `ia.display.table` column needs the FULL ~25-key schema; `header` is an object,
+  not a string.
+- Expression bindings are C-style: `=` for equality, `!` / `&&` / `||`.
 
-1. **Header** — `ia.container.flex` row, class `psc-pf-header`. Contains the title label "Inventory Cutover Scan" and an operator chip bound to `session.custom.user.initials`.
-2. **Mode tabs** — `ia.container.flex` row with two `ia.input.button` children, text `CAST PART` and `PURCHASED PART`. `onActionPerformed` sets `self.view.custom.mode`. Task 11 wires the purchased tab's body.
-3. **Latched header** — `ia.container.flex` column, background `--mpp-accent-20`, border `--mpp-accent-40`. Labels bound to `view.custom.session.lineName`, `.partNumber`, `.toolCode`, `.machineNumber`, `.destinationName`, and a label reading `Route step {view.custom.session.entryRouteSequence}`. A `Change` button opens the session-setup popup.
-4. **Entry form** — `ia.container.flex` column:
-   - `ia.input.text-field` bound bidirectionally to `view.custom.entry.lotName`, `props.deferUpdates: false`, placeholder `Scan tag barcode`.
-   - Cavity `ia.display.flex-repeater` over `view.custom.cavityOptions`, each instance an `ia.input.button` showing `CavityCode`.
-   - Date stepper — a flex row of `ia.input.button` (`‹`), a flex column with two labels (formatted date + relative line), and `ia.input.button` (`›`).
-   - `ia.input.numeric-entry-field` bound to `view.custom.entry.pieceCount`, `props.deferUpdates: false`.
-   - `ia.input.button` text `ADD BASKET`, `onActionPerformed` calls `self.view.rootContainer.addBasket()`.
-5. **Session panel** — a `ia.display.table` bound to `view.custom.sessionRows`, plus a totals label. Column definitions must carry the **full ~25-key column schema**; an abbreviated entry renders a Component Error after the gateway scan.
-
-> `props.deferUpdates: false` on both inputs is required. Inputs commit on blur by default, so a button press reads an empty value.
-
-- [ ] **Step 3: Write the `customMethods` on the root container**
-
-```python
-def loadSession(self, lineLocationId, itemId, entryRoleCode, machineNumber):
-	"""Latch the session context. Every domain question is asked of SQL; this
-	   method only assembles the answers into one atomic state write."""
-	item = BlueRidge.Parts.Item.getById(itemId) or {}
-	dest = BlueRidge.Location.Location.getStockDestinationOrEmpty(lineLocationId)
-	seq  = BlueRidge.Parts.RouteTemplate.getSequenceForItemRole(itemId, entryRoleCode)
-	line = BlueRidge.Location.Location.getById(lineLocationId) or {}
-
-	tools = BlueRidge.Tools.Tool.listForItem(itemId)
-	toolId, toolCode, ambiguous = None, "", False
-	if len(tools) == 1:
-		toolId = tools[0].get("Id")
-		toolCode = tools[0].get("Code")
-	elif len(tools) > 1:
-		ambiguous = True
-
-	cavities = []
-	if toolId is not None:
-		cavities = BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId)
-
-	if seq is None:
-		BlueRidge.Common.Notify.toast(
-			"No entry step",
-			"%s has no %s step on its active route." % (item.get("PartNumber"), entryRoleCode),
-			"error")
-		return
-
-	# ONE property write. Two sequential writes let a binding re-evaluate against
-	# a half-built state.
-	self.view.custom.session = {
-		"lineLocationId": lineLocationId,
-		"lineName": line.get("Name") or "",
-		"destinationLocationId": dest.get("DestinationLocationId"),
-		"destinationName": dest.get("DestinationName") or "",
-		"entryRoleCode": entryRoleCode,
-		"entryRouteSequence": seq,
-		"itemId": itemId,
-		"partNumber": item.get("PartNumber") or "",
-		"partDescription": item.get("Description") or "",
-		"toolId": toolId,
-		"toolCode": toolCode,
-		"toolIsAmbiguous": ambiguous,
-		"machineNumber": machineNumber or "",
-	}
-	self.view.custom.toolOptions = tools
-	self.view.custom.cavityOptions = cavities
-
-
-def stepCastDate(self, days):
-	"""Move the cast date by whole days, capped at today. Seeded from the last
-	   basket scanned, so consecutive baskets are zero or one tap."""
-	import java.util.Date as JDate
-	entry = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.entry) or {}
-	cur = entry.get("castDate")
-	if cur is None:
-		cur = system.date.now()
-	nxt = system.date.addDays(cur, days)
-	if system.date.isAfter(system.date.midnight(nxt), system.date.midnight(system.date.now())):
-		return
-	entry["castDate"] = nxt
-	self.view.custom.entry = entry
-
-
-def addBasket(self):
-	"""Create one migrated casting LOT. The scanned LTT becomes the LOT name
-	   verbatim -- no re-tagging."""
-	s = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.session) or {}
-	e = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.entry) or {}
-
-	lotName = (e.get("lotName") or "").strip()
-	if not lotName:
-		BlueRidge.Common.Notify.toast("Scan required", "Scan the LTT barcode.", "warning")
-		return
-	if e.get("toolCavityId") is None:
-		BlueRidge.Common.Notify.toast("Cavity required", "Tap the cavity shown on the tag.", "warning")
-		return
-	if e.get("castDate") is None:
-		BlueRidge.Common.Notify.toast("Cast date required", "Set the cast date from the tag.", "warning")
-		return
-	try:
-		pieces = int(("%s" % e.get("pieceCount")).strip())
-	except (ValueError, TypeError):
-		BlueRidge.Common.Notify.toast("Invalid count", "Enter a whole number.", "warning")
-		return
-	if pieces <= 0:
-		BlueRidge.Common.Notify.toast("Count required", "Enter how many are in the basket.", "warning")
-		return
-
-	originId = BlueRidge.Lots.Lot.getOriginTypeIdByCode("Manufactured")
-	termId = None
-	try:
-		termId = self.session.custom.terminal.terminalLocationId
-	except:
-		termId = None
-
-	res = BlueRidge.Lots.Lot.create({
-		"itemId": s.get("itemId"),
-		"lotOriginTypeId": originId,
-		"currentLocationId": s.get("destinationLocationId"),
-		"pieceCount": pieces,
-		"toolId": s.get("toolId"),
-		"toolCavityId": e.get("toolCavityId"),
-		"entryRouteSequence": s.get("entryRouteSequence"),
-		"castDate": e.get("castDate"),
-	}, self.session.custom.appUserId, termId, lotName)
-
-	BlueRidge.Common.Ui.notifyResult(res, "Basket added")
-	if not (res and res.get("Status")):
-		return
-
-	# Only the LTT and the count clear. Cavity and cast date latch, because
-	# baskets come off the rack grouped by both.
-	e["lotName"] = ""
-	e["pieceCount"] = ""
-	self.view.custom.entry = e
-
-	rows = list(self.view.custom.sessionRows or [])
-	rows.insert(0, {
-		"LotId": res.get("NewId"),
-		"LotName": lotName,
-		"PartNumber": s.get("partNumber"),
-		"CavityCode": e.get("cavityCode"),
-		"CastDate": e.get("castDate"),
-		"PieceCount": pieces,
-	})
-	self.view.custom.sessionRows = rows
-	self.view.custom.sessionTotals = {
-		"baskets": len(rows),
-		"pieces": sum([r.get("PieceCount") or 0 for r in rows]),
-	}
-```
-
-- [ ] **Step 4: Register the page**
-
-Add to `page-config/config.json`:
+- [ ] **Step 3: Register the page**
 
 ```json
-    "/shop-floor/cutover-scan": {
-      "viewPath": "BlueRidge/Views/ShopFloor/CutoverScan",
-      "viewParams": {}
-    }
+"/shop-floor/cutover-scan": {
+  "title": "Inventory Cutover Scan",
+  "viewPath": "BlueRidge/Views/ShopFloor/CutoverScan",
+  "viewParams": {}
+}
 ```
 
-- [ ] **Step 5: Scan and open**
+- [ ] **Step 4: Scan and verify all three sizes**
 
 ```bash
 ./scan.ps1
 ```
 
-Then open `/shop-floor/cutover-scan` in a session.
+Open `/shop-floor/cutover-scan` and resize across 500 and 900. Expected: the layout
+swaps at both boundaries, and **the session list survives the swap** -- that is the
+check proving state is in `session.custom`, not per-view.
 
-Expected: the page renders with no Component Error. If a red error box appears, a binding is reading a `view.custom` property whose default is missing a key — check the `custom` block against every bound path.
-
-- [ ] **Step 6: Scan one basket end to end and verify in SQL**
-
-Set the session to line `MA1-5GOF`, part `5G0-c`, entry role `MachiningIn`. Scan `TESTLTT-001`, tap a cavity, set cast date, enter `100`, press ADD BASKET.
+- [ ] **Step 5: Scan one basket and verify in SQL**
 
 ```bash
 sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -Q "SELECT LotName, EntryRouteSequence, CastDate, ToolCavityId, PieceCount FROM Lots.Lot WHERE LotName = 'TESTLTT-001';"
 ```
 
-Expected: one row with a non-NULL `EntryRouteSequence`, the `CastDate` entered, and a non-NULL `ToolCavityId`.
+Expected: one row with non-NULL `EntryRouteSequence`, the cast date entered, and a
+non-NULL `ToolCavityId`. Verify through SQL, not by reading the screen back -- the
+in-app browser cannot reliably commit Perspective input bindings.
 
-> The in-app browser cannot reliably commit Perspective input bindings. Verify submissions through SQL, not by reading the screen back.
-
-- [ ] **Step 7: Clean up the test LOT**
+Clean up afterwards:
 
 ```bash
 sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -Q "DECLARE @L BIGINT=(SELECT Id FROM Lots.Lot WHERE LotName='TESTLTT-001'); DELETE FROM Lots.LotEventLog WHERE LotId=@L; DELETE FROM Lots.LotMovement WHERE LotId=@L; DELETE FROM Lots.LotStatusHistory WHERE LotId=@L; DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId=@L OR DescendantLotId=@L; DELETE FROM Lots.Lot WHERE Id=@L;"
 ```
 
-- [ ] **Step 8: Commit**
-
-```bash
-git add ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan ignition/projects/MPP/com.inductiveautomation.perspective/page-config/config.json
-git commit -m "feat(ignition): cutover scan view -- cast-part flow
-
-Latched session context, scan-cavity-date-count loop, live session list.
-Only the LTT and count clear on submit; cavity and cast date latch."
-```
-
----
-
-### Task 11: Purchased-part flow and void
-
-**Files:**
-- Modify: `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/view.json`
-
-> File-authored like Task 10 — Designer is closed for this plan, so there is no cache to reconcile against.
-
-**Interfaces:**
-- Consumes: `BlueRidge.Parts.Item.getByPartNumber`, `BlueRidge.Lots.Lot.create`, `BlueRidge.Lots.Lot.updateStatus`.
-- Produces: no new external interface.
-
-- [ ] **Step 1: Add the purchased-part entry container**
-
-A second `ia.container.flex` column. Bind **`position.display`** — not `meta.visible` — to
-`{view.custom.mode} = 'purchased'`, and the inverse on the cast container. `meta.visible: false`
-renders `visibility: hidden` and the element still occupies its flex slot, leaving a gap where
-the other mode's form should be; `position.display: false` is `display: none` and the sibling
-reflows into the space. (The tabular-row exception in the repo's notes does not apply here —
-that is for table rows where column alignment depends on the slot surviving.)
-
-Expression language is C-style: `=` for equality, `!` / `&&` / `||`. Python keywords are
-silently falsy. Fields:
-
-- `ia.input.text-field` -> `view.custom.purchased.partNumber`, placeholder `Scan part number`
-- read-only label showing the resolved part description
-- `ia.input.numeric-entry-field` -> `view.custom.purchased.qty`
-- `ia.input.text-field` -> `view.custom.purchased.vendorLot`, label `VENDOR LOT — OPTIONAL`
-- `ia.input.button` `ADD BOX`
-
-Add to the `custom` block:
-
-```json
-"purchased": {"partNumber": "", "partDescription": "", "itemId": null, "qty": "", "vendorLot": ""}
-```
-
-- [ ] **Step 2: Add the `addBox` customMethod**
-
-```python
-def addBox(self):
-	"""Create one received purchased-component LOT. The box carries no LTT, so
-	   the LOT name is minted server-side; the supplier's lot goes to
-	   VendorLotNumber."""
-	s = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.session) or {}
-	p = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.purchased) or {}
-
-	itemId = p.get("itemId")
-	if itemId is None:
-		row = BlueRidge.Parts.Item.getByPartNumber((p.get("partNumber") or "").strip())
-		if row is None:
-			BlueRidge.Common.Notify.toast("Unknown part",
-				"No active item matches '%s'." % p.get("partNumber"), "error")
-			return
-		itemId = row.get("Id")
-
-	try:
-		qty = int(("%s" % p.get("qty")).strip())
-	except (ValueError, TypeError):
-		BlueRidge.Common.Notify.toast("Invalid quantity", "Enter a whole number.", "warning")
-		return
-	if qty <= 0:
-		BlueRidge.Common.Notify.toast("Quantity required", "Enter how many are in the box.", "warning")
-		return
-
-	originId = BlueRidge.Lots.Lot.getOriginTypeIdByCode("Received")
-	termId = None
-	try:
-		termId = self.session.custom.terminal.terminalLocationId
-	except:
-		termId = None
-
-	res = BlueRidge.Lots.Lot.create({
-		"itemId": itemId,
-		"lotOriginTypeId": originId,
-		"currentLocationId": s.get("destinationLocationId"),
-		"pieceCount": qty,
-		"vendorLotNumber": (p.get("vendorLot") or "").strip() or None,
-	}, self.session.custom.appUserId, termId)
-
-	BlueRidge.Common.Ui.notifyResult(res, "Box added")
-	if not (res and res.get("Status")):
-		return
-
-	p["partNumber"] = ""
-	p["partDescription"] = ""
-	p["itemId"] = None
-	p["qty"] = ""
-	p["vendorLot"] = ""
-	self.view.custom.purchased = p
-
-	rows = list(self.view.custom.sessionRows or [])
-	rows.insert(0, {
-		"LotId": res.get("NewId"),
-		"LotName": res.get("MintedLotName"),
-		"PartNumber": p.get("partNumber"),
-		"CavityCode": "",
-		"CastDate": None,
-		"PieceCount": qty,
-	})
-	self.view.custom.sessionRows = rows
-	self.view.custom.sessionTotals = {
-		"baskets": len(rows),
-		"pieces": sum([r.get("PieceCount") or 0 for r in rows]),
-	}
-	BlueRidge.Common.Ui.crtNotice(BlueRidge.Lots.Lot.crtNamesFor([res.get("NewId")]))
-```
-
-- [ ] **Step 3: Add the `voidEntry` customMethod**
-
-```python
-def voidEntry(self, lotId):
-	"""Undo a mis-scanned entry. The LOT is CLOSED with a cutover-correction
-	   reason, never deleted -- nothing in the plant holds trustworthy inventory
-	   to reconcile against, so the correction itself is the record."""
-	res = BlueRidge.Lots.Lot.updateStatus(
-		lotId, "Closed",
-		"Voided during inventory cutover scan (mis-scan correction).",
-		self.session.custom.appUserId)
-	BlueRidge.Common.Ui.notifyResult(res, "Entry voided")
-	if not (res and res.get("Status")):
-		return
-	rows = [r for r in (self.view.custom.sessionRows or [])
-	        if r.get("LotId") != lotId]
-	self.view.custom.sessionRows = rows
-	self.view.custom.sessionTotals = {
-		"baskets": len(rows),
-		"pieces": sum([r.get("PieceCount") or 0 for r in rows]),
-	}
-```
-
-Wire a void button into the session table's row actions, calling `self.view.rootContainer.voidEntry(lotId)`.
-
-- [ ] **Step 4: Verify both flows in SQL**
-
-Add one purchased box, then void it.
-
-```bash
-sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -Q "SELECT TOP 3 l.LotName, l.VendorLotNumber, sc.Code FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId ORDER BY l.Id DESC;"
-```
-
-Expected: the box LOT exists with its vendor lot, and after the void its status reads `Closed`.
-
-- [ ] **Step 5: Confirm nothing else in the working tree got picked up**
-
-```bash
-git status --short
-git diff --stat ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/view.json
-```
-
-The diff should be only the components and methods this task added. A surprisingly
-large diff means live runtime data got embedded in the view — strip it before staging.
-Stage explicit paths; another user may have unrelated work in this tree.
-
 - [ ] **Step 6: Commit**
 
 ```bash
-git add ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/view.json
-git commit -m "feat(ignition): cutover scan -- purchased-part tab and void
-
-A box has no LTT, so its LOT name is minted and the supplier lot goes to
-VendorLotNumber. Void closes the LOT with a correction reason, never deletes."
+git add ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/_CutoverScan ignition/projects/MPP/com.inductiveautomation.perspective/page-config/config.json
+git commit -m "feat(ignition): cutover scan -- breakpoint host and three size views"
 ```
 
 ---
 
-### Task 12: Responsive breakpoints
-
-> **BLOCKED until Jacques supplies the breakpoint host view.** He is building a
-> sample view that embeds the three sizes under a **single page configuration**, so
-> `/shop-floor/cutover-scan` resolves one page and the host picks the size. That
-> changes this task's shape: `CutoverScan` becomes the **embedded content view**, and
-> the host owns the breakpoint switching. Do not invent a host — wait for it, then
-> adapt. The page-config entry added in Task 10 Step 4 will point at the **host**, not
-> at `CutoverScan` directly.
-
-**Files:**
-- Modify: `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/view.json`
-- Modify: `ignition/projects/MPP/com.inductiveautomation.perspective/page-config/config.json` (repoint to the host)
-- Modify: `ignition/projects/Core/com.inductiveautomation.perspective/stylesheet/stylesheet.css`
-
-**Interfaces:**
-- Consumes: Jacques's breakpoint host view (path TBC on delivery).
-- Produces: CSS classes `psc-cutover-*` in the **Core** stylesheet. `CutoverScan` must
-  work as an embedded view — it already takes all its context from `view.custom`, so no
-  params change is expected, but confirm against the host's embed contract on delivery.
-
-> `psc-pf-*` styling is canonical in the Core stylesheet. Add the new classes there. Never create an MPP-local override.
-
-- [ ] **Step 1: Add the breakpoint classes**
-
-Only the layout wrapper is new — every visual class the screen uses already exists (see the
-vocabulary table in Task 10 Step 2). Append to the Core stylesheet, in the plant-floor section:
-
-```css
-/* ---- Inventory cutover scan ------------------------------------------- */
-.psc-cutover-cols {
-    display: flex;
-    gap: 12px;
-    flex: 1;
-    min-height: 0;
-    flex-direction: column;          /* phone: single column */
-}
-.psc-cutover-session { display: none; }   /* phone: collapsed to the summary bar */
-.psc-cutover-summary { display: flex; }
-
-@media (min-width: 768px) {               /* tablet and up: two columns */
-    .psc-cutover-cols { flex-direction: row; }
-    .psc-cutover-entry { flex: 0 0 390px; }
-    .psc-cutover-session { display: flex; flex: 1; }
-    .psc-cutover-summary { display: none; }
-}
-
-@media (min-width: 1200px) {              /* desktop: wider entry column */
-    .psc-cutover-entry { flex: 0 0 420px; }
-}
-
-.psc-cutover-seg {
-    min-height: var(--pf-touch-min);
-    min-width: 64px;
-}
-.psc-cutover-stepbtn {
-    min-width: 56px;
-    min-height: 56px;
-}
-```
-
-- [ ] **Step 2: Apply the classes in Designer**
-
-Set `props.style.classes` on the entry/session containers to `psc-cutover-entry` / `psc-cutover-session`, the wrapping row to `psc-cutover-cols`, the cavity buttons to `psc-cutover-seg`, and the date arrows to `psc-cutover-stepbtn`.
-
-- [ ] **Step 3: Verify each breakpoint**
-
-Open `/shop-floor/cutover-scan` and check all three widths.
-
-```
-Phone   390 x 844   single column, session collapsed to the summary bar
-Tablet  834 x 1112  two columns, session panel visible
-Desktop 1280 x 800  two columns, wider entry column
-```
-
-At every width: no horizontal body scroll, and every touch target at or above `--pf-touch-min` (40px).
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add ignition/projects/Core/com.inductiveautomation.perspective/stylesheet/stylesheet.css ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/view.json
-git commit -m "feat(ignition): cutover scan responsive breakpoints
-
-Phone single column, tablet and desktop two columns. psc-cutover-* classes
-in the Core stylesheet, where psc-pf-* is canonical."
-```
-
----
-
-### Task 13: Pre-cutover verification script
+### Task 12: Pre-cutover verification script
 
 **Files:**
 - Create: `sql/scratch/2026-09-12_cutover_readiness_check.sql`
 
 **Interfaces:**
 - Consumes: nothing. Read-only.
-- Produces: one result grid per check. Empty grid = ready.
+- Produces: one result grid per check. An empty grid means ready.
 
-> This is the §10 checklist as runnable SQL. It is read-only and intended to be run against **production** before each line is scanned.
+> Spec section 10 as runnable SQL, to be run against **production** before each line is
+> scanned. **Check 3 is not hypothetical:** the `5G0-c` fixture carries
+> `Item.MaxLotSize = 24`, and a realistic 3298-piece basket was rejected outright during
+> Task 5 with "PieceCount 3298 exceeds Item MaxLotSize 24." Real cutover parts need caps
+> that admit their real basket sizes, and that is config, not code.
 
 - [ ] **Step 1: Write the script**
 
@@ -2245,14 +2115,14 @@ in the Core stylesheet, where psc-pf-* is canonical."
 -- =============================================
 SET NOCOUNT ON;
 
-DECLARE @LineCode  NVARCHAR(50)  = N'MA1-5GOF';      -- <<< set per line
-DECLARE @EntryRole NVARCHAR(30)  = N'MachiningIn';   -- MachiningIn | AssemblyIn
+DECLARE @LineCode  NVARCHAR(50) = N'MA1-5GOF';      -- <<< set per line
+DECLARE @EntryRole NVARCHAR(30) = N'MachiningIn';   -- MachiningIn | AssemblyIn
 
 DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = @LineCode AND DeprecatedAt IS NULL);
 IF @Line IS NULL BEGIN PRINT 'UNKNOWN LINE CODE -- stop.'; RETURN; END
 
-PRINT '=== 1. Parts eligible at this line that have NO entry step for the role ===';
-SELECT i.Id, i.PartNumber, i.Description
+PRINT '=== 1. Parts eligible here with NO entry step for the role ===';
+SELECT DISTINCT i.Id, i.PartNumber, i.Description
 FROM Parts.v_EffectiveItemLocation e
 INNER JOIN Parts.Item i ON i.Id = e.ItemId
 WHERE e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@Line))
@@ -2265,7 +2135,7 @@ WHERE e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@
         AND oty.Code = @EntryRole);
 
 PRINT '=== 2. Castings eligible here with NO configured cavities ===';
-SELECT i.Id, i.PartNumber
+SELECT DISTINCT i.Id, i.PartNumber
 FROM Parts.v_EffectiveItemLocation e
 INNER JOIN Parts.Item i      ON i.Id = e.ItemId
 INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
@@ -2274,13 +2144,13 @@ WHERE e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@
   AND NOT EXISTS (SELECT 1 FROM Tools.ToolCavity tc WHERE tc.ItemId = i.Id AND tc.DeprecatedAt IS NULL);
 
 PRINT '=== 3. Parts whose MaxLotSize would reject a real basket (< 4000) ===';
-SELECT i.Id, i.PartNumber, i.MaxLotSize
+SELECT DISTINCT i.Id, i.PartNumber, i.MaxLotSize
 FROM Parts.v_EffectiveItemLocation e
 INNER JOIN Parts.Item i ON i.Id = e.ItemId
 WHERE e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@Line))
   AND i.MaxLotSize IS NOT NULL AND i.MaxLotSize < 4000;
 
-PRINT '=== 4. Stock destination configured for this line ===';
+PRINT '=== 4. Stock destination configured for this line (expect ONE row) ===';
 EXEC Location.Location_GetStockDestination @LineLocationId = @Line;
 
 PRINT '=== 5. Parts with MORE THAN ONE die (operator must pick) ===';
@@ -2291,11 +2161,11 @@ WHERE tc.DeprecatedAt IS NULL
 GROUP BY i.PartNumber
 HAVING COUNT(DISTINCT tc.ToolId) > 1;
 
-PRINT '=== 6. SubAssembly LOTs sitting at a machining location (wart -- see spec 11) ===';
+PRINT '=== 6. SubAssembly LOTs where a Machining OUT terminal can see them ===';
 SELECT l.Id, l.LotName, i.PartNumber, loc.Code AS AtLocation
 FROM Lots.Lot l
-INNER JOIN Parts.Item i        ON i.Id  = l.ItemId
-INNER JOIN Parts.ItemType it   ON it.Id = i.ItemTypeId
+INNER JOIN Parts.Item i          ON i.Id  = l.ItemId
+INNER JOIN Parts.ItemType it     ON it.Id = i.ItemTypeId
 INNER JOIN Location.Location loc ON loc.Id = l.CurrentLocationId
 INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
 WHERE it.Code = N'SubAssembly'
@@ -2309,15 +2179,14 @@ WHERE it.Code = N'SubAssembly'
 sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -i sql/scratch/2026-09-12_cutover_readiness_check.sql
 ```
 
-Expected: six labelled sections. Check 4 returns exactly one row (the destination). Checks 1, 2, 3, 6 should be empty on a correctly configured line; check 5 lists the one known multi-die part.
+Expected: six labelled sections. Check 4 returns exactly one row (the destination).
+Check 5 lists the one known multi-die part.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add sql/scratch/2026-09-12_cutover_readiness_check.sql
-git commit -m "chore(cutover): read-only per-line readiness check
-
-Spec section 10 as runnable SQL. Empty grids mean the line is ready to scan."
+git commit -m "chore(cutover): read-only per-line readiness check"
 ```
 
 ---
