@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetComponentsAtCell.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0
+-- Version:     1.1
 -- Description: "Components at this cell" read for the assembly screens. Returns the
 --              components available to consume at @CellLocationId as the UNION of
 --              two legs:
@@ -12,6 +12,9 @@
 --                  with @OperationTypeCode = NULL (pending per OperationRoleKind:
 --                  ConsumeMint always pending while open; Advance pending until a
 --                  matching Workorder.ProductionEvent; OriginMint never pending).
+--
+--                v1.1 (2026-09-12): Leg 1's inline pending-step CTE replaced by
+--                Lots.ufn_NextPendingRouteStep. Leg 2 is routeless and untouched.
 --
 --                LEG 2 (routeless components) -- open LOTs at the cell whose Item has
 --                  NO published route AND is BomDerived-eligible here. The
@@ -52,22 +55,6 @@ BEGIN
         INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
         WHERE ( (@IncludeDescendants = 1 AND l.CurrentLocationId IN (SELECT Id FROM Descendants))
              OR (@IncludeDescendants = 0 AND l.CurrentLocationId = @CellLocationId) )
-    ),
-    -- Leg 1: routeful -- lowest-SequenceNumber PENDING route step (mirrors Lot_GetWipQueueByLocation v3.0).
-    NextStep AS (
-        SELECT ac.Id AS LotId, rs.SequenceNumber, rs.OperationTemplateId,
-               ROW_NUMBER() OVER (PARTITION BY ac.Id ORDER BY rs.SequenceNumber ASC) AS rn
-        FROM AtCell ac
-        INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = ac.ItemId
-             AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
-        INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
-        INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
-        INNER JOIN Parts.OperationType oty2    ON oty2.Id = ot2.OperationTypeId
-        INNER JOIN Parts.OperationRoleKind rk  ON rk.Id  = oty2.OperationRoleKindId
-        WHERE rk.Code = N'ConsumeMint'
-           OR (rk.Code = N'Advance' AND NOT EXISTS (
-                  SELECT 1 FROM Workorder.ProductionEvent pe
-                  WHERE pe.LotId = ac.Id AND pe.OperationTemplateId = rs.OperationTemplateId))
     )
     -- Leg 1 result rows
     SELECT
@@ -78,8 +65,11 @@ BEGIN
         CAST(lm.LastMovementAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS LastMovementAt,
         oty.Code          AS NextOperationTypeCode,
         ns.SequenceNumber AS NextSequenceNumber
-    FROM NextStep ns
-    INNER JOIN Lots.Lot l                 ON l.Id = ns.LotId AND ns.rn = 1
+    -- Leg 1: routeful -- lowest-SequenceNumber PENDING route step, via the one
+    -- shared definition. AtCell already carries the status + location filter.
+    FROM AtCell ac
+    CROSS APPLY Lots.ufn_NextPendingRouteStep(ac.Id) ns
+    INNER JOIN Lots.Lot l                 ON l.Id = ac.Id
     INNER JOIN Lots.LotStatusCode sc      ON sc.Id = l.LotStatusId
     INNER JOIN Parts.Item i               ON i.Id  = l.ItemId
     INNER JOIN Parts.OperationTemplate ot ON ot.Id = ns.OperationTemplateId

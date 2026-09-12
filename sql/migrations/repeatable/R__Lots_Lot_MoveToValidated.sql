@@ -171,20 +171,9 @@ BEGIN
                 WHERE rt.ItemId = @ItemId AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
                   AND oty.Code = @OperationTypeCode);
 
+            -- One shared definition of "next pending step" (formerly inlined here).
             DECLARE @NextPendingSeq INT = (
-                SELECT MIN(rs.SequenceNumber)
-                FROM Parts.RouteTemplate rt
-                INNER JOIN Parts.RouteStep rs        ON rs.RouteTemplateId = rt.Id
-                INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
-                INNER JOIN Parts.OperationType oty   ON oty.Id = ot.OperationTypeId
-                INNER JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
-                WHERE rt.ItemId = @ItemId AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
-                  AND (
-                        rk.Code = N'ConsumeMint'
-                     OR (rk.Code = N'Advance' AND NOT EXISTS (
-                            SELECT 1 FROM Workorder.ProductionEvent pe
-                            WHERE pe.LotId = @LotId AND pe.OperationTemplateId = rs.OperationTemplateId))
-                      ));
+                SELECT SequenceNumber FROM Lots.ufn_NextPendingRouteStep(@LotId));
 
             -- Guard only when both resolve and the attempted step is strictly behind.
             IF @AttemptedSeq IS NOT NULL AND @NextPendingSeq IS NOT NULL AND @AttemptedSeq < @NextPendingSeq

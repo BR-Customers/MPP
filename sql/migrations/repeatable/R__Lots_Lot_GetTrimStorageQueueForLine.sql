@@ -43,21 +43,13 @@ BEGIN
     LastMove AS (
         SELECT m.LotId, MAX(m.MovedAt) AS LastMovementAt FROM Lots.LotMovement m GROUP BY m.LotId
     ),
-    NextStep AS (
-        SELECT l.Id AS LotId, rs.SequenceNumber, rs.OperationTemplateId,
-               ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
+    -- Open LOTs in a trim store. Status + location filtering stays HERE (this
+    -- proc excludes only Closed); the shared pending-step function filters neither.
+    Eligible AS (
+        SELECT l.Id AS LotId
         FROM Lots.Lot l
         INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
-        INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
-        INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
-        INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
-        INNER JOIN Parts.OperationType oty2    ON oty2.Id = ot2.OperationTypeId
-        INNER JOIN Parts.OperationRoleKind rk  ON rk.Id  = oty2.OperationRoleKindId
         WHERE l.CurrentLocationId IN (SELECT Id FROM TrimStores)
-          AND ( rk.Code = N'ConsumeMint'
-             OR (rk.Code = N'Advance' AND NOT EXISTS (
-                    SELECT 1 FROM Workorder.ProductionEvent pe
-                    WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId)) )
     )
     SELECT
         l.Id, l.LotName, l.ItemId,
@@ -67,8 +59,9 @@ BEGIN
         CAST(lm.LastMovementAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS LastMovementAt,
         oty.Code AS NextOperationTypeCode,
         ns.SequenceNumber AS NextSequenceNumber
-    FROM NextStep ns
-    INNER JOIN Lots.Lot l               ON l.Id = ns.LotId AND ns.rn = 1
+    FROM Eligible e
+    CROSS APPLY Lots.ufn_NextPendingRouteStep(e.LotId) ns
+    INNER JOIN Lots.Lot l               ON l.Id = e.LotId
     INNER JOIN Lots.LotStatusCode sc    ON sc.Id = l.LotStatusId
     INNER JOIN Parts.Item i             ON i.Id  = l.ItemId
     INNER JOIN Parts.OperationTemplate ot ON ot.Id = ns.OperationTemplateId

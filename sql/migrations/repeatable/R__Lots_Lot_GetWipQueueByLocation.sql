@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_Lot_GetWipQueueByLocation.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-03
--- Version:     3.1
+-- Version:     3.2
 -- Description: Terminal-mint model (spec 2026-07-07 §3.2). ROUTE-DRIVEN WIP queue:
 --              for a given terminal role @OperationTypeCode, returns the OPEN
 --              (LotStatusCode <> 'Closed') LOTs at @LocationId (or a descendant when
@@ -18,6 +18,12 @@
 --                                 partial mints.
 --              When @OperationTypeCode IS NULL, returns every open LOT at the location
 --              with its resolved next-step role (inventory/debug read).
+--
+--              v3.2 (2026-09-12): the inline pending-step CTE is replaced by
+--              Lots.ufn_NextPendingRouteStep (one definition, formerly copy-pasted
+--              seven times across five procs). Status + location filtering stays
+--              in this proc -- it excludes Closed AND Open where siblings exclude
+--              only Closed -- so the extraction is behaviour-neutral.
 --
 --              v3.0 (2026-07-07): REPLACES the v2.0 HasRenameBom + HasLineEvent hints
 --              with the route-driven rule (rename-BOM thread removed). Result columns:
@@ -61,27 +67,16 @@ BEGIN
     ),
     -- Each open LOT at the location joined to the PENDING steps of its active
     -- (published, non-deprecated) route; rank by SequenceNumber to find the next one.
-    NextStep AS (
-        SELECT l.Id AS LotId, rs.SequenceNumber, rs.OperationTemplateId,
-               ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
+    -- Open LOTs physically in scope. Status + location filtering stays HERE:
+    -- this proc excludes Closed AND Open, its siblings exclude only Closed, so
+    -- the shared pending-step function deliberately does not filter either.
+    Eligible AS (
+        SELECT l.Id AS LotId
         FROM Lots.Lot l
         INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code NOT IN (N'Closed', N'Open')
-        INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId
-             AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
-        INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
-        INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
-        INNER JOIN Parts.OperationType oty2    ON oty2.Id = ot2.OperationTypeId
-        INNER JOIN Parts.OperationRoleKind rk  ON rk.Id  = oty2.OperationRoleKindId
         WHERE (
                   (@IncludeDescendants = 1 AND l.CurrentLocationId IN (SELECT Id FROM Descendants))
                OR (@IncludeDescendants = 0 AND l.CurrentLocationId = @LocationId)
-              )
-          AND (
-                  rk.Code = N'ConsumeMint'                       -- terminal: pending while open
-               OR (rk.Code = N'Advance' AND NOT EXISTS (
-                      SELECT 1 FROM Workorder.ProductionEvent pe
-                      WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId))
-                  -- OriginMint: never pending (omitted)
               )
     )
     SELECT
@@ -92,8 +87,9 @@ BEGIN
         CAST(lm.LastMovementAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS LastMovementAt,
         oty.Code AS NextOperationTypeCode,
         ns.SequenceNumber AS NextSequenceNumber
-    FROM NextStep ns
-    INNER JOIN Lots.Lot l               ON l.Id = ns.LotId AND ns.rn = 1
+    FROM Eligible e
+    CROSS APPLY Lots.ufn_NextPendingRouteStep(e.LotId) ns
+    INNER JOIN Lots.Lot l               ON l.Id = e.LotId
     INNER JOIN Lots.LotStatusCode sc    ON sc.Id = l.LotStatusId
     INNER JOIN Parts.Item i             ON i.Id  = l.ItemId
     INNER JOIN Parts.OperationTemplate ot ON ot.Id = ns.OperationTemplateId
