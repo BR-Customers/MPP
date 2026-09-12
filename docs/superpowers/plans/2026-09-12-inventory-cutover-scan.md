@@ -45,7 +45,8 @@ Every task's requirements implicitly include this section.
 - **All named queries live in the `Core` project.** `MPP` and `MPP_Config` have none of their own; sibling projects cannot see each other's.
 - NQ `sqlType`: `2` = INTEGER/BIT, `3` = BIGINT, `5` = DECIMAL, `7` = VARCHAR/String, `91` = DATE.
 - A proc returning a status row needs NQ `"type": "Query"` and `execMutation`. A silent proc needs `"type": "UpdateQuery"` and `execNonQuery`.
-- **New** views may be authored as files. **Existing** views are edited in Designer — Designer's GSON writes `=`/`'`/`<`/`>` as 6-char unicode escapes and its in-memory model fights on-disk edits.
+- **All Ignition work in this plan is file-authored — new views and existing ones alike.** Jacques is keeping Designer closed for the duration, so the usual filesystem-vs-Designer reconciliation race does not apply and there is no Designer cache to fight. Edit `view.json` directly and run `.\scan.ps1`. (The standing repo rule — edit existing views in Designer — remains correct outside this plan.)
+- When a file edit reports "String not found" on text that visibly matches, the file has mixed line endings or Designer-era 6-char unicode escapes (`=` for `=`, and the same for `'`, `<`, `>`). Anchor edits on escape-free text, or do a byte-level replace in Python.
 - A view folder needs both `view.json` and `resource.json` (`"scope": "G"`) or the page reports "View Not Found".
 - After adding any new resource, run `.\scan.ps1` from the repo root. Never `pull.ps1` (it overwrites local work from the gateway).
 - Event-script bodies in `view.json` start with a tab — Designer wraps them in `def runAction(self, event):`. Column-0 content is an `IndentationError`.
@@ -1944,9 +1945,9 @@ Only the LTT and count clear on submit; cavity and cast date latch."
 ### Task 11: Purchased-part flow and void
 
 **Files:**
-- Modify (Designer): `.../CutoverScan/view.json`
+- Modify: `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/view.json`
 
-> The view now exists and Designer has cached it. **Do these edits in Designer**, not as file edits.
+> File-authored like Task 10 — Designer is closed for this plan, so there is no cache to reconcile against.
 
 **Interfaces:**
 - Consumes: `BlueRidge.Parts.Item.getByPartNumber`, `BlueRidge.Lots.Lot.create`, `BlueRidge.Lots.Lot.updateStatus`.
@@ -2078,9 +2079,12 @@ Expected: the box LOT exists with its vendor lot, and after the void its status 
 
 ```bash
 git status --short
+git diff --stat ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/view.json
 ```
 
-Designer saves can embed live runtime data into a view. Inspect `git diff --stat` on the view before staging; if the diff is large, the view has pickled query results and must be re-saved with the data cleared.
+The diff should be only the components and methods this task added. A surprisingly
+large diff means live runtime data got embedded in the view — strip it before staging.
+Stage explicit paths; another user may have unrelated work in this tree.
 
 - [ ] **Step 6: Commit**
 
@@ -2096,12 +2100,24 @@ VendorLotNumber. Void closes the LOT with a correction reason, never deletes."
 
 ### Task 12: Responsive breakpoints
 
+> **BLOCKED until Jacques supplies the breakpoint host view.** He is building a
+> sample view that embeds the three sizes under a **single page configuration**, so
+> `/shop-floor/cutover-scan` resolves one page and the host picks the size. That
+> changes this task's shape: `CutoverScan` becomes the **embedded content view**, and
+> the host owns the breakpoint switching. Do not invent a host — wait for it, then
+> adapt. The page-config entry added in Task 10 Step 4 will point at the **host**, not
+> at `CutoverScan` directly.
+
 **Files:**
-- Modify (Designer): `.../CutoverScan/view.json`
+- Modify: `ignition/projects/MPP/com.inductiveautomation.perspective/views/BlueRidge/Views/ShopFloor/CutoverScan/view.json`
+- Modify: `ignition/projects/MPP/com.inductiveautomation.perspective/page-config/config.json` (repoint to the host)
 - Modify: `ignition/projects/Core/com.inductiveautomation.perspective/stylesheet/stylesheet.css`
 
 **Interfaces:**
-- Produces: CSS classes `psc-cutover-*` in the **Core** stylesheet.
+- Consumes: Jacques's breakpoint host view (path TBC on delivery).
+- Produces: CSS classes `psc-cutover-*` in the **Core** stylesheet. `CutoverScan` must
+  work as an embedded view — it already takes all its context from `view.custom`, so no
+  params change is expected, but confirm against the host's embed contract on delivery.
 
 > `psc-pf-*` styling is canonical in the Core stylesheet. Add the new classes there. Never create an MPP-local override.
 
