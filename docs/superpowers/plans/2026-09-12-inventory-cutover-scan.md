@@ -43,7 +43,7 @@ Every task's requirements implicitly include this section.
 
 **Ignition**
 - **All named queries live in the `Core` project.** `MPP` and `MPP_Config` have none of their own; sibling projects cannot see each other's.
-- NQ `sqlType`: `2` = INTEGER/BIT, `3` = BIGINT, `5` = DECIMAL, `7` = VARCHAR/String, `91` = DATE.
+- NQ `sqlType` is **Designer's own enum, NOT `java.sql.Types`**: `0` TINYINT, `1` SMALLINT, `2` INTEGER, `3` BIGINT, `4` REAL, `5` FLOAT/DOUBLE, `6` BIT, `7` NVARCHAR/String, `8` DateTime, `20` ByteArray. There is **no DATE code** -- a `DATE` proc parameter is carried as `8` (DateTime). Never hand-author a JDBC code such as `-5` or `91`; Designer rewrites it on its next save.
 - A proc returning a status row needs NQ `"type": "Query"` and `execMutation`. A silent proc needs `"type": "UpdateQuery"` and `execNonQuery`.
 - **All Ignition work in this plan is file-authored — new views and existing ones alike.** Jacques is keeping Designer closed for the duration, so the usual filesystem-vs-Designer reconciliation race does not apply and there is no Designer cache to fight. Edit `view.json` directly and run `.\scan.ps1`. (The standing repo rule — edit existing views in Designer — remains correct outside this plan.)
 - When a file edit reports "String not found" on text that visibly matches, the file has mixed line endings or Designer-era 6-char unicode escapes -- a literal backslash-u-0-0-3-d in place of `=`, and the equivalents for `'`, `<` and `>`. Anchor edits on escape-free text, or do a byte-level replace in Python.
@@ -1505,11 +1505,13 @@ In `resource.json`, append two entries to `attributes.parameters`:
       {
         "type": "Parameter",
         "identifier": "castDate",
-        "sqlType": 91
+        "sqlType": 8
       }
 ```
 
-`sqlType: 2` = INTEGER. `sqlType: 91` = DATE.
+`sqlType: 2` = INTEGER (Designer's `Int4`). `sqlType: 8` = DateTime -- Designer's enum has no
+DATE code, and SQL Server widens a DateTime bind to `DATE` on the proc parameter without
+complaint. `91` is a `java.sql.Types` constant and is **wrong** here.
 
 - [ ] **Step 2: Create the four new named queries**
 
@@ -1741,7 +1743,32 @@ cavity, route-role sequence and line stock destination."
 
 - [ ] **Step 2: Build the component tree**
 
-Root is a `ia.container.flex` in `column` direction, with `props.style.classes` = `psc-pf-root`. Children, in order:
+Root is an `ia.container.flex` in `column` direction. **`meta.name` must be exactly `"root"`** —
+binding paths and the `self.view.rootContainer.*` addressing used by the customMethods below
+both assume it.
+
+**Style classes are referenced by SUFFIX ONLY.** Perspective prepends `psc-` at render time, so
+the stylesheet defines `.psc-pf-panel` and the view writes `"classes": "pf-panel"`. Writing
+`psc-pf-panel` renders as `psc-psc-pf-panel` and matches nothing.
+
+**Reuse the existing vocabulary — do not invent classes.** The Core stylesheet already carries
+everything this screen needs:
+
+| Element | Existing class |
+|---|---|
+| Shell / header | `pf-terminal`, `pf-terminal-header`, `pf-terminal-title`, `pf-terminal-subtitle` |
+| Mode tabs | `pf-tab-strip`, `pf-tab`, `pf-tab-active` |
+| Latched context + session panel | `pf-panel`, `pf-panel-header`, `pf-section-title` |
+| Each form field | `pf-field`, `pf-field-label`, `pf-field-input`, `pf-field-input-mono` |
+| Cavity segmented buttons | `pf-toggle-group`, `pf-toggle-btn`, `pf-toggle-btn-selected`, `pf-toggle-btn-label` |
+| Buttons | `pf-btn pf-btn-primary`, `pf-btn pf-btn-secondary`, `pf-btn-large` |
+| Running totals | `pf-kpi`, `pf-kpi-label`, `pf-kpi-value`, `pf-kpi-value-mono`, `pf-kpi-sub` |
+| Session rows | `pf-queue`, `pf-queue-row`, `pf-queue-name`, `pf-queue-detail` |
+| Empty state | `pf-empty-state`, `pf-empty-hint` |
+
+Task 12 therefore adds only the responsive column wrapper, not a parallel set of look-alikes.
+
+Children, in order:
 
 1. **Header** — `ia.container.flex` row, class `psc-pf-header`. Contains the title label "Inventory Cutover Scan" and an operator chip bound to `session.custom.user.initials`.
 2. **Mode tabs** — `ia.container.flex` row with two `ia.input.button` children, text `CAST PART` and `PURCHASED PART`. `onActionPerformed` sets `self.view.custom.mode`. Task 11 wires the purchased tab's body.
@@ -1955,7 +1982,15 @@ Only the LTT and count clear on submit; cavity and cast date latch."
 
 - [ ] **Step 1: Add the purchased-part entry container**
 
-A second `ia.container.flex` column, `meta.visible` bound to `{view.custom.mode} = 'purchased'` (expression language — `=` not `==`, and no Python keywords). The cast container gets the inverse binding. Fields:
+A second `ia.container.flex` column. Bind **`position.display`** — not `meta.visible` — to
+`{view.custom.mode} = 'purchased'`, and the inverse on the cast container. `meta.visible: false`
+renders `visibility: hidden` and the element still occupies its flex slot, leaving a gap where
+the other mode's form should be; `position.display: false` is `display: none` and the sibling
+reflows into the space. (The tabular-row exception in the repo's notes does not apply here —
+that is for table rows where column alignment depends on the slot surviving.)
+
+Expression language is C-style: `=` for equality, `!` / `&&` / `||`. Python keywords are
+silently falsy. Fields:
 
 - `ia.input.text-field` -> `view.custom.purchased.partNumber`, placeholder `Scan part number`
 - read-only label showing the resolved part description
@@ -2123,7 +2158,8 @@ VendorLotNumber. Void closes the LOT with a correction reason, never deletes."
 
 - [ ] **Step 1: Add the breakpoint classes**
 
-Append to the Core stylesheet, in the plant-floor section:
+Only the layout wrapper is new — every visual class the screen uses already exists (see the
+vocabulary table in Task 10 Step 2). Append to the Core stylesheet, in the plant-floor section:
 
 ```css
 /* ---- Inventory cutover scan ------------------------------------------- */
