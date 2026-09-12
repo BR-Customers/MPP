@@ -1,0 +1,106 @@
+{
+  "custom": {},
+  "params": {
+    "Id": null,
+    "CavityCode": "",
+    "Description": ""
+  },
+  "propConfig": {
+    "params.Id": {
+      "paramDirection": "input"
+    },
+    "params.CavityCode": {
+      "paramDirection": "input"
+    },
+    "params.Description": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 72,
+      "height": 60
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "center",
+      "justify": "center",
+      "style": {
+        "gap": "0px",
+        "padding": "4px",
+        "cursor": "pointer"
+      }
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.Id} = {session.custom.cutover.entry.toolCavityId}, 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
+          }
+        }
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tst = BlueRidge.Cutover.Scan.getState()\n\tst[\"entry\"][\"toolCavityId\"] = self.view.params.Id\n\tst[\"entry\"][\"cavityCode\"] = self.view.params.CavityCode\n\tself.session.custom.cutover = st"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "CodeLabel"
+        },
+        "props": {
+          "style": {
+            "fontFamily": "var(--mpp-font-mono)",
+            "fontSize": "22px",
+            "fontWeight": 600,
+            "textTransform": "none"
+          }
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.CavityCode"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "SubLabel"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-toggle-btn-meta"
+          },
+          "text": "CAV"
+        },
+        "position": {
+          "shrink": 0
+        }
+      }
+    ]
+  }
+}

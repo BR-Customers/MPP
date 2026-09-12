@@ -1,0 +1,178 @@
+{
+  "custom": {},
+  "params": {
+    "LotId": null,
+    "LotName": "",
+    "PartNumber": "",
+    "CavityCode": "",
+    "CastDate": null,
+    "PieceCount": 0
+  },
+  "propConfig": {
+    "params.LotId": {
+      "paramDirection": "input"
+    },
+    "params.LotName": {
+      "paramDirection": "input"
+    },
+    "params.PartNumber": {
+      "paramDirection": "input"
+    },
+    "params.CavityCode": {
+      "paramDirection": "input"
+    },
+    "params.CastDate": {
+      "paramDirection": "input"
+    },
+    "params.PieceCount": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 420,
+      "height": 52
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "10px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Info"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "NameLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-name"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.LotName"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "MetaLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-detail"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.PartNumber} + \"  ·  cav \" + if(isNull({view.params.CavityCode}) || {view.params.CavityCode} = \"\", \"-\", {view.params.CavityCode}) + \"  ·  \" + if(isNull({view.params.CastDate}), \"-\", dateFormat({view.params.CastDate}, \"MMM d\"))"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "QtyLabel"
+        },
+        "props": {
+          "style": {
+            "fontFamily": "var(--mpp-font-mono)",
+            "fontSize": "15px",
+            "fontWeight": 600,
+            "color": "var(--mpp-text-primary)"
+          }
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.PieceCount}) + \" pc\""
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "VoidButton"
+        },
+        "props": {
+          "text": "✕",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "minHeight": "32px",
+            "minWidth": "32px",
+            "padding": "0",
+            "color": "var(--mpp-text-tertiary)"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tres = BlueRidge.Cutover.Scan.voidEntry(self.view.params.LotId, self.session.custom.appUserId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Entry voided\")"
+              }
+            }
+          }
+        },
+        "position": {
+          "shrink": 0
+        }
+      }
+    ]
+  }
+}

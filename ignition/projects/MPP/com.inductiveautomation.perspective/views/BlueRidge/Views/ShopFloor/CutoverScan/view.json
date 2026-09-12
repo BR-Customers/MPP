@@ -1,0 +1,73 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.breakpt",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "breakpoint": 900,
+      "currentBreakpoint": "large"
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.breakpt",
+        "meta": {
+          "name": "BreakpointContainer"
+        },
+        "props": {
+          "breakpoint": 500,
+          "currentBreakpoint": "large"
+        },
+        "children": [
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "phone"
+            },
+            "props": {
+              "path": "BlueRidge/Views/ShopFloor/_CutoverScan/Phone"
+            }
+          },
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "tablet"
+            },
+            "position": {
+              "size": "large"
+            },
+            "props": {
+              "path": "BlueRidge/Views/ShopFloor/_CutoverScan/Tablet"
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "desktop"
+        },
+        "position": {
+          "size": "large"
+        },
+        "props": {
+          "path": "BlueRidge/Views/ShopFloor/_CutoverScan/Desktop"
+        }
+      }
+    ]
+  }
+}

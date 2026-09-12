@@ -4,6 +4,9 @@
       "title": "MPP MES",
       "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
     },
+    "/breakpoint-example": {
+      "viewPath": "Breakpoint Example"
+    },
     "/dev/launcher": {
       "title": "Dev Launcher",
       "viewPath": "BlueRidge/Views/Dev/DevLauncher"
@@ -35,6 +38,11 @@
     "/shop-floor/assembly-serialized": {
       "title": "Assembly (Serialized)",
       "viewPath": "BlueRidge/Views/ShopFloor/AssemblySerialized"
+    },
+    "/shop-floor/cutover-scan": {
+      "title": "Inventory Cutover Scan",
+      "viewPath": "BlueRidge/Views/ShopFloor/CutoverScan",
+      "viewParams": {}
     },
     "/shop-floor/die-cast": {
       "title": "Die Cast Entry",
