@@ -1,5 +1,45 @@
 {
-  "custom": {},
+  "custom": {
+    "cutover": {
+      "session": {
+        "lineLocationId": null,
+        "lineName": "",
+        "destinationLocationId": null,
+        "destinationName": "",
+        "entryRoleCode": "MachiningIn",
+        "entryRouteSequence": null,
+        "itemId": null,
+        "partNumber": "",
+        "partDescription": "",
+        "toolId": null,
+        "toolCode": "",
+        "toolIsAmbiguous": false,
+        "machineNumber": ""
+      },
+      "entry": {
+        "lotName": "",
+        "toolCavityId": null,
+        "cavityCode": "",
+        "castDate": null,
+        "pieceCount": ""
+      },
+      "purchased": {
+        "partNumber": "",
+        "partDescription": "",
+        "itemId": null,
+        "qty": "",
+        "vendorLot": ""
+      },
+      "cavityOptions": [],
+      "toolOptions": [],
+      "rows": [],
+      "totals": {
+        "baskets": 0,
+        "pieces": 0
+      },
+      "mode": "cast"
+    }
+  },
   "propConfig": {
     "props.auth": {
       "access": "PRIVATE",

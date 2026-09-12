@@ -87,6 +87,23 @@ def getOriginTypeIdByCode(code):
     return None
 
 
+def getStatusIdByCode(code):
+    """Resolve a Lots.LotStatusCode Id by Code (e.g. 'Good', 'Closed'), or None.
+    Sibling of getOriginTypeIdByCode -- same shape, over the LotStatusCode
+    read instead. Used by BlueRidge.Cutover.Scan.voidEntry to resolve the
+    'Closed' status id before calling updateStatus (which takes an Id, not a
+    code, per Lots.Lot_UpdateStatus's @NewLotStatusId parameter)."""
+    try:
+        rows = BlueRidge.Common.Db.execList("lots/LotStatusCode_List", {}) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getStatusIdByCode failed: %s" % str(e))
+        return None
+    for r in rows:
+        if r.get("Code") == code:
+            return r.get("Id")
+    return None
+
+
 def get(lotId=None, lotName=None):
     """Fetch one LOT by Id or by name. Returns a dict or None."""
     BlueRidge.Common.Util.log("lotId=%s lotName=%s" % (lotId, lotName))
