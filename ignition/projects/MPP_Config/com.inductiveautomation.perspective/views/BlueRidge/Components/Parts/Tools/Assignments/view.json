@@ -619,12 +619,12 @@
         {
           "name": "handleMount",
           "params": [],
-          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool first.\", \"warning\")\n\t\treturn\n\tcellId \u003d self.view.custom.selectedCellId\n\tif cellId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No cell selected\", \"Pick a cell to mount on.\", \"warning\")\n\t\treturn\n\tnotes \u003d self.view.custom.mountNotes\n\tresult \u003d BlueRidge.Parts.Tool.assignToCell(toolId, cellId, notes)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool mounted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedCellId \u003d None\n\t\tself.view.custom.mountNotes \u003d \"\"\n\t\tself.refresh()"
+          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool first.\", \"warning\")\n\t\treturn\n\tcellId \u003d self.view.custom.selectedCellId\n\tif cellId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No cell selected\", \"Pick a cell to mount on.\", \"warning\")\n\t\treturn\n\tnotes \u003d self.view.custom.mountNotes\n\tresult \u003d BlueRidge.Parts.Tool.assignToCell(toolId, cellId, notes)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool mounted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedCellId \u003d None\n\t\tself.view.custom.mountNotes \u003d \"\"\n\t\tself.refresh()\n\t\t# The parent Tools view owns the \"Mounted - \u003cCell\u003e\" badge in the\n\t\t# detail header. Its activeMount binding depends only on the\n\t\t# selected tool id, so it cannot see a mount/release that happened\n\t\t# inside this embedded section, and embed params are input-only.\n\t\t# Page-scoped message is how the news crosses the boundary.\n\t\tsystem.perspective.sendMessage(\n\t\t\t\"toolDataChanged\",\n\t\t\tpayload\u003d{\"section\": \"assignments\"},\n\t\t\tscope\u003d\"page\")"
         },
         {
           "name": "handleRelease",
           "params": [],
-          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool released\")\n\tif result and result.get(\"Status\"):\n\t\tself.refresh()"
+          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool released\")\n\tif result and result.get(\"Status\"):\n\t\tself.refresh()\n\t\t# The parent Tools view owns the \"Mounted - \u003cCell\u003e\" badge in the\n\t\t# detail header. Its activeMount binding depends only on the\n\t\t# selected tool id, so it cannot see a mount/release that happened\n\t\t# inside this embedded section, and embed params are input-only.\n\t\t# Page-scoped message is how the news crosses the boundary.\n\t\tsystem.perspective.sendMessage(\n\t\t\t\"toolDataChanged\",\n\t\t\tpayload\u003d{\"section\": \"assignments\"},\n\t\t\tscope\u003d\"page\")"
         }
       ],
       "extensionFunctions": null,
@@ -632,7 +632,7 @@
         {
           "messageType": "toolDataChanged",
           "pageScope": true,
-          "script": "\tsection \u003d (payload or {}).get(\u0027section\u0027)\n\tif section and section !\u003d \u0027assignments\u0027:\n\t\treturn\n\tself.refresh()",
+          "script": "\t# Broadcast by whichever surface mutated this tool. The Mount / Release\n\t# buttons in THIS view already refreshed synchronously before they\n\t# broadcast, so an \u0027assignments\u0027-sourced message is our own echo --\n\t# skip it instead of re-running the three reads.\n\tsection \u003d (payload or {}).get(\u0027section\u0027)\n\tif section \u003d\u003d \u0027assignments\u0027:\n\t\treturn\n\tself.refresh()",
           "sessionScope": false,
           "viewScope": false
         }

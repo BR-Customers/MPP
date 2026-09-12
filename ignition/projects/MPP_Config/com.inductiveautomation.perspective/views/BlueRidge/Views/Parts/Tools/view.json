@@ -1492,6 +1492,13 @@
           "viewScope": false
         },
         {
+          "messageType": "toolDataChanged",
+          "pageScope": true,
+          "script": "\t# The Assignments section mounts and releases inside its own embed, so\n\t# the activeMount binding -- whose only dependency is the selected tool\n\t# id -- never re-evaluates and the \"Mounted - \u003cCell\u003e\" badge in the\n\t# detail header goes stale until you click away and back. Same\n\t# direct-write-a-bound-custom-prop shape as toolRefresh.\n\tmeta \u003d (self.view.custom.selected or {}).get(\u0027meta\u0027) or {}\n\tself.view.custom.activeMount \u003d BlueRidge.Parts.Tool.getActiveAssignmentForToolOrEmpty(meta.get(\u0027Id\u0027))",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
           "messageType": "toolRefresh",
           "pageScope": true,
           "script": "\tself.view.custom.tools \u003d BlueRidge.Parts.Tool.getInstancesForFlexRepeater(self.view.custom.filter.searchText, self.view.custom.filter.statusCode, (self.view.custom.selected.meta or {}).get(\u0027Id\u0027, 0))",
