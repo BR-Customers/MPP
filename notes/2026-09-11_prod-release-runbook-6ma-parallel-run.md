@@ -216,4 +216,9 @@ Report: `dist\deploy-reports\MPP_MES_Prod_Execute_20260912_144959\`.
 > (`7273b5da24f` for `72073b5da24f`). The guard aborted before the backup and before the
 > transaction — nothing was written. Copy the fingerprint, don't retype it.
 
-_(still to fill in: imports, arming, first tray booked, first suppressed box)_
+**Ignition imported 2026-09-12** (Core then MPP, from
+`dist\ignition-exports\*_6ma-parallel-run_2026-09-11_1409.zip`). Prod SQL and Ignition are
+both at `d4c29e75`. The 6MA CH watcher is still on its old `SlcTray` mapping, which is
+dormant on this PLC, so the line is unchanged until the arming steps in section 3.
+
+_(still to fill in: arming, first tray booked, first suppressed box)_
