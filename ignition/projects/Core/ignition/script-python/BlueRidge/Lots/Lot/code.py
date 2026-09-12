@@ -4,6 +4,8 @@
    the session-resolved current user when the caller passes None; the plant
    floor passes appUserId / terminalLocationId explicitly."""
 
+import java.lang
+
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
@@ -78,7 +80,7 @@ def getOriginTypeIdByCode(code):
     existing lots/LotOriginType_List read."""
     try:
         rows = BlueRidge.Common.Db.execList("lots/LotOriginType_List", {}) or []
-    except Exception as e:
+    except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("getOriginTypeIdByCode failed: %s" % str(e))
         return None
     for r in rows:
@@ -95,7 +97,7 @@ def getStatusIdByCode(code):
     code, per Lots.Lot_UpdateStatus's @NewLotStatusId parameter)."""
     try:
         rows = BlueRidge.Common.Db.execList("lots/LotStatusCode_List", {}) or []
-    except Exception as e:
+    except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("getStatusIdByCode failed: %s" % str(e))
         return None
     for r in rows:
@@ -1055,7 +1057,7 @@ def crtNamesFor(lotIds):
             continue
         try:
             row = get(lotId)
-        except Exception as e:
+        except (Exception, java.lang.Exception) as e:
             BlueRidge.Common.Util.log(
                 "crtNamesFor: read failed for lotId=%s (%s) - LOT omitted from "
                 "the CRT notice; the tag itself is unaffected." % (lotId, e),
