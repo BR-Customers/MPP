@@ -46,7 +46,7 @@ Every task's requirements implicitly include this section.
 - NQ `sqlType`: `2` = INTEGER/BIT, `3` = BIGINT, `5` = DECIMAL, `7` = VARCHAR/String, `91` = DATE.
 - A proc returning a status row needs NQ `"type": "Query"` and `execMutation`. A silent proc needs `"type": "UpdateQuery"` and `execNonQuery`.
 - **All Ignition work in this plan is file-authored — new views and existing ones alike.** Jacques is keeping Designer closed for the duration, so the usual filesystem-vs-Designer reconciliation race does not apply and there is no Designer cache to fight. Edit `view.json` directly and run `.\scan.ps1`. (The standing repo rule — edit existing views in Designer — remains correct outside this plan.)
-- When a file edit reports "String not found" on text that visibly matches, the file has mixed line endings or Designer-era 6-char unicode escapes (`=` for `=`, and the same for `'`, `<`, `>`). Anchor edits on escape-free text, or do a byte-level replace in Python.
+- When a file edit reports "String not found" on text that visibly matches, the file has mixed line endings or Designer-era 6-char unicode escapes -- a literal backslash-u-0-0-3-d in place of `=`, and the equivalents for `'`, `<` and `>`. Anchor edits on escape-free text, or do a byte-level replace in Python.
 - A view folder needs both `view.json` and `resource.json` (`"scope": "G"`) or the page reports "View Not Found".
 - After adding any new resource, run `.\scan.ps1` from the repo root. Never `pull.ps1` (it overwrites local work from the gateway).
 - Event-script bodies in `view.json` start with a tab — Designer wraps them in `def runAction(self, event):`. Column-0 content is an `IndentationError`.
