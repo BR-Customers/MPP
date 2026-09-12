@@ -202,5 +202,18 @@ members that make the watcher act.
 
 ## Outcome
 
-_(fill in after the run: preview counts, fingerprint, backup path, commit time, imports,
-first tray booked, first suppressed box)_
+**SQL live on prod 2026-09-12 14:49 ET.** Prod was at `0077`; preview and rehearsal both
+showed exactly the expected plan (pending `0078` + `0079`; 452 identical / 3 changed / 0
+new; no gates; no warnings) — identical to the local rehearsal on `MPP_MES_ProdSim0077`.
+Plan fingerprint `72073b5da24f`. Rehearsal passed and rolled back with a 2.8 s lock window
+against live data (1 open basket, 1 running shift). Execute: backup
+`...\MSSQL16.MSSQLSERVER\MSSQL\Backup\MPP_MES_Prod_pre-release_0077_20260912_144959.bak`
+(COPY_ONLY, verified), transaction **committed in 2.9 s**, extended properties applied,
+every migration recorded and all 3 procs byte-identical to the repo.
+Report: `dist\deploy-reports\MPP_MES_Prod_Execute_20260912_144959\`.
+
+> One Execute was refused first because the fingerprint was mistyped by one character
+> (`7273b5da24f` for `72073b5da24f`). The guard aborted before the backup and before the
+> transaction — nothing was written. Copy the fingerprint, don't retype it.
+
+_(still to fill in: imports, arming, first tray booked, first suppressed box)_

@@ -252,6 +252,18 @@ No drag-and-drop anywhere — up/down arrow buttons for all sortable lists.
 
 All markdown docs have bordered + alternating-row styled Word versions. Regenerate via `pandoc <file>.md -o <file>.docx --reference-doc=reference.docx && node style_docx_tables.js <file>.docx`.
 
+### Production deployments
+
+Every deployment into a production environment ships as the same five things. Prod is a live plant; the preview is what Jacques reads before deciding, and Execute must refuse anything that changed after that decision.
+
+1. **Preview** — read-only: what would change, pre-flight gates against live data, a saved report, and a **plan fingerprint**.
+2. **Rehearsal** — the real deploy script against the live data inside a transaction, verified, then rolled back.
+3. **Execute** — verified COPY_ONLY backup first, one transaction, guarded by `-ExpectedPlan <fingerprint>` from the preview that was read.
+4. **Scoped project exports** — only the resources the change touched, built **from git** and verified against HEAD (`tools/Build-ChangeExport.ps1`), never whole projects. Core imports first.
+5. **An instruction guide** — published as an Artifact (copyable commands, the output to expect, what to do when it differs, verification, rollback) and mirrored as `notes/<date>_prod-release-runbook-*.md`.
+
+`sql/scripts/Deploy-ProdRelease.ps1` implements 1–3. Rehearse locally first against a DB built at the target's exact migration state (temp worktree at the target's commit + `Reset-DevDatabase.ps1` under a throwaway name) so the guide can state what the preview should print. **The fingerprint includes HEAD — nothing may be committed between preview and execute.** Reference: `notes/2026-09-11_prod-release-runbook-6ma-parallel-run.md`.
+
 ### Git commits
 
 Omit `Co-Authored-By: Claude` trailer.
