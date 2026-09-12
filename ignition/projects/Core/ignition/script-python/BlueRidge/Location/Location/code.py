@@ -570,6 +570,38 @@ def _refreshAfterMutation(targetId, rootId, expandDepth, defaultIcon):
 # ============================================================================
 
 
+def _sortOrderForEditor(value):
+    """Editor-side type for SortOrder: a STRING, always.
+
+       The Sort Order editor is an ia.input.text-field bound bidirectionally
+       to state.editDraft.sortOrder through props.text -- a String prop -- so
+       Perspective coerces whatever we seed and writes the string form back
+       into the draft. PlantHierarchy's dirty indicator is
+       jsonEncode(editDraft) != jsonEncode(selected), so seeding the raw INT
+       from the DB left the baseline at 3 while the draft held "3": unequal
+       forever. That latched "Unsaved changes" on with nothing edited and made
+       it immune to Save -- handleSaveAll re-baselined from the DB row and the
+       text field re-wrote the string immediately after. Keep BOTH halves in
+       the field's own type; _sortOrderForProc maps it back on the way out."""
+    if value is None or value == "":
+        return ""
+    return "%s" % value
+
+
+def _sortOrderForProc(value):
+    """Inverse of _sortOrderForEditor, for the sqlType:2 (Integer) NQ
+       parameter. Blank -> None, which Location_SaveAll reads as "auto-assign
+       MAX+1 among active siblings" on create and "preserve the current
+       SortOrder" on update. A non-numeric entry returns None too; the caller
+       distinguishes that from a genuine blank and rejects it."""
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
+
+
 def emptyMeta(parentLocationId):
     """Blank meta dict for a new Location under the given parent.
        LocationTypeDefinitionId starts None; the operator picks it via the
@@ -582,7 +614,7 @@ def emptyMeta(parentLocationId):
         "code":                     "",
         "name":                     "",
         "description":              "",
-        "sortOrder":                None,
+        "sortOrder":                "",
     }
 
 
@@ -600,7 +632,7 @@ def metaFromLocation(location):
         "code":                     location.get("code") or "",
         "name":                     location.get("name") or "",
         "description":              location.get("description") or "",
-        "sortOrder":                location.get("sortOrder"),
+        "sortOrder":                _sortOrderForEditor(location.get("sortOrder")),
     }
 
 
@@ -828,6 +860,18 @@ def handleSaveAll(meta, attributes, userId=None,
         })
     attrsJson = BlueRidge.Common.Util.convertWrapperObjectToJson(procRows)
 
+    # SortOrder lives in the editor as a string (see _sortOrderForEditor);
+    # convert it back for the sqlType:2 parameter. A blank is legitimate --
+    # the proc auto-assigns on create and preserves on update -- but a
+    # non-numeric entry has to be rejected here: it would otherwise fail in
+    # the JDBC layer, which never reaches the proc and so never reaches
+    # Audit.FailureLog.
+    sortOrderParam = _sortOrderForProc(meta.get("sortOrder"))
+    if sortOrderParam is None and meta.get("sortOrder") not in (None, ""):
+        BlueRidge.Common.Notify.toast(
+            "Save failed", "Sort Order must be a whole number.", "error")
+        return None
+
     isCreate     = meta.get("id") is None
     successTitle = "Created Location" if isCreate else "Saved Location"
     successMsg   = meta.get("name") or ""
@@ -841,7 +885,7 @@ def handleSaveAll(meta, attributes, userId=None,
             "name":                     meta.get("name"),
             "code":                     meta.get("code"),
             "description":              (meta.get("description") if meta.get("description") else None),
-            "sortOrder":                meta.get("sortOrder"),
+            "sortOrder":                sortOrderParam,
             "appUserId":                userId,
             "attributeValuesJson":      attrsJson,
         },
@@ -866,7 +910,7 @@ def handleSaveAll(meta, attributes, userId=None,
     newMeta = dict(meta)
     newMeta["id"] = newId
     if refresh.get("selected"):
-        newMeta["sortOrder"] = refresh["selected"].get("sortOrder")
+        newMeta["sortOrder"] = _sortOrderForEditor(refresh["selected"].get("sortOrder"))
     newAttrs = buildAttributesForType(newMeta.get("locationTypeDefinitionId"), newId)
     newMeta["attributes"] = newAttrs
     refresh["editDraft"]  = newMeta
