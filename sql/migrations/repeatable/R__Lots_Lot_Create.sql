@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_Lot_Create.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-09-10
--- Version:     1.2
+-- Version:     1.3
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
 --              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +
 --              FDS-05-034/-035).
@@ -13,6 +13,14 @@
 --              as the existing Item.MaxParts check (6) but scoped to configured
 --              consumption points only; no configured row = unrestricted. Nearest
 --              ancestor tier wins when more than one ItemLocation row applies.
+--
+--              v1.3 (2026-09-12, migration 0080): @EntryRouteSequence + @CastDate
+--              for the inventory cutover scan. Both default NULL, so every
+--              existing caller is unaffected. @EntryRouteSequence must name a
+--              real step on the item's active route (else the LOT would be
+--              invisible at every terminal); @CastDate may not be in the future.
+--              Both checks run BEFORE BEGIN TRANSACTION. A duplicate @LotName was
+--              already rejected in 2b.
 --
 --              Flow: validate params/FKs -> validate business rules
 --              (eligibility via Parts.v_EffectiveItemLocation Direct U
@@ -65,7 +73,9 @@ CREATE OR ALTER PROCEDURE Lots.Lot_Create
     @AppUserId          BIGINT,
     @TerminalLocationId BIGINT        = NULL,
     @LotName            NVARCHAR(50)  = NULL,   -- D4: caller-supplied identity (pre-printed LTT); NULL = mint server-side (today's behavior)
-    @DepositToStorage   BIT           = 0       -- die-cast: after birth at the machine, auto-move to the Warehouse (storage). OFF by default -> other origins (receiving, etc.) unaffected.
+    @DepositToStorage   BIT           = 0,      -- die-cast: after birth at the machine, auto-move to the Warehouse (storage). OFF by default -> other origins (receiving, etc.) unaffected.
+    @EntryRouteSequence INT           = NULL,  -- cutover: route step at which this LOT joined its route. NULL = the route start (every normal mint).
+    @CastDate           DATE          = NULL   -- cutover: date read off the physical LTT. Drives FIFO for migrated stock. NULL for a normal mint.
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -82,7 +92,8 @@ BEGIN
                @CurrentLocationId AS CurrentLocationId, @PieceCount AS PieceCount,
                @ToolId AS ToolId, @ToolCavityId AS ToolCavityId,
                @VendorLotNumber AS VendorLotNumber, @AppUserId AS AppUserId,
-               @TerminalLocationId AS TerminalLocationId
+               @TerminalLocationId AS TerminalLocationId,
+               @EntryRouteSequence AS EntryRouteSequence, @CastDate AS CastDate
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
@@ -458,6 +469,42 @@ BEGIN
             END
         END
 
+        -- ---- 7b. Cutover params (0080). Both run BEFORE BEGIN TRANSACTION so a
+        --          rejection never opens a txn (a ROLLBACK inside a proc invoked
+        --          via INSERT-EXEC raises Msg 3915).
+        --          A duplicate @LotName is already rejected in 2b above.
+        IF @EntryRouteSequence IS NOT NULL
+           AND NOT EXISTS (SELECT 1
+                           FROM Parts.RouteTemplate rt
+                           INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+                           WHERE rt.ItemId = @ItemId
+                             AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+                             AND rs.SequenceNumber = @EntryRouteSequence)
+        BEGIN
+            SET @Message = N'Entry route step ' + CAST(@EntryRouteSequence AS NVARCHAR(10))
+                         + N' does not exist on this part''s active route.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+            RETURN;
+        END
+
+        DECLARE @TodayUtc DATE = CAST(SYSUTCDATETIME() AS DATE);
+        IF @CastDate IS NOT NULL AND @CastDate > @TodayUtc
+        BEGIN
+            SET @Message = N'Cast date is in the future.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+            RETURN;
+        END
+
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
 
@@ -523,14 +570,16 @@ BEGIN
             Weight, WeightUomId, ToolId, ToolCavityId, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
-            CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive
+            CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive,
+            EntryRouteSequence, CastDate
         )
         VALUES (
             @MintedLotName, @ItemId, @LotOriginTypeId, @GoodStatusId, @PieceCount, @MaxLotSize,
             @Weight, @WeightUomId, @ToolId, @ToolCavityId, @VendorLotNumber,
             @MinSerialNumber, @MaxSerialNumber, @CurrentLocationId,
             0, @PieceCount,                          -- B5 materialized: TotalInProcess / InventoryAvailable
-            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive
+            @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive,
+            @EntryRouteSequence, @CastDate         -- 0080: cutover entry point + cast date
         );
 
         SET @NewId = SCOPE_IDENTITY();

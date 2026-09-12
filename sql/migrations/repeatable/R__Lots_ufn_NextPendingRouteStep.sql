@@ -2,13 +2,19 @@
 -- Repeatable:  R__Lots_ufn_NextPendingRouteStep.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-09-12
--- Version:     1.0
+-- Version:     1.1
 -- Description: THE single definition of "what is this LOT's next pending route
 --              step". Extracted from seven copy-pasted CTEs across five procs
 --              (Lots.Lot_GetWipQueueByLocation, Lots.Lot_GetComponentsAtCell,
 --              Lots.Lot_GetTrimStorageQueueForLine, Lots.Lot_MoveToValidated,
 --              and THREE inside Workorder.MachiningOut_Mint). Behaviour is
 --              identical to those copies -- this is a pure extraction.
+--
+--              v1.1 (2026-09-12): honours Lots.Lot.EntryRouteSequence (migration
+--              0080). Route steps below a LOT's entry point are never pending --
+--              that is how inventory counted in at cutover surfaces at the
+--              terminal where it physically sits rather than at the first route
+--              step. NULL = entry at the route start = today's behaviour.
 --
 --              Pending depends on the step's OperationRoleKind:
 --                * Advance     -> pending until a matching Workorder.ProductionEvent
@@ -54,6 +60,10 @@ AS RETURN
     INNER JOIN Parts.OperationType oty     ON oty.Id = ot.OperationTypeId
     INNER JOIN Parts.OperationRoleKind rk  ON rk.Id  = oty.OperationRoleKindId
     WHERE l.Id = @LotId
+      -- Steps below the LOT's entry point are not part of its journey. NULL
+      -- (every pre-cutover row) means entry at the route start, so this is
+      -- inert for existing data.
+      AND rs.SequenceNumber >= ISNULL(l.EntryRouteSequence, 0)
       AND (
               rk.Code = N'ConsumeMint'
            OR (rk.Code = N'Advance' AND NOT EXISTS (
