@@ -105,7 +105,8 @@
               "justify": "center",
               "style": {
                 "overflow": "hidden",
-                "gap": "0px"
+                "gap": "0px",
+                "minWidth": "0px"
               }
             },
             "children": [
@@ -130,6 +131,8 @@
                     "whiteSpace": "nowrap",
                     "overflow": "hidden",
                     "textOverflow": "ellipsis",
+                    "minWidth": "0px",
+                    "maxWidth": "100%",
                     "fontSize": "14px",
                     "fontWeight": 700
                   }
@@ -160,6 +163,8 @@
                     "whiteSpace": "nowrap",
                     "overflow": "hidden",
                     "textOverflow": "ellipsis",
+                    "minWidth": "0px",
+                    "maxWidth": "100%",
                     "fontSize": "11px"
                   }
                 },
@@ -186,7 +191,8 @@
               "alignItems": "flex-end",
               "style": {
                 "overflow": "hidden",
-                "gap": "0px"
+                "gap": "0px",
+                "minWidth": "0px"
               }
             },
             "children": [
@@ -213,6 +219,8 @@
                     "whiteSpace": "nowrap",
                     "overflow": "hidden",
                     "textOverflow": "ellipsis",
+                    "minWidth": "0px",
+                    "maxWidth": "100%",
                     "fontSize": "11px",
                     "lineHeight": "1.1"
                   }
@@ -242,6 +250,8 @@
                     "whiteSpace": "nowrap",
                     "overflow": "hidden",
                     "textOverflow": "ellipsis",
+                    "minWidth": "0px",
+                    "maxWidth": "100%",
                     "fontSize": "11px",
                     "lineHeight": "1.1"
                   }
@@ -255,7 +265,7 @@
               "name": "LineDownPill"
             },
             "position": {
-              "shrink": 0
+              "shrink": 1
             },
             "propConfig": {
               "meta.visible": {
@@ -281,6 +291,8 @@
                 "overflow": "hidden",
                 "textOverflow": "ellipsis",
                 "whiteSpace": "nowrap",
+                "minWidth": "0px",
+                "maxWidth": "100%",
                 "fontSize": "10px"
               }
             },
@@ -291,7 +303,7 @@
               "name": "ElevatedPill"
             },
             "position": {
-              "shrink": 0
+              "shrink": 1
             },
             "propConfig": {
               "position.display": {
@@ -317,6 +329,8 @@
                 "overflow": "hidden",
                 "textOverflow": "ellipsis",
                 "whiteSpace": "nowrap",
+                "minWidth": "0px",
+                "maxWidth": "100%",
                 "fontSize": "10px"
               }
             },
