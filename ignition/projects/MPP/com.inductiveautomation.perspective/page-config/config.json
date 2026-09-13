@@ -182,7 +182,7 @@
       {
         "anchor": "fixed",
         "autoBreakpoint": 0,
-        "content": "auto",
+        "content": "push",
         "handle": "hide",
         "iconUrl": "",
         "id": "dev-nav",

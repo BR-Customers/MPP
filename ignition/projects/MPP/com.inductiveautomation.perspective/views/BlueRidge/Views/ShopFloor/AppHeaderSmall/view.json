@@ -1,0 +1,462 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {
+    "defaultSize": {
+      "height": 88
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "pf-header",
+        "height": "100%",
+        "padding": "0 10px",
+        "overflow": "hidden"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Row1"
+        },
+        "position": {
+          "basis": "0px",
+          "grow": 1,
+          "shrink": 1
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "8px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(id=\"mpp-app-menu\", view=\"BlueRidge/Components/Popups/AppMenu\", modal=True, showCloseIcon=False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "MenuButton",
+              "tooltip": {}
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "meta.tooltip.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000), \"Menu\", \"Supervisor access required\")"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary",
+                "fontSize": "18px",
+                "minWidth": "44px",
+                "height": "34px",
+                "minHeight": "34px"
+              },
+              "text": "≡"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "BrandCol"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "direction": "column",
+              "justify": "center",
+              "style": {
+                "overflow": "hidden",
+                "gap": "0px"
+              }
+            },
+            "children": [
+              {
+                "meta": {
+                  "name": "TerminalName"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.terminal.terminalName}) || {session.custom.terminal.terminalName} = \"\", \"Madison Facility\", {session.custom.terminal.terminalName})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-app-title",
+                    "lineHeight": "1.1",
+                    "whiteSpace": "nowrap",
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
+                    "fontSize": "14px",
+                    "fontWeight": 700
+                  }
+                },
+                "type": "ia.display.label",
+                "position": {
+                  "shrink": 0
+                }
+              },
+              {
+                "meta": {
+                  "name": "ScopeName"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"\", {session.custom.terminal.zoneName})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-banner-detail",
+                    "lineHeight": "1.1",
+                    "whiteSpace": "nowrap",
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
+                    "fontSize": "11px"
+                  }
+                },
+                "type": "ia.display.label",
+                "position": {
+                  "shrink": 0
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "WhoCol"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "direction": "column",
+              "justify": "center",
+              "alignItems": "flex-end",
+              "style": {
+                "overflow": "hidden",
+                "gap": "0px"
+              }
+            },
+            "children": [
+              {
+                "meta": {
+                  "name": "Operator"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"Operator: \" + if(isNull({session.custom.user.initials}) || {session.custom.user.initials} = \"\", \"--\", {session.custom.user.initials})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-banner-detail",
+                    "whiteSpace": "nowrap",
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
+                    "fontSize": "11px",
+                    "lineHeight": "1.1"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ShiftLabel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"Shift: \" + if(isNull({view.custom.shift.ScheduleName}) || {view.custom.shift.ScheduleName} = \"\", \"none\", {view.custom.shift.ScheduleName})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-banner-detail",
+                    "whiteSpace": "nowrap",
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
+                    "fontSize": "11px",
+                    "lineHeight": "1.1"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ]
+          },
+          {
+            "meta": {
+              "name": "LineDownPill"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.openCount} > 0"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"● LINE DOWN · \" + toStr({view.custom.openCount})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "dt-open-badge",
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap",
+                "fontSize": "10px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ElevatedPill"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} > now(5000)"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Elevated: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", \"supervisor\", {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "dt-open-badge",
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap",
+                "fontSize": "10px"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Row2"
+        },
+        "position": {
+          "basis": "0px",
+          "grow": 1,
+          "shrink": 1
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "6px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(id=\"mpp-downtime-manager\", view=\"BlueRidge/Components/Popups/DowntimeManager\", modal=True, showCloseIcon=False, params={})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DowntimeButton"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary",
+                "fontSize": "12px",
+                "padding": "0 6px",
+                "height": "32px",
+                "minHeight": "32px",
+                "lineHeight": "32px"
+              },
+              "text": "Downtime"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(id=\"mpp-elevation-modal\", view=\"BlueRidge/Components/PlantFloor/ElevationModal\", modal=True, showCloseIcon=True, overlayDismiss=True, params={\"actionCode\": \"SupervisorAccess\", \"actionLabel\": \"Supervisor access\", \"popupId\": \"mpp-elevation-modal\", \"replyMessage\": \"elevationResult\"})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SupervisorAccessButton"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1,
+              "shrink": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "isNull({session.custom.elevatedUntil}) || {session.custom.elevatedUntil} <= now(5000)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary",
+                "fontSize": "12px",
+                "padding": "0 6px",
+                "height": "32px",
+                "minHeight": "32px",
+                "lineHeight": "32px"
+              },
+              "text": "Supervisor"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tBlueRidge.Common.Session.resetTerminal(self.session)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ResetTerminalButton",
+              "tooltip": {
+                "text": "Sign out and return to the default screen"
+              }
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary",
+                "fontSize": "12px",
+                "padding": "0 6px",
+                "height": "32px",
+                "minHeight": "32px",
+                "lineHeight": "32px"
+              },
+              "text": "Reset"
+            },
+            "type": "ia.input.button"
+          }
+        ]
+      }
+    ]
+  }
+}
