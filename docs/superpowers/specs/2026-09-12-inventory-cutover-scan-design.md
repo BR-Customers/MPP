@@ -134,6 +134,14 @@ Traced through the three item shapes cutover will scan:
 | Scanned item | Route shape | Entry point needed? |
 |---|---|---|
 | **Casting** | `DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut` | **Yes.** Without it the first pending step is `TrimIn` and the LOT lands in the Trim queues. |
+
+> **"Casting" is a ROLE, not an `ItemType`.** There is no `Casting` item type in this model —
+> the seeded codes are `RawMaterial` / `Component` / `SubAssembly` / `FinishedGood` /
+> `PassThrough`, and a casting is a `Component`. Identify one by its route: an item whose
+> active published route carries a `DieCast` (`OriginMint`) step. Filtering by
+> `ItemType.Code = 'Casting'` matches nothing and fails **silently** — it cost the
+> pre-cutover readiness check two vacuous sections that returned empty and looked like a
+> pass. Route role is the authority here, as everywhere else in the terminal-mint model.
 | **SubAssembly** | one step — `MachiningOut` (`ConsumeMint`), sequence 1 | **No.** There is no earlier step to skip; any value is a no-op. |
 | **Purchased component** | no published route at all | **No.** `Lot_GetWipQueueByLocation` drops it on the `INNER JOIN` to `RouteTemplate`. |
 
@@ -609,5 +617,6 @@ first.
 | Version | Date | Author | Change |
 |---|---|---|---|
 | 0.1 (draft) | 2026-09-12 | Jacques + Claude | Initial design: `EntryRouteSequence` + `CastDate`, `ufn_NextPendingRouteStep` extraction as prerequisite, two-flow mobile scan surface, rejected alternatives, pre-cutover verification list. |
+| 0.4 (draft) | 2026-09-12 | Jacques + Claude | "Casting" clarified as a route ROLE, not an ItemType -- there is no such item type, and filtering by one matches nothing silently. LINE means Work Center tier / ProductionLine definition, not Cell tier. |
 | 0.3 (draft) | 2026-09-12 | Jacques + Claude | Corrected the dies-per-part measurement in 6.3: the reported "6 dies -> 1 part" was the unmapped `ItemId IS NULL` bucket, not a part. Every mapped part resolves to exactly one die. `Item.MaxLotSize` is now informational rather than a rejection. |
 | 0.2 (draft) | 2026-09-12 | Jacques + Claude | Open questions resolved. Cavity `Da`/`Db` = die revision + cavity, maps 1:1 to `CavityCode`, no translation needed. Added `Location.DefaultStockLocationId` (§3.5). Operator access, no elevation gate. New §3.4 scoping `EntryRouteSequence` to castings only, with the SubAssembly placement rule. §11 replaced with the `ConsumeMint` wart analysis. |

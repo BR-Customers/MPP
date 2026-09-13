@@ -295,6 +295,38 @@ def getCellsForDropdown():
     return out
 
 
+def getProductionLinesForDropdown():
+    """Active Production Lines shaped for ia.input.dropdown.
+
+       Work Center tier + the ProductionLine definition -- NOT Cell tier.
+       getCellsForDropdown returns the 134 Cell-tier locations, which are
+       TERMINALS (MA1-5GOF-ASER), not the LINE they sit under (MA1-5GOF).
+       The inventory cutover scan first shipped bound to the cells variant,
+       which would have written every scanned basket onto a terminal while the
+       M&A model is line-resident -- the WIP queues match LOTs AT the line, so
+       the stock would have gone quietly missing from the queues it belongs in.
+
+       Returns:
+           list[dict]: [{label: '<Code> - <Name>', value: Id,
+                         code: Code, name: Name}].
+                       Always a list (never None) so a runScript-bound custom
+                       prop defaulting to [] is never overwritten with null.
+    """
+    BlueRidge.Common.Util.log("loading production lines for dropdown")
+    rows = BlueRidge.Common.Db.execList("location/Location_ListProductionLines") or []
+    out = []
+    for r in rows:
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        out.append({
+            "label": ("%s - %s" % (code, name)).strip(" -"),
+            "value": r.get("Id"),
+            "code":  code,
+            "name":  name,
+        })
+    return out
+
+
 def getMachiningDestinationsForDropdown(activeLotId=None, _refreshToken=None):
     """Machining PRODUCTION LINES shaped for ia.input.dropdown -- the valid
     whole-LOT destinations for Trim OUT (line-resident, Jacques 2026-07-06).

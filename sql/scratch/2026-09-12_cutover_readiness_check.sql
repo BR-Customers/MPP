@@ -39,9 +39,22 @@ PRINT '    EntryRouteSequence and Lot_Create will refuse every basket of it.';
 SELECT DISTINCT i.Id, i.PartNumber, i.Description
 FROM Parts.v_EffectiveItemLocation e
 INNER JOIN Parts.Item i      ON i.Id  = e.ItemId
-INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
 WHERE e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@Line))
-  AND it.Code = N'Casting'
+      AND EXISTS (   -- "casting" = its route is minted at Die Cast. There is NO
+                     -- 'Casting' ItemType in this model (the seeded codes are
+                     -- RawMaterial / Component / SubAssembly / FinishedGood /
+                     -- PassThrough -- a casting is a Component), so filtering by
+                     -- item type silently matches nothing. Role is the authority,
+                     -- consistent with the terminal-mint model.
+              SELECT 1
+              FROM Parts.RouteTemplate rt2
+              INNER JOIN Parts.RouteStep rs2         ON rs2.RouteTemplateId = rt2.Id
+              INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id  = rs2.OperationTemplateId
+              INNER JOIN Parts.OperationType oty2    ON oty2.Id = ot2.OperationTypeId
+              INNER JOIN Parts.OperationRoleKind rk2 ON rk2.Id  = oty2.OperationRoleKindId
+              WHERE rt2.ItemId = i.Id
+                AND rt2.PublishedAt IS NOT NULL AND rt2.DeprecatedAt IS NULL
+                AND rk2.Code = N'OriginMint')
   AND NOT EXISTS (
       SELECT 1
       FROM Parts.RouteTemplate rt
@@ -60,9 +73,22 @@ PRINT '    means no buttons to tap and no die genealogy for Honda.';
 SELECT DISTINCT i.Id, i.PartNumber
 FROM Parts.v_EffectiveItemLocation e
 INNER JOIN Parts.Item i      ON i.Id  = e.ItemId
-INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
 WHERE e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@Line))
-  AND it.Code = N'Casting'
+      AND EXISTS (   -- "casting" = its route is minted at Die Cast. There is NO
+                     -- 'Casting' ItemType in this model (the seeded codes are
+                     -- RawMaterial / Component / SubAssembly / FinishedGood /
+                     -- PassThrough -- a casting is a Component), so filtering by
+                     -- item type silently matches nothing. Role is the authority,
+                     -- consistent with the terminal-mint model.
+              SELECT 1
+              FROM Parts.RouteTemplate rt2
+              INNER JOIN Parts.RouteStep rs2         ON rs2.RouteTemplateId = rt2.Id
+              INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id  = rs2.OperationTemplateId
+              INNER JOIN Parts.OperationType oty2    ON oty2.Id = ot2.OperationTypeId
+              INNER JOIN Parts.OperationRoleKind rk2 ON rk2.Id  = oty2.OperationRoleKindId
+              WHERE rt2.ItemId = i.Id
+                AND rt2.PublishedAt IS NOT NULL AND rt2.DeprecatedAt IS NULL
+                AND rk2.Code = N'OriginMint')
   AND NOT EXISTS (SELECT 1 FROM Tools.ToolCavity tc
                   WHERE tc.ItemId = i.Id AND tc.DeprecatedAt IS NULL)
 ORDER BY i.PartNumber;
@@ -116,7 +142,7 @@ INNER JOIN Parts.Item i          ON i.Id  = l.ItemId
 INNER JOIN Parts.ItemType it     ON it.Id = i.ItemTypeId
 INNER JOIN Location.Location loc ON loc.Id = l.CurrentLocationId
 INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
-WHERE it.Code = N'SubAssembly'
+WHERE it.Code = N'SubAssembly'   -- a real seeded ItemType code, unlike 'Casting'
   AND EXISTS (SELECT 1 FROM Lots.ufn_NextPendingRouteStep(l.Id) ns
               WHERE ns.OperationTypeCode = N'MachiningOut')
 ORDER BY loc.Code, l.LotName;
