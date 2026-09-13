@@ -97,7 +97,7 @@ _EMPTY = {
 }
 
 
-def getState():
+def getState(session=None):
     """The whole cutover session state, always fully shaped -- merged over
        _EMPTY so a first-paint binding that traverses a nested path (before
        any session has been loaded, or against a key a future version adds)
@@ -105,11 +105,29 @@ def getState():
        Component Error rather than a blank/default value. Never-throw: this
        is called from bindings on every render, so a bad read must fall back
        to the empty shape, not raise into the component."""
-    try:
-        raw = system.perspective.getSessionInfo()["custom"].get("cutover")
-    except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("getState failed: %s" % str(e))
-        raw = None
+    # Read through the SESSION OBJECT the caller already holds.
+    #
+    # This used to be system.perspective.getSessionInfo()["custom"], which is
+    # wrong and failed on EVERY call with "list indices must be integers":
+    # getSessionInfo() returns a LIST of every session on the gateway, not the
+    # current one. The never-throw guard then swallowed it and handed back the
+    # empty shape, so getState could never see existing state -- addBasket read
+    # the operator's typed LTT and piece count out of that empty shape and got
+    # blanks. Silent, because the guard is doing exactly what it was built to do.
+    #
+    # There is no way to identify "this" session from that list, so without a
+    # session object the honest answer is the empty shape, logged.
+    raw = None
+    if session is not None:
+        try:
+            raw = session.custom.cutover
+        except (Exception, java.lang.Exception) as e:
+            BlueRidge.Common.Util.log("getState: session read failed: %s" % str(e))
+            raw = None
+    else:
+        BlueRidge.Common.Util.log(
+            "getState called with no session -- returning the empty shape. "
+            "Callers must pass the session object.")
     st = _u(raw) or {}
     # Shallow dict(_EMPTY) would share the nested dicts (session/entry/
     # purchased/totals) across every call -- one session's edits would then
@@ -163,7 +181,7 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
 
     cavities = BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId) if toolId else []
 
-    st = getState()
+    st = getState(session)
     st["session"] = {
         "lineLocationId": lineLocationId, "lineName": line.get("name") or "",
         "destinationLocationId": dest.get("DestinationLocationId"),
@@ -190,7 +208,7 @@ def addBasket(appUserId, terminalLocationId, session):
     appUserId = _u(appUserId)
     terminalLocationId = _u(terminalLocationId)
 
-    st = getState()
+    st = getState(session)
     s, e = st["session"], st["entry"]
 
     lotName = (e.get("lotName") or "").strip()
@@ -241,7 +259,7 @@ def addBox(appUserId, terminalLocationId, session):
     appUserId = _u(appUserId)
     terminalLocationId = _u(terminalLocationId)
 
-    st = getState()
+    st = getState(session)
     s, p = st["session"], st["purchased"]
 
     itemId = p.get("itemId")
@@ -303,7 +321,7 @@ def voidEntry(lotId, appUserId, session):
     }, appUserId)
     if not (res and res.get("Status")):
         return res
-    st = getState()
+    st = getState(session)
     rows = [r for r in (st.get("rows") or []) if r.get("LotId") != lotId]
     st["rows"] = rows
     st["totals"] = {"baskets": len(rows),
@@ -316,7 +334,7 @@ def stepCastDate(days, session):
     """Move the cast date by whole days, capped at today. Seeded from the last
        basket scanned, so consecutive baskets are zero or one tap."""
     days = _u(days)
-    st = getState()
+    st = getState(session)
     cur = st["entry"].get("castDate") or system.date.now()
     nxt = system.date.addDays(cur, days)
     if system.date.isAfter(system.date.midnight(nxt),

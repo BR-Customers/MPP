@@ -2028,9 +2028,19 @@
                   }
                 }
               }
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1,
+              "shrink": 1
             }
           }
-        ]
+        ],
+        "position": {
+          "basis": "0px",
+          "grow": 1,
+          "shrink": 1
+        }
       }
     ],
     "scripts": {
@@ -2050,7 +2060,7 @@
           "params": [
             "toolId"
           ],
-          "script": "\tst = BlueRidge.Cutover.Scan.getState()\n\titemId = st[\"session\"].get(\"itemId\")\n\tst[\"cavityOptions\"] = BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId)\n\tst[\"entry\"][\"toolCavityId\"] = None\n\tst[\"entry\"][\"cavityCode\"] = \"\"\n\tself.session.custom.cutover = st"
+          "script": "\tst = BlueRidge.Cutover.Scan.getState(self.session)\n\titemId = st[\"session\"].get(\"itemId\")\n\tst[\"cavityOptions\"] = BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId)\n\tst[\"entry\"][\"toolCavityId\"] = None\n\tst[\"entry\"][\"cavityCode\"] = \"\"\n\tself.session.custom.cutover = st"
         },
         {
           "name": "addBasket",
