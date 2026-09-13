@@ -434,7 +434,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {view.custom.setupDraft.lineLocationId}, {view.custom.setupDraft.entryRoleCode})"
+                            "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
                           }
                         }
                       },

@@ -166,11 +166,15 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
     item = BlueRidge.Parts.Item.getOne(itemId) or {}
     line = BlueRidge.Location.Location.getOne(lineLocationId) or {}
     dest = BlueRidge.Location.Location.getStockDestinationOrEmpty(lineLocationId)
+    # EntryRouteSequence is a CASTINGS-ONLY mechanism (design spec 3.4). A
+    # SubAssembly's route is a single ConsumeMint step with nothing earlier to
+    # skip, and a purchased component has no route at all -- both surface
+    # correctly through Lot_GetComponentsAtCell with no entry point. So "this
+    # part has no step for the entry role" is NORMAL for everything that is not
+    # a casting, and must not block the session: it just means the LOT is
+    # created with EntryRouteSequence NULL, which is exactly today's behaviour
+    # for every LOT in the plant.
     seq = BlueRidge.Parts.RouteTemplate.getSequenceForItemRole(itemId, entryRoleCode)
-    if seq is None:
-        return {"Status": 0,
-                "Message": "%s has no %s step on its active route."
-                           % (item.get("PartNumber"), entryRoleCode)}
 
     tools = BlueRidge.Tools.Tool.listForItem(itemId)
     toolId, toolCode, ambiguous = None, "", False
