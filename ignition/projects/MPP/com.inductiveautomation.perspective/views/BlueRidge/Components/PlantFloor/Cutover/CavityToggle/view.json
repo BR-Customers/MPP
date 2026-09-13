@@ -19,7 +19,7 @@
   "props": {
     "defaultSize": {
       "width": 72,
-      "height": 60
+      "height": 64
     }
   },
   "root": {
@@ -34,7 +34,8 @@
       "style": {
         "gap": "0px",
         "padding": "4px",
-        "cursor": "pointer"
+        "cursor": "pointer",
+        "overflow": "hidden"
       }
     },
     "propConfig": {

@@ -1256,7 +1256,8 @@
                                 "props": {
                                   "direction": "row",
                                   "style": {
-                                    "gap": "8px"
+                                    "gap": "8px",
+                                    "width": "100%"
                                   }
                                 },
                                 "children": [
@@ -1284,6 +1285,9 @@
                                           }
                                         }
                                       }
+                                    },
+                                    "position": {
+                                      "shrink": 0
                                     }
                                   },
                                   {
@@ -1298,7 +1302,8 @@
                                         "minHeight": "48px",
                                         "border": "1px solid var(--mpp-border-default)",
                                         "borderRadius": "var(--mpp-radius-md)",
-                                        "flex": "1"
+                                        "flex": "1",
+                                        "minWidth": "0px"
                                       },
                                       "alignItems": "center",
                                       "justify": "center"
@@ -1367,7 +1372,12 @@
                                           }
                                         }
                                       }
-                                    ]
+                                    ],
+                                    "position": {
+                                      "basis": "0px",
+                                      "grow": 1,
+                                      "shrink": 1
+                                    }
                                   },
                                   {
                                     "type": "ia.input.button",
@@ -1409,6 +1419,9 @@
                                           ]
                                         }
                                       }
+                                    },
+                                    "position": {
+                                      "shrink": 0
                                     }
                                   }
                                 ]

@@ -44,7 +44,8 @@
       "alignItems": "center",
       "style": {
         "classes": "pf-inventory-row",
-        "gap": "10px"
+        "gap": "10px",
+        "overflow": "hidden"
       }
     },
     "children": [
