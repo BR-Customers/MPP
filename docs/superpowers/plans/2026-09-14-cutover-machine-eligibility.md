@@ -39,6 +39,8 @@
 | `sql/tests/0070_Cutover_EntryRoute/060_DieCastMachine_ListForItem.sql` | Shortlist / fallback / deprecation / ordering coverage | 2 |
 | `sql/migrations/repeatable/R__Lots_Lot_Create.sql` | Gains `@ProducedAtLocationId`: validate, write, audit | 3 |
 | `sql/tests/0070_Cutover_EntryRoute/070_Lot_Create_ProducedAt.sql` | Accept / reject / omit / audit-JSON coverage | 3 |
+| `sql/migrations/repeatable/R__Lots_Lot_SearchAdvanced.sql` | Machine filter + displayed column consider the cutover machine | 6b |
+| `sql/tests/0067_Lot_SearchAdvanced/060_cutover_machine.sql` | Cutover LOT findable and displayed by machine | 6b |
 | `ignition/projects/Core/ignition/named-query/location/DieCastMachine_ListForItem/` | NQ wrapping the read proc | 4 |
 | `ignition/projects/Core/ignition/script-python/BlueRidge/Location/Location/code.py` | `getDieCastMachineDropdown` | 4 |
 | `ignition/projects/Core/ignition/named-query/lots/Lot_Create/` | NQ gains the `producedAtLocationId` parameter | 5 |
@@ -1310,6 +1312,223 @@ git commit -m "feat(cutover): Machine # is an eligibility-driven dropdown, not f
 
 ---
 
+## Task 6b: LOT Search finds cutover LOTs by machine
+
+**Files:**
+- Modify: `sql/migrations/repeatable/R__Lots_Lot_SearchAdvanced.sql`
+- Create: `sql/tests/0067_Lot_SearchAdvanced/060_cutover_machine.sql`
+
+**Interfaces:**
+- Consumes: `Lots.Lot.ProducedAtLocationId` (Task 1), written by `Lot_Create` (Task 3).
+- Produces: **no signature change.** `Lots.Lot_SearchAdvanced`'s parameter list and its result-set column list are both unchanged — only how `@MachineLocationId` matches, and how `OriginMachineName` is resolved. The `#LS` temp-table shape in the existing tests stays valid.
+
+**Why.** `Lot_SearchAdvanced` already has an origin-machine dimension, and it resolves entirely through `Workorder.DieCastContribution` — the per-shift good-piece rows stamped at the press. A **cutover LOT has no contribution rows at all**: it is migrated stock, and `addBasket` calls `Lot_Create` and nothing else. So without this task the machine we just captured is unreachable from the one screen that asks for it, and `OriginMachineName` renders blank for every cutover basket.
+
+This is **not** the live re-derivation the proc header warns against. That header rejects deriving the press from `LotMovement`, because movement drifts. `ProducedAtLocationId` is a value a human recorded off the tag and we stored — the same class of fact as a contribution row, captured by a different route. Contribution rows still win where a LOT has both.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `sql/tests/0067_Lot_SearchAdvanced/060_cutover_machine.sql`:
+
+```sql
+-- =============================================
+-- File:         0067_Lot_SearchAdvanced/060_cutover_machine.sql
+-- Description:  A cutover LOT is findable by its die cast machine.
+--
+--               LOT Search resolves the origin machine through
+--               Workorder.DieCastContribution -- the per-shift rows stamped at
+--               the press. A cutover LOT has none: it is migrated stock whose
+--               machine was read off the paper tag into
+--               Lots.Lot.ProducedAtLocationId (migration 0082).
+--
+--               Both the FILTER and the DISPLAYED column must consider it, or
+--               the captured machine is invisible on the one screen that asks
+--               the question. Contribution rows still take precedence where a
+--               LOT has both.
+-- =============================================
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+EXEC test.BeginTestFile @FileName = N'0067_Lot_SearchAdvanced/060_cutover_machine.sql';
+GO
+
+DECLARE @U      BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+DECLARE @Item   BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Line   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
+DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @MachDef BIGINT = (SELECT Id FROM Location.LocationTypeDefinition WHERE Code = N'DieCastMachine');
+DECLARE @Facility BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
+                            INNER JOIN Location.LocationTypeDefinition d
+                                    ON d.Id = l.LocationTypeDefinitionId
+                            WHERE d.Code = N'Facility' AND l.DeprecatedAt IS NULL
+                            ORDER BY l.Id);
+
+-- Pre-flight: fixed LOT name, so a failed run can strand it.
+DECLARE @Stale TABLE (Id BIGINT);
+INSERT INTO @Stale SELECT Id FROM Lots.Lot WHERE LotName = N'ZZCM-0001';
+DELETE FROM Lots.LotEventLog        WHERE LotId IN (SELECT Id FROM @Stale);
+DELETE FROM Lots.LotMovement        WHERE LotId IN (SELECT Id FROM @Stale);
+DELETE FROM Lots.LotStatusHistory   WHERE LotId IN (SELECT Id FROM @Stale);
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId  IN (SELECT Id FROM @Stale)
+                                        OR DescendantLotId IN (SELECT Id FROM @Stale);
+DELETE FROM Lots.Lot                WHERE Id IN (SELECT Id FROM @Stale);
+DELETE FROM Location.Location WHERE Code = N'ZZCM-M01';
+
+INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, SortOrder, CreatedAt)
+VALUES (@MachDef, @Facility, N'Machine 77', N'ZZCM-M01', 977, SYSUTCDATETIME());
+DECLARE @Mach BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZCM-M01');
+
+CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+CREATE TABLE #LS (
+    Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeId BIGINT,
+    LotStatusId BIGINT, PieceCount INT, VendorLotNumber NVARCHAR(100),
+    CurrentLocationId BIGINT, CreatedAt DATETIME2(3), ItemPartNumber NVARCHAR(100),
+    LotStatusCode NVARCHAR(50), LotOriginTypeCode NVARCHAR(50),
+    CurrentLocationName NVARCHAR(200), LastOperationName NVARCHAR(100),
+    ToolCode NVARCHAR(50), CavityCode NVARCHAR(4), OriginMachineName NVARCHAR(200),
+    TotalCount INT
+);
+
+-- Fixture: a cutover-style LOT -- ProducedAtLocationId set, and deliberately NO
+-- Workorder.DieCastContribution rows, exactly as addBasket creates it.
+INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Origin,
+    @CurrentLocationId = @Line, @PieceCount = 40, @AppUserId = @U,
+    @LotName = N'ZZCM-0001', @ProducedAtLocationId = @Mach;
+DECLARE @Lot BIGINT = (SELECT NewId FROM #C);
+DECLARE @e0 NVARCHAR(20) = CAST(@Lot AS NVARCHAR(20));
+EXEC test.Assert_IsNotNull @TestName = N'[CutoverMachine] fixture LOT created', @Value = @e0;
+
+-- Guard the premise: the fixture really has no contribution rows.
+DECLARE @e1 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
+                            FROM Workorder.DieCastContribution WHERE LotId = @Lot);
+EXEC test.Assert_IsEqual @TestName = N'[CutoverMachine] cutover LOT has no DieCastContribution rows',
+    @Expected = N'0', @Actual = @e1;
+
+-- (1) The machine FILTER finds it.
+DELETE FROM #LS;
+INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @MachineLocationId = @Mach;
+DECLARE @e2 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #LS WHERE Id = @Lot);
+EXEC test.Assert_IsEqual @TestName = N'[CutoverMachine] machine filter finds the cutover LOT',
+    @Expected = N'1', @Actual = @e2;
+
+-- (2) The DISPLAYED column names the machine, not blank.
+DECLARE @e3 NVARCHAR(200) = (SELECT OriginMachineName FROM #LS WHERE Id = @Lot);
+EXEC test.Assert_IsEqual @TestName = N'[CutoverMachine] origin machine column shows the recorded machine',
+    @Expected = N'Machine 77', @Actual = @e3;
+
+-- (3) Filtering by a DIFFERENT machine must not return it.
+DECLARE @Other BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
+                         INNER JOIN Location.LocationTypeDefinition d
+                                 ON d.Id = l.LocationTypeDefinitionId
+                         WHERE d.Code = N'DieCastMachine' AND l.DeprecatedAt IS NULL
+                           AND l.Id <> @Mach ORDER BY l.Id);
+DELETE FROM #LS;
+INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @MachineLocationId = @Other;
+DECLARE @e4 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #LS WHERE Id = @Lot);
+EXEC test.Assert_IsEqual @TestName = N'[CutoverMachine] another machine does not match it',
+    @Expected = N'0', @Actual = @e4;
+
+-- (4) A LOT with neither source must never match -- the new OR must not widen
+--     the filter into "everything".
+DELETE FROM #LS;
+INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @MachineLocationId = @Mach;
+DECLARE @e5 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
+                            FROM #LS ls
+                            INNER JOIN Lots.Lot l2 ON l2.Id = ls.Id
+                            WHERE l2.ProducedAtLocationId IS NULL
+                              AND NOT EXISTS (SELECT 1 FROM Workorder.DieCastContribution d2
+                                              WHERE d2.LotId = l2.Id AND d2.CellLocationId = @Mach));
+EXEC test.Assert_IsEqual @TestName = N'[CutoverMachine] LOTs with no machine at all never match',
+    @Expected = N'0', @Actual = @e5;
+
+DROP TABLE #C; DROP TABLE #LS;
+
+-- Teardown: closure before LOTs, LOTs before the machine they reference.
+DELETE FROM Lots.LotEventLog        WHERE LotId = @Lot;
+DELETE FROM Lots.LotMovement        WHERE LotId = @Lot;
+DELETE FROM Lots.LotStatusHistory   WHERE LotId = @Lot;
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId = @Lot OR DescendantLotId = @Lot;
+DELETE FROM Lots.Lot                WHERE Id = @Lot;
+DELETE FROM Location.Location WHERE Code = N'ZZCM-M01';
+GO
+
+EXEC test.EndTestFile;
+GO
+```
+
+- [ ] **Step 2: Run it and watch it fail**
+
+```bash
+cd sql/tests && powershell -NoProfile -File Run-Tests.ps1 -Filter "0067" -DatabaseName <your assigned DB>
+```
+
+Expected: assertions (1) and (2) FAIL — the filter returns `0` where `1` is expected, and `OriginMachineName` comes back NULL instead of `Machine 77`. The premise guard and (3) and (4) should already pass.
+
+- [ ] **Step 3: Widen the filter predicate**
+
+In `sql/migrations/repeatable/R__Lots_Lot_SearchAdvanced.sql`, replace the `@MachineLocationId` clause in the `WHERE`:
+
+```sql
+      -- Origin machine has TWO recorded sources, and a LOT has at most one of
+      -- them. A normally-produced LOT accumulates DieCastContribution rows at
+      -- the press. A CUTOVER LOT has none -- it is migrated stock whose machine
+      -- was read off the paper tag into Lot.ProducedAtLocationId (0082).
+      -- Both are RECORDED values; neither is the live LotMovement re-derivation
+      -- this proc's header rejects.
+      AND (@MachineLocationId IS NULL
+           OR l.ProducedAtLocationId = @MachineLocationId
+           OR EXISTS (
+              SELECT 1 FROM Workorder.DieCastContribution dm
+              WHERE dm.LotId = l.Id AND dm.CellLocationId = @MachineLocationId))
+```
+
+- [ ] **Step 4: Make the displayed column fall back**
+
+Add a join beside the existing `LEFT JOIN Tools.ToolCavity tc` line:
+
+```sql
+    LEFT  JOIN Location.Location  pal ON pal.Id = l.ProducedAtLocationId
+```
+
+and change the projected column (currently `press.MachineName AS OriginMachineName,`):
+
+```sql
+        COALESCE(press.MachineName, pal.Name) AS OriginMachineName,
+```
+
+Contribution rows take precedence: where a LOT has both, the press it actually ran on wins over anything typed at a cutover terminal.
+
+- [ ] **Step 5: Update the proc header**
+
+Bump `-- Version:     1.0` to `1.1`, set `-- Modified:    2026-09-14`, and replace the paragraph beginning `Origin machine is DieCastContribution.CellLocationId` with:
+
+```
+--              Origin machine has TWO recorded sources. Normally-produced LOTs:
+--              DieCastContribution.CellLocationId (the press, stamped at write
+--              time by migration 0061). Cutover LOTs: Lot.ProducedAtLocationId
+--              (0082), read off the paper tag -- they have no contribution rows
+--              at all, so without it the captured machine is unreachable here.
+--              Contribution wins where a LOT has both. Still deliberately NOT
+--              derived from LotMovement: 0061 exists to stop live re-derivation
+--              of the press, and both sources above are RECORDED, not derived.
+```
+
+- [ ] **Step 6: Run the tests and watch them pass**
+
+```bash
+cd sql/tests && powershell -NoProfile -File Run-Tests.ps1 -Filter "0067" -DatabaseName <your assigned DB>
+```
+
+Expected: all six `[CutoverMachine]` assertions PASS, and every pre-existing `0067_Lot_SearchAdvanced` test still passes — the parameter list and result-set shape did not change, so `010_filters`, `020_date_boundary`, `030_origin_conditional` and especially `050_signature_parity` must be untouched.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add sql/migrations/repeatable/R__Lots_Lot_SearchAdvanced.sql sql/tests/0067_Lot_SearchAdvanced/060_cutover_machine.sql
+git commit -m "feat(sql): LOT Search finds cutover LOTs by their recorded die cast machine"
+```
+
+---
+
 ## Task 7: Full-suite regression and release readiness
 
 **Files:**
@@ -1358,6 +1577,7 @@ This change includes a schema migration, so it ships through the five-part produ
 The exports it will need, Core first:
 
 - Core: `location/DieCastMachine_ListForItem`, `lots/Lot_Create`, `BlueRidge/Location/Location`, `BlueRidge/Lots/Lot`, `BlueRidge/Cutover/Scan`
+- SQL: migration `0082`, plus repeatables `R__Location_Location_ListDieCastMachinesForItem`, `R__Lots_Lot_Create`, `R__Lots_Lot_SearchAdvanced`, `R__Descriptions_ExtendedProperties`
 - MPP: `session-props`, the three `_CutoverScan` views
 
 Note for whoever builds the runbook: **the die-name change** (`Tools.Tool.Name` instead of `Code` in the die dropdown and header, Ignition-only, three `_CutoverScan` views + `Cutover/Scan` + `session-props`) may still be uncommitted in the working tree. Decide whether it rides along or ships separately before building the export.
