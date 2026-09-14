@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-09-12
-# Version:          1.2
+# Version:          1.3
 #
 # Description:
 #   All behaviour for the inventory cutover scan screen. The screen is hosted
@@ -24,7 +24,7 @@
 #   session state, and formats messages.
 #
 # Public surface:
-#   loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session)
+#   loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId, session)
 #                          -> {Status, Message}
 #   addBasket(appUserId, terminalLocationId, session)
 #                          -> {Status, Message, NewId}
@@ -80,6 +80,11 @@
 #                      session.toolCode -> session.toolName; the die
 #                      dropdown and the auto-resolved label both read the
 #                      name, with Code kept only as a fallback.
+#   2026-09-14 - 1.3 - Machine # is a die cast machine LocationId, not free
+#                      text. session.machineNumber -> machineLocationId +
+#                      machineName (the dropdown's own label, re-resolved on
+#                      load so a part change clears a stale machine).
+#                      addBasket passes producedAtLocationId; addBox does not.
 # =============================================================================
 
 import java.lang
@@ -148,7 +153,8 @@ _EMPTY = {
                 "destinationName": "", "entryRoleCode": "MachiningIn",
                 "entryRouteSequence": None, "itemId": None, "partNumber": "",
                 "partDescription": "", "toolId": None, "toolName": "",
-                "toolIsAmbiguous": False, "machineNumber": ""},
+                "toolIsAmbiguous": False,
+                "machineLocationId": None, "machineName": ""},
     "entry": {"lotName": "", "toolCavityId": None, "cavityCode": "",
               "castDate": None, "pieceCount": ""},
     "purchased": {"partNumber": "", "partDescription": "", "itemId": None,
@@ -255,13 +261,13 @@ def _guard(fn):
 
 
 @_guard
-def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
+def loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId, session):
     """Latch the scan session. Every domain question is asked of SQL; this only
        assembles the answers. Returns {Status, Message}."""
     lineLocationId = _u(lineLocationId)
     itemId = _u(itemId)
     entryRoleCode = _u(entryRoleCode)
-    machineNumber = _u(machineNumber)
+    machineLocationId = _u(machineLocationId)
 
     item = BlueRidge.Parts.Item.getOne(itemId) or {}
     line = BlueRidge.Location.Location.getOne(lineLocationId) or {}
@@ -290,6 +296,20 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
 
     cavities = BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId) if toolId else []
 
+    # The machine's display label comes from the SAME list the operator picked
+    # from, so the header can never disagree with the dropdown -- and the lookup
+    # doubles as re-validation: if the part changed and the previously chosen
+    # machine is no longer offered, the match fails and the pick clears rather
+    # than silently persisting a stale machine.
+    machineName = ""
+    if machineLocationId is not None:
+        for opt in BlueRidge.Location.Location.getDieCastMachineDropdown(itemId):
+            if opt.get("value") == machineLocationId:
+                machineName = opt.get("label") or ""
+                break
+        if not machineName:
+            machineLocationId = None
+
     st = getState(session)
     st["session"] = {
         "lineLocationId": lineLocationId, "lineName": line.get("name") or "",
@@ -299,7 +319,7 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
         "itemId": itemId, "partNumber": item.get("PartNumber") or "",
         "partDescription": item.get("Description") or "",
         "toolId": toolId, "toolName": toolName, "toolIsAmbiguous": ambiguous,
-        "machineNumber": machineNumber or "",
+        "machineLocationId": machineLocationId, "machineName": machineName,
     }
     st["toolOptions"], st["cavityOptions"] = tools, cavities
     st["rows"], st["totals"] = [], {"baskets": 0, "pieces": 0}
@@ -344,6 +364,7 @@ def addBasket(appUserId, terminalLocationId, session):
         "toolCavityId": e.get("toolCavityId"),
         "entryRouteSequence": s.get("entryRouteSequence"),
         "castDate": e.get("castDate"),
+        "producedAtLocationId": s.get("machineLocationId"),
     }, appUserId, terminalLocationId, lotName)
     if not (res and res.get("Status")):
         return res

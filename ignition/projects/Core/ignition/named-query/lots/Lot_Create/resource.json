@@ -114,6 +114,11 @@
         "type": "Parameter",
         "identifier": "castDate",
         "sqlType": 8
+      },
+      {
+        "type": "Parameter",
+        "identifier": "producedAtLocationId",
+        "sqlType": 3
       }
     ]
   }

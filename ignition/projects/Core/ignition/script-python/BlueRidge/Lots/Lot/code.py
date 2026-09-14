@@ -37,7 +37,7 @@ def create(data, appUserId=None, terminalLocationId=None, lotName=None):
     """Mint a new LOT. data carries every Lot_Create field (itemId,
        lotOriginTypeId, currentLocationId, pieceCount, weight, weightUomId,
        toolId, toolCavityId, vendorLotNumber, minSerialNumber, maxSerialNumber,
-       entryRouteSequence, castDate).
+       entryRouteSequence, castDate, producedAtLocationId).
        lotName (D4): None = server mint (default); a value = use it verbatim (the
        pre-printed LTT).
        Returns {Status, Message, NewId, MintedLotName}."""
@@ -70,6 +70,9 @@ def create(data, appUserId=None, terminalLocationId=None, lotName=None):
         # physical LTT. Both None for every normal mint.
         "entryRouteSequence": d.get("entryRouteSequence"),
         "castDate":           d.get("castDate"),
+        # Cutover scan: the die cast machine off the paper tag (0082). None for
+        # every normal mint, where the creating terminal's parent IS the machine.
+        "producedAtLocationId": d.get("producedAtLocationId"),
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_Create", params)
 

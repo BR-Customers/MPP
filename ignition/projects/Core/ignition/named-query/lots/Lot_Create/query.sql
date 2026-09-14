@@ -15,4 +15,5 @@ EXEC Lots.Lot_Create
     @LotName            = :lotName,
     @DepositToStorage   = :depositToStorage,
     @EntryRouteSequence = :entryRouteSequence,
-    @CastDate           = :castDate
+    @CastDate           = :castDate,
+    @ProducedAtLocationId = :producedAtLocationId
