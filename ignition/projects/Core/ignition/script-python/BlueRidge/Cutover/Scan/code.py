@@ -68,6 +68,14 @@
 #   2026-09-12 - 1.0 - Initial version (Task 10: scan logic as a Core script
 #                      module; loadSession, addBasket, addBox, voidEntry,
 #                      stepCastDate, getState).
+#   2026-09-13 - 1.1 - FIX: every control on the screen was inert because
+#                      getState() handed back LIVE PropertyTreeScriptWrapper
+#                      views of session.custom.cutover rather than detached
+#                      Python. Added _plain() and routed getState through it.
+#                      See _plain's docstring for the mechanism. (The
+#                      java.util.Date theory recorded in PROJECT_STATUS was
+#                      wrong -- a Date round-trips through a session custom
+#                      prop correctly; verified live.)
 # =============================================================================
 
 import java.lang
@@ -80,6 +88,55 @@ def _u(value):
        a QualifiedValue / Java Map, not a bare Python value, and an `is None`
        guard does not catch it."""
     return BlueRidge.Common.Util.extractQualifiedValues(value)
+
+
+def _plain(value):
+    """DETACH a Perspective property-tree value into plain Python.
+
+       session.custom.cutover does NOT hand back a dict -- it hands back a
+       com.inductiveautomation.perspective.gateway.script.PropertyTreeScriptWrapper
+       $ObjectWrapper, a LIVE VIEW into the session's property document. It
+       quacks enough like a dict (.get / .keys / .items / [k]) that code which
+       copies it looks correct and is not: every nested value copied out is
+       still a live view, so
+
+           st = getState(session)          # st["entry"] is a LIVE wrapper
+           st["entry"]["castDate"] = nxt   # mutates the live tree (queued)
+           session.custom.cutover = st     # replaces the tree with a snapshot
+                                           # rebuilt from those same wrappers
+
+       ends with the nested write clobbered by the wholesale replace. That is
+       the bug that made every control on this screen inert while the screen
+       itself rendered perfectly: cavity tiles, both cast-date arrows, the LTT
+       and count clears after a basket -- all of them mutate nested state.
+
+       extractQualifiedValues does NOT cover this: it only recurses into a
+       Python dict / list / tuple, and an ObjectWrapper is none of those
+       (verified: isinstance(raw, dict) is False).
+
+       So every read of session state goes through here first. Duck-typed
+       rather than isinstance-checked because the wrapper classes are internal
+       and differ between object and array nodes -- .items() means mapping,
+       iterable means sequence, anything else (including java.util.Date) is a
+       leaf and is returned untouched.
+
+       BlueRidge.Lots.LotTrail._plain solves the same hazard by round-tripping
+       through system.util.jsonEncode/jsonDecode. That is NOT usable here:
+       entry.castDate is a java.util.Date and a JSON round-trip would return it
+       as a string, which then fails Lot_Create's :castDate (sqlType 8,
+       DateTime). A Date DOES survive a session custom prop untouched --
+       verified live 2026-09-13, write and read-back matched -- so the leaf is
+       left alone."""
+    if value is None or isinstance(value, (bool, int, long, float, basestring)):
+        return value
+    items = getattr(value, "items", None)
+    if items is not None and callable(items):
+        return dict([(k, _plain(v)) for k, v in value.items()])
+    try:
+        seq = list(value)
+    except (TypeError, Exception, java.lang.Exception):
+        return value
+    return [_plain(v) for v in seq]
 
 
 _EMPTY = {
@@ -128,7 +185,9 @@ def getState(session=None):
         BlueRidge.Common.Util.log(
             "getState called with no session -- returning the empty shape. "
             "Callers must pass the session object.")
-    st = _u(raw) or {}
+    st = _plain(_u(raw))
+    if not isinstance(st, dict):
+        st = {}
     # Shallow dict(_EMPTY) would share the nested dicts (session/entry/
     # purchased/totals) across every call -- one session's edits would then
     # mutate the module-level default for every other session. Copy each
@@ -334,11 +393,50 @@ def voidEntry(lotId, appUserId, session):
     return res
 
 
+# ---------------------------------------------------------------------------
+# Camera scanning
+# ---------------------------------------------------------------------------
+# A native/barcode scan does not return to the component that asked for it --
+# Perspective fires ONE project-wide session event. BlueRidge.Common.Barcode
+# routes it here by the action's context {"screen": "cutover", "field": "..."}.
+# See that module's header for the full path a scan takes.
+#
+# field key -> (state section, key in that section)
+_SCAN_TARGETS = {
+    "lotName":            ("entry", "lotName"),
+    "purchasedPartNumber": ("purchased", "partNumber"),
+    "vendorLot":          ("purchased", "vendorLot"),
+}
+
+
+def applyScan(session, text, field):
+    """Put one scanned value into the field that asked for it.
+
+       This is a read-modify-write of nested session state, which is exactly
+       the shape that silently loses the write unless getState() has detached
+       the property tree first -- see _plain(). Do not "simplify" this to
+       session.custom.cutover.entry.lotName = text; that direct form does work,
+       but it diverges from every other mutation on this screen and the next
+       person to add a wholesale write beside it would clobber it."""
+    target = _SCAN_TARGETS.get(field)
+    if target is None:
+        BlueRidge.Common.Util.log(
+            "applyScan: unknown field '%s' (known: %s)"
+            % (field, ", ".join(sorted(_SCAN_TARGETS))))
+        return {"Status": 0, "Message": "Nothing on this screen scans into '%s'." % field}
+
+    section, key = target
+    st = getState(session)
+    st[section][key] = text
+    _write(st, session)
+    BlueRidge.Common.Util.log("applyScan %s.%s <- %s" % (section, key, text))
+    return {"Status": 1, "Message": "Scanned."}
+
+
 def stepCastDate(days, session):
     """Move the cast date by whole days, capped at today. Seeded from the last
        basket scanned, so consecutive baskets are zero or one tap."""
     days = _u(days)
-    BlueRidge.Common.Util.log("stepCastDate ENTER days=%s" % days)
     st = getState(session)
     cur = st["entry"].get("castDate") or system.date.now()
     nxt = system.date.addDays(cur, days)
@@ -347,11 +445,5 @@ def stepCastDate(days, session):
         return cur
     st["entry"]["castDate"] = nxt
     _write(st, session)
-    # Read straight back through the same path the bindings use. If this does not
-    # echo what we just wrote, the session-prop write was dropped -- which is what
-    # three consecutive taps all writing the same day already implies.
-    back = getState(session)["entry"].get("castDate")
-    BlueRidge.Common.Util.log(
-        "stepCastDate WROTE %s ; READBACK %s ; match=%s ; type=%s"
-        % (nxt, back, (back == nxt), type(nxt)))
     return nxt
+

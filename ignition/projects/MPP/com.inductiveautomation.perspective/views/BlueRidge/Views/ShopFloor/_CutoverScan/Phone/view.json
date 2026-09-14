@@ -3,52 +3,29 @@
     "forceSetup": false,
     "phoneShowRows": false,
     "setupDraft": {
-      "lineLocationId": null,
       "entryRoleCode": "MachiningIn",
       "itemId": null,
+      "lineLocationId": null,
       "machineNumber": ""
     }
   },
   "params": {},
   "props": {
     "defaultSize": {
-      "width": 390,
-      "height": 844
+      "height": 844,
+      "width": 390
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "height": "100%",
-        "overflow": "hidden",
-        "classes": "canvas"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "TopBar"
-        },
-        "props": {
-          "direction": "row",
-          "style": {
-            "gap": "12px",
-            "padding": "10px 16px",
-            "borderBottom": "1px solid var(--mpp-border-subtle)"
-          },
-          "alignItems": "center"
-        },
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "Title"
+            },
+            "position": {
+              "shrink": 0
             },
             "props": {
               "style": {
@@ -57,34 +34,31 @@
               },
               "text": "Cutover Scan"
             },
-            "position": {
-              "shrink": 0
-            }
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex",
             "meta": {
               "name": "Spacer"
             },
-            "props": {
-              "direction": "row",
-              "style": {}
-            },
-            "children": [],
             "position": {
               "grow": 1
-            }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.display.label",
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "OperatorLabel"
-            },
-            "props": {
-              "style": {
-                "cursor": "pointer",
-                "classes": "pf-kpi-sub"
-              }
             },
             "position": {
               "shrink": 0
@@ -92,75 +66,45 @@
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
-                  }
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
                 }
               }
-            },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
-                  }
-                }
-              }
-            }
-          }
-        ],
-        "position": {
-          "shrink": 0
-        }
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Body"
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "gap": "14px",
-            "padding": "16px",
-            "overflowY": "auto",
-            "flex": "1"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "SetupPanel"
             },
             "props": {
-              "direction": "column",
               "style": {
-                "gap": "14px",
-                "padding": "16px",
-                "classes": "pf-panel"
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
               }
             },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "TopBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "padding": "10px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
             "children": [
               {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "SetupHeader"
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "alignItems": "flex-start",
-                    "gap": "4px",
-                    "classes": "pf-panel-header"
-                  }
-                },
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "SetupTitle"
                     },
@@ -173,10 +117,10 @@
                         "textTransform": "uppercase"
                       },
                       "text": "Session setup"
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "SetupSub"
                     },
@@ -185,28 +129,29 @@
                         "classes": "pf-kpi-sub"
                       },
                       "text": "Pick the line, entry step and part -- this stays latched for the whole session."
-                    }
+                    },
+                    "type": "ia.display.label"
                   }
                 ],
+                "meta": {
+                  "name": "SetupHeader"
+                },
                 "position": {
                   "shrink": 0
-                }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "LineField"
                 },
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "6px",
-                    "classes": "pf-field"
+                    "alignItems": "flex-start",
+                    "classes": "pf-panel-header",
+                    "gap": "4px"
                   }
                 },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "LineFieldLabel"
                     },
@@ -215,12 +160,31 @@
                         "classes": "pf-field-label"
                       },
                       "text": "Line"
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.input.dropdown",
                     "meta": {
                       "name": "LineDropdown"
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Location.Location.getProductionLinesForDropdown\", 0)"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.setupDraft.lineLocationId"
+                          },
+                          "type": "property"
+                        }
+                      }
                     },
                     "props": {
                       "placeholder": "Pick the line",
@@ -228,46 +192,27 @@
                         "minHeight": "44px"
                       }
                     },
-                    "propConfig": {
-                      "props.options": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "runScript(\"BlueRidge.Location.Location.getProductionLinesForDropdown\", 0)"
-                          }
-                        }
-                      },
-                      "props.value": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.setupDraft.lineLocationId",
-                            "bidirectional": true
-                          }
-                        }
-                      }
-                    }
+                    "type": "ia.input.dropdown"
                   }
                 ],
+                "meta": {
+                  "name": "LineField"
+                },
                 "position": {
                   "shrink": 0
-                }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "EntryRoleField"
                 },
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "6px",
-                    "classes": "pf-field"
+                    "classes": "pf-field",
+                    "gap": "6px"
                   }
                 },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "EntryRoleFieldLabel"
                     },
@@ -276,138 +221,133 @@
                         "classes": "pf-field-label"
                       },
                       "text": "Entry step"
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "EntryRoleToggle"
-                    },
-                    "props": {
-                      "direction": "row",
-                      "style": {
-                        "classes": "pf-toggle-group"
-                      }
-                    },
                     "children": [
                       {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "MachiningInBtn"
-                        },
-                        "props": {
-                          "direction": "row",
-                          "style": {
-                            "minHeight": "40px",
-                            "padding": "0 14px"
-                          },
-                          "alignItems": "center",
-                          "justify": "center"
-                        },
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "MachiningInLbl"
                             },
                             "props": {
-                              "style": {},
                               "text": "Machining IN"
-                            }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
-                        "propConfig": {
-                          "props.style.classes": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "if({view.custom.setupDraft.entryRoleCode} = \"MachiningIn\", 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
-                              }
-                            }
-                          }
-                        },
                         "events": {
                           "dom": {
                             "onClick": {
-                              "type": "script",
-                              "scope": "G",
                               "config": {
-                                "script": "\tself.view.custom.setupDraft.entryRoleCode = \"MachiningIn\""
-                              }
+                                "script": "\tself.view.custom.setupDraft.entryRoleCode \u003d \"MachiningIn\""
+                              },
+                              "scope": "G",
+                              "type": "script"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
+                        },
                         "meta": {
-                          "name": "AssemblyInBtn"
+                          "name": "MachiningInBtn"
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "config": {
+                                "expression": "if({view.custom.setupDraft.entryRoleCode} \u003d \"MachiningIn\", \u0027pf-toggle-btn pf-toggle-btn-selected\u0027, \u0027pf-toggle-btn\u0027)"
+                              },
+                              "type": "expr"
+                            }
+                          }
                         },
                         "props": {
-                          "direction": "row",
+                          "alignItems": "center",
+                          "justify": "center",
                           "style": {
                             "minHeight": "40px",
                             "padding": "0 14px"
-                          },
-                          "alignItems": "center",
-                          "justify": "center"
+                          }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "AssemblyInLbl"
                             },
                             "props": {
-                              "style": {},
                               "text": "Assembly IN"
-                            }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
-                        "propConfig": {
-                          "props.style.classes": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "if({view.custom.setupDraft.entryRoleCode} = \"AssemblyIn\", 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
-                              }
-                            }
-                          }
-                        },
                         "events": {
                           "dom": {
                             "onClick": {
-                              "type": "script",
-                              "scope": "G",
                               "config": {
-                                "script": "\tself.view.custom.setupDraft.entryRoleCode = \"AssemblyIn\""
-                              }
+                                "script": "\tself.view.custom.setupDraft.entryRoleCode \u003d \"AssemblyIn\""
+                              },
+                              "scope": "G",
+                              "type": "script"
                             }
                           }
-                        }
+                        },
+                        "meta": {
+                          "name": "AssemblyInBtn"
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "config": {
+                                "expression": "if({view.custom.setupDraft.entryRoleCode} \u003d \"AssemblyIn\", \u0027pf-toggle-btn pf-toggle-btn-selected\u0027, \u0027pf-toggle-btn\u0027)"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "justify": "center",
+                          "style": {
+                            "minHeight": "40px",
+                            "padding": "0 14px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "EntryRoleToggle"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-toggle-group"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
                 ],
+                "meta": {
+                  "name": "EntryRoleField"
+                },
                 "position": {
                   "shrink": 0
-                }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "ItemField"
                 },
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "6px",
-                    "classes": "pf-field"
+                    "classes": "pf-field",
+                    "gap": "6px"
                   }
                 },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "ItemFieldLabel"
                     },
@@ -416,12 +356,31 @@
                         "classes": "pf-field-label"
                       },
                       "text": "Part"
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.input.dropdown",
                     "meta": {
                       "name": "ItemDropdown"
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.setupDraft.itemId"
+                          },
+                          "type": "property"
+                        }
+                      }
                     },
                     "props": {
                       "placeholder": "Pick the part",
@@ -429,46 +388,27 @@
                         "minHeight": "44px"
                       }
                     },
-                    "propConfig": {
-                      "props.options": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
-                          }
-                        }
-                      },
-                      "props.value": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.setupDraft.itemId",
-                            "bidirectional": true
-                          }
-                        }
-                      }
-                    }
+                    "type": "ia.input.dropdown"
                   }
                 ],
+                "meta": {
+                  "name": "ItemField"
+                },
                 "position": {
                   "shrink": 0
-                }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "MachineField"
                 },
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "6px",
-                    "classes": "pf-field"
+                    "classes": "pf-field",
+                    "gap": "6px"
                   }
                 },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
                       "name": "MachineFieldLabel"
                     },
@@ -477,233 +417,220 @@
                         "classes": "pf-field-label"
                       },
                       "text": "Machine #"
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.input.text-field",
                     "meta": {
                       "name": "MachineNumberInput"
-                    },
-                    "props": {
-                      "placeholder": "Machine number",
-                      "deferUpdates": false,
-                      "style": {
-                        "classes": "pf-field-input"
-                      }
                     },
                     "propConfig": {
                       "props.text": {
                         "binding": {
-                          "type": "property",
                           "config": {
-                            "path": "view.custom.setupDraft.machineNumber",
-                            "bidirectional": true
-                          }
+                            "bidirectional": true,
+                            "path": "view.custom.setupDraft.machineNumber"
+                          },
+                          "type": "property"
                         }
                       }
-                    }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "Machine number",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "type": "ia.input.text-field"
                   }
                 ],
+                "meta": {
+                  "name": "MachineField"
+                },
                 "position": {
                   "shrink": 0
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "StartSessionButton"
-                },
-                "props": {
-                  "text": "Start Session",
-                  "style": {
-                    "classes": "pf-btn pf-btn-primary pf-btn-large"
-                  }
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.startSession()"
-                      }
-                    }
-                  }
-                },
-                "propConfig": {
-                  "props.enabled": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "!isNull({view.custom.setupDraft.lineLocationId}) && !isNull({view.custom.setupDraft.itemId})"
-                      }
-                    }
-                  }
-                }
-              }
-            ],
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "isNull({session.custom.cutover.session.itemId}) || {view.custom.forceSetup}"
-                  }
-                }
-              }
-            },
-            "position": {
-              "shrink": 0
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "MainPanel"
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "gap": "14px"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "LatchedHeader"
                 },
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "10px",
-                    "padding": "12px 16px",
-                    "classes": "pf-panel"
+                    "classes": "pf-field",
+                    "gap": "6px"
                   }
                 },
+                "type": "ia.container.flex"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.startSession()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "StartSessionButton"
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "!isNull({view.custom.setupDraft.lineLocationId}) \u0026\u0026 !isNull({view.custom.setupDraft.itemId})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary pf-btn-large"
+                  },
+                  "text": "Start Session"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "SetupPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "isNull({session.custom.cutover.session.itemId}) || {view.custom.forceSetup}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "14px",
+                "padding": "16px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
                 "children": [
                   {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "LatchedTop"
-                    },
-                    "props": {
-                      "direction": "row",
-                      "style": {
-                        "gap": "10px"
-                      },
-                      "alignItems": "center"
-                    },
                     "children": [
                       {
-                        "type": "ia.display.label",
                         "meta": {
                           "name": "LineNameLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "fontSize": "16px",
-                            "fontWeight": 700
-                          }
                         },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "type": "property",
                               "config": {
                                 "path": "session.custom.cutover.session.lineName"
-                              }
+                              },
+                              "type": "property"
                             }
                           }
+                        },
+                        "props": {
+                          "style": {
+                            "fontSize": "16px",
+                            "fontWeight": 700,
+                            "minWidth": "0px",
+                            "overflow": "hidden",
+                            "textOverflow": "ellipsis",
+                            "whiteSpace": "nowrap"
+                          }
+                        },
+                        "type": "ia.display.label",
+                        "position": {
+                          "shrink": 1
                         }
                       },
                       {
-                        "type": "ia.display.label",
                         "meta": {
                           "name": "StepPill"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if({session.custom.cutover.session.entryRoleCode} \u003d \"MachiningIn\", \"MACHINING IN\", \"ASSEMBLY IN\")"
+                              },
+                              "type": "expr"
+                            }
+                          }
                         },
                         "props": {
                           "style": {
                             "classes": "pf-pill pf-pill-warn"
                           }
                         },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "if({session.custom.cutover.session.entryRoleCode} = \"MachiningIn\", \"MACHINING IN\", \"ASSEMBLY IN\")"
-                              }
-                            }
-                          }
+                        "type": "ia.display.label",
+                        "position": {
+                          "shrink": 0
                         }
                       },
                       {
-                        "type": "ia.container.flex",
                         "meta": {
                           "name": "LatchedSpacer"
                         },
-                        "props": {
-                          "direction": "row",
-                          "style": {}
-                        },
-                        "children": [],
                         "position": {
                           "grow": 1
-                        }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.input.button",
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.openChange()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
                         "meta": {
                           "name": "ChangeButton"
                         },
                         "props": {
-                          "text": "Change",
                           "style": {
                             "classes": "pf-btn pf-btn-secondary"
-                          }
+                          },
+                          "text": "Change"
                         },
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": {
-                                "script": "\tself.view.rootContainer.openChange()"
-                              }
-                            }
-                          }
+                        "type": "ia.input.button",
+                        "position": {
+                          "shrink": 0
                         }
                       }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
+                    ],
                     "meta": {
-                      "name": "LatchedKvRow"
+                      "name": "LatchedTop"
                     },
                     "props": {
-                      "direction": "row",
+                      "alignItems": "center",
                       "style": {
-                        "gap": "28px",
-                        "flexWrap": "wrap"
+                        "gap": "10px"
                       }
                     },
+                    "type": "ia.container.flex"
+                  },
+                  {
                     "children": [
                       {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "PartKv"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "gap": "2px"
-                          }
-                        },
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "PartKvK"
                             },
@@ -712,38 +639,36 @@
                                 "classes": "pf-kpi-label"
                               },
                               "text": "Part"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "PartV"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "path": "session.custom.cutover.session.partNumber"
+                                  },
+                                  "type": "property"
+                                }
+                              }
                             },
                             "props": {
                               "style": {
                                 "classes": "pf-kpi-value-mono"
                               }
                             },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "property",
-                                  "config": {
-                                    "path": "session.custom.cutover.session.partNumber"
-                                  }
-                                }
-                              }
-                            }
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "PartKv"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "DieKv"
                         },
                         "props": {
                           "direction": "column",
@@ -751,9 +676,11 @@
                             "gap": "2px"
                           }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "DieKvK"
                             },
@@ -762,143 +689,135 @@
                                 "classes": "pf-kpi-label"
                               },
                               "text": "Die"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.container.flex",
-                            "meta": {
-                              "name": "DieWrap"
-                            },
-                            "props": {
-                              "direction": "row",
-                              "style": {}
-                            },
                             "children": [
                               {
-                                "type": "ia.container.flex",
-                                "meta": {
-                                  "name": "DieAutoRow"
-                                },
-                                "props": {
-                                  "direction": "row",
-                                  "style": {},
-                                  "alignItems": "center"
-                                },
                                 "children": [
                                   {
-                                    "type": "ia.display.label",
                                     "meta": {
                                       "name": "DieValue"
+                                    },
+                                    "propConfig": {
+                                      "props.text": {
+                                        "binding": {
+                                          "config": {
+                                            "path": "session.custom.cutover.session.toolCode"
+                                          },
+                                          "type": "property"
+                                        }
+                                      }
                                     },
                                     "props": {
                                       "style": {
                                         "classes": "pf-kpi-value-mono"
                                       }
                                     },
-                                    "propConfig": {
-                                      "props.text": {
-                                        "binding": {
-                                          "type": "property",
-                                          "config": {
-                                            "path": "session.custom.cutover.session.toolCode"
-                                          }
-                                        }
-                                      }
-                                    }
+                                    "type": "ia.display.label"
                                   },
                                   {
-                                    "type": "ia.display.label",
                                     "meta": {
                                       "name": "DieAutoBadge"
                                     },
                                     "props": {
                                       "style": {
-                                        "marginLeft": "6px",
-                                        "classes": "pf-pill pf-pill-good"
+                                        "classes": "pf-pill pf-pill-good",
+                                        "marginLeft": "6px"
                                       },
                                       "text": "AUTO"
-                                    }
+                                    },
+                                    "type": "ia.display.label"
                                   }
                                 ],
+                                "meta": {
+                                  "name": "DieAutoRow"
+                                },
                                 "propConfig": {
                                   "position.display": {
                                     "binding": {
-                                      "type": "expr",
                                       "config": {
                                         "expression": "!{session.custom.cutover.session.toolIsAmbiguous}"
-                                      }
+                                      },
+                                      "type": "expr"
                                     }
                                   }
-                                }
+                                },
+                                "props": {
+                                  "alignItems": "center"
+                                },
+                                "type": "ia.container.flex"
                               },
                               {
-                                "type": "ia.input.dropdown",
+                                "events": {
+                                  "component": {
+                                    "onActionPerformed": {
+                                      "config": {
+                                        "script": "\tself.view.rootContainer.onToolChanged(self.props.value)"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
                                 "meta": {
                                   "name": "DieDropdown"
                                 },
-                                "props": {
-                                  "placeholder": "Pick die",
-                                  "style": {
-                                    "minHeight": "36px",
-                                    "maxWidth": "160px"
-                                  }
-                                },
                                 "propConfig": {
+                                  "position.display": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "{session.custom.cutover.session.toolIsAmbiguous}"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  },
                                   "props.options": {
                                     "binding": {
-                                      "type": "property",
                                       "config": {
                                         "path": "session.custom.cutover.toolOptions"
                                       },
                                       "transforms": [
                                         {
-                                          "type": "script",
-                                          "code": "\trows = value or []\n\treturn [{\"label\": r.get(\"Code\") or \"\", \"value\": r.get(\"Id\")} for r in rows]"
+                                          "code": "\trows \u003d value or []\n\treturn [{\"label\": r.get(\"Code\") or \"\", \"value\": r.get(\"Id\")} for r in rows]",
+                                          "type": "script"
                                         }
-                                      ]
+                                      ],
+                                      "type": "property"
                                     }
                                   },
                                   "props.value": {
                                     "binding": {
-                                      "type": "property",
                                       "config": {
-                                        "path": "session.custom.cutover.session.toolId",
-                                        "bidirectional": true
-                                      }
-                                    }
-                                  },
-                                  "position.display": {
-                                    "binding": {
-                                      "type": "expr",
-                                      "config": {
-                                        "expression": "{session.custom.cutover.session.toolIsAmbiguous}"
-                                      }
+                                        "bidirectional": true,
+                                        "path": "session.custom.cutover.session.toolId"
+                                      },
+                                      "type": "property"
                                     }
                                   }
                                 },
-                                "events": {
-                                  "component": {
-                                    "onActionPerformed": {
-                                      "type": "script",
-                                      "scope": "G",
-                                      "config": {
-                                        "script": "\tself.view.rootContainer.onToolChanged(self.props.value)"
-                                      }
-                                    }
+                                "props": {
+                                  "placeholder": "Pick die",
+                                  "style": {
+                                    "maxWidth": "160px",
+                                    "minHeight": "36px"
                                   }
-                                }
+                                },
+                                "type": "ia.input.dropdown"
                               }
-                            ]
+                            ],
+                            "meta": {
+                              "name": "DieWrap"
+                            },
+                            "type": "ia.container.flex"
                           }
                         ],
+                        "meta": {
+                          "name": "DieKv"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "MachineKv"
                         },
                         "props": {
                           "direction": "column",
@@ -906,9 +825,11 @@
                             "gap": "2px"
                           }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "MachineKvK"
                             },
@@ -917,197 +838,189 @@
                                 "classes": "pf-kpi-label"
                               },
                               "text": "Machine"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "MachineV"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "path": "session.custom.cutover.session.machineNumber"
+                                  },
+                                  "type": "property"
+                                }
+                              }
                             },
                             "props": {
                               "style": {
                                 "classes": "pf-kpi-value-mono"
                               }
                             },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "property",
-                                  "config": {
-                                    "path": "session.custom.cutover.session.machineNumber"
-                                  }
-                                }
-                              }
-                            }
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "MachineKv"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      }
-                    ]
-                  }
-                ],
-                "position": {
-                  "shrink": 0
-                }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "ContentArea"
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "gap": "12px",
-                    "overflowY": "auto",
-                    "flex": "1"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "TabStrip"
-                    },
-                    "props": {
-                      "direction": "row",
-                      "style": {
-                        "classes": "pf-tab-strip"
-                      }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "CastTab"
-                        },
-                        "props": {
-                          "direction": "row",
-                          "style": {
-                            "minHeight": "44px",
-                            "padding": "0 18px"
-                          },
-                          "alignItems": "center",
-                          "justify": "center"
-                        },
-                        "children": [
-                          {
-                            "type": "ia.display.label",
-                            "meta": {
-                              "name": "CastTabLbl"
-                            },
-                            "props": {
-                              "style": {},
-                              "text": "Cast part"
-                            }
-                          }
-                        ],
-                        "propConfig": {
-                          "props.style.classes": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "if({session.custom.cutover.mode} = \"cast\", 'pf-tab pf-tab-active', 'pf-tab')"
-                              }
-                            }
-                          }
-                        },
-                        "events": {
-                          "dom": {
-                            "onClick": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": {
-                                "script": "\tself.session.custom.cutover.mode = \"cast\""
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "PurchasedTab"
-                        },
-                        "props": {
-                          "direction": "row",
-                          "style": {
-                            "minHeight": "44px",
-                            "padding": "0 18px"
-                          },
-                          "alignItems": "center",
-                          "justify": "center"
-                        },
-                        "children": [
-                          {
-                            "type": "ia.display.label",
-                            "meta": {
-                              "name": "PurchasedTabLbl"
-                            },
-                            "props": {
-                              "style": {},
-                              "text": "Purchased part"
-                            }
-                          }
-                        ],
-                        "propConfig": {
-                          "props.style.classes": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "if({session.custom.cutover.mode} = \"purchased\", 'pf-tab pf-tab-active', 'pf-tab')"
-                              }
-                            }
-                          }
-                        },
-                        "events": {
-                          "dom": {
-                            "onClick": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": {
-                                "script": "\tself.session.custom.cutover.mode = \"purchased\""
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ],
-                    "position": {
-                      "shrink": 0
-                    }
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "CastEntryPanel"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "14px",
-                        "padding": "14px 16px",
-                        "classes": "pf-panel"
-                      }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "LttField"
                         },
                         "props": {
                           "direction": "column",
                           "style": {
-                            "gap": "6px",
-                            "classes": "pf-field"
+                            "gap": "2px"
                           }
                         },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "LatchedKvRow"
+                    },
+                    "props": {
+                      "style": {
+                        "flexWrap": "wrap",
+                        "gap": "28px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "LatchedHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-panel",
+                    "gap": "10px",
+                    "padding": "12px 16px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "CastTabLbl"
+                            },
+                            "props": {
+                              "text": "Cast part"
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tself.session.custom.cutover.mode \u003d \"cast\""
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "CastTab"
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "config": {
+                                "expression": "if({session.custom.cutover.mode} \u003d \"cast\", \u0027pf-tab pf-tab-active\u0027, \u0027pf-tab\u0027)"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "justify": "center",
+                          "style": {
+                            "minHeight": "44px",
+                            "padding": "0 18px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "PurchasedTabLbl"
+                            },
+                            "props": {
+                              "text": "Purchased part"
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tself.session.custom.cutover.mode \u003d \"purchased\""
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "PurchasedTab"
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "config": {
+                                "expression": "if({session.custom.cutover.mode} \u003d \"purchased\", \u0027pf-tab pf-tab-active\u0027, \u0027pf-tab\u0027)"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "justify": "center",
+                          "style": {
+                            "minHeight": "44px",
+                            "padding": "0 18px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TabStrip"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-tab-strip"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
                             "meta": {
                               "name": "LttFieldLabel"
                             },
@@ -1116,54 +1029,123 @@
                                 "classes": "pf-field-label"
                               },
                               "text": "Scan LTT"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.input.text-field",
+                            "type": "ia.container.flex",
                             "meta": {
-                              "name": "LttInput"
+                              "name": "LttInputRow"
+                            },
+                            "position": {
+                              "shrink": 0
                             },
                             "props": {
-                              "placeholder": "Scan LTT barcode",
-                              "deferUpdates": false,
+                              "direction": "row",
+                              "alignItems": "stretch",
                               "style": {
-                                "classes": "pf-field-input-mono",
-                                "fontSize": "17px",
-                                "minHeight": "48px"
+                                "gap": "8px"
                               }
                             },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "property",
-                                  "config": {
-                                    "path": "session.custom.cutover.entry.lotName",
-                                    "bidirectional": true
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "LttInput"
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "session.custom.cutover.entry.lotName"
+                                      },
+                                      "type": "property"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "deferUpdates": false,
+                                  "placeholder": "Scan LTT barcode",
+                                  "style": {
+                                    "classes": "pf-field-input-mono",
+                                    "fontSize": "17px",
+                                    "minHeight": "48px",
+                                    "minWidth": "0px"
+                                  }
+                                },
+                                "type": "ia.input.text-field",
+                                "position": {
+                                  "grow": 1,
+                                  "shrink": 1,
+                                  "basis": "0px"
+                                }
+                              },
+                              {
+                                "type": "ia.input.button",
+                                "meta": {
+                                  "name": "LttInputScanButton",
+                                  "tooltip": {
+                                    "text": "Scan the LTT barcode with the camera"
+                                  }
+                                },
+                                "position": {
+                                  "basis": "56px",
+                                  "shrink": 0
+                                },
+                                "props": {
+                                  "text": "",
+                                  "image": {
+                                    "icon": {
+                                      "path": "mpp/qr_code_scanner"
+                                    }
+                                  },
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "minHeight": "48px"
+                                  }
+                                },
+                                "events": {
+                                  "dom": {
+                                    "onClick": {
+                                      "config": {
+                                        "config": {
+                                          "backgroundColor": "AUTO",
+                                          "cameraPreference": "BACK",
+                                          "type": "ANY",
+                                          "uuid": "60374fad-23f5-4c31-bd20-521da90bcaf0"
+                                        },
+                                        "context": {
+                                          "screen": "cutover",
+                                          "field": "lotName"
+                                        }
+                                      },
+                                      "scope": "C",
+                                      "type": "native/barcode"
+                                    }
                                   }
                                 }
                               }
-                            }
+                            ]
                           }
                         ],
+                        "meta": {
+                          "name": "LttField"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "CavityField"
                         },
                         "props": {
                           "direction": "column",
                           "style": {
-                            "gap": "6px",
-                            "classes": "pf-field"
+                            "classes": "pf-field",
+                            "gap": "6px"
                           }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "CavityFieldLabel"
                             },
@@ -1172,60 +1154,58 @@
                                 "classes": "pf-field-label"
                               },
                               "text": "Cavity"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.display.flex-repeater",
                             "meta": {
                               "name": "CavityRepeater"
                             },
+                            "propConfig": {
+                              "props.instances": {
+                                "binding": {
+                                  "config": {
+                                    "path": "session.custom.cutover.cavityOptions"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
                             "props": {
-                              "direction": "row",
-                              "path": "BlueRidge/Components/PlantFloor/Cutover/CavityToggle",
                               "elementPosition": {
                                 "basis": "72px",
                                 "grow": 0,
                                 "shrink": 0
                               },
+                              "path": "BlueRidge/Components/PlantFloor/Cutover/CavityToggle",
                               "style": {
-                                "gap": "8px",
                                 "flexWrap": "wrap",
+                                "gap": "8px",
                                 "minHeight": "60px"
                               },
-                              "useDefaultViewHeight": true,
                               "useDefaultViewWidth": false
                             },
-                            "propConfig": {
-                              "props.instances": {
-                                "binding": {
-                                  "type": "property",
-                                  "config": {
-                                    "path": "session.custom.cutover.cavityOptions"
-                                  }
-                                }
-                              }
-                            }
+                            "type": "ia.display.flex-repeater"
                           }
                         ],
+                        "meta": {
+                          "name": "CavityField"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "CastDateField"
                         },
                         "props": {
                           "direction": "column",
                           "style": {
-                            "gap": "6px",
-                            "classes": "pf-field"
+                            "classes": "pf-field",
+                            "gap": "6px"
                           }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "CastDateFieldLabel"
                             },
@@ -1234,73 +1214,55 @@
                                 "classes": "pf-field-label"
                               },
                               "text": "Cast date"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.container.flex",
-                            "meta": {
-                              "name": "CastDateStepper"
-                            },
-                            "props": {
-                              "direction": "row",
-                              "style": {
-                                "gap": "8px",
-                                "width": "100%"
-                              }
-                            },
                             "children": [
                               {
-                                "type": "ia.input.button",
-                                "meta": {
-                                  "name": "CastDateBack"
-                                },
-                                "props": {
-                                  "text": "‹",
-                                  "style": {
-                                    "classes": "pf-btn pf-btn-secondary",
-                                    "minWidth": "48px",
-                                    "minHeight": "48px",
-                                    "fontSize": "20px"
-                                  }
-                                },
                                 "events": {
                                   "component": {
                                     "onActionPerformed": {
-                                      "type": "script",
-                                      "scope": "G",
                                       "config": {
                                         "script": "\tBlueRidge.Cutover.Scan.stepCastDate(-1, self.session)"
-                                      }
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
                                     }
                                   }
                                 },
+                                "meta": {
+                                  "name": "CastDateBack"
+                                },
                                 "position": {
                                   "shrink": 0
-                                }
-                              },
-                              {
-                                "type": "ia.container.flex",
-                                "meta": {
-                                  "name": "CastDateBox"
                                 },
                                 "props": {
-                                  "direction": "column",
                                   "style": {
-                                    "gap": "1px",
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "fontSize": "20px",
                                     "minHeight": "48px",
-                                    "border": "1px solid var(--mpp-border-default)",
-                                    "borderRadius": "var(--mpp-radius-md)",
-                                    "flex": "1",
-                                    "minWidth": "0px"
+                                    "minWidth": "48px"
                                   },
-                                  "alignItems": "center",
-                                  "justify": "center"
+                                  "text": "‹"
                                 },
+                                "type": "ia.input.button"
+                              },
+                              {
                                 "children": [
                                   {
-                                    "type": "ia.display.label",
                                     "meta": {
                                       "name": "CastDateValue"
+                                    },
+                                    "propConfig": {
+                                      "props.text": {
+                                        "binding": {
+                                          "config": {
+                                            "expression": "if(isNull({session.custom.cutover.entry.castDate}), \"Tap ‹ or › to set\", dateFormat({session.custom.cutover.entry.castDate}, \"EEE, MMM d yyyy\"))"
+                                          },
+                                          "type": "expr"
+                                        }
+                                      }
                                     },
                                     "props": {
                                       "style": {
@@ -1308,132 +1270,146 @@
                                         "fontWeight": 600
                                       }
                                     },
-                                    "propConfig": {
-                                      "props.text": {
-                                        "binding": {
-                                          "type": "expr",
-                                          "config": {
-                                            "expression": "if(isNull({session.custom.cutover.entry.castDate}), \"Tap ‹ or › to set\", dateFormat({session.custom.cutover.entry.castDate}, \"EEE, MMM d yyyy\"))"
-                                          }
-                                        }
-                                      }
-                                    }
+                                    "type": "ia.display.label"
                                   },
                                   {
-                                    "type": "ia.display.label",
                                     "meta": {
                                       "name": "CastDateRel"
                                     },
-                                    "props": {
-                                      "style": {
-                                        "classes": "pf-kpi-sub"
-                                      }
-                                    },
                                     "propConfig": {
-                                      "props.text": {
-                                        "binding": {
-                                          "type": "property",
-                                          "config": {
-                                            "path": "session.custom.cutover.entry.castDate"
-                                          },
-                                          "transforms": [
-                                            {
-                                              "type": "script",
-                                              "code": "\tif not value:\n\t\treturn \"\"\n\ttoday = system.date.toMillis(system.date.midnight(system.date.now()))\n\tthen = system.date.toMillis(system.date.midnight(value))\n\tdays = int((today - then) / 86400000)\n\tif days <= 0:\n\t\treturn \"Today\"\n\ttxt = \"%d day%s ago\" % (days, \"\" if days == 1 else \"s\")\n\tif days > 180:\n\t\ttxt += \" - check the year\"\n\treturn txt"
-                                            }
-                                          ]
-                                        }
-                                      },
                                       "props.style.classes": {
                                         "binding": {
-                                          "type": "property",
                                           "config": {
                                             "path": "session.custom.cutover.entry.castDate"
                                           },
                                           "transforms": [
                                             {
-                                              "type": "script",
-                                              "code": "\tif not value:\n\t\treturn \"pf-kpi-sub\"\n\ttoday = system.date.toMillis(system.date.midnight(system.date.now()))\n\tthen = system.date.toMillis(system.date.midnight(value))\n\tdays = int((today - then) / 86400000)\n\treturn \"pf-kpi-value-warn\" if days > 180 else \"pf-kpi-sub\""
+                                              "code": "\tif not value:\n\t\treturn \"pf-kpi-sub\"\n\ttoday \u003d system.date.toMillis(system.date.midnight(system.date.now()))\n\tthen \u003d system.date.toMillis(system.date.midnight(value))\n\tdays \u003d int((today - then) / 86400000)\n\treturn \"pf-kpi-value-warn\" if days \u003e 180 else \"pf-kpi-sub\"",
+                                              "type": "script"
                                             }
-                                          ]
+                                          ],
+                                          "type": "property"
+                                        }
+                                      },
+                                      "props.text": {
+                                        "binding": {
+                                          "config": {
+                                            "path": "session.custom.cutover.entry.castDate"
+                                          },
+                                          "transforms": [
+                                            {
+                                              "code": "\tif not value:\n\t\treturn \"\"\n\ttoday \u003d system.date.toMillis(system.date.midnight(system.date.now()))\n\tthen \u003d system.date.toMillis(system.date.midnight(value))\n\tdays \u003d int((today - then) / 86400000)\n\tif days \u003c\u003d 0:\n\t\treturn \"Today\"\n\ttxt \u003d \"%d day%s ago\" % (days, \"\" if days \u003d\u003d 1 else \"s\")\n\tif days \u003e 180:\n\t\ttxt +\u003d \" - check the year\"\n\treturn txt",
+                                              "type": "script"
+                                            }
+                                          ],
+                                          "type": "property"
                                         }
                                       }
-                                    }
+                                    },
+                                    "props": {
+                                      "style": {}
+                                    },
+                                    "type": "ia.display.label"
                                   }
                                 ],
+                                "meta": {
+                                  "name": "CastDateBox"
+                                },
                                 "position": {
                                   "basis": "0px",
-                                  "grow": 1,
-                                  "shrink": 1
-                                }
-                              },
-                              {
-                                "type": "ia.input.button",
-                                "meta": {
-                                  "name": "CastDateForward"
+                                  "grow": 1
                                 },
                                 "props": {
-                                  "text": "›",
+                                  "alignItems": "center",
+                                  "direction": "column",
+                                  "justify": "center",
                                   "style": {
-                                    "classes": "pf-btn pf-btn-secondary",
-                                    "minWidth": "48px",
+                                    "border": "1px solid var(--mpp-border-default)",
+                                    "borderRadius": "var(--mpp-radius-md)",
+                                    "flex": "1",
+                                    "gap": "1px",
                                     "minHeight": "48px",
-                                    "fontSize": "20px"
+                                    "minWidth": "0px"
                                   }
                                 },
+                                "type": "ia.container.flex"
+                              },
+                              {
                                 "events": {
                                   "component": {
                                     "onActionPerformed": {
-                                      "type": "script",
-                                      "scope": "G",
                                       "config": {
                                         "script": "\tBlueRidge.Cutover.Scan.stepCastDate(1, self.session)"
-                                      }
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
                                     }
                                   }
+                                },
+                                "meta": {
+                                  "name": "CastDateForward"
+                                },
+                                "position": {
+                                  "shrink": 0
                                 },
                                 "propConfig": {
                                   "props.enabled": {
                                     "binding": {
-                                      "type": "property",
                                       "config": {
                                         "path": "session.custom.cutover.entry.castDate"
                                       },
                                       "transforms": [
                                         {
-                                          "type": "script",
-                                          "code": "\tif not value:\n\t\treturn True\n\treturn system.date.midnight(value) < system.date.midnight(system.date.now())"
+                                          "code": "\tif not value:\n\t\treturn True\n\treturn system.date.midnight(value) \u003c system.date.midnight(system.date.now())",
+                                          "type": "script"
                                         }
-                                      ]
+                                      ],
+                                      "type": "property"
                                     }
                                   }
                                 },
-                                "position": {
-                                  "shrink": 0
-                                }
+                                "props": {
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "fontSize": "20px",
+                                    "minHeight": "48px",
+                                    "minWidth": "48px"
+                                  },
+                                  "text": "›"
+                                },
+                                "type": "ia.input.button"
                               }
-                            ]
+                            ],
+                            "meta": {
+                              "name": "CastDateStepper"
+                            },
+                            "props": {
+                              "style": {
+                                "gap": "8px",
+                                "width": "100%"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           }
                         ],
+                        "meta": {
+                          "name": "CastDateField"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "PieceCountField"
                         },
                         "props": {
                           "direction": "column",
                           "style": {
-                            "gap": "6px",
-                            "classes": "pf-field"
+                            "classes": "pf-field",
+                            "gap": "6px"
                           }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "PieceCountFieldLabel"
                             },
@@ -1442,103 +1418,106 @@
                                 "classes": "pf-field-label"
                               },
                               "text": "Piece count"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.input.numeric-entry-field",
                             "meta": {
                               "name": "PieceCountInput"
                             },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "session.custom.cutover.entry.pieceCount"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
                             "props": {
-                              "placeholder": "Count",
                               "deferUpdates": false,
+                              "placeholder": "Count",
                               "style": {
                                 "classes": "pf-field-input-mono",
                                 "fontSize": "18px",
                                 "minHeight": "48px"
                               }
                             },
-                            "propConfig": {
-                              "props.value": {
-                                "binding": {
-                                  "type": "property",
-                                  "config": {
-                                    "path": "session.custom.cutover.entry.pieceCount",
-                                    "bidirectional": true
-                                  }
-                                }
-                              }
-                            }
+                            "type": "ia.input.numeric-entry-field"
                           }
                         ],
+                        "meta": {
+                          "name": "PieceCountField"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      },
-                      {
-                        "type": "ia.input.button",
-                        "meta": {
-                          "name": "AddBasketButton"
-                        },
-                        "props": {
-                          "text": "Add basket",
-                          "style": {
-                            "classes": "pf-btn pf-btn-primary pf-btn-large"
-                          }
-                        },
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": {
-                                "script": "\tself.view.rootContainer.addBasket()"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ],
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "{session.custom.cutover.mode} = \"cast\""
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "PurchasedEntryPanel"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "14px",
-                        "padding": "14px 16px",
-                        "classes": "pf-panel"
-                      }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "PurchasedPartField"
                         },
                         "props": {
                           "direction": "column",
                           "style": {
-                            "gap": "6px",
-                            "classes": "pf-field"
+                            "classes": "pf-field",
+                            "gap": "6px"
                           }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.addBasket()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "AddBasketButton"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-btn pf-btn-primary pf-btn-large"
+                          },
+                          "text": "Add basket"
+                        },
+                        "type": "ia.input.button",
+                        "position": {
+                          "shrink": 0
+                        }
+                      }
+                    ],
+                    "meta": {
+                      "name": "CastEntryPanel"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{session.custom.cutover.mode} \u003d \"cast\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-panel",
+                        "gap": "14px",
+                        "padding": "14px 16px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "PurchasedPartFieldLabel"
                             },
@@ -1547,54 +1526,123 @@
                                 "classes": "pf-field-label"
                               },
                               "text": "Scan part number"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.input.text-field",
+                            "type": "ia.container.flex",
                             "meta": {
-                              "name": "PurchasedPartInput"
+                              "name": "PurchasedPartInputRow"
+                            },
+                            "position": {
+                              "shrink": 0
                             },
                             "props": {
-                              "placeholder": "Scan or type part number",
-                              "deferUpdates": false,
+                              "direction": "row",
+                              "alignItems": "stretch",
                               "style": {
-                                "classes": "pf-field-input-mono",
-                                "fontSize": "16px",
-                                "minHeight": "48px"
+                                "gap": "8px"
                               }
                             },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "property",
-                                  "config": {
-                                    "path": "session.custom.cutover.purchased.partNumber",
-                                    "bidirectional": true
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "PurchasedPartInput"
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "session.custom.cutover.purchased.partNumber"
+                                      },
+                                      "type": "property"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "deferUpdates": false,
+                                  "placeholder": "Scan or type part number",
+                                  "style": {
+                                    "classes": "pf-field-input-mono",
+                                    "fontSize": "16px",
+                                    "minHeight": "48px",
+                                    "minWidth": "0px"
+                                  }
+                                },
+                                "type": "ia.input.text-field",
+                                "position": {
+                                  "grow": 1,
+                                  "shrink": 1,
+                                  "basis": "0px"
+                                }
+                              },
+                              {
+                                "type": "ia.input.button",
+                                "meta": {
+                                  "name": "PurchasedPartInputScanButton",
+                                  "tooltip": {
+                                    "text": "Scan the part number with the camera"
+                                  }
+                                },
+                                "position": {
+                                  "basis": "56px",
+                                  "shrink": 0
+                                },
+                                "props": {
+                                  "text": "",
+                                  "image": {
+                                    "icon": {
+                                      "path": "mpp/qr_code_scanner"
+                                    }
+                                  },
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "minHeight": "48px"
+                                  }
+                                },
+                                "events": {
+                                  "dom": {
+                                    "onClick": {
+                                      "config": {
+                                        "config": {
+                                          "backgroundColor": "AUTO",
+                                          "cameraPreference": "BACK",
+                                          "type": "ANY",
+                                          "uuid": "b1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f"
+                                        },
+                                        "context": {
+                                          "screen": "cutover",
+                                          "field": "purchasedPartNumber"
+                                        }
+                                      },
+                                      "scope": "C",
+                                      "type": "native/barcode"
+                                    }
                                   }
                                 }
                               }
-                            }
+                            ]
                           }
                         ],
+                        "meta": {
+                          "name": "PurchasedPartField"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "PurchasedQtyField"
                         },
                         "props": {
                           "direction": "column",
                           "style": {
-                            "gap": "6px",
-                            "classes": "pf-field"
+                            "classes": "pf-field",
+                            "gap": "6px"
                           }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "PurchasedQtyFieldLabel"
                             },
@@ -1603,54 +1651,54 @@
                                 "classes": "pf-field-label"
                               },
                               "text": "Quantity -- scan or type"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.input.numeric-entry-field",
                             "meta": {
                               "name": "PurchasedQtyInput"
                             },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "session.custom.cutover.purchased.qty"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
                             "props": {
-                              "placeholder": "Quantity",
                               "deferUpdates": false,
+                              "placeholder": "Quantity",
                               "style": {
                                 "classes": "pf-field-input-mono",
                                 "fontSize": "18px",
                                 "minHeight": "48px"
                               }
                             },
-                            "propConfig": {
-                              "props.value": {
-                                "binding": {
-                                  "type": "property",
-                                  "config": {
-                                    "path": "session.custom.cutover.purchased.qty",
-                                    "bidirectional": true
-                                  }
-                                }
-                              }
-                            }
+                            "type": "ia.input.numeric-entry-field"
                           }
                         ],
+                        "meta": {
+                          "name": "PurchasedQtyField"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "VendorLotField"
                         },
                         "props": {
                           "direction": "column",
                           "style": {
-                            "gap": "6px",
-                            "classes": "pf-field"
+                            "classes": "pf-field",
+                            "gap": "6px"
                           }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "VendorLotFieldLabel"
                             },
@@ -1659,39 +1707,50 @@
                                 "classes": "pf-field-label"
                               },
                               "text": "Vendor lot -- optional"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.input.text-field",
                             "meta": {
                               "name": "VendorLotInput"
-                            },
-                            "props": {
-                              "placeholder": "Vendor lot (optional)",
-                              "deferUpdates": false,
-                              "style": {
-                                "classes": "pf-field-input"
-                              }
                             },
                             "propConfig": {
                               "props.text": {
                                 "binding": {
-                                  "type": "property",
                                   "config": {
-                                    "path": "session.custom.cutover.purchased.vendorLot",
-                                    "bidirectional": true
-                                  }
+                                    "bidirectional": true,
+                                    "path": "session.custom.cutover.purchased.vendorLot"
+                                  },
+                                  "type": "property"
                                 }
                               }
-                            }
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "placeholder": "Vendor lot (optional)",
+                              "style": {
+                                "classes": "pf-field-input"
+                              }
+                            },
+                            "type": "ia.input.text-field"
                           }
                         ],
+                        "meta": {
+                          "name": "VendorLotField"
+                        },
                         "position": {
                           "shrink": 0
-                        }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "pf-field",
+                            "gap": "6px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.display.label",
                         "meta": {
                           "name": "PurchasedNote"
                         },
@@ -1700,61 +1759,101 @@
                             "classes": "pf-field-help"
                           },
                           "text": "No cavity, die or cast date -- a purchased part has no casting history of ours to record. The supplier lot goes to VendorLotNumber; the LOT name is minted by us."
+                        },
+                        "type": "ia.display.label",
+                        "position": {
+                          "shrink": 0
                         }
                       },
                       {
-                        "type": "ia.input.button",
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.addBox()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
                         "meta": {
                           "name": "AddBoxButton"
                         },
                         "props": {
-                          "text": "Add box",
                           "style": {
                             "classes": "pf-btn pf-btn-primary pf-btn-large"
-                          }
+                          },
+                          "text": "Add box"
                         },
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": {
-                                "script": "\tself.view.rootContainer.addBox()"
-                              }
-                            }
-                          }
+                        "type": "ia.input.button",
+                        "position": {
+                          "shrink": 0
                         }
                       }
                     ],
+                    "meta": {
+                      "name": "PurchasedEntryPanel"
+                    },
                     "propConfig": {
                       "position.display": {
                         "binding": {
-                          "type": "expr",
                           "config": {
-                            "expression": "{session.custom.cutover.mode} = \"purchased\""
-                          }
+                            "expression": "{session.custom.cutover.mode} \u003d \"purchased\""
+                          },
+                          "type": "expr"
                         }
                       }
-                    }
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "SummaryBar"
                     },
                     "props": {
-                      "direction": "row",
+                      "direction": "column",
                       "style": {
-                        "gap": "10px",
-                        "padding": "10px 14px",
-                        "cursor": "pointer",
-                        "classes": "pf-panel"
-                      },
-                      "alignItems": "center"
+                        "classes": "pf-panel",
+                        "gap": "14px",
+                        "padding": "14px 16px"
+                      }
                     },
+                    "type": "ia.container.flex"
+                  },
+                  {
                     "children": [
                       {
-                        "type": "ia.container.flex",
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "SummaryCount"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "toStr({session.custom.cutover.totals.baskets}) + \" entries  ·  \" + toStr({session.custom.cutover.totals.pieces}) + \" pcs\""
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "15px",
+                                "fontWeight": 600
+                              }
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "SummarySub"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-sub"
+                              },
+                              "text": "This session -- tap to view"
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
                         "meta": {
                           "name": "SummaryText"
                         },
@@ -1764,126 +1863,73 @@
                             "gap": "2px"
                           }
                         },
-                        "children": [
-                          {
-                            "type": "ia.display.label",
-                            "meta": {
-                              "name": "SummaryCount"
-                            },
-                            "props": {
-                              "style": {
-                                "fontSize": "15px",
-                                "fontWeight": 600
-                              }
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {
-                                    "expression": "toStr({session.custom.cutover.totals.baskets}) + \" entries  ·  \" + toStr({session.custom.cutover.totals.pieces}) + \" pcs\""
-                                  }
-                                }
-                              }
-                            }
-                          },
-                          {
-                            "type": "ia.display.label",
-                            "meta": {
-                              "name": "SummarySub"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-sub"
-                              },
-                              "text": "This session -- tap to view"
-                            }
-                          }
-                        ]
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.container.flex",
                         "meta": {
                           "name": "SummarySpacer"
                         },
-                        "props": {
-                          "direction": "row",
-                          "style": {}
-                        },
-                        "children": [],
                         "position": {
                           "grow": 1
-                        }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.display.label",
                         "meta": {
                           "name": "SummaryChevron"
-                        },
-                        "props": {
-                          "style": {
-                            "fontSize": "18px",
-                            "color": "var(--mpp-accent-60)"
-                          }
                         },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "type": "expr",
                               "config": {
                                 "expression": "if({view.custom.phoneShowRows}, \"▴\", \"▾\")"
-                              }
+                              },
+                              "type": "expr"
                             }
                           }
-                        }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-accent-60)",
+                            "fontSize": "18px"
+                          }
+                        },
+                        "type": "ia.display.label"
                       }
                     ],
-                    "position": {
-                      "shrink": 0
-                    },
                     "events": {
                       "dom": {
                         "onClick": {
-                          "type": "script",
-                          "scope": "G",
                           "config": {
-                            "script": "\tself.view.custom.phoneShowRows = not self.view.custom.phoneShowRows"
-                          }
+                            "script": "\tself.view.custom.phoneShowRows \u003d not self.view.custom.phoneShowRows"
+                          },
+                          "scope": "G",
+                          "type": "script"
                         }
                       }
-                    }
-                  },
-                  {
-                    "type": "ia.container.flex",
+                    },
                     "meta": {
-                      "name": "SessionPanel"
+                      "name": "SummaryBar"
+                    },
+                    "position": {
+                      "shrink": 0
                     },
                     "props": {
-                      "direction": "column",
+                      "alignItems": "center",
                       "style": {
+                        "classes": "pf-panel",
+                        "cursor": "pointer",
                         "gap": "10px",
-                        "padding": "12px 14px",
-                        "maxHeight": "320px",
-                        "overflow": "hidden",
-                        "classes": "pf-panel"
+                        "padding": "10px 14px"
                       }
                     },
+                    "type": "ia.container.flex"
+                  },
+                  {
                     "children": [
                       {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "SessionHeader"
-                        },
-                        "props": {
-                          "direction": "row",
-                          "style": {
-                            "classes": "pf-panel-header"
-                          },
-                          "alignItems": "center"
-                        },
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "SessionTitle"
                             },
@@ -1896,67 +1942,59 @@
                                 "textTransform": "uppercase"
                               },
                               "text": "This session"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.container.flex",
                             "meta": {
                               "name": "SessionHeaderSpacer"
                             },
-                            "props": {
-                              "direction": "row",
-                              "style": {}
-                            },
-                            "children": [],
                             "position": {
                               "grow": 1
-                            }
+                            },
+                            "type": "ia.container.flex"
                           },
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "SessionTotals"
-                            },
-                            "props": {
-                              "style": {
-                                "fontSize": "14px",
-                                "fontWeight": 600,
-                                "color": "var(--pf-status-good-fg)"
-                              }
                             },
                             "propConfig": {
                               "props.text": {
                                 "binding": {
-                                  "type": "expr",
                                   "config": {
                                     "expression": "toStr({session.custom.cutover.totals.baskets}) + \" entries  ·  \" + toStr({session.custom.cutover.totals.pieces}) + \" pcs\""
-                                  }
+                                  },
+                                  "type": "expr"
                                 }
                               }
-                            }
+                            },
+                            "props": {
+                              "style": {
+                                "color": "var(--pf-status-good-fg)",
+                                "fontSize": "14px",
+                                "fontWeight": 600
+                              }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "SessionHeader"
+                        },
                         "position": {
                           "shrink": 0
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "SessionEmpty"
                         },
                         "props": {
-                          "direction": "row",
-                          "style": {
-                            "padding": "24px 16px",
-                            "classes": "pf-empty-state"
-                          },
                           "alignItems": "center",
-                          "justify": "center"
+                          "style": {
+                            "classes": "pf-panel-header"
+                          }
                         },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "children": [
                           {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "SessionEmptyText"
                             },
@@ -1966,136 +2004,206 @@
                                 "textAlign": "center"
                               },
                               "text": "No entries yet. Scan a basket or box above to begin."
-                            }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "SessionEmpty"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
-                              "type": "expr",
                               "config": {
-                                "expression": "len({session.custom.cutover.rows}) = 0"
-                              }
+                                "expression": "len({session.custom.cutover.rows}) \u003d 0"
+                              },
+                              "type": "expr"
                             }
                           }
-                        }
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "justify": "center",
+                          "style": {
+                            "classes": "pf-empty-state",
+                            "padding": "24px 16px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.display.flex-repeater",
                         "meta": {
                           "name": "SessionRowsRepeater"
                         },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "len({session.custom.cutover.rows}) \u003e 0"
+                              },
+                              "type": "expr"
+                            }
+                          },
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "session.custom.cutover.rows"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
                         "props": {
                           "direction": "column",
-                          "path": "BlueRidge/Components/PlantFloor/Cutover/SessionRow",
                           "elementPosition": {
                             "basis": "52px",
                             "grow": 0,
                             "shrink": 0
                           },
+                          "path": "BlueRidge/Components/PlantFloor/Cutover/SessionRow",
                           "style": {
-                            "gap": "6px",
                             "flexWrap": "nowrap",
+                            "gap": "6px",
                             "overflowY": "auto"
                           },
-                          "useDefaultViewHeight": true,
                           "useDefaultViewWidth": false
                         },
-                        "propConfig": {
-                          "props.instances": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "session.custom.cutover.rows"
-                              }
-                            }
-                          },
-                          "position.display": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "len({session.custom.cutover.rows}) > 0"
-                              }
-                            }
-                          }
-                        }
+                        "type": "ia.display.flex-repeater"
                       }
                     ],
+                    "meta": {
+                      "name": "SessionPanel"
+                    },
                     "propConfig": {
                       "position.display": {
                         "binding": {
-                          "type": "expr",
                           "config": {
                             "expression": "{view.custom.phoneShowRows}"
-                          }
+                          },
+                          "type": "expr"
                         }
                       }
-                    }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-panel",
+                        "gap": "10px",
+                        "maxHeight": "320px",
+                        "overflow": "hidden",
+                        "padding": "12px 14px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
                 ],
+                "meta": {
+                  "name": "ContentArea"
+                },
                 "position": {
                   "basis": "0px",
-                  "grow": 1,
-                  "shrink": 1
-                }
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "flex": "1",
+                    "gap": "12px",
+                    "overflowY": "auto"
+                  }
+                },
+                "type": "ia.container.flex"
               }
             ],
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "!isNull({session.custom.cutover.session.itemId}) && !{view.custom.forceSetup}"
-                  }
-                }
-              }
+            "meta": {
+              "name": "MainPanel"
             },
             "position": {
               "basis": "0px",
-              "grow": 1,
-              "shrink": 1
-            }
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({session.custom.cutover.session.itemId}) \u0026\u0026 !{view.custom.forceSetup}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "14px"
+              }
+            },
+            "type": "ia.container.flex"
           }
         ],
+        "meta": {
+          "name": "Body"
+        },
         "position": {
           "basis": "0px",
-          "grow": 1,
-          "shrink": 1
-        }
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "flex": "1",
+            "gap": "14px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "height": "100%",
+        "overflow": "hidden"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "startSession",
           "params": [],
-          "script": "\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres = BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineNumber\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup = False"
+          "script": "\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres \u003d BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineNumber\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup \u003d False"
         },
         {
           "name": "openChange",
           "params": [],
-          "script": "\ts = self.session.custom.cutover.session\n\tself.view.custom.setupDraft = {\"lineLocationId\": s.get(\"lineLocationId\"), \"entryRoleCode\": s.get(\"entryRoleCode\"), \"itemId\": s.get(\"itemId\"), \"machineNumber\": s.get(\"machineNumber\")}\n\tself.view.custom.forceSetup = True"
+          "script": "\ts \u003d self.session.custom.cutover.session\n\tself.view.custom.setupDraft \u003d {\"lineLocationId\": s.get(\"lineLocationId\"), \"entryRoleCode\": s.get(\"entryRoleCode\"), \"itemId\": s.get(\"itemId\"), \"machineNumber\": s.get(\"machineNumber\")}\n\tself.view.custom.forceSetup \u003d True"
         },
         {
           "name": "onToolChanged",
           "params": [
             "toolId"
           ],
-          "script": "\tst = BlueRidge.Cutover.Scan.getState(self.session)\n\titemId = st[\"session\"].get(\"itemId\")\n\tst[\"cavityOptions\"] = BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId)\n\tst[\"entry\"][\"toolCavityId\"] = None\n\tst[\"entry\"][\"cavityCode\"] = \"\"\n\tself.session.custom.cutover = st"
+          "script": "\tst \u003d BlueRidge.Cutover.Scan.getState(self.session)\n\titemId \u003d st[\"session\"].get(\"itemId\")\n\tst[\"cavityOptions\"] \u003d BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId)\n\tst[\"entry\"][\"toolCavityId\"] \u003d None\n\tst[\"entry\"][\"cavityCode\"] \u003d \"\"\n\tself.session.custom.cutover \u003d st"
         },
         {
           "name": "addBasket",
           "params": [],
-          "script": "\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Cutover.Scan.addBasket(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Basket added\", res.get(\"Message\") if res else None)"
+          "script": "\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tres \u003d BlueRidge.Cutover.Scan.addBasket(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Basket added\", res.get(\"Message\") if res else None)"
         },
         {
           "name": "addBox",
           "params": [],
-          "script": "\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Cutover.Scan.addBox(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Box added\", res.get(\"Message\") if res else None)"
+          "script": "\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tres \u003d BlueRidge.Cutover.Scan.addBox(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Box added\", res.get(\"Message\") if res else None)"
         }
       ],
       "extensionFunctions": null,
       "messageHandlers": []
-    }
+    },
+    "type": "ia.container.flex"
   }
 }

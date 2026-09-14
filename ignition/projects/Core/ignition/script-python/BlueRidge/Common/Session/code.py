@@ -23,6 +23,12 @@
 #   2026-05-14 - 1.1 - Delegates to BlueRidge.Common.Util._currentAppUserId
 #                      so the dev fallback + future session resolution
 #                      live in one place.
+#   2026-09-13 - 1.2 - FIX: resetTerminal navigated an unregistered / fallback
+#                      terminal to "/shop-floor", which is not a route in MPP's
+#                      page-config -- the terminal landed on "View Not Found".
+#                      Destination now resolved by _resetDestination(), which
+#                      mirrors HomeRouter's landing rule (fallback -> the
+#                      terminal selector; registered -> its DefaultScreen).
 # =============================================================================
 
 
@@ -112,6 +118,33 @@ def activeTimeoutSeconds(session):
     return pol.get("operatorPresenceTimeoutSeconds") or 1800
 
 
+# Where an unregistered / fallback terminal goes. NOT "/shop-floor" -- that is
+# not a route in MPP's page-config, so navigating there renders "View Not Found
+# -- No view configured for this page". A fallback terminal's defaultScreen is
+# "" (Terminal.applyToSession sets it so when terminalLocationId is None), so
+# that dead route was exactly what an unregistered terminal hit on Reset.
+# The selector is also what HomeRouter already sends this case to -- same
+# destination, one rule.
+_UNREGISTERED_TERMINAL_SCREEN = "/shop-floor/terminal-selector"
+
+
+def _resetDestination(session):
+    """Where resetTerminal navigates. Mirrors HomeRouter's landing rule:
+       no terminal (or the facility-wide fallback) -> the terminal selector;
+       a registered terminal -> its own DefaultScreen. Never-throw, because a
+       bad read here would strand the terminal on whatever screen it was on
+       with no operator signed in."""
+    try:
+        term = session.custom.terminal
+        if term is None:
+            return _UNREGISTERED_TERMINAL_SCREEN
+        if not term.get("terminalLocationId") or term.get("isFallback"):
+            return _UNREGISTERED_TERMINAL_SCREEN
+        return term.get("defaultScreen") or _UNREGISTERED_TERMINAL_SCREEN
+    except (Exception, java.lang.Exception):
+        return _UNREGISTERED_TERMINAL_SCREEN
+
+
 def resetTerminal(session):
     """Drop elevation AND operator; return to the default screen + prompt initials.
     Same path the elevation-idle expiry takes (#11)."""
@@ -133,11 +166,7 @@ def resetTerminal(session):
     session.custom.appUserId = None
     session.custom.elevatedUntil = None
     session.custom.pendingElevatedAction = None
-    try:
-        dflt = (session.custom.terminal or {}).get("defaultScreen") or "/shop-floor"
-    except Exception:
-        dflt = "/shop-floor"
-    system.perspective.navigate(dflt)
+    system.perspective.navigate(_resetDestination(session))
     system.perspective.openPopup(
         "mpp-initials", "BlueRidge/Components/Popups/InitialsEntry",
         params={"popupId": "mpp-initials"}, modal=True, showCloseIcon=False, overlayDismiss=False)

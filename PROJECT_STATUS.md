@@ -12,31 +12,79 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-09-13 — **Inventory cutover scan built end to end (SQL + Ignition). It renders on phone, tablet and desktop and not one control inside it works: every write to `session.custom.cutover` is silently dropped.** Design: `docs/superpowers/specs/2026-09-12-inventory-cutover-scan-design.md`. Plan: `docs/superpowers/plans/2026-09-12-inventory-cutover-scan.md`.
+**Last updated:** 2026-09-13 (evening) — **Inventory cutover scan: the dropped-write bug is FIXED and verified live. Cavity tiles, both cast-date arrows, the tab strip, Change, and all three mobile-header buttons work. Mobile CAMERA barcode scanning is wired and routed (Phone + Tablet), and `resetTerminal`'s dead-route landing is fixed.** Design: `docs/superpowers/specs/2026-09-12-inventory-cutover-scan-design.md`. Plan: `docs/superpowers/plans/2026-09-12-inventory-cutover-scan.md`.
 
-> ### STOP HERE WHEN YOU COME BACK — the one open bug
+> ### The bug that made every control inert — ROOT CAUSE, and the wrong theory it replaces
 >
-> **Symptom.** The screen renders correctly at every breakpoint. Session setup works (line, part, Start Session all latch; the die auto-resolves; "Step 4 - Machining IN" shows). Then **nothing else does anything**: the cavity tiles, both cast-date arrows, and — reported, not yet instrumented — the three mobile-header buttons Downtime / Supervisor / Reset.
->
-> **It is NOT the taps, the handlers, the params, the scope, or the event wiring.** All of that is proven working, from the gateway log:
+> **`BlueRidge.Cutover.Scan.getState()` handed back LIVE property-tree views, not detached Python.**
+> `session.custom.cutover` reads back as a `com.inductiveautomation.perspective.gateway.script.PropertyTreeScriptWrapper$ObjectWrapper` — a live view into the session's property document. It quacks enough like a dict (`.get` / `.keys` / `.items` / `[k]`) that `getState`'s `for k, v in st.items(): out[k] = v` looked correct and was not: every nested value copied out was still a live view. So
 > ```
-> CavityToggle TAPPED id=38 code=a          <- handler fires, params resolve
-> stepCastDate ENTER days=-1
-> stepCastDate WROTE Sat Sep 12 21:03:13
+> st = getState(session)          # st["entry"] is a LIVE wrapper
+> st["entry"]["castDate"] = nxt   # mutates the live tree (queued)
+> session.custom.cutover = st     # replaces the tree with a snapshot rebuilt
+>                                 # from those same wrappers -> clobbers it
 > ```
-> **The write is dropped.** Three consecutive back-arrow taps each logged `WROTE Sat Sep 12` — they should step Sep 12, Sep 11, Sep 10. `cur = st["entry"].get("castDate") or system.date.now()` keeps falling through to `now()`, so `getState()` never reads back what `_write()` just wrote. Confirmed independently by the screen itself: the label reads "Tap < or > to set", which only renders when `isNull({session.custom.cutover.entry.castDate})`.
+> **`extractQualifiedValues` does NOT cover this** — it only recurses into a Python `dict` / `list` / `tuple`, and `isinstance(wrapper, dict)` is `False` (verified live).
 >
-> **Leading hypothesis (UNPROVEN).** Perspective session custom props must be JSON-serialisable, and `system.date.addDays` returns a **`java.util.Date`**. The tell: `loadSession` is the only write that works, and it is the only one whose dict carries `castDate: None`. `startSession` then calls `stepCastDate(0)`, and every write from that moment on carries a Date. If that is the cause, store the date as millis or an ISO string and convert at the boundary — and note **both bindings change too**: `CastDateValue` uses `dateFormat(...)` and `CastDateRel`'s transform calls `system.date.midnight(value)`.
+> **Fix:** `_plain()` in `BlueRidge/Cutover/Scan/code.py` — a duck-typed deep detach (`.items()` ⇒ mapping, iterable ⇒ sequence, anything else ⇒ leaf), applied in `getState`. Read its docstring; it carries the whole mechanism.
 >
-> **NEXT ACTION — one tap settles it.** A readback probe is already committed and scanned into `BlueRidge.Cutover.Scan.stepCastDate`. Tap the back arrow once and read the gateway log:
+> **Why not the JSON round-trip** that `BlueRidge.Lots.LotTrail._plain` uses for the same hazard: `entry.castDate` is a `java.util.Date`, and a JSON round-trip returns it as a string, which then fails `Lot_Create`'s `:castDate` (`sqlType` 8, DateTime).
+>
+> **The `java.util.Date` theory recorded here previously was WRONG.** A `Date` round-trips through a session custom prop correctly — `WROTE Sat Sep 12 … ; READBACK Sat Sep 12 … ; match=True`, verified live. It looked like the culprit only because `loadSession` was the one write that worked, and it is also the one write that never mutates nested state (it *replaces* whole keys with fresh literals: `st["session"] = {...}`, `st["rows"] = []`). That asymmetry had nothing to do with dates.
+>
+> **How it was found (the technique, not the guess):** instrument at the boundary and read `logs/wrapper.log` directly — `type(raw)`, `isinstance(raw, dict)`, `u.items()`, and a direct `session.custom.cutover.entry.castDate` readback. One tap printed the wrapper class name and settled it. Driving the session from the in-app browser + tailing `wrapper.log` is a ~20-second feedback loop; use it instead of reasoning about Perspective internals.
+>
+> **Verified live on the real screen, 2026-09-13:** cavity tile taps latch (`toolCavityId: 38, cavityCode: 'a'` read back); the back arrow steps Sep 12 → Sep 11 → Sep 10 with `match=True` on every write and the label re-rendering each time; the Cast/Purchased tab strip switches; **Change** re-opens setup pre-populated from the latched session; **Downtime** opens `popup-mpp-downtime-manager`; **Supervisor** opens `popup-mpp-elevation-modal`; **Reset** clears the operator, navigates, and re-prompts for a PIN. All instrumentation has been removed.
+
+> ### Cutover scan — what is still NOT exercised
+>
+> - **No basket or box has been written end to end.** Everything up to `Add basket` is verified; `addBasket` / `addBox` / `voidEntry` now receive plain dicts (same code path as the verified ones) and `Lot_Create` with these exact parameters is proven from SQL, but nobody has typed an LTT and tapped Add. The in-app browser cannot commit Perspective text bindings, so this needs a human at a real browser: scan/type an LTT, a piece count, tap **Add basket**, confirm the row appears, the totals increment, the LTT + count clear while cavity and cast date latch — then **Void** it and confirm it disappears.
+> - **Camera scanning has never been exercised on a real phone.** The whole chain is verified on the gateway via the client's own simulate hook (below), but nobody has pointed an actual camera at an LTT.
+> - **The PIN keypad is clipped on a phone** — `1/4/7/Clear` and `3/6/9/Back` fall off 375px. An operator cannot sign in on a phone. Still blocking for handheld use.
+> - Spec section 11 open questions: where warehouse-held stock lands, and whether already-machined SubAssembly stock needs its own handling.
+
+> ### Camera barcode scanning (2026-09-13, Jacques + Claude)
+>
+> **Mobile camera scanning works, and the mechanism is not what the component list suggests.**
+>
+> **`ia.input.barcodescannerinput` is NOT a camera** — it is a keyboard-wedge listener, and it was removed from this screen. Read out of the 8.3.5 client bundle: `captureMode` (default `"keypress"`) is passed straight to `document.addEventListener(captureMode, …)`, and its handler factory returns **null** unless `prefix`+`suffix` or `regex` is set — so with the default props it silently captures nothing, forever. Its `props.data` is also **append-only** (`props.write("data", data.concat(scanned))`), so a `props.data[0]` binding sees only the *first* scan ever. Use it only with a hardware/Bluetooth wedge scanner, and only with a prefix+suffix pair or a regex.
+>
+> **The camera is a native ACTION, App-only.** A component carries an event action of type **`native/barcode`** (config: `cameraPreference`, `type`, `backgroundColor`, `uuid`). Firing it calls `window.__mobileInterface.launchAction(...)`, a bridge that exists **only inside the Ignition Perspective App**. In a plain mobile browser the client logs *"Native mobile action requested in non-mobile client. Action request ignored!"* and nothing happens. Operators therefore need the **Perspective App**, not Safari/Chrome. (Sibling native actions, same bridge: `native/picture`, `native/geolocation`, `native/deviceId`, `native/ndef`, `native/bluetooth`, `native/accelerometer`.)
+>
+> **A scan does not return to the component that asked for it.** Perspective fires ONE project-wide session event, `MPP/com.inductiveautomation.perspective/barcode/onBarcodeDataReceived.py`, for every scan in the app:
 > ```
-> stepCastDate WROTE <x> ; READBACK <y> ; match=<bool> ; type=<class>
+> data    = {"barcodeType": "qrcode", "text": "<payload>", "timestamp": 1789351139952}
+> context = the action's own "context" object, echoed back verbatim
 > ```
-> `match=False` or `READBACK None` -> the write is rejected, and `type=` names the culprit. `match=True` -> the write lands and the **bindings** are not re-reading, which is a completely different fix.
+> **`context` is the only routing key there is.** So every `native/barcode` action SHALL carry `{"screen": "<screen>", "field": "<field>"}`. The session event is a one-liner into **`BlueRidge.Common.Barcode.onScan`**, which dispatches per screen; `BlueRidge.Cutover.Scan.applyScan` writes the value into the right slot of `session.custom.cutover`. An action with **no context is logged and dropped on purpose** — writing a stray scan into whatever field was last touched is worse than ignoring it.
 >
-> **REMOVE THE INSTRUMENTATION** once this is closed: the `stepCastDate ENTER` / `WROTE ... READBACK` logging in `Cutover/Scan/code.py`, and the `CavityToggle TAPPED` line at the top of `CavityToggle`'s `dom.onClick`.
+> Wired: **Phone + Tablet** — LTT field → `entry.lotName`, purchased part-number field → `purchased.partNumber`. **Desktop deliberately has neither** component nor action; because the three size views are separate files, "hide the scanner on desktop" needs no binding at all.
 >
-> **Dead ends already burned — do not re-walk these.** (1) `Could not find the web session` on route `/hello/:project_name/:tab_id` is Perspective's own tab-attach handshake, not a component failing; it was stale background tabs. (2) `Unable to find registered component for id="ia.display.inline-frame"` at startup is pre-existing, belongs to `AssemblySerialized` / `AssemblyNonSerialized` (last touched 2026-09-03 / 09-11), fires about 10 s into boot before the component registry finishes, and those vision frames render fine. (3) The event JSON is byte-identical to the working `MachiningIn` Refresh button — scope `G`, `component.onActionPerformed`, tab-indented script. (4) DOM probes run without a session started report `{0,0,0,0}` for everything, because a `display:none` subtree reports zero boxes at the origin — that is not a collapse.
+> **This is also why the `_plain` fix was load-bearing.** `applyScan` is a read-modify-write of nested session state — the exact shape that silently lost every write before `getState()` started detaching the property tree.
+>
+> **Test a scan without a phone.** The client exposes the simulate path; run this in the browser console of a live session and watch `wrapper.log`:
+> ```js
+> window.__webInterface.submitData({type: 'native/barcode',
+>   data: {barcodeType: 'code128', text: 'LTT-TEST-0001', timestamp: Date.now()},
+>   context: {screen: 'cutover', field: 'lotName'}});
+> ```
+> Verified 2026-09-13 — `lotName`, `purchasedPartNumber`, and the no-context drop path all behaved correctly.
+>
+> **Open UX question:** the `native/barcode` action currently sits on the text field's own `dom.onClick`, so tapping the field opens the camera — which means an operator **cannot type a damaged barcode by hand**. Either move the action to a dedicated scan button beside the field, or keep tap-to-scan and add a separate manual-entry affordance. Not decided.
+
+> ### Found in passing (pre-existing, outside the cutover screen)
+>
+> **FIXED — `Common.Session.resetTerminal` navigated to a dead route.** Its fallback was `navigate("/shop-floor")`, which is not a route in MPP's `page-config`, so an unregistered / fallback terminal landed on *"View Not Found"* after **Reset** (reproduced live). A fallback terminal's `defaultScreen` is `""` (`Terminal.applyToSession` sets it so when `terminalLocationId` is None), so that dead route was exactly what it hit. Destination now resolves through `Common.Session._resetDestination()`, which mirrors **HomeRouter's** existing landing rule — no terminal or `isFallback` → `/shop-floor/terminal-selector`; a registered terminal → its own `DefaultScreen`. One rule, two callers.
+>
+> **The live-wrapper hazard was audited across the rest of the codebase and is clean.** `BlueRidge.Lots.LotTrail._plain` already solves it (JSON round-trip, and its docstring names the hazard); `Common.Notify._readInstances` only filters elements out of the list and never mutates one, so it is safe; every other `session.custom.*` write in `Core` assigns a fresh literal. Cutover was the only module that read-modify-wrote nested session state without detaching first.
+>
+> **FIXED — flex shrink/collide defects in all three `_CutoverScan` views.** `CastEntryPanel` / `PurchasedEntryPanel` are flex columns whose children all carried `position.shrink: 0` **except** the trailing note + Add button; a flex child defaults to `shrink: 1`, so those two were the only ones squeezed when content exceeded the panel — down to near-zero height with their text overflowing onto the field above (the "Vendor lot overlaps the paragraph" symptom). And in `LatchedTop`, the line name and the step pill both defaulted to `shrink: 1` **and** `min-width: auto`, which refuses to shrink below content — so they collided instead of truncating. Line name now gets `min-width: 0` + ellipsis; pill and Change button get `shrink: 0`. Same class as the SetupPanel and header-column fixes banked 2026-09-12.
+>
+> **Editing these view files programmatically:** Phone is authored in Designer's escaped form (`=` / `'`), Tablet and Desktop in the plain form, and Phone alone has no trailing newline. A scripted edit MUST detect and preserve each file's own shape, or a four-line fix reformats two thousand. `scratchpad/viewio.py` in that session did this by rendering both ways and keeping whichever reproduced the file byte-for-byte, asserting that on all three before writing anything.
+
+> ### Dead ends already burned — do not re-walk these
+>
+> (1) `Could not find the web session` on route `/hello/:project_name/:tab_id` is Perspective's own tab-attach handshake, not a component failing; it was stale background tabs. (2) `Unable to find registered component for id="ia.display.inline-frame"` at startup is pre-existing, belongs to `AssemblySerialized` / `AssemblyNonSerialized`, fires about 10 s into boot before the component registry finishes, and those vision frames render fine. (3) The event JSON is byte-identical to the working `MachiningIn` Refresh button — scope `G`, `component.onActionPerformed`, tab-indented script. (4) DOM probes run without a session started report `{0,0,0,0}` for everything, because a `display:none` subtree reports zero boxes at the origin — that is not a collapse. (5) **Screenshots of the in-app browser go stale while its pane is hidden** — a frozen frame showed SetupPanel and MainPanel rendering simultaneously, which is not real (`getComputedStyle` confirmed SetupPanel was `display: none`). Confirm layout from the DOM, not from a screenshot taken after the pane was backgrounded.
 
 > ### What IS built and verified
 >
@@ -47,7 +95,7 @@
 > - **`Item.MaxLotSize` is now INFORMATIONAL** (Jacques's call): an over-size basket creates successfully with a note appended to `Message`. `Item.MaxParts` and the consumption-point `ItemLocation.MaxQuantity` still reject — they cap what may accumulate at a location, which is a real physical constraint.
 > - Readiness check `sql/scratch/2026-09-12_cutover_readiness_check.sql`, verified read-only against Dev.
 >
-> **Ignition — renders, does not function (see above).** Breakpoint host plus Phone/Tablet/Desktop views, the `BlueRidge.Cutover.Scan` module, named queries and wrappers, reachable from the Terminal Selector, and `AppHeaderSmall` completing the breakpoint header shell Jacques scaffolded.
+> **Ignition — renders and functions (see the root-cause block above).** Breakpoint host plus Phone/Tablet/Desktop views, the `BlueRidge.Cutover.Scan` module, named queries and wrappers, reachable from the Terminal Selector, and `AppHeaderSmall` completing the breakpoint header shell Jacques scaffolded.
 
 > ### Corrections banked this session (each was a real defect)
 >
@@ -60,9 +108,7 @@
 > - Flex fixes: `SetupPanel` shrinking below its content and clipping its own heading; header columns overlapping instead of truncating (`min-width: 0`); cavity and session-row scrollbars (the `overflow: auto` default); toasts 500px wide on a 390px phone (now device-aware, with chars-per-line scaled — otherwise the height estimate under-reads and the message is clipped).
 
 > ### Known gaps, not started
-> - **The PIN keypad is clipped on a phone** — `1/4/7/Clear` and `3/6/9/Back` fall off 375px. An operator cannot sign in on a phone. Blocking for handheld use.
-> - The LTT text field could never be exercised from this environment (the in-app browser cannot commit Perspective text bindings), so **no basket has ever been written end to end**. `Lot_Create` with those exact parameters is proven from SQL.
-> - Spec section 11 open questions: where warehouse-held stock lands, and whether already-machined SubAssembly stock needs its own handling.
+> Superseded by “Cutover scan — what is still NOT exercised” above; that list is the current one.
 
 **Previously:** 2026-09-11 (late afternoon) — **6MA CH camera: the SlcTray handshake was built on the wrong PLC program. New `SlcPassPulse` protocol, a `DisableWriteback` UDT switch, and a per-terminal `SuppressAimAndLabel` (migration `0079`) for the parallel run beside legacy.** Detail: `notes/2026-09-11_6ma-ch-real-ladder-slcpasspulse.md`.
 > **What happened.** `6MA_CH` ran all night with live tags and the MES booked nothing. MPP supplied the real program (`reference/6MA_PLC Logic`, processor "6MA", PLC `172.17.21.213`). It is **not** MPPMACH (PLC `172.17.20.30`, whose vision IP is RPY Line 2's), which `SlcTray` had been built from on a data-file-layout match. Confirmed live: device IP `.213`, `C5:10.PRE` = 48. On the 6MA ladder, N7:0 is 1 constantly (no per-tray edge), N7:1 does not gate the camera (the PLC runs the cell by itself), N7:30 is set and cleared in the same scan (unobservable), N7:11..27 are never written. The only per-tray host signal is **N7:10** "PASSED TO HOST COMPUTER": 1 for 2-3 s on each good tray. The per-part N17 words are filled from the discrete pass input, so this cell is tray-level only.

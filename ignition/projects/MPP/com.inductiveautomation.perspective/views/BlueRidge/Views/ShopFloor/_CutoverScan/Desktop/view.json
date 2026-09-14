@@ -605,7 +605,11 @@
                         "props": {
                           "style": {
                             "fontSize": "16px",
-                            "fontWeight": 700
+                            "fontWeight": 700,
+                            "minWidth": "0px",
+                            "overflow": "hidden",
+                            "textOverflow": "ellipsis",
+                            "whiteSpace": "nowrap"
                           }
                         },
                         "propConfig": {
@@ -617,6 +621,9 @@
                               }
                             }
                           }
+                        },
+                        "position": {
+                          "shrink": 1
                         }
                       },
                       {
@@ -638,6 +645,9 @@
                               }
                             }
                           }
+                        },
+                        "position": {
+                          "shrink": 0
                         }
                       },
                       {
@@ -675,6 +685,9 @@
                               }
                             }
                           }
+                        },
+                        "position": {
+                          "shrink": 0
                         }
                       }
                     ]
@@ -1608,6 +1621,9 @@
                                   }
                                 }
                               }
+                            },
+                            "position": {
+                              "shrink": 0
                             }
                           }
                         ],
@@ -1812,6 +1828,9 @@
                                 "classes": "pf-field-help"
                               },
                               "text": "No cavity, die or cast date -- a purchased part has no casting history of ours to record. The supplier lot goes to VendorLotNumber; the LOT name is minted by us."
+                            },
+                            "position": {
+                              "shrink": 0
                             }
                           },
                           {
@@ -1835,6 +1854,9 @@
                                   }
                                 }
                               }
+                            },
+                            "position": {
+                              "shrink": 0
                             }
                           }
                         ],

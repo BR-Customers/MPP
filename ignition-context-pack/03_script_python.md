@@ -342,6 +342,55 @@ def convertWrapperObjectToJson(obj):
 
 `extractQualifiedValues` and `convertWrapperObjectToJson` solve a class of "value comes back wrapped and SQL parameter binding fails" problems you'll otherwise hit repeatedly.
 
+#### `extractQualifiedValues` does NOT detach a session/view property read
+
+Reading an object-typed property from script — `session.custom.myState`, `view.custom.myState` — does **not** return a dict. It returns a
+`com.inductiveautomation.perspective.gateway.script.PropertyTreeScriptWrapper$ObjectWrapper`
+(`$ArrayWrapper` for arrays): a **live view into the property document**. Verified on 8.3.5 by logging `type(raw)` from a gateway-scope event script.
+
+It quacks like a dict — `.get()`, `.keys()`, `.items()`, `[k]`, `len()` all work — so code that copies it looks correct and isn't. `extractQualifiedValues` does not help: it recurses into a Python `dict` / `list` / `tuple`, and `isinstance(wrapper, dict)` is `False`, so the wrapper falls through its final `return data` untouched.
+
+The failure is **silent, and it eats the write**:
+
+```python
+st = session.custom.myState          # ObjectWrapper
+copy = {}
+for k, v in st.items():
+    copy[k] = v                      # every v is STILL a live view
+copy["entry"]["field"] = newValue    # mutates the live tree (queued)
+session.custom.myState = copy        # replaces the tree with a snapshot
+                                     # rebuilt from those same views
+                                     # -> the nested write is clobbered
+```
+
+No exception, no log line. The symptom is a screen that renders perfectly and whose controls do nothing — and it is asymmetric in a way that sends you chasing the wrong thing: a handler that only ever *replaces whole keys* with fresh literals (`st["section"] = {...}`) works fine, while every handler that mutates a nested value is inert. Do not read the difference between those two handlers as being about the *values* involved.
+
+**Rule: detach before you mutate.** Deep-copy any property read into plain Python first. Two idioms, pick by whether the state carries non-JSON leaves:
+
+```python
+# (a) JSON round-trip -- simplest, but stringifies java.util.Date / Java types
+system.util.jsonDecode(system.util.jsonEncode(raw))
+
+# (b) duck-typed deep copy -- preserves Date and other leaves
+def plain(v):
+    if v is None or isinstance(v, (bool, int, long, float, basestring)):
+        return v
+    items = getattr(v, "items", None)
+    if items is not None and callable(items):
+        return dict([(k, plain(x)) for k, x in v.items()])
+    try:
+        seq = list(v)
+    except (TypeError, Exception):
+        return v                       # leaf: Date, enum, opaque Java object
+    return [plain(x) for x in seq]
+```
+
+Use (b) whenever a `Date` has to survive the round trip into a named-query parameter (`sqlType: 8`) — (a) turns it into a string and the parameter binding then fails.
+
+A **direct** nested assignment with no wholesale write afterwards (`session.custom.myState.mode = "cast"`) is fine and does land; it is the read-modify-write-the-whole-object shape that loses data.
+
+**Diagnosing it:** log `type(raw)` and `isinstance(raw, dict)` at the read, and read the property straight back through the session object right after the write. A `WROTE x ; READBACK None` pair with no exception in between is this bug.
+
 The previous-generation pattern (seen in older Ignition projects) had a `log(msg)` wrapper in every entity module that delegated to a per-domain `Util.logging(...)`. Modern practice: one shared `Common.Util.log` and direct calls — fewer wrappers, single source of truth.
 
 ### View → entity → Common helper, end-to-end
