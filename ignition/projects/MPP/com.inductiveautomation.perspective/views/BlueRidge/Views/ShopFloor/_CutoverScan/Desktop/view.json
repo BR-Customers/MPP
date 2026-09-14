@@ -705,6 +705,7 @@
                       "name": "LatchedKvRow"
                     },
                     "props": {
+                      "wrap": "wrap",
                       "direction": "row",
                       "style": {
                         "gap": "28px",
