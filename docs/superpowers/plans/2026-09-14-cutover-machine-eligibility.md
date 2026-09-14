@@ -206,13 +206,13 @@ GO
 In `MPP_MES_DATA_MODEL.md`, find the `Lots.Lot` column table — the row for `DieNumber` is the landmark (`| DieNumber | NVARCHAR(50) | NULL | **Legacy as of v1.9** …`). Insert this row immediately **after** the `ToolCavityId` row and **before** the `DieNumber` row:
 
 ```markdown
-| ProducedAtLocationId | BIGINT | FK → Location.Location.Id, NULL | Added v2.4 (migration `0082`). The **die cast machine** that produced this LOT. Written only by the inventory cutover scan: a LOT born at a die cast terminal derives its machine from `CreatedAtTerminalId`'s parent, but a cutover LOT is created at a machining terminal weeks after the casting, so the machine exists only on the paper tag. NULL for every non-cutover LOT and for every received purchased component. Not to be confused with `DieNumber`, which is the legacy DIE column. |
+| ProducedAtLocationId | BIGINT | FK → Location.Location.Id, NULL | Added v2.5 (migration `0082`). The **die cast machine** that produced this LOT. Written only by the inventory cutover scan: a LOT born at a die cast terminal derives its machine from `CreatedAtTerminalId`'s parent, but a cutover LOT is created at a machining terminal weeks after the casting, so the machine exists only on the paper tag. NULL for every non-cutover LOT and for every received purchased component. Not to be confused with `DieNumber`, which is the legacy DIE column. |
 ```
 
 Add a revision-history row at the top of the same document, following the format of the existing rows:
 
 ```markdown
-| 2.4 | 2026-09-14 | Blue Ridge Automation | **`Lots.Lot.ProducedAtLocationId`** (migration `0082`) — a nullable FK to `Location.Location` recording the die cast machine that produced a LOT. Populated only by the inventory cutover scan, whose operator reads the machine off the paper tag; every other mint leaves it NULL because a die cast terminal's parent already names the machine. Spec `docs/superpowers/specs/2026-09-14-cutover-machine-eligibility-design.md`. |
+| 2.5 | 2026-09-14 | Blue Ridge Automation | **`Lots.Lot.ProducedAtLocationId`** (migration `0082`) — a nullable FK to `Location.Location` recording the die cast machine that produced a LOT. Populated only by the inventory cutover scan, whose operator reads the machine off the paper tag; every other mint leaves it NULL because a die cast terminal's parent already names the machine. Spec `docs/superpowers/specs/2026-09-14-cutover-machine-eligibility-design.md`. |
 ```
 
 - [ ] **Step 5: Regenerate the extended properties**
