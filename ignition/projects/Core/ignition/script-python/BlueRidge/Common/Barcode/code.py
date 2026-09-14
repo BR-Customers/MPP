@@ -114,7 +114,7 @@ def onScan(session, data, context):
             BlueRidge.Common.Util.log(
                 "scan DROPPED: the action carried no context.screen. Give the "
                 "native/barcode action a context of "
-                "{\"screen\": \"...\", \"field\": \"...\"}.")
+                "{\"screen\": \"...\", \"field\": \"...\"}.", level="warn")
             return {"Status": 0, "Message": "Scan had no routing context."}
 
         if screen == "cutover":
@@ -122,8 +122,8 @@ def onScan(session, data, context):
 
         BlueRidge.Common.Util.log(
             "scan DROPPED: no handler for screen '%s' (known: %s)"
-            % (screen, ", ".join(_SCREENS)))
+            % (screen, ", ".join(_SCREENS)), level="warn")
         return {"Status": 0, "Message": "No handler for screen '%s'." % screen}
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("onScan FAILED: %s" % str(e))
+        BlueRidge.Common.Util.log("onScan FAILED: %s" % str(e), level="warn")
         return {"Status": 0, "Message": "Scan handling failed: %s" % str(e)}

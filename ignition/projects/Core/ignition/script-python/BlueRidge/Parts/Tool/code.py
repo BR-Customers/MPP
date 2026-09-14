@@ -144,7 +144,7 @@ def getAllForList(searchText="", statusCode="All"):
             },
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAllForList failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAllForList failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load tools", str(e), "error")
         return []
 
@@ -470,7 +470,7 @@ def getAttributeInstancesForTool(toolId):
             {"toolId": toolId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAttributeInstancesForTool failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAttributeInstancesForTool failed: %s" % str(e), level="warn")
         return []
 
     out = []
@@ -507,7 +507,7 @@ def getCavityInstancesForTool(toolId):
             {"toolId": toolId, "includeDeprecated": 0},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getCavityInstancesForTool failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getCavityInstancesForTool failed: %s" % str(e), level="warn")
         return []
 
     out = []
@@ -546,7 +546,7 @@ def getAssignmentInstancesForTool(toolId):
             {"toolId": toolId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAssignmentInstancesForTool failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAssignmentInstancesForTool failed: %s" % str(e), level="warn")
         return []
 
     out = []
@@ -603,7 +603,7 @@ def getStatusCodesForDropdown():
     try:
         rows = BlueRidge.Common.Db.execList("parts/ToolStatusCode_List", None)
     except Exception as e:
-        BlueRidge.Common.Util.log("getStatusCodesForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getStatusCodesForDropdown failed: %s" % str(e), level="warn")
         return []
     return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Code")} for r in rows or []]
 
@@ -614,7 +614,7 @@ def getToolTypesForDropdown():
     try:
         rows = BlueRidge.Common.Db.execList("parts/ToolType_List", None)
     except Exception as e:
-        BlueRidge.Common.Util.log("getToolTypesForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getToolTypesForDropdown failed: %s" % str(e), level="warn")
         return []
     return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Code")} for r in rows or []]
 
@@ -704,7 +704,7 @@ def getAttributeDefinitionsForToolType(toolTypeId):
             {"toolTypeId": toolTypeId, "includeDeprecated": 0},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAttributeDefinitionsForToolType failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAttributeDefinitionsForToolType failed: %s" % str(e), level="warn")
         return []
     return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Id")} for r in rows or []]
 
@@ -733,7 +733,7 @@ def getAttributeDefinitionOptions(toolId):
             {"toolTypeId": toolTypeId, "includeDeprecated": 0},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAttributeDefinitionOptions failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAttributeDefinitionOptions failed: %s" % str(e), level="warn")
         return []
     return [{"value": r.get("Id"),
              "label": r.get("Name") or r.get("Code"),
@@ -762,7 +762,7 @@ def getCellsForDropdown(toolId=None):
             {"toolId": toolId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getCellsForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getCellsForDropdown failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in rows or []:
@@ -1002,7 +1002,7 @@ def getCavitiesForDropdown(toolId):
         rows = BlueRidge.Common.Db.execList(
             "parts/ToolCavity_ListActiveByTool", {"toolId": toolId})
     except Exception as e:
-        BlueRidge.Common.Util.log("getCavitiesForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getCavitiesForDropdown failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in (rows or []):
@@ -1024,7 +1024,7 @@ def getMountedToolForCell(cellLocationId):
         rows = BlueRidge.Common.Db.execList(
             "parts/ToolAssignment_ListActiveByCell", {"cellLocationId": cellLocationId})
     except Exception as e:
-        BlueRidge.Common.Util.log("getMountedToolForCell failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getMountedToolForCell failed: %s" % str(e), level="warn")
         return None
     return rows[0] if rows else None
 
@@ -1065,7 +1065,7 @@ def getCellMountContextOrEmpty(cellLocationId):
         row = BlueRidge.Common.Db.execOne(
             "parts/ToolAssignment_GetCellContext", {"cellLocationId": cellLocationId})
     except Exception as e:
-        BlueRidge.Common.Util.log("getCellMountContextOrEmpty failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getCellMountContextOrEmpty failed: %s" % str(e), level="warn")
         return empty
     if row is None:
         return empty
@@ -1088,7 +1088,7 @@ def getShotStatusForCell(cellLocationId):
         return BlueRidge.Common.Db.execOne(
             "parts/Tool_GetShotStatusForCell", {"cellLocationId": cellLocationId})
     except Exception as e:
-        BlueRidge.Common.Util.log("getShotStatusForCell failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getShotStatusForCell failed: %s" % str(e), level="warn")
         return None
 
 
@@ -1117,7 +1117,7 @@ def getMountableToolsForCell(cellLocationId):
         rows = BlueRidge.Common.Db.execList(
             "parts/Tool_ListMountableForCell", {"cellLocationId": cellLocationId})
     except Exception as e:
-        BlueRidge.Common.Util.log("getMountableToolsForCell failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getMountableToolsForCell failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in (rows or []):

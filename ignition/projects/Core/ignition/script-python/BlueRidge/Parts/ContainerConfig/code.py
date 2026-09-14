@@ -41,7 +41,7 @@ def getByItem(itemId):
         )
         return row if row is not None else {}
     except Exception as e:
-        BlueRidge.Common.Util.log("getByItem failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getByItem failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load container config", str(e), "error")
         return {}

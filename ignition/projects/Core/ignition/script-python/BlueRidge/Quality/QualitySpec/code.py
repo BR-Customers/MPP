@@ -88,7 +88,7 @@ def listForItem(itemId):
             {"itemId": itemId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("listForItem failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listForItem failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load quality specs", str(e), "error")
         return []
@@ -311,7 +311,7 @@ def listUoms():
     try:
         return BlueRidge.Common.Db.execList("parts/Uom_List", {"includeDeprecated": False}) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("listUoms failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listUoms failed: %s" % str(e), level="warn")
         return []
 
 
@@ -363,7 +363,7 @@ def getActiveVersionForItemOrEmpty(itemId, _refreshToken=None):
         specs = BlueRidge.Common.Db.execList(
             "quality/QualitySpec_ListForItem", {"itemId": itemId}) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getActiveVersionForItemOrEmpty failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getActiveVersionForItemOrEmpty failed: %s" % str(e), level="warn")
         return dict(_EMPTY_ACTIVE_SPEC)
     for s in specs:
         v = BlueRidge.Common.Db.execOne(

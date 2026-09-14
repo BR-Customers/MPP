@@ -123,7 +123,7 @@ def getActiveForItem(itemId):
         result["steps"]            = _mapSteps(steps)
         return result
     except Exception as e:
-        BlueRidge.Common.Util.log("getActiveForItem failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getActiveForItem failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load route", str(e), "error")
         return dict(_EMPTY_ROUTE)
@@ -434,7 +434,7 @@ def getSequenceForItemRole(itemId, roleCode):
                                             {"itemId": itemId,
                                              "operationTypeCode": roleCode}) or []
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("getSequenceForItemRole failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getSequenceForItemRole failed: %s" % str(e), level="warn")
         return None
     if not rows:
         return None

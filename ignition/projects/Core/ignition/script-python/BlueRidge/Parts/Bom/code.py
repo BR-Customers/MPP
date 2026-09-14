@@ -139,7 +139,7 @@ def getActiveForItem(itemId):
         result["lines"]            = _mapLines(lines)
         return result
     except Exception as e:
-        BlueRidge.Common.Util.log("getActiveForItem failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getActiveForItem failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load BOM", str(e), "error")
         return dict(_EMPTY_BOM)
@@ -169,7 +169,7 @@ def listByParentItem(parentItemId, includeDeprecated=False):
             out.append(d)
         return out
     except Exception as e:
-        BlueRidge.Common.Util.log("listByParentItem failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listByParentItem failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load BOM versions", str(e), "error")
         return []
@@ -227,7 +227,7 @@ def getOneFull(bomId):
             "lines":            _mapEditorLines(lines),
         }
     except Exception as e:
-        BlueRidge.Common.Util.log("getOneFull failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getOneFull failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load BOM", str(e), "error")
         return empty
@@ -249,7 +249,7 @@ def listAvailableItems(parentItemId, searchText=None):
         )
         return rows or []
     except Exception as e:
-        BlueRidge.Common.Util.log("listAvailableItems failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listAvailableItems failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load component list", str(e), "error")
         return []
@@ -261,7 +261,7 @@ def listUoms():
         rows = BlueRidge.Common.Db.execList("parts/Uom_List", {"includeDeprecated": False})
         return rows or []
     except Exception as e:
-        BlueRidge.Common.Util.log("listUoms failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listUoms failed: %s" % str(e), level="warn")
         return []
 
 
@@ -364,7 +364,7 @@ def handleCreateOrCloneVersion(parentItemId, sourceBomId=None):
             },
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("handleCreateOrCloneVersion failed: %s" % str(e))
+        BlueRidge.Common.Util.log("handleCreateOrCloneVersion failed: %s" % str(e), level="warn")
         return {"Status": False,
                 "Message": "Create version failed: " + str(e),
                 "NewId": None}

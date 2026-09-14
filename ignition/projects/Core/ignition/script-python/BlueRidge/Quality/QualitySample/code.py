@@ -166,7 +166,7 @@ def getTriggerOptions(_refreshToken=None):
     try:
         rows = BlueRidge.Common.Db.execList("quality/SampleTriggerCode_List") or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getTriggerOptions failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getTriggerOptions failed: %s" % str(e), level="warn")
         return []
     return [{"label": r.get("Name") or r.get("Code") or "", "value": r.get("Id")}
             for r in rows]

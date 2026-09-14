@@ -52,7 +52,7 @@ def listForItem(itemId):
         return BlueRidge.Common.Db.execList("tools/Tool_ListForItem",
                                             {"itemId": itemId}) or []
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("listForItem failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listForItem failed: %s" % str(e), level="warn")
         return []
 
 
@@ -67,5 +67,5 @@ def listCavitiesForItemTool(itemId, toolId):
         return BlueRidge.Common.Db.execList("tools/ToolCavity_ListForItemTool",
                                             {"itemId": itemId, "toolId": toolId}) or []
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("listCavitiesForItemTool failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listCavitiesForItemTool failed: %s" % str(e), level="warn")
         return []

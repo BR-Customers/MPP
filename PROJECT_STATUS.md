@@ -82,6 +82,29 @@
 >
 > **Editing these view files programmatically:** Phone is authored in Designer's escaped form (`=` / `'`), Tablet and Desktop in the plain form, and Phone alone has no trailing newline. A scripted edit MUST detect and preserve each file's own shape, or a four-line fix reformats two thousand. `scratchpad/viewio.py` in that session did this by rendering both ways and keeping whichever reproduced the file byte-for-byte, asserting that on all three before writing anything.
 
+> ### Gateway logging: traces are OFF by default (2026-09-13)
+>
+> `BlueRidge.Common.Util.log()`'s default level is now **`debug`**, not `info`. There were ~430 call sites across ~75 modules, nearly all function-entry traces, and at INFO they buried the gateway log so deeply that a real fault was hard to find.
+>
+> **To see a module's traces again:** Gateway -> **Status -> Diagnostics -> Logs**, set that module's logger (e.g. `BlueRidge.Lots.Lot`) to DEBUG. Per-module, no redeploy, no code change.
+>
+> **A bare `log()` is now invisible in normal operation, so anything that must be seen says so explicitly.** Classification was done by AST, not by grepping the message text (which is unreliable both ways -- "failed" appears in harmless traces, and real faults often never say it); the structural question is *is this call inside an `except` handler?*
+>
+> | bucket | count | level |
+> |---|---|---|
+> | already passed `level=` | 69 | unchanged |
+> | inside `except`, no level | 90 | promoted to `warn` |
+> | misconfiguration diagnostics outside `except` | 5 | promoted to `warn` |
+> | plain function traces | 264 | `debug` (silent) |
+>
+> Post-sweep the audit reports **zero** `except`-block calls left at default level. Verified live: a successful routed barcode scan now emits **nothing**, while a mis-configured one still raises a `W` line.
+>
+> **Deliberately left at `debug`:** `Oee.DowntimePlc.tickWatcher`'s "PLC DowntimeSourceCode not found" — `DowntimePlcWatcher` runs every 5 s, so promoting it would trade one kind of log spam for another.
+>
+> Also removed: the three leftover `system.perspective.print` debug calls in **MPP_Config** (`DieRanks`, `LocationTypeEditor`, `ItemMaster`). The other 94 hits live in `Refrence project/Spinner`, a reference project that is not deployed — left alone.
+>
+> Re-run the audit any time with the AST classifier pattern in `ignition-context-pack/03_script_python.md` § "Log entry and exit of every public function".
+
 > ### Dead ends already burned — do not re-walk these
 >
 > (1) `Could not find the web session` on route `/hello/:project_name/:tab_id` is Perspective's own tab-attach handshake, not a component failing; it was stale background tabs. (2) `Unable to find registered component for id="ia.display.inline-frame"` at startup is pre-existing, belongs to `AssemblySerialized` / `AssemblyNonSerialized`, fires about 10 s into boot before the component registry finishes, and those vision frames render fine. (3) The event JSON is byte-identical to the working `MachiningIn` Refresh button — scope `G`, `component.onActionPerformed`, tab-indented script. (4) DOM probes run without a session started report `{0,0,0,0}` for everything, because a `display:none` subtree reports zero boxes at the origin — that is not a collapse. (5) **Screenshots of the in-app browser go stale while its pane is hidden** — a frozen frame showed SetupPanel and MainPanel rendering simultaneously, which is not real (`getComputedStyle` confirmed SetupPanel was `display: none`). Confirm layout from the DOM, not from a screenshot taken after the pane was backgrounded.

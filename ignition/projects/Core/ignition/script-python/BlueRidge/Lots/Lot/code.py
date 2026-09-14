@@ -81,7 +81,7 @@ def getOriginTypeIdByCode(code):
     try:
         rows = BlueRidge.Common.Db.execList("lots/LotOriginType_List", {}) or []
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("getOriginTypeIdByCode failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getOriginTypeIdByCode failed: %s" % str(e), level="warn")
         return None
     for r in rows:
         if r.get("Code") == code:
@@ -98,7 +98,7 @@ def getStatusIdByCode(code):
     try:
         rows = BlueRidge.Common.Db.execList("lots/LotStatusCode_List", {}) or []
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("getStatusIdByCode failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getStatusIdByCode failed: %s" % str(e), level="warn")
         return None
     for r in rows:
         if r.get("Code") == code:

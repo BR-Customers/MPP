@@ -62,7 +62,7 @@ def search(filter):
             )
         return {"rows": rows, "totalCount": totalCount}
     except Exception as e:
-        BlueRidge.Common.Util.log("search failed: %s" % str(e))
+        BlueRidge.Common.Util.log("search failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Search failed", str(e), "error")
         return {"rows": [], "totalCount": 0}
 
@@ -80,6 +80,6 @@ def getByEntity(typeCode, entityId):
             {"logEntityTypeCode": typeCode, "entityId": entityId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getByEntity failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getByEntity failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Lookup failed", str(e), "error")
         return []

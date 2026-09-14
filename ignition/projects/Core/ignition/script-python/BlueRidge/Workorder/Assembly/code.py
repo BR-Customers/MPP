@@ -325,7 +325,7 @@ def _rankedFinishedGoods(cellLocationId):
         return BlueRidge.Common.Db.execList(
             "parts/Item_ListEligibleFinishedGoodsRanked", {"locationId": cellLocationId}) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("_rankedFinishedGoods failed: %s" % str(e))
+        BlueRidge.Common.Util.log("_rankedFinishedGoods failed: %s" % str(e), level="warn")
         return []
 
 

@@ -55,7 +55,7 @@ def getAllForList():
             {"includeDeprecated": 0},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAllForList failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAllForList failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load die ranks", str(e), "error")
         return []
 
@@ -170,7 +170,7 @@ def getCompatibilityMatrix():
             "parts/DieRankCompatibility_List",
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("compat list failed: %s" % str(e))
+        BlueRidge.Common.Util.log("compat list failed: %s" % str(e), level="warn")
         return matrix
 
     for row in rows:

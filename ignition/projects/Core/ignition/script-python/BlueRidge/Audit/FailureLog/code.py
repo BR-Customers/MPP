@@ -92,7 +92,7 @@ def search(filter):
             "topProcs":   topProcs,
         }
     except Exception as e:
-        BlueRidge.Common.Util.log("search failed: %s" % str(e))
+        BlueRidge.Common.Util.log("search failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Search failed", str(e), "error")
         return {"rows": [], "totalCount": 0, "topReasons": [], "topProcs": []}
 
@@ -110,7 +110,7 @@ def getByEntity(typeCode, entityId):
             {"logEntityTypeCode": typeCode, "entityId": entityId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getByEntity failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getByEntity failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Lookup failed", str(e), "error")
         return []
 
@@ -121,6 +121,6 @@ def distinctProcedures():
     try:
         return BlueRidge.Common.Db.execList("audit/FailureLog_DistinctProcedures")
     except Exception as e:
-        BlueRidge.Common.Util.log("distinctProcedures failed: %s" % str(e))
+        BlueRidge.Common.Util.log("distinctProcedures failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load procedures", str(e), "error")
         return []

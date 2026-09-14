@@ -197,7 +197,7 @@ def getClosureContext(terminalLocationId):
             "location/Terminal_GetClosureContext", {"terminalLocationId": tid})
         return row if row is not None else {}
     except Exception as e:
-        BlueRidge.Common.Util.log("getClosureContext failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getClosureContext failed: %s" % str(e), level="warn")
         return {}
 
 

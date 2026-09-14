@@ -33,7 +33,7 @@ def getAll(includeDeprecated=False):
             {"includeDeprecated": 1 if includeDeprecated else 0},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAll failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAll failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load item types", str(e), "error")
         return []

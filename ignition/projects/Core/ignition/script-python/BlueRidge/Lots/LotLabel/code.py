@@ -58,7 +58,7 @@ def _sessionPrinter():
         custom = system.perspective.getSessionInfo()["custom"]
         return custom.get("printer") or {}
     except Exception as e:
-        BlueRidge.Common.Util.log("_sessionPrinter failed: %s" % str(e))
+        BlueRidge.Common.Util.log("_sessionPrinter failed: %s" % str(e), level="warn")
         return {}
 
 

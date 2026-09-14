@@ -26,6 +26,6 @@ def list():
     try:
         return BlueRidge.Common.Db.execList("audit/LogEntityType_List")
     except Exception as e:
-        BlueRidge.Common.Util.log("list failed: %s" % str(e))
+        BlueRidge.Common.Util.log("list failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load entity types", str(e), "error")
         return []

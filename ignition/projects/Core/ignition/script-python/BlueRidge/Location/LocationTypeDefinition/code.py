@@ -154,7 +154,7 @@ def getAll(locationTypeId):
             {"locationTypeId": locationTypeId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAll(%s) failed: %s" % (locationTypeId, str(e)))
+        BlueRidge.Common.Util.log("getAll(%s) failed: %s" % (locationTypeId, str(e)), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load definitions",
             "Tier " + str(locationTypeId) + ": " + str(e),

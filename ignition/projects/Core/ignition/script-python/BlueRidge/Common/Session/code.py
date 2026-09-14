@@ -241,4 +241,5 @@ def dispatchElevatedAction(session, code, params):
         return
     if code and code != "SupervisorAccess":
         BlueRidge.Common.Util.log(
-            "dispatchElevatedAction: no handler wired for code=%s (params=%s)" % (code, p))
+            "dispatchElevatedAction: no handler wired for code=%s (params=%s)" % (code, p),
+            level="warn")

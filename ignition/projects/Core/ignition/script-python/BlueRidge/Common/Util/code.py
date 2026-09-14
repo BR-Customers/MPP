@@ -104,7 +104,7 @@ def systemAppUserId():
     return _SYSTEM_APP_USER_ID
 
 
-def log(msg, level="info"):
+def log(msg, level="debug"):
     """
     Function-trace logger. Auto-fills the calling module's dotted name and
     the calling function's name into the gateway log line, so call sites
@@ -113,15 +113,24 @@ def log(msg, level="info"):
     Resulting log line shape:
         <module.path>: <funcName>() <msg>
 
+    THE DEFAULT IS "debug" (changed from "info" on 2026-09-13). There are ~430
+    call sites across ~75 modules, nearly all of them function-entry traces --
+    at INFO they buried the gateway log so deeply that a real fault was hard to
+    find, which is the opposite of what logging is for. Tracing is now OFF in
+    the default gateway view and costs nothing to switch back on: in the
+    Gateway, Status -> Diagnostics -> Logs, set the module's logger (e.g.
+    BlueRidge.Lots.Lot) to DEBUG. No redeploy, no code change, per-module.
+
+    So: a call that should be visible in normal operation MUST say so
+    explicitly. Handled-exception paths pass level="warn"; anything that
+    breaks production passes level="error". A bare log() is a trace and is
+    invisible by default -- that is the intent, not an oversight.
+
     Args:
         msg (str):   The message to log. Format yourself before calling --
                      the helper does no interpolation.
-        level (str): Logger method to use -- "info" (default), "debug",
-                     "trace", "warn", or "error". High-frequency trace
-                     points (timer ticks, per-call DB traces) pass
-                     level="debug" so they stay out of the default INFO
-                     gateway log; bump the relevant logger to DEBUG in the
-                     gateway to see them again when diagnosing.
+        level (str): Logger method to use -- "debug" (default), "trace",
+                     "info", "warn", or "error".
     """
     frame  = inspect.currentframe().f_back
     module = frame.f_globals.get("__name__", "unknown")

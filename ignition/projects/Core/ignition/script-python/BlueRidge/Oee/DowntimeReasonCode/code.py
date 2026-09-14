@@ -29,7 +29,7 @@ def search(filters=None):
     try:
         rows = BlueRidge.Common.Db.execList("oee/DowntimeReasonCode_List", params)
     except Exception as e:
-        BlueRidge.Common.Util.log("list failed: %s" % str(e))
+        BlueRidge.Common.Util.log("list failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load downtime codes", str(e), "error")
         return []
 
@@ -56,7 +56,7 @@ def getOne(id):
     try:
         return BlueRidge.Common.Db.execOne("oee/DowntimeReasonCode_Get", {"id": _u(id)})
     except Exception as e:
-        BlueRidge.Common.Util.log("get failed: %s" % str(e))
+        BlueRidge.Common.Util.log("get failed: %s" % str(e), level="warn")
         return None
 
 
@@ -120,7 +120,7 @@ def getForDropdown(operationCategoryCode=None, operationTypeCode=None):
              "downtimeReasonTypeId": None, "includeDeprecated": 0},
         ) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getForDropdown failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in rows:
@@ -139,7 +139,7 @@ def getCategoryOptions(nullLabel=None):
     try:
         cats = BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown() or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getCategoryOptions failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getCategoryOptions failed: %s" % str(e), level="warn")
         cats = []
     out = []
     if nullLabel is not None:

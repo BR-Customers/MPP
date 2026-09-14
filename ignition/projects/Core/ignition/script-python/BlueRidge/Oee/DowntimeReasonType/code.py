@@ -8,7 +8,7 @@ def getAll():
     try:
         return BlueRidge.Common.Db.execList("oee/DowntimeReasonType_List")
     except Exception as e:
-        BlueRidge.Common.Util.log("list failed: %s" % str(e))
+        BlueRidge.Common.Util.log("list failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load downtime reason types", str(e), "error")
         return []
 

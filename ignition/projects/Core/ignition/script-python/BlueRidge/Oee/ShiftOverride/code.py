@@ -78,7 +78,7 @@ def listEquipment(searchText=None):
         return BlueRidge.Common.Db.execList(
             "oee/ShiftOverride_ListEquipment", {"searchText": _u(searchText)}) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("listEquipment failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listEquipment failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load equipment", str(e), "error")
         return []
 
@@ -105,7 +105,7 @@ def search(filters=None):
     try:
         rows = BlueRidge.Common.Db.execList("oee/ShiftOverride_List", params)
     except Exception as e:
-        BlueRidge.Common.Util.log("list failed: %s" % str(e))
+        BlueRidge.Common.Util.log("list failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load shift overrides", str(e), "error")
         return []
 
@@ -150,7 +150,7 @@ def getOne(id):
     try:
         return BlueRidge.Common.Db.execOne("oee/ShiftOverride_Get", {"id": _u(id)})
     except Exception as e:
-        BlueRidge.Common.Util.log("get failed: %s" % str(e))
+        BlueRidge.Common.Util.log("get failed: %s" % str(e), level="warn")
         return None
 
 
@@ -311,7 +311,7 @@ def availability(shiftId, locationId=None):
             "locationId": _u(locationId),
         })
     except Exception as e:
-        BlueRidge.Common.Util.log("availability failed: %s" % str(e))
+        BlueRidge.Common.Util.log("availability failed: %s" % str(e), level="warn")
         return []
     return [_shapeAvailability(r) for r in (rows or [])]
 

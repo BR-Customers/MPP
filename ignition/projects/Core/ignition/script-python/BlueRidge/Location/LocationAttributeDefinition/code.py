@@ -59,7 +59,7 @@ def getAll(definitionId):
             {"locationTypeDefinitionId": definitionId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAll(%s) failed: %s" % (definitionId, str(e)))
+        BlueRidge.Common.Util.log("getAll(%s) failed: %s" % (definitionId, str(e)), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load attributes",
             "Definition " + str(definitionId) + ": " + str(e),

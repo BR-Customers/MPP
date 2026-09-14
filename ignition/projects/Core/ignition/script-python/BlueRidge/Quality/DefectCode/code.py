@@ -98,7 +98,7 @@ def getAll(includeDeprecated=False, operationCategoryId=None):
             },
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAll failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAll failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load defect codes", str(e), "error")
         return []
 
@@ -114,7 +114,7 @@ def getForDropdown(operationTypeCode=None):
              "operationTypeCode": operationTypeCode},
         ) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getForDropdown failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in rows:
@@ -133,7 +133,7 @@ def getCategoryOptions(nullLabel=None):
     try:
         cats = BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown() or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getCategoryOptions failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getCategoryOptions failed: %s" % str(e), level="warn")
         cats = []
     out = []
     if nullLabel is not None:
@@ -275,7 +275,7 @@ def getForTiles(operationTypeCode=None):
              "operationTypeCode": operationTypeCode},
         ) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getForTiles failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getForTiles failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in rows:

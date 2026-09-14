@@ -621,7 +621,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tBlueRidge.Common.Notify.toast(\u0027Saved (stub)\u0027, \u0027Die rank save lands in populate pass.\u0027, \u0027success\u0027, 4)\n\tsystem.perspective.print(self.view.custom.compatibilityData)\n\tBlueRidge.Parts.DieRank.saveCompatibilityMatrix(self.view.custom.compatibilityData, self.session.custom.appUserId)\n\tsystem.perspective.closePopup(id\u003d\u0027mpp-die-ranks\u0027)"
+                    "script": "\tBlueRidge.Common.Notify.toast(\u0027Saved (stub)\u0027, \u0027Die rank save lands in populate pass.\u0027, \u0027success\u0027, 4)\n\tBlueRidge.Parts.DieRank.saveCompatibilityMatrix(self.view.custom.compatibilityData, self.session.custom.appUserId)\n\tsystem.perspective.closePopup(id\u003d\u0027mpp-die-ranks\u0027)"
                   },
                   "scope": "G",
                   "type": "script"

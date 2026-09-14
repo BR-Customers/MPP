@@ -254,7 +254,7 @@ def listByTier(tierCode):
             {"tierCode": tierCode},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("listByTier failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listByTier failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load locations", str(e), "error")
         return []
 
@@ -363,7 +363,7 @@ def getMachiningDestinationsForDropdown(activeLotId=None, _refreshToken=None):
                 "location/Location_ListMachiningDestinations", {}
             ) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getMachiningDestinationsForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getMachiningDestinationsForDropdown failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load machining destinations", str(e), "error")
         return []
     out = []
@@ -433,7 +433,7 @@ def getCellsForAreaDropdown(areaId):
         rows = BlueRidge.Common.Db.execList(
             "location/Location_ListCellsForArea", {"areaLocationId": areaId})
     except Exception as e:
-        BlueRidge.Common.Util.log("getCellsForAreaDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getCellsForAreaDropdown failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in (rows or []):
@@ -1034,7 +1034,7 @@ def getStockDestination(lineLocationId):
         rows = BlueRidge.Common.Db.execList("location/Location_GetStockDestination",
                                             {"lineLocationId": lineLocationId}) or []
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("getStockDestination failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getStockDestination failed: %s" % str(e), level="warn")
         return None
     if not rows:
         return None

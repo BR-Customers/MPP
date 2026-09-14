@@ -141,7 +141,7 @@ def getReleasePreview(lotId, shiftId=None, cellLocationId=None, counterReading=N
             "counterReading": reading,
         })
     except Exception as e:
-        BlueRidge.Common.Util.log("getReleasePreview failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getReleasePreview failed: %s" % str(e), level="warn")
         return dict(_EMPTY_RELEASE_PREVIEW)
     if not row:
         return dict(_EMPTY_RELEASE_PREVIEW)
@@ -228,7 +228,7 @@ def getCounterContext(toolId, shiftId, cellLocationId=None, _refreshToken=None):
             "cellLocationId": _u(cellLocationId),
         })
     except Exception as e:
-        BlueRidge.Common.Util.log("getCounterContext failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getCounterContext failed: %s" % str(e), level="warn")
         return dict(_EMPTY_COUNTER_CONTEXT)
     if not row:
         return dict(_EMPTY_COUNTER_CONTEXT)
@@ -311,7 +311,7 @@ def listAnchorReasons():
     try:
         rows = BlueRidge.Common.Db.execList("workorder/DieCastCounterAnchorReason_List", {})
     except Exception as e:
-        BlueRidge.Common.Util.log("listAnchorReasons failed: %s" % str(e))
+        BlueRidge.Common.Util.log("listAnchorReasons failed: %s" % str(e), level="warn")
         return []
     return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Id")}
             for r in (rows or [])]
@@ -328,7 +328,7 @@ def anchorReasonRequiresNote(reasonId):
     try:
         rows = BlueRidge.Common.Db.execList("workorder/DieCastCounterAnchorReason_List", {})
     except Exception as e:
-        BlueRidge.Common.Util.log("anchorReasonRequiresNote failed: %s" % str(e))
+        BlueRidge.Common.Util.log("anchorReasonRequiresNote failed: %s" % str(e), level="warn")
         return False
     for r in (rows or []):
         if r.get("Id") == rid:
@@ -568,12 +568,12 @@ def getBulkOpenRowInstances(toolId, seedToken=None, _optionsToken=None):
         cavities = BlueRidge.Common.Db.execList(
             "parts/ToolCavity_ListByTool", {"toolId": toolId, "includeDeprecated": False}) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getBulkOpenRowInstances cavities failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getBulkOpenRowInstances cavities failed: %s" % str(e), level="warn")
         return []
     try:
         openRows = BlueRidge.Lots.Lot.getOpenByTool(toolId) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getBulkOpenRowInstances openByTool failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getBulkOpenRowInstances openByTool failed: %s" % str(e), level="warn")
         openRows = []
     openByCavity = {}
     for r in openRows:

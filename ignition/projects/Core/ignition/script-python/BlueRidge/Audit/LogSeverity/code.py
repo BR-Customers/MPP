@@ -20,6 +20,6 @@ def list():
     try:
         return BlueRidge.Common.Db.execList("audit/LogSeverity_List")
     except Exception as e:
-        BlueRidge.Common.Util.log("list failed: %s" % str(e))
+        BlueRidge.Common.Util.log("list failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load severities", str(e), "error")
         return []

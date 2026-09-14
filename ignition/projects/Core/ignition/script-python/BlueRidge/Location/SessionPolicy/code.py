@@ -21,7 +21,7 @@ def getPolicy():
         if row:
             return row
     except Exception as e:
-        BlueRidge.Common.Util.log("getPolicy failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getPolicy failed: %s" % str(e), level="warn")
     return {"OperatorPresenceTimeoutSeconds": 1800, "ElevationTimeoutSeconds": 300}
 
 

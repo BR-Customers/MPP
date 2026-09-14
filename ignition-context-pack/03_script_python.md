@@ -100,7 +100,11 @@ def getEntitiesForDropdown():
 
 ### Conventions worth enforcing across every module
 
-1. **Log entry and exit of every public function.** Direct call to `<integrator>.Common.Util.log(msg)` — no per-module `log()` wrapper. The shared logger auto-fills the calling module and function name via `inspect.currentframe().f_back`.
+1. **Log entry and exit of every public function — at DEBUG, not INFO.** Direct call to `<integrator>.Common.Util.log(msg)` — no per-module `log()` wrapper. The shared logger auto-fills the calling module and function name via `inspect.currentframe().f_back`.
+
+   **Trace at DEBUG and make the helper's default `debug`.** This convention produces a *lot* of call sites — one project reached ~430 across ~75 modules. At INFO they bury the gateway log so deeply that a real fault is hard to find, which is the opposite of what logging is for. With the default at `debug` the traces cost nothing and are one click away: in the Gateway, **Status → Diagnostics → Logs**, set that module's logger to DEBUG. No redeploy, no code change, per-module.
+
+   The corollary: **a bare `log()` is invisible in normal operation, so anything that must be seen has to say so.** Handled-exception paths pass `level="warn"`; things that break production pass `level="error"`. When retrofitting an existing codebase, don't grep the message text for words like "failed" — it appears in plenty of harmless traces and plenty of real faults never say it. Parse the AST and ask the structural question instead: *is this call inside an `except` handler?* That one test cleanly separated 90 fault sites from 269 traces in the project above. Then hand-check the handful of misconfiguration diagnostics that sit *outside* `except` blocks, and leave anything on a short timer at debug — promoting a message that fires every 5 s to `warn` just trades one kind of log spam for another.
 2. **Docstrings carry purpose / args / returns.** Use the same shape across modules so generated docs are uniform.
 3. **Callers pass a dict, never a JSON string.** Older patterns dual-mode the first arg with `if isinstance(data, str): data = system.util.jsonDecode(data)`. Drop that: the type guards exist because the calling convention is ambiguous. If a view truly has a JSON string (rare), decode at the boundary, not in every entity function.
 4. **AppUserId from the session, not the caller.** Mutations call `<integrator>.Common.Util._currentAppUserId()` and pass `@AppUserId` to the proc. The proc stamps audit columns (`CreatedAt`, `LastEditedAt`, etc.) — script-side stamping is wrong because the proc's `getdate()` is the canonical write time and the client clock isn't trustworthy.
@@ -303,14 +307,17 @@ import inspect
 from com.inductiveautomation.ignition.common import TypeUtilities
 from com.inductiveautomation.ignition.common.model.values import QualifiedValue
 
-def log(msg):
+def log(msg, level="debug"):
     """Function-trace logger. Auto-fills calling module + function name so
        call sites don't need a per-module wrapper. Result line:
-       <full.module.path>: <funcName>() <msg>"""
+       <full.module.path>: <funcName>() <msg>
+
+       DEFAULT LEVEL IS "debug" -- see the note below. A call that must be
+       visible in normal operation passes level="warn" / "error"."""
     frame  = inspect.currentframe().f_back
     module = frame.f_globals.get("__name__", "unknown")
     func   = frame.f_code.co_name
-    system.util.getLogger(module).info("%s() %s" % (func, msg))
+    getattr(system.util.getLogger(module), level)("%s() %s" % (func, msg))
 
 def _currentAppUserId():
     """Resolves the calling session's appUserId from session.custom.appUserId

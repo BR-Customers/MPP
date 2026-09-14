@@ -179,12 +179,12 @@ def getState(session=None):
         try:
             raw = session.custom.cutover
         except (Exception, java.lang.Exception) as e:
-            BlueRidge.Common.Util.log("getState: session read failed: %s" % str(e))
+            BlueRidge.Common.Util.log("getState: session read failed: %s" % str(e), level="warn")
             raw = None
     else:
         BlueRidge.Common.Util.log(
             "getState called with no session -- returning the empty shape. "
-            "Callers must pass the session object.")
+            "Callers must pass the session object.", level="warn")
     st = _plain(_u(raw))
     if not isinstance(st, dict):
         st = {}
@@ -422,7 +422,7 @@ def applyScan(session, text, field):
     if target is None:
         BlueRidge.Common.Util.log(
             "applyScan: unknown field '%s' (known: %s)"
-            % (field, ", ".join(sorted(_SCAN_TARGETS))))
+            % (field, ", ".join(sorted(_SCAN_TARGETS))), level="warn")
         return {"Status": 0, "Message": "Nothing on this screen scans into '%s'." % field}
 
     section, key = target

@@ -81,7 +81,7 @@ def getAll(searchText=None, itemTypeId=None, includeDeprecated=False):
             },
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAll failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAll failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load items", str(e), "error")
         return []
@@ -100,7 +100,7 @@ def getOne(itemId):
             {"id": itemId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getOne failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getOne failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast(
             "Could not load item", str(e), "error")
         return None
@@ -162,7 +162,7 @@ def getEligibleForLocationDropdown(locationId, operationTypeCode=None, _refreshT
             rows = BlueRidge.Common.Db.execList(
                 "parts/Item_ListEligibleForLocation", {"locationId": locationId})
     except Exception as e:
-        BlueRidge.Common.Util.log("getEligibleForLocationDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getEligibleForLocationDropdown failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in (rows or []):

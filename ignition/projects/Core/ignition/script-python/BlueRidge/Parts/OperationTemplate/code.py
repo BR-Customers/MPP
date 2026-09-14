@@ -89,7 +89,7 @@ def getAllForList(includeDeprecated=False, operationTypeId=None, operationCatego
             },
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAllForList failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAllForList failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load templates", str(e), "error")
         return []
 
@@ -207,7 +207,7 @@ def getVersionsForCode(code, includeDeprecated=True):
             {"operationTypeId": None, "activeOnly": 0},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getVersionsForCode failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getVersionsForCode failed: %s" % str(e), level="warn")
         return []
 
     matches = [r for r in rows if r.get("Code") == code]
@@ -284,7 +284,7 @@ def getFieldsForTemplate(operationTemplateId):
             {"operationTemplateId": operationTemplateId},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getFieldsForTemplate failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getFieldsForTemplate failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in rows:
@@ -315,7 +315,7 @@ def getDieCastFieldsWithType(operationTemplateId):
         typeRows = BlueRidge.Common.Db.execList(
             "parts/DataCollectionField_List", {"includeDeprecated": 0}) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getDieCastFieldsWithType type load failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getDieCastFieldsWithType type load failed: %s" % str(e), level="warn")
         typeRows = []
     typeById = {}
     for r in typeRows:
@@ -350,7 +350,7 @@ def getActiveTemplateIdForRoute(itemId, operationTypeCode):
             "parts/OperationTemplate_GetForRouteRole",
             {"itemId": itemId, "operationTypeCode": operationTypeCode})
     except Exception as e:
-        BlueRidge.Common.Util.log("getActiveTemplateIdForRoute failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getActiveTemplateIdForRoute failed: %s" % str(e), level="warn")
         return None
     for r in rows or []:
         return r.get("OperationTemplateId")
@@ -395,7 +395,7 @@ def getFieldSummary(operationTemplateId):
             {"operationTemplateId": tid},
         ) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getFieldSummary failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getFieldSummary failed: %s" % str(e), level="warn")
         return ""
     names = [r.get("Name") or r.get("Code") or "" for r in rows]
     return ", ".join([n for n in names if n])
@@ -412,7 +412,7 @@ def getOperationTypesForDropdown():
     try:
         rows = BlueRidge.Common.Db.execList("parts/OperationType_ListForDropdown", {})
     except Exception as e:
-        BlueRidge.Common.Util.log("getOperationTypesForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getOperationTypesForDropdown failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in rows or []:
@@ -429,7 +429,7 @@ def getOperationCategoriesForDropdown():
     try:
         rows = BlueRidge.Common.Db.execList("parts/OperationType_ListForDropdown", {})
     except Exception as e:
-        BlueRidge.Common.Util.log("getOperationCategoriesForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getOperationCategoriesForDropdown failed: %s" % str(e), level="warn")
         return []
     seen = {}
     out = []
@@ -455,7 +455,7 @@ def getOperationTypesByCategory(operationCategoryId=None):
     try:
         rows = BlueRidge.Common.Db.execList("parts/OperationType_ListForDropdown", {})
     except Exception as e:
-        BlueRidge.Common.Util.log("getOperationTypesByCategory failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getOperationTypesByCategory failed: %s" % str(e), level="warn")
         return []
     out = []
     for r in rows or []:
@@ -475,7 +475,7 @@ def getAvailableDataCollectionFields(operationTemplateId):
             {"includeDeprecated": 0},
         )
     except Exception as e:
-        BlueRidge.Common.Util.log("getAvailableDataCollectionFields failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAvailableDataCollectionFields failed: %s" % str(e), level="warn")
         return []
 
     taken = set()

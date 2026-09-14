@@ -56,7 +56,7 @@ def getAll():
     try:
         return BlueRidge.Common.Db.execList("location/LocationType_List")
     except Exception as e:
-        BlueRidge.Common.Util.log("getAll failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getAll failed: %s" % str(e), level="warn")
         BlueRidge.Common.Notify.toast("Could not load tiers", str(e), "error")
         return []
 
@@ -98,5 +98,5 @@ def nameForTier(tiers, tierId):
                 return t.get("Name") or ""
         return ""
     except Exception as e:
-        BlueRidge.Common.Util.log("FAILED: %s" % str(e))
+        BlueRidge.Common.Util.log("FAILED: %s" % str(e), level="warn")
         return ""
