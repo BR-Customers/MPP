@@ -2054,6 +2054,23 @@ BEGIN
                          @level2type = N'COLUMN', @level2name = N'ToolCavityId';
     END
 
+    IF COL_LENGTH(N'[Lots].[Lot]', N'ProducedAtLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Lot]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Lot]'), N'ProducedAtLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v2.4 (migration 0082). The die cast machine that produced this LOT. Written only by the inventory cutover scan: a LOT born at a die cast terminal derives its machine from CreatedAtTerminalId''s parent, but a cutover LOT is created at a machining terminal weeks after the casting, so the machine exists only on the paper tag. NULL for every non-cutover LOT and for every received purchased component. Not to be confused with DieNumber, which is the legacy DIE column.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'ProducedAtLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v2.4 (migration 0082). The die cast machine that produced this LOT. Written only by the inventory cutover scan: a LOT born at a die cast terminal derives its machine from CreatedAtTerminalId''s parent, but a cutover LOT is created at a machining terminal weeks after the casting, so the machine exists only on the paper tag. NULL for every non-cutover LOT and for every received purchased component. Not to be confused with DieNumber, which is the legacy DIE column.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Lot',
+                         @level2type = N'COLUMN', @level2name = N'ProducedAtLocationId';
+    END
+
     IF COL_LENGTH(N'[Lots].[Lot]', N'DieNumber') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
@@ -2154,57 +2171,6 @@ BEGIN
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Lot',
                          @level2type = N'COLUMN', @level2name = N'CrtActive';
-    END
-
-    IF COL_LENGTH(N'[Lots].[Lot]', N'EntryRouteSequence') IS NOT NULL
-    BEGIN
-        IF EXISTS (SELECT 1 FROM sys.extended_properties
-                   WHERE major_id = OBJECT_ID(N'[Lots].[Lot]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Lot]'), N'EntryRouteSequence', 'ColumnId')
-                     AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. Route step SequenceNumber at which this LOT joined its route. Steps below this value are NOT part of the LOT journey and are never pending (Lots.ufn_NextPendingRouteStep). NULL = entered at the route start, which is every normally minted LOT. Set by the inventory cutover scan so physically counted stock surfaces at the terminal where it actually sits instead of at the first route step. Chosen over writing synthetic ProductionEvent rows, which would assert operations we never performed and pollute OEE and operator attribution.',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Lot',
-                         @level2type = N'COLUMN', @level2name = N'EntryRouteSequence';
-        ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. Route step SequenceNumber at which this LOT joined its route. Steps below this value are NOT part of the LOT journey and are never pending (Lots.ufn_NextPendingRouteStep). NULL = entered at the route start, which is every normally minted LOT. Set by the inventory cutover scan so physically counted stock surfaces at the terminal where it actually sits instead of at the first route step. Chosen over writing synthetic ProductionEvent rows, which would assert operations we never performed and pollute OEE and operator attribution.',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Lot',
-                         @level2type = N'COLUMN', @level2name = N'EntryRouteSequence';
-    END
-
-    IF COL_LENGTH(N'[Lots].[Lot]', N'CastDate') IS NOT NULL
-    BEGIN
-        IF EXISTS (SELECT 1 FROM sys.extended_properties
-                   WHERE major_id = OBJECT_ID(N'[Lots].[Lot]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Lot]'), N'CastDate', 'ColumnId')
-                     AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. Cast date read off the physical LTT at cutover scan time. Drives FIFO ordering for migrated stock via COALESCE(CastDate, last LotMovement). NULL for normally minted LOTs, whose arrival order already is their FIFO order. Deliberately not backdated onto Lots.LotMovement.MovedAt, which is partitioned on MovedAt under the sliding-window TRUNCATE retention -- a backdated row would land in a partition maintenance is designed to sweep and the FIFO position would change silently.',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Lot',
-                         @level2type = N'COLUMN', @level2name = N'CastDate';
-        ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. Cast date read off the physical LTT at cutover scan time. Drives FIFO ordering for migrated stock via COALESCE(CastDate, last LotMovement). NULL for normally minted LOTs, whose arrival order already is their FIFO order. Deliberately not backdated onto Lots.LotMovement.MovedAt, which is partitioned on MovedAt under the sliding-window TRUNCATE retention -- a backdated row would land in a partition maintenance is designed to sweep and the FIFO position would change silently.',
-                         @level0type = N'SCHEMA', @level0name = N'Lots',
-                         @level1type = N'TABLE',  @level1name = N'Lot',
-                         @level2type = N'COLUMN', @level2name = N'CastDate';
-    END
-
-    IF COL_LENGTH(N'[Location].[Location]', N'DefaultStockLocationId') IS NOT NULL
-    BEGIN
-        IF EXISTS (SELECT 1 FROM sys.extended_properties
-                   WHERE major_id = OBJECT_ID(N'[Location].[Location]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Location].[Location]'), N'DefaultStockLocationId', 'ColumnId')
-                     AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. On a Line, the Location where inventory scanned for this line is deposited. NULL = the line itself, which is how M&A inventory works today (LOTs are line-resident). Present so warehouse-held stock for a line is expressible without reworking the cutover scan. Self-FK to Location.Location.',
-                         @level0type = N'SCHEMA', @level0name = N'Location',
-                         @level1type = N'TABLE',  @level1name = N'Location',
-                         @level2type = N'COLUMN', @level2name = N'DefaultStockLocationId';
-        ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added by migration 0080. On a Line, the Location where inventory scanned for this line is deposited. NULL = the line itself, which is how M&A inventory works today (LOTs are line-resident). Present so warehouse-held stock for a line is expressible without reworking the cutover scan. Self-FK to Location.Location.',
-                         @level0type = N'SCHEMA', @level0name = N'Location',
-                         @level1type = N'TABLE',  @level1name = N'Location',
-                         @level2type = N'COLUMN', @level2name = N'DefaultStockLocationId';
     END
 END
 GO
@@ -2654,6 +2620,23 @@ BEGIN
                          @level1type = N'TABLE',  @level1name = N'LotLabel',
                          @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
     END
+
+    IF COL_LENGTH(N'[Lots].[LotLabel]', N'RfidTag') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[LotLabel]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[LotLabel]'), N'RfidTag', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Reserved placeholder for a future RFID-encoding phase (migration 0070). Not populated or read anywhere yet.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotLabel',
+                         @level2type = N'COLUMN', @level2name = N'RfidTag';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Reserved placeholder for a future RFID-encoding phase (migration 0070). Not populated or read anywhere yet.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'LotLabel',
+                         @level2type = N'COLUMN', @level2name = N'RfidTag';
+    END
 END
 GO
 
@@ -2710,6 +2693,23 @@ BEGIN
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'Container',
                          @level2type = N'COLUMN', @level2name = N'LotId';
+    END
+
+    IF COL_LENGTH(N'[Lots].[Container]', N'StationLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[Container]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[Container]'), N'StationLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray v1.4 files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'StationLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The terminal that owns this open box (migration 0078). Workorder.Assembly_CompleteTray v1.4 files a tray into the station''s own open box for (line, part), else claims an unowned open box for (line, part), else opens one owned by the station. NULL = unowned: every pre-0078 container, and any box opened by a caller that passes no Terminal. Filtered index IX_Container_OpenByCellItemStation on open rows. Why: METTs A and B on MA2-6MACH run the same part numbers at once into physically separate boxes.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'Container',
+                         @level2type = N'COLUMN', @level2name = N'StationLocationId';
     END
 
     IF COL_LENGTH(N'[Lots].[Container]', N'AimShipperId') IS NOT NULL
@@ -3033,6 +3033,23 @@ BEGIN
                          @level0type = N'SCHEMA', @level0name = N'Lots',
                          @level1type = N'TABLE',  @level1name = N'ShippingLabel',
                          @level2type = N'COLUMN', @level2name = N'BannerAcknowledgedAt';
+    END
+
+    IF COL_LENGTH(N'[Lots].[ShippingLabel]', N'RfidTag') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ShippingLabel]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ShippingLabel]'), N'RfidTag', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Reserved placeholder for a future RFID-encoding phase (migration 0070). Not populated or read anywhere yet.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ShippingLabel',
+                         @level2type = N'COLUMN', @level2name = N'RfidTag';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Reserved placeholder for a future RFID-encoding phase (migration 0070). Not populated or read anywhere yet.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ShippingLabel',
+                         @level2type = N'COLUMN', @level2name = N'RfidTag';
     END
 END
 GO
@@ -4235,6 +4252,244 @@ BEGIN
                          @level0type = N'SCHEMA', @level0name = N'Workorder',
                          @level1type = N'TABLE',  @level1name = N'DieCastContribution',
                          @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastContribution]', N'CellLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastContribution]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastContribution]'), N'CellLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The PRESS. Added migration 0061. Load-bearing for the shot-reading chain: both watermarks are scoped by it, so a die moved to another press is a different counter space and a changeover to another die on the same press has different ToolCavity rows - both reset the chain with no special-casing.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastContribution',
+                         @level2type = N'COLUMN', @level2name = N'CellLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The PRESS. Added migration 0061. Load-bearing for the shot-reading chain: both watermarks are scoped by it, so a die moved to another press is a different counter space and a changeover to another die on the same press has different ToolCavity rows - both reset the chain with no special-casing.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastContribution',
+                         @level2type = N'COLUMN', @level2name = N'CellLocationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastContribution]', N'ShotCounterReading') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastContribution]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastContribution]'), N'ShotCounterReading', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0073 (2026-09-09) - shot-reading chain. The press-counter reading at which this ledger row was taken. The press counter resets each shift, so the number the operator types is a READING, not an increment; a basket''s credit is (reading - the cavity''s watermark). Both watermarks derive from this one column - Workorder.ufn_CavityShotWatermark scoped (ToolCavityId, ShiftId, CellLocationId) for the per-basket credit, Workorder.ufn_DieShotWatermark scoped (ToolId, ShiftId, CellLocationId) for the Tools.Tool.ShotCount increment. NULL means "recorded before migration 0073"; 0073 backfilled every such row as a running sum of PieceDelta per (cavity, shift, press).',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastContribution',
+                         @level2type = N'COLUMN', @level2name = N'ShotCounterReading';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0073 (2026-09-09) - shot-reading chain. The press-counter reading at which this ledger row was taken. The press counter resets each shift, so the number the operator types is a READING, not an increment; a basket''s credit is (reading - the cavity''s watermark). Both watermarks derive from this one column - Workorder.ufn_CavityShotWatermark scoped (ToolCavityId, ShiftId, CellLocationId) for the per-basket credit, Workorder.ufn_DieShotWatermark scoped (ToolId, ShiftId, CellLocationId) for the Tools.Tool.ShotCount increment. NULL means "recorded before migration 0073"; 0073 backfilled every such row as a running sum of PieceDelta per (cavity, shift, press).',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastContribution',
+                         @level2type = N'COLUMN', @level2name = N'ShotCounterReading';
+    END
+END
+GO
+
+-- Workorder.DieCastCounterAnchor
+IF OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0074 (2026-09-10) - die cast counter anchor (spec docs/superpowers/specs/2026-09-10-diecast-counter-anchor-design.md). An operator''s declaration of the TRUE press-counter reading for a die on a press in a shift.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0074 (2026-09-10) - die cast counter anchor (spec docs/superpowers/specs/2026-09-10-diecast-counter-anchor-design.md). An operator''s declaration of the TRUE press-counter reading for a die on a press in a shift.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor';
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchor]', N'ToolId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]'), N'ToolId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The die the declaration is about.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'ToolId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The die the declaration is about.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'ToolId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchor]', N'ShiftId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]'), N'ShiftId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The shift it applies to. NOT NULL (unlike DieCastContribution.ShiftId) - the press counter resets per shift, so an anchor outside a shift has no counter space to anchor.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The shift it applies to. NOT NULL (unlike DieCastContribution.ShiftId) - the press counter resets per shift, so an anchor outside a shift has no counter space to anchor.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchor]', N'CellLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]'), N'CellLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The PRESS - the same three-part scope key the watermarks use.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'CellLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The PRESS - the same three-part scope key the watermarks use.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'CellLocationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchor]', N'DeclaredReading') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]'), N'DeclaredReading', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'What the press counter actually reads. Deliberately un-guarded against going backwards - declaring a lower number is the entire point, and a monotonic guard here would reintroduce the wall inside the tool built to get past it.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'DeclaredReading';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'What the press counter actually reads. Deliberately un-guarded against going backwards - declaring a lower number is the entire point, and a monotonic guard here would reintroduce the wall inside the tool built to get past it.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'DeclaredReading';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchor]', N'ReasonId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]'), N'ReasonId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Why the counter moved.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'ReasonId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Why the counter moved.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'ReasonId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchor]', N'Note') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]'), N'Note', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Free text; required when the reason is Other (enforced in Workorder.DieCastCounterAnchor_Record).',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'Note';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Free text; required when the reason is Other (enforced in Workorder.DieCastCounterAnchor_Record).',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'Note';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchor]', N'AppUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]'), N'AppUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Who declared it. Any signed-in operator - no AD elevation: they are the only person who can see the press counter, and gating on a supervisor strands a night shift at a wall.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'AppUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Who declared it. Any signed-in operator - no AD elevation: they are the only person who can see the press counter, and gating on a supervisor strands a night shift at a wall.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'AppUserId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchor]', N'EventAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]'), N'EventAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Both watermark functions compare contribution EventAt against this.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'EventAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Both watermark functions compare contribution EventAt against this.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'EventAt';
+    END
+END
+GO
+
+-- Workorder.DieCastCounterAnchorReason
+IF OBJECT_ID(N'[Workorder].[DieCastCounterAnchorReason]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchorReason]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0074 (2026-09-10). Read-only code table - why a press counter had to be re-anchored. Code-table backed per repo convention: no free-text reason, no magic integers.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchorReason';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0074 (2026-09-10). Read-only code table - why a press counter had to be re-anchored. Code-table backed per repo convention: no free-text reason, no magic integers.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchorReason';
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchorReason]', N'Name') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchorReason]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchorReason]'), N'Name', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Operator-facing label; drives the reason dropdown.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchorReason',
+                         @level2type = N'COLUMN', @level2name = N'Name';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Operator-facing label; drives the reason dropdown.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchorReason',
+                         @level2type = N'COLUMN', @level2name = N'Name';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchorReason]', N'SortOrder') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchorReason]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchorReason]'), N'SortOrder', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Dropdown order (CounterReset first - the commonest case).',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchorReason',
+                         @level2type = N'COLUMN', @level2name = N'SortOrder';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Dropdown order (CounterReset first - the commonest case).',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchorReason',
+                         @level2type = N'COLUMN', @level2name = N'SortOrder';
     END
 END
 GO
@@ -5703,12 +5958,12 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Tools].[ToolCavity]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Tools].[ToolCavity]'), N'CavityCode', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Per-part cavity identifier: 1-4 lowercase letters (a-z). A 12-cavity family die casting four part numbers carries four cavities called a, one per part, which is how MPP names them (6MA EX 1 cavity a). Unique per (ToolId, ItemId) among non-deprecated rows via UQ_ToolCavity_ActiveToolItemCode. Immutable once saved: correct a mistake by scrapping the cavity and creating a new one. Replaced the die-wide integer ordinal in migration 0076.',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Per-part cavity identifier: 1-4 lowercase letters (a, b, c...). A 12-cavity family die casting four parts carries four cavities called a, one per part - which is how MPP names them ("6MA EX 1 cavity a"). Immutable once saved. Replaced the die-wide integer ordinal in migration 0076.',
                          @level0type = N'SCHEMA', @level0name = N'Tools',
                          @level1type = N'TABLE',  @level1name = N'ToolCavity',
                          @level2type = N'COLUMN', @level2name = N'CavityCode';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Per-part cavity identifier: 1-4 lowercase letters (a-z). A 12-cavity family die casting four part numbers carries four cavities called a, one per part, which is how MPP names them (6MA EX 1 cavity a). Unique per (ToolId, ItemId) among non-deprecated rows via UQ_ToolCavity_ActiveToolItemCode. Immutable once saved: correct a mistake by scrapping the cavity and creating a new one. Replaced the die-wide integer ordinal in migration 0076.',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Per-part cavity identifier: 1-4 lowercase letters (a, b, c...). A 12-cavity family die casting four parts carries four cavities called a, one per part - which is how MPP names them ("6MA EX 1 cavity a"). Immutable once saved. Replaced the die-wide integer ordinal in migration 0076.',
                          @level0type = N'SCHEMA', @level0name = N'Tools',
                          @level1type = N'TABLE',  @level1name = N'ToolCavity',
                          @level2type = N'COLUMN', @level2name = N'CavityCode';
@@ -6402,4 +6657,4 @@ BEGIN
 END
 GO
 
--- 67 table descriptions, 299 column descriptions
+-- 69 table descriptions, 314 column descriptions
