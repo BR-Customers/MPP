@@ -29,9 +29,9 @@ DECLARE @Facility BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
                             WHERE d.Code = N'Facility' AND l.DeprecatedAt IS NULL
                             ORDER BY l.Id);
 
--- Pre-flight: fixed LOT name, so a failed run can strand it.
+-- Pre-flight: fixed LOT names, so a failed run can strand them.
 DECLARE @Stale TABLE (Id BIGINT);
-INSERT INTO @Stale SELECT Id FROM Lots.Lot WHERE LotName = N'ZZCM-0001';
+INSERT INTO @Stale SELECT Id FROM Lots.Lot WHERE LotName IN (N'ZZCM-0001', N'ZZCM-0002');
 DELETE FROM Lots.LotEventLog        WHERE LotId IN (SELECT Id FROM @Stale);
 DELETE FROM Lots.LotMovement        WHERE LotId IN (SELECT Id FROM @Stale);
 DELETE FROM Lots.LotStatusHistory   WHERE LotId IN (SELECT Id FROM @Stale);
@@ -70,6 +70,22 @@ DECLARE @e1 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
 EXEC test.Assert_IsEqual @TestName = N'[CutoverMachine] cutover LOT has no DieCastContribution rows',
     @Expected = N'0', @Actual = @e1;
 
+-- Distractor fixture: a LOT with NO machine at ALL -- no ProducedAtLocationId
+-- and no DieCastContribution rows. Case (4) below asserts that the new OR did
+-- not widen the machine filter into "everything"; without this row that check is
+-- VACUOUS under a filtered run (-Filter "0067"), because every file in this
+-- folder tears its own fixtures down and the only surviving LOT would be
+-- ZZCM-0001, which HAS a machine. Under the full suite earlier folders happen to
+-- leave machine-less LOTs behind, so the assertion bit there and nowhere else.
+DELETE FROM #C;
+INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Origin,
+    @CurrentLocationId = @Line, @PieceCount = 40, @AppUserId = @U,
+    @LotName = N'ZZCM-0002';
+DECLARE @NoMach BIGINT = (SELECT NewId FROM #C);
+DECLARE @e0b NVARCHAR(20) = CAST(@NoMach AS NVARCHAR(20));
+EXEC test.Assert_IsNotNull @TestName = N'[CutoverMachine] machine-less distractor LOT created',
+    @Value = @e0b;
+
 -- (1) The machine FILTER finds it.
 DELETE FROM #LS;
 INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @MachineLocationId = @Mach;
@@ -96,6 +112,17 @@ EXEC test.Assert_IsEqual @TestName = N'[CutoverMachine] another machine does not
 
 -- (4) A LOT with neither source must never match -- the new OR must not widen
 --     the filter into "everything".
+--     Guard the premise first: the distractor must still be present and still
+--     machine-less at the moment the assertion evaluates, or (4) proves nothing.
+DECLARE @e4b NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
+                             FROM Lots.Lot l3
+                             WHERE l3.Id = @NoMach
+                               AND l3.ProducedAtLocationId IS NULL
+                               AND NOT EXISTS (SELECT 1 FROM Workorder.DieCastContribution d3
+                                               WHERE d3.LotId = l3.Id));
+EXEC test.Assert_IsEqual @TestName = N'[CutoverMachine] distractor LOT is present and machine-less',
+    @Expected = N'1', @Actual = @e4b;
+
 DELETE FROM #LS;
 INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @MachineLocationId = @Mach;
 DECLARE @e5 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
@@ -110,11 +137,12 @@ EXEC test.Assert_IsEqual @TestName = N'[CutoverMachine] LOTs with no machine at 
 DROP TABLE #C; DROP TABLE #LS;
 
 -- Teardown: closure before LOTs, LOTs before the machine they reference.
-DELETE FROM Lots.LotEventLog        WHERE LotId = @Lot;
-DELETE FROM Lots.LotMovement        WHERE LotId = @Lot;
-DELETE FROM Lots.LotStatusHistory   WHERE LotId = @Lot;
-DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId = @Lot OR DescendantLotId = @Lot;
-DELETE FROM Lots.Lot                WHERE Id = @Lot;
+DELETE FROM Lots.LotEventLog        WHERE LotId IN (@Lot, @NoMach);
+DELETE FROM Lots.LotMovement        WHERE LotId IN (@Lot, @NoMach);
+DELETE FROM Lots.LotStatusHistory   WHERE LotId IN (@Lot, @NoMach);
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId  IN (@Lot, @NoMach)
+                                        OR DescendantLotId IN (@Lot, @NoMach);
+DELETE FROM Lots.Lot                WHERE Id IN (@Lot, @NoMach);
 DELETE FROM Location.Location WHERE Code = N'ZZCM-M01';
 GO
 
