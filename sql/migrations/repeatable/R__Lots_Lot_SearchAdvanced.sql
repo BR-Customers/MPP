@@ -1,8 +1,8 @@
 -- =============================================
 -- Repeatable:  R__Lots_Lot_SearchAdvanced.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-25
--- Version:     1.0
+-- Modified:    2026-09-14
+-- Version:     1.1
 -- Description: FDS-12-004 LOT Search. Filtered browse: free text, item, Eastern
 --              created-day range, die, cavity, location (always incl.
 --              descendants), origin machine, shift, status, origin type.
@@ -22,11 +22,14 @@
 --              die-cast-origin LOTs. Intended; surfaced in the UI, not
 --              compensated for here.
 --
---              Origin machine is DieCastContribution.CellLocationId (the press,
---              stamped at write time by migration 0061). Deliberately NOT
+--              Origin machine has TWO recorded sources. Normally-produced LOTs:
+--              DieCastContribution.CellLocationId (the press, stamped at write
+--              time by migration 0061). Cutover LOTs: Lot.ProducedAtLocationId
+--              (0082), read off the paper tag -- they have no contribution rows
+--              at all, so without it the captured machine is unreachable here.
+--              Contribution wins where a LOT has both. Still deliberately NOT
 --              derived from LotMovement: 0061 exists to stop live re-derivation
---              of the press, and a movement-based derivation reintroduces the
---              same drift.
+--              of the press, and both sources above are RECORDED, not derived.
 --
 --              Dates are Eastern calendar days, inclusive both ends, converted
 --              to a half-open UTC range here so the filter agrees with the
@@ -87,7 +90,7 @@ BEGIN
         lastop.OperationName AS LastOperationName,
         t.Code               AS ToolCode,
         tc.CavityCode        AS CavityCode,
-        press.MachineName    AS OriginMachineName,
+        COALESCE(press.MachineName, pal.Name) AS OriginMachineName,
         COUNT(*) OVER()      AS TotalCount
     FROM Lots.Lot l
     INNER JOIN Parts.Item         i   ON i.Id   = l.ItemId
@@ -96,6 +99,7 @@ BEGIN
     INNER JOIN Location.Location  loc ON loc.Id = l.CurrentLocationId
     LEFT  JOIN Tools.Tool         t   ON t.Id   = l.ToolId
     LEFT  JOIN Tools.ToolCavity   tc  ON tc.Id  = l.ToolCavityId
+    LEFT  JOIN Location.Location  pal ON pal.Id = l.ProducedAtLocationId
     OUTER APPLY (
         SELECT TOP (1) oty.Name AS OperationName
         FROM Workorder.ProductionEvent pe
@@ -120,7 +124,15 @@ BEGIN
       AND (@LotStatusId     IS NULL OR l.LotStatusId     = @LotStatusId)
       AND (@LotOriginTypeId IS NULL OR l.LotOriginTypeId = @LotOriginTypeId)
       AND (@LocationId      IS NULL OR l.CurrentLocationId IN (SELECT Id FROM Descendants))
-      AND (@MachineLocationId IS NULL OR EXISTS (
+      -- Origin machine has TWO recorded sources, and a LOT has at most one of
+      -- them. A normally-produced LOT accumulates DieCastContribution rows at
+      -- the press. A CUTOVER LOT has none -- it is migrated stock whose machine
+      -- was read off the paper tag into Lot.ProducedAtLocationId (0082).
+      -- Both are RECORDED values; neither is the live LotMovement re-derivation
+      -- this proc's header rejects.
+      AND (@MachineLocationId IS NULL
+           OR l.ProducedAtLocationId = @MachineLocationId
+           OR EXISTS (
               SELECT 1 FROM Workorder.DieCastContribution dm
               WHERE dm.LotId = l.Id AND dm.CellLocationId = @MachineLocationId))
       AND (@ShiftId IS NULL OR EXISTS (
