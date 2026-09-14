@@ -338,6 +338,7 @@ def stepCastDate(days, session):
     """Move the cast date by whole days, capped at today. Seeded from the last
        basket scanned, so consecutive baskets are zero or one tap."""
     days = _u(days)
+    BlueRidge.Common.Util.log("stepCastDate ENTER days=%s" % days)
     st = getState(session)
     cur = st["entry"].get("castDate") or system.date.now()
     nxt = system.date.addDays(cur, days)
@@ -346,4 +347,11 @@ def stepCastDate(days, session):
         return cur
     st["entry"]["castDate"] = nxt
     _write(st, session)
+    # Read straight back through the same path the bindings use. If this does not
+    # echo what we just wrote, the session-prop write was dropped -- which is what
+    # three consecutive taps all writing the same day already implies.
+    back = getState(session)["entry"].get("castDate")
+    BlueRidge.Common.Util.log(
+        "stepCastDate WROTE %s ; READBACK %s ; match=%s ; type=%s"
+        % (nxt, back, (back == nxt), type(nxt)))
     return nxt

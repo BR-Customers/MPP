@@ -12,7 +12,59 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-09-11 (late afternoon) — **6MA CH camera: the SlcTray handshake was built on the wrong PLC program. New `SlcPassPulse` protocol, a `DisableWriteback` UDT switch, and a per-terminal `SuppressAimAndLabel` (migration `0079`) for the parallel run beside legacy.** Detail: `notes/2026-09-11_6ma-ch-real-ladder-slcpasspulse.md`.
+**Last updated:** 2026-09-13 — **Inventory cutover scan built end to end (SQL + Ignition). It renders on phone, tablet and desktop and not one control inside it works: every write to `session.custom.cutover` is silently dropped.** Design: `docs/superpowers/specs/2026-09-12-inventory-cutover-scan-design.md`. Plan: `docs/superpowers/plans/2026-09-12-inventory-cutover-scan.md`.
+
+> ### STOP HERE WHEN YOU COME BACK — the one open bug
+>
+> **Symptom.** The screen renders correctly at every breakpoint. Session setup works (line, part, Start Session all latch; the die auto-resolves; "Step 4 - Machining IN" shows). Then **nothing else does anything**: the cavity tiles, both cast-date arrows, and — reported, not yet instrumented — the three mobile-header buttons Downtime / Supervisor / Reset.
+>
+> **It is NOT the taps, the handlers, the params, the scope, or the event wiring.** All of that is proven working, from the gateway log:
+> ```
+> CavityToggle TAPPED id=38 code=a          <- handler fires, params resolve
+> stepCastDate ENTER days=-1
+> stepCastDate WROTE Sat Sep 12 21:03:13
+> ```
+> **The write is dropped.** Three consecutive back-arrow taps each logged `WROTE Sat Sep 12` — they should step Sep 12, Sep 11, Sep 10. `cur = st["entry"].get("castDate") or system.date.now()` keeps falling through to `now()`, so `getState()` never reads back what `_write()` just wrote. Confirmed independently by the screen itself: the label reads "Tap < or > to set", which only renders when `isNull({session.custom.cutover.entry.castDate})`.
+>
+> **Leading hypothesis (UNPROVEN).** Perspective session custom props must be JSON-serialisable, and `system.date.addDays` returns a **`java.util.Date`**. The tell: `loadSession` is the only write that works, and it is the only one whose dict carries `castDate: None`. `startSession` then calls `stepCastDate(0)`, and every write from that moment on carries a Date. If that is the cause, store the date as millis or an ISO string and convert at the boundary — and note **both bindings change too**: `CastDateValue` uses `dateFormat(...)` and `CastDateRel`'s transform calls `system.date.midnight(value)`.
+>
+> **NEXT ACTION — one tap settles it.** A readback probe is already committed and scanned into `BlueRidge.Cutover.Scan.stepCastDate`. Tap the back arrow once and read the gateway log:
+> ```
+> stepCastDate WROTE <x> ; READBACK <y> ; match=<bool> ; type=<class>
+> ```
+> `match=False` or `READBACK None` -> the write is rejected, and `type=` names the culprit. `match=True` -> the write lands and the **bindings** are not re-reading, which is a completely different fix.
+>
+> **REMOVE THE INSTRUMENTATION** once this is closed: the `stepCastDate ENTER` / `WROTE ... READBACK` logging in `Cutover/Scan/code.py`, and the `CavityToggle TAPPED` line at the top of `CavityToggle`'s `dom.onClick`.
+>
+> **Dead ends already burned — do not re-walk these.** (1) `Could not find the web session` on route `/hello/:project_name/:tab_id` is Perspective's own tab-attach handshake, not a component failing; it was stale background tabs. (2) `Unable to find registered component for id="ia.display.inline-frame"` at startup is pre-existing, belongs to `AssemblySerialized` / `AssemblyNonSerialized` (last touched 2026-09-03 / 09-11), fires about 10 s into boot before the component registry finishes, and those vision frames render fine. (3) The event JSON is byte-identical to the working `MachiningIn` Refresh button — scope `G`, `component.onActionPerformed`, tab-indented script. (4) DOM probes run without a session started report `{0,0,0,0}` for everything, because a `display:none` subtree reports zero boxes at the origin — that is not a collapse.
+
+> ### What IS built and verified
+>
+> **SQL — all green, full suite on `MPP_MES_Test` 3451/3451.**
+> - **Phase A (behaviour-neutral):** `Lots.ufn_NextPendingRouteStep` extracted from **seven** copy-pasted pending-step CTEs across five procs (`Lot_GetWipQueueByLocation`, `Lot_GetComponentsAtCell`, `Lot_GetTrimStorageQueueForLine`, `Lot_MoveToValidated`, and three inside `MachiningOut_Mint`, where drift between the copies produces wrong QUANTITIES rather than an error). Proven neutral by diffing the full suite before and after, line by line — identical.
+> - **Migration `0080`:** `Lots.Lot.EntryRouteSequence`, `Lots.Lot.CastDate`, `Location.Location.DefaultStockLocationId`. All nullable, no backfill, metadata-only ALTERs.
+> - `CastDate` lives on `Lots.Lot`, **not** a backdated `LotMovement.MovedAt`: that table is partitioned on `MovedAt` under sliding-window `TRUNCATE` retention, so a backdated row lands in a partition maintenance is designed to sweep, and the LOT's FIFO position would change silently.
+> - **`Item.MaxLotSize` is now INFORMATIONAL** (Jacques's call): an over-size basket creates successfully with a note appended to `Message`. `Item.MaxParts` and the consumption-point `ItemLocation.MaxQuantity` still reject — they cap what may accumulate at a location, which is a real physical constraint.
+> - Readiness check `sql/scratch/2026-09-12_cutover_readiness_check.sql`, verified read-only against Dev.
+>
+> **Ignition — renders, does not function (see above).** Breakpoint host plus Phone/Tablet/Desktop views, the `BlueRidge.Cutover.Scan` module, named queries and wrappers, reachable from the Terminal Selector, and `AppHeaderSmall` completing the breakpoint header shell Jacques scaffolded.
+
+> ### Corrections banked this session (each was a real defect)
+>
+> - **`session.custom.cutover` was declared in CORE.** MPP defines its own `session-props` resource, which overrides the parent rather than merging — so the prop was undeclared for every MPP session while all three views bound nested paths into it. Moved to MPP.
+> - **`getState()` could never read state.** It called `system.perspective.getSessionInfo()["custom"]`, but that returns a LIST of every session on the gateway; it threw `list indices must be integers` on every call and the never-throw guard swallowed it. Now reads through the session object. **`CavityToggle` still called the no-arg form**, so tapping a cavity read the empty shape and wrote it straight back, wiping the whole session.
+> - **The top dock had `content: "auto"`** (not a documented value — push / cover are). The page body started 24px above the dock's bottom edge, so the first 24px of EVERY shop-floor screen rendered underneath the header; on desktop each view's own title bar hid it. Set to `push`.
+> - **The PART dropdown passed `@OperationTypeCode`**, hiding four eligible parts at `6ma-CH-L2` including both dowel pins — the entire purchased-part flow was unreachable from the picker. Eligibility alone now (`v_EffectiveItemLocation` plus the ancestor cascade). `loadSession` no longer hard-fails when a part has no step for the entry role: `EntryRouteSequence` is castings-only (spec 3.4).
+> - **"Casting" is a ROLE, not an `ItemType`** — there is no such item type (`RawMaterial` / `Component` / `SubAssembly` / `FinishedGood` / `PassThrough`); a casting is a `Component`. Filtering by it matched nothing and made two readiness-check sections silently vacuous. Now identified by an `OriginMint` DieCast route step, which immediately found 6 castings at `MA1-5GOF` with no cavities configured.
+> - **Measurement correction:** the earlier "13 of 14 parts map to one die, 1 part on 6 dies" was wrong — the 6-die bucket was `ItemId IS NULL` (unmapped cavities). All 13 mapped parts resolve to exactly one die.
+> - Flex fixes: `SetupPanel` shrinking below its content and clipping its own heading; header columns overlapping instead of truncating (`min-width: 0`); cavity and session-row scrollbars (the `overflow: auto` default); toasts 500px wide on a 390px phone (now device-aware, with chars-per-line scaled — otherwise the height estimate under-reads and the message is clipped).
+
+> ### Known gaps, not started
+> - **The PIN keypad is clipped on a phone** — `1/4/7/Clear` and `3/6/9/Back` fall off 375px. An operator cannot sign in on a phone. Blocking for handheld use.
+> - The LTT text field could never be exercised from this environment (the in-app browser cannot commit Perspective text bindings), so **no basket has ever been written end to end**. `Lot_Create` with those exact parameters is proven from SQL.
+> - Spec section 11 open questions: where warehouse-held stock lands, and whether already-machined SubAssembly stock needs its own handling.
+
+**Previously:** 2026-09-11 (late afternoon) — **6MA CH camera: the SlcTray handshake was built on the wrong PLC program. New `SlcPassPulse` protocol, a `DisableWriteback` UDT switch, and a per-terminal `SuppressAimAndLabel` (migration `0079`) for the parallel run beside legacy.** Detail: `notes/2026-09-11_6ma-ch-real-ladder-slcpasspulse.md`.
 > **What happened.** `6MA_CH` ran all night with live tags and the MES booked nothing. MPP supplied the real program (`reference/6MA_PLC Logic`, processor "6MA", PLC `172.17.21.213`). It is **not** MPPMACH (PLC `172.17.20.30`, whose vision IP is RPY Line 2's), which `SlcTray` had been built from on a data-file-layout match. Confirmed live: device IP `.213`, `C5:10.PRE` = 48. On the 6MA ladder, N7:0 is 1 constantly (no per-tray edge), N7:1 does not gate the camera (the PLC runs the cell by itself), N7:30 is set and cleared in the same scan (unobservable), N7:11..27 are never written. The only per-tray host signal is **N7:10** "PASSED TO HOST COMPUTER": 1 for 2-3 s on each good tray. The per-part N17 words are filled from the discrete pass input, so this cell is tray-level only.
 > **Fix (Core `TrayInspectionWatcher`; `SlcTray` left as MPPMACH's, probably `RPY_CH`).** Protocol **`SlcPassPulse`**: `TrayLocked` → I:0.0/0 (tray present) syncs N7:2 to `Item.PlcId` if it differs. `InspectionComplete` → **N7:10** books the ByVision tray **only if** `VisionPartNumber` → **N16:2** (the program vision is actually running) equals `PlcId`. Otherwise it is a master tray / rabbit test / override: not booked, warning toast. **`DisableWriteback`** (new Boolean memory member on `TrayInspectionStation`) makes any tray protocol observe-only: it reads and books, writes nothing to the PLC, and logs each suppressed write. **Migration `0079`** + **`Lots.Container_Complete` v1.2**: terminal attribute `SuppressAimAndLabel` (BIT); when it is set, the box completes and its FG LOTs close, but with no AIM claim, no pool check and no `ShippingLabel`. `Assembly.completeBoxToPrinter` returns cleanly on the NULL label. New tool `reference/scripts/decode_rslogix500_rss.py` decodes any RSLogix 500 `.RSS` without RSLogix. Get and decode the `.RSS` before wiring the next cam-holder cell.
 > **Verification.** SQL `0028/055` (13 assertions: suppressed + empty pool completes; suppressed leaves a pool row unconsumed; attribute 0 = the normal claim + label) red → green; full suite on `MPP_MES_Test` **3444/3444**. Applied to Dev (`0079` + proc) and scanned. Offline Python harnesses: every SlcPassPulse branch, DisableWriteback across all three protocols, and Container.complete / completeBoxToPrinter with suppressed vs normal results. **Not yet run against the PLC.**

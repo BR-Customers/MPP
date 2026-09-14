@@ -54,7 +54,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tst = BlueRidge.Cutover.Scan.getState(self.session)\n\tst[\"entry\"][\"toolCavityId\"] = self.view.params.Id\n\tst[\"entry\"][\"cavityCode\"] = self.view.params.CavityCode\n\tself.session.custom.cutover = st"
+            "script": "\tBlueRidge.Common.Util.log(\"CavityToggle TAPPED id=%s code=%s\" % (self.view.params.Id, self.view.params.CavityCode))\n\tst = BlueRidge.Cutover.Scan.getState(self.session)\n\tst[\"entry\"][\"toolCavityId\"] = self.view.params.Id\n\tst[\"entry\"][\"cavityCode\"] = self.view.params.CavityCode\n\tself.session.custom.cutover = st"
           }
         }
       }
