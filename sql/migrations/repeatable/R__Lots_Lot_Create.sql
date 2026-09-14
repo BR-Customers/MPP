@@ -1,11 +1,20 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Create.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-13
--- Version:     1.5
+-- Modified:    2026-09-14
+-- Version:     1.6
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
 --              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +
 --              FDS-05-034/-035).
+--
+--              v1.6 (2026-09-14, migration 0082): @ProducedAtLocationId -- the
+--              die cast machine the cutover operator read off the paper tag.
+--              Defaults NULL so every existing caller is unaffected. Validated
+--              BEFORE BEGIN TRANSACTION as an active DieCastMachine location;
+--              deliberately NOT re-checked against Parts.ItemLocation, because
+--              the picker falls back to every machine for a part with no
+--              machine-tier row. Written to the column and echoed into the
+--              LotCreated NewValue JSON as a resolved-name ProducedAt object.
 --
 --              v1.5 (2026-09-13, migration 0081): the item-eligibility gate
 --              is SKIPPED when the destination is a STOCK location
@@ -90,7 +99,8 @@ CREATE OR ALTER PROCEDURE Lots.Lot_Create
     @LotName            NVARCHAR(50)  = NULL,   -- D4: caller-supplied identity (pre-printed LTT); NULL = mint server-side (today's behavior)
     @DepositToStorage   BIT           = 0,      -- die-cast: after birth at the machine, auto-move to the Warehouse (storage). OFF by default -> other origins (receiving, etc.) unaffected.
     @EntryRouteSequence INT           = NULL,  -- cutover: route step at which this LOT joined its route. NULL = the route start (every normal mint).
-    @CastDate           DATE          = NULL   -- cutover: date read off the physical LTT. Drives FIFO for migrated stock. NULL for a normal mint.
+    @CastDate           DATE          = NULL,  -- cutover: date read off the physical LTT. Drives FIFO for migrated stock. NULL for a normal mint.
+    @ProducedAtLocationId BIGINT      = NULL   -- cutover: the die cast machine off the tag (0082). NULL for every normal mint.
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -108,7 +118,8 @@ BEGIN
                @ToolId AS ToolId, @ToolCavityId AS ToolCavityId,
                @VendorLotNumber AS VendorLotNumber, @AppUserId AS AppUserId,
                @TerminalLocationId AS TerminalLocationId,
-               @EntryRouteSequence AS EntryRouteSequence, @CastDate AS CastDate
+               @EntryRouteSequence AS EntryRouteSequence, @CastDate AS CastDate,
+               @ProducedAtLocationId AS ProducedAtLocationId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
@@ -560,6 +571,33 @@ BEGIN
             RETURN;
         END
 
+        -- ---- 7c. Cutover machine (0082). Same pre-transaction placement and
+        --          the same reason: a ROLLBACK inside a proc invoked via
+        --          INSERT-EXEC raises Msg 3915.
+        --          NARROW ON PURPOSE -- active, and a die cast machine. It does
+        --          NOT re-check Parts.ItemLocation eligibility: the picker falls
+        --          back to every machine when a part has no machine-tier row, so
+        --          an eligibility gate here would reject exactly the picks that
+        --          fallback exists to allow.
+        IF @ProducedAtLocationId IS NOT NULL
+           AND NOT EXISTS (SELECT 1
+                           FROM Location.Location l
+                           INNER JOIN Location.LocationTypeDefinition ltd
+                                   ON ltd.Id = l.LocationTypeDefinitionId
+                           WHERE l.Id = @ProducedAtLocationId
+                             AND l.DeprecatedAt IS NULL
+                             AND ltd.Code = N'DieCastMachine')
+        BEGIN
+            SET @Message = N'Producing machine must be an active die cast machine.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+            RETURN;
+        END
+
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
 
@@ -626,7 +664,7 @@ BEGIN
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
             CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive,
-            EntryRouteSequence, CastDate
+            EntryRouteSequence, CastDate, ProducedAtLocationId
         )
         VALUES (
             @MintedLotName, @ItemId, @LotOriginTypeId, @GoodStatusId, @PieceCount, @MaxLotSize,
@@ -634,7 +672,8 @@ BEGIN
             @MinSerialNumber, @MaxSerialNumber, @CurrentLocationId,
             0, @PieceCount,                          -- B5 materialized: TotalInProcess / InventoryAvailable
             @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive,
-            @EntryRouteSequence, @CastDate         -- 0080: cutover entry point + cast date
+            @EntryRouteSequence, @CastDate,        -- 0080: cutover entry point + cast date
+            @ProducedAtLocationId                  -- 0082: cutover die cast machine
         );
 
         SET @NewId = SCOPE_IDENTITY();
@@ -656,6 +695,10 @@ BEGIN
         DECLARE @LocName    NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @CurrentLocationId);
         DECLARE @ToolCode   NVARCHAR(50)  = (SELECT Code FROM Tools.Tool WHERE Id = @ToolId);
         DECLARE @CavityNum  NVARCHAR(50)  = (SELECT CavityCode FROM Tools.ToolCavity WHERE Id = @ToolCavityId);
+        DECLARE @MachineName NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @ProducedAtLocationId);
+        DECLARE @MachineArea NVARCHAR(200) = (SELECT p.Name FROM Location.Location m
+                                              INNER JOIN Location.Location p ON p.Id = m.ParentLocationId
+                                              WHERE m.Id = @ProducedAtLocationId);
 
         -- Cavity prose: the validated cavity's per-part code. The D2 '(manual)'
         -- arm is gone with the free-text fallback itself (0076).
@@ -664,10 +707,17 @@ BEGIN
                  THEN N'; Tool ' + ISNULL(@ToolCode, N'?') + N', Cavity ' + ISNULL(@CavityNum, N'?')
                  ELSE N'' END;
 
+        -- Machine prose: the area disambiguates, because machine Names repeat
+        -- across die cast areas (four 'Machine 01's in the real plant).
+        DECLARE @MachineSuffix NVARCHAR(200) =
+            CASE WHEN @ProducedAtLocationId IS NOT NULL
+                 THEN N'; Machine ' + ISNULL(@MachineArea, N'?') + N' ' + ISNULL(@MachineName, N'?')
+                 ELSE N'' END;
+
         DECLARE @ActivityRaw NVARCHAR(MAX) =
             @MintedLotName + N' ' + Audit.ufn_MidDot() + N' Lot ' + Audit.ufn_MidDot()
             + N' Created at ' + @LocName + N' (' + @PartNumber + N', ' + CAST(@PieceCount AS NVARCHAR(20)) + N' pcs)'
-            + @ToolSuffix;
+            + @ToolSuffix + @MachineSuffix;
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         DECLARE @NewValue NVARCHAR(MAX) = (
@@ -681,7 +731,10 @@ BEGIN
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Location,
                 JSON_QUERY((SELECT sc.Id, sc.Code, sc.Name
                             FROM Lots.LotStatusCode sc WHERE sc.Id = l.LotStatusId
-                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Status
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Status,
+                JSON_QUERY((SELECT pl.Id, pl.Code, pl.Name
+                            FROM Location.Location pl WHERE pl.Id = l.ProducedAtLocationId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ProducedAt
             FROM Lots.Lot l WHERE l.Id = @NewId
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
