@@ -1,6 +1,9 @@
 # Prod release runbook — cutover machine + die name
 
-**Release commit:** `e0cc9577` on `jacques/working`.
+**Release commit:** `e0cc9577` on `jacques/working` — the commit the two archives were
+built and verified from. **HEAD is `a1b4fb78`**, this runbook, committed after them;
+`git diff e0cc9577..a1b4fb78 -- ignition/ sql/` is empty, so the archives and the SQL plan
+are unaffected by it.
 **Previous release:** `515db6c6` (2026-09-13, inventory cutover scan).
 **Rehearsed against:** `MPP_MES_ProdSim`, a database built at `515db6c6` — prod's exact
 migration state (81 migrations, highest `0081`, `Lots.Lot.ProducedAtLocationId` absent).
@@ -14,7 +17,15 @@ Before starting, confirm the tree is where this runbook says:
 git log --oneline -1
 ```
 
-Expect `e0cc9577 docs(cutover): verification record for the machine eligibility dropdown`.
+Expect `a1b4fb78 docs(release): 2026-09-14 prod runbook ...` — this runbook. Confirm no
+deployable moved after the archives were built:
+
+```bash
+git diff --stat e0cc9577..HEAD -- ignition/ sql/
+```
+
+Expect **no output**. If anything is listed, the archives are stale — rebuild them with
+`.	ools\Build-ChangeExport.ps1 -Since 515db6c6 -Label cutover-machine` before going on.
 
 ---
 
