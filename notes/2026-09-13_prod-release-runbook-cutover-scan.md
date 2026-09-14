@@ -2,7 +2,11 @@
 
 **Prod baseline:** `d4c29e75` — the state prod SQL has been at since 2026-09-11, and
 prod Ignition since the 2026-09-12 Config Tool release (`b7bc870e`, which touched no
-SQL, so both converge for SQL purposes). **This release:** `515db6c6`.
+SQL, so both converge for SQL purposes). **This release:** `515db6c6` — the commit the
+three archives were built and verified from. This runbook was committed after them
+(`04ca04ba`) and ships nothing; `515db6c6..04ca04ba` touches `notes/` only, so the
+archives remain valid against it. Verify with
+`git diff --stat 515db6c6..HEAD -- ignition/ sql/` — it should be empty.
 
 This is a **SQL + Ignition** release: 2 versioned migrations, 12 repeatables, and 68
 Ignition resources across three projects. Unlike the last two releases there IS a
