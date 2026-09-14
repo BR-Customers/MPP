@@ -445,8 +445,19 @@ def voidEntry(lotId, appUserId, session):
 _SCAN_TARGETS = {
     "lotName":            ("entry", "lotName"),
     "purchasedPartNumber": ("purchased", "partNumber"),
+    "purchasedQty":       ("purchased", "qty"),
     "vendorLot":          ("purchased", "vendorLot"),
 }
+
+# Fields bound to a numeric-entry-field rather than a text-field. A scan arrives
+# as text; writing "5000 EA" into props.value renders as nothing useful, so the
+# digits are taken and the rest dropped.
+#
+# ASSUMPTION, flagged 2026-09-13: a quantity barcode is digits, possibly with a
+# prefix or a unit suffix. If MPP's labels encode something structured (a
+# GS1 AI, a check digit) this is the place that has to learn it -- it is
+# deliberately one line so replacing it is cheap.
+_SCAN_NUMERIC = ("purchasedQty",)
 
 
 def applyScan(session, text, field):
@@ -465,11 +476,24 @@ def applyScan(session, text, field):
             % (field, ", ".join(sorted(_SCAN_TARGETS))), level="warn")
         return {"Status": 0, "Message": "Nothing on this screen scans into '%s'." % field}
 
+    value = text
+    if field in _SCAN_NUMERIC:
+        digits = "".join([c for c in text if c.isdigit()])
+        if not digits:
+            return {"Status": 0, "Message": "That barcode has no number in it."}
+        value = int(digits)
+
     section, key = target
     st = getState(session)
-    st[section][key] = text
+    st[section][key] = value
     _write(st, session)
-    BlueRidge.Common.Util.log("applyScan %s.%s <- %s" % (section, key, text))
+    # WARN, not debug: the raw scan is the only record of what the barcode
+    # actually carried, and the barcode's shape is exactly what is still being
+    # learned here (an MPP part label was found to carry a 'P' prefix on
+    # 2026-09-13). Drop this to debug once the label formats are settled.
+    BlueRidge.Common.Util.log(
+        "applyScan %s.%s <- %r (raw scan %r)" % (section, key, value, text),
+        level="warn")
     return {"Status": 1, "Message": "Scanned."}
 
 

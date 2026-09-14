@@ -1753,30 +1753,99 @@
                             "type": "ia.display.label"
                           },
                           {
+                            "type": "ia.container.flex",
                             "meta": {
-                              "name": "PurchasedQtyInput"
+                              "name": "PurchasedQtyInputRow"
                             },
-                            "propConfig": {
-                              "props.value": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "session.custom.cutover.purchased.qty"
-                                  },
-                                  "type": "property"
-                                }
-                              }
+                            "position": {
+                              "shrink": 0
                             },
                             "props": {
-                              "deferUpdates": false,
-                              "placeholder": "Quantity",
+                              "direction": "row",
+                              "alignItems": "stretch",
                               "style": {
-                                "classes": "pf-field-input-mono",
-                                "fontSize": "18px",
-                                "minHeight": "48px"
+                                "gap": "8px"
                               }
                             },
-                            "type": "ia.input.numeric-entry-field"
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "PurchasedQtyInput"
+                                },
+                                "propConfig": {
+                                  "props.value": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "session.custom.cutover.purchased.qty"
+                                      },
+                                      "type": "property"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "deferUpdates": false,
+                                  "placeholder": "Quantity",
+                                  "style": {
+                                    "classes": "pf-field-input-mono",
+                                    "fontSize": "18px",
+                                    "minHeight": "48px",
+                                    "minWidth": "0px"
+                                  }
+                                },
+                                "type": "ia.input.numeric-entry-field",
+                                "position": {
+                                  "grow": 1,
+                                  "shrink": 1,
+                                  "basis": "0px"
+                                }
+                              },
+                              {
+                                "type": "ia.input.button",
+                                "meta": {
+                                  "name": "PurchasedQtyInputScanButton",
+                                  "tooltip": {
+                                    "text": "Scan the quantity with the camera"
+                                  }
+                                },
+                                "position": {
+                                  "basis": "56px",
+                                  "shrink": 0
+                                },
+                                "props": {
+                                  "text": "",
+                                  "image": {
+                                    "icon": {
+                                      "path": "mpp/qr_code_scanner"
+                                    }
+                                  },
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "minHeight": "48px"
+                                  }
+                                },
+                                "events": {
+                                  "dom": {
+                                    "onClick": {
+                                      "config": {
+                                        "config": {
+                                          "backgroundColor": "AUTO",
+                                          "cameraPreference": "BACK",
+                                          "type": "ANY",
+                                          "uuid": "e4a5b6c7-8d9e-4f0a-1b2c-3d4e5f607182"
+                                        },
+                                        "context": {
+                                          "screen": "cutover",
+                                          "field": "purchasedQty"
+                                        }
+                                      },
+                                      "scope": "C",
+                                      "type": "native/barcode"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
                           }
                         ],
                         "meta": {
@@ -1809,28 +1878,97 @@
                             "type": "ia.display.label"
                           },
                           {
+                            "type": "ia.container.flex",
                             "meta": {
-                              "name": "VendorLotInput"
+                              "name": "VendorLotInputRow"
                             },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "session.custom.cutover.purchased.vendorLot"
-                                  },
-                                  "type": "property"
-                                }
-                              }
+                            "position": {
+                              "shrink": 0
                             },
                             "props": {
-                              "deferUpdates": false,
-                              "placeholder": "Vendor lot (optional)",
+                              "direction": "row",
+                              "alignItems": "stretch",
                               "style": {
-                                "classes": "pf-field-input"
+                                "gap": "8px"
                               }
                             },
-                            "type": "ia.input.text-field"
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "VendorLotInput"
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "session.custom.cutover.purchased.vendorLot"
+                                      },
+                                      "type": "property"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "deferUpdates": false,
+                                  "placeholder": "Vendor lot (optional)",
+                                  "style": {
+                                    "classes": "pf-field-input",
+                                    "minWidth": "0px"
+                                  }
+                                },
+                                "type": "ia.input.text-field",
+                                "position": {
+                                  "grow": 1,
+                                  "shrink": 1,
+                                  "basis": "0px"
+                                }
+                              },
+                              {
+                                "type": "ia.input.button",
+                                "meta": {
+                                  "name": "VendorLotInputScanButton",
+                                  "tooltip": {
+                                    "text": "Scan the vendor lot with the camera"
+                                  }
+                                },
+                                "position": {
+                                  "basis": "56px",
+                                  "shrink": 0
+                                },
+                                "props": {
+                                  "text": "",
+                                  "image": {
+                                    "icon": {
+                                      "path": "mpp/qr_code_scanner"
+                                    }
+                                  },
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "minHeight": "48px"
+                                  }
+                                },
+                                "events": {
+                                  "dom": {
+                                    "onClick": {
+                                      "config": {
+                                        "config": {
+                                          "backgroundColor": "AUTO",
+                                          "cameraPreference": "BACK",
+                                          "type": "ANY",
+                                          "uuid": "f5b6c7d8-9e0f-4a1b-2c3d-4e5f60718293"
+                                        },
+                                        "context": {
+                                          "screen": "cutover",
+                                          "field": "vendorLot"
+                                        }
+                                      },
+                                      "scope": "C",
+                                      "type": "native/barcode"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
                           }
                         ],
                         "meta": {
