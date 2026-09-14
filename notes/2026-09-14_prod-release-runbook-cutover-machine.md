@@ -25,7 +25,7 @@ git diff --stat e0cc9577..HEAD -- ignition/ sql/
 ```
 
 Expect **no output**. If anything is listed, the archives are stale — rebuild them with
-`.	ools\Build-ChangeExport.ps1 -Since 515db6c6 -Label cutover-machine` before going on.
+`.\tools\Build-ChangeExport.ps1 -Since 515db6c6 -Label cutover-machine` before going on.
 
 ---
 
