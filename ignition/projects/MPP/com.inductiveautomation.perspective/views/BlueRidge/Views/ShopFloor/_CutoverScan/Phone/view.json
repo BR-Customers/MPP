@@ -7,7 +7,8 @@
       "itemId": null,
       "lineLocationId": null,
       "machineNumber": ""
-    }
+    },
+    "headerExpanded": false
   },
   "params": {},
   "props": {
@@ -528,15 +529,15 @@
                     "children": [
                       {
                         "meta": {
-                          "name": "LineNameLabel"
+                          "name": "PartNumberLabel"
                         },
                         "propConfig": {
                           "props.text": {
                             "binding": {
+                              "type": "property",
                               "config": {
-                                "path": "session.custom.cutover.session.lineName"
-                              },
-                              "type": "property"
+                                "path": "session.custom.cutover.session.partNumber"
+                              }
                             }
                           }
                         },
@@ -547,36 +548,13 @@
                             "minWidth": "0px",
                             "overflow": "hidden",
                             "textOverflow": "ellipsis",
-                            "whiteSpace": "nowrap"
+                            "whiteSpace": "nowrap",
+                            "fontFamily": "var(--mpp-font-mono)"
                           }
                         },
                         "type": "ia.display.label",
                         "position": {
                           "shrink": 1
-                        }
-                      },
-                      {
-                        "meta": {
-                          "name": "StepPill"
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "if({session.custom.cutover.session.entryRoleCode} \u003d \"MachiningIn\", \"MACHINING IN\", \"ASSEMBLY IN\")"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-pill pf-pill-warn"
-                          }
-                        },
-                        "type": "ia.display.label",
-                        "position": {
-                          "shrink": 0
                         }
                       },
                       {
@@ -587,6 +565,63 @@
                           "grow": 1
                         },
                         "type": "ia.container.flex"
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "HeaderToggle",
+                          "tooltip": {
+                            "text": "Show or hide line, die and machine"
+                          }
+                        },
+                        "position": {
+                          "basis": "44px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "row",
+                          "justify": "center",
+                          "alignItems": "center",
+                          "style": {
+                            "cursor": "pointer",
+                            "minHeight": "44px"
+                          }
+                        },
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tself.view.custom.headerExpanded \u003d not self.view.custom.headerExpanded"
+                              }
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "HeaderChevron"
+                            },
+                            "props": {
+                              "style": {
+                                "color": "var(--mpp-accent-60)",
+                                "fontSize": "18px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.headerExpanded}, \"▴\", \"▾\")"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
                       },
                       {
                         "events": {
@@ -629,43 +664,9 @@
                   {
                     "children": [
                       {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "PartKvK"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-label"
-                              },
-                              "text": "Part"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "PartV"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "path": "session.custom.cutover.session.partNumber"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-value-mono"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
+                        "type": "ia.container.flex",
                         "meta": {
-                          "name": "PartKv"
+                          "name": "LineKv"
                         },
                         "position": {
                           "shrink": 0
@@ -676,7 +677,41 @@
                             "gap": "2px"
                           }
                         },
-                        "type": "ia.container.flex"
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "LineKvK"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-label"
+                              },
+                              "text": "Line"
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "LineV"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-value"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "path": "session.custom.cutover.session.lineName"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
                       },
                       {
                         "children": [
@@ -876,6 +911,59 @@
                           }
                         },
                         "type": "ia.container.flex"
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "StepKv"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "StepKvK"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-label"
+                              },
+                              "text": "Entering at"
+                            }
+                          },
+                          {
+                            "meta": {
+                              "name": "StepPill"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if({session.custom.cutover.session.entryRoleCode} \u003d \"MachiningIn\", \"MACHINING IN\", \"ASSEMBLY IN\")"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-pill pf-pill-warn"
+                              }
+                            },
+                            "type": "ia.display.label",
+                            "position": {
+                              "shrink": 0
+                            }
+                          }
+                        ]
                       }
                     ],
                     "meta": {
@@ -887,7 +975,17 @@
                         "gap": "28px"
                       }
                     },
-                    "type": "ia.container.flex"
+                    "type": "ia.container.flex",
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.headerExpanded} || {session.custom.cutover.session.toolIsAmbiguous}"
+                          }
+                        }
+                      }
+                    }
                   }
                 ],
                 "meta": {

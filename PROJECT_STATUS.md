@@ -39,7 +39,8 @@
 > ### Cutover scan — what is still NOT exercised
 >
 > - **No basket or box has been written end to end.** Everything up to `Add basket` is verified; `addBasket` / `addBox` / `voidEntry` now receive plain dicts (same code path as the verified ones) and `Lot_Create` with these exact parameters is proven from SQL, but nobody has typed an LTT and tapped Add. The in-app browser cannot commit Perspective text bindings, so this needs a human at a real browser: scan/type an LTT, a piece count, tap **Add basket**, confirm the row appears, the totals increment, the LTT + count clear while cavity and cast date latch — then **Void** it and confirm it disappears.
-> - **Camera scanning has never been exercised on a real phone.** The whole chain is verified on the gateway via the client's own simulate hook (below), but nobody has pointed an actual camera at an LTT.
+> - **Camera scanning works on a real phone** (Perspective App, 2026-09-13). The scan action now sits on its own button beside each field so a damaged barcode can still be hand-typed. **Still unexercised: a basket written end to end** -- the first real attempt hit the two defects above; both are fixed and `Lot_Create` is proven from SQL, but nobody has yet tapped Add basket successfully.
+> - **The phone header now collapses** (default collapsed; the always-visible label shows the PART NUMBER, and the Part/Die/Machine row is forced open when the die is ambiguous because the die dropdown lives in it). The tablet and desktop were left alone.
 > - **The PIN keypad is clipped on a phone** — `1/4/7/Clear` and `3/6/9/Back` fall off 375px. An operator cannot sign in on a phone. Still blocking for handheld use.
 > - Spec section 11 open questions: where warehouse-held stock lands, and whether already-machined SubAssembly stock needs its own handling.
 
@@ -81,6 +82,18 @@
 > **FIXED — flex shrink/collide defects in all three `_CutoverScan` views.** `CastEntryPanel` / `PurchasedEntryPanel` are flex columns whose children all carried `position.shrink: 0` **except** the trailing note + Add button; a flex child defaults to `shrink: 1`, so those two were the only ones squeezed when content exceeded the panel — down to near-zero height with their text overflowing onto the field above (the "Vendor lot overlaps the paragraph" symptom). And in `LatchedTop`, the line name and the step pill both defaulted to `shrink: 1` **and** `min-width: auto`, which refuses to shrink below content — so they collided instead of truncating. Line name now gets `min-width: 0` + ellipsis; pill and Change button get `shrink: 0`. Same class as the SetupPanel and header-column fixes banked 2026-09-12.
 >
 > **Editing these view files programmatically:** Phone is authored in Designer's escaped form (`=` / `'`), Tablet and Desktop in the plain form, and Phone alone has no trailing newline. A scripted edit MUST detect and preserve each file's own shape, or a four-line fix reformats two thousand. `scratchpad/viewio.py` in that session did this by rendering both ways and keeping whichever reproduced the file byte-for-byte, asserting that on all three before writing anything.
+
+> ### Add basket failed silently -- TWO defects, both fixed (2026-09-13, real phone)
+>
+> **1. The Dev database was behind on migrations.** `Lots.Lot_Create` raised `Invalid object name 'Lots.ufn_CrtForMint'`. `MPP_MES_Dev` had **77 of 80** versioned migrations applied: **0064_crt_part_scoped, 0065_crt_label_mark_token and 0066_crt_banner_label were never applied**, even though 0067-0080 were. So `Parts.Item.CrtEnabled` and `Location.LocationTypeDefinition.IsProductionDestination` did not exist, the three repeatables that read them could not compile (`Lots.ufn_CrtForMint`, `Lots.ufn_CrtBlocksAdvance` / `ufn_CrtBlocksMoveTo`, `Lots.ContainerSerial_Get` were all absent), and any mint path blew up at runtime.
+>
+> Applied 0064-0066 then the three repeatables; all four objects now resolve and `Lot_Create` was proven with the real cutover parameters inside a transaction (`Status=1`, LOT count 67 -> 68 -> 67 on rollback, nothing left behind).
+>
+> **`sqlcmd` needs `-I`.** The first attempt failed with `Msg 1934 ... QUOTED_IDENTIFIER`, because sqlcmd defaults that OFF and the schema has filtered indexes. Every script in `sql/scripts/` already passes `-b -I -C`; a hand-run `sqlcmd` must too. Nothing partial was recorded -- the migrations guard their `SchemaVersion` insert.
+>
+> **Worth a standing check.** A dev DB can sit mid-sequence indefinitely and nothing says so until a proc fails at runtime. The diff that found it is two lines: `SELECT MigrationId FROM dbo.SchemaVersion` against `ls sql/migrations/versioned/*.sql`. Anything CRT-related has therefore never actually run on this Dev database.
+>
+> **2. The exception reached the operator as nothing at all.** The view does `res = ...addBasket(...)` then `notifyResult(res, ...)`. When `addBasket` RAISES, the gateway event script dies on the spot and `notifyResult` never runs -- no toast, no error, the button simply does nothing, and the only evidence is a stack trace in `wrapper.log`. `loadSession` / `addBasket` / `addBox` / `voidEntry` now carry a `@_guard` decorator that converts an unexpected exception into the `{Status: 0, Message}` row every caller already renders. Business-rule failures were already Status-0 and are unaffected.
 
 > ### Gateway logging: traces are OFF by default (2026-09-13)
 >

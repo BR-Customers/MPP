@@ -214,6 +214,43 @@ def _write(state, session):
     session.custom.cutover = state
 
 
+def _guard(fn):
+    """Turn an UNEXPECTED exception into the status row every caller already
+       knows how to render.
+
+       Without this, a DB-level failure is completely silent to the operator.
+       The view does
+
+           res = BlueRidge.Cutover.Scan.addBasket(...)
+           BlueRidge.Common.Ui.notifyResult(res, "Basket added", ...)
+
+       so if addBasket RAISES, the gateway event script dies on the spot and
+       notifyResult never runs: no toast, no error, the button just does
+       nothing. That is exactly what happened on 2026-09-13 when Lot_Create hit
+       'Invalid object name Lots.ufn_CrtForMint' on a Dev database that was
+       behind on migrations 0064-0066 -- the operator got no feedback at all
+       and the only evidence was a stack trace in wrapper.log.
+
+       Business-rule failures already return Status 0 and are NOT exceptions;
+       this only catches the unexpected. The message is surfaced verbatim
+       because on the plant floor the alternative -- a generic "something went
+       wrong" -- tells the person standing at the terminal nothing they can
+       relay."""
+    def wrapped(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except (Exception, java.lang.Exception) as e:
+            BlueRidge.Common.Util.log(
+                "%s FAILED: %s" % (fn.__name__, str(e)), level="error")
+            return {"Status": 0,
+                    "Message": "%s failed: %s" % (fn.__name__, str(e)),
+                    "NewId": None}
+    wrapped.__name__ = fn.__name__
+    wrapped.__doc__ = fn.__doc__
+    return wrapped
+
+
+@_guard
 def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
     """Latch the scan session. Every domain question is asked of SQL; this only
        assembles the answers. Returns {Status, Message}."""
@@ -261,6 +298,7 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
     return {"Status": 1, "Message": "Session ready"}
 
 
+@_guard
 def addBasket(appUserId, terminalLocationId, session):
     """Create one migrated casting LOT. The scanned LTT becomes the LOT name
        verbatim -- no re-tagging. Returns {Status, Message, NewId}. A success
@@ -315,6 +353,7 @@ def addBasket(appUserId, terminalLocationId, session):
     return res
 
 
+@_guard
 def addBox(appUserId, terminalLocationId, session):
     """Create one received purchased-component LOT. The box has no LTT, so the
        LOT name is minted server-side and the supplier lot goes to
@@ -362,6 +401,7 @@ def addBox(appUserId, terminalLocationId, session):
     return res
 
 
+@_guard
 def voidEntry(lotId, appUserId, session):
     """Undo a mis-scanned entry. The LOT is CLOSED with a cutover-correction
        reason, never deleted -- nothing in the plant holds trustworthy inventory
