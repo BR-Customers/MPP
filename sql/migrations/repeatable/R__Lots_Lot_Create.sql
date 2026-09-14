@@ -1,11 +1,19 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Create.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-10
--- Version:     1.4
+-- Modified:    2026-09-13
+-- Version:     1.5
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
 --              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +
 --              FDS-05-034/-035).
+--
+--              v1.5 (2026-09-13, migration 0081): the item-eligibility gate
+--              is SKIPPED when the destination is a STOCK location
+--              (LocationTypeDefinition.IsStockLocation = 1: InventoryLocation,
+--              SupportArea, InspectionStation, InspectionLine). Eligibility
+--              means "may this part be WORKED here" and storage carries no
+--              eligibility rows, so every part was ineligible at the warehouse.
+--              Production destinations are unaffected and still reject.
 --
 --              v1.1 (2026-08-20): step 6b -- consumption-point quantity cap.
 --              Parts.ItemLocation.MaxQuantity (where IsConsumptionPoint=1) now caps
@@ -286,7 +294,41 @@ BEGIN
         -- Eligible if configured at the Cell OR any ancestor tier (Cell -> WorkCenter
         -- -> Area -> Site). Must match the dropdown (Item_ListEligibleForLocation) so
         -- a picked Item is never rejected here.
-        IF NOT EXISTS (
+        --
+        -- ...but NOT at a STOCK location. Eligibility answers "may this part be
+        -- WORKED here", which is meaningless for storage: the warehouse and the
+        -- trim stores carry no eligibility rows at all, and neither does the
+        -- Site tier, so every part reads as ineligible at WHSE. Die cast already
+        -- had to dodge that -- @DepositToStorage is explicitly
+        -- non-eligibility-gated, "warehouse is storage, not a production
+        -- location" -- which is this rule stated once, locally, for one caller.
+        -- Needed by the inventory cutover scan, which counts stock in where it
+        -- physically sits (warehouse / trim floor / trim stores / M&A lines).
+        --
+        -- Location.LocationTypeDefinition.IsStockLocation (migration 0081) is 1
+        -- for InventoryLocation / SupportArea / InspectionStation /
+        -- InspectionLine and 0 for everything else.
+        --
+        -- NOT IsProductionDestination (0064), which looks like the same question
+        -- and is not: that column is DEFAULT 0 with only seven definitions set
+        -- to 1, so "non-production" also covers Organization, Facility, Printer,
+        -- Scale and Terminal -- gating on it would permit a LOT at the ENTERPRISE
+        -- ROOT. Caught by 0020_PlantFloor_Foundation/040_Lot_Create.sql
+        -- [LcIneligible], which picks the lowest-Id ineligible location (MPP-ENT).
+        -- Lots.Lot_MoveTo legitimately uses that flag because its question is
+        -- "may a CRT LOT move to quarantine".
+        --
+        -- Defaults to 0 (gate ENFORCED) when the definition cannot be resolved,
+        -- so an unclassified or missing location fails closed exactly as before.
+        DECLARE @DestIsStockLocation BIT = ISNULL((
+            SELECT ltd.IsStockLocation
+            FROM Location.Location l
+            JOIN Location.LocationTypeDefinition ltd
+              ON ltd.Id = l.LocationTypeDefinitionId
+            WHERE l.Id = @CurrentLocationId), 0);
+
+        IF @DestIsStockLocation = 0
+           AND NOT EXISTS (
             SELECT 1 FROM Parts.v_EffectiveItemLocation
             WHERE ItemId = @ItemId
               AND LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@CurrentLocationId))

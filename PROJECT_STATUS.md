@@ -38,7 +38,7 @@
 
 > ### Cutover scan — what is still NOT exercised
 >
-> - **No basket or box has been written end to end.** Everything up to `Add basket` is verified; `addBasket` / `addBox` / `voidEntry` now receive plain dicts (same code path as the verified ones) and `Lot_Create` with these exact parameters is proven from SQL, but nobody has typed an LTT and tapped Add. The in-app browser cannot commit Perspective text bindings, so this needs a human at a real browser: scan/type an LTT, a piece count, tap **Add basket**, confirm the row appears, the totals increment, the LTT + count clear while cavity and cast date latch — then **Void** it and confirm it disappears.
+> - ~~No basket has been written end to end.~~ **DONE, on a real phone (2026-09-13 23:17 ET).** LOT `10627577` in Dev: part `12231-6MA -0000`, 2016 pcs, `CastDate 2026-09-10`, `EntryRouteSequence 4`, die `6MA-B` cavity `b`, and its **next pending step is `MachiningIn`** — i.e. it surfaces in the Machining IN queue instead of falling into Trim, which is the entire point of `EntryRouteSequence`. Every part of the chain (`_plain`, the cavity write, the date stepper, `Lot_Create`) is confirmed on real hardware. **Still unexercised: `addBox` (purchased) and `voidEntry`.**
 > - **Camera scanning works on a real phone** (Perspective App, 2026-09-13). The scan action now sits on its own button beside each field so a damaged barcode can still be hand-typed. **Still unexercised: a basket written end to end** -- the first real attempt hit the two defects above; both are fixed and `Lot_Create` is proven from SQL, but nobody has yet tapped Add basket successfully.
 > - **The phone header now collapses** (default collapsed; the always-visible label shows the PART NUMBER, and the Part/Die/Machine row is forced open when the die is ambiguous because the die dropdown lives in it). The tablet and desktop were left alone.
 > - **The PIN keypad is clipped on a phone** — `1/4/7/Clear` and `3/6/9/Back` fall off 375px. An operator cannot sign in on a phone. Still blocking for handheld use.
@@ -94,6 +94,27 @@
 > **Worth a standing check.** A dev DB can sit mid-sequence indefinitely and nothing says so until a proc fails at runtime. The diff that found it is two lines: `SELECT MigrationId FROM dbo.SchemaVersion` against `ls sql/migrations/versioned/*.sql`. Anything CRT-related has therefore never actually run on this Dev database.
 >
 > **2. The exception reached the operator as nothing at all.** The view does `res = ...addBasket(...)` then `notifyResult(res, ...)`. When `addBasket` RAISES, the gateway event script dies on the spot and `notifyResult` never runs -- no toast, no error, the button simply does nothing, and the only evidence is a stack trace in `wrapper.log`. `loadSession` / `addBasket` / `addBox` / `voidEntry` now carry a `@_guard` decorator that converts an unexpected exception into the `{Status: 0, Message}` row every caller already renders. Business-rule failures were already Status-0 and are unaffected.
+
+> ### Stock locations -- `Lot_Create` no longer demands eligibility at storage (0081)
+>
+> Counting stock in at the **warehouse** or a **trim store** was impossible: `Lot_Create` gates `@CurrentLocationId` on `Parts.v_EffectiveItemLocation`, eligibility answers *"may this part be WORKED here"*, and storage locations carry no eligibility rows at all -- nor does the Site tier -- so **every** part read as *"Item is not eligible at the specified location"* at `WHSE`. Die cast had already hit this and dodged it locally: its `@DepositToStorage` move is explicitly non-eligibility-gated, commented *"warehouse is storage, not a production location"*.
+>
+> **Migration `0081`** adds `Location.LocationTypeDefinition.IsStockLocation` (BIT, default 0), set 1 for `InventoryLocation`, `SupportArea`, `InspectionStation`, `InspectionLine` (inspection included deliberately -- quarantined material rests there). `Lots.Lot_Create` **v1.5** skips the eligibility gate when the destination is a stock location. Production destinations are untouched and still reject.
+>
+> **A dead end worth not repeating: `IsProductionDestination` (0064) is NOT the right flag**, even though `Lots.Lot_MoveTo` gates on it and reusing it looks like good consistency. 0064 added that column `DEFAULT 0` and set 1 for only seven definitions, so "non-production" ALSO covers `Organization`, `Facility`, `Printer`, `Scale` and `Terminal` -- gating `Lot_Create` on it permits a LOT at the **enterprise root**. That is not theoretical: it was caught by `0020_PlantFloor_Foundation/040_Lot_Create.sql [LcIneligible]`, which picks the lowest-Id ineligible location (`MPP-ENT`, Id 1). `Lot_MoveTo` can use the flag because its question is *"may a CRT LOT move to quarantine"*, where permissive toward inspection/inventory/support IS the intent. Same flag, different question.
+>
+> **Verified.** Full suite **3489/3489** both before the change (clean baseline, so any failure is unambiguously the change) and after, with `0081` applied in sequence. Behaviour on Dev, all rolled back:
+>
+> | Destination | Expected | Actual |
+> |---|---|---|
+> | Warehouse (`SupportArea`) | create | create |
+> | Trim store (`InventoryLocation`) | create | create |
+> | Trim shop area (production, part eligible) | create | create |
+> | M&A line, part not eligible | REJECT | REJECT |
+> | Enterprise root | REJECT | REJECT |
+> | Printer | REJECT | REJECT |
+>
+> **Method note.** The first attempt was validated by hand-picking three destinations on Dev -- all three passed, and it looked like confirmation. It only tested the locations already in mind; the suite tested the one that was not. Hand-checks confirm what you thought of; the suite catches what you did not.
 
 > ### Gateway logging: traces are OFF by default (2026-09-13)
 >
