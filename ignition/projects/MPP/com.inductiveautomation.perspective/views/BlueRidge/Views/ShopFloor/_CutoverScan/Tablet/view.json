@@ -229,7 +229,18 @@
                         "minHeight": "44px"
                       }
                     },
-                    "propConfig": {
+                    "events": {
+                        "component": {
+                          "onActionPerformed": {
+                            "type": "script",
+                            "scope": "G",
+                            "config": {
+                              "script": "\t# Show the default instead of hiding it: stock goes to the line unless\n\t# the operator picks elsewhere. loadSession already falls back to the\n\t# line, but a blank control reads as nothing-chosen.\n\tself.view.custom.setupDraft.destinationLocationId = self.props.value"
+                            }
+                          }
+                        }
+                      },
+                      "propConfig": {
                       "props.options": {
                         "binding": {
                           "type": "expr",
