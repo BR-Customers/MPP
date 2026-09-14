@@ -442,11 +442,25 @@ def voidEntry(lotId, appUserId, session):
 # See that module's header for the full path a scan takes.
 #
 # field key -> (state section, key in that section)
+# field key -> (state section, key in that section, AIAG data identifier or None)
+#
+# MPP's purchased-part labels are AIAG / ANSI MH10.8.2: each barcode is prefixed
+# with a DATA IDENTIFIER naming the field, and the label prints that identifier
+# in parentheses beside the caption -- "Part Number (P)", "Quantity (Q)",
+# "PO Number (A)". So the part-number barcode reads P90701-5R0-3000, not
+# 90701-5R0-3000, and scanning it raw put a leading 'P' in the field (observed
+# 2026-09-13; the operator deleted it by hand, which is how a near-identical
+# part number got picked by mistake).
+#
+# Only strip an identifier the FIELD declares. A blind "drop the first letter"
+# would corrupt any value that legitimately starts with one -- the LTT and the
+# vendor lot are printed without identifiers and carry None here, so they are
+# never touched.
 _SCAN_TARGETS = {
-    "lotName":            ("entry", "lotName"),
-    "purchasedPartNumber": ("purchased", "partNumber"),
-    "purchasedQty":       ("purchased", "qty"),
-    "vendorLot":          ("purchased", "vendorLot"),
+    "lotName":            ("entry", "lotName", None),
+    "purchasedPartNumber": ("purchased", "partNumber", "P"),
+    "purchasedQty":       ("purchased", "qty", "Q"),
+    "vendorLot":          ("purchased", "vendorLot", None),
 }
 
 # Fields bound to a numeric-entry-field rather than a text-field. A scan arrives
@@ -476,14 +490,20 @@ def applyScan(session, text, field):
             % (field, ", ".join(sorted(_SCAN_TARGETS))), level="warn")
         return {"Status": 0, "Message": "Nothing on this screen scans into '%s'." % field}
 
+    section, key, dataId = target
+
+    # Strip this field's AIAG data identifier when the scan carries it. Guarded
+    # on a non-empty remainder so a one-character scan cannot become "".
+    raw = text
+    if dataId and text.startswith(dataId) and len(text) > len(dataId):
+        text = text[len(dataId):].strip()
+
     value = text
     if field in _SCAN_NUMERIC:
         digits = "".join([c for c in text if c.isdigit()])
         if not digits:
             return {"Status": 0, "Message": "That barcode has no number in it."}
         value = int(digits)
-
-    section, key = target
     st = getState(session)
     st[section][key] = value
     _write(st, session)
@@ -492,7 +512,7 @@ def applyScan(session, text, field):
     # learned here (an MPP part label was found to carry a 'P' prefix on
     # 2026-09-13). Drop this to debug once the label formats are settled.
     BlueRidge.Common.Util.log(
-        "applyScan %s.%s <- %r (raw scan %r)" % (section, key, value, text),
+        "applyScan %s.%s <- %r (raw scan %r)" % (section, key, value, raw),
         level="warn")
     return {"Status": 1, "Message": "Scanned."}
 
