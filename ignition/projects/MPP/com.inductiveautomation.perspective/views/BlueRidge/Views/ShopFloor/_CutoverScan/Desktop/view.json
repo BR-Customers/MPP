@@ -6,7 +6,7 @@
       "lineLocationId": null,
       "entryRoleCode": "MachiningIn",
       "itemId": null,
-      "machineNumber": ""
+      "machineLocationId": null
     }
   },
   "params": {},
@@ -480,23 +480,30 @@
                     }
                   },
                   {
-                    "type": "ia.input.text-field",
+                    "type": "ia.input.dropdown",
                     "meta": {
-                      "name": "MachineNumberInput"
+                      "name": "MachineDropdown"
                     },
                     "props": {
-                      "placeholder": "Machine number",
-                      "deferUpdates": false,
+                      "placeholder": "Pick the machine",
                       "style": {
-                        "classes": "pf-field-input"
+                        "minHeight": "44px"
                       }
                     },
                     "propConfig": {
-                      "props.text": {
+                      "props.options": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Location.Location.getDieCastMachineDropdown\", 0, {view.custom.setupDraft.itemId})"
+                          }
+                        }
+                      },
+                      "props.value": {
                         "binding": {
                           "type": "property",
                           "config": {
-                            "path": "view.custom.setupDraft.machineNumber",
+                            "path": "view.custom.setupDraft.machineLocationId",
                             "bidirectional": true
                           }
                         }
@@ -999,7 +1006,7 @@
                                 "binding": {
                                   "type": "property",
                                   "config": {
-                                    "path": "session.custom.cutover.session.machineNumber"
+                                    "path": "session.custom.cutover.session.machineName"
                                   }
                                 }
                               }
@@ -2086,12 +2093,12 @@
         {
           "name": "startSession",
           "params": [],
-          "script": "\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres = BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineNumber\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup = False"
+          "script": "\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres = BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineLocationId\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup = False"
         },
         {
           "name": "openChange",
           "params": [],
-          "script": "\ts = self.session.custom.cutover.session\n\tself.view.custom.setupDraft = {\"lineLocationId\": s.get(\"lineLocationId\"), \"entryRoleCode\": s.get(\"entryRoleCode\"), \"itemId\": s.get(\"itemId\"), \"machineNumber\": s.get(\"machineNumber\")}\n\tself.view.custom.forceSetup = True"
+          "script": "\ts = self.session.custom.cutover.session\n\tself.view.custom.setupDraft = {\"lineLocationId\": s.get(\"lineLocationId\"), \"entryRoleCode\": s.get(\"entryRoleCode\"), \"itemId\": s.get(\"itemId\"), \"machineLocationId\": s.get(\"machineLocationId\")}\n\tself.view.custom.forceSetup = True"
         },
         {
           "name": "onToolChanged",

@@ -56,7 +56,8 @@
         "toolId": null,
         "toolName": "",
         "toolIsAmbiguous": false,
-        "machineNumber": ""
+        "machineLocationId": null,
+        "machineName": ""
       },
       "entry": {
         "lotName": "",
