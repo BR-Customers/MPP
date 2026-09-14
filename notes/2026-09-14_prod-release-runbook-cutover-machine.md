@@ -1,9 +1,7 @@
 # Prod release runbook — cutover machine + die name
 
 **Release commit:** `e0cc9577` on `jacques/working` — the commit the two archives were
-built and verified from. **HEAD is `a1b4fb78`**, this runbook, committed after them;
-`git diff e0cc9577..a1b4fb78 -- ignition/ sql/` is empty, so the archives and the SQL plan
-are unaffected by it.
+built and verified from.
 **Previous release:** `515db6c6` (2026-09-13, inventory cutover scan).
 **Rehearsed against:** `MPP_MES_ProdSim`, a database built at `515db6c6` — prod's exact
 migration state (81 migrations, highest `0081`, `Lots.Lot.ProducedAtLocationId` absent).
@@ -11,21 +9,17 @@ migration state (81 migrations, highest `0081`, `Lots.Lot.ProducedAtLocationId` 
 **Nothing may be committed between the preview you read and the Execute.** The plan
 fingerprint covers HEAD; Execute refuses if anything moved.
 
-Before starting, confirm the tree is where this runbook says:
-
-```bash
-git log --oneline -1
-```
-
-Expect `a1b4fb78 docs(release): 2026-09-14 prod runbook ...` — this runbook. Confirm no
-deployable moved after the archives were built:
+HEAD will be this runbook, or a later docs-only commit — that is fine and expected.
+What matters is not which commit HEAD is, but that **no deployable moved after the
+archives were built**:
 
 ```bash
 git diff --stat e0cc9577..HEAD -- ignition/ sql/
 ```
 
-Expect **no output**. If anything is listed, the archives are stale — rebuild them with
-`.\tools\Build-ChangeExport.ps1 -Since 515db6c6 -Label cutover-machine` before going on.
+Expect **no output**. If anything is listed, the archives are stale — rebuild with
+`.\tools\Build-ChangeExport.ps1 -Since 515db6c6 -Label cutover-machine` and re-run the
+preview before going on.
 
 ---
 
