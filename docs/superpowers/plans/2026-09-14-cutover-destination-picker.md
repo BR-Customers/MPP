@@ -40,6 +40,7 @@
 - Create: `sql/migrations/versioned/0083_location_is_cutover_destination.sql`
 - Create: `sql/migrations/repeatable/R__Location_Location_ListCutoverDestinationsForLine.sql`
 - Create: `sql/tests/0070_Cutover_EntryRoute/080_CutoverDestinations.sql`
+- Create: `sql/seeds/033_seed_cutover_destinations.sql` — **required**, see note below
 
 **Interfaces:**
 - Produces: `Location.Location.IsCutoverDestination BIT NOT NULL DEFAULT 0`, and
@@ -314,7 +315,18 @@ All nine `[Dest]` assertions pass; the rest of `0070` still passes.
 cd sql/tests && powershell -NoProfile -File Run-Tests.ps1 -DatabaseName <assigned DB>
 ```
 
-Expect 3523 + 9 = **3532 passed, 0 failed, exit 0**. A new `NOT NULL DEFAULT 0` column on `Location.Location` touches a widely-joined table; the full suite is the check that nothing selected `*` and broke.
+Expect 3523 + 10 = **3533 passed, 0 failed, exit 0**. A new `NOT NULL DEFAULT 0` column on `Location.Location` touches a widely-joined table; the full suite is the check that nothing selected `*` and broke.
+
+> **The migration alone is not enough on a fresh database.** `Reset-DevDatabase.ps1`
+> runs versioned migrations at step `[4/6]` and seeds at `[6/7]`, and `WHSE` /
+> `TRIM1-STORE` / `TRIM2-STORE` are created by `sql/seeds/011_seed_locations_mpp_plant.sql`
+> — a **seed**. So `0083`'s `UPDATE` matches zero rows on a rebuilt database. (`0081`
+> escaped this only because its flag sits on `LocationTypeDefinition`, which migration
+> `0002` seeds inline.) A companion `sql/seeds/033_seed_cutover_destinations.sql` carries
+> the same idempotent `UPDATE` pair: the seed is the source of truth for new databases,
+> the migration is the patch for already-seeded ones — the same split
+> `0071_insp_sort_terminal_default_screen.sql` documents. Both files must say why the
+> duplication exists so neither is "tidied" away.
 
 - [ ] **Step 7: Commit**
 
