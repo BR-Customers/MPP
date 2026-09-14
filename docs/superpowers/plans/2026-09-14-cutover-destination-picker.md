@@ -431,12 +431,19 @@ Bump the module `# Version:` and add a change-log line.
 
 ```bash
 powershell -NoProfile -File scan.ps1
-sqlcmd -S localhost -d MPP_MES_Dev -E -C -i sql/migrations/versioned/0083_location_is_cutover_destination.sql
-sqlcmd -S localhost -d MPP_MES_Dev -E -C -i sql/migrations/repeatable/R__Location_Location_ListCutoverDestinationsForLine.sql
+sqlcmd -S localhost -d MPP_MES_Dev -E -C -b -I -i sql/migrations/versioned/0083_location_is_cutover_destination.sql
+sqlcmd -S localhost -d MPP_MES_Dev -E -C -b -I -i sql/migrations/repeatable/R__Location_Location_ListCutoverDestinationsForLine.sql
 sqlcmd -S localhost -d MPP_MES_Dev -E -C -W -s"|" -Q "SET NOCOUNT ON; DECLARE @L BIGINT=(SELECT Id FROM Location.Location WHERE Code='MA1-5GOF'); EXEC Location.Location_ListCutoverDestinationsForLine @LineLocationId=@L;"
 ```
 
 Expect four rows: the line first with `IsDefault = 1`, then `Trim Shop 1 - Trim Storage`, `Trim Shop 2 - Trim Storage`, `Warehouse`.
+
+> **`-I` is not optional when applying a migration by hand.** `0083`'s step-3 diagnostic
+> uses `FOR XML PATH(...).value()`, which requires `QUOTED_IDENTIFIER ON`; `sqlcmd` leaves
+> it OFF by default, so the PRINT dies with `Msg 1934` even though the column add and both
+> UPDATEs succeeded. Every runner in `sql/scripts/` (`Deploy-ProdRelease.ps1`,
+> `Reset-DevDatabase.ps1`) already passes `-b -I -C`, so the deploy path is unaffected —
+> this bites only hand-run `sqlcmd`. `0081` carries the identical pattern.
 
 Applying the migration and proc to `MPP_MES_Dev` is required — the gateway reads that database, and Task 3's views will call this proc. **Apply those two files only. Never reset `MPP_MES_Dev`.**
 
