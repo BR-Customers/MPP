@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-12
-# Version:          1.6
+# Version:          1.9
 #
 # Description:
 #   Entity-script for Location.Location and its attribute values.
@@ -13,6 +13,7 @@
 #       getAttributesByLocation(locId)   -> list[dict]
 #       getAllAreas(includeAll=False)     -> list[{label, value}]
 #       listByTier(tierCode)             -> list[dict]
+#       getDieCastMachineDropdown(itemId) -> list[{label, value}]
 #
 #   Write surface (sort-order actions):
 #       handleMoveUp(selected, userId=None, ...)   -> dict | None
@@ -78,6 +79,10 @@
 #   2026-09-12 - 1.8 - Cutover scan: getStockDestination / getStockDestinationOrEmpty
 #                      (line -> deposit-location resolution via
 #                      Location.Location_GetStockDestination).
+#   2026-09-14 - 1.9 - Cutover scan: getDieCastMachineDropdown(itemId) - die
+#                      cast machines for a part via
+#                      location/DieCastMachine_ListForItem. Label carries the
+#                      AREA because machine Names repeat across areas.
 # =============================================================================
 
 import java.lang
@@ -1048,3 +1053,39 @@ def getStockDestinationOrEmpty(lineLocationId):
     if not row:
         return dict(_EMPTY_STOCK_DEST)
     return row
+
+
+def getDieCastMachineDropdown(itemId, _refreshToken=None):
+    """Die cast machines the cutover scan offers for a part, shaped for
+       ia.input.dropdown: [{label: 'Die Cast 1 - Machine 10', value: <LocationId>}].
+       Always a list, never None.
+
+       The AREA prefix is not decoration. Machine Names repeat across die cast
+       areas -- DC1-M01 and DC2-M01 are both 'Machine 01' -- so a Name-only
+       label shows four identical rows.
+
+       ASCII separator on purpose: the same string is echoed into SQL audit
+       prose, and sqlcmd reads .sql files in the Windows codepage, where a
+       middot becomes mojibake.
+
+       The proc falls back to EVERY active machine when the part carries no
+       machine-tier eligibility row, so an empty list here means no die cast
+       machines are configured at all.
+
+       _refreshToken is ignored -- runScript bindings pass a bumped token to
+       force a re-read (runScript caches on args)."""
+    itemId = _u(itemId)
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "location/DieCastMachine_ListForItem", {"itemId": itemId}) or []
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("getDieCastMachineDropdown failed: %s" % str(e),
+                                  level="warn")
+        return []
+    options = []
+    for r in rows:
+        area = r.get("AreaName") or ""
+        name = r.get("Name") or r.get("Code") or ""
+        options.append({"label": ("%s - %s" % (area, name)) if area else name,
+                        "value": r.get("Id")})
+    return options
