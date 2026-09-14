@@ -40,10 +40,14 @@ logger = system.util.getLogger("BlueRidge.Common.Notify")
 
 # ---- Tunables -------------------------------------------------------------
 DEFAULT_TTL_SEC = 8        # non-error auto-dismiss (matches toast() docstring)
+import java.lang
+
 MAX_VISIBLE     = 5
 STACK_TOP_START = 10        # px from top of viewport for first toast
 STACK_GAP       = 12        # px between stacked toasts (height now varies per toast)
-TOAST_WIDTH     = 500
+TOAST_WIDTH     = 500       # desktop / tablet
+TOAST_WIDTH_SMALL = 330     # phones: 500px anchored right:10 hangs ~120px off
+                            # the left edge of a 390px screen
 TOAST_MIN_HEIGHT = 96       # single-line title + single-line message + padding
 TOAST_MAX_HEIGHT = 320      # cap so one very long message can't dominate the stack
 TOAST_VIEW_PATH = "BlueRidge/Components/Popups/Toast"
@@ -88,7 +92,19 @@ def toast(title, message, level="info", ttl=None):
 
 # ---- Internal helpers (called from host view + toast popup) ---------------
 
-def _estimateHeight(title, message):
+def _toastWidth(view):
+    """Toast width for THIS session's device. Perspective populates
+       session.props.device.type at runtime ('mobile' / 'tablet' / 'desktop').
+       Never-throws: a toast that cannot size itself must still appear."""
+    kind = ""
+    try:
+        kind = (view.session.props.device.type or "").lower()
+    except (Exception, java.lang.Exception):
+        kind = ""
+    return TOAST_WIDTH_SMALL if kind in ("mobile", "phone") else TOAST_WIDTH
+
+
+def _estimateHeight(title, message, width=TOAST_WIDTH):
     """
     Rough px height for THIS toast's content, so the popup (and the next
     toast's stack offset) scale with how much text is actually in it instead
@@ -101,8 +117,9 @@ def _estimateHeight(title, message):
     .psc-toast-msg fs-base ~20px/1.3 line) and its content column width
     (TOAST_WIDTH minus icon/padding/close-icon, ~360px at 500px total).
     """
-    title_chars_per_line   = 28
-    message_chars_per_line = 46
+    scale = (width or TOAST_WIDTH) / float(TOAST_WIDTH)
+    title_chars_per_line   = max(12, int(28 * scale))
+    message_chars_per_line = max(20, int(46 * scale))
     title_line_px          = 28
     message_line_px        = 26
     vertical_padding_px    = 40   # top+bottom padding + icon/content top offset
@@ -125,7 +142,8 @@ def _handle(view, payload):
 
     title = payload.get("title", "")
     message = payload.get("message", "")
-    height = _estimateHeight(title, message)
+    width  = _toastWidth(view)
+    height = _estimateHeight(title, message, width)
     new_top, new_id = _nextSlot(instances)
     new_entry = {
         "id":     new_id,
@@ -139,7 +157,7 @@ def _handle(view, payload):
     system.perspective.openPopup(
         id=new_id,
         view=TOAST_VIEW_PATH,
-        position={"right": 10, "top": new_top, "width": TOAST_WIDTH, "height": height},
+        position={"right": 10, "top": new_top, "width": width, "height": height},
         params={
             "id":      new_id,
             "title":   title,
