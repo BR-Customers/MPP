@@ -824,7 +824,7 @@ Bump `-- Version:     1.5` to `1.6`, set `-- Modified:   2026-09-14`, and add to
 cd sql/tests && powershell -NoProfile -File Run-Tests.ps1 -Filter "0070"
 ```
 
-Expected: all eleven `[ProducedAt]` assertions from `070_…` PASS, alongside Tasks 1 and 2.
+Expected: all twelve `[ProducedAt]` assertions from `070_…` PASS, alongside Tasks 1 and 2.
 
 - [ ] **Step 9: Run the FULL suite — this proc has many callers**
 
