@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-09-12
-# Version:          1.3
+# Version:          1.4
 #
 # Description:
 #   All behaviour for the inventory cutover scan screen. The screen is hosted
@@ -24,7 +24,8 @@
 #   session state, and formats messages.
 #
 # Public surface:
-#   loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId, session)
+#   loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId,
+#               destinationLocationId, session)
 #                          -> {Status, Message}
 #   addBasket(appUserId, terminalLocationId, session)
 #                          -> {Status, Message, NewId}
@@ -85,6 +86,15 @@
 #                      machineName (the dropdown's own label, re-resolved on
 #                      load so a part change clears a stale machine).
 #                      addBasket passes producedAtLocationId; addBox does not.
+#   2026-09-14 - 1.4 - The operator chooses where stock is counted in.
+#                      loadSession takes destinationLocationId as a new SIXTH
+#                      positional argument (before session); the pick is
+#                      resolved against the SAME list the dropdown offered
+#                      (BlueRidge.Location.Location.getCutoverDestinationDropdown)
+#                      so the label cannot drift and a line change cannot
+#                      leave a stale destination. No pick -> the per-line
+#                      getStockDestinationOrEmpty default, i.e. today's
+#                      behaviour, unchanged.
 # =============================================================================
 
 import java.lang
@@ -261,17 +271,29 @@ def _guard(fn):
 
 
 @_guard
-def loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId, session):
+def loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId,
+                destinationLocationId, session):
     """Latch the scan session. Every domain question is asked of SQL; this only
        assembles the answers. Returns {Status, Message}."""
     lineLocationId = _u(lineLocationId)
     itemId = _u(itemId)
     entryRoleCode = _u(entryRoleCode)
     machineLocationId = _u(machineLocationId)
+    destinationLocationId = _u(destinationLocationId)
 
     item = BlueRidge.Parts.Item.getOne(itemId) or {}
     line = BlueRidge.Location.Location.getOne(lineLocationId) or {}
     dest = BlueRidge.Location.Location.getStockDestinationOrEmpty(lineLocationId)
+    # The operator's pick wins; the per-line default is the fallback. Resolved
+    # against the SAME list the dropdown offered, so the label cannot drift and
+    # a line change cannot leave a stale destination selected.
+    destId = dest.get("DestinationLocationId")
+    destName = dest.get("DestinationName") or ""
+    if destinationLocationId is not None:
+        for opt in BlueRidge.Location.Location.getCutoverDestinationDropdown(lineLocationId):
+            if opt.get("value") == destinationLocationId:
+                destId, destName = destinationLocationId, opt.get("label") or ""
+                break
     # EntryRouteSequence is a CASTINGS-ONLY mechanism (design spec 3.4). A
     # SubAssembly's route is a single ConsumeMint step with nothing earlier to
     # skip, and a purchased component has no route at all -- both surface
@@ -313,8 +335,8 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId, sessio
     st = getState(session)
     st["session"] = {
         "lineLocationId": lineLocationId, "lineName": line.get("name") or "",
-        "destinationLocationId": dest.get("DestinationLocationId"),
-        "destinationName": dest.get("DestinationName") or "",
+        "destinationLocationId": destId,
+        "destinationName": destName,
         "entryRoleCode": entryRoleCode, "entryRouteSequence": seq,
         "itemId": itemId, "partNumber": item.get("PartNumber") or "",
         "partDescription": item.get("Description") or "",

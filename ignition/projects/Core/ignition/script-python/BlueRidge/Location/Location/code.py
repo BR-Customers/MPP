@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-12
-# Version:          1.9
+# Version:          2.0
 #
 # Description:
 #   Entity-script for Location.Location and its attribute values.
@@ -14,6 +14,7 @@
 #       getAllAreas(includeAll=False)     -> list[{label, value}]
 #       listByTier(tierCode)             -> list[dict]
 #       getDieCastMachineDropdown(itemId) -> list[{label, value}]
+#       getCutoverDestinationDropdown(lineLocationId) -> list[{label, value}]
 #
 #   Write surface (sort-order actions):
 #       handleMoveUp(selected, userId=None, ...)   -> dict | None
@@ -83,6 +84,12 @@
 #                      cast machines for a part via
 #                      location/DieCastMachine_ListForItem. Label carries the
 #                      AREA because machine Names repeat across areas.
+#   2026-09-14 - 2.0 - Cutover scan: getCutoverDestinationDropdown(lineLocationId)
+#                      - where the operator may count stock in (the line,
+#                      first and default, plus the warehouse and both trim
+#                      stores) via location/CutoverDestination_ListForLine.
+#                      The label is the proc's DisplayName: it parent-qualifies
+#                      a colliding name only when it collides.
 # =============================================================================
 
 import java.lang
@@ -1089,3 +1096,24 @@ def getDieCastMachineDropdown(itemId, _refreshToken=None):
         options.append({"label": ("%s - %s" % (area, name)) if area else name,
                         "value": r.get("Id")})
     return options
+
+
+def getCutoverDestinationDropdown(lineLocationId, _refreshToken=None):
+    """Where the cutover operator may count stock in, shaped for
+       ia.input.dropdown: [{label: 'Warehouse', value: <LocationId>}].
+       The selected line comes back FIRST and is the default. Always a list.
+
+       DisplayName is computed by the proc, which qualifies a name with its
+       parent only when it collides -- both trim stores are called 'Trim
+       Storage'. Do not re-derive the label here."""
+    lineLocationId = _u(lineLocationId)
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "location/CutoverDestination_ListForLine",
+            {"lineLocationId": lineLocationId}) or []
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("getCutoverDestinationDropdown failed: %s" % str(e),
+                                  level="warn")
+        return []
+    return [{"label": r.get("DisplayName") or r.get("Name") or r.get("Code") or "",
+             "value": r.get("Id")} for r in rows]
