@@ -6,7 +6,8 @@
       "entryRoleCode": "MachiningIn",
       "itemId": null,
       "lineLocationId": null,
-      "machineLocationId": null
+      "machineLocationId": null,
+      "destinationLocationId": null
     },
     "headerExpanded": false
   },
@@ -469,6 +470,67 @@
                 "type": "ia.container.flex"
               },
               {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "DestinationFieldLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "Destination"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "DestinationDropdown"
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Location.Location.getCutoverDestinationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.setupDraft.destinationLocationId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "Pick where stock is counted in",
+                      "style": {
+                        "minHeight": "44px"
+                      }
+                    },
+                    "type": "ia.input.dropdown"
+                  }
+                ],
+                "meta": {
+                  "name": "DestinationField"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "gap": "6px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
                 "events": {
                   "component": {
                     "onActionPerformed": {
@@ -907,6 +969,56 @@
                         ],
                         "meta": {
                           "name": "MachineKv"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "DestinationKvK"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-label"
+                              },
+                              "text": "Destination"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "DestinationValue"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "path": "session.custom.cutover.session.destinationName"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-value-mono"
+                              }
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
+                        "meta": {
+                          "name": "DestinationKv"
                         },
                         "position": {
                           "shrink": 0
@@ -2419,12 +2531,12 @@
         {
           "name": "startSession",
           "params": [],
-          "script": "\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres \u003d BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineLocationId\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup \u003d False"
+          "script": "\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres \u003d BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineLocationId\"), d.get(\"destinationLocationId\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup \u003d False"
         },
         {
           "name": "openChange",
           "params": [],
-          "script": "\ts \u003d self.session.custom.cutover.session\n\tself.view.custom.setupDraft \u003d {\"lineLocationId\": s.get(\"lineLocationId\"), \"entryRoleCode\": s.get(\"entryRoleCode\"), \"itemId\": s.get(\"itemId\"), \"machineLocationId\": s.get(\"machineLocationId\")}\n\tself.view.custom.forceSetup \u003d True"
+          "script": "\ts \u003d self.session.custom.cutover.session\n\tself.view.custom.setupDraft \u003d {\"lineLocationId\": s.get(\"lineLocationId\"), \"entryRoleCode\": s.get(\"entryRoleCode\"), \"itemId\": s.get(\"itemId\"), \"machineLocationId\": s.get(\"machineLocationId\"), \"destinationLocationId\": s.get(\"destinationLocationId\")}\n\tself.view.custom.forceSetup \u003d True"
         },
         {
           "name": "onToolChanged",
