@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-09-12
-# Version:          1.0
+# Version:          1.2
 #
 # Description:
 #   All behaviour for the inventory cutover scan screen. The screen is hosted
@@ -76,6 +76,10 @@
 #                      java.util.Date theory recorded in PROJECT_STATUS was
 #                      wrong -- a Date round-trips through a session custom
 #                      prop correctly; verified live.)
+#   2026-09-14 - 1.2 - The die is identified by Tool.Name, not Tool.Code.
+#                      session.toolCode -> session.toolName; the die
+#                      dropdown and the auto-resolved label both read the
+#                      name, with Code kept only as a fallback.
 # =============================================================================
 
 import java.lang
@@ -143,7 +147,7 @@ _EMPTY = {
     "session": {"lineLocationId": None, "lineName": "", "destinationLocationId": None,
                 "destinationName": "", "entryRoleCode": "MachiningIn",
                 "entryRouteSequence": None, "itemId": None, "partNumber": "",
-                "partDescription": "", "toolId": None, "toolCode": "",
+                "partDescription": "", "toolId": None, "toolName": "",
                 "toolIsAmbiguous": False, "machineNumber": ""},
     "entry": {"lotName": "", "toolCavityId": None, "cavityCode": "",
               "castDate": None, "pieceCount": ""},
@@ -273,9 +277,14 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
     seq = BlueRidge.Parts.RouteTemplate.getSequenceForItemRole(itemId, entryRoleCode)
 
     tools = BlueRidge.Tools.Tool.listForItem(itemId)
-    toolId, toolCode, ambiguous = None, "", False
+    # The operator identifies a die by its NAME, not its asset number:
+    # Tool.Code is the asset tag (DMO126), Tool.Name is what the die is
+    # known as on the floor. Code is the fallback only so a die with no
+    # Name still shows something.
+    toolId, toolName, ambiguous = None, "", False
     if len(tools) == 1:
-        toolId, toolCode = tools[0].get("Id"), tools[0].get("Code")
+        toolId = tools[0].get("Id")
+        toolName = tools[0].get("Name") or tools[0].get("Code") or ""
     elif len(tools) > 1:
         ambiguous = True
 
@@ -289,7 +298,7 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineNumber, session):
         "entryRoleCode": entryRoleCode, "entryRouteSequence": seq,
         "itemId": itemId, "partNumber": item.get("PartNumber") or "",
         "partDescription": item.get("Description") or "",
-        "toolId": toolId, "toolCode": toolCode, "toolIsAmbiguous": ambiguous,
+        "toolId": toolId, "toolName": toolName, "toolIsAmbiguous": ambiguous,
         "machineNumber": machineNumber or "",
     }
     st["toolOptions"], st["cavityOptions"] = tools, cavities

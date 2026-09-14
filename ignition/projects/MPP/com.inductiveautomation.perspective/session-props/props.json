@@ -54,7 +54,7 @@
         "partNumber": "",
         "partDescription": "",
         "toolId": null,
-        "toolCode": "",
+        "toolName": "",
         "toolIsAmbiguous": false,
         "machineNumber": ""
       },

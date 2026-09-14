@@ -865,7 +865,7 @@
                                         "binding": {
                                           "type": "property",
                                           "config": {
-                                            "path": "session.custom.cutover.session.toolCode"
+                                            "path": "session.custom.cutover.session.toolName"
                                           }
                                         }
                                       }
@@ -905,7 +905,7 @@
                                   "placeholder": "Pick die",
                                   "style": {
                                     "minHeight": "36px",
-                                    "maxWidth": "160px"
+                                    "maxWidth": "220px"
                                   }
                                 },
                                 "propConfig": {
@@ -918,7 +918,7 @@
                                       "transforms": [
                                         {
                                           "type": "script",
-                                          "code": "\trows = value or []\n\treturn [{\"label\": r.get(\"Code\") or \"\", \"value\": r.get(\"Id\")} for r in rows]"
+                                          "code": "\trows = value or []\n\topts = [{\"label\": r.get(\"Name\") or r.get(\"Code\") or \"\", \"value\": r.get(\"Id\")} for r in rows]\n\treturn sorted(opts, key=lambda o: o[\"label\"])"
                                         }
                                       ]
                                     }
