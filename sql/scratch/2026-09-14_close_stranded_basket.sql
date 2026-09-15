@@ -41,9 +41,9 @@ SET QUOTED_IDENTIFIER ON;   -- Lots.Lot carries a filtered index; DML needs this
 -- PARAMETERS
 -- ------------------------------------------------------------
 DECLARE @LotName             NVARCHAR(50)  = N'10627569';
-DECLARE @Mode                NVARCHAR(20)  = N'Inspect';   -- Inspect | Close | Void
+DECLARE @Mode                NVARCHAR(20)  = N'Close';     -- Inspect | Close | Void
 DECLARE @CorrectedPieceCount INT           = NULL;
-DECLARE @Reason              NVARCHAR(500) = N'Basket left open when DMO124 was released; closed out during die cast screen rework.';
+DECLARE @Reason              NVARCHAR(500) = N'Close-out of a basket left Open when DMO124 came off DC1-M11. PieceCount 2501 confirmed correct (569 counted at the 2026-09-11 reopen, plus 1932 credited since). InventoryAvailable realigned from 2991 -- it had kept the pre-reopen total because the manual reopen set PieceCount without it.';
 DECLARE @AppUserInitials     NVARCHAR(10)  = N'JGP';
 DECLARE @TerminalLocationId  BIGINT        = NULL;
 DECLARE @Commit              BIT           = 0;
