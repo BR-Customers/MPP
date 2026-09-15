@@ -1226,6 +1226,16 @@
                                             "classes": "pf-field-label"
                                           },
                                           "text": "Press counter reading now"
+                                        },
+                                        "propConfig": {
+                                          "props.text": {
+                                            "binding": {
+                                              "type": "expr",
+                                              "config": {
+                                                "expression": "if({view.custom.selectedShiftId} \u003d {view.custom.defaultShiftId} || isNull({view.custom.defaultShiftId}), \u0027Press counter reading now\u0027, \u0027Counter reading at end of that shift\u0027)"
+                                              }
+                                            }
+                                          }
                                         }
                                       },
                                       {
@@ -1378,6 +1388,35 @@
                                   },
                                   "alignItems": "center"
                                 }
+                              },
+                              {
+                                "type": "ia.display.label",
+                                "version": 0,
+                                "meta": {
+                                  "name": "BackdatedNotice"
+                                },
+                                "position": {
+                                  "shrink": 0
+                                },
+                                "propConfig": {
+                                  "position.display": {
+                                    "binding": {
+                                      "type": "expr",
+                                      "config": {
+                                        "expression": "!({view.custom.selectedShiftId} \u003d {view.custom.defaultShiftId} || isNull({view.custom.defaultShiftId}))"
+                                      }
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "text": "Reporting a shift that is not the one in progress. Enter the reading you wrote down at the swap, not the counter now.",
+                                  "style": {
+                                    "classes": "pf-kpi-sub",
+                                    "color": "var(--mpp-state-warn-fg)",
+                                    "fontWeight": 600
+                                  }
+                                },
+                                "custom": {}
                               }
                             ],
                             "position": {
