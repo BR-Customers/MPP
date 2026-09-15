@@ -99,23 +99,31 @@ EXEC test.Assert_IsEqual @TestName = N'[PlantSummary] RejectPercent is reject ov
 -- ---- Non-reject scrap block ----
 INSERT INTO #NR EXEC Quality.Reject_GetNonRejectScrap;
 
+-- Migration 0084 added DC-999 (Warmup) as a sixth IsNonRejectScrap=1 code
+-- alongside the original five from 0067, so the block now lists six rows.
 SELECT @n = COUNT(*) FROM #NR;
-EXEC test.Assert_IsEqual @TestName = N'[NonRejectScrap] all five codes listed even at zero',
-    @Expected = N'5', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[NonRejectScrap] all six codes listed even at zero',
+    @Expected = N'6', @Actual = @n;
 
 SELECT @n = Quantity FROM #NR WHERE DefectCode = N'107';
 EXEC test.Assert_IsEqual @TestName = N'[NonRejectScrap] the Test Part quantity lands here',
     @Expected = N'5', @Actual = @n;
 
-SELECT @n = COUNT(*) FROM #NR WHERE DefectCode NOT IN (N'107', N'170', N'199', N'229', N'230');
+-- DC-999 (Warmup, migration 0084) belongs in this block same as the
+-- original five -- it is a genuine IsNonRejectScrap=1 code, not a leak.
+-- Widened to six names so this guard still catches an ordinary
+-- (IsNonRejectScrap=0) defect code appearing here.
+SELECT @n = COUNT(*) FROM #NR WHERE DefectCode NOT IN (N'107', N'170', N'199', N'229', N'230', N'DC-999');
 EXEC test.Assert_IsEqual @TestName = N'[NonRejectScrap] no ordinary defect leaks into the block',
     @Expected = N'0', @Actual = @n;
 
 -- A past window zeroes the block without dropping its rows.
+-- Name updated to "six rows" for consistency with the two assertions above --
+-- migration 0084 (DC-999) is the reason the block now has six rows, not five.
 DELETE FROM #NR;
 INSERT INTO #NR EXEC Quality.Reject_GetNonRejectScrap @FromEt = '2000-01-01', @ToEt = '2000-01-02';
 SELECT @n = SUM(Quantity) FROM #NR;
-EXEC test.Assert_IsEqual @TestName = N'[NonRejectScrap] a past window reports zero, still five rows',
+EXEC test.Assert_IsEqual @TestName = N'[NonRejectScrap] a past window reports zero, still six rows',
     @Expected = N'0', @Actual = @n;
 GO
 
