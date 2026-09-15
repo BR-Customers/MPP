@@ -183,7 +183,8 @@ INSERT INTO @Defects (Code, Description, OperationCategoryId, IsExcused) VALUES
 -- MPP additions, numbered from 260 -- above the FRS Appendix E maximum of 256.
 -- The free gaps INSIDE the FRS range (155, 193, 196, 251) sit mid-band where
 -- Flexware could still fill them, so ours start a band of their own.
-(N'260', N'Scale Adjustment', @Trim, 0)
+(N'260', N'Scale Adjustment', @Trim, 0),
+(N'DC-999', N'Warmup', @DieCast, 0)
 ;
 
 INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused)
@@ -238,6 +239,12 @@ BEGIN
 
     UPDATE Quality.DefectCode SET ChargeToPartyId = @cpMachineShop
     WHERE ChargeToPartyId IS NULL AND OperationCategoryId = @ocMachAsm;
+
+    -- DC-999 Warmup: process necessity, not a defect. Counted for material and
+    -- yield, excluded from the reject percentage, charged to Die Cast so it
+    -- stays visible as a departmental cost rather than sitting in Unassigned.
+    UPDATE Quality.DefectCode SET IsNonRejectScrap = 1
+    WHERE Code = N'DC-999' AND IsNonRejectScrap = 0;
 
     -- Counted, but excluded from every reject percentage.
     --   107 Test Part (DC)             170 Machine Trial (MS)
