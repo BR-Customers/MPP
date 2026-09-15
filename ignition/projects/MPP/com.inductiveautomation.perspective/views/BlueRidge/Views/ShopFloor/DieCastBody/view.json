@@ -1,109 +1,63 @@
 {
   "custom": {
-    "activeTab": 0,
-    "activeTool": {
-      "AssignedAt": null,
-      "AssignedByUserId": null,
-      "CellLocationId": null,
-      "Id": null,
-      "Notes": null,
-      "ToolCode": "",
-      "ToolId": null,
-      "ToolName": "",
-      "ToolTypeCode": ""
-    },
-    "autoTick": null,
+    "activeTab": 1,
     "breakdown": [],
     "breakdownEntries": {},
     "bulkOpenDraft": {},
     "bulkOpenPendingCount": 0,
     "bulkOpenResult": {},
-    "cavityOptions": [],
-    "cells": [],
-    "dieWideLines": [],
-    "dieWideSeed": 0,
+    "counterReading": "",
+    "dieWideLines": [
+      {
+        "code": "DC-999",
+        "defectCodeId": 165,
+        "fixed": true,
+        "rowLabel": "Warm-up shots",
+        "shots": 0
+      },
+      {
+        "code": "107",
+        "defectCodeId": 21,
+        "fixed": true,
+        "rowLabel": "Quality test shots",
+        "shots": 0
+      }
+    ],
+    "dieWideSeed": 1,
     "dieWideShots": 0,
     "lotFooter": {
       "empty": 0,
       "pieces": 0,
       "running": 0
     },
+    "pendingReleaseLotId": null,
+    "pendingReleaseLotName": "",
+    "pendingSubmit": "",
+    "pendingVoidLotId": null,
+    "pendingVoidLotName": "",
     "reconcile": {
       "canSubmit": false,
+      "dieWide": 0,
       "gateMessage": "",
       "good": 0,
       "needCount": 0,
       "pending": 0,
       "scrap": 0,
       "shots": 0,
-      "unaccounted": 0,
       "shotsNote": "",
-      "unaccountedNote": "",
-      "dieWide": 0
+      "unaccounted": 0,
+      "unaccountedNote": ""
     },
-    "defaultShiftId": null,
-    "counterContext": {
-      "cellLocationId": null,
-      "dieCreditedThrough": 0,
-      "found": false,
-      "hasAnchor": false,
-      "note": "",
-      "reasonName": "",
-      "recordedAt": null,
-      "recordedBy": "",
-      "shiftId": null,
-      "sourceKind": "None",
-      "toolId": null
-    },
-    "counterContextLine": "",
-    "counterReading": "",
-    "itemOptions": [],
-    "openBasketInstances": [],
-    "pendingReleaseLotId": null,
-    "pendingReleaseLotName": "",
-    "pendingSubmit": "",
-    "pendingVoidLotId": null,
-    "pendingVoidLotName": "",
-    "refreshToken": 0,
-    "selectedShiftId": null,
-    "shiftOptions": [],
+    "refreshToken": 8,
+    "selectedShiftId": 20107,
     "shotLossDefectCodeId": null,
-    "shotLossDefectOptions": [],
-    "shotLossQty": "",
-    "shotStatus": {
-      "IsNearLimit": false,
-      "IsOverLimit": false,
-      "PercentOfLimit": null,
-      "ShotCount": 0,
-      "ShotLimit": null,
-      "ShotsRemaining": null,
-      "ToolCode": "",
-      "ToolId": null,
-      "ToolName": ""
-    },
-    "terminalRecent": []
+    "shotLossQty": ""
   },
   "params": {
     "areaId": "",
     "cellPickerEnabled": false
   },
   "propConfig": {
-    "custom.counterContext": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Workorder.DieCast.getCounterContext\", 0, {view.custom.activeTool.ToolId}, {view.custom.selectedShiftId}, {session.custom.cell.locationId}, {view.custom.refreshToken})"
-        },
-        "type": "expr"
-      }
-    },
-    "custom.counterContextLine": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Workorder.DieCast.describeCounterContext\", 0, {view.custom.counterContext})"
-        },
-        "type": "expr"
-      }
-    },
     "custom.activeTool": {
       "binding": {
         "config": {
@@ -136,6 +90,22 @@
       "binding": {
         "config": {
           "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId}, \"Die Cast Machine\")"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.counterContext": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.getCounterContext\", 0, {view.custom.activeTool.ToolId}, {view.custom.selectedShiftId}, {session.custom.cell.locationId}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.counterContextLine": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCast.describeCounterContext\", 0, {view.custom.counterContext})"
         },
         "type": "expr"
       }
@@ -377,8 +347,7 @@
               "style": {
                 "classes": "pf-pill",
                 "fontFamily": "var(--mpp-font-mono)"
-              },
-              "text": ""
+              }
             },
             "type": "ia.display.label"
           },
@@ -454,7 +423,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                    "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t# refreshToken only re-reads the runScript-backed bindings. The\n\t# Reconcile grid is imperative (view.custom.breakdown), so without\n\t# this the tab an operator is looking at never re-read. quiet\u003dTrue:\n\t# a no-op when no counter reading has been entered yet.\n\tself.view.rootContainer.computeBreakdown(True)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -522,22 +491,13 @@
           {
             "children": [
               {
-                "meta": {
-                  "name": "LotManagementPanel"
-                },
-                "type": "ia.container.flex",
                 "children": [
                   {
-                    "meta": {
-                      "name": "ToolRow"
-                    },
-                    "type": "ia.container.flex",
                     "children": [
                       {
                         "meta": {
                           "name": "ToolLabel"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "shrink": 0
                         },
@@ -546,13 +506,13 @@
                             "classes": "pf-field-label"
                           },
                           "text": "Die"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "ToolValue"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "0",
                           "grow": 1
@@ -570,9 +530,9 @@
                         "props": {
                           "style": {
                             "classes": "pf-field-input-mono"
-                          },
-                          "text": ""
-                        }
+                          }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "events": {
@@ -589,7 +549,6 @@
                         "meta": {
                           "name": "DieMountButton"
                         },
-                        "type": "ia.input.button",
                         "position": {
                           "shrink": 0
                         },
@@ -598,126 +557,120 @@
                             "classes": "pf-btn pf-btn-secondary"
                           },
                           "text": "Die Mount"
-                        }
+                        },
+                        "type": "ia.input.button"
                       }
                     ],
+                    "meta": {
+                      "name": "ToolRow"
+                    },
                     "position": {
                       "shrink": 0
                     },
                     "props": {
+                      "alignItems": "center",
                       "style": {
                         "gap": "10px",
                         "overflow": "visible"
-                      },
-                      "alignItems": "center"
-                    }
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "meta": {
-                      "name": "LotGridHeader"
-                    },
-                    "type": "ia.container.flex",
                     "children": [
                       {
                         "meta": {
                           "name": "HdrCavity"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "180px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
-                            "classes": "pf-field-label"
+                            "classes": "pf-field-label",
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Cavity"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrPart"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "170px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
-                            "classes": "pf-field-label"
+                            "classes": "pf-field-label",
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Part"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrBasket"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "0",
-                          "grow": 1,
-                          "shrink": 1
+                          "grow": 1
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
-                            "classes": "pf-field-label"
+                            "classes": "pf-field-label",
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Basket"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrPieces"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "90px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
+                            "classes": "pf-field-label",
                             "textAlign": "right",
-                            "classes": "pf-field-label"
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Pieces"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrActions"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "230px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
-                            "classes": "pf-field-label"
-                          },
-                          "text": ""
-                        }
+                            "classes": "pf-field-label",
+                            "whiteSpace": "nowrap"
+                          }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.display.label",
-                        "version": 0,
-                        "props": {
-                          "text": ""
-                        },
                         "meta": {
                           "name": "LotHdrSpacer"
                         },
                         "position": {
                           "grow": 1
                         },
-                        "custom": {}
+                        "type": "ia.display.label"
                       },
                       {
                         "events": {
@@ -751,6 +704,9 @@
                         "type": "ia.display.icon"
                       }
                     ],
+                    "meta": {
+                      "name": "LotGridHeader"
+                    },
                     "position": {
                       "shrink": 0
                     },
@@ -765,13 +721,14 @@
                       }
                     },
                     "props": {
+                      "alignItems": "center",
                       "style": {
-                        "padding": "0 14px",
                         "gap": "12px",
-                        "overflow": "hidden"
-                      },
-                      "alignItems": "center"
-                    }
+                        "overflow": "hidden",
+                        "padding": "0 14px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
                     "meta": {
@@ -806,10 +763,10 @@
                       },
                       "path": "BlueRidge/Components/PlantFloor/DieCastEntry/LotManagementRow",
                       "style": {
-                        "gap": "6px",
-                        "overflowY": "auto",
                         "alignContent": "flex-start",
-                        "justifyContent": "flex-start"
+                        "gap": "6px",
+                        "justifyContent": "flex-start",
+                        "overflowY": "auto"
                       },
                       "useDefaultViewHeight": false,
                       "useDefaultViewWidth": false
@@ -820,23 +777,22 @@
                     "meta": {
                       "name": "EmptyHint"
                     },
-                    "type": "ia.display.label",
                     "position": {
                       "shrink": 0
                     },
                     "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "expression": "if(isNull({view.custom.activeTool.ToolId}), \"No die is mounted on this cell - a basket can only be opened against a mounted die.\", \"The mounted die has no active cavities. Add them in Tool Config.\")"
-                          },
-                          "type": "expr"
-                        }
-                      },
                       "position.display": {
                         "binding": {
                           "config": {
                             "expression": "len({view.custom.cavityOptions}) \u003d 0"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "if(isNull({view.custom.activeTool.ToolId}), \"No die is mounted on this cell - a basket can only be opened against a mounted die.\", \"The mounted die has no active cavities. Add them in Tool Config.\")"
                           },
                           "type": "expr"
                         }
@@ -845,15 +801,11 @@
                     "props": {
                       "style": {
                         "classes": "pf-empty-hint"
-                      },
-                      "text": ""
-                    }
+                      }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "meta": {
-                      "name": "FormActions"
-                    },
-                    "type": "ia.container.flex",
                     "children": [
                       {
                         "events": {
@@ -870,7 +822,6 @@
                         "meta": {
                           "name": "OpenAllButton"
                         },
-                        "type": "ia.input.button",
                         "position": {
                           "shrink": 0
                         },
@@ -895,9 +846,9 @@
                         "props": {
                           "style": {
                             "classes": "pf-btn pf-btn-primary pf-btn-large"
-                          },
-                          "text": "OPEN BASKETS"
-                        }
+                          }
+                        },
+                        "type": "ia.input.button"
                       },
                       {
                         "events": {
@@ -917,7 +868,6 @@
                             "text": "Single-part die: copy the first part you picked onto every cavity row that has none yet. Each row stays editable."
                           }
                         },
-                        "type": "ia.input.button",
                         "position": {
                           "shrink": 0
                         },
@@ -936,7 +886,8 @@
                             "classes": "pf-btn pf-btn-secondary"
                           },
                           "text": "Copy part to empty rows"
-                        }
+                        },
+                        "type": "ia.input.button"
                       },
                       {
                         "events": {
@@ -953,7 +904,6 @@
                         "meta": {
                           "name": "ClearButton"
                         },
-                        "type": "ia.input.button",
                         "position": {
                           "shrink": 0
                         },
@@ -962,25 +912,22 @@
                             "classes": "pf-btn pf-btn-secondary"
                           },
                           "text": "Clear"
-                        }
+                        },
+                        "type": "ia.input.button"
                       },
                       {
                         "meta": {
                           "name": "ActionsSpacer"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "grow": 1
                         },
-                        "props": {
-                          "text": ""
-                        }
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "FooterSummary"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "shrink": 0
                         },
@@ -997,129 +944,107 @@
                         "props": {
                           "style": {
                             "classes": "pf-kpi-sub"
-                          },
-                          "text": ""
-                        }
+                          }
+                        },
+                        "type": "ia.display.label"
                       }
                     ],
+                    "meta": {
+                      "name": "FormActions"
+                    },
                     "position": {
                       "shrink": 0
                     },
                     "props": {
+                      "alignItems": "center",
                       "style": {
                         "gap": "10px",
                         "overflow": "visible"
-                      },
-                      "alignItems": "center"
-                    }
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
                 ],
-                "position": {
-                  "tabIndex": 0
+                "meta": {
+                  "name": "LotManagementPanel"
                 },
                 "props": {
+                  "direction": "column",
                   "style": {
-                    "padding": "10px",
                     "classes": "pf-panel",
                     "gap": "8px",
-                    "overflow": "hidden"
-                  },
-                  "direction": "column"
-                }
+                    "overflow": "hidden",
+                    "padding": "10px"
+                  }
+                },
+                "type": "ia.container.flex"
               },
               {
-                "meta": {
-                  "name": "ReconcilePanel"
-                },
-                "type": "ia.container.flex",
                 "children": [
                   {
-                    "meta": {
-                      "name": "TopRow"
-                    },
-                    "type": "ia.container.flex",
                     "children": [
                       {
-                        "meta": {
-                          "name": "EntryCol"
-                        },
-                        "type": "ia.container.flex",
                         "children": [
                           {
-                            "meta": {
-                              "name": "EntrySection"
-                            },
-                            "type": "ia.container.flex",
                             "children": [
                               {
                                 "meta": {
                                   "name": "EntrySectionText"
                                 },
-                                "type": "ia.display.label",
                                 "position": {
                                   "shrink": 0
                                 },
                                 "props": {
                                   "style": {
-                                    "letterSpacing": "0.1em",
-                                    "classes": "pf-field-label"
+                                    "classes": "pf-field-label",
+                                    "letterSpacing": "0.1em"
                                   },
                                   "text": "THIS ENTRY"
-                                }
+                                },
+                                "type": "ia.display.label"
                               },
                               {
                                 "meta": {
                                   "name": "EntrySectionSpacer"
                                 },
-                                "type": "ia.display.label",
                                 "position": {
                                   "grow": 1
                                 },
-                                "props": {
-                                  "text": ""
-                                }
+                                "type": "ia.display.label"
                               }
                             ],
+                            "meta": {
+                              "name": "EntrySection"
+                            },
                             "position": {
                               "shrink": 0
                             },
                             "props": {
+                              "alignItems": "baseline",
                               "style": {
                                 "gap": "10px",
                                 "overflow": "visible"
-                              },
-                              "alignItems": "baseline"
-                            }
+                              }
+                            },
+                            "type": "ia.container.flex"
                           },
                           {
-                            "meta": {
-                              "name": "EntryCard"
-                            },
-                            "type": "ia.container.flex",
                             "children": [
                               {
-                                "meta": {
-                                  "name": "FieldsRow"
-                                },
-                                "type": "ia.container.flex",
                                 "children": [
                                   {
-                                    "meta": {
-                                      "name": "ShiftField"
-                                    },
-                                    "type": "ia.container.flex",
                                     "children": [
                                       {
                                         "meta": {
                                           "name": "ShiftLabel"
                                         },
-                                        "type": "ia.display.label",
                                         "props": {
                                           "style": {
                                             "classes": "pf-field-label"
                                           },
                                           "text": "Reporting shift"
-                                        }
+                                        },
+                                        "type": "ia.display.label"
                                       },
                                       {
                                         "meta": {
@@ -1137,8 +1062,8 @@
                                           "props.value": {
                                             "binding": {
                                               "config": {
-                                                "path": "view.custom.selectedShiftId",
-                                                "bidirectional": true
+                                                "bidirectional": true,
+                                                "path": "view.custom.selectedShiftId"
                                               },
                                               "type": "property"
                                             }
@@ -1155,46 +1080,44 @@
                                         "type": "ia.input.dropdown"
                                       }
                                     ],
+                                    "meta": {
+                                      "name": "ShiftField"
+                                    },
                                     "position": {
-                                      "basis": "230px",
-                                      "shrink": 1
+                                      "basis": "230px"
                                     },
                                     "props": {
+                                      "direction": "column",
                                       "style": {
                                         "classes": "pf-field",
                                         "gap": "4px",
                                         "overflow": "visible"
-                                      },
-                                      "direction": "column"
-                                    }
+                                      }
+                                    },
+                                    "type": "ia.container.flex"
                                   },
                                   {
-                                    "meta": {
-                                      "name": "CounterField"
-                                    },
-                                    "type": "ia.container.flex",
                                     "children": [
                                       {
                                         "meta": {
                                           "name": "CounterLabel"
                                         },
-                                        "type": "ia.display.label",
-                                        "props": {
-                                          "style": {
-                                            "classes": "pf-field-label"
-                                          },
-                                          "text": "Press counter reading now"
-                                        },
                                         "propConfig": {
                                           "props.text": {
                                             "binding": {
-                                              "type": "expr",
                                               "config": {
                                                 "expression": "if({view.custom.selectedShiftId} \u003d {view.custom.defaultShiftId} || isNull({view.custom.defaultShiftId}), \u0027Press counter reading now\u0027, \u0027Counter reading at end of that shift\u0027)"
-                                              }
+                                              },
+                                              "type": "expr"
                                             }
                                           }
-                                        }
+                                        },
+                                        "props": {
+                                          "style": {
+                                            "classes": "pf-field-label"
+                                          }
+                                        },
+                                        "type": "ia.display.label"
                                       },
                                       {
                                         "meta": {
@@ -1204,8 +1127,8 @@
                                           "props.text": {
                                             "binding": {
                                               "config": {
-                                                "path": "view.custom.counterReading",
-                                                "bidirectional": true
+                                                "bidirectional": true,
+                                                "path": "view.custom.counterReading"
                                               },
                                               "type": "property"
                                             }
@@ -1221,18 +1144,22 @@
                                         "type": "ia.input.text-field"
                                       }
                                     ],
+                                    "meta": {
+                                      "name": "CounterField"
+                                    },
                                     "position": {
                                       "basis": "170px",
                                       "shrink": 0
                                     },
                                     "props": {
+                                      "direction": "column",
                                       "style": {
                                         "classes": "pf-field",
                                         "gap": "4px",
                                         "overflow": "visible"
-                                      },
-                                      "direction": "column"
-                                    }
+                                      }
+                                    },
+                                    "type": "ia.container.flex"
                                   },
                                   {
                                     "events": {
@@ -1249,7 +1176,6 @@
                                     "meta": {
                                       "name": "ComputeButton"
                                     },
-                                    "type": "ia.input.button",
                                     "position": {
                                       "shrink": 0
                                     },
@@ -1258,35 +1184,34 @@
                                         "classes": "pf-btn pf-btn-secondary pf-btn-large"
                                       },
                                       "text": "Compute"
-                                    }
+                                    },
+                                    "type": "ia.input.button"
                                   }
                                 ],
+                                "meta": {
+                                  "name": "FieldsRow"
+                                },
                                 "position": {
                                   "shrink": 0
                                 },
                                 "props": {
+                                  "alignItems": "flex-end",
                                   "style": {
                                     "gap": "10px",
                                     "overflow": "visible"
-                                  },
-                                  "alignItems": "flex-end"
-                                }
+                                  }
+                                },
+                                "type": "ia.container.flex"
                               },
                               {
-                                "meta": {
-                                  "name": "ContextRow"
-                                },
-                                "type": "ia.container.flex",
                                 "children": [
                                   {
                                     "meta": {
                                       "name": "CounterContextLabel"
                                     },
-                                    "type": "ia.display.label",
                                     "position": {
                                       "basis": "0",
-                                      "grow": 1,
-                                      "shrink": 1
+                                      "grow": 1
                                     },
                                     "propConfig": {
                                       "props.text": {
@@ -1300,11 +1225,11 @@
                                     },
                                     "props": {
                                       "style": {
-                                        "fontWeight": 600,
-                                        "classes": "pf-kpi-sub"
-                                      },
-                                      "text": ""
-                                    }
+                                        "classes": "pf-kpi-sub",
+                                        "fontWeight": 600
+                                      }
+                                    },
+                                    "type": "ia.display.label"
                                   },
                                   {
                                     "events": {
@@ -1324,7 +1249,6 @@
                                         "text": "Counter reset, or a wrong total recorded earlier?"
                                       }
                                     },
-                                    "type": "ia.input.button",
                                     "position": {
                                       "shrink": 0
                                     },
@@ -1333,23 +1257,26 @@
                                         "classes": "pf-btn pf-btn-secondary"
                                       },
                                       "text": "Fix counter"
-                                    }
+                                    },
+                                    "type": "ia.input.button"
                                   }
                                 ],
+                                "meta": {
+                                  "name": "ContextRow"
+                                },
                                 "position": {
                                   "shrink": 0
                                 },
                                 "props": {
+                                  "alignItems": "center",
                                   "style": {
                                     "gap": "10px",
                                     "overflow": "visible"
-                                  },
-                                  "alignItems": "center"
-                                }
+                                  }
+                                },
+                                "type": "ia.container.flex"
                               },
                               {
-                                "type": "ia.display.label",
-                                "version": 0,
                                 "meta": {
                                   "name": "BackdatedNotice"
                                 },
@@ -1359,123 +1286,119 @@
                                 "propConfig": {
                                   "position.display": {
                                     "binding": {
-                                      "type": "expr",
                                       "config": {
                                         "expression": "!({view.custom.selectedShiftId} \u003d {view.custom.defaultShiftId} || isNull({view.custom.defaultShiftId}))"
-                                      }
+                                      },
+                                      "type": "expr"
                                     }
                                   }
                                 },
                                 "props": {
-                                  "text": "Reporting a shift that is not the one in progress. Enter the reading you wrote down at the swap, not the counter now.",
                                   "style": {
                                     "classes": "pf-kpi-sub",
                                     "color": "var(--mpp-state-warn-fg)",
                                     "fontWeight": 600
-                                  }
+                                  },
+                                  "text": "Reporting a shift that is not the one in progress. Enter the reading you wrote down at the swap, not the counter now."
                                 },
-                                "custom": {}
+                                "type": "ia.display.label"
                               }
                             ],
+                            "meta": {
+                              "name": "EntryCard"
+                            },
                             "position": {
-                              "basis": "auto",
                               "grow": 1,
                               "shrink": 0
                             },
                             "props": {
+                              "direction": "column",
                               "style": {
                                 "border": "1px solid var(--mpp-border-subtle, #2C3A55)",
                                 "borderRadius": "8px",
-                                "padding": "10px 12px",
                                 "gap": "8px",
-                                "overflow": "visible"
-                              },
-                              "direction": "column"
-                            }
+                                "overflow": "visible",
+                                "padding": "10px 12px"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           }
                         ],
+                        "meta": {
+                          "name": "EntryCol"
+                        },
                         "position": {
-                          "basis": "430px",
-                          "grow": 1,
-                          "shrink": 1
+                          "basis": "500px",
+                          "grow": 1
                         },
                         "props": {
+                          "direction": "column",
                           "style": {
                             "gap": "4px",
                             "overflow": "visible"
-                          },
-                          "direction": "column"
-                        }
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "meta": {
-                          "name": "DieWideCol"
-                        },
-                        "type": "ia.container.flex",
                         "children": [
                           {
-                            "meta": {
-                              "name": "DieWideSection"
-                            },
-                            "type": "ia.container.flex",
                             "children": [
                               {
                                 "meta": {
                                   "name": "DieWideSectionText"
                                 },
-                                "type": "ia.display.label",
                                 "position": {
                                   "shrink": 0
                                 },
                                 "props": {
                                   "style": {
-                                    "letterSpacing": "0.1em",
-                                    "classes": "pf-field-label"
+                                    "classes": "pf-field-label",
+                                    "letterSpacing": "0.1em"
                                   },
                                   "text": "DIE-WIDE"
-                                }
+                                },
+                                "type": "ia.display.label"
                               },
                               {
                                 "meta": {
                                   "name": "DieWideSectionNote"
                                 },
-                                "type": "ia.display.label",
                                 "position": {
                                   "basis": "0",
-                                  "grow": 1,
-                                  "shrink": 1
+                                  "grow": 1
                                 },
                                 "props": {
                                   "style": {
                                     "classes": "pf-kpi-sub"
                                   },
                                   "text": "one lost shot costs one part on every running cavity"
-                                }
+                                },
+                                "type": "ia.display.label"
                               }
                             ],
+                            "meta": {
+                              "name": "DieWideSection"
+                            },
                             "position": {
                               "shrink": 0
                             },
                             "props": {
+                              "alignItems": "baseline",
                               "style": {
                                 "gap": "10px",
                                 "overflow": "visible"
-                              },
-                              "alignItems": "baseline"
-                            }
+                              }
+                            },
+                            "type": "ia.container.flex"
                           },
                           {
-                            "meta": {
-                              "name": "DieWideCard"
-                            },
-                            "type": "ia.container.flex",
                             "children": [
                               {
                                 "meta": {
                                   "name": "DieWideRepeater"
                                 },
                                 "position": {
-                                  "basis": "auto",
                                   "shrink": 0
                                 },
                                 "propConfig": {
@@ -1505,16 +1428,11 @@
                                     "gap": "4px",
                                     "overflow": "visible"
                                   },
-                                  "useDefaultViewHeight": true,
                                   "useDefaultViewWidth": false
                                 },
                                 "type": "ia.display.flex-repeater"
                               },
                               {
-                                "meta": {
-                                  "name": "DieWideActions"
-                                },
-                                "type": "ia.container.flex",
                                 "children": [
                                   {
                                     "events": {
@@ -1531,39 +1449,35 @@
                                     "meta": {
                                       "name": "AddDieWideButton"
                                     },
-                                    "type": "ia.input.button",
                                     "position": {
                                       "shrink": 0
                                     },
                                     "props": {
-                                      "style": {
-                                        "classes": "pf-btn pf-btn-secondary"
-                                      },
-                                      "text": "Add die-wide scrap",
                                       "image": {
                                         "icon": {
                                           "path": "mpp/add_circle"
                                         }
-                                      }
-                                    }
+                                      },
+                                      "style": {
+                                        "classes": "pf-btn pf-btn-secondary"
+                                      },
+                                      "text": "Add die-wide scrap"
+                                    },
+                                    "type": "ia.input.button"
                                   },
                                   {
                                     "meta": {
                                       "name": "DieWideSpacer"
                                     },
-                                    "type": "ia.display.label",
                                     "position": {
                                       "grow": 1
                                     },
-                                    "props": {
-                                      "text": ""
-                                    }
+                                    "type": "ia.display.label"
                                   },
                                   {
                                     "meta": {
                                       "name": "DieWideSummary"
                                     },
-                                    "type": "ia.display.label",
                                     "position": {
                                       "shrink": 0
                                     },
@@ -1580,55 +1494,68 @@
                                     "props": {
                                       "style": {
                                         "classes": "pf-kpi-sub"
-                                      },
-                                      "text": ""
-                                    }
+                                      }
+                                    },
+                                    "type": "ia.display.label"
                                   }
                                 ],
+                                "meta": {
+                                  "name": "DieWideActions"
+                                },
                                 "position": {
                                   "shrink": 0
                                 },
                                 "props": {
+                                  "alignItems": "center",
                                   "style": {
                                     "gap": "10px",
                                     "overflow": "visible"
-                                  },
-                                  "alignItems": "center"
-                                }
+                                  }
+                                },
+                                "type": "ia.container.flex"
                               }
                             ],
+                            "meta": {
+                              "name": "DieWideCard"
+                            },
                             "position": {
-                              "basis": "auto",
                               "grow": 1,
                               "shrink": 0
                             },
                             "props": {
+                              "direction": "column",
                               "style": {
                                 "border": "1px solid var(--mpp-border-subtle, #2C3A55)",
-                                "borderRadius": "8px",
-                                "padding": "10px 12px",
                                 "borderLeft": "3px solid var(--pf-status-warn-fg, #F4B343)",
+                                "borderRadius": "8px",
                                 "gap": "5px",
-                                "overflow": "visible"
-                              },
-                              "direction": "column"
-                            }
+                                "overflow": "visible",
+                                "padding": "10px 12px"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           }
                         ],
+                        "meta": {
+                          "name": "DieWideCol"
+                        },
                         "position": {
                           "basis": "560px",
-                          "grow": 2,
-                          "shrink": 1
+                          "grow": 2
                         },
                         "props": {
+                          "direction": "column",
                           "style": {
                             "gap": "4px",
                             "overflow": "visible"
-                          },
-                          "direction": "column"
-                        }
+                          }
+                        },
+                        "type": "ia.container.flex"
                       }
                     ],
+                    "meta": {
+                      "name": "TopRow"
+                    },
                     "position": {
                       "shrink": 0
                     },
@@ -1637,48 +1564,43 @@
                         "gap": "12px",
                         "overflow": "visible"
                       },
-                      "alignItems": "stretch",
                       "wrap": "wrap"
-                    }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "meta": {
-                      "name": "GridSection"
-                    },
-                    "type": "ia.container.flex",
                     "children": [
                       {
                         "meta": {
                           "name": "GridSectionText"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "letterSpacing": "0.1em",
-                            "classes": "pf-field-label"
+                            "classes": "pf-field-label",
+                            "letterSpacing": "0.1em"
                           },
                           "text": "PER CAVITY"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "GridSectionNote"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "0",
-                          "grow": 1,
-                          "shrink": 1
+                          "grow": 1
                         },
                         "props": {
                           "style": {
                             "classes": "pf-kpi-sub"
                           },
                           "text": "grouped by part - good is pre-filled and editable"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "events": {
@@ -1705,174 +1627,176 @@
                           "path": "material/help_outline",
                           "style": {
                             "cursor": "pointer",
-                            "height": "35px",
-                            "width": "35px"
+                            "height": "24px",
+                            "width": "24px"
                           }
                         },
                         "type": "ia.display.icon"
                       }
                     ],
+                    "meta": {
+                      "name": "GridSection"
+                    },
                     "position": {
                       "shrink": 0
                     },
                     "props": {
+                      "alignItems": "center",
                       "style": {
                         "gap": "10px",
                         "overflow": "visible"
-                      },
-                      "alignItems": "center"
-                    }
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "meta": {
-                      "name": "ReconcileGridHeader"
-                    },
-                    "type": "ia.container.flex",
                     "children": [
                       {
                         "meta": {
                           "name": "HdrCavity"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "180px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
-                            "classes": "pf-field-label"
+                            "classes": "pf-field-label",
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Cavity"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrBasket"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "0",
-                          "grow": 1,
-                          "shrink": 1
+                          "grow": 1
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
-                            "classes": "pf-field-label"
+                            "classes": "pf-field-label",
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Basket"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrShots"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "110px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
+                            "classes": "pf-field-label",
                             "textAlign": "right",
-                            "classes": "pf-field-label"
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Shots"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrGood"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "130px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
+                            "classes": "pf-field-label",
                             "textAlign": "right",
-                            "classes": "pf-field-label"
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Good"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrScrap"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "140px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
+                            "classes": "pf-field-label",
                             "textAlign": "right",
-                            "classes": "pf-field-label"
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Cavity scrap"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrVariance"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "130px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
+                            "classes": "pf-field-label",
                             "textAlign": "right",
-                            "classes": "pf-field-label"
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Variance"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrShiftGood"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "95px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
+                            "classes": "pf-field-label",
                             "textAlign": "right",
-                            "classes": "pf-field-label"
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Shift good"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "HdrShiftScrap"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "basis": "95px",
                           "shrink": 0
                         },
                         "props": {
                           "style": {
-                            "whiteSpace": "nowrap",
+                            "classes": "pf-field-label",
                             "textAlign": "right",
-                            "classes": "pf-field-label"
+                            "whiteSpace": "nowrap"
                           },
                           "text": "Shift scrap"
-                        }
+                        },
+                        "type": "ia.display.label"
                       }
                     ],
+                    "meta": {
+                      "name": "ReconcileGridHeader"
+                    },
                     "position": {
                       "shrink": 0
                     },
@@ -1887,19 +1811,19 @@
                       }
                     },
                     "props": {
+                      "alignItems": "center",
                       "style": {
-                        "padding": "0 14px",
                         "gap": "10px",
-                        "overflow": "hidden"
-                      },
-                      "alignItems": "center"
-                    }
+                        "overflow": "hidden",
+                        "padding": "0 14px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
                     "meta": {
                       "name": "BreakdownEmptyHint"
                     },
-                    "type": "ia.display.label",
                     "position": {
                       "shrink": 0
                     },
@@ -1918,7 +1842,8 @@
                         "classes": "pf-empty-hint"
                       },
                       "text": "Enter the press counter reading and press Compute."
-                    }
+                    },
+                    "type": "ia.display.label"
                   },
                   {
                     "meta": {
@@ -1926,8 +1851,7 @@
                     },
                     "position": {
                       "basis": "0",
-                      "grow": 1,
-                      "shrink": 1
+                      "grow": 1
                     },
                     "propConfig": {
                       "props.instances": {
@@ -1946,6 +1870,7 @@
                       }
                     },
                     "props": {
+                      "alignContent": "flex-start",
                       "direction": "column",
                       "elementPosition": {
                         "basis": "auto",
@@ -1954,11 +1879,10 @@
                       },
                       "path": "BlueRidge/Components/PlantFloor/DieCastEntry/CavityLotRow",
                       "style": {
-                        "gap": "6px",
-                        "overflowY": "auto",
-                        "overflow": "auto",
                         "alignContent": "flex-start",
-                        "justifyContent": "flex-start"
+                        "gap": "6px",
+                        "justifyContent": "flex-start",
+                        "overflowY": "auto"
                       },
                       "useDefaultViewHeight": false,
                       "useDefaultViewWidth": false
@@ -1966,34 +1890,25 @@
                     "type": "ia.display.flex-repeater"
                   },
                   {
-                    "meta": {
-                      "name": "TotalsBar"
-                    },
-                    "type": "ia.container.flex",
                     "children": [
                       {
-                        "meta": {
-                          "name": "TotShots"
-                        },
-                        "type": "ia.container.flex",
                         "children": [
                           {
                             "meta": {
                               "name": "TotShotsCaption"
                             },
-                            "type": "ia.display.label",
                             "props": {
                               "style": {
                                 "classes": "pf-kpi-label"
                               },
                               "text": "Parts"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
                             "meta": {
                               "name": "TotShotsValue"
                             },
-                            "type": "ia.display.label",
                             "propConfig": {
                               "props.text": {
                                 "binding": {
@@ -2006,16 +1921,14 @@
                             },
                             "props": {
                               "style": {
+                                "classes": "pf-kpi-value",
                                 "fontFamily": "var(--mpp-font-mono)",
-                                "fontWeight": 700,
-                                "classes": "pf-kpi-value"
-                              },
-                              "text": "0"
-                            }
+                                "fontWeight": 700
+                              }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.display.label",
-                            "version": 0,
                             "meta": {
                               "name": "TotShotsNote"
                             },
@@ -2023,85 +1936,83 @@
                               "shrink": 0
                             },
                             "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {
-                                    "expression": "{view.custom.reconcile.shotsNote}"
-                                  }
-                                }
-                              },
                               "position.display": {
                                 "binding": {
-                                  "type": "expr",
                                   "config": {
                                     "expression": "len({view.custom.reconcile.shotsNote}) \u003e 0"
-                                  }
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "{view.custom.reconcile.shotsNote}"
+                                  },
+                                  "type": "expr"
                                 }
                               }
                             },
                             "props": {
-                              "text": "",
                               "style": {
                                 "classes": "pf-kpi-sub",
                                 "fontFamily": "var(--mpp-font-mono)",
                                 "whiteSpace": "nowrap"
                               }
                             },
-                            "custom": {}
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "TotShots"
+                        },
                         "position": {
                           "shrink": 0
                         },
                         "props": {
+                          "direction": "column",
                           "style": {
                             "gap": "1px",
                             "overflow": "visible"
-                          },
-                          "direction": "column"
-                        }
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
                         "meta": {
                           "name": "OpMinus1"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "shrink": 0
                         },
                         "props": {
                           "style": {
+                            "classes": "pf-kpi-value",
                             "color": "var(--mpp-text-tertiary, #697A98)",
-                            "fontFamily": "var(--mpp-font-mono)",
-                            "classes": "pf-kpi-value"
+                            "fontFamily": "var(--mpp-font-mono)"
                           },
                           "text": "-"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "meta": {
-                          "name": "TotGood"
-                        },
-                        "type": "ia.container.flex",
                         "children": [
                           {
                             "meta": {
                               "name": "TotGoodCaption"
                             },
-                            "type": "ia.display.label",
                             "props": {
                               "style": {
                                 "classes": "pf-kpi-label"
                               },
                               "text": "Good"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
                             "meta": {
                               "name": "TotGoodValue"
                             },
-                            "type": "ia.display.label",
                             "propConfig": {
                               "props.text": {
                                 "binding": {
@@ -2114,65 +2025,64 @@
                             },
                             "props": {
                               "style": {
+                                "classes": "pf-kpi-value",
                                 "fontFamily": "var(--mpp-font-mono)",
-                                "fontWeight": 700,
-                                "classes": "pf-kpi-value"
-                              },
-                              "text": "0"
-                            }
+                                "fontWeight": 700
+                              }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "TotGood"
+                        },
                         "position": {
                           "shrink": 0
                         },
                         "props": {
+                          "direction": "column",
                           "style": {
                             "gap": "1px",
                             "overflow": "visible"
-                          },
-                          "direction": "column"
-                        }
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
                         "meta": {
                           "name": "OpMinus2"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "shrink": 0
                         },
                         "props": {
                           "style": {
+                            "classes": "pf-kpi-value",
                             "color": "var(--mpp-text-tertiary, #697A98)",
-                            "fontFamily": "var(--mpp-font-mono)",
-                            "classes": "pf-kpi-value"
+                            "fontFamily": "var(--mpp-font-mono)"
                           },
                           "text": "-"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "meta": {
-                          "name": "TotScrap"
-                        },
-                        "type": "ia.container.flex",
                         "children": [
                           {
                             "meta": {
                               "name": "TotScrapCaption"
                             },
-                            "type": "ia.display.label",
                             "props": {
                               "style": {
                                 "classes": "pf-kpi-label"
                               },
                               "text": "Scrap"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
                             "meta": {
                               "name": "TotScrapValue"
                             },
-                            "type": "ia.display.label",
                             "propConfig": {
                               "props.text": {
                                 "binding": {
@@ -2185,74 +2095,65 @@
                             },
                             "props": {
                               "style": {
+                                "classes": "pf-kpi-value",
                                 "fontFamily": "var(--mpp-font-mono)",
-                                "fontWeight": 700,
-                                "classes": "pf-kpi-value"
-                              },
-                              "text": "0"
-                            }
+                                "fontWeight": 700
+                              }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "TotScrap"
+                        },
                         "position": {
                           "shrink": 0
                         },
                         "props": {
+                          "direction": "column",
                           "style": {
                             "gap": "1px",
                             "overflow": "visible"
-                          },
-                          "direction": "column"
-                        }
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
                         "meta": {
                           "name": "OpEquals"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "shrink": 0
                         },
                         "props": {
                           "style": {
+                            "classes": "pf-kpi-value",
                             "color": "var(--mpp-text-tertiary, #697A98)",
-                            "fontFamily": "var(--mpp-font-mono)",
-                            "classes": "pf-kpi-value"
+                            "fontFamily": "var(--mpp-font-mono)"
                           },
                           "text": "\u003d"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "meta": {
-                          "name": "TotUnaccounted"
-                        },
-                        "type": "ia.container.flex",
                         "children": [
                           {
                             "meta": {
                               "name": "TotUnaccountedCaption"
                             },
-                            "type": "ia.display.label",
                             "props": {
                               "style": {
                                 "classes": "pf-kpi-label"
                               },
                               "text": "Unaccounted"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
                             "meta": {
                               "name": "TotUnaccountedValue"
                             },
-                            "type": "ia.display.label",
                             "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "toStr({view.custom.reconcile.unaccounted})"
-                                  },
-                                  "type": "expr"
-                                }
-                              },
                               "props.style.color": {
                                 "binding": {
                                   "config": {
@@ -2260,20 +2161,26 @@
                                   },
                                   "type": "expr"
                                 }
+                              },
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "toStr({view.custom.reconcile.unaccounted})"
+                                  },
+                                  "type": "expr"
+                                }
                               }
                             },
                             "props": {
                               "style": {
+                                "classes": "pf-kpi-value",
                                 "fontFamily": "var(--mpp-font-mono)",
-                                "fontWeight": 700,
-                                "classes": "pf-kpi-value"
-                              },
-                              "text": "0"
-                            }
+                                "fontWeight": 700
+                              }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.display.label",
-                            "version": 0,
                             "meta": {
                               "name": "TotUnaccountedNote"
                             },
@@ -2281,48 +2188,50 @@
                               "shrink": 0
                             },
                             "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {
-                                    "expression": "{view.custom.reconcile.unaccountedNote}"
-                                  }
-                                }
-                              },
                               "position.display": {
                                 "binding": {
-                                  "type": "expr",
                                   "config": {
                                     "expression": "len({view.custom.reconcile.unaccountedNote}) \u003e 0"
-                                  }
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "{view.custom.reconcile.unaccountedNote}"
+                                  },
+                                  "type": "expr"
                                 }
                               }
                             },
                             "props": {
-                              "text": "",
                               "style": {
                                 "classes": "pf-kpi-sub"
                               }
                             },
-                            "custom": {}
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "TotUnaccounted"
+                        },
                         "position": {
                           "shrink": 0
                         },
                         "props": {
+                          "direction": "column",
                           "style": {
                             "gap": "1px",
                             "overflow": "visible"
-                          },
-                          "direction": "column"
-                        }
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
                         "meta": {
                           "name": "TotalsDivider"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "shrink": 0
                         },
@@ -2331,33 +2240,28 @@
                             "borderLeft": "1px solid var(--mpp-border-subtle, #2C3A55)",
                             "height": "40px",
                             "width": "1px"
-                          },
-                          "text": ""
-                        }
+                          }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "meta": {
-                          "name": "TotPending"
-                        },
-                        "type": "ia.container.flex",
                         "children": [
                           {
                             "meta": {
                               "name": "TotPendingCaption"
                             },
-                            "type": "ia.display.label",
                             "props": {
                               "style": {
                                 "classes": "pf-kpi-label"
                               },
                               "text": "Pending"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
                             "meta": {
                               "name": "TotPendingValue"
                             },
-                            "type": "ia.display.label",
                             "propConfig": {
                               "props.text": {
                                 "binding": {
@@ -2370,28 +2274,67 @@
                             },
                             "props": {
                               "style": {
+                                "classes": "pf-kpi-value",
                                 "fontFamily": "var(--mpp-font-mono)",
-                                "fontWeight": 700,
-                                "classes": "pf-kpi-value"
-                              },
-                              "text": "0"
-                            }
+                                "fontWeight": 700
+                              }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "TotPending"
+                        },
                         "position": {
                           "shrink": 0
                         },
                         "props": {
+                          "direction": "column",
                           "style": {
                             "gap": "1px",
                             "overflow": "visible"
-                          },
-                          "direction": "column"
-                        }
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.container.flex",
-                        "version": 0,
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "TotDieWideCaption"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-label"
+                              },
+                              "text": "Die-wide"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TotDieWideValue"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "numberFormat({view.custom.reconcile.dieWide}, \"#,##0\")"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-value",
+                                "fontFamily": "var(--mpp-font-mono)",
+                                "fontWeight": 700
+                              }
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
                         "meta": {
                           "name": "TotDieWide",
                           "tooltip": {
@@ -2408,93 +2351,40 @@
                             "overflow": "visible"
                           }
                         },
-                        "children": [
-                          {
-                            "type": "ia.display.label",
-                            "version": 0,
-                            "meta": {
-                              "name": "TotDieWideCaption"
-                            },
-                            "props": {
-                              "text": "Die-wide",
-                              "style": {
-                                "classes": "pf-kpi-label"
-                              }
-                            }
-                          },
-                          {
-                            "type": "ia.display.label",
-                            "version": 0,
-                            "meta": {
-                              "name": "TotDieWideValue"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {
-                                    "expression": "numberFormat({view.custom.reconcile.dieWide}, \"#,##0\")"
-                                  }
-                                }
-                              }
-                            },
-                            "props": {
-                              "text": "0",
-                              "style": {
-                                "classes": "pf-kpi-value",
-                                "fontFamily": "var(--mpp-font-mono)",
-                                "fontWeight": 700
-                              }
-                            }
-                          }
-                        ],
-                        "custom": {}
+                        "type": "ia.container.flex"
                       },
                       {
                         "meta": {
                           "name": "PendingNote"
                         },
-                        "type": "ia.display.label",
                         "position": {
-                          "basis": "180px",
-                          "shrink": 1
+                          "basis": "180px"
                         },
                         "props": {
                           "style": {
                             "classes": "pf-kpi-sub"
                           },
                           "text": "shots on cavities with no basket - they credit to the next basket"
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "TotalsSpacer"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "grow": 1
                         },
-                        "props": {
-                          "text": ""
-                        }
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
                           "name": "GateMessage"
                         },
-                        "type": "ia.display.label",
                         "position": {
                           "shrink": 0
                         },
                         "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "path": "view.custom.reconcile.gateMessage"
-                              },
-                              "type": "property"
-                            }
-                          },
                           "position.display": {
                             "binding": {
                               "config": {
@@ -2502,17 +2392,25 @@
                               },
                               "type": "expr"
                             }
+                          },
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.reconcile.gateMessage"
+                              },
+                              "type": "property"
+                            }
                           }
                         },
                         "props": {
                           "style": {
+                            "classes": "pf-kpi-sub",
                             "color": "var(--pf-status-warn-fg, #F4B343)",
                             "fontWeight": 700,
-                            "whiteSpace": "nowrap",
-                            "classes": "pf-kpi-sub"
-                          },
-                          "text": ""
-                        }
+                            "whiteSpace": "nowrap"
+                          }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "events": {
@@ -2529,7 +2427,6 @@
                         "meta": {
                           "name": "SubmitShiftOutputButton"
                         },
-                        "type": "ia.input.button",
                         "position": {
                           "shrink": 0
                         },
@@ -2548,37 +2445,46 @@
                             "classes": "pf-btn pf-btn-primary pf-btn-large"
                           },
                           "text": "SUBMIT SHIFT ENTRY"
-                        }
+                        },
+                        "type": "ia.input.button"
                       }
                     ],
+                    "meta": {
+                      "name": "TotalsBar"
+                    },
                     "position": {
                       "shrink": 0
                     },
                     "props": {
+                      "alignItems": "center",
                       "style": {
                         "border": "1px solid var(--mpp-border-subtle, #2C3A55)",
                         "borderRadius": "8px",
-                        "padding": "9px 12px",
                         "gap": "14px",
-                        "overflow": "visible"
+                        "overflow": "visible",
+                        "padding": "9px 12px"
                       },
-                      "alignItems": "center",
                       "wrap": "wrap"
-                    }
+                    },
+                    "type": "ia.container.flex"
                   }
                 ],
+                "meta": {
+                  "name": "ReconcilePanel"
+                },
                 "position": {
                   "tabIndex": 1
                 },
                 "props": {
+                  "direction": "column",
                   "style": {
-                    "padding": "10px",
                     "classes": "pf-panel",
                     "gap": "8px",
-                    "overflow": "hidden"
-                  },
-                  "direction": "column"
-                }
+                    "overflow": "hidden",
+                    "padding": "10px"
+                  }
+                },
+                "type": "ia.container.flex"
               }
             ],
             "meta": {
@@ -2685,7 +2591,7 @@
           "params": [
             "cellId"
           ],
-          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
+          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tprev \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tif prev.get(\"locationId\") \u003d\u003d row.get(\"value\"):\n\t\treturn\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}\n\t# Everything below belongs to the PREVIOUS die. The bound props\n\t# (activeTool, shotStatus, itemOptions, openBasketInstances) key off\n\t# session.custom.cell and re-read themselves; this imperative state does\n\t# not, and Submit builds its lines from view.custom.breakdown -- so\n\t# leaving it would let an operator submit the old die\u0027s cavities against\n\t# the new press.\n\tself.view.custom.breakdown \u003d []\n\tself.view.custom.breakdownEntries \u003d {}\n\tself.view.custom.counterReading \u003d \"\"\n\tself.view.custom.pendingSubmit \u003d \"\"\n\tself.view.custom.bulkOpenDraft \u003d {}\n\tself.view.custom.bulkOpenResult \u003d {}\n\tself.view.custom.bulkOpenPendingCount \u003d 0\n\tself.view.custom.pendingReleaseLotId \u003d None\n\tself.view.custom.pendingReleaseLotName \u003d \"\"\n\tself.view.custom.pendingVoidLotId \u003d None\n\tself.view.custom.pendingVoidLotName \u003d \"\"\n\t# die-wide shot counts are per-die; re-seed the named rows at zero\n\tself.view.custom.dieWideLines \u003d []\n\tself.view.custom.dieWideShots \u003d 0\n\tself.seedDieWide()\n\t# defaultEntryShiftId is CELL-scoped, so the reporting shift is re-seeded\n\t# rather than carried across.\n\tself.view.custom.selectedShiftId \u003d BlueRidge.Oee.Shift.defaultEntryShiftId(row.get(\"value\"))\n\t# force the runScript bindings to re-read even where their other\n\t# arguments are unchanged (runScript caches on its arguments)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\tself.recomputeTotals()"
         },
         {
           "name": "startup",
@@ -2717,7 +2623,7 @@
         {
           "name": "recomputeTotals",
           "params": [],
-          "script": "\timport java.lang\n\t# The totals ARE the equation (spec 6.3):\n\t#     Shots - Good - Scrap \u003d Unaccounted,   plus a separate Pending.\n\t# Shots is RAW and die-wide is charged to Scrap, so raw \u003d net + die-wide\n\t# balances without double counting. Cavities with NO basket sit OUTSIDE\n\t# the identity (3.5): their shots are Pending, never Unaccounted.\n\t# Preview arithmetic only -- DieCastShiftOutput_Record is authoritative.\n\t_u \u003d BlueRidge.Common.Util.extractQualifiedValues\n\trows \u003d _u(self.view.custom.breakdown) or []\n\tentries \u003d _u(self.view.custom.breakdownEntries) or {}\n\tdw \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.dieWideShots) or 0\n\ttry:\n\t\treasons \u003d BlueRidge.Workorder.DieCast.listVarianceReasons() or []\n\texcept (Exception, java.lang.Exception):\n\t\treasons \u003d []\n\tneedsNote \u003d {}\n\tfor o in reasons:\n\t\to \u003d o or {}\n\t\tneedsNote[\"%s\" % o.get(\"value\")] \u003d bool(o.get(\"requiresNote\"))\n\tshots \u003d 0\n\tnetsSeen \u003d {}\n\taccounted \u003d 0\n\tunacc \u003d 0\n\toffNames \u003d []\n\tneedNames \u003d []\n\tgood \u003d 0\n\tscrap \u003d 0\n\tpendingShots \u003d 0\n\tneed \u003d 0\n\tactive \u003d 0\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\tif (\"%s\" % (r.get(\"CavityStatusCode\") or \"Active\")) \u003d\u003d \"Active\":\n\t\t\tactive +\u003d 1\n\t\te \u003d _u(entries.get(\"%s\" % r.get(\"ToolCavityId\"))) or {}\n\t\ts \u003d 0\n\t\tfor sl in (_u(e.get(\"scrapLines\")) or []):\n\t\t\tsl \u003d sl or {}\n\t\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif sl.get(\"defectCodeId\") is not None and q:\n\t\t\t\ts +\u003d q\n\t\tscrap +\u003d s\n\t\tnewShots \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"NewShots\")) or 0\n\t\tisPending \u003d r.get(\"IsPending\")\n\t\tif isPending is None:\n\t\t\tisPending \u003d (r.get(\"LotId\") is None)\n\t\tif isPending:\n\t\t\tpendingShots +\u003d newShots\n\t\t\tcontinue\n\t\tif not r.get(\"IsOpen\"):\n\t\t\t# released earlier this shift: scrap only, no shots left to account\n\t\t\tcontinue\n\t\trowDw \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"DieWideShots\"))\n\t\tif rowDw is None:\n\t\t\trowDw \u003d dw\n\t\tnet \u003d newShots - rowDw\n\t\tif net \u003c 0:\n\t\t\tnet \u003d 0\n\t\tg \u003d BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif g is None:\n\t\t\tg \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\t# PARTS counts NET, which is what the row\u0027s SHOTS cell shows, so the\n\t\t# total is the sum of the column above it. Die-wide is already out\n\t\t# of net and is reported as its own term, not folded into SCRAP.\n\t\tshots +\u003d net\n\t\tnetsSeen[net] \u003d 1\n\t\taccounted +\u003d 1\n\t\tgood +\u003d g\n\t\tv \u003d net - g - s\n\t\tunacc +\u003d v\n\t\tif v !\u003d 0:\n\t\t\tnm \u003d (\"%s\" % (r.get(\"CavityDescription\") or \"\")).strip()\n\t\t\tif not nm:\n\t\t\t\tnm \u003d \"Cavity %s\" % (r.get(\"CavityCode\") or \"?\")\n\t\t\toffNames.append(nm)\n\t\t\trid \u003d e.get(\"varianceReasonId\")\n\t\t\tnote \u003d (\"%s\" % (e.get(\"varianceNote\") or \"\")).strip()\n\t\t\tif rid is None or (needsNote.get(\"%s\" % rid) and not note):\n\t\t\t\tneed +\u003d 1\n\t\t\t\tneedNames.append(nm)\n\t# Die-wide is ALREADY out of every cavity\u0027s net, so adding it to\n\t# SCRAP here would double-count it and stop SCRAP being the sum of\n\t# the CAVITY SCRAP column. It is reported as its own term instead.\n\t# The WRITE is unchanged -- DieCastShiftOutput_Record still fans it\n\t# out across active cavities as real RejectEvents (D8).\n\tdieWideParts \u003d dw * accounted\n\t# Name them. Counting them still leaves the operator scanning rows.\n\tmsg \u003d \"\"\n\tif needNames:\n\t\tshown \u003d needNames[:3]\n\t\ttail \u003d \"\" if len(needNames) \u003c\u003d 3 else \" and %d more\" % (len(needNames) - 3)\n\t\tmsg \u003d \"Needs a reason: \" + \", \".join(shown) + tail\n\t# 3.7: the gate is on DISPOSITIONS, never on the numbers. The operator is\n\t# never asked to make the numbers agree, only to say what happened -- and\n\t# Unknown always discharges that. A clean shift never sees the gate.\n\t# One press cycle fires every cavity, so the summed figure is PARTS, not\n\t# shots. State the shots it came from -- but only when a single figure is\n\t# actually true of every accounted cavity.\n\treading \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.counterReading) or 0\n\tif len(netsSeen) \u003d\u003d 1 and accounted \u003e 0:\n\t\tper \u003d list(netsSeen.keys())[0]\n\t\tshotsNote \u003d \"{:,} shots x {} cavities\".format(per, accounted)\n\telif reading \u003e 0:\n\t\tshotsNote \u003d \"from counter {:,}\".format(reading)\n\telse:\n\t\tshotsNote \u003d \"\"\n\t# UNACCOUNTED is the SUM OF THE VARIANCE COLUMN, not a residual of the\n\t# other three totals -- so it agrees with the rows even when a cavity\n\t# is excluded from the identity.\n\tif offNames:\n\t\tshownO \u003d offNames[:3]\n\t\ttailO \u003d \"\" if len(offNames) \u003c\u003d 3 else \" +%d more\" % (len(offNames) - 3)\n\t\tunaccNote \u003d \", \".join(shownO) + tailO\n\telse:\n\t\tunaccNote \u003d \"\"\n\tself.view.custom.reconcile \u003d {\n\t\t\"shotsNote\": shotsNote, \"unaccountedNote\": unaccNote,\n\t\t\"dieWide\": dieWideParts,\n\t\t\"shots\": shots, \"good\": good, \"scrap\": scrap,\n\t\t\"unaccounted\": unacc, \"pending\": pendingShots,\n\t\t\"needCount\": need, \"gateMessage\": msg,\n\t\t\"canSubmit\": bool(need \u003d\u003d 0 and len(rows) \u003e 0)}"
+          "script": "\timport java.lang\n\t# The totals ARE the equation (spec 6.3):\n\t#     Shots - Good - Scrap \u003d Unaccounted,   plus a separate Pending.\n\t# Shots is RAW and die-wide is charged to Scrap, so raw \u003d net + die-wide\n\t# balances without double counting. Cavities with NO basket sit OUTSIDE\n\t# the identity (3.5): their shots are Pending, never Unaccounted.\n\t# Preview arithmetic only -- DieCastShiftOutput_Record is authoritative.\n\t_u \u003d BlueRidge.Common.Util.extractQualifiedValues\n\trows \u003d _u(self.view.custom.breakdown) or []\n\tentries \u003d _u(self.view.custom.breakdownEntries) or {}\n\tdw \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.dieWideShots) or 0\n\ttry:\n\t\treasons \u003d BlueRidge.Workorder.DieCast.listVarianceReasons() or []\n\texcept (Exception, java.lang.Exception):\n\t\treasons \u003d []\n\tneedsNote \u003d {}\n\tfor o in reasons:\n\t\to \u003d o or {}\n\t\tneedsNote[\"%s\" % o.get(\"value\")] \u003d bool(o.get(\"requiresNote\"))\n\tshots \u003d 0\n\tnetsSeen \u003d {}\n\taccounted \u003d 0\n\tunacc \u003d 0\n\toffNames \u003d []\n\tneedNames \u003d []\n\tgood \u003d 0\n\tscrap \u003d 0\n\tpendingShots \u003d 0\n\tneed \u003d 0\n\tactive \u003d 0\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\tif (\"%s\" % (r.get(\"CavityStatusCode\") or \"Active\")) \u003d\u003d \"Active\":\n\t\t\tactive +\u003d 1\n\t\t# toolCavityId:lotId -- one cavity can have two rows (a basket\n\t\t# released earlier this shift, plus a newly opened one).\n\t\te \u003d _u(entries.get(\"%s:%s\" % (r.get(\"ToolCavityId\"), r.get(\"LotId\")))) or {}\n\t\ts \u003d 0\n\t\tfor sl in (_u(e.get(\"scrapLines\")) or []):\n\t\t\tsl \u003d sl or {}\n\t\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif sl.get(\"defectCodeId\") is not None and q:\n\t\t\t\ts +\u003d q\n\t\tscrap +\u003d s\n\t\tnewShots \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"NewShots\")) or 0\n\t\tisPending \u003d r.get(\"IsPending\")\n\t\tif isPending is None:\n\t\t\tisPending \u003d (r.get(\"LotId\") is None)\n\t\tif isPending:\n\t\t\tpendingShots +\u003d newShots\n\t\t\tcontinue\n\t\tif not r.get(\"IsOpen\"):\n\t\t\t# released earlier this shift: scrap only, no shots left to account\n\t\t\tcontinue\n\t\trowDw \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"DieWideShots\"))\n\t\tif rowDw is None:\n\t\t\trowDw \u003d dw\n\t\tnet \u003d newShots - rowDw\n\t\tif net \u003c 0:\n\t\t\tnet \u003d 0\n\t\tg \u003d BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif g is None:\n\t\t\tg \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\t# PARTS counts NET, which is what the row\u0027s SHOTS cell shows, so the\n\t\t# total is the sum of the column above it. Die-wide is already out\n\t\t# of net and is reported as its own term, not folded into SCRAP.\n\t\tshots +\u003d net\n\t\tnetsSeen[net] \u003d 1\n\t\taccounted +\u003d 1\n\t\tgood +\u003d g\n\t\tv \u003d net - g - s\n\t\tunacc +\u003d v\n\t\tif v !\u003d 0:\n\t\t\tnm \u003d (\"%s\" % (r.get(\"CavityDescription\") or \"\")).strip()\n\t\t\tif not nm:\n\t\t\t\tnm \u003d \"Cavity %s\" % (r.get(\"CavityCode\") or \"?\")\n\t\t\toffNames.append(nm)\n\t\t\trid \u003d e.get(\"varianceReasonId\")\n\t\t\tnote \u003d (\"%s\" % (e.get(\"varianceNote\") or \"\")).strip()\n\t\t\tif rid is None or (needsNote.get(\"%s\" % rid) and not note):\n\t\t\t\tneed +\u003d 1\n\t\t\t\tneedNames.append(nm)\n\t# Die-wide is ALREADY out of every cavity\u0027s net, so adding it to\n\t# SCRAP here would double-count it and stop SCRAP being the sum of\n\t# the CAVITY SCRAP column. It is reported as its own term instead.\n\t# The WRITE is unchanged -- DieCastShiftOutput_Record still fans it\n\t# out across active cavities as real RejectEvents (D8).\n\tdieWideParts \u003d dw * accounted\n\t# Name them. Counting them still leaves the operator scanning rows.\n\tmsg \u003d \"\"\n\tif needNames:\n\t\tshown \u003d needNames[:3]\n\t\ttail \u003d \"\" if len(needNames) \u003c\u003d 3 else \" and %d more\" % (len(needNames) - 3)\n\t\tmsg \u003d \"Needs a reason: \" + \", \".join(shown) + tail\n\t# 3.7: the gate is on DISPOSITIONS, never on the numbers. The operator is\n\t# never asked to make the numbers agree, only to say what happened -- and\n\t# Unknown always discharges that. A clean shift never sees the gate.\n\t# One press cycle fires every cavity, so the summed figure is PARTS, not\n\t# shots. State the shots it came from -- but only when a single figure is\n\t# actually true of every accounted cavity.\n\treading \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.counterReading) or 0\n\tif len(netsSeen) \u003d\u003d 1 and accounted \u003e 0:\n\t\tper \u003d list(netsSeen.keys())[0]\n\t\tshotsNote \u003d \"{:,} shots x {} cavities\".format(per, accounted)\n\telif reading \u003e 0:\n\t\tshotsNote \u003d \"from counter {:,}\".format(reading)\n\telse:\n\t\tshotsNote \u003d \"\"\n\t# UNACCOUNTED is the SUM OF THE VARIANCE COLUMN, not a residual of the\n\t# other three totals -- so it agrees with the rows even when a cavity\n\t# is excluded from the identity.\n\tif offNames:\n\t\tshownO \u003d offNames[:3]\n\t\ttailO \u003d \"\" if len(offNames) \u003c\u003d 3 else \" +%d more\" % (len(offNames) - 3)\n\t\tunaccNote \u003d \", \".join(shownO) + tailO\n\telse:\n\t\tunaccNote \u003d \"\"\n\tself.view.custom.reconcile \u003d {\n\t\t\"shotsNote\": shotsNote, \"unaccountedNote\": unaccNote,\n\t\t\"dieWide\": dieWideParts,\n\t\t\"shots\": shots, \"good\": good, \"scrap\": scrap,\n\t\t\"unaccounted\": unacc, \"pending\": pendingShots,\n\t\t\"needCount\": need, \"gateMessage\": msg,\n\t\t\"canSubmit\": bool(need \u003d\u003d 0 and len(rows) \u003e 0)}"
         },
         {
           "name": "groupByPart",
@@ -2770,7 +2676,7 @@
         {
           "name": "submitShiftOutput",
           "params": [],
-          "script": "\timport java.lang\n\t_u \u003d BlueRidge.Common.Util.extractQualifiedValues\n\trows \u003d _u(self.view.custom.breakdown) or []\n\tentries \u003d _u(self.view.custom.breakdownEntries) or {}\n\ttool \u003d _u(self.view.custom.activeTool) or {}\n\tcell \u003d _u(self.session.custom.cell) or {}\n\trec \u003d _u(self.view.custom.reconcile) or {}\n\tshotLoss \u003d self.dieWideShotLoss()\n\tif not rows:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to submit\", \"Enter the press counter reading and press Compute first.\", \"warning\")\n\t\treturn\n\tif not rec.get(\"canSubmit\"):\n\t\t# Never \"variance must be zero\" -- say what is MISSING (3.7).\n\t\tBlueRidge.Common.Notify.toast(\"Say what happened first\", rec.get(\"gateMessage\") or \"\", \"warning\")\n\t\treturn\n\tlines \u003d []\n\toverflow \u003d []\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\ttcid \u003d r.get(\"ToolCavityId\")\n\t\t# BUG FIX: the draft entry used to be keyed on \"%s\" % lotId, so EVERY\n\t\t# cavity without a basket collided on the string \"None\" and they all\n\t\t# shared one entry. ToolCavityId exists on every row, basket or not.\n\t\te \u003d _u(entries.get(\"%s\" % tcid)) or {}\n\t\tscrapLines \u003d []\n\t\tfor sl in (_u(e.get(\"scrapLines\")) or []):\n\t\t\tsl \u003d sl or {}\n\t\t\td \u003d sl.get(\"defectCodeId\")\n\t\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif d and q:\n\t\t\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\t\tlotId \u003d r.get(\"LotId\")\n\t\tisPending \u003d r.get(\"IsPending\")\n\t\tif isPending is None:\n\t\t\tisPending \u003d (lotId is None)\n\t\tif isPending or lotId is None:\n\t\t\t# A cavity with NO basket: pieceDelta MUST be 0 and toolCavityId is\n\t\t\t# REQUIRED. Its shots are PENDING -- they credit to the next basket,\n\t\t\t# because that is where the castings physically are (3.6) -- so the\n\t\t\t# line exists only to carry scrap, and writes no contribution row.\n\t\t\tif not scrapLines:\n\t\t\t\tcontinue\n\t\t\tlines.append({\"lotId\": None, \"toolCavityId\": tcid, \"pieceDelta\": 0,\n\t\t\t\t\"scrapLines\": scrapLines, \"varianceReasonId\": None,\n\t\t\t\t\"varianceNote\": None})\n\t\t\tcontinue\n\t\tif not r.get(\"IsOpen\"):\n\t\t\t# BUG FIX: this row used to be SKIPPED outright -- which silently\n\t\t\t# discarded scrap on a basket released earlier in the shift and then\n\t\t\t# toasted \"Shift output recorded\". DieCastShiftOutput_Record v2.1 was\n\t\t\t# explicitly widened to accept exactly that case; the view threw it\n\t\t\t# away before the proc ever saw it. A closed basket takes scrap only,\n\t\t\t# so there is nothing left to credit and pieceDelta is 0.\n\t\t\tif not scrapLines:\n\t\t\t\tcontinue\n\t\t\tlines.append({\"lotId\": lotId, \"toolCavityId\": tcid, \"pieceDelta\": 0,\n\t\t\t\t\"scrapLines\": scrapLines, \"varianceReasonId\": None,\n\t\t\t\t\"varianceNote\": None})\n\t\t\tcontinue\n\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif good is None:\n\t\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\tnote \u003d e.get(\"varianceNote\")\n\t\tif note is not None:\n\t\t\tnote \u003d (\"%s\" % note).strip() or None\n\t\tlines.append({\"lotId\": lotId, \"toolCavityId\": tcid, \"pieceDelta\": good,\n\t\t\t\"scrapLines\": scrapLines,\n\t\t\t\"varianceReasonId\": e.get(\"varianceReasonId\"),\n\t\t\t\"varianceNote\": note})\n\t\th \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"MaxHeadroom\"))\n\t\tif h is not None and h \u003c 2147483647 and good \u003e h:\n\t\t\toverflow.append({\"lotId\": lotId, \"lotName\": r.get(\"LotName\") or \"\",\n\t\t\t\t\"cavityCode\": r.get(\"CavityCode\") or \"\", \"toolCavityId\": tcid,\n\t\t\t\t\"itemId\": r.get(\"ItemId\"), \"headroom\": h, \"good\": good,\n\t\t\t\t\"remainder\": good - h, \"scrapLines\": scrapLines})\n\tif not lines and not shotLoss:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to submit\", \"No cavity has anything to record.\", \"warning\")\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept (Exception, java.lang.Exception):\n\t\tterm \u003d None\n\tif overflow:\n\t\tself.view.custom.pendingSubmit \u003d system.util.jsonEncode({\n\t\t\t\"counterReading\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.counterReading),\n\t\t\t\"lines\": lines, \"overflow\": overflow, \"shotLoss\": shotLoss,\n\t\t\t\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"),\n\t\t\t\"cellLocationId\": cell.get(\"locationId\"), \"terminalLocationId\": term})\n\t\tsystem.perspective.openPopup(\"mpp-diecast-overflow\",\n\t\t\t\"BlueRidge/Components/Popups/DieCastOverflow\",\n\t\t\tparams\u003d{\"replyMessage\": \"dieCastOverflowResult\", \"popupId\": \"mpp-diecast-overflow\", \"overflow\": overflow},\n\t\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)\n\t\treturn\n\tdata \u003d {\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"),\n\t\t\"lines\": lines, \"shotLoss\": shotLoss,\n\t\t\"counterReading\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.counterReading),\n\t\t\"cellLocationId\": cell.get(\"locationId\")}\n\tresult \u003d BlueRidge.Workorder.DieCast.recordShiftOutput(data, appUserId\u003dself.session.custom.appUserId, terminalLocationId\u003dterm)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Shift reconciled\")\n\tif result and result.get(\"Status\"):\n\t\tself._afterSubmit()"
+          "script": "\timport java.lang\n\t_u \u003d BlueRidge.Common.Util.extractQualifiedValues\n\trows \u003d _u(self.view.custom.breakdown) or []\n\tentries \u003d _u(self.view.custom.breakdownEntries) or {}\n\ttool \u003d _u(self.view.custom.activeTool) or {}\n\tcell \u003d _u(self.session.custom.cell) or {}\n\trec \u003d _u(self.view.custom.reconcile) or {}\n\tshotLoss \u003d self.dieWideShotLoss()\n\tif not rows:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to submit\", \"Enter the press counter reading and press Compute first.\", \"warning\")\n\t\treturn\n\tif not rec.get(\"canSubmit\"):\n\t\t# Never \"variance must be zero\" -- say what is MISSING (3.7).\n\t\tBlueRidge.Common.Notify.toast(\"Say what happened first\", rec.get(\"gateMessage\") or \"\", \"warning\")\n\t\treturn\n\tlines \u003d []\n\toverflow \u003d []\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\ttcid \u003d r.get(\"ToolCavityId\")\n\t\t# BUG FIX: the draft entry used to be keyed on \"%s\" % lotId, so EVERY\n\t\t# cavity without a basket collided on the string \"None\" and they all\n\t\t# shared one entry. ToolCavityId exists on every row, basket or not.\n\t\te \u003d _u(entries.get(\"%s:%s\" % (tcid, r.get(\"LotId\")))) or {}\n\t\tscrapLines \u003d []\n\t\tfor sl in (_u(e.get(\"scrapLines\")) or []):\n\t\t\tsl \u003d sl or {}\n\t\t\td \u003d sl.get(\"defectCodeId\")\n\t\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif d and q:\n\t\t\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\t\tlotId \u003d r.get(\"LotId\")\n\t\tisPending \u003d r.get(\"IsPending\")\n\t\tif isPending is None:\n\t\t\tisPending \u003d (lotId is None)\n\t\tif isPending or lotId is None:\n\t\t\t# A cavity with NO basket: pieceDelta MUST be 0 and toolCavityId is\n\t\t\t# REQUIRED. Its shots are PENDING -- they credit to the next basket,\n\t\t\t# because that is where the castings physically are (3.6) -- so the\n\t\t\t# line exists only to carry scrap, and writes no contribution row.\n\t\t\tif not scrapLines:\n\t\t\t\tcontinue\n\t\t\tlines.append({\"lotId\": None, \"toolCavityId\": tcid, \"pieceDelta\": 0,\n\t\t\t\t\"scrapLines\": scrapLines, \"varianceReasonId\": None,\n\t\t\t\t\"varianceNote\": None})\n\t\t\tcontinue\n\t\tif not r.get(\"IsOpen\"):\n\t\t\t# BUG FIX: this row used to be SKIPPED outright -- which silently\n\t\t\t# discarded scrap on a basket released earlier in the shift and then\n\t\t\t# toasted \"Shift output recorded\". DieCastShiftOutput_Record v2.1 was\n\t\t\t# explicitly widened to accept exactly that case; the view threw it\n\t\t\t# away before the proc ever saw it. A closed basket takes scrap only,\n\t\t\t# so there is nothing left to credit and pieceDelta is 0.\n\t\t\tif not scrapLines:\n\t\t\t\tcontinue\n\t\t\tlines.append({\"lotId\": lotId, \"toolCavityId\": tcid, \"pieceDelta\": 0,\n\t\t\t\t\"scrapLines\": scrapLines, \"varianceReasonId\": None,\n\t\t\t\t\"varianceNote\": None})\n\t\t\tcontinue\n\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif good is None:\n\t\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\tnote \u003d e.get(\"varianceNote\")\n\t\tif note is not None:\n\t\t\tnote \u003d (\"%s\" % note).strip() or None\n\t\tlines.append({\"lotId\": lotId, \"toolCavityId\": tcid, \"pieceDelta\": good,\n\t\t\t\"scrapLines\": scrapLines,\n\t\t\t\"varianceReasonId\": e.get(\"varianceReasonId\"),\n\t\t\t\"varianceNote\": note})\n\t\th \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"MaxHeadroom\"))\n\t\tif h is not None and h \u003c 2147483647 and good \u003e h:\n\t\t\toverflow.append({\"lotId\": lotId, \"lotName\": r.get(\"LotName\") or \"\",\n\t\t\t\t\"cavityCode\": r.get(\"CavityCode\") or \"\", \"toolCavityId\": tcid,\n\t\t\t\t\"itemId\": r.get(\"ItemId\"), \"headroom\": h, \"good\": good,\n\t\t\t\t\"remainder\": good - h, \"scrapLines\": scrapLines})\n\tif not lines and not shotLoss:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to submit\", \"No cavity has anything to record.\", \"warning\")\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept (Exception, java.lang.Exception):\n\t\tterm \u003d None\n\tif overflow:\n\t\tself.view.custom.pendingSubmit \u003d system.util.jsonEncode({\n\t\t\t\"counterReading\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.counterReading),\n\t\t\t\"lines\": lines, \"overflow\": overflow, \"shotLoss\": shotLoss,\n\t\t\t\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"),\n\t\t\t\"cellLocationId\": cell.get(\"locationId\"), \"terminalLocationId\": term})\n\t\tsystem.perspective.openPopup(\"mpp-diecast-overflow\",\n\t\t\t\"BlueRidge/Components/Popups/DieCastOverflow\",\n\t\t\tparams\u003d{\"replyMessage\": \"dieCastOverflowResult\", \"popupId\": \"mpp-diecast-overflow\", \"overflow\": overflow},\n\t\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)\n\t\treturn\n\tdata \u003d {\"shiftId\": self.view.custom.selectedShiftId, \"toolId\": tool.get(\"ToolId\"),\n\t\t\"lines\": lines, \"shotLoss\": shotLoss,\n\t\t\"counterReading\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.counterReading),\n\t\t\"cellLocationId\": cell.get(\"locationId\")}\n\tresult \u003d BlueRidge.Workorder.DieCast.recordShiftOutput(data, appUserId\u003dself.session.custom.appUserId, terminalLocationId\u003dterm)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Shift reconciled\")\n\tif result and result.get(\"Status\"):\n\t\tself._afterSubmit()"
         },
         {
           "name": "requestRelease",
@@ -2852,7 +2758,7 @@
         {
           "messageType": "dieCastRowChanged",
           "pageScope": true,
-          "script": "\t# Keyed on ToolCavityId, NOT lotId. Every cavity with no basket carried\n\t# lotId None, so entries[\"None\"] was ONE entry shared by all of them --\n\t# the last row to report silently overwrote every other basketless cavity.\n\tif not payload:\n\t\treturn\n\t_u \u003d BlueRidge.Common.Util.extractQualifiedValues\n\tentries \u003d dict(_u(self.view.custom.breakdownEntries) or {})\n\tkey \u003d \"%s\" % payload.get(\"toolCavityId\")\n\tif key in (\"None\", \"\"):\n\t\treturn\n\tentries[key] \u003d {\n\t\t\"good\": payload.get(\"good\"),\n\t\t\"scrapLines\": _u(payload.get(\"scrapLines\")) or [],\n\t\t\"variance\": payload.get(\"variance\"),\n\t\t\"varianceReasonId\": payload.get(\"varianceReasonId\"),\n\t\t\"varianceNote\": payload.get(\"varianceNote\") or \"\",\n\t\t\"isPending\": bool(payload.get(\"isPending\")),\n\t}\n\tself.view.custom.breakdownEntries \u003d entries\n\tself.recomputeTotals()",
+          "script": "\t# Keyed on toolCavityId:lotId -- unique per ROW. toolCavityId alone is\n\t# not: a cavity whose basket was released earlier this shift keeps a\n\t# scrap-only row AND gains a second row when a new basket is opened on\n\t# it, and the two then shared one draft. lotId alone is not either --\n\t# every basketless cavity carries None.\n\tif not payload:\n\t\treturn\n\t_u \u003d BlueRidge.Common.Util.extractQualifiedValues\n\tentries \u003d dict(_u(self.view.custom.breakdownEntries) or {})\n\tcav \u003d \"%s\" % payload.get(\"toolCavityId\")\n\tif cav in (\"None\", \"\"):\n\t\treturn\n\tkey \u003d cav + \":\" + (\"%s\" % payload.get(\"lotId\"))\n\tentries[key] \u003d {\n\t\t\"good\": payload.get(\"good\"),\n\t\t\"scrapLines\": _u(payload.get(\"scrapLines\")) or [],\n\t\t\"variance\": payload.get(\"variance\"),\n\t\t\"varianceReasonId\": payload.get(\"varianceReasonId\"),\n\t\t\"varianceNote\": payload.get(\"varianceNote\") or \"\",\n\t\t\"isPending\": bool(payload.get(\"isPending\")),\n\t}\n\tself.view.custom.breakdownEntries \u003d entries\n\tself.recomputeTotals()",
           "sessionScope": false,
           "viewScope": false
         },
