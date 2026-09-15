@@ -258,7 +258,7 @@
         },
         "Device": {
           "dataType": "String",
-          "value": "MPP_Sim"
+          "value": "V6 Oil Pan Camera"
         },
         "OpcServer": {
           "dataType": "String",
@@ -266,6 +266,40 @@
         }
       },
       "tagType": "UdtInstance",
+      "tags": [
+        {
+          "name": "TrayLocked",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]I:0.0/0"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "InspectionComplete",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:10"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "PartNumber",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:2"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "VisionPartNumber",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N16:2"
+          },
+          "tagType": "AtomicTag"
+        }
+      ],
       "typeId": "TrayInspectionStation"
     },
     {
@@ -277,7 +311,7 @@
         },
         "Device": {
           "dataType": "String",
-          "value": "MPP_Sim"
+          "value": "64A Oil Pan Camera"
         },
         "OpcServer": {
           "dataType": "String",
@@ -285,6 +319,42 @@
         }
       },
       "tagType": "UdtInstance",
+      "tags": [
+        {
+          "name": "TrayLocked",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]I:0.0/8"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "InspectionComplete",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:10"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "PartNumber",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:2"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "Protocol",
+          "tagType": "AtomicTag",
+          "value": "SlcPassPulse"
+        },
+        {
+          "name": "VisionMatchOptional",
+          "tagType": "AtomicTag",
+          "value": true
+        }
+      ],
       "typeId": "TrayInspectionStation"
     },
     {
@@ -315,7 +385,7 @@
         },
         "Device": {
           "dataType": "String",
-          "value": "MPP_Sim"
+          "value": "6MA Oil Pan Camera"
         },
         "OpcServer": {
           "dataType": "String",
@@ -323,6 +393,45 @@
         }
       },
       "tagType": "UdtInstance",
+      "tags": [
+        {
+          "name": "TrayLocked",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]I:0.0/1"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "InspectionComplete",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:10"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "PartNumber",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:2"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "VisionPartNumber",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N16:2"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "Protocol",
+          "tagType": "AtomicTag",
+          "value": "SlcPassPulse"
+        }
+      ],
       "typeId": "TrayInspectionStation"
     },
     {

@@ -46,31 +46,48 @@
      both read-only), and TrayLocked is re-asserted every scan -- an MES reset
      would bounce straight back and every bounce is a fresh rising edge.
 
-   SlcPassPulse  (6MA_CH: processor "6MA", PLC 172.17.21.213)
-     This PLC runs the cell on its own. The camera fires without the MES, the
-     tray goes to the good or bad side, and the only per-tray signal it gives
-     the host is a PASS pulse. Nothing the MES does can hold a tray. Ladder
-     decoded from the real .RSS in
-     notes/2026-09-11_6ma-ch-real-ladder-slcpasspulse.md. Instance members:
-       TrayLocked          I:0.0/0  tray present (input). Rising edge -> sync
-                                    the recipe before the camera fires (~4 s).
-       InspectionComplete  N7:10    "PASSED TO HOST COMPUTER": 1 for 2-3 s on
-                                    each GOOD tray, 0 otherwise. Never pulses
-                                    for a failed tray.
-       VisionPartNumber    N16:2    the program the vision controller is
-                                    actually running (the PLC copies N7:2 into
-                                    it; the HMI's master-tray buttons put
-                                    11..15 there).
-       PartNumber          N7:2     recipe, MES -> PLC.
+   SlcPassPulse  (any PLC whose only per-tray signal to the host is a pass pulse)
+     The PLC runs the cell on its own -- the camera fires without the MES, the
+     tray/cart is released (or not) entirely on the PLC's own logic, and the
+     only thing the host ever hears is "this one passed." Nothing the MES does
+     can hold one back. Shared by every real ladder decoded so far under this
+     name; they agree on the shape but differ on addresses and on whether
+     VisionPartNumber exists at all:
+       6MA_CH       (processor "6MA", 172.17.21.213) -- ladder decoded in
+                    notes/2026-09-11_6ma-ch-real-ladder-slcpasspulse.md.
+                    TrayLocked=I:0.0/0, InspectionComplete=N7:10 ("PASSED TO
+                    HOST COMPUTER"), VisionPartNumber=N16:2, PartNumber=N7:2.
+       6C2_6MA_OilPan / 5J6_OilPan / 5K8_64A_OilPan
+                    (the oil-pan cart-scanner family; ladders decoded in
+                    notes/2026-09-15_6ma-oilpan-plc-address-validation.md).
+                    TrayLocked=cart-present input, InspectionComplete=N7:10
+                    ("CART GOOD"/"CART DONE AND GOOD TO FLEXWARE", gated on
+                    the vision controller's own good/bad discrete pair --
+                    confirmed by decoded symbol comments, not inferred),
+                    PartNumber=N7:2. VisionPartNumber=N16:2 on the two
+                    cart-scanners that share their camera across multiple
+                    lines (6C2_6MA_OilPan, 5J6_OilPan); 5K8_64A_OilPan's
+                    ladder carries no N16 word anywhere -- confirmed by a
+                    direct search of the decoded program stream, not just an
+                    unmapped tag -- so it has no vision-program register to
+                    compare against at all. Its instance sets
+                    VisionMatchOptional=1 for exactly that reason (see below).
      TrayLocked rising edge -> write the finished good's Item.PlcId to
        PartNumber if it differs. Logged, never alarmed (the booking below is
        where the operator hears about a problem).
-     InspectionComplete rising edge -> a tray just passed. Book it only when
-       VisionPartNumber equals the finished good's PlcId. Anything else is a
-       master tray / rabbit test, an HMI part override, or a changeover the
-       recipe has not reached yet. Warn and do not book. Then sync the recipe.
-     No other writes: N7:1 (OkToContinue) and N7:30 have no effect or cannot
-     be observed on this ladder.
+     InspectionComplete rising edge -> a tray/cart just passed.
+       VisionPartNumber reads a value -> book only when it equals the
+         finished good's PlcId. Anything else is a master tray / rabbit test,
+         an HMI part override, or a changeover the recipe has not reached
+         yet. Warn and do not book. Then sync the recipe.
+       VisionPartNumber reads None (bad quality / unmapped) ->
+         VisionMatchOptional=1 -> nothing to compare against on this PLC by
+           design. Book on the pass alone.
+         VisionMatchOptional=0 (default) -> we cannot tell whether this is a
+           master tray or a changeover. Warn and do not book -- unreadable is
+           not the same as "no register exists," and must fail closed.
+     No other writes on 6MA_CH: N7:1 (OkToContinue) and N7:30 have no effect
+     or cannot be observed on that ladder.
 
    Observe-only (any protocol): set the instance's DisableWriteback memory
    member and the watcher still reads and books but writes NOTHING to the PLC
@@ -78,6 +95,15 @@
    InterfaceLog as "<member> write suppressed". For running beside the legacy
    host, which then keeps owning the handshake. On SkuVerify/SlcTray cells
    that means the MES relies on that host to release trays and ack triggers.
+
+   No vision-program register (SlcPassPulse only): set the instance's
+   VisionMatchOptional memory member and a booking whose VisionPartNumber
+   reads None is trusted on the pass alone instead of refused. A missing
+   member reads as bad quality -> None -> False, so every instance that
+   already has a real VisionPartNumber wired keeps requiring the match --
+   this only changes behaviour where explicitly set True, and should be set
+   True only after confirming (by decoding the real ladder, not by the tag
+   simply being unmapped in Ignition) that the PLC has no such register at all.
 
    The comparisons here are protocol decoding of PLC words, not business rules.
    The finished good, pack-out and tray close all resolve through
@@ -148,6 +174,20 @@ def _writebackDisabled(instancePath):
     """The instance's DisableWriteback memory member. A missing member reads as
        bad quality -> None -> False, so instances without it write as before."""
     return bool(BlueRidge.Workorder.PlcWatcher.readMember(instancePath, "DisableWriteback"))
+
+
+def _visionMatchOptional(instancePath):
+    """The instance's VisionMatchOptional memory member. A missing member reads
+       as bad quality -> None -> False, so every existing SlcPassPulse instance
+       keeps requiring a VisionPartNumber match before booking -- unchanged.
+       Set True only on a station whose PLC has no vision-program register at
+       all (confirmed by decoding the real ladder, e.g. 5K8_64A_OilPan/
+       64A_OILP.RSS carries no N16 word anywhere) -- there is nothing to
+       compare against, so the pass alone is trusted. Leave False on any
+       station that DOES have VisionPartNumber wired: a transient bad-quality
+       read there still means "we can't tell if this is a master tray or a
+       changeover," and must still refuse the booking, not silently accept it."""
+    return bool(BlueRidge.Workorder.PlcWatcher.readMember(instancePath, "VisionMatchOptional"))
 
 
 def _plcWrite(instancePath, member, value, detail=None):
@@ -428,6 +468,14 @@ def _pulseOnTrayPassed(instancePath, terminalLocationId):
     loaded = W.readMember(instancePath, "VisionPartNumber")
 
     if loaded is None:
+        if _visionMatchOptional(instancePath):
+            # This station's PLC has no vision-program register to compare
+            # against (VisionMatchOptional=1) -- the pass alone is the whole
+            # signal. Book it.
+            W.logInterface(device, "Tray passed -> booked (no vision program to check)",
+                           requestPayload="item=%s" % itemId, ok=True)
+            _closeTray(instancePath, terminalLocationId, expected)
+            return
         msg = ("Tray passed but not booked: the vision program (VisionPartNumber, "
                "N16:2) could not be read.")
         W.logInterface(device, "Tray passed -> NOT booked (vision program unreadable)",
