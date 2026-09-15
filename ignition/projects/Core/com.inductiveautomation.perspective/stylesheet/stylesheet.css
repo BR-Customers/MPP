@@ -158,21 +158,24 @@
                      'Segoe UI', Roboto, sans-serif;
     --mpp-font-mono: 'JetBrains Mono', 'Roboto Mono', 'Consolas', monospace;
 
-    /* Type scale is ~1.4x a desktop scale ON PURPOSE: the MPP plant floor
-       runs on 1920x1200 tablets at devicePixelRatio 1, so the whole UI lays out
-       at full desktop logical width but on an ~11" panel read at arm's length
-       (gloves, glances, safety glasses). These px are the physical-size we give
-       back. Only plant-floor (MPP) sessions load this stylesheet -- the desktop
-       Config Tool (MPP_Config) carries its own copy of these tokens, so bumps
-       here never touch it. Tune from the tablet, not the Designer preview. */
-    --mpp-fs-xs:   16px;
-    --mpp-fs-sm:   17px;
-    --mpp-fs-base: 20px;
-    --mpp-fs-md:   22px;
-    --mpp-fs-lg:   26px;
-    --mpp-fs-xl:   32px;
-    --mpp-fs-2xl:  40px;
-    --mpp-fs-3xl:  50px;
+    /* Type scale for the plant floor: the terminal estate is mixed -- some
+       are touch tablets, some are fixed non-touch monitors -- so this is not
+       tuned to one read-at-arm's-length-with-gloves form factor. Reduced 15%
+       on 2026-09-14 (was ~1.4x a desktop scale). --pf-touch-min below rides
+       the same reduction down to 34px; that was flagged as a risk for the
+       touch/glove terminals and Jacques elected to proceed anyway -- a
+       deliberate call, not an oversight. Only plant-floor (MPP) sessions
+       load this stylesheet -- the desktop Config Tool (MPP_Config) carries
+       its own copy of these tokens, so bumps here never touch it. Verify
+       against real hardware, not just the Designer preview. */
+    --mpp-fs-xs:   14px;   /* was 16 */
+    --mpp-fs-sm:   15px;   /* was 17 -- nudged off 0.85 so xs and sm stay distinct */
+    --mpp-fs-base: 17px;   /* was 20 */
+    --mpp-fs-md:   19px;   /* was 22 */
+    --mpp-fs-lg:   22px;   /* was 26 */
+    --mpp-fs-xl:   27px;   /* was 32 */
+    --mpp-fs-2xl:  34px;   /* was 40 */
+    --mpp-fs-3xl:  42px;   /* was 50 */
 
     --mpp-fw-regular:  400;
     --mpp-fw-medium:   500;
@@ -245,7 +248,7 @@
        tablet. Widths (tree/kpi/modal) left as-is for now -- bump live if text
        reflows. */
     --pf-header-h:    68px;
-    --pf-touch-min:   40px;
+    --pf-touch-min:   34px;
     --pf-tree-w:      320px;
     --pf-tab-h:       56px;
     --pf-banner-h:    68px;
