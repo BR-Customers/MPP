@@ -2067,9 +2067,11 @@
         {
           "name": "releaseBasket",
           "params": [
-            "counterReading"
+            "counterReading",
+            "finalPieceDelta",
+            "scrapLines"
           ],
-          "script": "\tlotId \u003d self.view.custom.pendingReleaseLotId\n\tif lotId is None:\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\t# The PRESS: Lots.DieCastLot_Release scopes both watermarks by it, so\n\t# sending it explicitly keeps the write on the same chain the dialog\n\t# previewed rather than on whatever the proc\u0027s fallback resolves.\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tdata \u003d {\n\t\t\"lotId\": lotId,\n\t\t\"shiftId\": self.view.custom.selectedShiftId,\n\t\t\"counterReading\": BlueRidge.Common.Util.toIntOrNone(counterReading),\n\t\t\"cellLocationId\": cell.get(\"locationId\"),\n\t\t\"appUserId\": self.session.custom.appUserId,\n\t\t\"terminalLocationId\": term,\n\t}\n\tresult \u003d BlueRidge.Lots.Lot.releaseDieCast(data)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Basket released\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pendingReleaseLotId \u003d None\n\t\tself.view.custom.pendingReleaseLotName \u003d \"\"\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tlotId \u003d self.view.custom.pendingReleaseLotId\n\tif lotId is None:\n\t\treturn\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\t# The PRESS: Lots.DieCastLot_Release scopes both watermarks by it, so\n\t# sending it explicitly keeps the write on the same chain the dialog\n\t# previewed rather than on whatever the proc\u0027s fallback resolves.\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tdata \u003d {\n\t\t\"lotId\": lotId,\n\t\t\"shiftId\": self.view.custom.selectedShiftId,\n\t\t\"counterReading\": BlueRidge.Common.Util.toIntOrNone(counterReading),\n\t\t\"cellLocationId\": cell.get(\"locationId\"),\n\t\t\"appUserId\": self.session.custom.appUserId,\n\t\t\"terminalLocationId\": term,\n\t\t# D3/D5: the operator\u0027s counted Good and the closing scrap\n\t\t# batch, both collected by the release dialog. finalPieceDelta is\n\t\t# None when the counted figure still agrees with the derived one,\n\t\t# and the proc then runs its own counterReading-derived delta.\n\t\t\"finalPieceDelta\": finalPieceDelta,\n\t\t\"scrapLines\": scrapLines or [],\n\t}\n\tresult \u003d BlueRidge.Lots.Lot.releaseDieCast(data)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Basket released\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pendingReleaseLotId \u003d None\n\t\tself.view.custom.pendingReleaseLotName \u003d \"\"\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "name": "requestVoid",
@@ -2159,7 +2161,7 @@
         {
           "messageType": "releaseConfirmResult",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"action\") \u003d\u003d \"confirm\":\n\t\tself.releaseBasket(payload.get(\"counterReading\"))",
+          "script": "\tif payload and payload.get(\"action\") \u003d\u003d \"confirm\":\n\t\tself.releaseBasket(payload.get(\"counterReading\"), payload.get(\"finalPieceDelta\"), payload.get(\"scrapLines\"))",
           "sessionScope": false,
           "viewScope": false
         },
