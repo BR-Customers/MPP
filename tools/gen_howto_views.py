@@ -194,57 +194,87 @@ def _b(t):
 
 # ------------------------------------------------------------- die cast -----
 # Written for the operator at the machine, not for whoever built the system.
-# Order matches the screen: the die, then the three tabs left to right.
+#
+# 2026-09-14 REWRITE. The screen went from three tabs to two (design spec
+# docs/superpowers/specs/2026-09-14-diecast-quantity-and-scrap-model-design.md
+# section 6; reference rendering mockup/diecast_reconcile_mock.html). "Open
+# Baskets" and "Currently Open" were two views of the same twelve cavities
+# split by whether a basket existed -- they merge into ONE tab, Lot
+# Management, where every cavity has a row and shows Open / Release / Void
+# inline depending on its own state. "Record Shift Output" becomes Reconcile
+# Shift and is rewritten for the new identity (shots = good + scrap +
+# unaccounted), the editable Good figure, the die-wide block entered in
+# shots, Pending cavities (no basket, never blocks Submit), and mandatory
+# variance disposition (Unknown always available).
+#
+# These guides describe the APPROVED DESIGN, not the live view.json -- Task 8
+# is rebuilding DieCastBody/DieCastEntry concurrently with this rewrite. The
+# release mechanics (press counter reading, the three-box math, Void, the red
+# button states) are UNCHANGED from before -- Lots.DieCastLot_Release keeps
+# its signature (spec 5.4) -- so those sections are carried over rather than
+# re-invented. Bulk-open-at-changeover is confirmed kept ("Open all empty
+# cavities" in the Lot Management footer, spec 6.2) but the mockup does not
+# render that flow, so it is described at the level the spec commits to and
+# no further.
+#
+# GUIDES dir/popupId/title are UNCHANGED (interface stability -- Task 8 opens
+# these same popup ids from the rebuilt tab); only defaultSize grew where the
+# content did. dieCastOpenHowTo and dieCastLotReleaseHowTo now both live on
+# the Lot Management tab and cross-reference each other instead of naming a
+# tab that no longer exists.
 def die_cast_open_source():
     parts = []
     parts.append(_lead(
-        'Open a basket into each cavity of the die mounted on this machine.'))
+        'Open a basket into an empty cavity. This lives on the %s tab, '
+        'alongside Release and Void &ndash; every cavity of the die has a '
+        'row here, whether or not it is holding a basket right now.'
+        % _b('Lot Management')))
 
     parts.append(_step(1, 'Check the die',
         'The %s box at the top names the tool mounted on this machine, and '
-        'the cavity rows below come from it. Every cavity of the die has a '
-        'row, in the order they are numbered on the die.' % _b('Die')))
+        'the cavity rows come from it. Every cavity has a row, in the order '
+        'they are numbered on the die.' % _b('Die')))
 
-    parts.append(_step(2, 'Check the part',
-        'Each row already shows the %s that cavity is set up to cast. You do '
-        'not pick it &ndash; it comes from the die\'s configuration, and the '
-        'box is locked so a basket cannot be opened against the wrong part.'
-        % _b('Part')))
+    parts.append(_points('WHAT EACH COLUMN SHOWS', [
+        ('Part', 'What that cavity is set up to cast &ndash; locked, so a '
+                 'basket cannot be opened against the wrong part.'),
+        ('Basket', 'The LOT on that cavity right now, and when it was '
+                   'opened. Blank means the cavity is empty.'),
+        ('Pieces', 'How many pieces are on the open basket so far. Blank '
+                   'for an empty cavity.'),
+    ]))
     parts.append(_note(
-        'A cavity that has never been set up shows an open %s box. Pick the '
-        'part, then tell a supervisor so the die gets configured properly.'
-        % _b('Part')))
+        'A cavity that has never been set up shows an open %s box instead '
+        'of a locked one. Pick the part, then tell a supervisor so the die '
+        'gets configured properly.' % _b('Part')))
 
-    parts.append(_step(3, 'Scan the basket',
-        'Scan the %s from the basket into that row. %s'
-        % (_b('LTT Barcode'),
-           'Scanning the ticket is what stages the row &ndash; the button at '
-           'the bottom counts the tickets you have scanned, nothing else.')))
+    parts.append(_step(2, 'Open one basket',
+        'On an empty cavity\'s row, press %s, then scan the %s when asked. '
+        'The row fills in with the new LOT the moment it is open.'
+        % (_b('Open basket'), _b('LTT Barcode'))))
 
-    parts.append(_step(4, 'Open them',
-        'Press the button at the bottom. It counts the tickets you have '
-        'scanned &ndash; %s means three rows are staged. Every one of them is '
-        'opened at once. It stays greyed out until you have scanned at least '
-        'one ticket.' % _b('OPEN 3 BASKET(S)')))
+    parts.append(_step(3, 'Opening several at once',
+        'At a changeover, with a run of cavities empty together, press %s '
+        'in the footer instead of working row by row. It is the same '
+        'scan-a-ticket-per-cavity-then-confirm flow as always &ndash; it '
+        'just runs from this tab now instead of a separate screen.'
+        % _b('Open all empty cavities')))
 
     parts.append(_rule())
 
-    parts.append(_points('ROWS THAT OFFER NOTHING', [
-        ('Already open', 'The cavity is holding a basket. Release it on the '
-                         '%s tab before opening another.' % _b('Lot Release')),
+    parts.append(_points('ROWS THAT OFFER SOMETHING ELSE', [
+        ('Already holding a basket', 'The row shows %s and %s instead of '
+                                     '%s &ndash; see the release guide on '
+                                     'this same tab.'
+                                     % (_b('Release'), _b('Void'),
+                                        _b('Open basket'))),
         ('Out of service', 'The cavity is Closed or Scrapped in the die\'s '
                            'configuration. It still runs shots, and they '
-                           'still get recorded as scrap on %s &ndash; it just '
-                           'cannot hold a basket.' % _b('Record Shift Output')),
+                           'still get recorded as scrap on %s &ndash; it '
+                           'just cannot hold a basket.' % _b('Reconcile Shift')),
     ]))
 
     parts.append(_points('THE OTHER BUTTONS', [
-        ('Copy part to empty rows',
-            'Only on a die whose cavities cast more than one part. Fills the '
-            '%s box on every row you have not set yet with the part from the '
-            'first row you did.' % _b('Part')),
-        ('Clear', 'Empties every scanned ticket and part on the grid. Nothing '
-                  'is opened, and nothing already open is touched.'),
         ('Tool Config', 'Opens the die\'s configuration. Greyed out until a '
                         'supervisor signs in with their own credentials at '
                         'the terminal.'),
@@ -261,9 +291,11 @@ def die_cast_open_source():
 def die_cast_shift_output_source():
     parts = []
     parts.append(_lead(
-        'Record what the die made during your shift. You enter the number '
-        'showing on the press counter &ndash; the system works out what each '
-        'cavity is owed. You never subtract anything.'))
+        'Settle the shift for this die. You still read the press counter '
+        '&ndash; the system works out what each cavity is owed &ndash; but '
+        'now you also confirm what actually landed in each basket, cavity '
+        'by cavity, and nothing is hidden just because a cavity has no '
+        'basket at all.'))
 
     parts.append(_step(1, 'Read the line above the boxes',
         'It tells you where this die already stands for the shift &ndash; '
@@ -271,11 +303,11 @@ def die_cast_shift_output_source():
         '"Nothing recorded for this die yet this shift. Every cavity is '
         'credited from 0."'))
     parts.append(_note(
-        'If it says %s, someone has already corrected the counter this shift, '
-        'and the reason is on the end of the line.' % _b('set by hand')))
+        'If it says %s, someone has already corrected the counter this '
+        'shift, and the reason is on the end of the line.' % _b('set by hand')))
 
     parts.append(_step(2, 'Pick the shift',
-        'Choose your %s.' % _b('Reporting shift')))
+        'Choose your %s.' % _b('Shift')))
 
     parts.append(_step(3, 'Read the press counter',
         'Type the number showing on the press counter right now into %s. '
@@ -283,69 +315,105 @@ def die_cast_shift_output_source():
         'last entry.' % _b('Press counter reading now')))
     parts.append(_note(
         'Normally the counter starts from zero each shift and only ever '
-        'climbs. If it was zeroed mid-shift, or someone typed a wrong number '
-        'earlier, do not try to work around it &ndash; use the button below.'))
+        'climbs. If it was zeroed mid-shift, or someone typed a wrong '
+        'number earlier, do not try to work around it &ndash; use the '
+        'button below.'))
 
     parts.append(_callout(WARN_BG, WARN_EDGE,
         'If the counter was reset, or a wrong number went in earlier',
         'Press %s. Enter what the counter actually reads now &ndash; %s '
-        '&ndash; pick why it moved (%s, %s, %s, or %s, which needs a note), '
-        'and press %s. Crediting resumes from that number. Pieces already on '
-        'the baskets are NOT changed, and the die keeps the shot count it '
-        'already has.'
+        '&ndash; pick why it moved, and confirm. Crediting resumes from '
+        'that number. Pieces already on the baskets are NOT changed, and '
+        'the die keeps the shot count it already has.'
         % (_b('Counter reset / wrong total?'),
-           _b('if it was zeroed, enter 0'),
-           _b('The counter was reset'),
-           _b('A wrong reading was entered earlier'),
-           _b('The die was changed over'),
-           _b('Other'),
-           _b('Record this reading'))))
+           _b('if it was zeroed, enter 0'))))
 
-    parts.append(_step(4, 'Compute it',
-        'Press %s. Every cavity of the die gets a row.' % _b('Compute / Preview')))
+    parts.append(_step(4, 'Check the die-wide block',
+        'Before you look at any cavity, check %s on the right. It carries '
+        'two named rows every shift &ndash; %s (%s) and %s (%s) &ndash; '
+        'plus %s for anything else that happens to the whole die at once. '
+        'Enter each one in %s the press actually made, not a piece total '
+        '&ndash; the screen states the part count next to it, so nobody '
+        'has to multiply by the number of cavities in their head.'
+        % (_b('Die-wide'), _b('Warm-up shots'), _b('DC-999'),
+           _b('Quality test shots'), _b('107'),
+           _b('+ Add die-wide scrap'), _b('shots'))))
     parts.append(_note(
-        'A row for an open basket says %s &ndash; the reading that cavity was '
-        'last settled at, and the shots it is being credited now. A cavity '
-        'whose basket was released earlier in the shift is credited only from '
-        'that point on, which is why its number can differ from its '
-        'neighbours.' % _b('credited thru')))
+        'These shots come out of every cavity\'s count before anything '
+        'else is worked out. A shift with 20 warm-up shots no longer shows '
+        'up as 20 pieces of unexplained variance on every cavity &ndash; '
+        'it is accounted for here, once, for the whole die.'))
+
+    parts.append(_step(5, 'Check the Good figure on each cavity',
+        'It starts out following the press counter on its own &ndash; '
+        'shots owed, minus that cavity\'s own scrap. The moment you type a '
+        'number yourself it locks to that and is marked so you can see it '
+        'was entered by hand. A line that just reads the counter types '
+        'nothing here; a line that counts baskets types one number per '
+        'cavity. There is no setting to choose &ndash; it works either way, '
+        'row by row.'))
     parts.append(_note(
-        'A basket you already released this shift keeps the count it closed '
-        'at and says %s. It is listed so you can still enter its scrap; it '
-        'will not be given any more pieces.' % _b('scrap only')))
+        'A cavity with no basket has no %s box to type into &ndash; there '
+        'is nowhere for those pieces to be counted yet. See step 7.'
+        % _b('Good')))
 
-    parts.append(_step(5, 'Log any scrap',
-        'Press %s on any cavity that had scrap. %s updates on its own as you '
-        'log it.' % (_b('Add scrap reason'), _b('Good (pc)'))))
+    parts.append(_step(6, 'Log any cavity scrap',
+        'Tap the number under %s on that cavity\'s row to add a reason and '
+        'a quantity. It opens right where you tapped &ndash; there is no '
+        'separate screen &ndash; and the chip beside the number shows how '
+        'many reasons are already logged.' % _b('Cavity scrap')))
 
-    parts.append(_step(6, 'Submit',
-        'Press %s when the rows look right.' % _b('SUBMIT SHIFT OUTPUT')))
+    parts.append(_step(7, 'A cavity with no basket',
+        'A cavity marked %s is not a problem. Its row reads something like '
+        '"116 shots since 02:10 &ndash; credits to the next basket." Those '
+        'shots are not lost: the moment a basket is opened in that cavity, '
+        'it is credited everything run since, because that is physically '
+        'where the castings are. A %s cavity never holds up Submit, and '
+        'you can still log scrap against it if you know some of what it '
+        'ran was bad.' % (_b('Pending'), _b('Pending'))))
 
-    parts.append(_step(7, 'If it says the basket is full',
-        'Submitting can open %s &ndash; a cavity is owed more pieces than its '
-        'basket holds. For each cavity listed, either tick %s to put them all '
-        'on the ticket anyway, or scan a %s and the extra pieces open on a '
-        'fresh basket. Press %s to finish the submission.'
-        % (_b('Basket capacity exceeded'), _b('Overfill this basket'),
-           _b('new LTT'), _b('Apply'))))
+    parts.append(_step(8, 'If a Variance turns amber, say why',
+        'Tap the number to pick a reason: the basket count was wrong, the '
+        'press counter reading looked suspect, scrap happened but was not '
+        'recorded, or parts were pulled off the line. Two of those ask for '
+        'a short note as well.'))
+    parts.append(_callout(INFO_BG, INFO_EDGE,
+        'When you genuinely do not know, say that',
+        '%s is always on the list, and choosing it is the right, '
+        'professional answer when you cannot account for the difference '
+        '&ndash; it is not a shortcut past the question. A screen that '
+        'refuses to submit at 03:00 is what pushes an operator into '
+        'picking a defect code at random, and that guess becomes a real '
+        'reject on the report Honda reads. Add the short note it asks for '
+        '&ndash; a line like %s is worth more six months from now than a '
+        'bare code.'
+        % (_b('Unknown'), '&ldquo;found the cavity empty at 02:40&rdquo;')))
+
+    parts.append(_step(9, 'Submit',
+        'Press %s. It writes everything on this tab in one go &ndash; '
+        'every cavity\'s good count and scrap, and the die-wide block '
+        'together.' % _b('Submit shift entry')))
     parts.append(_note(
-        'A row on the grid that reads %s is warning you this is coming.'
-        % _b('Over basket headroom')))
+        'While any cavity has a variance with no reason, the button stays '
+        'disabled and the line beside it says how many &ndash; %s &ndash; '
+        'never that the numbers have to match. Fixing that is picking a '
+        'reason, not forcing the count to balance.'
+        % '&ldquo;2 cavities need a reason&rdquo;'))
 
     parts.append(_rule())
 
-    parts.append(_points('WHAT ELSE IS ON THIS TAB', [
-        ('Shot loss (all cavities)', 'Shots the die made that produced no '
-                                     'good part in ANY cavity &ndash; a short '
-                                     'shot, a purge. Enter the number of '
-                                     'SHOTS lost, not a piece total: every '
-                                     'basket open on this die right now is '
-                                     'charged that many pieces. A cavity with '
-                                     'no open basket is charged nothing, so '
-                                     'log its scrap on its own row instead.'),
-        ('Cavities with no basket', 'They still appear, with the part they '
-                                    'are set up to cast, so their scrap can '
-                                    'be recorded.'),
+    parts.append(_points('THE TOTALS ROW', [
+        ('The equation', 'Reads %s across the bottom, in that order. Only '
+                         'cavities with a basket count toward %s &ndash; a '
+                         '%s cavity\'s shots show in their own figure, not '
+                         'folded into it.'
+                         % (_b('Shots minus Good minus Scrap equals '
+                               'Unaccounted'), _b('Unaccounted'),
+                            _b('Pending'))),
+        ('Die life', 'The shots-vs-limit figure that used to sit in a '
+                     'right-hand panel is a pill in the header now. It '
+                     'turns amber as the die nears its shot limit &ndash; '
+                     'look there instead of a sidebar.'),
     ]))
 
     return ''.join(parts)
@@ -354,16 +422,17 @@ def die_cast_shift_output_source():
 def die_cast_lot_release_source():
     parts = []
     parts.append(_lead(
-        'Release a full basket, or void an empty one. Every cavity of the die '
-        'is listed, whether or not it is holding a basket.'))
+        'Release a full basket, or void an empty one &ndash; from the same '
+        '%s tab you use to open one. Every cavity of the die is listed '
+        'there, whether or not it is holding a basket.' % _b('Lot Management')))
 
     parts.append(_callout(INFO_BG, INFO_EDGE,
-        'You do not have to record shift output first',
+        'You do not have to reconcile the shift first',
         'Releasing asks you for the press counter reading and credits that '
-        'cavity everything it is owed up to that reading. Record the rest of '
-        'the die at the end of the shift as usual &ndash; the cavity you just '
-        'released is picked up from where it left off, so nothing is counted '
-        'twice and nothing is lost.'))
+        'cavity everything it is owed up to that reading. Settle the rest '
+        'of the die on %s at the end of the shift as usual &ndash; the '
+        'cavity you just released is picked up from where it left off, so '
+        'nothing is counted twice and nothing is lost.' % _b('Reconcile Shift')))
 
     parts.append(_step(1, 'Press Release on the basket',
         'The row names the cavity, its ticket and what is on it now.'))
@@ -393,9 +462,10 @@ def die_cast_lot_release_source():
     parts.append(_points('THE OTHER THINGS ON THIS TAB', [
         ('Void', 'Only appears on a basket with nothing on it. It discards '
                  'the basket.'),
-        ('no open basket', 'That cavity is free &ndash; open one on the %s '
-                           'tab.' % _b('Open Basket')),
-        ('out of service', 'The cavity is Closed or Scrapped in the die\'s '
+        ('No basket yet', 'That row shows %s instead &ndash; see the '
+                          'opening guide, right here on the same tab.'
+                          % _b('Open basket')),
+        ('Out of service', 'The cavity is Closed or Scrapped in the die\'s '
                            'configuration and cannot hold a basket.'),
     ]))
 
@@ -686,6 +756,17 @@ def aim_pool_config_source():
     return ''.join(parts)
 
 
+# RE-VERIFIED 2026-09-15 against the live DieCastSupervisor view.json during
+# the reconcile-model rewrite of the other three die-cast guides. This is a
+# DIFFERENT screen -- BlueRidge/Views/ShopFloor/DieCastSupervisor, its own
+# view/proc/script module, matched only by the "die_cast_" function-name
+# prefix -- not one of the Lot Management / Reconcile Shift tabs Task 8 is
+# rebuilding, and neither the design spec (2026-09-14-diecast-quantity-and-
+# scrap-model-design.md) nor the mockup mentions it. Its data source,
+# Workorder.DieCastSupervisor_GetShiftTotals, is untouched by that work and
+# still deliberately omits scrap (its own header comment: "SCRAP IS
+# DELIBERATELY ABSENT ... RejectEvent has no ShiftId"). Content below is
+# unchanged after verification finds it still accurate.
 def die_cast_supervisor_source():
     parts = []
     parts.append(_lead(
@@ -2384,21 +2465,21 @@ GUIDES = [
     {
         "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastOpenHowTo"),
         "source": die_cast_open_source,
-        "defaultSize": {"width": 720, "height": 560},
+        "defaultSize": {"width": 720, "height": 640},
         "title": "How to open baskets",
         "popupId": "dieCastOpenHowTo",
     },
     {
         "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastShiftOutputHowTo"),
         "source": die_cast_shift_output_source,
-        "defaultSize": {"width": 620, "height": 340},
-        "title": "How to record shift output",
+        "defaultSize": {"width": 760, "height": 760},
+        "title": "How to reconcile the shift",
         "popupId": "dieCastShiftOutputHowTo",
     },
     {
         "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastLotReleaseHowTo"),
         "source": die_cast_lot_release_source,
-        "defaultSize": {"width": 620, "height": 300},
+        "defaultSize": {"width": 660, "height": 420},
         "title": "How to release baskets",
         "popupId": "dieCastLotReleaseHowTo",
     },
