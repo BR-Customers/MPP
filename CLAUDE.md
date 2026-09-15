@@ -167,6 +167,21 @@ supervisor covering a break instead does a plain PIN sign-in from the
 operator bar, which confers no privilege because nothing reads
 `session.custom.user.ignitionRole` as an authorization gate.
 
+### Die cast — cavity-attributed scrap and the reconciliation model (2026-09-14)
+
+**Designed, not yet built.** Spec: `docs/superpowers/specs/2026-09-14-diecast-quantity-and-scrap-model-design.md`. Plan: `docs/superpowers/plans/2026-09-14-diecast-quantity-and-scrap-model.md` (migration `0084`). Durable rules:
+
+- **Die cast is the one operation where scrap is not subtractive.** The bad casting never entered the basket. `Parts.OperationType.ScrapIsAdditive` (migration `0042`) already encodes this and `RejectEvent_Record` branches on it in SQL — additive scrap records without decrementing `PieceCount` or closing the LOT.
+- **Scrap is a fact about `(Shift, Press, Tool, Cavity, Part)`; the LOT is optional decoration.** `Workorder.RejectEvent.LotId` becomes nullable so a cavity with no basket can be scrapped.
+- **Identity is STAMPED on the reject row, never derived through the LOT.** `RejectEvent.ItemId` and `.ToolId` are written at record time because `Quality.Reject_GetPartMatrix` / `_SearchDetail` / `_GetPlantSummary` reach the part via `INNER JOIN Lots.Lot` — and an inner join on a NULL key **drops the row silently**. `ToolId` is denormalised because several dies make the same part and are distinguishable only by code.
+- **`Workorder.DieCastContribution.LotId` stays `NOT NULL`, and that is load-bearing — do not "fix" it.** It is what stops a basketless cavity advancing its shot watermark. When a basket is released and the next opened late, the press keeps firing and those castings go into **the next physical basket**, so crediting them there is correct. Advancing the watermark would strand them and under-credit the basket that holds them. *A timing gap on the operator's part must not cost them production.* An earlier draft of the spec argued the opposite and is inverted in place at § 3.6.
+- **A cavity letter is unique per `(Tool, Item, CavityCode)`, not per tool.** A family die repeats letters once per part — prod's `DM0124` is 11 cavities = 3 letters × 4 parts, and one part has no `a`. Every die-cast read and screen groups by **part, then letter** (`DieCast_GetShiftOutputBreakdown` v2.2 made this fix for itself).
+- **The reconciliation identity**, per cavity with a basket: `netShots = good + scrap + unaccounted`, where `netShots = (reading − cavityWatermark) − dieWideShots`. A cavity with no basket is **pending**, outside the identity. Non-zero variance takes a mandatory disposition (`Workorder.DieCastVarianceReason`) with `Unknown` always available — mandatory, but it can never wall an operator, since the escape from a hard block is lying.
+
+### `Lot_RectifyPieceCount` and `Lot_Update` both refuse a no-op
+
+Both reject a LOT whose status is `Open`, `Closed`, or `BlocksProduction`, **and** both no-op-reject when the supplied `@PieceCount` equals the current value. Consequence: neither can realign `Lot.InventoryAvailable` when `PieceCount` is already correct, so a divergence between the two materialized quantities (B5) has **no audited repair path** today. Read a proc's guards before chaining it — the guard list is not in the header.
+
 ### Stored procedure template
 
 `sql/scripts/_TEMPLATE_stored_procedure.sql`. Three-tier error hierarchy. `RAISERROR` (not `THROW`) in CATCH blocks with nested TRY/CATCH for failure logging. Schema-qualify all DB references. `EXEC` parameters must be literals or `@variables` — never inline `CAST` / arithmetic / `CASE`.
@@ -261,6 +276,8 @@ Every deployment into a production environment ships as the same five things. Pr
 3. **Execute** — verified COPY_ONLY backup first, one transaction, guarded by `-ExpectedPlan <fingerprint>` from the preview that was read.
 4. **Scoped project exports** — only the resources the change touched, built **from git** and verified against HEAD (`tools/Build-ChangeExport.ps1`), never whole projects. Core imports first.
 5. **An instruction guide** — published as an Artifact (copyable commands, the output to expect, what to do when it differs, verification, rollback) and mirrored as `notes/<date>_prod-release-runbook-*.md`.
+
+A one-off remediation against live data follows the same shape at smaller scale: `@Commit = 0` **runs the statements inside a transaction and rolls back** — it never skips them, because a preview that skips the writes proves nothing and will surface a guard only on the commit run. Go through the procs, never a raw `UPDATE`, so the change carries validation and audit rows. Arm a script (`@Commit = 1`) in the working tree only; never commit one armed.
 
 `sql/scripts/Deploy-ProdRelease.ps1` implements 1–3. Rehearse locally first against a DB built at the target's exact migration state (temp worktree at the target's commit + `Reset-DevDatabase.ps1` under a throwaway name) so the guide can state what the preview should print. **The fingerprint includes HEAD — nothing may be committed between preview and execute.** Reference: `notes/2026-09-11_prod-release-runbook-6ma-parallel-run.md`.
 
