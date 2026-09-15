@@ -1,30 +1,57 @@
 {
   "custom": {
-    "good": "",
-    "overHeadroom": false,
+    "goodValue": 0,
+    "goodOverride": false,
     "scrapLines": [],
-    "scrapTotal": 0
+    "scrapTotal": 0,
+    "variance": 0,
+    "overHeadroom": false,
+    "scrapOpen": false,
+    "reasonOpen": false,
+    "varianceReasonId": null,
+    "varianceNote": "",
+    "reasonRequiresNote": false
   },
   "params": {
+    "rowKind": "cavity",
+    "groupLabel": "",
+    "groupDetail": "",
+    "ownerKey": "",
     "toolCavityId": null,
     "cavityCode": "",
     "cavityName": "",
     "cavityOrdinalLabel": "",
     "hasCavityName": false,
+    "cavityStatusCode": "Active",
+    "configuredPart": "",
     "lotId": null,
     "lotName": "",
     "isOpen": true,
+    "hasBasket": true,
+    "isPending": false,
     "priorGoodThisShift": 0,
+    "priorScrapThisShift": 0,
     "proposedGood": 0,
     "maxHeadroom": 2147483647,
-    "defectOptions": [],
     "creditedThrough": 0,
     "newShots": 0,
-    "cavityStatusCode": "Active",
-    "configuredPart": "",
-    "hasBasket": true
+    "dieWideShots": 0,
+    "defectOptions": [],
+    "varianceReasonOptions": []
   },
   "propConfig": {
+    "params.rowKind": {
+      "paramDirection": "input"
+    },
+    "params.groupLabel": {
+      "paramDirection": "input"
+    },
+    "params.groupDetail": {
+      "paramDirection": "input"
+    },
+    "params.ownerKey": {
+      "paramDirection": "input"
+    },
     "params.toolCavityId": {
       "paramDirection": "input"
     },
@@ -40,6 +67,12 @@
     "params.hasCavityName": {
       "paramDirection": "input"
     },
+    "params.cavityStatusCode": {
+      "paramDirection": "input"
+    },
+    "params.configuredPart": {
+      "paramDirection": "input"
+    },
     "params.lotId": {
       "paramDirection": "input"
     },
@@ -49,440 +82,917 @@
     "params.isOpen": {
       "paramDirection": "input"
     },
+    "params.hasBasket": {
+      "paramDirection": "input"
+    },
     "params.priorGoodThisShift": {
+      "paramDirection": "input"
+    },
+    "params.priorScrapThisShift": {
       "paramDirection": "input"
     },
     "params.maxHeadroom": {
       "paramDirection": "input"
     },
+    "params.creditedThrough": {
+      "paramDirection": "input"
+    },
     "params.defectOptions": {
+      "paramDirection": "input"
+    },
+    "params.varianceReasonOptions": {
       "paramDirection": "input"
     },
     "params.proposedGood": {
       "paramDirection": "input",
       "onChange": {
         "enabled": true,
-        "script": "\t# A fresh proposal replaces the row wholesale: the operator\u0027s scrap lines and\n\t# the derived Good both belong to the PREVIOUS proposal and must not survive.\n\tval \u003d self.view.params.proposedGood\n\tself.view.custom.scrapLines \u003d []\n\tself.view.custom.scrapTotal \u003d 0\n\tself.view.custom.good \u003d str(val) if val is not None else \"\"\n\tself.view.custom.overHeadroom \u003d False"
+        "script": "\tif not self.view.custom.goodOverride:\n\t\tval \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.proposedGood) or 0\n\t\tself.view.custom.goodValue \u003d val\n\tself.rootContainer.recompute()"
       }
     },
-    "params.creditedThrough": {
-      "paramDirection": "input"
-    },
     "params.newShots": {
-      "paramDirection": "input"
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.recompute()"
+      }
     },
-    "params.cavityStatusCode": {
-      "paramDirection": "input"
+    "params.dieWideShots": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.recompute()"
+      }
     },
-    "params.configuredPart": {
-      "paramDirection": "input"
-    },
-    "params.hasBasket": {
-      "paramDirection": "input"
+    "params.isPending": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.recompute()"
+      }
     }
   },
   "props": {
     "defaultSize": {
-      "height": 150,
-      "width": 900
+      "height": 64,
+      "width": 1180
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "alignItems": "flex-start",
-      "style": {
-        "classes": "pf-inventory-row",
-        "gap": "12px",
-        "overflow": "visible"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
         "meta": {
-          "name": "CavityLotBlock"
+          "name": "GroupBand"
         },
-        "position": {
-          "basis": "150px",
-          "shrink": 0
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "gap": "2px",
-            "overflow": "hidden"
-          }
-        },
+        "type": "ia.container.flex",
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
-              "name": "CavityLabel"
+              "name": "GroupPart"
             },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.params.cavityName"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "fontWeight": 600,
-                "overflow": "hidden",
-                "textOverflow": "ellipsis",
-                "whiteSpace": "nowrap"
-              }
-            }
-          },
-          {
             "type": "ia.display.label",
-            "meta": {
-              "name": "LotLabel"
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if({view.params.hasBasket}, {view.params.lotName}, if({view.params.configuredPart} \u003d \"\", \"no basket\", \"no basket  -  \" + {view.params.configuredPart}))"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "classes": "pf-kpi-sub",
-                "fontFamily": "var(--mpp-font-mono)"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "CavityOrdinal"
-            },
             "position": {
               "shrink": 0
             },
             "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.params.hasCavityName"
-                  }
-                }
-              },
               "props.text": {
                 "binding": {
-                  "type": "property",
                   "config": {
-                    "path": "view.params.cavityOrdinalLabel"
-                  }
+                    "path": "view.params.groupLabel"
+                  },
+                  "type": "property"
                 }
               }
             },
             "props": {
-              "text": "",
+              "style": {
+                "fontWeight": 700,
+                "whiteSpace": "nowrap",
+                "classes": "pf-field-input-mono"
+              }
+            }
+          },
+          {
+            "meta": {
+              "name": "GroupDetail"
+            },
+            "type": "ia.display.label",
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.groupDetail"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
               "style": {
                 "classes": "pf-kpi-sub"
               }
             }
-          },
-          {
-            "meta": {
-              "name": "CavityStateBadge"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.params.cavityStatusCode} !\u003d \"Active\""
-                  }
-                }
-              },
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.params.cavityStatusCode"
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-kpi-sub",
-                "color": "var(--mpp-state-bad-fg)",
-                "fontWeight": 600
-              }
-            },
-            "type": "ia.display.label"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "EditableBlock"
-        },
+        ],
         "position": {
-          "basis": "0",
-          "grow": 1,
-          "shrink": 1
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.rowKind} \u003d \"group\""
+              },
+              "type": "expr"
+            }
+          }
         },
         "props": {
-          "alignItems": "stretch",
           "style": {
-            "gap": "8px",
+            "borderBottom": "1px solid var(--mpp-border-subtle, #2C3A55)",
+            "paddingBottom": "4px",
+            "paddingTop": "10px",
+            "gap": "10px",
             "overflow": "visible"
           },
-          "direction": "column"
+          "alignItems": "center"
+        }
+      },
+      {
+        "meta": {
+          "name": "CavityContent"
         },
+        "type": "ia.container.flex",
         "children": [
           {
+            "meta": {
+              "name": "MainLine"
+            },
+            "type": "ia.container.flex",
             "children": [
               {
-                "type": "ia.container.flex",
                 "meta": {
-                  "name": "GoodBlock"
+                  "name": "CavityCell"
                 },
-                "position": {
-                  "basis": "120px",
-                  "shrink": 0
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "gap": "2px",
-                    "overflow": "hidden"
-                  }
-                },
+                "type": "ia.container.flex",
                 "children": [
                   {
-                    "type": "ia.display.label",
                     "meta": {
-                      "name": "GoodLabel"
+                      "name": "CavityName"
                     },
-                    "props": {
-                      "text": "Good (pc)",
-                      "style": {
-                        "classes": "pf-field-label"
-                      }
-                    }
-                  },
-                  {
                     "type": "ia.display.label",
-                    "meta": {
-                      "name": "GoodValue"
-                    },
                     "propConfig": {
                       "props.text": {
                         "binding": {
-                          "type": "property",
                           "config": {
-                            "path": "view.custom.good"
-                          }
+                            "path": "view.params.cavityName"
+                          },
+                          "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "text": "",
                       "style": {
-                        "classes": "pf-kpi-value",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "22px",
-                        "fontWeight": 700
+                        "fontWeight": 600,
+                        "overflow": "hidden",
+                        "textOverflow": "ellipsis",
+                        "whiteSpace": "nowrap"
+                      }
+                    }
+                  },
+                  {
+                    "meta": {
+                      "name": "CavityOrdinal"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.cavityOrdinalLabel"
+                          },
+                          "type": "property"
+                        }
+                      },
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.hasCavityName"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "meta": {
+                      "name": "CavityStatus"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.cavityStatusCode"
+                          },
+                          "type": "property"
+                        }
+                      },
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.params.cavityStatusCode} !\u003d \"Active\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-state-bad-fg)",
+                        "fontWeight": 600,
+                        "classes": "pf-kpi-sub"
                       }
                     }
                   }
-                ]
+                ],
+                "position": {
+                  "basis": "180px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "gap": "2px",
+                    "overflow": "hidden"
+                  },
+                  "direction": "column"
+                }
               },
               {
-                "type": "ia.display.label",
                 "meta": {
-                  "name": "ReferenceLabel"
+                  "name": "BasketCell"
                 },
+                "type": "ia.container.flex",
+                "children": [
+                  {
+                    "meta": {
+                      "name": "LotLabel"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.lotName"
+                          },
+                          "type": "property"
+                        }
+                      },
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.hasBasket"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "overflow": "hidden",
+                        "textOverflow": "ellipsis",
+                        "whiteSpace": "nowrap",
+                        "classes": "pf-field-input-mono"
+                      }
+                    }
+                  },
+                  {
+                    "meta": {
+                      "name": "NoBasketLabel"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!{view.params.hasBasket}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--pf-status-warn-fg, #F4B343)",
+                        "fontWeight": 600
+                      },
+                      "text": "no basket"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "name": "PartLabel"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.params.configuredPart"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "overflow": "hidden",
+                        "textOverflow": "ellipsis",
+                        "whiteSpace": "nowrap",
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "meta": {
+                      "name": "ReleasedLabel"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.params.hasBasket} \u0026\u0026 !{view.params.isOpen}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "released earlier this shift - scrap only"
+                    }
+                  }
+                ],
                 "position": {
-                  "basis": "210px",
+                  "basis": "0",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "props": {
+                  "style": {
+                    "gap": "2px",
+                    "overflow": "hidden"
+                  },
+                  "direction": "column"
+                }
+              },
+              {
+                "meta": {
+                  "name": "ShotsCell"
+                },
+                "type": "ia.container.flex",
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ShotsNet"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr(if({view.params.newShots} - {view.params.dieWideShots} \u003c 0, 0, {view.params.newShots} - {view.params.dieWideShots}))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontWeight": 600,
+                        "textAlign": "right",
+                        "classes": "pf-field-input-mono"
+                      }
+                    }
+                  },
+                  {
+                    "meta": {
+                      "name": "ShotsCalc"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr({view.params.newShots}) + \" - \" + toStr({view.params.dieWideShots})"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.params.dieWideShots} \u003e 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "textAlign": "right",
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "basis": "110px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "gap": "0px",
+                    "overflow": "hidden"
+                  },
+                  "direction": "column",
+                  "alignItems": "flex-end"
+                }
+              },
+              {
+                "meta": {
+                  "name": "GoodCell"
+                },
+                "type": "ia.container.flex",
+                "children": [
+                  {
+                    "events": {
+                      "dom": {
+                        "onBlur": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.markGoodEdited()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "GoodInput",
+                      "tooltip": {
+                        "text": "Pre-filled from the press counter. Type over it to use your own count."
+                      }
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1,
+                      "shrink": 1
+                    },
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.goodValue",
+                            "bidirectional": true
+                          },
+                          "type": "property"
+                        }
+                      },
+                      "props.enabled": {
+                        "binding": {
+                          "config": {
+                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen}"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.style.borderColor": {
+                        "binding": {
+                          "config": {
+                            "expression": "if({view.custom.goodOverride}, \"var(--mpp-accent-60, #22A8CC)\", \"var(--mpp-border-default, #425270)\")"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.style.fontWeight": {
+                        "binding": {
+                          "config": {
+                            "expression": "if({view.custom.goodOverride}, 700, 400)"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "style": {
+                        "classes": "pf-field-input",
+                        "minHeight": "44px",
+                        "textAlign": "right"
+                      }
+                    },
+                    "type": "ia.input.numeric-entry-field"
+                  }
+                ],
+                "position": {
+                  "basis": "130px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "gap": "4px",
+                    "overflow": "visible"
+                  },
+                  "alignItems": "center"
+                }
+              },
+              {
+                "meta": {
+                  "name": "ScrapCell"
+                },
+                "type": "ia.container.flex",
+                "children": [
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.toggleScrap()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "ScrapButton",
+                      "tooltip": {
+                        "text": "Record scrap against this cavity"
+                      }
+                    },
+                    "type": "ia.input.button",
+                    "position": {
+                      "basis": "0",
+                      "grow": 1,
+                      "shrink": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr({view.custom.scrapTotal}) + if(len({view.custom.scrapLines}) \u003e 0, \"  (\" + toStr(len({view.custom.scrapLines})) + \")\", \"\")"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "minHeight": "44px",
+                        "classes": "pf-btn pf-btn-secondary"
+                      },
+                      "text": "0"
+                    }
+                  }
+                ],
+                "position": {
+                  "basis": "140px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "gap": "6px",
+                    "overflow": "visible"
+                  },
+                  "alignItems": "center"
+                }
+              },
+              {
+                "meta": {
+                  "name": "VarianceCell"
+                },
+                "type": "ia.container.flex",
+                "children": [
+                  {
+                    "meta": {
+                      "name": "VarianceNA"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.params.isPending} || !{view.params.isOpen}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "-"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "name": "VarianceZero"
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen} \u0026\u0026 {view.custom.variance} \u003d 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--pf-status-good-fg, #50C878)",
+                        "fontWeight": 600,
+                        "classes": "pf-field-input-mono"
+                      },
+                      "text": "0"
+                    }
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.toggleReason()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "VarianceButton",
+                      "tooltip": {
+                        "text": "Say what happened to these pieces"
+                      }
+                    },
+                    "type": "ia.input.button",
+                    "position": {
+                      "basis": "0",
+                      "grow": 1,
+                      "shrink": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr({view.custom.variance})"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen} \u0026\u0026 {view.custom.variance} !\u003d 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "minHeight": "44px",
+                        "color": "var(--pf-status-warn-fg, #F4B343)",
+                        "fontWeight": 700,
+                        "classes": "pf-btn pf-btn-secondary"
+                      },
+                      "text": "0"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "name": "VarianceChip"
+                    },
+                    "type": "ia.display.label",
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "if(isNull({view.custom.varianceReasonId}), \"!\", \"OK\")"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.style.classes": {
+                        "binding": {
+                          "config": {
+                            "expression": "if(isNull({view.custom.varianceReasonId}), \"pf-pill pf-pill-warn\", \"pf-pill pf-pill-good\")"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen} \u0026\u0026 {view.custom.variance} !\u003d 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-pill"
+                      },
+                      "text": ""
+                    }
+                  }
+                ],
+                "position": {
+                  "basis": "130px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "gap": "6px",
+                    "overflow": "visible"
+                  },
+                  "alignItems": "center"
+                }
+              },
+              {
+                "meta": {
+                  "name": "ShiftGoodCell"
+                },
+                "type": "ia.display.label",
+                "position": {
+                  "basis": "95px",
                   "shrink": 0
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "expr",
                       "config": {
-                        "expression": "if(!{view.params.hasBasket}, \"no basket  -  \" + toStr({view.params.newShots}) + \" shots ran\", if({view.params.isOpen}, \"credited thru \" + toStr({view.params.creditedThrough}) + \"  -  +\" + toStr({view.params.newShots}) + \" shots\", \"released earlier this shift  -  scrap only\"))"
-                      }
+                        "expression": "toStr({view.params.priorGoodThisShift})"
+                      },
+                      "type": "expr"
                     }
                   }
                 },
                 "props": {
-                  "text": "",
                   "style": {
+                    "fontFamily": "var(--mpp-font-mono)",
+                    "textAlign": "right",
                     "classes": "pf-kpi-sub"
                   }
                 }
               },
               {
                 "meta": {
-                  "name": "ControlsSpacer"
+                  "name": "ShiftScrapCell"
                 },
-                "position": {
-                  "grow": 1,
-                  "shrink": 1
-                },
-                "props": {
-                  "text": ""
-                },
-                "type": "ia.display.label"
-              },
-              {
                 "type": "ia.display.label",
-                "meta": {
-                  "name": "ScrapTotalLabel"
-                },
                 "position": {
+                  "basis": "95px",
                   "shrink": 0
                 },
                 "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.scrapTotal} \u003e 0"
-                      }
-                    }
-                  },
                   "props.text": {
                     "binding": {
-                      "type": "expr",
                       "config": {
-                        "expression": "\"scrap \" + toStr({view.custom.scrapTotal}) + \" pc\""
-                      }
+                        "expression": "toStr({view.params.priorScrapThisShift})"
+                      },
+                      "type": "expr"
                     }
                   }
                 },
                 "props": {
-                  "text": "",
                   "style": {
-                    "classes": "pf-kpi-sub",
-                    "whiteSpace": "nowrap"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "HeadroomWarning"
-                },
-                "position": {
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.overHeadroom"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "text": "Over basket headroom",
-                  "style": {
-                    "color": "var(--mpp-warning, #b26a00)",
-                    "fontWeight": 600,
-                    "whiteSpace": "nowrap"
-                  }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "AddScrapButton"
-                },
-                "position": {
-                  "basis": "180px",
-                  "shrink": 0
-                },
-                "props": {
-                  "text": "Add scrap reason",
-                  "image": {
-                    "icon": {
-                      "path": "mpp/add_circle"
-                    }
-                  },
-                  "style": {
-                    "classes": "pf-btn pf-btn-secondary",
-                    "minHeight": "44px"
-                  }
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.addScrapLine()"
-                      }
-                    }
+                    "fontFamily": "var(--mpp-font-mono)",
+                    "textAlign": "right",
+                    "classes": "pf-kpi-sub"
                   }
                 }
               }
             ],
-            "meta": {
-              "name": "ControlsLine"
-            },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "alignItems": "center",
               "style": {
                 "gap": "10px",
                 "overflow": "visible"
-              }
-            },
-            "type": "ia.container.flex"
+              },
+              "alignItems": "center"
+            }
           },
           {
+            "meta": {
+              "name": "PendingStrip"
+            },
             "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "PendingText"
+                },
+                "type": "ia.display.label",
+                "position": {
+                  "basis": "0",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr({view.params.newShots}) + \" shots ran - credits to the next basket\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--pf-status-warn-fg, #F4B343)"
+                  }
+                }
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.requestOpenBasket()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "OpenBasketButton"
+                },
+                "type": "ia.input.button",
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  },
+                  "text": "Open basket"
+                }
+              }
+            ],
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.isPending"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "paddingLeft": "10px",
+                "gap": "10px",
+                "overflow": "visible"
+              },
+              "alignItems": "center"
+            }
+          },
+          {
             "meta": {
               "name": "ScrapStack"
             },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "gap": "6px",
-                "overflow": "visible"
-              },
-              "wrap": "nowrap",
-              "alignItems": "stretch"
-            },
+            "type": "ia.container.flex",
             "children": [
               {
-                "type": "ia.display.flex-repeater",
                 "meta": {
                   "name": "ScrapRepeater"
                 },
@@ -493,22 +1003,21 @@
                 "propConfig": {
                   "props.instances": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "path": "view.custom.scrapLines"
                       },
                       "transforms": [
                         {
-                          "type": "script",
-                          "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.params.defectOptions) or []\n\tlotId \u003d self.view.params.lotId\n\tout \u003d []\n\tfor i, r in enumerate(rows):\n\t\tr \u003d r or {}\n\t\tout.append({\"lotId\": lotId, \"index\": i, \"defectCodeId\": r.get(\"defectCodeId\"), \"quantity\": r.get(\"quantity\") or \"\", \"defectOptions\": opts})\n\treturn out"
+                          "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.params.defectOptions) or []\n\towner \u003d self.view.params.ownerKey or \"\"\n\tout \u003d []\n\tfor i, r in enumerate(rows):\n\t\tr \u003d r or {}\n\t\t# lotId is deliberately None: routing is by ownerKey now, and a\n\t\t# null lotId is what stops Popups/DieCastRelease\u0027s own lotId\n\t\t# router from claiming a row that belongs to this grid.\n\t\tout.append({\"ownerKey\": owner, \"lotId\": None, \"index\": i,\n\t\t\t\"defectCodeId\": r.get(\"defectCodeId\"),\n\t\t\t\"quantity\": r.get(\"quantity\") or \"\",\n\t\t\t\"defectOptions\": opts})\n\treturn out",
+                          "type": "script"
                         }
-                      ]
+                      ],
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "direction": "column",
-                  "wrap": "nowrap",
                   "elementPosition": {
                     "basis": "auto",
                     "shrink": 0
@@ -520,20 +1029,366 @@
                     "overflow": "visible"
                   },
                   "useDefaultViewHeight": true,
-                  "useDefaultViewWidth": false
+                  "useDefaultViewWidth": false,
+                  "wrap": "nowrap"
+                },
+                "type": "ia.display.flex-repeater"
+              },
+              {
+                "meta": {
+                  "name": "ScrapActions"
+                },
+                "type": "ia.container.flex",
+                "children": [
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.addScrapLine()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "AddScrapButton"
+                    },
+                    "type": "ia.input.button",
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "minHeight": "40px",
+                        "classes": "pf-btn pf-btn-secondary"
+                      },
+                      "text": "Add scrap reason",
+                      "image": {
+                        "icon": {
+                          "path": "mpp/add_circle"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "visible"
+                  },
+                  "alignItems": "center"
                 }
               }
-            ]
+            ],
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.scrapOpen"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "borderLeft": "3px solid var(--mpp-accent-40, #126680)",
+                "marginLeft": "10px",
+                "paddingLeft": "10px",
+                "gap": "6px",
+                "overflow": "visible"
+              },
+              "direction": "column"
+            }
+          },
+          {
+            "meta": {
+              "name": "ReasonBox"
+            },
+            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "ReasonLead"
+                },
+                "type": "ia.display.label",
+                "position": {
+                  "basis": "150px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"Variance \" + toStr({view.custom.variance})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.setReason(self.props.value)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "ReasonDropdown"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.params.varianceReasonOptions"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.varianceReasonId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": {
+                    "text": "Pick a reason"
+                  },
+                  "style": {
+                    "classes": "pf-field-select",
+                    "minWidth": "260px"
+                  }
+                },
+                "type": "ia.input.dropdown"
+              },
+              {
+                "events": {
+                  "dom": {
+                    "onBlur": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.setReasonNote(self.props.text)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "ReasonNote"
+                },
+                "position": {
+                  "basis": "300px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.varianceNote",
+                        "bidirectional": true
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.reasonRequiresNote"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "Required - what happened?",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
+                "type": "ia.input.text-field"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.setReason(None)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "ReasonClear"
+                },
+                "type": "ia.input.button",
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "!isNull({view.custom.varianceReasonId})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary"
+                  },
+                  "text": "Clear"
+                }
+              }
+            ],
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!{view.params.isPending} \u0026\u0026 {view.params.isOpen} \u0026\u0026 {view.custom.variance} !\u003d 0 \u0026\u0026 {view.custom.reasonOpen}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "borderLeft": "3px solid var(--pf-status-warn-fg, #F4B343)",
+                "marginLeft": "10px",
+                "paddingLeft": "10px",
+                "gap": "8px",
+                "overflow": "visible"
+              },
+              "alignItems": "center"
+            }
           }
-        ]
+        ],
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.rowKind} !\u003d \"group\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "gap": "6px",
+            "overflow": "visible"
+          },
+          "direction": "column"
+        }
       }
     ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tself.recompute()"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "0px",
+        "overflow": "visible"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
+          "name": "recompute",
+          "params": [],
+          "script": "\t# Display arithmetic for the reconciliation identity (spec 3.2):\n\t#     netShots \u003d NewShots - DieWideShots\n\t#     variance \u003d netShots - good - cavityScrap\n\t# NOT a domain rule: Workorder.DieCastShiftOutput_Record recomputes\n\t# everything at submit and its Message is what the operator sees. This\n\t# is the preview the operator reconciles against, and ProposedGood (from\n\t# the proc, already net of die-wide) is the proposal Good auto-follows.\n\ttotal \u003d 0\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\tif r.get(\"defectCodeId\") is None:\n\t\t\tcontinue\n\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif q:\n\t\t\ttotal +\u003d q\n\tself.view.custom.scrapTotal \u003d total\n\tpending \u003d bool(self.view.params.isPending)\n\tscrapOnly \u003d (not pending) and (not self.view.params.isOpen)\n\tif pending or scrapOnly:\n\t\t# A cavity with NO basket cannot be credited on this entry (spec 3.5);\n\t\t# a basket released earlier in the shift takes scrap only. Neither is\n\t\t# inside the identity, so neither can carry a variance.\n\t\tif self.view.custom.goodValue !\u003d 0:\n\t\t\tself.view.custom.goodValue \u003d 0\n\t\tself.view.custom.variance \u003d 0\n\t\tself.view.custom.overHeadroom \u003d False\n\t\tself.emitRowChanged()\n\t\treturn\n\tbase \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.proposedGood) or 0\n\tif self.view.custom.goodOverride:\n\t\tgood \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.goodValue) or 0\n\telse:\n\t\tgood \u003d base - total\n\t\tif good \u003c 0:\n\t\t\tgood \u003d 0\n\t\tif good !\u003d self.view.custom.goodValue:\n\t\t\tself.view.custom.goodValue \u003d good\n\tnewShots \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.newShots) or 0\n\tdieWide \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.dieWideShots) or 0\n\tnet \u003d newShots - dieWide\n\tif net \u003c 0:\n\t\tnet \u003d 0\n\tself.view.custom.variance \u003d net - good - total\n\tmaxH \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.maxHeadroom)\n\tself.view.custom.overHeadroom \u003d (maxH is not None and good \u003e maxH)\n\tself.emitRowChanged()"
+        },
+        {
+          "name": "emitRowChanged",
+          "params": [],
+          "script": "\t# The ONLY channel back to DieCastBody (embed params are input-only).\n\t# Keyed on toolCavityId, NOT lotId: every basketless cavity has\n\t# lotId None and they all collided on the string \"None\" before.\n\tif self.view.params.rowKind \u003d\u003d \"group\":\n\t\treturn\n\tlines \u003d []\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\td \u003d r.get(\"defectCodeId\")\n\t\tq \u003d r.get(\"quantity\")\n\t\tif d is not None and q not in (None, \"\"):\n\t\t\tlines.append({\"defectCodeId\": d, \"quantity\": q})\n\tsystem.perspective.sendMessage(\"dieCastRowChanged\", payload\u003d{\n\t\t\"toolCavityId\": self.view.params.toolCavityId,\n\t\t\"lotId\": self.view.params.lotId,\n\t\t\"good\": self.view.custom.goodValue,\n\t\t\"scrapLines\": lines,\n\t\t\"variance\": self.view.custom.variance,\n\t\t\"varianceReasonId\": self.view.custom.varianceReasonId,\n\t\t\"varianceNote\": self.view.custom.varianceNote or \"\",\n\t\t\"isPending\": bool(self.view.params.isPending),\n\t}, scope\u003d\"page\")"
+        },
+        {
+          "name": "markGoodEdited",
+          "params": [],
+          "script": "\t# D3: Good auto-follows the proposal until the operator types a\n\t# DIFFERENT number; from then it is theirs and the input is marked.\n\t# Tabbing through without changing anything must not freeze the\n\t# auto-follow, so the blur only latches on an actual disagreement.\n\tif self.view.custom.goodOverride:\n\t\tself.recompute()\n\t\treturn\n\tbase \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.proposedGood) or 0\n\tauto \u003d base - (BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapTotal) or 0)\n\tif auto \u003c 0:\n\t\tauto \u003d 0\n\tcur \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.goodValue) or 0\n\tif cur !\u003d auto:\n\t\tself.view.custom.goodOverride \u003d True\n\tself.recompute()"
+        },
+        {
+          "name": "toggleScrap",
+          "params": [],
+          "script": "\tself.view.custom.scrapOpen \u003d not self.view.custom.scrapOpen\n\tif self.view.custom.scrapOpen and not (self.view.custom.scrapLines or []):\n\t\tself.addScrapLine()"
+        },
+        {
+          "name": "toggleReason",
+          "params": [],
+          "script": "\tself.view.custom.reasonOpen \u003d not self.view.custom.reasonOpen"
+        },
+        {
+          "name": "setReason",
+          "params": [
+            "reasonId"
+          ],
+          "script": "\t# requiresNote is passed through from the SQL code table\n\t# (Workorder.DieCastVarianceReason.RequiresNote), never decided here.\n\treq \u003d False\n\tfor o in (BlueRidge.Common.Util.extractQualifiedValues(self.view.params.varianceReasonOptions) or []):\n\t\to \u003d o or {}\n\t\tif reasonId is not None and (\"%s\" % o.get(\"value\")) \u003d\u003d (\"%s\" % reasonId):\n\t\t\treq \u003d bool(o.get(\"requiresNote\"))\n\t\t\tbreak\n\tself.view.custom.varianceReasonId \u003d reasonId\n\tself.view.custom.reasonRequiresNote \u003d req\n\tif reasonId is None:\n\t\tself.view.custom.varianceNote \u003d \"\"\n\tself.emitRowChanged()"
+        },
+        {
+          "name": "setReasonNote",
+          "params": [
+            "note"
+          ],
+          "script": "\tself.view.custom.varianceNote \u003d note or \"\"\n\tself.emitRowChanged()"
+        },
+        {
           "name": "addScrapLine",
           "params": [],
-          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows \u003d [dict(r or {}) for r in rows]\n\trows.append({\"defectCodeId\": None, \"quantity\": \"\"})\n\tself.view.custom.scrapLines \u003d rows"
+          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows \u003d [dict(r or {}) for r in rows]\n\trows.append({\"defectCodeId\": None, \"quantity\": \"\"})\n\tself.view.custom.scrapLines \u003d rows\n\tself.view.custom.scrapOpen \u003d True"
         },
         {
           "name": "setScrapLine",
@@ -542,31 +1397,26 @@
             "defectCodeId",
             "quantity"
           ],
-          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows \u003d [dict(r or {}) for r in rows]\n\tif index is None or index \u003c 0 or index \u003e\u003d len(rows):\n\t\treturn\n\trows[index] \u003d {\"defectCodeId\": defectCodeId, \"quantity\": quantity or \"\"}\n\tself.view.custom.scrapLines \u003d rows\n\tself.applyScrap()"
+          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows \u003d [dict(r or {}) for r in rows]\n\tif index is None or index \u003c 0 or index \u003e\u003d len(rows):\n\t\treturn\n\trows[index] \u003d {\"defectCodeId\": defectCodeId, \"quantity\": quantity or \"\"}\n\tself.view.custom.scrapLines \u003d rows\n\tself.recompute()"
         },
         {
           "name": "removeScrapLine",
           "params": [
             "index"
           ],
-          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows \u003d [dict(r or {}) for r in rows]\n\tif index is None or index \u003c 0 or index \u003e\u003d len(rows):\n\t\treturn\n\tdel rows[index]\n\tself.view.custom.scrapLines \u003d rows\n\tself.applyScrap()"
+          "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows \u003d [dict(r or {}) for r in rows]\n\tif index is None or index \u003c 0 or index \u003e\u003d len(rows):\n\t\treturn\n\tdel rows[index]\n\tself.view.custom.scrapLines \u003d rows\n\tself.recompute()"
         },
         {
-          "name": "applyScrap",
+          "name": "requestOpenBasket",
           "params": [],
-          "script": "\t# FAT #23: scrap auto-decrements Good. Good is DISPLAY-ONLY now (backlog 2.5),\n\t# so it is a pure derivation -- Good \u003d ProposedGood - (submittable scrap),\n\t# floored at 0 -- rather than the old subtract-the-delta bookkeeping that\n\t# existed only to preserve operator hand-edits to an editable Good field.\n\t# Recomputing from the proposal means clearing or shrinking a scrap line puts\n\t# the pieces straight back, with no scrapApplied running total to drift.\n\ttotal \u003d 0\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\tif r.get(\"defectCodeId\") is None:\n\t\t\tcontinue\n\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif q:\n\t\t\ttotal +\u003d q\n\tbase \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.proposedGood) or 0\n\tg \u003d base - total\n\tif g \u003c 0:\n\t\tg \u003d 0\n\tmaxH \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.maxHeadroom)\n\tself.view.custom.scrapTotal \u003d total\n\tself.view.custom.good \u003d str(g)\n\tself.view.custom.overHeadroom \u003d (maxH is not None and g \u003e maxH)\n\tself.emitRowChanged()"
-        },
-        {
-          "name": "emitRowChanged",
-          "params": [],
-          "script": "\t# Wire shape is UNCHANGED from the fixed-six-slot version DieCastBody\u0027s\n\t# dieCastRowChanged handler + Workorder.DieCastShiftOutput_Record expect:\n\t# {lotId, good, scrapLines: [{defectCodeId, quantity}, ...]}. Only the number\n\t# of scrap lines is now unbounded (backlog 2.3).\n\tlines \u003d []\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\td \u003d r.get(\"defectCodeId\")\n\t\tq \u003d r.get(\"quantity\")\n\t\tif d is not None and q not in (None, \"\"):\n\t\t\tlines.append({\"defectCodeId\": d, \"quantity\": q})\n\tsystem.perspective.sendMessage(\"dieCastRowChanged\", payload\u003d{\n\t\t\"lotId\": self.view.params.lotId,\n\t\t\"good\": self.view.custom.good,\n\t\t\"scrapLines\": lines,\n\t}, scope\u003d\"page\")"
+          "script": "\t# Close the gap where the operator noticed it (spec 6.3) --\n\t# DieCastBody routes to Lot Management with this cavity in view.\n\tsystem.perspective.sendMessage(\"dieCastOpenBasketRequested\", payload\u003d{\n\t\t\"toolCavityId\": self.view.params.toolCavityId,\n\t\t\"cavityName\": self.view.params.cavityName or \"\",\n\t}, scope\u003d\"page\")"
         },
         {
           "name": "_isMine",
           "params": [
             "payload"
           ],
-          "script": "\t# The ScrapLineRow children broadcast on PAGE scope, so every CavityLotRow on\n\t# the shift-output list receives every child\u0027s message. Route by lotId.\n\tif not payload:\n\t\treturn False\n\treturn (\"%s\" % payload.get(\"lotId\")) \u003d\u003d (\"%s\" % self.view.params.lotId)"
+          "script": "\t# ScrapLineRow broadcasts on PAGE scope, so EVERY consumer on the page\n\t# hears every child\u0027s message -- including Popups/DieCastRelease, which\n\t# uses the same row view. Routing on lotId alone was ambiguous twice\n\t# over: basketless cavities all carry lotId None, and the release dialog\n\t# can be open on a lot that also has a row here. ownerKey is an opaque\n\t# per-consumer token (\"cav:\u003ctoolCavityId\u003e\"), so a broadcast reaches\n\t# exactly one consumer. Our children also send lotId None, which is what\n\t# keeps the release dialog\u0027s own lotId router from claiming them back.\n\tif not payload:\n\t\treturn False\n\tmine \u003d self.view.params.ownerKey or \"\"\n\tif not mine:\n\t\treturn False\n\treturn (\"%s\" % payload.get(\"ownerKey\")) \u003d\u003d (\"%s\" % mine)"
         }
       ],
       "messageHandlers": [
@@ -585,6 +1435,7 @@
           "script": "\tif self._isMine(payload):\n\t\tself.removeScrapLine(payload.get(\"index\"))"
         }
       ]
-    }
+    },
+    "type": "ia.container.flex"
   }
 }

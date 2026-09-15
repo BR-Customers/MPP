@@ -1,0 +1,733 @@
+{
+  "custom": {
+    "itemId": null,
+    "scannedLtt": ""
+  },
+  "params": {
+    "rowKind": "cavity",
+    "groupLabel": "",
+    "groupDetail": "",
+    "toolCavityId": null,
+    "cavityCode": "",
+    "cavityName": "",
+    "cavityOrdinalLabel": "",
+    "cavityStatusCode": "Active",
+    "isActive": true,
+    "alreadyOpen": false,
+    "configuredItemId": null,
+    "configuredPart": "",
+    "itemId": null,
+    "scannedLtt": "",
+    "itemOptions": [],
+    "resultState": "",
+    "resultMessage": "",
+    "lotId": null,
+    "lotName": "",
+    "pieceCount": 0,
+    "maxPieceCount": null,
+    "belowStandard": false,
+    "contributorCount": 0,
+    "openedAtDisplay": "",
+    "voidEligible": false,
+    "seedToken": -1
+  },
+  "propConfig": {
+    "params.rowKind": {
+      "paramDirection": "input"
+    },
+    "params.groupLabel": {
+      "paramDirection": "input"
+    },
+    "params.groupDetail": {
+      "paramDirection": "input"
+    },
+    "params.toolCavityId": {
+      "paramDirection": "input"
+    },
+    "params.cavityCode": {
+      "paramDirection": "input"
+    },
+    "params.cavityName": {
+      "paramDirection": "input"
+    },
+    "params.cavityOrdinalLabel": {
+      "paramDirection": "input"
+    },
+    "params.cavityStatusCode": {
+      "paramDirection": "input"
+    },
+    "params.isActive": {
+      "paramDirection": "input"
+    },
+    "params.alreadyOpen": {
+      "paramDirection": "input"
+    },
+    "params.configuredItemId": {
+      "paramDirection": "input"
+    },
+    "params.configuredPart": {
+      "paramDirection": "input"
+    },
+    "params.itemId": {
+      "paramDirection": "input"
+    },
+    "params.scannedLtt": {
+      "paramDirection": "input"
+    },
+    "params.itemOptions": {
+      "paramDirection": "input"
+    },
+    "params.resultState": {
+      "paramDirection": "input"
+    },
+    "params.resultMessage": {
+      "paramDirection": "input"
+    },
+    "params.lotId": {
+      "paramDirection": "input"
+    },
+    "params.lotName": {
+      "paramDirection": "input"
+    },
+    "params.pieceCount": {
+      "paramDirection": "input"
+    },
+    "params.maxPieceCount": {
+      "paramDirection": "input"
+    },
+    "params.belowStandard": {
+      "paramDirection": "input"
+    },
+    "params.contributorCount": {
+      "paramDirection": "input"
+    },
+    "params.openedAtDisplay": {
+      "paramDirection": "input"
+    },
+    "params.voidEligible": {
+      "paramDirection": "input"
+    },
+    "params.seedToken": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\t# seedToken changes ONLY when the parent rebuilds the repeater (it carries\n\t# the view\u0027s refreshToken), so this is the reseed hook: take the values the\n\t# parent just handed down -- the retained draft for a row that failed to\n\t# open, or blanks for a row that succeeded and is now read-only.\n\t# The part falls back to the cavity\u0027s CONFIGURED part (0072): the operator\n\t# does not pick it any more, so it has to be put on the screen for them.\n\t# This is a DISPLAY seed -- the TICKET, never the part, stages a row.\n\tif self.view.params.rowKind \u003d\u003d \"group\":\n\t\treturn\n\titemId \u003d self.view.params.itemId\n\tif itemId is None:\n\t\titemId \u003d self.view.params.configuredItemId\n\tself.view.custom.itemId \u003d itemId\n\tself.view.custom.scannedLtt \u003d self.view.params.scannedLtt or \"\"\n\t# Report UNCONDITIONALLY. Writing null over null fires no onChange, so a\n\t# row that has just become read-only can never tell the parent it is empty\n\t# through the value path -- and the parent went on counting it.\n\tself.rootContainer.report()"
+      }
+    },
+    "custom.itemId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.report()"
+      }
+    },
+    "custom.scannedLtt": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.report()"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 64,
+      "width": 1180
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "GroupBand"
+        },
+        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "GroupPart"
+            },
+            "type": "ia.display.label",
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.groupLabel"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontWeight": 700,
+                "whiteSpace": "nowrap",
+                "classes": "pf-field-input-mono"
+              }
+            }
+          },
+          {
+            "meta": {
+              "name": "GroupDetail"
+            },
+            "type": "ia.display.label",
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.groupDetail"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
+          }
+        ],
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.rowKind} \u003d \"group\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle, #2C3A55)",
+            "paddingBottom": "4px",
+            "paddingTop": "10px",
+            "gap": "10px",
+            "overflow": "visible"
+          },
+          "alignItems": "center"
+        }
+      },
+      {
+        "meta": {
+          "name": "CavityContent"
+        },
+        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "CavityBlock"
+            },
+            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "CavityName"
+                },
+                "type": "ia.display.label",
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.params.cavityName"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontWeight": 600,
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
+                    "whiteSpace": "nowrap"
+                  }
+                }
+              },
+              {
+                "meta": {
+                  "name": "CavityOrdinal"
+                },
+                "type": "ia.display.label",
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.params.cavityOrdinalLabel"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "180px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "gap": "2px",
+                "overflow": "hidden"
+              },
+              "direction": "column"
+            }
+          },
+          {
+            "meta": {
+              "name": "PartLabel"
+            },
+            "type": "ia.display.label",
+            "position": {
+              "basis": "170px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.configuredPart"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap",
+                "classes": "pf-field-input-mono"
+              },
+              "text": ""
+            }
+          },
+          {
+            "meta": {
+              "name": "BasketBlock"
+            },
+            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "LotLabel"
+                },
+                "type": "ia.display.label",
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.params.lotName"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "path": "view.params.alreadyOpen"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-accent, #4BC2E0)",
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
+                    "whiteSpace": "nowrap",
+                    "classes": "pf-field-input-mono"
+                  }
+                }
+              },
+              {
+                "meta": {
+                  "name": "LotSub"
+                },
+                "type": "ia.display.label",
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr({view.params.contributorCount}) + \" contributor(s)  -  opened \" + {view.params.openedAtDisplay}"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "path": "view.params.alreadyOpen"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              },
+              {
+                "meta": {
+                  "name": "NoBasketLabel"
+                },
+                "type": "ia.display.label",
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.params.isActive}, \"no basket - ready for a new one\", {view.params.cavityStatusCode} + \" - out of service\")"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "!{view.params.alreadyOpen}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--pf-status-warn-fg, #F4B343)",
+                    "fontWeight": 600
+                  }
+                }
+              }
+            ],
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "style": {
+                "gap": "2px",
+                "overflow": "hidden"
+              },
+              "direction": "column"
+            }
+          },
+          {
+            "meta": {
+              "name": "PiecesLabel"
+            },
+            "type": "ia.display.label",
+            "position": {
+              "basis": "90px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.params.alreadyOpen}, toStr({view.params.pieceCount}) + \" pc\", \"-\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontWeight": 600,
+                "textAlign": "right",
+                "classes": "pf-field-input-mono"
+              },
+              "text": ""
+            }
+          },
+          {
+            "meta": {
+              "name": "ItemDropdown"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "isNull({view.params.configuredItemId})"
+                  },
+                  "type": "expr"
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!{view.params.alreadyOpen} \u0026\u0026 {view.params.isActive}"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.itemOptions"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.itemId",
+                    "bidirectional": true
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Select the part for this cavity"
+              },
+              "style": {
+                "classes": "pf-field-select",
+                "width": "100%"
+              }
+            },
+            "type": "ia.input.dropdown"
+          },
+          {
+            "meta": {
+              "name": "LttInput"
+            },
+            "position": {
+              "basis": "200px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!{view.params.alreadyOpen} \u0026\u0026 {view.params.isActive}"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.scannedLtt",
+                    "bidirectional": true
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "deferUpdates": false,
+              "placeholder": "Scan LTT",
+              "style": {
+                "classes": "pf-field-input-mono",
+                "width": "100%"
+              }
+            },
+            "type": "ia.input.text-field"
+          },
+          {
+            "meta": {
+              "name": "ActionsBlock"
+            },
+            "type": "ia.container.flex",
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.sendMessage(\"requestReleaseBasket\", payload\u003d{\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName, \"pieceCount\": self.view.params.pieceCount, \"maxPieceCount\": self.view.params.maxPieceCount, \"belowStandard\": self.view.params.belowStandard}, scope\u003d\"page\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "ReleaseButton"
+                },
+                "type": "ia.input.button",
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "path": "view.params.alreadyOpen"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  },
+                  "text": "Release"
+                }
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.sendMessage(\"requestVoidBasket\", payload\u003d{\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName}, scope\u003d\"page\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "VoidButton"
+                },
+                "type": "ia.input.button",
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "path": "view.params.voidEligible"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-danger"
+                  },
+                  "text": "Void"
+                }
+              }
+            ],
+            "position": {
+              "basis": "230px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "justifyContent": "flex-end",
+                "gap": "8px",
+                "overflow": "visible"
+              },
+              "alignItems": "center"
+            }
+          },
+          {
+            "meta": {
+              "name": "ResultLabel"
+            },
+            "type": "ia.display.label",
+            "position": {
+              "basis": "230px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.resultState} !\u003d \"\""
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.style.color": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.params.resultState} \u003d \"ok\", \"var(--pf-status-good-fg)\", \"var(--pf-status-bad-fg)\")"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.resultMessage"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "overflow": "hidden"
+              },
+              "text": ""
+            }
+          }
+        ],
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.rowKind} !\u003d \"group\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "gap": "12px",
+            "overflow": "visible"
+          },
+          "alignItems": "center"
+        }
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "0px",
+        "overflow": "visible"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "report",
+          "params": [],
+          "script": "\t# Cross the embed boundary the only way an input-only param allows: a\n\t# page-scoped message up to DieCastBody, which owns the authoritative\n\t# bulkOpenDraft map (feedback_ignition_embed_params_input_only).\n\t# alreadyOpen / isActive travel with it so the parent can DROP the entry\n\t# for a cavity this row can no longer stage.\n\tif self.view.params.rowKind \u003d\u003d \"group\":\n\t\treturn\n\tsystem.perspective.sendMessage(\"bulkOpenRowChanged\", payload\u003d{\n\t\t\"toolCavityId\": self.view.params.toolCavityId,\n\t\t\"itemId\": self.view.custom.itemId,\n\t\t\"scannedLtt\": self.view.custom.scannedLtt or \"\",\n\t\t\"alreadyOpen\": bool(self.view.params.alreadyOpen),\n\t\t\"isActive\": bool(self.view.params.isActive),\n\t}, scope\u003d\"page\")"
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,365 @@
+{
+  "custom": {
+    "defectCodeId": null,
+    "shots": 0
+  },
+  "params": {
+    "index": 0,
+    "rowLabel": "",
+    "code": "",
+    "defectCodeId": null,
+    "shots": 0,
+    "fixed": false,
+    "cavityCount": 1,
+    "defectOptions": [],
+    "seedToken": -1
+  },
+  "propConfig": {
+    "params.index": {
+      "paramDirection": "input"
+    },
+    "params.rowLabel": {
+      "paramDirection": "input"
+    },
+    "params.code": {
+      "paramDirection": "input"
+    },
+    "params.defectCodeId": {
+      "paramDirection": "input"
+    },
+    "params.shots": {
+      "paramDirection": "input"
+    },
+    "params.fixed": {
+      "paramDirection": "input"
+    },
+    "params.cavityCount": {
+      "paramDirection": "input"
+    },
+    "params.defectOptions": {
+      "paramDirection": "input"
+    },
+    "params.seedToken": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\t# seedToken carries the parent\u0027s refreshToken, so it changes on every\n\t# rebuild -- the reseed hook (mirrors BulkOpenRow). Local inputs take\n\t# the parent\u0027s authoritative values back.\n\tself.view.custom.defectCodeId \u003d self.view.params.defectCodeId\n\tself.view.custom.shots \u003d BlueRidge.Common.Util.toIntOrNone(self.view.params.shots) or 0"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 52,
+      "width": 900
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "NameBlock"
+        },
+        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "RowLabel"
+            },
+            "type": "ia.display.label",
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.rowLabel"
+                  },
+                  "type": "property"
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.fixed"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontWeight": 600,
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
+              }
+            }
+          },
+          {
+            "meta": {
+              "name": "RowCode"
+            },
+            "type": "ia.display.label",
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.code"
+                  },
+                  "type": "property"
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.fixed"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontFamily": "var(--mpp-font-mono)",
+                "classes": "pf-kpi-sub"
+              }
+            }
+          }
+        ],
+        "position": {
+          "basis": "220px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.fixed"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "gap": "1px",
+            "overflow": "hidden"
+          },
+          "direction": "column"
+        }
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tself.view.custom.defectCodeId \u003d self.props.value\n\tself.view.rootContainer.emitChanged()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "DefectDropdown"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.params.defectOptions"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.custom.defectCodeId"
+              },
+              "type": "property"
+            }
+          },
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.fixed}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "placeholder": {
+            "text": "Die-wide scrap reason"
+          },
+          "style": {
+            "classes": "pf-field-select",
+            "minWidth": "240px"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tself.view.rootContainer.emitChanged()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ShotsInput"
+        },
+        "position": {
+          "basis": "110px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.custom.shots",
+                "bidirectional": true
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "deferUpdates": false,
+          "style": {
+            "classes": "pf-field-input",
+            "minHeight": "44px",
+            "textAlign": "right"
+          }
+        },
+        "type": "ia.input.numeric-entry-field"
+      },
+      {
+        "meta": {
+          "name": "MathLabel"
+        },
+        "type": "ia.display.label",
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.cavityCount} \u003c\u003d 1, \"\u003d \" + toStr({view.custom.shots}) + \" pc\", \"x \" + toStr({view.params.cavityCount}) + \" cavities \u003d \" + toStr({view.custom.shots} * {view.params.cavityCount}) + \" pc\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontFamily": "var(--mpp-font-mono)",
+            "whiteSpace": "nowrap",
+            "classes": "pf-kpi-sub"
+          },
+          "text": ""
+        }
+      },
+      {
+        "meta": {
+          "name": "NonRejectPill"
+        },
+        "type": "ia.display.label",
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.fixed"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-pill"
+          },
+          "text": "Non-reject scrap"
+        }
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"dieCastDieWideRemoved\", payload\u003d{\"index\": self.view.params.index}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "RemoveButton"
+        },
+        "type": "ia.input.button",
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.fixed}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "minHeight": "44px",
+            "classes": "pf-btn pf-btn-secondary"
+          },
+          "text": "",
+          "image": {
+            "icon": {
+              "path": "mpp/cancel"
+            }
+          }
+        }
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "gap": "10px",
+        "overflow": "visible"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "emitChanged",
+          "params": [],
+          "script": "\t# Page-scoped up to DieCastBody, which owns view.custom.dieWideLines.\n\t# Embed params are input-only, so this is the only channel there is.\n\tsystem.perspective.sendMessage(\"dieCastDieWideChanged\", payload\u003d{\n\t\t\"index\": self.view.params.index,\n\t\t\"defectCodeId\": self.view.custom.defectCodeId,\n\t\t\"shots\": self.view.custom.shots,\n\t}, scope\u003d\"page\")"
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

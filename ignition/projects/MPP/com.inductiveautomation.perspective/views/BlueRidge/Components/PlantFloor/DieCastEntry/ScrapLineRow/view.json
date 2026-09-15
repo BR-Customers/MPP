@@ -1,6 +1,7 @@
 {
   "custom": {},
   "params": {
+    "ownerKey": "",
     "lotId": null,
     "index": 0,
     "defectCodeId": null,
@@ -8,6 +9,9 @@
     "defectOptions": []
   },
   "propConfig": {
+    "params.ownerKey": {
+      "paramDirection": "input"
+    },
     "params.lotId": {
       "paramDirection": "input"
     },
@@ -87,7 +91,7 @@
               "type": "script",
               "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"dieCastScrapLineChanged\", payload\u003d{\"lotId\": self.view.params.lotId, \"index\": self.view.params.index, \"defectCodeId\": self.props.value, \"quantity\": self.getSibling(\"QtyInput\").props.text}, scope\u003d\"page\")"
+                "script": "\tsystem.perspective.sendMessage(\"dieCastScrapLineChanged\", payload\u003d{\"ownerKey\": self.view.params.ownerKey, \"lotId\": self.view.params.lotId, \"index\": self.view.params.index, \"defectCodeId\": self.props.value, \"quantity\": self.getSibling(\"QtyInput\").props.text}, scope\u003d\"page\")"
               }
             }
           }
@@ -125,7 +129,7 @@
               "type": "script",
               "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"dieCastScrapLineChanged\", payload\u003d{\"lotId\": self.view.params.lotId, \"index\": self.view.params.index, \"defectCodeId\": self.getSibling(\"ReasonDropdown\").props.value, \"quantity\": self.props.text}, scope\u003d\"page\")"
+                "script": "\tsystem.perspective.sendMessage(\"dieCastScrapLineChanged\", payload\u003d{\"ownerKey\": self.view.params.ownerKey, \"lotId\": self.view.params.lotId, \"index\": self.view.params.index, \"defectCodeId\": self.getSibling(\"ReasonDropdown\").props.value, \"quantity\": self.props.text}, scope\u003d\"page\")"
               }
             }
           }
@@ -159,7 +163,7 @@
               "type": "script",
               "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"dieCastScrapLineRemoved\", payload\u003d{\"lotId\": self.view.params.lotId, \"index\": self.view.params.index}, scope\u003d\"page\")"
+                "script": "\tsystem.perspective.sendMessage(\"dieCastScrapLineRemoved\", payload\u003d{\"ownerKey\": self.view.params.ownerKey, \"lotId\": self.view.params.lotId, \"index\": self.view.params.index}, scope\u003d\"page\")"
               }
             }
           }
