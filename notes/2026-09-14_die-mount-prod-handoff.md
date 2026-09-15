@@ -263,9 +263,24 @@ silently inert screen, so confirm `parts/Tool_ListEligibleForCell` resolves.
    window open. This is what proves the shared `Common.Session` change is good, and it is
    the step most likely to be skipped.
 
-**Nothing here has been click-tested anywhere, including Dev.** The SQL has 246 passing
-tests; the UI has been deployed and scanned and its JSON shape asserted, but no human has
-pressed the button. Do not let the guide imply otherwise.
+**Confirmed at a Dev terminal, 2026-09-14 (Jacques):** the popup works end to end — one
+tap on **Die Mount**, the AD prompt, and the popup opens by itself on success. That is
+item 1 above, and it is also the direct confirmation that `860d4d83` fixed the replay:
+the same flow required a second tap before it.
+
+**Still unexercised**, and worth a few minutes before the window rather than discovering
+them in prod:
+
+- Item 2/3 — the **open-basket block**. Dev has 21 open baskets, so this is easy to stage:
+  open the popup on a press whose die holds one and confirm Release is disabled with the
+  reason line, then release or void the basket and confirm it enables.
+- Item 6 — **a non-Die-Mount elevated action from cold** (a downtime *edit* with no
+  elevation window). This is the one I would least like to assume: it is the only proof
+  that the shared `Common.Session` change is good for the other four elevated actions, and
+  it is a path this feature's own testing never touches.
+
+Items 4 and 5 (single modal across a changeover; cancel leaves no phantom state) are
+lower risk and can be covered by the prod click-through.
 
 ---
 
