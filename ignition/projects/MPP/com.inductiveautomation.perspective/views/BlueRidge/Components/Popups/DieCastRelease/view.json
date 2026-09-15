@@ -71,7 +71,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\t# A fresh proposal replaces the operator\u0027s counted-good override, mirroring\n\t# CavityLotRow\u0027s params.proposedGood reseed. Independent from the counter\n\t# reading itself (D3) -- the operator\u0027s count only rides along on Release\n\t# when it still disagrees with this freshly-derived figure.\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.preview) or {}\n\t# The field is the basket TOTAL, so it prefills with the projected\n\t# close-at (what is on the basket + what this release adds), not\n\t# with the delta alone.\n\tval \u003d p.get(\"projectedPieceCount\")\n\tif val is None:\n\t\tval \u003d (BlueRidge.Common.Util.toIntOrNone(p.get(\"pieceCount\")) or 0) \\\n\t\t\t+ (BlueRidge.Common.Util.toIntOrNone(p.get(\"newShots\")) or 0)\n\tself.view.custom.good \u003d str(val) if val is not None else \"0\""
+        "script": "\t# A fresh proposal replaces the operator\u0027s counted-good override, mirroring\n\t# CavityLotRow\u0027s params.proposedGood reseed. Independent from the counter\n\t# reading itself (D3) -- the operator\u0027s count only rides along on Release\n\t# when it still disagrees with this freshly-derived figure.\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.preview) or {}\n\t# The field is what THIS RELEASE ADDS -- the operator records what they\n\t# just put in the basket, not what the basket now holds. So it\n\t# prefills with the derived delta; the total is the RESULT, shown in\n\t# BASKET CLOSES AT.\n\tval \u003d p.get(\"newShots\")\n\tself.view.custom.good \u003d str(val) if val is not None else \"0\""
       }
     },
     "custom.scrapDefectOptions": {
@@ -187,7 +187,7 @@
               "style": {
                 "classes": "pf-field-label"
               },
-              "text": "PIECES IN THIS BASKET"
+              "text": "PIECES YOU PUT IN THIS RELEASE"
             },
             "type": "ia.display.label"
           },
@@ -233,19 +233,9 @@
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "Type what you counted. This is what the basket closes at."
+                  "text": "Type what you counted going in. It adds to what the basket already holds."
                 },
-                "type": "ia.display.label",
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "if(try(toInt(toStr({view.custom.good})), 0) \u003c {view.custom.preview.pieceCount}, \u0027Lower than the \u0027 + numberFormat({view.custom.preview.pieceCount}, \"#,##0\") + \u0027 pc already on this basket.\u0027, \u0027Type what you counted. This is what the basket closes at.\u0027)"
-                      }
-                    }
-                  }
-                }
+                "type": "ia.display.label"
               }
             ],
             "meta": {
@@ -459,7 +449,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "numberFormat(try(toInt(toStr({view.custom.good})), 0) - {view.custom.preview.pieceCount}, \"#,##0\") + \" pc\""
+                        "expression": "numberFormat(try(toInt(toStr({view.custom.good})), 0), \"#,##0\") + \" pc\""
                       },
                       "type": "expr"
                     }
@@ -532,7 +522,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "numberFormat(try(toInt(toStr({view.custom.good})), 0), \"#,##0\") + \" pc\""
+                        "expression": "numberFormat({view.custom.preview.pieceCount} + try(toInt(toStr({view.custom.good})), 0), \"#,##0\") + \" pc\""
                       },
                       "type": "expr"
                     }
@@ -847,7 +837,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\t# The reading rides the reply so the caller writes exactly the\n\t# number this dialog showed the arithmetic for. The operator\u0027s counted\n\t# Good rides too, but ONLY when it still disagrees with the derived\n\t# figure (D3) -- two independent facts, allowed to disagree; when they\n\t# match, the proc\u0027s own counterReading-derived delta runs unmodified.\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.preview) or {}\n\t# The field holds the basket TOTAL; the proc takes a DELTA. Derive it.\n\t# Only override when the counted total still disagrees with the\n\t# derived one -- when they match, the proc runs its own\n\t# counterReading-derived delta unmodified (D3).\n\tonBasket \u003d BlueRidge.Common.Util.toIntOrNone(p.get(\"pieceCount\")) or 0\n\tderivedTotal \u003d BlueRidge.Common.Util.toIntOrNone(p.get(\"projectedPieceCount\"))\n\tif derivedTotal is None:\n\t\tderivedTotal \u003d onBasket + (BlueRidge.Common.Util.toIntOrNone(p.get(\"newShots\")) or 0)\n\tcountedTotal \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.good)\n\tif countedTotal is not None and countedTotal !\u003d derivedTotal:\n\t\tfinalPieceDelta \u003d countedTotal - onBasket\n\telse:\n\t\tfinalPieceDelta \u003d None\n\tscrapLines \u003d []\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\td \u003d r.get(\"defectCodeId\")\n\t\tq \u003d r.get(\"quantity\")\n\t\tif d is not None and q not in (None, \"\"):\n\t\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\n\t\t\"action\": \"confirm\",\n\t\t\"counterReading\": self.view.custom.counterReading,\n\t\t\"finalPieceDelta\": finalPieceDelta,\n\t\t\"scrapLines\": scrapLines,\n\t}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                    "script": "\t# The reading rides the reply so the caller writes exactly the\n\t# number this dialog showed the arithmetic for. The operator\u0027s counted\n\t# Good rides too, but ONLY when it still disagrees with the derived\n\t# figure (D3) -- two independent facts, allowed to disagree; when they\n\t# match, the proc\u0027s own counterReading-derived delta runs unmodified.\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.preview) or {}\n\t# The field IS the delta -- what this release adds. It rides along only\n\t# when it still disagrees with the counter-derived figure (D3): two\n\t# independent facts, allowed to disagree. When they match, the proc\n\t# runs its own counterReading-derived delta unmodified.\n\tderived \u003d BlueRidge.Common.Util.toIntOrNone(p.get(\"newShots\"))\n\tcounted \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.good)\n\tfinalPieceDelta \u003d counted if (counted is not None and counted !\u003d derived) else None\n\tscrapLines \u003d []\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr \u003d r or {}\n\t\td \u003d r.get(\"defectCodeId\")\n\t\tq \u003d r.get(\"quantity\")\n\t\tif d is not None and q not in (None, \"\"):\n\t\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\n\t\t\"action\": \"confirm\",\n\t\t\"counterReading\": self.view.custom.counterReading,\n\t\t\"finalPieceDelta\": finalPieceDelta,\n\t\t\"scrapLines\": scrapLines,\n\t}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
                   },
                   "scope": "G",
                   "type": "script"
