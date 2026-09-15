@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_RejectEvent_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-07
--- Version:     1.2
+-- Modified:    2026-09-14
+-- Version:     2.0
 -- Change Log:  2026-06-16 - 1.1 - TOCTOU guard: re-check the decremented PieceCount
 --                                 under UPDLOCK; RAISERROR on negative (concurrent
 --                                 over-reject) routes to CATCH = clean Status 0.
@@ -12,6 +12,17 @@
 --                                 LOT is decremented in place with no split and no
 --                                 hold release. Close-at-zero stays gated on Good,
 --                                 so a fully-scrapped held LOT remains HELD.
+--              2026-09-14 - 2.0 - Die-cast quantity/scrap model (spec 4.1/4.2/5.1):
+--                                 @LotId becomes OPTIONAL -- a cavity with no basket
+--                                 can still be scrapped. New optional @ItemId,
+--                                 @ToolId, @ToolCavityId, @ShiftId, @CellLocationId
+--                                 STAMP identity onto the row (never derived at read
+--                                 time -- two reject reports reach the part via
+--                                 INNER JOIN Lots.Lot, which drops a lot-free row
+--                                 outright). Exactly one of @LotId / @ToolCavityId
+--                                 is required. Subtractive scrap still requires
+--                                 @LotId (nothing to decrement without one); the
+--                                 @Additive branch (0042) is otherwise untouched.
 -- Description: Arc 2 Phase 3 (§4.2 + D3). Records ONE reject/scrap event against
 --              a LOT (Workorder.RejectEvent) and, per D3, decrements the LOT's
 --              materialized B5 quantities (Lot.PieceCount + Lot.InventoryAvailable)
@@ -45,7 +56,7 @@
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Workorder.RejectEvent_Record
-    @LotId               BIGINT,
+    @LotId               BIGINT         = NULL,   -- v2.0: optional -- a cavity with no basket can be scrapped
     @DefectCodeId        BIGINT,
     @Quantity            INT,
     @ProductionEventId   BIGINT         = NULL,
@@ -54,7 +65,15 @@ CREATE OR ALTER PROCEDURE Workorder.RejectEvent_Record
     @AppUserId           BIGINT,
     @TerminalLocationId  BIGINT         = NULL,  -- audit-only; no column on RejectEvent
     @OperationTypeCode   NVARCHAR(20)   = NULL,  -- reject's operation context; drives additive-vs-subtractive (0042)
-    @AllowHeldLot        BIT            = 0       -- FAT-QH-150: permit scrap against a HELD (2) LOT only
+    @AllowHeldLot        BIT            = 0,      -- FAT-QH-150: permit scrap against a HELD (2) LOT only
+    -- v2.0 (spec 5.1): identity is STAMPED onto the row, never derived at read
+    -- time -- two reject reports resolve the part via INNER JOIN Lots.Lot,
+    -- which silently drops a lot-free row.
+    @ItemId              BIGINT         = NULL,
+    @ToolId              BIGINT         = NULL,
+    @ToolCavityId        BIGINT         = NULL,
+    @ShiftId             BIGINT         = NULL,
+    @CellLocationId      BIGINT         = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -69,7 +88,9 @@ BEGIN
         SELECT @LotId AS LotId, @DefectCodeId AS DefectCodeId, @Quantity AS Quantity,
                @ProductionEventId AS ProductionEventId, @ChargeToArea AS ChargeToArea,
                @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId,
-               @OperationTypeCode AS OperationTypeCode, @AllowHeldLot AS AllowHeldLot
+               @OperationTypeCode AS OperationTypeCode, @AllowHeldLot AS AllowHeldLot,
+               @ItemId AS ItemId, @ToolId AS ToolId, @ToolCavityId AS ToolCavityId,
+               @ShiftId AS ShiftId, @CellLocationId AS CellLocationId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @StatusCode NVARCHAR(20);
@@ -91,9 +112,11 @@ BEGIN
 
     BEGIN TRY
         -- ---- 1. Required parameters ----
-        IF @LotId IS NULL OR @DefectCodeId IS NULL OR @Quantity IS NULL OR @AppUserId IS NULL
+        -- v2.0: LotId is no longer in this list -- die-cast scrap is a fact
+        -- about a CAVITY, and the LOT is optional decoration (D1).
+        IF @DefectCodeId IS NULL OR @Quantity IS NULL OR @AppUserId IS NULL
         BEGIN
-            SET @Message = N'Required parameter missing (LotId, DefectCodeId, Quantity, AppUserId).';
+            SET @Message = N'Required parameter missing (DefectCodeId, Quantity, AppUserId).';
             IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
@@ -103,6 +126,53 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
+
+        -- ---- 1b. Exactly one identifier (spec 5.1) ----
+        -- A reject that names neither a basket nor a cavity is not a fact
+        -- about anything.
+        IF @LotId IS NULL AND @ToolCavityId IS NULL
+        BEGIN
+            SET @Message = N'Supply either a LOT or a cavity.';
+            IF EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
+                    @EntityId = NULL, @LogEventTypeCode = N'RejectEventRecorded',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ---- 1c. Subtractive scrap still demands a LOT (spec 5.1) ----
+        -- Subtractive scrap decrements Lot.PieceCount -- there is nothing to
+        -- decrement without a LOT. This is a validation, not an oversight.
+        IF @Additive = 0 AND @LotId IS NULL
+        BEGIN
+            SET @Message = N'Scrap at this operation must be recorded against a LOT.';
+            IF EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
+                    @EntityId = NULL, @LogEventTypeCode = N'RejectEventRecorded',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ---- 1d. Identity resolution (stamped, never derived at read time; spec 4.2) ----
+        -- Two reject reports reach the part via INNER JOIN Lots.Lot, and an
+        -- INNER JOIN on a NULL key drops the row -- a lot-free reject would
+        -- silently vanish from the Part Matrix / Transaction Detail. So the
+        -- part (and die) are resolved HERE and stamped onto the row.
+        -- @ResolvedItemId may legitimately remain NULL (an unmapped cavity,
+        -- spec 4.1) -- do NOT reject on it; that would make scrap
+        -- unrecordable on a configuration gap (D4).
+        DECLARE @ResolvedItemId BIGINT = @ItemId;
+        DECLARE @ResolvedToolId BIGINT = @ToolId;
+        IF @ResolvedItemId IS NULL AND @LotId        IS NOT NULL SELECT @ResolvedItemId = ItemId FROM Lots.Lot        WHERE Id = @LotId;
+        IF @ResolvedItemId IS NULL AND @ToolCavityId IS NOT NULL SELECT @ResolvedItemId = ItemId FROM Tools.ToolCavity WHERE Id = @ToolCavityId;
+        IF @ResolvedToolId IS NULL AND @ToolCavityId IS NOT NULL SELECT @ResolvedToolId = ToolId FROM Tools.ToolCavity WHERE Id = @ToolCavityId;
+        IF @ResolvedToolId IS NULL AND @LotId        IS NOT NULL SELECT @ResolvedToolId = ToolId FROM Lots.Lot        WHERE Id = @LotId;
 
         -- ---- 2. Quantity sanity ----
         IF @Quantity <= 0
@@ -151,46 +221,51 @@ BEGIN
         END
 
         -- ---- 4. LOT existence + held-LOT guard (INLINED mirror of Lots.Lot_AssertNotBlocked) ----
-        SELECT @CurrentStatusId = l.LotStatusId,
-               @StatusCode      = sc.Code,
-               @StatusName      = sc.Name,
-               @Blocks          = sc.BlocksProduction,
-               @PieceCount      = l.PieceCount,
-               @InventoryAvail  = l.InventoryAvailable
-        FROM Lots.Lot l
-        INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
-        WHERE l.Id = @LotId;
-
-        IF @StatusCode IS NULL
+        -- v2.0: entirely skipped when @LotId IS NULL -- a cavity-only reject
+        -- has no LOT to check or block against.
+        IF @LotId IS NOT NULL
         BEGIN
-            SET @Message = N'LOT not found.';
-            EXEC Audit.Audit_LogFailure
-                @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
-                @EntityId = @LotId, @LogEventTypeCode = N'RejectEventRecorded',
-                @FailureReason = @Message, @ProcedureName = @ProcName,
-                @AttemptedParameters = @Params;
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
-            RETURN;
-        END
+            SELECT @CurrentStatusId = l.LotStatusId,
+                   @StatusCode      = sc.Code,
+                   @StatusName      = sc.Name,
+                   @Blocks          = sc.BlocksProduction,
+                   @PieceCount      = l.PieceCount,
+                   @InventoryAvail  = l.InventoryAvailable
+            FROM Lots.Lot l
+            INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
+            WHERE l.Id = @LotId;
 
-        -- Blocked: Hold/Scrap (BlocksProduction) or terminal Closed cannot reject.
-        -- FAT-QH-150 (Jacques direction, overrides FRS/FDS): a held LOT may be
-        -- SCRAPPED in place (no split, no hold release) when @AllowHeldLot=1. The
-        -- exception is scoped to Hold(2) ONLY -- a Scrap(3) LOT (already scrapped)
-        -- and a Closed(4) LOT still reject. The close-at-zero block below is gated
-        -- on @CurrentStatusId = Good, so a fully-scrapped held LOT stays HELD; the
-        -- hold lifecycle (release/disposition) owns the terminal transition.
-        IF (@Blocks = 1 AND NOT (@AllowHeldLot = 1 AND @StatusCode = N'Hold'))
-           OR @StatusCode IN (N'Closed', N'Open')
-        BEGIN
-            SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode + N') and cannot record a reject.';
-            EXEC Audit.Audit_LogFailure
-                @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
-                @EntityId = @LotId, @LogEventTypeCode = N'RejectEventRecorded',
-                @FailureReason = @Message, @ProcedureName = @ProcName,
-                @AttemptedParameters = @Params;
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
-            RETURN;
+            IF @StatusCode IS NULL
+            BEGIN
+                SET @Message = N'LOT not found.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
+                    @EntityId = @LotId, @LogEventTypeCode = N'RejectEventRecorded',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+                RETURN;
+            END
+
+            -- Blocked: Hold/Scrap (BlocksProduction) or terminal Closed cannot reject.
+            -- FAT-QH-150 (Jacques direction, overrides FRS/FDS): a held LOT may be
+            -- SCRAPPED in place (no split, no hold release) when @AllowHeldLot=1. The
+            -- exception is scoped to Hold(2) ONLY -- a Scrap(3) LOT (already scrapped)
+            -- and a Closed(4) LOT still reject. The close-at-zero block below is gated
+            -- on @CurrentStatusId = Good, so a fully-scrapped held LOT stays HELD; the
+            -- hold lifecycle (release/disposition) owns the terminal transition.
+            IF (@Blocks = 1 AND NOT (@AllowHeldLot = 1 AND @StatusCode = N'Hold'))
+               OR @StatusCode IN (N'Closed', N'Open')
+            BEGIN
+                SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode + N') and cannot record a reject.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'RejectEvent',
+                    @EntityId = @LotId, @LogEventTypeCode = N'RejectEventRecorded',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+                RETURN;
+            END
         END
 
         -- ---- 5. Quantity cannot exceed remaining pieces (SUBTRACTIVE only; D3 cannot go
@@ -212,14 +287,20 @@ BEGIN
         BEGIN TRANSACTION;
 
         -- Insert the reject record. NOTE: @TerminalLocationId is NOT a column on
-        -- RejectEvent (audit-only) — it is deliberately omitted here.
+        -- RejectEvent (audit-only) — it is deliberately omitted here. The five
+        -- v2.0 identity columns are STAMPED (@ResolvedItemId / @ResolvedToolId
+        -- computed at 1d; @ToolCavityId / @ShiftId / @CellLocationId passed
+        -- straight through) so every reader that reads re.ItemId directly
+        -- (spec 4.2) sees the part even when @LotId is NULL.
         INSERT INTO Workorder.RejectEvent (
             ProductionEventId, LotId, DefectCodeId, Quantity,
-            ChargeToArea, Remarks, AppUserId, RecordedAt
+            ChargeToArea, Remarks, AppUserId, RecordedAt,
+            ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId
         )
         VALUES (
             @ProductionEventId, @LotId, @DefectCodeId, @Quantity,
-            @ChargeToArea, @Remarks, @AppUserId, SYSUTCDATETIME()
+            @ChargeToArea, @Remarks, @AppUserId, SYSUTCDATETIME(),
+            @ResolvedItemId, @ResolvedToolId, @ToolCavityId, @ShiftId, @CellLocationId
         );
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
@@ -259,11 +340,23 @@ BEGIN
         -- ----- Reject audit (resolved-FK JSON + readable Description) -----
         DECLARE @LotName    NVARCHAR(50)  = (SELECT LotName FROM Lots.Lot WHERE Id = @LotId);
         DECLARE @DefCode    NVARCHAR(50)  = (SELECT Code FROM Quality.DefectCode WHERE Id = @DefectCodeId);
+        -- v2.0: a lot-free reject has no LotName -- fall back to a cavity
+        -- label so the Description is never NULL (Audit.ufn_TruncateActivity
+        -- returns NULL in -> NULL out, and NULL + text also concatenates to
+        -- NULL). @NewPieceCount is only meaningful when a LOT exists, so it
+        -- must not be concatenated on the lot-free path either.
+        DECLARE @CavityLabel NVARCHAR(80) = (
+            SELECT t.Code + N'/' + tc.CavityCode
+            FROM Tools.ToolCavity tc JOIN Tools.Tool t ON t.Id = tc.ToolId
+            WHERE tc.Id = @ToolCavityId);
+        DECLARE @Subject NVARCHAR(80) = ISNULL(@LotName, ISNULL(@CavityLabel, N'(unidentified)'));
 
         DECLARE @ActivityRaw NVARCHAR(MAX) =
-            @LotName + N' ' + Audit.ufn_MidDot() + N' Reject ' + Audit.ufn_MidDot()
+            @Subject + N' ' + Audit.ufn_MidDot() + N' Reject ' + Audit.ufn_MidDot()
             + N' ' + CAST(@Quantity AS NVARCHAR(20)) + N' pcs (' + ISNULL(@DefCode, N'?') + N')'
-            + CASE WHEN @Additive = 1
+            + CASE WHEN @LotId IS NULL
+                   THEN N'; no LOT'
+                   WHEN @Additive = 1
                    THEN N'; additive, LOT unchanged at ' + CAST(@NewPieceCount AS NVARCHAR(20))
                    ELSE N'; remaining ' + CAST(@NewPieceCount AS NVARCHAR(20)) END;
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
@@ -343,7 +436,12 @@ BEGIN
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = CASE WHEN @Additive = 1
+        -- v2.0: @NewPieceCount is only meaningful when a LOT exists (it stays
+        -- NULL, mirroring @PieceCount, for a lot-free / cavity-only reject) --
+        -- branch on @LotId IS NULL first so it is never concatenated as NULL.
+        SET @Message = CASE WHEN @LotId IS NULL
+                            THEN N'Reject recorded (no LOT).'
+                            WHEN @Additive = 1
                             THEN N'Reject recorded (additive); LOT unchanged at ' + CAST(@NewPieceCount AS NVARCHAR(20)) + N' pieces.'
                             WHEN @NewPieceCount = 0 AND @CurrentStatusId = @GoodStatusId
                             THEN N'Reject recorded; LOT closed (zero pieces remaining).'

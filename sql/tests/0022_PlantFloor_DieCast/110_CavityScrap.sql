@@ -278,6 +278,89 @@ EXEC test.Assert_IsEqual @TestName = N'[Watermark] basketless cavity writes no c
     @Expected = N'0', @Actual = @contributionsWithoutLot;
 GO
 
+-- =============================================
+-- RejectEvent_Record v2.0 -- LOT-OPTIONAL (Task 3 of the same plan, spec 5.1).
+-- Die-cast scrap is a fact about a CAVITY; the LOT is optional decoration
+-- (D1). Reuses the CS-DIE / cavity 'a' / CS-FIXTURE shift fixture already
+-- established above.
+--
+-- Lot-free RejectEvent rows have a NULL LotId, so the per-LOT teardown DELETE
+-- below cannot reach them -- capture the Ids this block inserts and clean up
+-- by Id, in THIS batch, before the cavity/tool fixture is torn down.
+-- =============================================
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CS-DIE');
+DECLARE @CavId BIGINT = (SELECT tc.Id FROM Tools.ToolCavity tc JOIN Tools.Tool t ON t.Id = tc.ToolId
+                         WHERE t.Code = N'CS-DIE' AND tc.CavityCode = N'a');
+DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'CS-FIXTURE' ORDER BY Id DESC);
+DECLARE @CellId BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
+  JOIN Location.LocationTypeDefinition d ON d.Id = l.LocationTypeDefinitionId
+  WHERE d.Code = N'DieCastMachine' AND l.DeprecatedAt IS NULL ORDER BY l.Id);
+DECLARE @ItemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Usr BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
+DECLARE @DefectId BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @v NVARCHAR(20);
+DECLARE @NewIds TABLE (Id BIGINT);
+DECLARE @R TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+
+-- lot-free scrap against a cavity
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.RejectEvent_Record
+    @LotId = NULL, @DefectCodeId = @DefectId, @Quantity = 12,
+    @ToolCavityId = @CavId, @ShiftId = @ShiftId, @CellLocationId = @CellId,
+    @AppUserId = @Usr, @OperationTypeCode = N'DieCast';
+SET @v = (SELECT CAST(Status AS NVARCHAR(20)) FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[LotFree] scrap with no LOT is accepted', @Expected = N'1', @Actual = @v;
+INSERT INTO @NewIds (Id) SELECT NewId FROM @R WHERE NewId IS NOT NULL;
+
+-- the part came from the cavity, not from a LOT
+SET @v = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM Workorder.RejectEvent re
+          WHERE re.ToolCavityId = @CavId AND re.LotId IS NULL AND re.ItemId = @ItemId);
+EXEC test.Assert_IsEqual @TestName = N'[LotFree] ItemId resolved from ToolCavity.ItemId', @Expected = N'1', @Actual = @v;
+
+-- neither identifier supplied -> rejected before any transaction
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.RejectEvent_Record
+    @LotId = NULL, @DefectCodeId = @DefectId, @Quantity = 5, @AppUserId = @Usr,
+    @OperationTypeCode = N'DieCast';
+SET @v = (SELECT CAST(Status AS NVARCHAR(20)) FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[LotFree] neither LotId nor ToolCavityId rejects', @Expected = N'0', @Actual = @v;
+
+-- an unmapped cavity still records, with a NULL part (spec 4.1)
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+SELECT @ToolId, N'b', (SELECT TOP 1 Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active'),
+       N'CS cavity b unmapped', NULL, @Usr;
+DECLARE @CavIdUnmapped BIGINT = SCOPE_IDENTITY();
+
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.RejectEvent_Record
+    @LotId = NULL, @DefectCodeId = @DefectId, @Quantity = 3,
+    @ToolCavityId = @CavIdUnmapped, @ShiftId = @ShiftId, @CellLocationId = @CellId,
+    @AppUserId = @Usr, @OperationTypeCode = N'DieCast';
+DECLARE @vUnmapped NVARCHAR(20) = (SELECT CAST(Status AS NVARCHAR(20)) FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[LotFree] unmapped cavity records with NULL ItemId', @Expected = N'1', @Actual = @vUnmapped;
+INSERT INTO @NewIds (Id) SELECT NewId FROM @R WHERE NewId IS NOT NULL;
+
+SET @v = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM Workorder.RejectEvent re
+          WHERE re.ToolCavityId = @CavIdUnmapped AND re.ItemId IS NULL);
+EXEC test.Assert_IsEqual @TestName = N'[LotFree] unmapped cavity reject row has NULL ItemId', @Expected = N'1', @Actual = @v;
+
+-- subtractive scrap still demands a LOT -- there is nothing to decrement without one
+-- (no @OperationTypeCode -> ISNULL(...,0) -> subtractive, per 0042)
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.RejectEvent_Record
+    @LotId = NULL, @DefectCodeId = @DefectId, @Quantity = 4,
+    @ToolCavityId = @CavId, @ShiftId = @ShiftId, @CellLocationId = @CellId,
+    @AppUserId = @Usr;
+DECLARE @vSubtractive NVARCHAR(20) = (SELECT CAST(Status AS NVARCHAR(20)) FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[LotFree] subtractive scrap without a LOT rejects', @Expected = N'0', @Actual = @vSubtractive;
+
+-- cleanup the lot-free rows this block inserted, BY ID (a per-LOT DELETE
+-- cannot reach them -- their LotId is NULL) -- before the fixture teardown
+-- below drops the ToolCavity/Tool these rows FK to.
+DELETE re FROM Workorder.RejectEvent re JOIN @NewIds n ON n.Id = re.Id;
+DELETE FROM Tools.ToolCavity WHERE Id = @CavIdUnmapped;
+GO
+
 -- ---- teardown ----
 DECLARE @CsLots TABLE (Id BIGINT PRIMARY KEY);
 INSERT INTO @CsLots (Id) SELECT Id FROM Lots.Lot WHERE LotName LIKE N'CS-%';
