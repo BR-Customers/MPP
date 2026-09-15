@@ -401,7 +401,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if(!isNull({view.custom.shotStatus.ShotLimit}) \u0026\u0026 {view.custom.shotStatus.ShotCount} \u003e\u003d 0.9 * {view.custom.shotStatus.ShotLimit}, \"pf-pill pf-pill-warn\", \"pf-pill\")"
+                    "expression": "if(!isNull({view.custom.shotStatus.ShotLimit}) && {view.custom.shotStatus.ShotCount} \u003e\u003d 0.9 * {view.custom.shotStatus.ShotLimit}, \"pf-pill pf-pill-warn\", \"pf-pill\")"
                   },
                   "type": "expr"
                 }
@@ -569,101 +569,6 @@
                 },
                 "type": "ia.container.flex",
                 "children": [
-                  {
-                    "meta": {
-                      "name": "PanelHeaderRow"
-                    },
-                    "type": "ia.container.flex",
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "PanelHeader"
-                        },
-                        "type": "ia.display.label",
-                        "props": {
-                          "style": {
-                            "classes": "pf-panel-header"
-                          },
-                          "text": "Lot Management"
-                        }
-                      },
-                      {
-                        "meta": {
-                          "name": "CavitySummary"
-                        },
-                        "type": "ia.display.label",
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "toStr(len({view.custom.openBasketInstances})) + \" cavities\""
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-kpi-sub"
-                          },
-                          "text": ""
-                        }
-                      },
-                      {
-                        "meta": {
-                          "name": "HeaderSpacer"
-                        },
-                        "type": "ia.display.label",
-                        "position": {
-                          "grow": 1
-                        },
-                        "props": {
-                          "text": ""
-                        }
-                      },
-                      {
-                        "events": {
-                          "dom": {
-                            "onClick": {
-                              "config": {
-                                "script": "\tsystem.perspective.openPopup(\u0027dieCastOpenHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/DieCastOpenHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027dieCastOpenHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
-                              },
-                              "scope": "G",
-                              "type": "script"
-                            }
-                          }
-                        },
-                        "meta": {
-                          "name": "HowToButton",
-                          "tooltip": {
-                            "text": "How to open and release baskets"
-                          }
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "path": "material/help_outline",
-                          "style": {
-                            "cursor": "pointer",
-                            "height": "35px",
-                            "width": "35px"
-                          }
-                        },
-                        "type": "ia.display.icon"
-                      }
-                    ],
-                    "position": {
-                      "shrink": 0
-                    },
-                    "props": {
-                      "style": {
-                        "gap": "10px",
-                        "overflow": "visible"
-                      },
-                      "alignItems": "center"
-                    }
-                  },
                   {
                     "meta": {
                       "name": "ToolRow"
@@ -841,6 +746,51 @@
                           },
                           "text": ""
                         }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "version": 0,
+                        "props": {
+                          "text": ""
+                        },
+                        "meta": {
+                          "name": "LotHdrSpacer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "custom": {}
+                      },
+                      {
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tsystem.perspective.openPopup(\u0027dieCastOpenHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/DieCastOpenHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027dieCastOpenHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "HowToButton",
+                          "tooltip": {
+                            "text": "How to open and release baskets"
+                          }
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "path": "material/help_outline",
+                          "style": {
+                            "cursor": "pointer",
+                            "height": "35px",
+                            "width": "35px"
+                          }
+                        },
+                        "type": "ia.display.icon"
                       }
                     ],
                     "position": {
@@ -893,12 +843,15 @@
                       "direction": "column",
                       "elementPosition": {
                         "basis": "auto",
+                        "grow": 0,
                         "shrink": 0
                       },
                       "path": "BlueRidge/Components/PlantFloor/DieCastEntry/LotManagementRow",
                       "style": {
                         "gap": "6px",
-                        "overflowY": "auto"
+                        "overflowY": "auto",
+                        "alignContent": "flex-start",
+                        "justifyContent": "flex-start"
                       },
                       "useDefaultViewHeight": false,
                       "useDefaultViewWidth": false
@@ -1108,9 +1061,9 @@
                 },
                 "props": {
                   "style": {
-                    "padding": "16px",
+                    "padding": "10px",
                     "classes": "pf-panel",
-                    "gap": "12px",
+                    "gap": "8px",
                     "overflow": "hidden"
                   },
                   "direction": "column"
@@ -1122,79 +1075,6 @@
                 },
                 "type": "ia.container.flex",
                 "children": [
-                  {
-                    "meta": {
-                      "name": "PanelHeaderRow"
-                    },
-                    "type": "ia.container.flex",
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "PanelHeader"
-                        },
-                        "type": "ia.display.label",
-                        "props": {
-                          "style": {
-                            "classes": "pf-panel-header"
-                          },
-                          "text": "Reconcile Shift"
-                        }
-                      },
-                      {
-                        "meta": {
-                          "name": "HeaderSpacer"
-                        },
-                        "type": "ia.display.label",
-                        "position": {
-                          "grow": 1
-                        },
-                        "props": {
-                          "text": ""
-                        }
-                      },
-                      {
-                        "events": {
-                          "dom": {
-                            "onClick": {
-                              "config": {
-                                "script": "\tsystem.perspective.openPopup(\u0027dieCastShiftOutputHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/DieCastShiftOutputHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027dieCastShiftOutputHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
-                              },
-                              "scope": "G",
-                              "type": "script"
-                            }
-                          }
-                        },
-                        "meta": {
-                          "name": "HowToButton",
-                          "tooltip": {
-                            "text": "How to reconcile a shift"
-                          }
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "path": "material/help_outline",
-                          "style": {
-                            "cursor": "pointer",
-                            "height": "35px",
-                            "width": "35px"
-                          }
-                        },
-                        "type": "ia.display.icon"
-                      }
-                    ],
-                    "position": {
-                      "shrink": 0
-                    },
-                    "props": {
-                      "style": {
-                        "gap": "10px",
-                        "overflow": "visible"
-                      },
-                      "alignItems": "center"
-                    }
-                  },
                   {
                     "meta": {
                       "name": "TopRow"
@@ -1509,8 +1389,8 @@
                               "style": {
                                 "border": "1px solid var(--mpp-border-subtle, #2C3A55)",
                                 "borderRadius": "8px",
-                                "padding": "12px 14px",
-                                "gap": "10px",
+                                "padding": "10px 12px",
+                                "gap": "8px",
                                 "overflow": "visible"
                               },
                               "direction": "column"
@@ -1524,7 +1404,7 @@
                         },
                         "props": {
                           "style": {
-                            "gap": "6px",
+                            "gap": "4px",
                             "overflow": "visible"
                           },
                           "direction": "column"
@@ -1729,9 +1609,9 @@
                               "style": {
                                 "border": "1px solid var(--mpp-border-subtle, #2C3A55)",
                                 "borderRadius": "8px",
-                                "padding": "12px 14px",
+                                "padding": "10px 12px",
                                 "borderLeft": "3px solid var(--pf-status-warn-fg, #F4B343)",
-                                "gap": "6px",
+                                "gap": "5px",
                                 "overflow": "visible"
                               },
                               "direction": "column"
@@ -1745,7 +1625,7 @@
                         },
                         "props": {
                           "style": {
-                            "gap": "6px",
+                            "gap": "4px",
                             "overflow": "visible"
                           },
                           "direction": "column"
@@ -1757,7 +1637,7 @@
                     },
                     "props": {
                       "style": {
-                        "gap": "16px",
+                        "gap": "12px",
                         "overflow": "visible"
                       },
                       "alignItems": "stretch",
@@ -1802,6 +1682,37 @@
                           },
                           "text": "grouped by part - good is pre-filled and editable"
                         }
+                      },
+                      {
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tsystem.perspective.openPopup(\u0027dieCastShiftOutputHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/DieCastShiftOutputHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027dieCastShiftOutputHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "HowToButton",
+                          "tooltip": {
+                            "text": "How to reconcile a shift"
+                          }
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "path": "material/help_outline",
+                          "style": {
+                            "cursor": "pointer",
+                            "height": "35px",
+                            "width": "35px"
+                          }
+                        },
+                        "type": "ia.display.icon"
                       }
                     ],
                     "position": {
@@ -1812,7 +1723,7 @@
                         "gap": "10px",
                         "overflow": "visible"
                       },
-                      "alignItems": "baseline"
+                      "alignItems": "center"
                     }
                   },
                   {
@@ -2018,7 +1929,8 @@
                     },
                     "position": {
                       "basis": "0",
-                      "grow": 1
+                      "grow": 1,
+                      "shrink": 1
                     },
                     "propConfig": {
                       "props.instances": {
@@ -2040,12 +1952,16 @@
                       "direction": "column",
                       "elementPosition": {
                         "basis": "auto",
+                        "grow": 0,
                         "shrink": 0
                       },
                       "path": "BlueRidge/Components/PlantFloor/DieCastEntry/CavityLotRow",
                       "style": {
                         "gap": "6px",
-                        "overflowY": "auto"
+                        "overflowY": "auto",
+                        "overflow": "auto",
+                        "alignContent": "flex-start",
+                        "justifyContent": "flex-start"
                       },
                       "useDefaultViewHeight": false,
                       "useDefaultViewWidth": false
@@ -2512,7 +2428,7 @@
                       "style": {
                         "border": "1px solid var(--mpp-border-subtle, #2C3A55)",
                         "borderRadius": "8px",
-                        "padding": "12px 14px",
+                        "padding": "9px 12px",
                         "gap": "14px",
                         "overflow": "visible"
                       },
@@ -2526,9 +2442,9 @@
                 },
                 "props": {
                   "style": {
-                    "padding": "16px",
+                    "padding": "10px",
                     "classes": "pf-panel",
-                    "gap": "12px",
+                    "gap": "8px",
                     "overflow": "hidden"
                   },
                   "direction": "column"
@@ -2599,8 +2515,7 @@
         },
         "props": {
           "style": {
-            "gap": "16px",
-            "paddingTop": "4px"
+            "gap": "10px"
           }
         },
         "type": "ia.container.flex"
@@ -2624,8 +2539,8 @@
       "direction": "column",
       "style": {
         "classes": "canvas",
-        "gap": "4px",
-        "padding": "16px"
+        "gap": "2px",
+        "padding": "8px"
       }
     },
     "scripts": {
@@ -2648,20 +2563,20 @@
           "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this\n\t# screen. Non-blocking: the page still populates behind the modal, and\n\t# session.custom is reactive, so the operator label/mutations pick up the\n\t# user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)\n\t# backlog 2.1: pre-select the reporting shift with the CURRENT shift. The\n\t# custom.defaultShiftId binding also seeds it through its onChange, but that\n\t# only fires once the binding produces a value -- seeding here makes the\n\t# first paint deterministic instead of racing the binding.\n\tif self.view.custom.selectedShiftId is None:\n\t\tself.view.custom.selectedShiftId \u003d BlueRidge.Oee.Shift.defaultEntryShiftId(self.session.custom.cell.locationId)\n\tself.seedDieWide()\n\tself.recomputeTotals()"
         },
         {
-        "name": "submitBulkOpen",
-        "params": [],
-        "script": "\t# Bulk open (backlog 3.4). bulkOpenDraft is the authoritative per-cavity\n\t# entry map: the repeater rows are input-only embeds and can only report\n\t# upward via the page-scoped bulkOpenRowChanged message, so nothing is\n\t# ever read back out of the repeater here.\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenDraft) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\trows \u003d []\n\tfor key in draft.keys():\n\t\td \u003d draft.get(key) or {}\n\t\trows.append({\"toolCavityId\": d.get(\"toolCavityId\"), \"itemId\": d.get(\"itemId\"), \"scannedLtt\": d.get(\"scannedLtt\")})\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\tres \u003d BlueRidge.Workorder.DieCast.submitBulkOpen(rows, tool.get(\"ToolId\"), cell.get(\"locationId\"), self.session.custom.appUserId, term) or {}\n\t# Per-row outcomes live on the VIEW, not inside the rows: the repeater\u0027s\n\t# instances transform overlays them, so they survive the rebuild below.\n\tself.view.custom.bulkOpenResult \u003d res.get(\"Rows\") or {}\n\tif res.get(\"Rejected\"):\n\t\t# A batch gate fired -- NOTHING was written, so the operator\u0027s entries\n\t\t# stay exactly as they are and no rebuild happens.\n\t\tBlueRidge.Common.Notify.toast(\"Nothing opened\", res.get(\"Message\") or \"\", \"warning\")\n\t\treturn res\n\t# Partial submission: keep only the rows that did NOT open, so the operator\n\t# re-enters the failures alone and never a cavity that already succeeded.\n\trowResults \u003d res.get(\"Rows\") or {}\n\tkept \u003d {}\n\tfor key in draft.keys():\n\t\tif (rowResults.get(key) or {}).get(\"state\") \u003d\u003d \"ok\":\n\t\t\tcontinue\n\t\tkept[key] \u003d draft.get(key) or {}\n\tself.view.custom.bulkOpenDraft \u003d kept\n\tself.view.custom.bulkOpenPendingCount \u003d BlueRidge.Workorder.DieCast.bulkOpenPending(kept)\n\tlevel \u003d \"success\"\n\tif res.get(\"Failed\"):\n\t\tlevel \u003d \"warning\" if res.get(\"Opened\") else \"error\"\n\tBlueRidge.Common.Notify.toast(\"Bulk open\", res.get(\"Message\") or \"\", level)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t# D9: ONE CRT notice per SUBMIT, naming every basket that opened CRT --\n\t# never one dialog per cavity, which trains operators to dismiss dialogs.\n\t# LAST, after the refresh bump: every basket has already committed.\n\tBlueRidge.Common.Ui.crtNotice(res.get(\"CrtLots\"), res.get(\"Opened\"))\n\treturn res"
-      },
-      {
-        "name": "copyPartToEmptyRows",
-        "params": [],
-        "script": "\t# Convenience for a SINGLE-part die: take the first part the operator has\n\t# already picked and put it on every other cavity that has none yet. This is\n\t# deliberately NOT an auto-assign -- it only ever runs on an explicit press,\n\t# and every row\u0027s dropdown stays editable afterwards. On a family die (a\n\t# different part per cavity) the operator simply never presses it.\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenDraft) or {}\n\tcavities \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.cavityOptions) or []\n\topenInstances \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.openBasketInstances) or []\n\ttaken \u003d {}\n\tfor o in openInstances:\n\t\ttaken[\"%s\" % (o or {}).get(\"toolCavityId\")] \u003d True\n\tsource \u003d None\n\tfor c in cavities:\n\t\td \u003d draft.get(\"%s\" % (c or {}).get(\"value\")) or {}\n\t\tif d.get(\"itemId\") is not None:\n\t\t\tsource \u003d d.get(\"itemId\")\n\t\t\tbreak\n\tif source is None:\n\t\tBlueRidge.Common.Notify.toast(\"Pick a part first\", \"Select the part on one cavity row, then press this to copy it to the empty rows.\", \"warning\")\n\t\treturn\n\tout \u003d dict(draft)\n\tcopied \u003d 0\n\tfor c in cavities:\n\t\tcavityId \u003d (c or {}).get(\"value\")\n\t\tkey \u003d \"%s\" % cavityId\n\t\tif taken.get(key):\n\t\t\tcontinue\n\t\td \u003d dict(out.get(key) or {})\n\t\tif d.get(\"itemId\") is not None:\n\t\t\tcontinue\n\t\td[\"toolCavityId\"] \u003d cavityId\n\t\td[\"itemId\"] \u003d source\n\t\td[\"scannedLtt\"] \u003d d.get(\"scannedLtt\") or \"\"\n\t\tout[key] \u003d d\n\t\tcopied +\u003d 1\n\tself.view.custom.bulkOpenDraft \u003d out\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\tBlueRidge.Common.Notify.toast(\"Part copied\", \"Applied to %s empty cavity row(s).\" % copied, \"info\")"
-      },
+          "name": "submitBulkOpen",
+          "params": [],
+          "script": "\t# Bulk open (backlog 3.4). bulkOpenDraft is the authoritative per-cavity\n\t# entry map: the repeater rows are input-only embeds and can only report\n\t# upward via the page-scoped bulkOpenRowChanged message, so nothing is\n\t# ever read back out of the repeater here.\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenDraft) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\trows \u003d []\n\tfor key in draft.keys():\n\t\td \u003d draft.get(key) or {}\n\t\trows.append({\"toolCavityId\": d.get(\"toolCavityId\"), \"itemId\": d.get(\"itemId\"), \"scannedLtt\": d.get(\"scannedLtt\")})\n\tterm \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\tterm \u003d None\n\tres \u003d BlueRidge.Workorder.DieCast.submitBulkOpen(rows, tool.get(\"ToolId\"), cell.get(\"locationId\"), self.session.custom.appUserId, term) or {}\n\t# Per-row outcomes live on the VIEW, not inside the rows: the repeater\u0027s\n\t# instances transform overlays them, so they survive the rebuild below.\n\tself.view.custom.bulkOpenResult \u003d res.get(\"Rows\") or {}\n\tif res.get(\"Rejected\"):\n\t\t# A batch gate fired -- NOTHING was written, so the operator\u0027s entries\n\t\t# stay exactly as they are and no rebuild happens.\n\t\tBlueRidge.Common.Notify.toast(\"Nothing opened\", res.get(\"Message\") or \"\", \"warning\")\n\t\treturn res\n\t# Partial submission: keep only the rows that did NOT open, so the operator\n\t# re-enters the failures alone and never a cavity that already succeeded.\n\trowResults \u003d res.get(\"Rows\") or {}\n\tkept \u003d {}\n\tfor key in draft.keys():\n\t\tif (rowResults.get(key) or {}).get(\"state\") \u003d\u003d \"ok\":\n\t\t\tcontinue\n\t\tkept[key] \u003d draft.get(key) or {}\n\tself.view.custom.bulkOpenDraft \u003d kept\n\tself.view.custom.bulkOpenPendingCount \u003d BlueRidge.Workorder.DieCast.bulkOpenPending(kept)\n\tlevel \u003d \"success\"\n\tif res.get(\"Failed\"):\n\t\tlevel \u003d \"warning\" if res.get(\"Opened\") else \"error\"\n\tBlueRidge.Common.Notify.toast(\"Bulk open\", res.get(\"Message\") or \"\", level)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t# D9: ONE CRT notice per SUBMIT, naming every basket that opened CRT --\n\t# never one dialog per cavity, which trains operators to dismiss dialogs.\n\t# LAST, after the refresh bump: every basket has already committed.\n\tBlueRidge.Common.Ui.crtNotice(res.get(\"CrtLots\"), res.get(\"Opened\"))\n\treturn res"
+        },
         {
-        "name": "clearBulkOpen",
-        "params": [],
-        "script": "\t# Wipe every operator entry AND the last submission\u0027s per-row results, then\n\t# rebuild the rows from the live cavity/open-basket state.\n\tself.view.custom.bulkOpenDraft \u003d {}\n\tself.view.custom.bulkOpenResult \u003d {}\n\tself.view.custom.bulkOpenPendingCount \u003d 0\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
-      },
+          "name": "copyPartToEmptyRows",
+          "params": [],
+          "script": "\t# Convenience for a SINGLE-part die: take the first part the operator has\n\t# already picked and put it on every other cavity that has none yet. This is\n\t# deliberately NOT an auto-assign -- it only ever runs on an explicit press,\n\t# and every row\u0027s dropdown stays editable afterwards. On a family die (a\n\t# different part per cavity) the operator simply never presses it.\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.bulkOpenDraft) or {}\n\tcavities \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.cavityOptions) or []\n\topenInstances \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.openBasketInstances) or []\n\ttaken \u003d {}\n\tfor o in openInstances:\n\t\ttaken[\"%s\" % (o or {}).get(\"toolCavityId\")] \u003d True\n\tsource \u003d None\n\tfor c in cavities:\n\t\td \u003d draft.get(\"%s\" % (c or {}).get(\"value\")) or {}\n\t\tif d.get(\"itemId\") is not None:\n\t\t\tsource \u003d d.get(\"itemId\")\n\t\t\tbreak\n\tif source is None:\n\t\tBlueRidge.Common.Notify.toast(\"Pick a part first\", \"Select the part on one cavity row, then press this to copy it to the empty rows.\", \"warning\")\n\t\treturn\n\tout \u003d dict(draft)\n\tcopied \u003d 0\n\tfor c in cavities:\n\t\tcavityId \u003d (c or {}).get(\"value\")\n\t\tkey \u003d \"%s\" % cavityId\n\t\tif taken.get(key):\n\t\t\tcontinue\n\t\td \u003d dict(out.get(key) or {})\n\t\tif d.get(\"itemId\") is not None:\n\t\t\tcontinue\n\t\td[\"toolCavityId\"] \u003d cavityId\n\t\td[\"itemId\"] \u003d source\n\t\td[\"scannedLtt\"] \u003d d.get(\"scannedLtt\") or \"\"\n\t\tout[key] \u003d d\n\t\tcopied +\u003d 1\n\tself.view.custom.bulkOpenDraft \u003d out\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\tBlueRidge.Common.Notify.toast(\"Part copied\", \"Applied to %s empty cavity row(s).\" % copied, \"info\")"
+        },
+        {
+          "name": "clearBulkOpen",
+          "params": [],
+          "script": "\t# Wipe every operator entry AND the last submission\u0027s per-row results, then\n\t# rebuild the rows from the live cavity/open-basket state.\n\tself.view.custom.bulkOpenDraft \u003d {}\n\tself.view.custom.bulkOpenResult \u003d {}\n\tself.view.custom.bulkOpenPendingCount \u003d 0\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+        },
         {
           "name": "computeBreakdown",
           "params": [
@@ -2800,7 +2715,7 @@
         {
           "messageType": "dieCastAnchorResult",
           "pageScope": true,
-          "script": "\t# An anchor moves the die watermark, so every proposed per-cavity\n\t# credit on this screen was computed from a floor that no longer\n\t# applies. Drop the stale breakdown rather than leaving numbers on\n\t# screen that a submit would no longer produce.\n\tif payload and payload.get(\"action\") == \"anchored\":\n\t\tself.view.custom.breakdown = []\n\t\tself.view.custom.breakdownEntries = {}\n\t\tself.recomputeTotals()\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\t# An anchor moves the die watermark, so every proposed per-cavity\n\t# credit on this screen was computed from a floor that no longer\n\t# applies. Drop the stale breakdown rather than leaving numbers on\n\t# screen that a submit would no longer produce.\n\tif payload and payload.get(\"action\") \u003d\u003d \"anchored\":\n\t\tself.view.custom.breakdown \u003d []\n\t\tself.view.custom.breakdownEntries \u003d {}\n\t\tself.recomputeTotals()\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },
@@ -2832,13 +2747,13 @@
           "sessionScope": false,
           "viewScope": false
         },
-      {
-        "messageType": "bulkOpenRowChanged",
-        "pageScope": true,
-        "script": "\t# The only channel a repeater row has back to this view: params are\n\t# input-only, so every keystroke/selection AND every repeater rebuild is\n\t# reported up here. The fold is the single place that decides what counts\n\t# as staged, and it can DELETE an entry -- which is how a cavity that has\n\t# since been opened stops being counted on the button.\n\tres \u003d BlueRidge.Workorder.DieCast.foldBulkOpenRowChange(self.view.custom.bulkOpenDraft, payload)\n\tself.view.custom.bulkOpenDraft \u003d res[\"draft\"]\n\tself.view.custom.bulkOpenPendingCount \u003d res[\"pending\"]",
-        "sessionScope": false,
-        "viewScope": false
-      },
+        {
+          "messageType": "bulkOpenRowChanged",
+          "pageScope": true,
+          "script": "\t# The only channel a repeater row has back to this view: params are\n\t# input-only, so every keystroke/selection AND every repeater rebuild is\n\t# reported up here. The fold is the single place that decides what counts\n\t# as staged, and it can DELETE an entry -- which is how a cavity that has\n\t# since been opened stops being counted on the button.\n\tres \u003d BlueRidge.Workorder.DieCast.foldBulkOpenRowChange(self.view.custom.bulkOpenDraft, payload)\n\tself.view.custom.bulkOpenDraft \u003d res[\"draft\"]\n\tself.view.custom.bulkOpenPendingCount \u003d res[\"pending\"]",
+          "sessionScope": false,
+          "viewScope": false
+        },
         {
           "messageType": "requestReleaseBasket",
           "pageScope": true,
