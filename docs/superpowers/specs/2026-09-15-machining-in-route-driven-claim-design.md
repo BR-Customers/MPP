@@ -164,12 +164,20 @@ from one definition. It is also a step toward the
 - All new rejections stay **before** `BEGIN TRANSACTION` (FDS-11-011 +
   Msg-3915: each SELECTs the status row and `RETURN`s with no open transaction).
 
-### 4.3 Nothing else
+### 4.3 One comment-only Ignition edit; nothing else
 
-No migration. No named query, Python module, or Perspective view changes — the
-NQ is a thin `EXEC` passing both parameters, and retaining `@StorageLocationId`
-(D7) plus the names (D6) keeps every caller byte-identical. No Designer session,
-no `scan.ps1`, no project export.
+No migration. No **Perspective view** changes and no named-query changes — the NQ
+is a thin `EXEC` passing both parameters, and retaining `@StorageLocationId` (D7)
+plus the names (D6) keeps every caller's signature byte-identical. **No Designer
+session and no project export.**
+
+One exception: `BlueRidge.Lots.Lot.getTrimStorageQueueForLine`'s docstring
+currently reads *"the open LOTs sitting in Trim Storage whose next pending route
+step is MachiningIn"*. After this change that sentence is **factually wrong**,
+not merely stale-named, so it is rewritten (§5). That is a comment-only edit to a
+Python module — a file type explicitly safe for file-based edits under the
+CLAUDE.md Ignition edit boundary — followed by `.\scan.ps1` to sync the gateway.
+No behaviour changes.
 
 ---
 
@@ -180,12 +188,20 @@ accepted deliberately to avoid touching the MachiningIn view's binding
 expression, which names the Python wrapper — an edit to an **existing**
 `view.json`, which per CLAUDE.md belongs in Designer rather than in a file edit.
 
-The mitigation is documentary and must not be skipped: the proc header, the NQ,
-and the Python docstring each state that the name is historic, that the read is
-route-driven, and that trim storage is now just one of several places a
-claimable LOT may sit. A future rename to `Lot_GetMachiningInQueueForLine`
-remains open and should be bundled with the next Designer session that touches
-the MachiningIn view for other reasons.
+The mitigation is documentary and must not be skipped. Both the **proc header**
+and the **Python docstring** (`BlueRidge.Lots.Lot.getTrimStorageQueueForLine`)
+state that the name is historic, that the read is route-driven, and that trim
+storage is now just one of several places a claimable LOT may sit. The docstring
+is not optional politeness — its current text asserts the LOT is "sitting in
+Trim Storage", which this change makes false.
+
+The NQ's `query.sql` is left alone: it is a three-line `EXEC` with no prose to
+contradict, and the docstring directly above it in the calling module is where a
+reader actually looks.
+
+A future rename to `Lot_GetMachiningInQueueForLine` remains open and should be
+bundled with the next Designer session that touches the MachiningIn view for
+other reasons.
 
 ---
 
