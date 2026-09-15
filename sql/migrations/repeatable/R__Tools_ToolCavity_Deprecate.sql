@@ -2,12 +2,30 @@
 -- Procedure:   Tools.ToolCavity_Deprecate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-22
--- Version:     1.0
+-- Version:     1.1
+-- Changelog:   1.1 (2026-09-14) OPEN-BASKET GUARD. Rejects while the cavity
+--              still holds an Open LOT.
+--
+--              WHY A CONFIG-TOOL PROC GREW A PLANT-FLOOR RULE.
+--              Lots.Lot_GetOpenByTool -- the Die Cast screen's basket list --
+--              is cavity-driven and filters tc.DeprecatedAt IS NULL. So
+--              deprecating a cavity that holds an open basket made that basket
+--              INVISIBLE on the floor while it stayed Open on the die: live
+--              production with no surface to close it from, and shots the
+--              die's life never gets credited. That was latent while nothing
+--              read the count, and Tools.ToolAssignment_Release v1.1 now does
+--              -- an invisible basket would have blocked a changeover the
+--              operator had no way to clear. Closing the hole here stops it
+--              being re-opened from the Config Tool rather than papering over
+--              it at the press.
 --
 -- Description:
 --   Soft-deletes a ToolCavity row. Row-lifecycle deprecation (distinct
 --   from business state transitions like Closed / Scrapped handled by
---   ToolCavity_UpdateStatus).
+--   ToolCavity_UpdateStatus). Rejects if the cavity holds an open basket.
+--
+--   Spec: docs/superpowers/specs/
+--         2026-09-14-plant-floor-die-mount-popup-design.md (5.4.1)
 -- =============================================
 CREATE OR ALTER PROCEDURE Tools.ToolCavity_Deprecate
     @Id        BIGINT,
@@ -40,6 +58,23 @@ BEGIN
                        WHERE Id = @Id AND DeprecatedAt IS NULL)
         BEGIN
             SET @Message = N'ToolCavity not found or already deprecated.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ToolCavity',
+                @EntityId = @Id, @LogEventTypeCode = N'Deprecated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
+        -- ---- v1.1: open-basket guard (see header) ----
+        IF EXISTS (SELECT 1
+                   FROM Lots.Lot l
+                   INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
+                   WHERE l.ToolCavityId = @Id
+                     AND sc.Code = N'Open')
+        BEGIN
+            SET @Message = N'This cavity still has an open basket. Release or void it before deprecating the cavity.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ToolCavity',
                 @EntityId = @Id, @LogEventTypeCode = N'Deprecated',

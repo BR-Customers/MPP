@@ -207,7 +207,17 @@ _ELEVATED_REPLAY_MESSAGES = {
     "DowntimeVoid":    "dtVoidRequested",            # Downtime Manager - void an event
     "SortCageMigrate": "sortCageMigrateAuthorized",  # Sort Cage - re-containerize a serial
     "CrtToggle":       "crtToggleRequested",         # LOT Detail - apply/release a Controlled Run Tag
+    "DieMount":        "dieMountRequested",          # Die Cast - open the Die Mount popup, then mount / release
 }
+
+# NOTE on "DieMount": it is the first replay whose handler is NOT on an already
+# open surface. The gate fires on the Die Cast screen's button BEFORE the popup
+# exists, so DieCastBody carries a dieMountRequested handler for
+# params {"intent": "open"} and the popup carries one for "mount" / "release"
+# (its own re-assert, for a window that lapsed while it sat open). A
+# page-scoped sendMessage reaches EVERY handler of that name on the page, so
+# both views subscribing to one message is the mechanism, not a collision --
+# each ignores the intents that are not its own.
 
 
 def dispatchElevatedAction(session, code, params):

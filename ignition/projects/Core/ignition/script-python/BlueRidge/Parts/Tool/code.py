@@ -54,6 +54,8 @@
 #   strict). Display strings use plain hyphens.
 # =============================================================================
 
+import java.lang
+
 
 def _u(value):
     """Deep-unwrap shorthand for QualifiedValue / Java Map containers."""
@@ -1048,17 +1050,27 @@ def getMountedToolForCellOrEmpty(cellLocationId, _refreshToken=None):
 # Tool-side Assignments tab. See spec 2026-06-16-cell-mount-card-design.md.
 # -----------------------------------------------------------------------------
 
-def getCellMountContextOrEmpty(cellLocationId):
+def getCellMountContextOrEmpty(cellLocationId, _refreshToken=None):
     """Single-row mount context for a Cell, for the Plant Hierarchy Cell Mount
-    Card. Always a fully-shaped dict (never None) so the card's nested-path
+    Card and the plant-floor Die Mount popup.
+
+    _refreshToken is ignored -- it lets a runScript binding force a re-read
+    after a mount / release (runScript caches on its args). Existing one-arg
+    callers are unaffected. Always a fully-shaped dict (never None) so the card's nested-path
     bindings never Component-Error (pre-declare-bound-props rule). Wraps
     Tools.ToolAssignment_GetCellContext. IsMountTarget is coerced to a bool;
-    nullable text columns coerced to '' for clean binding render."""
+    nullable text columns coerced to '' for clean binding render.
+
+    OpenBasketCount (proc v1.1) is how the Die Mount popup disables Release
+    and states the reason inline instead of firing a mutation to be told no.
+    It is coerced to an int because a NULL here would make the popup's
+    'count > 0' test silently false and re-enable a button the proc will
+    refuse."""
     cellLocationId = _u(cellLocationId)
     BlueRidge.Common.Util.log("getCellMountContextOrEmpty cellLocationId=%s" % cellLocationId)
     empty = {"IsMountTarget": False, "ToolAssignmentId": None, "ToolId": None,
              "ToolCode": "", "ToolName": "", "ToolTypeCode": "",
-             "AssignedAt": None, "AssignedBy": ""}
+             "AssignedAt": None, "AssignedBy": "", "OpenBasketCount": 0}
     if cellLocationId is None:
         return empty
     try:
@@ -1073,6 +1085,10 @@ def getCellMountContextOrEmpty(cellLocationId):
     for k in ("ToolCode", "ToolName", "ToolTypeCode", "AssignedBy"):
         if row.get(k) is None:
             row[k] = ""
+    if row.get("OpenBasketCount") is None:
+        row["OpenBasketCount"] = 0
+    else:
+        row["OpenBasketCount"] = int(row["OpenBasketCount"])
     return row
 
 
@@ -1126,3 +1142,66 @@ def getMountableToolsForCell(cellLocationId):
         label = ("%s - %s" % (code, name)) if code and name else (code or name)
         out.append({"label": label, "value": r.get("Id")})
     return out
+
+
+# -----------------------------------------------------------------------------
+# Plant-floor Die Mount popup (mount-at-the-press).
+# See spec 2026-09-14-plant-floor-die-mount-popup-design.md.
+# -----------------------------------------------------------------------------
+
+_EMPTY_PICKER = {"options": [], "isFallback": False, "count": 0}
+
+
+def getEligibleToolPicker(cellLocationId, _refreshToken=None):
+    """The Die Mount popup's whole dropdown state in one read.
+
+    Returns {"options": [{label, value}...], "isFallback": bool, "count": int}
+    -- ALWAYS that exact shape, on every path including the exception path, so
+    the binding can never overwrite the view's shaped default with None and
+    Component-Error a nested read (pre-declare-bound-props rule).
+
+    isFallback is True when the rowset is non-empty and EVERY row came back
+    IsEligible = 0 -- i.e. the press carries no machine-tier Parts.ItemLocation
+    row and Tools.Tool_ListEligibleForCell fell back to every compatible
+    unmounted die. That decision is the PROC'S; this function only reports it.
+    The proc is all-or-nothing by construction (one COUNT(*), not a per-row
+    test), so 'every row is 0' is a faithful reading and never a mixed rowset.
+
+    NO ELIGIBILITY LOGIC LIVES HERE. Type compatibility, the part-to-press
+    match, the fallback decision and the not-already-mounted rule are all in
+    SQL. This shapes rows into {label, value} and nothing more.
+
+    The eligibility flag deliberately does NOT ride inside an option: dropdown
+    options are {label, value} and nothing else. It surfaces as the muted line
+    above the dropdown, driven by isFallback.
+
+    _refreshToken is ignored -- it exists so a runScript binding can force a
+    re-read after a mount / release (runScript caches on its args)."""
+    cellLocationId = _u(cellLocationId)
+    BlueRidge.Common.Util.log("getEligibleToolPicker cellLocationId=%s" % cellLocationId)
+    if cellLocationId is None:
+        return dict(_EMPTY_PICKER)
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/Tool_ListEligibleForCell", {"cellLocationId": cellLocationId})
+    except (Exception, java.lang.Exception) as e:
+        # A bare 'except Exception' does not catch a Java exception, and a
+        # throw here would leave the popup with no dropdown and no message.
+        BlueRidge.Common.Util.log(
+            "getEligibleToolPicker failed: %s" % str(e), level="warn")
+        return dict(_EMPTY_PICKER)
+
+    rows = rows or []
+    options = []
+    eligible = 0
+    for r in rows:
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        label = ("%s - %s" % (code, name)) if code and name else (code or name)
+        options.append({"label": label, "value": r.get("Id")})
+        if r.get("IsEligible"):
+            eligible += 1
+
+    return {"options": options,
+            "isFallback": bool(rows) and eligible == 0,
+            "count": len(options)}

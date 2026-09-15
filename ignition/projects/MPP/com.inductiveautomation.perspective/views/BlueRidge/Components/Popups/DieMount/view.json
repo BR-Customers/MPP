@@ -1,0 +1,554 @@
+{
+  "custom": {
+    "context": {
+      "AssignedAt": null,
+      "AssignedBy": "",
+      "IsMountTarget": false,
+      "OpenBasketCount": 0,
+      "ToolAssignmentId": null,
+      "ToolCode": "",
+      "ToolId": null,
+      "ToolName": "",
+      "ToolTypeCode": ""
+    },
+    "mountNotes": "",
+    "picker": {
+      "count": 0,
+      "isFallback": false,
+      "options": []
+    },
+    "refreshToken": 0,
+    "selectedToolId": null
+  },
+  "params": {
+    "cellLocationId": null,
+    "popupId": "mpp-die-mount",
+    "replyMessage": "dieMountResult"
+  },
+  "propConfig": {
+    "custom.context": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getCellMountContextOrEmpty\", 0, {view.params.cellLocationId}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.picker": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getEligibleToolPicker\", 0, {view.params.cellLocationId}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
+    "params.cellLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 520,
+      "width": 680
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Title"
+        },
+        "props": {
+          "style": {
+            "fontSize": "20px",
+            "fontWeight": 700
+          },
+          "text": "Die Mount"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Subject"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "{session.custom.cell.name}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "fontFamily": "var(--mpp-font-mono)"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "DieCode"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.context.ToolCode} + if({view.custom.context.ToolName} \u003d \"\", \"\", \" - \" + {view.custom.context.ToolName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontFamily": "var(--mpp-font-mono)",
+                "fontSize": "22px",
+                "fontWeight": 700
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "MountedLine"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Mounted \" + if(isNull({view.custom.context.AssignedAt}), \"-\", dateFormat({view.custom.context.AssignedAt}, \"MM/dd/yyyy h:mm a\")) + if({view.custom.context.AssignedBy} \u003d \"\", \"\", \" by \" + {view.custom.context.AssignedBy})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "BlockedNote"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.context.OpenBasketCount} \u003e 0"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "toStr({view.custom.context.OpenBasketCount}) + \" basket(s) still open on this die. Release or void them on the Die Cast screen first.\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "color": "var(--mpp-state-warn-fg)",
+                "fontWeight": 600
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "OccupiedPanel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "!isNull({view.custom.context.ToolId})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-kpi",
+            "gap": "6px",
+            "overflow": "visible",
+            "padding": "12px 14px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "NoDie"
+            },
+            "props": {
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": 700
+              },
+              "text": "No die mounted"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "FallbackNote"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.picker.isFallback}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "No die is mapped to this press - showing all available dies."
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "PickLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "DIE TO MOUNT"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "DieDropdown"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.picker.options"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.selectedToolId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Select a die"
+              },
+              "search": true,
+              "style": {
+                "classes": "pf-field-select",
+                "width": "100%"
+              }
+            },
+            "type": "ia.input.dropdown"
+          },
+          {
+            "meta": {
+              "name": "NotesLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "NOTES (OPTIONAL)"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "NotesInput"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.mountNotes"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "deferUpdates": false,
+              "placeholder": "e.g. changeover for 6MA",
+              "style": {
+                "classes": "pf-field-input-mono",
+                "width": "100%"
+              }
+            },
+            "type": "ia.input.text-field"
+          }
+        ],
+        "meta": {
+          "name": "EmptyPanel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "isNull({view.custom.context.ToolId})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "8px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "Filler"
+        },
+        "position": {
+          "grow": 1
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"close\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary pf-btn-large"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleRelease()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ReleaseButton"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.context.ToolId})"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.context.OpenBasketCount} \u003d 0"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-danger pf-btn-large"
+              },
+              "text": "Release die"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleMount()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "MountButton"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "isNull({view.custom.context.ToolId})"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.selectedToolId})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary pf-btn-large"
+              },
+              "text": "Mount die"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "ButtonRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "row",
+          "style": {
+            "gap": "10px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "surface-card",
+        "gap": "14px",
+        "overflow": "visible",
+        "padding": "24px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\t# runScript caches on its arguments, so the token is what forces the\n\t# context + picker bindings to re-read. refreshBinding from a message\n\t# handler fails silently; this is the mechanism.\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+        },
+        {
+          "name": "handleMount",
+          "params": [],
+          "script": "\t# The popup only opens inside an elevation window (DieCastBody gates\n\t# the button), so this is a RE-ASSERT, not a second gate: the window\n\t# is a rolling 300s and the mutation happens minutes after the check.\n\tif BlueRidge.Common.Session.isElevated(self.session):\n\t\tself._doMount()\n\t\treturn\n\tBlueRidge.Common.Session.requireElevation(\n\t\tself.session, \"DieMount\", \"Mount a die\", {\"intent\": \"mount\"})"
+        },
+        {
+          "name": "handleRelease",
+          "params": [],
+          "script": "\tif BlueRidge.Common.Session.isElevated(self.session):\n\t\tself._doRelease()\n\t\treturn\n\tBlueRidge.Common.Session.requireElevation(\n\t\tself.session, \"DieMount\", \"Release a die\", {\"intent\": \"release\"})"
+        },
+        {
+          "name": "_doMount",
+          "params": [],
+          "script": "\tcellId \u003d self.view.params.cellLocationId\n\ttoolId \u003d self.view.custom.selectedToolId\n\tif toolId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No die selected\", \"Pick a die to mount.\", \"warning\")\n\t\treturn\n\tresult \u003d BlueRidge.Parts.Tool.assignToCell(toolId, cellId, self.view.custom.mountNotes)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Die mounted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedToolId \u003d None\n\t\tself.view.custom.mountNotes \u003d \"\"\n\t\tself.refresh()"
+        },
+        {
+          "name": "_doRelease",
+          "params": [],
+          "script": "\t# Re-read rather than trust the binding: the basket count is the guard\n\t# Tools.ToolAssignment_Release will apply, and it can have changed\n\t# while this popup sat open. The proc is the enforcement; this only\n\t# saves the operator a round trip to be told no.\n\tcellId \u003d self.view.params.cellLocationId\n\tctx \u003d BlueRidge.Parts.Tool.getCellMountContextOrEmpty(cellId)\n\ttoolId \u003d ctx.get(\"ToolId\")\n\tif toolId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing mounted\", \"No die is mounted on this press.\", \"warning\")\n\t\treturn\n\tif (ctx.get(\"OpenBasketCount\") or 0) \u003e 0:\n\t\tBlueRidge.Common.Notify.toast(\"Baskets still open\",\n\t\t\t\"Release or void the open baskets on the Die Cast screen first.\", \"warning\")\n\t\tself.refresh()\n\t\treturn\n\tresult \u003d BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Die released\")\n\tif result and result.get(\"Status\"):\n\t\tself.refresh()"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "dieMountRequested",
+          "pageScope": true,
+          "script": "\t# Elevation replay. DieCastBody carries a handler for the same message\n\t# and takes intent \u0027open\u0027; a page-scoped send reaches both, so each\n\t# ignores the intents that are not its own.\n\tintent \u003d (payload or {}).get(\"intent\")\n\tif intent \u003d\u003d \"mount\":\n\t\tself._doMount()\n\telif intent \u003d\u003d \"release\":\n\t\tself._doRelease()",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}
