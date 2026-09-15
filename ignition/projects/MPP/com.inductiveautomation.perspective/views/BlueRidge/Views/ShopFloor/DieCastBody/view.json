@@ -2103,7 +2103,7 @@
         {
           "messageType": "dieMountRequested",
           "pageScope": true,
-          "script": "\t# Elevation replay. The DieMount popup subscribes to this same message\n\t# for its own \"mount\" / \"release\" re-assert; a page-scoped send reaches\n\t# every handler of the name, so each ignores the intents that are not\n\t# its own.\n\tif payload and payload.get(\"intent\") \u003d\u003d \"open\":\n\t\tself.openDieMount()",
+          "script": "\t# Elevation replay. Read through extractQualifiedValues like every other\n\t# replay consumer -- the payload arrives as a wrapper, not a plain dict.\n\t# The DieMount popup subscribes to this same message for its own\n\t# \"mount\" / \"release\" re-assert; a page-scoped send reaches every handler\n\t# of the name, so each ignores the intents that are not its own.\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tif p.get(\"intent\") \u003d\u003d \"open\":\n\t\tself.openDieMount()",
           "sessionScope": false,
           "viewScope": false
         },

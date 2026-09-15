@@ -543,7 +543,7 @@
         {
           "messageType": "dieMountRequested",
           "pageScope": true,
-          "script": "\t# Elevation replay. DieCastBody carries a handler for the same message\n\t# and takes intent \u0027open\u0027; a page-scoped send reaches both, so each\n\t# ignores the intents that are not its own.\n\tintent \u003d (payload or {}).get(\"intent\")\n\tif intent \u003d\u003d \"mount\":\n\t\tself._doMount()\n\telif intent \u003d\u003d \"release\":\n\t\tself._doRelease()",
+          "script": "\t# Elevation replay. DieCastBody carries a handler for the same message\n\t# and takes intent \"open\"; a page-scoped send reaches both, so each\n\t# ignores the intents that are not its own. Read through\n\t# extractQualifiedValues -- the payload arrives as a wrapper.\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tintent \u003d p.get(\"intent\")\n\tif intent \u003d\u003d \"mount\":\n\t\tself._doMount()\n\telif intent \u003d\u003d \"release\":\n\t\tself._doRelease()",
           "sessionScope": false,
           "viewScope": false
         }

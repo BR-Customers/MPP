@@ -29,6 +29,14 @@
 #                      Destination now resolved by _resetDestination(), which
 #                      mirrors HomeRouter's landing rule (fallback -> the
 #                      terminal selector; registered -> its DefaultScreen).
+#   2026-09-14 - 1.3 - FIX: dispatchElevatedAction delivered a payload that was
+#                      a LIVE VIEW into session.custom.pendingElevatedAction and
+#                      then cleared that property before sending, so every
+#                      PARAM-CARRYING replay arrived empty. Only the
+#                      not-already-elevated path was affected, which made the
+#                      symptom "the first protected action does nothing and the
+#                      second attempt works". Params are now detached first.
+#                      Also adds the DieMount replay entry.
 # =============================================================================
 
 
@@ -234,6 +242,25 @@ def dispatchElevatedAction(session, code, params):
     has passed, so a prompt the operator dismissed can never be resurrected by a
     later, unrelated elevation."""
     p = BlueRidge.Common.Util.extractQualifiedValues(params) or {}
+    # DETACH before the stash is cleared below. When the caller was NOT already
+    # elevated, `params` came back out of session.custom.pendingElevatedAction,
+    # which makes it a PropertyTreeScriptWrapper -- a LIVE VIEW, not a dict --
+    # and extractQualifiedValues does NOT detach one (it tests QualifiedValue /
+    # list / tuple / dict; a wrapper is none of those and falls through its
+    # final `return data` untouched). Clearing the stash a few lines down then
+    # empties the very tree this payload points at, so the replay is delivered
+    # with no params and the receiving handler silently does nothing.
+    #
+    # The already-elevated path never saw it: requireElevation calls straight
+    # through with the caller's literal dict. That asymmetry is the signature --
+    # the FIRST protected action of a session does nothing and the second,
+    # now-elevated attempt works.
+    try:
+        p = system.util.jsonDecode(system.util.jsonEncode(p))
+    except (Exception, java.lang.Exception):
+        # Never let an odd payload kill the replay outright. A shallow copy
+        # still detaches the top level, which is where every replay key lives.
+        p = dict(p)
     messageType = _ELEVATED_REPLAY_MESSAGES.get(code)
     if messageType:
         pend = BlueRidge.Common.Util.extractQualifiedValues(
