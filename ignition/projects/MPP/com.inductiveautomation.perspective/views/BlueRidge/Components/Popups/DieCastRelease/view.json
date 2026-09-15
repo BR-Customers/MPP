@@ -15,7 +15,10 @@
     },
     "contextLine": "",
     "counterReading": "",
+    "good": "",
     "refreshToken": 0,
+    "scrapDefectOptions": [],
+    "scrapLines": [],
     "preview": {
       "belowStandardAfter": false,
       "cavityName": "",
@@ -63,6 +66,18 @@
       "binding": {
         "config": {
           "expression": "runScript(\"BlueRidge.Workorder.DieCast.getReleasePreview\", 0, {view.params.lotId}, {view.params.shiftId}, {view.params.cellLocationId}, {view.custom.counterReading}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# A fresh proposal replaces the operator's counted-good override, mirroring\n\t# CavityLotRow's params.proposedGood reseed. Independent from the counter\n\t# reading itself (D3) -- the operator's count only rides along on Release\n\t# when it still disagrees with this freshly-derived figure.\n\tp = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.preview) or {}\n\tval = p.get(\"newShots\")\n\tself.view.custom.good = str(val) if val is not None else \"0\""
+      }
+    },
+    "custom.scrapDefectOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0, \"DieCast\")"
         },
         "type": "expr"
       }
@@ -462,6 +477,222 @@
         "type": "ia.container.flex"
       },
       {
+        "children": [
+          {
+            "meta": {
+              "name": "GoodLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "COUNTED GOOD (IF DIFFERENT)"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "GoodInput"
+                },
+                "position": {
+                  "basis": "170px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.good"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "deferUpdates": false,
+                  "placeholder": "e.g. 288",
+                  "style": {
+                    "classes": "pf-field-input-mono",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
+              },
+              {
+                "meta": {
+                  "name": "GoodHint"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "Defaults to the press math above. Type what you actually counted in the basket if it disagrees -- your count wins."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "GoodRow"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "12px",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "GoodField"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "4px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ScrapLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "SCRAP ON THIS BASKET"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ScrapSpacer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "text": ""
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.addScrapLine()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "AddScrapButton"
+                },
+                "props": {
+                  "image": {
+                    "icon": {
+                      "path": "mpp/add_circle"
+                    }
+                  },
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary",
+                    "minHeight": "36px"
+                  },
+                  "text": "Add scrap reason"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "ScrapHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "10px",
+                "overflow": "visible"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "ScrapRepeater"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.scrapLines"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapDefectOptions) or []\n\tlotId = self.view.params.lotId\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = r or {}\n\t\tout.append({\"lotId\": lotId, \"index\": i, \"defectCodeId\": r.get(\"defectCodeId\"), \"quantity\": r.get(\"quantity\") or \"\", \"defectOptions\": opts})\n\treturn out",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": {
+                "basis": "auto",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/DieCastEntry/ScrapLineRow",
+              "style": {
+                "flexWrap": "nowrap",
+                "gap": "6px",
+                "overflow": "visible"
+              },
+              "useDefaultViewHeight": true,
+              "useDefaultViewWidth": false
+            },
+            "type": "ia.display.flex-repeater"
+          }
+        ],
+        "meta": {
+          "name": "ScrapBlock"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "6px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
         "meta": {
           "name": "ChainNote"
         },
@@ -596,7 +827,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\t# The reading rides the reply so the caller writes exactly the\n\t# number this dialog showed the arithmetic for.\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\n\t\t\"action\": \"confirm\",\n\t\t\"counterReading\": self.view.custom.counterReading,\n\t}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                    "script": "\t# The reading rides the reply so the caller writes exactly the\n\t# number this dialog showed the arithmetic for. The operator's counted\n\t# Good rides too, but ONLY when it still disagrees with the derived\n\t# figure (D3) -- two independent facts, allowed to disagree; when they\n\t# match, the proc's own counterReading-derived delta runs unmodified.\n\tp = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.preview) or {}\n\tderived = BlueRidge.Common.Util.toIntOrNone(p.get(\"newShots\"))\n\tcounted = BlueRidge.Common.Util.toIntOrNone(self.view.custom.good)\n\tfinalPieceDelta = counted if (counted is not None and counted != derived) else None\n\tscrapLines = []\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []):\n\t\tr = r or {}\n\t\td = r.get(\"defectCodeId\")\n\t\tq = r.get(\"quantity\")\n\t\tif d is not None and q not in (None, \"\"):\n\t\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\n\t\t\"action\": \"confirm\",\n\t\t\"counterReading\": self.view.custom.counterReading,\n\t\t\"finalPieceDelta\": finalPieceDelta,\n\t\t\"scrapLines\": scrapLines,\n\t}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -651,11 +882,55 @@
       "name": "root"
     },
     "scripts": {
+      "customMethods": [
+        {
+          "name": "addScrapLine",
+          "params": [],
+          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = [dict(r or {}) for r in rows]\n\trows.append({\"defectCodeId\": None, \"quantity\": \"\"})\n\tself.view.custom.scrapLines = rows"
+        },
+        {
+          "name": "setScrapLine",
+          "params": [
+            "index",
+            "defectCodeId",
+            "quantity"
+          ],
+          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = [dict(r or {}) for r in rows]\n\tif index is None or index < 0 or index >= len(rows):\n\t\treturn\n\trows[index] = {\"defectCodeId\": defectCodeId, \"quantity\": quantity or \"\"}\n\tself.view.custom.scrapLines = rows"
+        },
+        {
+          "name": "removeScrapLine",
+          "params": [
+            "index"
+          ],
+          "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\trows = [dict(r or {}) for r in rows]\n\tif index is None or index < 0 or index >= len(rows):\n\t\treturn\n\tdel rows[index]\n\tself.view.custom.scrapLines = rows"
+        },
+        {
+          "name": "_isMineScrapLine",
+          "params": [
+            "payload"
+          ],
+          "script": "\t# ScrapLineRow broadcasts on PAGE scope -- filter to rows this dialog owns.\n\tif not payload:\n\t\treturn False\n\treturn (\"%s\" % payload.get(\"lotId\")) == (\"%s\" % self.view.params.lotId)"
+        }
+      ],
       "messageHandlers": [
         {
           "messageType": "dieCastAnchorResult",
           "pageScope": true,
           "script": "\t# The anchor moved the die watermark without touching any of the\n\t# preview binding's real inputs, so nothing would re-evaluate on\n\t# its own and this dialog would go on quoting the number that had\n\t# just been superseded.\n\tif payload and payload.get(\"action\") == \"anchored\":\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "dieCastScrapLineChanged",
+          "pageScope": true,
+          "script": "\tif self._isMineScrapLine(payload):\n\t\tself.setScrapLine(payload.get(\"index\"), payload.get(\"defectCodeId\"), payload.get(\"quantity\"))",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "dieCastScrapLineRemoved",
+          "pageScope": true,
+          "script": "\tif self._isMineScrapLine(payload):\n\t\tself.removeScrapLine(payload.get(\"index\"))",
           "sessionScope": false,
           "viewScope": false
         }
