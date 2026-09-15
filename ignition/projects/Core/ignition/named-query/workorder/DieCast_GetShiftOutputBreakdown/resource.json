@@ -18,7 +18,7 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
-    "lastModificationSignature": "",
+    "lastModificationSignature": "f02b26142db9ccae28ee98a82457f4f827e93e52b89920c5854ff567c5062571",
     "permissions": [
       {
         "zone": "",
@@ -26,8 +26,8 @@
       }
     ],
     "lastModification": {
-      "actor": "claude",
-      "timestamp": "2026-07-29T12:00:00Z"
+      "actor": "admin",
+      "timestamp": "2026-09-11T01:33:56Z"
     },
     "parameters": [
       {
@@ -49,6 +49,11 @@
         "type": "Parameter",
         "identifier": "cellLocationId",
         "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "dieWideShots",
+        "sqlType": 2
       }
     ]
   }

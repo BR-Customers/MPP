@@ -5,14 +5,16 @@
    -scrap fan-out all live in the procs.
 
    Public surface:
-     getShiftOutputBreakdown(toolId, shiftId, counterReading, cellLocationId) -> list[dict]
+     getShiftOutputBreakdown(toolId, shiftId, counterReading, cellLocationId,
+                              dieWideShots=0)                                -> list[dict]
      recordShiftOutput(data, appUserId=None, terminalLocationId=None)        -> {Status, Message, NewId}
      registerShotLoss(toolId, shiftId, defectCodeId, quantity,
                        appUserId=None, terminalLocationId=None)              -> {Status, Message, NewId}
      getCounterContext(toolId, shiftId, cellLocationId)                      -> dict
      describeCounterContext(ctx)                                             -> str
      listAnchorReasons()                                                     -> list[{label, value}]
-     recordCounterAnchor(toolId, shiftId, declaredReading, reasonId, ...)    -> {Status, Message, NewId}"""
+     recordCounterAnchor(toolId, shiftId, declaredReading, reasonId, ...)    -> {Status, Message, NewId}
+     listVarianceReasons()                                                   -> list[{label, value, requiresNote}]"""
 
 # system.date.* raises Java Throwables, which `except Exception` does NOT catch
 # in Jython -- describeCounterContext's timestamp guard needs the Java branch or
@@ -24,7 +26,7 @@ def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
 
 
-def getShiftOutputBreakdown(toolId, shiftId, counterReading, cellLocationId=None):
+def getShiftOutputBreakdown(toolId, shiftId, counterReading, cellLocationId=None, dieWideShots=0):
     """Proposed per-cavity-lot good-piece counts for a PRESS COUNTER READING
        (Workorder.DieCast_GetShiftOutputBreakdown) -- the read-side proposal the
        recording flow presents to the operator for confirmation/adjustment
@@ -43,21 +45,29 @@ def getShiftOutputBreakdown(toolId, shiftId, counterReading, cellLocationId=None
        cellLocationId is the PRESS. The watermark is scoped by it, so a die
        moved to another press (or a changeover to another die on the same
        press) resets the chain. The proc falls back to the die's currently
-       mounted cell when it is not supplied."""
+       mounted cell when it is not supplied.
+
+       dieWideShots is a NEW trailing keyword argument (proc v3.0, 2026-09-14):
+       shots already booked die-wide this shift (e.g. via registerShotLoss)
+       that the proc nets out of every cavity's ProposedGood before flooring
+       at 0 -- existing positional callers passing only the first four args
+       are unaffected and get the v3.0 default of 0 (no netting)."""
     toolId = _u(toolId)
     shiftId = _u(shiftId)
     counterReading = _u(counterReading)
     cellLocationId = _u(cellLocationId)
+    dieWideShots = _u(dieWideShots)
     BlueRidge.Common.Util.log(
-        "getShiftOutputBreakdown toolId=%s shiftId=%s counterReading=%s cellLocationId=%s"
-        % (toolId, shiftId, counterReading, cellLocationId)
+        "getShiftOutputBreakdown toolId=%s shiftId=%s counterReading=%s cellLocationId=%s dieWideShots=%s"
+        % (toolId, shiftId, counterReading, cellLocationId, dieWideShots)
     )
     if toolId is None or shiftId is None:
         return []
     return BlueRidge.Common.Db.execList(
         "workorder/DieCast_GetShiftOutputBreakdown",
         {"toolId": toolId, "shiftId": shiftId,
-         "counterReading": counterReading, "cellLocationId": cellLocationId},
+         "counterReading": counterReading, "cellLocationId": cellLocationId,
+         "dieWideShots": dieWideShots},
     )
 
 
@@ -72,7 +82,21 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None, cellLocatio
        parts were added at -- stamped on the DieCastPieceContributed audit op's
        @LocationId; the explicit kwarg wins, else data['cellLocationId']).
        Returns {Status, Message, NewId} (NewId is always None -- this proc fans
-       out to N lots, there is no single 'the' new id)."""
+       out to N lots, there is no single 'the' new id).
+
+       PER-LINE PAYLOAD WIDENED (proc v3.0, 2026-09-14): each element of
+       data['lines'] may now also carry:
+         toolCavityId    -- BIGINT, REQUIRED when lotId is None (a basketless
+                             cavity: no LOT to credit, so pieceDelta MUST be 0
+                             -- the proc rejects a nonzero delta with no lotId)
+         varianceReasonId -- BIGINT or None (Workorder.DieCastVarianceReason)
+         varianceNote      -- str or None (REQUIRED when the chosen reason's
+                               RequiresNote = 1; the proc rejects a blank note)
+       This function does NOT reshape or validate individual line keys -- lines
+       passes straight through to JSON exactly as the caller built it, so no
+       change was needed here to carry the new fields; the proc alone decides
+       what is valid (do not re-validate lotId/toolCavityId/varianceReasonId
+       here or in a binding)."""
     BlueRidge.Common.Util.log(
         "recordShiftOutput data=%s appUserId=%s terminalLocationId=%s cellLocationId=%s"
         % (data, appUserId, terminalLocationId, cellLocationId)
@@ -367,6 +391,33 @@ def recordCounterAnchor(toolId, shiftId, declaredReading, reasonId, note=None,
     return BlueRidge.Common.Db.execMutation("workorder/DieCastCounterAnchor_Record", params)
 
 
+def listVarianceReasons():
+    """Dropdown shape for the variance disposition picker
+       (Workorder.DieCastVarianceReason_List), as the {label, value,
+       requiresNote} shape the reconciliation screen's disposition dropdown
+       needs -- requiresNote decides whether the screen must demand a note
+       before submit, per D15.
+
+       Sorted by the code table's SortOrder (the NQ's own ORDER BY -- not
+       re-sorted here). requiresNote is passed straight through from SQL,
+       never computed in Python: Workorder.DieCastShiftOutput_Record is the
+       sole authority on which reasons require a note, and it re-checks this
+       at write time regardless of what the screen sends."""
+    try:
+        rows = BlueRidge.Common.Db.execList("workorder/DieCastVarianceReason_List")
+    except (Exception, java.lang.Exception) as e:
+        # BOTH arms are required. A gateway-side query failure arrives as a Java
+        # exception, which a bare `except Exception` does NOT catch in Jython --
+        # so the guard would miss precisely the failure it exists to absorb, and
+        # the picker would take the whole binding down instead of degrading to an
+        # empty list. See the note at the top of this module.
+        BlueRidge.Common.Util.log("listVarianceReasons failed: %s" % str(e), level="warn")
+        return []
+    return [{"label": r.get("Name"), "value": r.get("Id"),
+             "requiresNote": bool(r.get("RequiresNote"))}
+            for r in (rows or [])]
+
+
 def cavityDisplayName(cavityCode, cavityDescription):
     """The operator-facing name of a die cavity.
 
@@ -402,7 +453,20 @@ def mapBreakdownInstances(rows):
        receive it. Proc v2.1 is cavity-driven, so the list now also carries
        cavities with NO basket at all (Closed / Scrapped, or simply unopened);
        those still report the shots that ran and the part they are configured
-       to cut, so their scrap is recordable too."""
+       to cut, so their scrap is recordable too.
+
+       THREE COLUMNS APPENDED (proc v3.0, 2026-09-14), surfaced here so
+       CavityLotRow can read them -- the proc already read fine by-key
+       (.get()) with these unmapped, it just never showed them:
+         priorScrapThisShift -- SUM(RejectEvent.Quantity) already recorded
+                                 for THIS cavity THIS shift (not netted out of
+                                 proposedGood in SQL; informational only)
+         dieWideShots         -- the @DieWideShots this call was passed,
+                                 echoed back so a row can show raw vs. net
+         isPending             -- True when the cavity has no basket
+                                 (lotId is None) -- mirrors hasBasket's
+                                 negation but comes straight from the proc's
+                                 own IsPending rather than being re-derived"""
     rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
     out = []
     for r in rows:
@@ -429,6 +493,10 @@ def mapBreakdownInstances(rows):
             "cavityStatusCode":   r.get("CavityStatusCode") or "Active",
             "configuredPart":     r.get("ConfiguredPartNumber") or "",
             "hasBasket":          r.get("LotId") is not None,
+            # v3.0 cavity scrap attribution -- appended last by the proc
+            "priorScrapThisShift": r.get("PriorScrapThisShift") or 0,
+            "dieWideShots":         r.get("DieWideShots") or 0,
+            "isPending":            bool(r.get("IsPending")),
         })
     return out
 
