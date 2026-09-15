@@ -2,13 +2,15 @@
 -- File:         0024_PlantFloor_Movement_Trim/065_Lot_GetTrimStorageQueueForLine.sql
 -- Author:       Blue Ridge Automation
 -- Created:      2026-07-23
--- Description:  Tests for Lots.Lot_GetTrimStorageQueueForLine (Trim-Storage model). A LOT
---               sitting in Trim Storage whose next-pending route step is MachiningIn shows
---               up at a line ONLY when its Item is eligible there; a part eligible at two
---               lines appears in BOTH lines' reads (the two-line case); claiming it onto one
---               line (move off Trim Storage) removes it from both. Fixture: routed casting
---               5G0-c staged in TRIM1-STORE, made eligible at MA1-5GOF AND MA1-5GOR (two
---               lines), NOT at MA1-6MD.
+-- Description:  Tests for Lots.Lot_GetTrimStorageQueueForLine. NOTE THE NAME IS HISTORIC --
+--               as of 2026-09-15 the read is route-driven and does not look at Trim
+--               Storage (see the proc header). This fixture still STAGES the LOT in
+--               TRIM1-STORE, which is now incidental rather than load-bearing: what makes
+--               it visible is that its next pending route step is MachiningIn. A LOT shows
+--               at a line ONLY when its Item is eligible there; a part eligible at two
+--               lines appears in BOTH lines' reads; claiming it on one line satisfies the
+--               MachiningIn step and removes it from both. Fixture: routed casting 5G0-c
+--               staged in TRIM1-STORE, eligible at MA1-5GOF AND MA1-5GOR, NOT at MA1-6MD.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -71,7 +73,7 @@ DECLARE @claimS NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R);
 EXEC test.Assert_IsEqual N'[TSQueue] claim onto line A succeeds', N'1', @claimS;
 DELETE FROM @Q; INSERT INTO @Q EXEC Lots.Lot_GetTrimStorageQueueForLine @LineLocationId=@LineB;
 DECLARE @b2 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q WHERE Id=@Lot);
-EXEC test.Assert_IsEqual N'[TSQueue] after claim, LOT gone from line B queue (no longer in Trim Storage)', N'0', @b2;
+EXEC test.Assert_IsEqual N'[TSQueue] after claim, LOT gone from line B queue (MachiningIn step now satisfied)', N'0', @b2;
 GO
 
 -- cleanup
