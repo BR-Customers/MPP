@@ -22,9 +22,15 @@ DELETE FROM Tools.ToolCavity WHERE ToolId = @ToolId;
 DECLARE @SeedPartId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'SA-CAV-SEED-PART');
 IF @SeedPartId IS NULL
 BEGIN
+    -- The @Description below deliberately does NOT contain the string 'SaveAll'.
+    -- Parts.Item_Create writes an Audit.ConfigLog row carrying it, and
+    -- 02_audit_readers/050_ConfigLog_List.sql asserts that a ConfigLog_List
+    -- filtered on @DescriptionLike = N'SaveAll' returns exactly ONE row. This
+    -- file sorts BEFORE 02_audit_readers, so the word here would silently
+    -- become a second match and fail that test instead of this one.
     CREATE TABLE #SP (Status BIT, Message NVARCHAR(500), NewId BIGINT);
     INSERT INTO #SP EXEC Parts.Item_Create
-        @ItemTypeId = 4, @PartNumber = N'SA-CAV-SEED-PART', @Description = N'Cavity SaveAll seed part',
+        @ItemTypeId = 4, @PartNumber = N'SA-CAV-SEED-PART', @Description = N'Cavity seed part',
         @UomId = 1, @AppUserId = 1;
     DROP TABLE #SP;
 END
