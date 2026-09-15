@@ -1,8 +1,22 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-19
--- Version:     2.1
+-- Modified:    2026-09-14
+-- Version:     2.2
+-- Change:      v2.2 -- companion fix for Workorder.ufn_CavityShotWatermark
+--              v3.0 (die-cast quantity + scrap model, spec sec 5.3b), which
+--              reads DieCastContribution.ToolCavityId directly instead of
+--              deriving the cavity via INNER JOIN Lots.Lot. That is only
+--              behaviour-preserving if EVERY contribution row still carries
+--              its cavity, so the per-line pieces row now stamps ToolCavityId
+--              from the line's LOT. Without this, every basket contributed to
+--              through this proc would leave its row's cavity unresolvable
+--              under v3.0 and the next basket on that cavity would be
+--              credited from a stale (zero) watermark -- exactly the
+--              regression Task 2's neutrality test exists to catch. The
+--              larger cavity-line / cavity-fan-out rewrite (varianceReasonId,
+--              basketless scrap lines) is a separate, later change (spec
+--              sec 5.3) -- this is only the minimum stamp.
 -- Change:      v2.1 -- SCRAP ON A BASKET CLOSED EARLIER THIS SHIFT. MPP
 --              records scrap ONCE, at end of shift, from a paper form -- so a
 --              basket released mid-shift still needs its scrap entered hours
@@ -209,8 +223,9 @@ BEGIN
         BEGIN
             IF @Delta > 0
             BEGIN
-                INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId, ShotCounterReading)
-                VALUES (@LotId, @ShiftId, @Delta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId, @CounterReading);
+                INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId, ShotCounterReading, ToolCavityId)
+                VALUES (@LotId, @ShiftId, @Delta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId, @CounterReading,
+                        (SELECT ToolCavityId FROM Lots.Lot WHERE Id = @LotId));
                 UPDATE Lots.Lot WITH (UPDLOCK, HOLDLOCK)
                 SET PieceCount = PieceCount + @Delta, InventoryAvailable = InventoryAvailable + @Delta,
                     UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId

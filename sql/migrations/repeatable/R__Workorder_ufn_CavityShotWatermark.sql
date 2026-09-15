@@ -1,8 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_ufn_CavityShotWatermark.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-10
--- Version:     2.0
+-- Modified:    2026-09-14
+-- Version:     3.0
+-- Change:      v3.0 (2026-09-14, die-cast quantity + scrap model, sec 3.6/5.3b)
+--              -- reads the stamped Workorder.DieCastContribution.ToolCavityId
+--              directly instead of traversing INNER JOIN Lots.Lot. Behaviour-
+--              identical: every contribution row still carries a LOT (LotId
+--              stays NOT NULL, precisely so a basketless cavity cannot write a
+--              watermark-advancing row -- spec 3.6), so the old join and the
+--              new column resolve the same cavity for every existing row. This
+--              is a pure simplification, pinned neutral by 110_CavityScrap.sql
+--              Test 1.
 -- Description: Die-cast shot-reading chain (spec 2026-09-09). Returns the
 --              press-counter reading through which a CAVITY has already been
 --              credited in a shift -- its "credited-through watermark".
@@ -77,10 +86,12 @@ BEGIN
 
     DECLARE @Watermark INT;
 
+    -- v3.0: read the stamped cavity instead of traversing the LOT. Behaviour-
+    -- identical -- every contribution row still has a LOT (spec 3.6) -- so
+    -- this is a simplification, asserted neutral by test 1.
     SELECT @Watermark = MAX(c.ShotCounterReading)
     FROM Workorder.DieCastContribution c
-    INNER JOIN Lots.Lot l ON l.Id = c.LotId
-    WHERE l.ToolCavityId = @ToolCavityId
+    WHERE c.ToolCavityId = @ToolCavityId
       AND c.ShiftId      = @ShiftId
       AND ISNULL(c.CellLocationId, -1) = ISNULL(@CellLocationId, -1)
       AND (@AnchorAt IS NULL OR c.EventAt > @AnchorAt);

@@ -1,8 +1,21 @@
 -- ============================================================
 -- Repeatable:  R__Lots_DieCastLot_Release.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-19
--- Version:     2.0
+-- Modified:    2026-09-14
+-- Version:     2.1
+-- Change:      v2.1 -- companion fix for Workorder.ufn_CavityShotWatermark
+--              v3.0 (die-cast quantity + scrap model, spec sec 5.3b), which
+--              reads DieCastContribution.ToolCavityId directly instead of
+--              deriving the cavity via INNER JOIN Lots.Lot. That is only
+--              behaviour-preserving if EVERY contribution row still carries
+--              its cavity -- so the final-delta row written here now stamps
+--              ToolCavityId from the already-resolved @RelToolCavityId (no
+--              new lookup; this proc already reads it at line ~144 to derive
+--              the delta). Without this, a basket released here would leave
+--              its contribution row's cavity unresolvable under v3.0 and the
+--              next basket on the same cavity would be credited from a stale
+--              (zero) watermark -- exactly the regression Task 2's neutrality
+--              test exists to catch.
 -- Change:      v2.0 -- SHOT-READING CHAIN (spec 2026-09-09). New
 --              @CounterReading: the press counter reading at the moment the
 --              basket was swapped. The operator writes it down at the press
@@ -189,8 +202,8 @@ BEGIN
         -- watermark stale and over-credit the next basket on this cavity.
         IF @CounterReading IS NOT NULL OR (@FinalPieceDelta IS NOT NULL AND @FinalPieceDelta > 0)
         BEGIN
-            INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId, ShotCounterReading)
-            VALUES (@LotId, @ShiftId, ISNULL(@FinalPieceDelta, 0), @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId, @CounterReading);
+            INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId, ShotCounterReading, ToolCavityId)
+            VALUES (@LotId, @ShiftId, ISNULL(@FinalPieceDelta, 0), @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId, @CounterReading, @RelToolCavityId);
             IF ISNULL(@FinalPieceDelta, 0) > 0
             UPDATE Lots.Lot WITH (UPDLOCK, HOLDLOCK)
             SET PieceCount = PieceCount + @FinalPieceDelta, InventoryAvailable = InventoryAvailable + @FinalPieceDelta,
