@@ -268,19 +268,24 @@ tap on **Die Mount**, the AD prompt, and the popup opens by itself on success. T
 item 1 above, and it is also the direct confirmation that `860d4d83` fixed the replay:
 the same flow required a second tap before it.
 
-**Still unexercised**, and worth a few minutes before the window rather than discovering
-them in prod:
+Also confirmed by Jacques the same day:
 
-- Item 2/3 — the **open-basket block**. Dev has 21 open baskets, so this is easy to stage:
-  open the popup on a press whose die holds one and confirm Release is disabled with the
-  reason line, then release or void the basket and confirm it enables.
-- Item 6 — **a non-Die-Mount elevated action from cold** (a downtime *edit* with no
-  elevation window). This is the one I would least like to assume: it is the only proof
-  that the shared `Common.Session` change is good for the other four elevated actions, and
+- Item 2/3 — the **open-basket block**. Release is disabled with the reason line while the
+  die holds an open basket, and enables once the basket is cleared. This is the half of
+  the feature that changes Config Tool behaviour in prod, so it mattered that it was
+  exercised rather than assumed.
+- Item 6 — **a non-Die-Mount elevated action from cold**. This is the proof that the
+  shared `Common.Session` replay fix is good for the other four elevated actions
+  (`DowntimeReason`, `DowntimeEdit`, `DowntimeVoid`, `SortCageMigrate`, `CrtToggle`), and
   it is a path this feature's own testing never touches.
 
-Items 4 and 5 (single modal across a changeover; cancel leaves no phantom state) are
-lower risk and can be covered by the prod click-through.
+**So the Dev-side verification is complete.** Items 4 and 5 (a single modal across a
+Release-then-Mount changeover; cancelling the elevation leaves no phantom state) are
+lower risk and are left for the prod click-through.
+
+What remains genuinely unverified is prod's **data**, not the code — the three pre-flight
+queries in §6 are still the gate, and §6B in particular is expected to return rows on a
+running plant where Dev returned few.
 
 ---
 
