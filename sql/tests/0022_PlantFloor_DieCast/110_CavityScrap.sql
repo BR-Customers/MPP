@@ -472,6 +472,141 @@ DROP TABLE #Breakdown;
 DELETE re FROM Workorder.RejectEvent re JOIN @NewIds n ON n.Id = re.Id;
 GO
 
+-- =============================================
+-- Workorder.DieCastShiftOutput_Record v3.0 -- cavity lines, cavity fan-out,
+-- dispositions (Task 5, spec sec 5.3, D8, D15). Reuses the CS-DIE tool /
+-- CS-FIXTURE shift established above. Cavity 'q' (minted by the Breakdown
+-- block above, no open LOT, no RejectEvent written against it yet) is reused
+-- for the fan-out assertion; a fresh cavity 'm' is minted AFTER the fan-out
+-- call runs, so the fan-out -- which reaches every active cavity on this tool
+-- -- cannot touch it, keeping the basketless-line scrap count exact.
+-- =============================================
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CS-DIE');
+DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'CS-FIXTURE' ORDER BY Id DESC);
+DECLARE @CellId BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
+  JOIN Location.LocationTypeDefinition d ON d.Id = l.LocationTypeDefinitionId
+  WHERE d.Code = N'DieCastMachine' AND l.DeprecatedAt IS NULL ORDER BY l.Id);
+DECLARE @ItemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Usr BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
+DECLARE @DefectId BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @ActiveCavStatusId BIGINT = (SELECT TOP 1 Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
+DECLARE @CavIdQ BIGINT = (SELECT tc.Id FROM Tools.ToolCavity tc WHERE tc.ToolId = @ToolId AND tc.CavityCode = N'q');
+DECLARE @R TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+
+-- Test 1 -- die-wide fan-out reaches a cavity with no basket (D8). @LinesJson
+-- is empty -- this is a die-wide-only entry (spec D7, e.g. a warm-up block).
+DECLARE @ShotLoss1 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@DefectId AS NVARCHAR(20)) + N',"quantity":5}]';
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.DieCastShiftOutput_Record
+    @ShiftId = @ShiftId, @ToolId = @ToolId, @LinesJson = N'[]',
+    @ShotLossJson = @ShotLoss1,
+    @AppUserId = @Usr, @CellLocationId = @CellId;
+DECLARE @vFanoutCall NVARCHAR(20) = (SELECT CAST(Status AS NVARCHAR(20)) FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[ShiftOutput] die-wide fan-out call succeeds',
+    @Expected = N'1', @Actual = @vFanoutCall;
+
+DECLARE @vFanout NVARCHAR(20) = CAST(
+    (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE ToolCavityId = @CavIdQ AND LotId IS NULL) AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[ShiftOutput] die-wide reaches a cavity with no basket',
+    @Expected = N'1', @Actual = @vFanout;
+
+-- fixture for Tests 2/3 -- a fresh cavity minted AFTER the fan-out call, so
+-- the fan-out above cannot have touched it. No basket.
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+SELECT @ToolId, N'm', @ActiveCavStatusId, N'CS cavity m basketless-line', @ItemId, @Usr;
+DECLARE @CavIdM BIGINT = SCOPE_IDENTITY();
+
+-- Test 2 -- a basketless line writes scrap and NO contribution row (spec 3.6).
+DECLARE @Json5 NVARCHAR(MAX) = N'[{"toolCavityId":' + CAST(@CavIdM AS NVARCHAR(20))
+    + N',"lotId":null,"pieceDelta":0,"scrapLines":[{"defectCodeId":' + CAST(@DefectId AS NVARCHAR(20)) + N',"quantity":9}]}]';
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.DieCastShiftOutput_Record
+    @ShiftId = @ShiftId, @ToolId = @ToolId, @LinesJson = @Json5,
+    @AppUserId = @Usr, @CellLocationId = @CellId;
+DECLARE @vScrapCall NVARCHAR(20) = (SELECT CAST(Status AS NVARCHAR(20)) FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[ShiftOutput] basketless-line scrap call succeeds',
+    @Expected = N'1', @Actual = @vScrapCall;
+
+DECLARE @vNoContrib NVARCHAR(20) = CAST((SELECT CASE WHEN
+        (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE ToolCavityId = @CavIdM AND LotId IS NULL AND Quantity = 9) = 1
+        AND (SELECT COUNT(*) FROM Workorder.DieCastContribution WHERE ToolCavityId = @CavIdM) = 0
+    THEN 1 ELSE 0 END) AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[ShiftOutput] basketless line writes scrap, no contribution',
+    @Expected = N'1', @Actual = @vNoContrib;
+
+-- Test 3 -- pieces on a basketless line reject: there is no basket to credit.
+DECLARE @Json6 NVARCHAR(MAX) = N'[{"toolCavityId":' + CAST(@CavIdM AS NVARCHAR(20)) + N',"lotId":null,"pieceDelta":5,"scrapLines":[]}]';
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.DieCastShiftOutput_Record
+    @ShiftId = @ShiftId, @ToolId = @ToolId, @LinesJson = @Json6,
+    @AppUserId = @Usr, @CellLocationId = @CellId;
+DECLARE @vPieces NVARCHAR(20) = (SELECT CAST(Status AS NVARCHAR(20)) FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[ShiftOutput] pieces on a basketless line reject',
+    @Expected = N'0', @Actual = @vPieces;
+
+-- Test 3b -- a WITH-basket scrap line stamps identity too.
+-- This is the ordinary everyday path, and it was the one left behind: the
+-- basketless branch and the die-wide fan-out both stamped, this one did not.
+-- Since the reject reports resolve the part from RejectEvent.ItemId now
+-- (spec 4.2 / 5.5) instead of joining through the LOT, an unstamped row
+-- lands in the '(unassigned part)' bucket -- silently, and for every normal
+-- die-cast scrap entry, not just the lot-free ones.
+DECLARE @CavIdW BIGINT;
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+SELECT @ToolId, N'w', @ActiveCavStatusId, N'CS cavity w with-basket-scrap', @ItemId, @Usr;
+SET @CavIdW = SCOPE_IDENTITY();
+
+DECLARE @OriginIdW BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @OpenIdW BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Open');
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable,
+                      CurrentLocationId, ToolId, ToolCavityId, CreatedAt, CreatedByUserId)
+VALUES (N'CS-BW', @ItemId, @OriginIdW, @OpenIdW, 0, 0, @CellId, @ToolId, @CavIdW, SYSUTCDATETIME(), @Usr);
+DECLARE @LotBW BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'CS-BW');
+
+DECLARE @JsonWB NVARCHAR(MAX) = N'[{"lotId":' + CAST(@LotBW AS NVARCHAR(20))
+    + N',"pieceDelta":0,"scrapLines":[{"defectCodeId":' + CAST(@DefectId AS NVARCHAR(20)) + N',"quantity":7}]}]';
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.DieCastShiftOutput_Record
+    @ShiftId = @ShiftId, @ToolId = @ToolId, @LinesJson = @JsonWB,
+    @AppUserId = @Usr, @CellLocationId = @CellId;
+DECLARE @vWithBasketCall NVARCHAR(20) = (SELECT CAST(Status AS NVARCHAR(20)) FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[ShiftOutput] with-basket scrap call succeeds',
+    @Expected = N'1', @Actual = @vWithBasketCall;
+
+DECLARE @vStamped NVARCHAR(20) = CAST((SELECT COUNT(*) FROM Workorder.RejectEvent re
+    WHERE re.LotId = @LotBW AND re.Quantity = 7
+      AND re.ItemId = @ItemId AND re.ToolId = @ToolId
+      AND re.ToolCavityId = @CavIdW AND re.ShiftId = @ShiftId
+      AND re.CellLocationId = @CellId) AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[ShiftOutput] with-basket scrap stamps part, die, cavity, shift and press',
+    @Expected = N'1', @Actual = @vStamped;
+
+-- Test 4 -- a reason whose RequiresNote is 1 must carry one (D15/spec 3.7).
+-- Reuses basket CS-B2 (minted in the Watermark fixture above, still Open on
+-- cavity 'a'); the call is rejected pre-transaction, so CS-B2's PieceCount is
+-- untouched by it.
+DECLARE @LotB2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'CS-B2');
+DECLARE @UnknownReasonId BIGINT = (SELECT Id FROM Workorder.DieCastVarianceReason WHERE Code = N'Unknown');
+DECLARE @Json7 NVARCHAR(MAX) = N'[{"lotId":' + CAST(@LotB2 AS NVARCHAR(20))
+    + N',"pieceDelta":5,"scrapLines":[],"varianceReasonId":' + CAST(@UnknownReasonId AS NVARCHAR(20)) + N',"varianceNote":null}]';
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.DieCastShiftOutput_Record
+    @ShiftId = @ShiftId, @ToolId = @ToolId, @LinesJson = @Json7,
+    @AppUserId = @Usr, @CellLocationId = @CellId;
+DECLARE @vNote NVARCHAR(20) = (SELECT CAST(Status AS NVARCHAR(20)) FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[ShiftOutput] Unknown without a note rejects',
+    @Expected = N'0', @Actual = @vNote;
+
+-- cleanup: every lot-free RejectEvent row on any cavity of THIS tool -- the
+-- fan-out (cavity 'q'/'p') and the basketless-line write (cavity 'm') all
+-- write LotId NULL, so a per-LOT DELETE cannot reach them, and this proc
+-- (unlike RejectEvent_Record) never returns a per-row NewId to capture --
+-- before the shared teardown below drops the ToolCavity/Tool rows they FK to.
+DELETE re FROM Workorder.RejectEvent re
+JOIN Tools.ToolCavity tc ON tc.Id = re.ToolCavityId
+WHERE tc.ToolId = @ToolId AND re.LotId IS NULL;
+GO
+
 -- ---- teardown ----
 DECLARE @CsLots TABLE (Id BIGINT PRIMARY KEY);
 INSERT INTO @CsLots (Id) SELECT Id FROM Lots.Lot WHERE LotName LIKE N'CS-%';
