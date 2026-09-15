@@ -1,24 +1,40 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetTrimStorageQueueForLine.sql
 -- Author:      Blue Ridge Automation
--- Version:     1.0
--- Description: Machining IN queue read under the Trim-Storage model (2026-07-23). Trim OUT
---              deposits every trimmed LOT into a neutral per-shop Trim Storage
---              (InventoryLocation def 14 under a TRIM* ProductionArea); the machining line
---              is no longer chosen at Trim. This proc returns, for ONE machining line, the
---              open LOTs sitting in ANY trim storage whose next-pending route step is
---              MachiningIn AND whose Item is ELIGIBLE at that line (ancestor cascade). A part
---              eligible at two lines appears in both lines' reads; the first claim moves it
---              onto its line (MachiningIn_RecordPick) and it drops off the others.
+-- Modified:    2026-09-15
+-- Version:     2.0
+-- Description: THE Machining IN queue read for ONE machining line.
 --
---              Same column shape as Lots.Lot_GetWipQueueByLocation v3.0 so the view row
+--              *** THE NAME IS HISTORIC. This proc no longer looks at Trim Storage. ***
+--              It was written for the Trim-Storage model (2026-07-23), when every part
+--              went through a trim shop and "claimable stock" and "stock in Trim Storage"
+--              were the same set. Some oil pans skip trim entirely; their route is
+--              DieCast -> MachiningIn -> AssemblyOut and a released basket sits in WHSE.
+--              The name is kept only because renaming it would force an edit to the
+--              MachiningIn view's binding expression (a Designer change). See spec
+--              2026-09-15-machining-in-route-driven-claim-design.md section 5.
+--
+--              v2.0 (2026-09-15): THE ROUTE IS THE GATE. Returns the LOTs -- wherever
+--              they physically sit -- whose next PENDING route step is MachiningIn and
+--              whose Item is ELIGIBLE at @LineLocationId (ancestor cascade). Trim Storage
+--              is now just one of several places such a LOT may be; WHSE is another.
+--
+--              A part eligible at two lines appears in both lines' reads. Claiming it
+--              (Workorder.MachiningIn_RecordPick) writes the MachiningIn ProductionEvent,
+--              which SATISFIES that Advance step -- so the LOT drops off every line's
+--              read by route, not by having been moved out of a storage location.
+--
+--              @StorageLocationId is ACCEPTED AND IGNORED (v2.0). It restricted the read
+--              to one shop's trim store under the old model and is meaningless now; it
+--              is retained so the named query's signature stays byte-identical. Compare
+--              @DestinationCellLocationId on Workorder.TrimOut_Record.
+--
+--              Same column shape as Lots.Lot_GetWipQueueByLocation so the view row
 --              transform is unchanged. Read proc: no OUTPUT params, single result set,
---              empty set = nothing to show (FDS-11-011). Pending logic mirrors the WIP
---              queue (Advance pending until a matching ProductionEvent; ConsumeMint always
---              pending while open; OriginMint never pending). FIFO by arrival.
---
---              @StorageLocationId NULL => all trim-storage locations (both shops); pass an
---              explicit id to restrict to one shop's storage.
+--              empty set = nothing to show (FDS-11-011). Pending logic lives in
+--              Lots.ufn_NextPendingRouteStep (Advance pending until a matching
+--              ProductionEvent; ConsumeMint always pending while open; OriginMint never
+--              pending). FIFO by CastDate then arrival.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.Lot_GetTrimStorageQueueForLine
     @LineLocationId    BIGINT,
@@ -27,29 +43,28 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    ;WITH TrimStores AS (
-        SELECT s.Id
-        FROM Location.Location s
-        WHERE s.DeprecatedAt IS NULL
-          AND ( (@StorageLocationId IS NOT NULL AND s.Id = @StorageLocationId)
-                OR (@StorageLocationId IS NULL
-                    AND s.LocationTypeDefinitionId = 14   -- InventoryLocation
-                    AND EXISTS (SELECT 1 FROM Location.Location a
-                                WHERE a.Id = s.ParentLocationId AND a.Code LIKE N'TRIM%')) )
-    ),
-    LineAncestors AS (
+    ;WITH LineAncestors AS (
         SELECT LocationId FROM Location.ufn_AncestorLocationIds(@LineLocationId)
     ),
     LastMove AS (
         SELECT m.LotId, MAX(m.MovedAt) AS LastMovementAt FROM Lots.LotMovement m GROUP BY m.LotId
     ),
-    -- Open LOTs in a trim store. Status + location filtering stays HERE (this
-    -- proc excludes only Closed); the shared pending-step function filters neither.
+    -- Candidate LOTs, ANYWHERE. v2.0 (2026-09-15): location is no longer a gate --
+    -- see the header. Status filtering stays HERE (the shared pending-step function
+    -- filters neither status nor location):
+    --   Closed -> finished, nothing pending.
+    --   Open   -> a die-cast basket still being FILLED. It must not be claimable, and
+    --             without this it WOULD surface on a trim-skipping route (DieCast is
+    --             OriginMint, so MachiningIn is already "next" while the basket fills).
+    --             Mirrors Lot_GetWipQueueByLocation, which excludes both.
+    -- Held/blocked LOTs are deliberately NOT excluded: the Machining IN screen shows
+    -- them and counts them in its "On Hold" indicator. MachiningIn_RecordPick refuses
+    -- the claim, which is the intended visible-but-not-claimable behaviour.
     Eligible AS (
         SELECT l.Id AS LotId
         FROM Lots.Lot l
-        INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
-        WHERE l.CurrentLocationId IN (SELECT Id FROM TrimStores)
+        INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
+                                        AND sc.Code NOT IN (N'Closed', N'Open')
     )
     SELECT
         l.Id, l.LotName, l.ItemId,
