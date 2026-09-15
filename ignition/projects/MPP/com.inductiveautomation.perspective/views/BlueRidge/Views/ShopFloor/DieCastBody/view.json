@@ -36,7 +36,8 @@
       "pending": 0,
       "scrap": 0,
       "shots": 0,
-      "unaccounted": 0
+      "unaccounted": 0,
+      "shotsNote": ""
     },
     "defaultShiftId": null,
     "counterContext": {
@@ -2028,7 +2029,7 @@
                               "style": {
                                 "classes": "pf-kpi-label"
                               },
-                              "text": "Shots"
+                              "text": "Parts"
                             }
                           },
                           {
@@ -2054,6 +2055,43 @@
                               },
                               "text": "0"
                             }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "version": 0,
+                            "meta": {
+                              "name": "TotShotsNote"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "{view.custom.reconcile.shotsNote}"
+                                  }
+                                }
+                              },
+                              "position.display": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "len({view.custom.reconcile.shotsNote}) \u003e 0"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "text": "",
+                              "style": {
+                                "classes": "pf-kpi-sub",
+                                "fontFamily": "var(--mpp-font-mono)",
+                                "whiteSpace": "nowrap"
+                              }
+                            },
+                            "custom": {}
                           }
                         ],
                         "position": {
@@ -2626,7 +2664,7 @@
         {
           "name": "recomputeTotals",
           "params": [],
-          "script": "\timport java.lang\n\t# The totals ARE the equation (spec 6.3):\n\t#     Shots - Good - Scrap \u003d Unaccounted,   plus a separate Pending.\n\t# Shots is RAW and die-wide is charged to Scrap, so raw \u003d net + die-wide\n\t# balances without double counting. Cavities with NO basket sit OUTSIDE\n\t# the identity (3.5): their shots are Pending, never Unaccounted.\n\t# Preview arithmetic only -- DieCastShiftOutput_Record is authoritative.\n\t_u \u003d BlueRidge.Common.Util.extractQualifiedValues\n\trows \u003d _u(self.view.custom.breakdown) or []\n\tentries \u003d _u(self.view.custom.breakdownEntries) or {}\n\tdw \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.dieWideShots) or 0\n\ttry:\n\t\treasons \u003d BlueRidge.Workorder.DieCast.listVarianceReasons() or []\n\texcept (Exception, java.lang.Exception):\n\t\treasons \u003d []\n\tneedsNote \u003d {}\n\tfor o in reasons:\n\t\to \u003d o or {}\n\t\tneedsNote[\"%s\" % o.get(\"value\")] \u003d bool(o.get(\"requiresNote\"))\n\tshots \u003d 0\n\tgood \u003d 0\n\tscrap \u003d 0\n\tpendingShots \u003d 0\n\tneed \u003d 0\n\tactive \u003d 0\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\tif (\"%s\" % (r.get(\"CavityStatusCode\") or \"Active\")) \u003d\u003d \"Active\":\n\t\t\tactive +\u003d 1\n\t\te \u003d _u(entries.get(\"%s\" % r.get(\"ToolCavityId\"))) or {}\n\t\ts \u003d 0\n\t\tfor sl in (_u(e.get(\"scrapLines\")) or []):\n\t\t\tsl \u003d sl or {}\n\t\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif sl.get(\"defectCodeId\") is not None and q:\n\t\t\t\ts +\u003d q\n\t\tscrap +\u003d s\n\t\tnewShots \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"NewShots\")) or 0\n\t\tisPending \u003d r.get(\"IsPending\")\n\t\tif isPending is None:\n\t\t\tisPending \u003d (r.get(\"LotId\") is None)\n\t\tif isPending:\n\t\t\tpendingShots +\u003d newShots\n\t\t\tcontinue\n\t\tif not r.get(\"IsOpen\"):\n\t\t\t# released earlier this shift: scrap only, no shots left to account\n\t\t\tcontinue\n\t\trowDw \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"DieWideShots\"))\n\t\tif rowDw is None:\n\t\t\trowDw \u003d dw\n\t\tnet \u003d newShots - rowDw\n\t\tif net \u003c 0:\n\t\t\tnet \u003d 0\n\t\tg \u003d BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif g is None:\n\t\t\tg \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\tshots +\u003d newShots\n\t\tgood +\u003d g\n\t\tv \u003d net - g - s\n\t\tif v !\u003d 0:\n\t\t\trid \u003d e.get(\"varianceReasonId\")\n\t\t\tnote \u003d (\"%s\" % (e.get(\"varianceNote\") or \"\")).strip()\n\t\t\tif rid is None or (needsNote.get(\"%s\" % rid) and not note):\n\t\t\t\tneed +\u003d 1\n\t# D8: the fan-out lands on ACTIVE CAVITIES, so that is what it is charged to\n\tscrap +\u003d dw * active\n\tmsg \u003d \"\"\n\tif need \u003d\u003d 1:\n\t\tmsg \u003d \"1 cavity needs a reason\"\n\telif need \u003e 1:\n\t\tmsg \u003d \"%s cavities need a reason\" % need\n\t# 3.7: the gate is on DISPOSITIONS, never on the numbers. The operator is\n\t# never asked to make the numbers agree, only to say what happened -- and\n\t# Unknown always discharges that. A clean shift never sees the gate.\n\tself.view.custom.reconcile \u003d {\n\t\t\"shots\": shots, \"good\": good, \"scrap\": scrap,\n\t\t\"unaccounted\": shots - good - scrap, \"pending\": pendingShots,\n\t\t\"needCount\": need, \"gateMessage\": msg,\n\t\t\"canSubmit\": bool(need \u003d\u003d 0 and len(rows) \u003e 0)}"
+          "script": "\timport java.lang\n\t# The totals ARE the equation (spec 6.3):\n\t#     Shots - Good - Scrap \u003d Unaccounted,   plus a separate Pending.\n\t# Shots is RAW and die-wide is charged to Scrap, so raw \u003d net + die-wide\n\t# balances without double counting. Cavities with NO basket sit OUTSIDE\n\t# the identity (3.5): their shots are Pending, never Unaccounted.\n\t# Preview arithmetic only -- DieCastShiftOutput_Record is authoritative.\n\t_u \u003d BlueRidge.Common.Util.extractQualifiedValues\n\trows \u003d _u(self.view.custom.breakdown) or []\n\tentries \u003d _u(self.view.custom.breakdownEntries) or {}\n\tdw \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.dieWideShots) or 0\n\ttry:\n\t\treasons \u003d BlueRidge.Workorder.DieCast.listVarianceReasons() or []\n\texcept (Exception, java.lang.Exception):\n\t\treasons \u003d []\n\tneedsNote \u003d {}\n\tfor o in reasons:\n\t\to \u003d o or {}\n\t\tneedsNote[\"%s\" % o.get(\"value\")] \u003d bool(o.get(\"requiresNote\"))\n\tshots \u003d 0\n\tnetsSeen \u003d {}\n\taccounted \u003d 0\n\tgood \u003d 0\n\tscrap \u003d 0\n\tpendingShots \u003d 0\n\tneed \u003d 0\n\tactive \u003d 0\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\tif (\"%s\" % (r.get(\"CavityStatusCode\") or \"Active\")) \u003d\u003d \"Active\":\n\t\t\tactive +\u003d 1\n\t\te \u003d _u(entries.get(\"%s\" % r.get(\"ToolCavityId\"))) or {}\n\t\ts \u003d 0\n\t\tfor sl in (_u(e.get(\"scrapLines\")) or []):\n\t\t\tsl \u003d sl or {}\n\t\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(sl.get(\"quantity\"))\n\t\t\tif sl.get(\"defectCodeId\") is not None and q:\n\t\t\t\ts +\u003d q\n\t\tscrap +\u003d s\n\t\tnewShots \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"NewShots\")) or 0\n\t\tisPending \u003d r.get(\"IsPending\")\n\t\tif isPending is None:\n\t\t\tisPending \u003d (r.get(\"LotId\") is None)\n\t\tif isPending:\n\t\t\tpendingShots +\u003d newShots\n\t\t\tcontinue\n\t\tif not r.get(\"IsOpen\"):\n\t\t\t# released earlier this shift: scrap only, no shots left to account\n\t\t\tcontinue\n\t\trowDw \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"DieWideShots\"))\n\t\tif rowDw is None:\n\t\t\trowDw \u003d dw\n\t\tnet \u003d newShots - rowDw\n\t\tif net \u003c 0:\n\t\t\tnet \u003d 0\n\t\tg \u003d BlueRidge.Common.Util.toIntOrNone(e.get(\"good\"))\n\t\tif g is None:\n\t\t\tg \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"ProposedGood\")) or 0\n\t\tshots +\u003d newShots\n\t\t# every accounted cavity normally sees the SAME shots; keep the\n\t\t# distinct values so the sub-line can only claim one when it is true\n\t\tnetsSeen[net] \u003d 1\n\t\taccounted +\u003d 1\n\t\tgood +\u003d g\n\t\tv \u003d net - g - s\n\t\tif v !\u003d 0:\n\t\t\trid \u003d e.get(\"varianceReasonId\")\n\t\t\tnote \u003d (\"%s\" % (e.get(\"varianceNote\") or \"\")).strip()\n\t\t\tif rid is None or (needsNote.get(\"%s\" % rid) and not note):\n\t\t\t\tneed +\u003d 1\n\t# D8: the fan-out lands on ACTIVE CAVITIES, so that is what it is charged to\n\tscrap +\u003d dw * active\n\tmsg \u003d \"\"\n\tif need \u003d\u003d 1:\n\t\tmsg \u003d \"1 cavity needs a reason\"\n\telif need \u003e 1:\n\t\tmsg \u003d \"%s cavities need a reason\" % need\n\t# 3.7: the gate is on DISPOSITIONS, never on the numbers. The operator is\n\t# never asked to make the numbers agree, only to say what happened -- and\n\t# Unknown always discharges that. A clean shift never sees the gate.\n\t# One press cycle fires every cavity, so the summed figure is PARTS, not\n\t# shots. State the shots it came from -- but only when a single figure is\n\t# actually true of every accounted cavity.\n\treading \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.counterReading) or 0\n\tif len(netsSeen) \u003d\u003d 1 and accounted \u003e 0:\n\t\tper \u003d list(netsSeen.keys())[0]\n\t\tshotsNote \u003d \"{:,} shots x {} cavities\".format(per, accounted)\n\telif reading \u003e 0:\n\t\tshotsNote \u003d \"from counter {:,}\".format(reading)\n\telse:\n\t\tshotsNote \u003d \"\"\n\tself.view.custom.reconcile \u003d {\n\t\t\"shotsNote\": shotsNote,\n\t\t\"shots\": shots, \"good\": good, \"scrap\": scrap,\n\t\t\"unaccounted\": shots - good - scrap, \"pending\": pendingShots,\n\t\t\"needCount\": need, \"gateMessage\": msg,\n\t\t\"canSubmit\": bool(need \u003d\u003d 0 and len(rows) \u003e 0)}"
         },
         {
           "name": "groupByPart",
