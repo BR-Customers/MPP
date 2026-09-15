@@ -27,8 +27,21 @@
 --            the basket to storage (Open -> Good), where it rejoins its route
 --            and appears in the Trim IN queue. No pieces are invented: the
 --            closing delta is fixed at 0 and no counter reading is read.
---   Void     The castings do not exist / were remelted. Corrects the count to
---            zero, then voids the basket (Open -> Scrap).
+--   Void     Voids an ALREADY-EMPTY basket (Open -> Scrap). It cannot empty a
+--            basket for you -- see the ordering note below.
+--
+-- ORDERING, and why it is not the obvious one.
+--   Lots.Lot_RectifyPieceCount refuses any LOT whose status is Open, Closed, or
+--   blocking (R__Lots_Lot_RectifyPieceCount.sql line 154). So the correction
+--   CANNOT happen while the basket is still Open. Close therefore RELEASES
+--   FIRST -- which makes the LOT Good at storage -- and rectifies after. The
+--   release carries @FinalPieceDelta = 0, so nothing is credited in between and
+--   the count the rectify then sets is the count that sticks.
+--
+--   The same guard is why Void only accepts a basket that is already empty:
+--   zeroing it would need a rectify, and a rectify needs it not to be Open.
+--   A non-empty basket that should be scrapped is a Close followed by a scrap
+--   entry against the released LOT, not a Void.
 --
 -- @CorrectedPieceCount  The real counted quantity, when the floor has one.
 --                       NULL keeps the current PieceCount.
@@ -177,6 +190,15 @@ BEGIN RAISERROR(N'LOT has descendants. Stop and review before closing.', 16, 1);
 IF @Mode = N'Close' AND ISNULL(@CorrectedPieceCount, @PieceCount) <= 0
 BEGIN RAISERROR(N'Close needs a positive piece count. Use Void for an empty basket.', 16, 1); RETURN; END
 
+-- Void cannot empty a basket: zeroing it needs a rectify, and a rectify refuses
+-- an Open LOT. A non-empty basket that should be scrapped is a Close followed by
+-- a scrap entry against the released LOT.
+IF @Mode = N'Void' AND @PieceCount > 0
+BEGIN
+    RAISERROR(N'Void only accepts an empty basket; this one holds %d pieces. Use Close, then record scrap against the released LOT.', 16, 1, @PieceCount);
+    RETURN;
+END
+
 -- ------------------------------------------------------------
 -- 3. THE WORK  (transactional; rolled back unless @Commit = 1)
 -- ------------------------------------------------------------
@@ -188,32 +210,13 @@ IF @Mode = N'Void' SET @TargetCount = 0;
 BEGIN TRANSACTION;
 BEGIN TRY
 
-    -- 3a. Rectify when the count changes, OR when the two columns disagree.
-    --     Lot_RectifyPieceCount writes PieceCount AND InventoryAvailable, so it
-    --     is also the repair for the divergence.
-    IF @TargetCount <> @PieceCount OR @PieceCount <> @InvAvail
-    BEGIN
-        DELETE FROM @R;
-        INSERT INTO @R
-        EXEC Lots.Lot_RectifyPieceCount
-            @LotId              = @LotId,
-            @NewPieceCount      = @TargetCount,
-            @Reason             = @Reason,
-            @AppUserId          = @AppUserId,
-            @TerminalLocationId = @TerminalLocationId;
-
-        SELECT @St = Status, @Msg = Message FROM @R;
-        PRINT N'Rectify -> ' + CAST(@St AS NVARCHAR(1)) + N' : ' + ISNULL(@Msg, N'');
-        IF @St = 0 BEGIN RAISERROR(N'Rectify refused: %s', 16, 1, @Msg); END
-    END
-    ELSE PRINT N'Rectify -> skipped (count unchanged, columns already agree).';
-
-    -- 3b. Close it out.
+    -- 3a. Close it out FIRST. Rectify cannot touch an Open LOT (see the header),
+    --     so the status has to move before the numbers can be corrected.
     IF @Mode = N'Close'
     BEGIN
         -- @FinalPieceDelta fixed at 0 and NO counter reading: this basket is
-        -- being settled where it stands, not credited. Passing a reading here
-        -- would credit (reading - cavity watermark) and invent castings.
+        -- being settled where it stands, not credited. Passing a reading would
+        -- credit (reading - cavity watermark) and invent castings.
         DELETE FROM @R;
         INSERT INTO @R
         EXEC Lots.DieCastLot_Release
@@ -244,7 +247,33 @@ BEGIN TRY
         IF @St = 0 BEGIN RAISERROR(N'Void refused: %s', 16, 1, @Msg); END
     END
 
-    -- 3c. After-state, inside the transaction so the dry run shows it too.
+    -- 3b. Re-read: the release may have moved the numbers, and the rectify has
+    --     to act on what is actually there now, not on what was there before.
+    SELECT @PieceCount = PieceCount, @InvAvail = InventoryAvailable
+    FROM Lots.Lot WHERE Id = @LotId;
+
+    -- 3c. Correct the count, and/or realign the two columns. Runs on a Good LOT
+    --     now, which the guard accepts. Lot_RectifyPieceCount writes PieceCount
+    --     AND InventoryAvailable, so it is the repair for a divergence even when
+    --     the count itself does not change.
+    IF @Mode = N'Close' AND (@TargetCount <> @PieceCount OR @PieceCount <> @InvAvail)
+    BEGIN
+        DELETE FROM @R;
+        INSERT INTO @R
+        EXEC Lots.Lot_RectifyPieceCount
+            @LotId              = @LotId,
+            @NewPieceCount      = @TargetCount,
+            @Reason             = @Reason,
+            @AppUserId          = @AppUserId,
+            @TerminalLocationId = @TerminalLocationId;
+
+        SELECT @St = Status, @Msg = Message FROM @R;
+        PRINT N'Rectify -> ' + CAST(@St AS NVARCHAR(1)) + N' : ' + ISNULL(@Msg, N'');
+        IF @St = 0 BEGIN RAISERROR(N'Rectify refused: %s', 16, 1, @Msg); END
+    END
+    ELSE PRINT N'Rectify -> skipped (count unchanged, columns already agree).';
+
+    -- 3d. After-state, inside the transaction so the dry run shows it too.
     SELECT N'AFTER' AS Section, l.LotName, sc.Code AS Status,
            l.PieceCount, l.InventoryAvailable,
            l.InventoryAvailable - l.PieceCount AS Divergence,
