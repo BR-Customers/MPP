@@ -382,51 +382,6 @@
           },
           {
             "meta": {
-              "name": "DieLifePill",
-              "tooltip": {
-                "text": "Shots on this die against its configured shot limit"
-              }
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "config": {
-                    "expression": "!isNull({view.custom.activeTool.ToolId})"
-                  },
-                  "type": "expr"
-                }
-              },
-              "props.style.classes": {
-                "binding": {
-                  "config": {
-                    "expression": "if(!isNull({view.custom.shotStatus.ShotLimit}) && {view.custom.shotStatus.ShotCount} \u003e\u003d 0.9 * {view.custom.shotStatus.ShotLimit}, \"pf-pill pf-pill-warn\", \"pf-pill\")"
-                  },
-                  "type": "expr"
-                }
-              },
-              "props.text": {
-                "binding": {
-                  "config": {
-                    "expression": "toStr({view.custom.shotStatus.ShotCount}) + if(isNull({view.custom.shotStatus.ShotLimit}), \"\", \" / \" + toStr({view.custom.shotStatus.ShotLimit})) + \" shots\""
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-pill",
-                "fontFamily": "var(--mpp-font-mono)"
-              },
-              "text": ""
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
               "name": "HeaderSpacer"
             },
             "position": {
