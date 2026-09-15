@@ -1,7 +1,7 @@
 # Plant-Floor Die Mount Popup — Design Spec
 
 **Date:** 2026-09-14
-**Status:** Approved — all three §9 decisions closed by Jacques on 2026-09-14. Ready to build.
+**Status:** Built and committed 2026-09-14 (`3616026e` SQL + Ignition, `bf377911` DieCastBody). All three §9 decisions closed and §6.3's prerequisite confirmed. Outstanding: the §10 runtime click-through at a die cast terminal.
 **Author:** Blue Ridge (with Claude)
 **Arc / Phase:** Arc 2 (Plant Floor) — Die Cast.
 **Origin:** Jacques, 2026-09-14. The Die Cast screen's **Tool Config** button navigates to a different Perspective project; an operator doing a die changeover at the press cannot practically use it.
@@ -264,11 +264,13 @@ With the guard in place a die can no longer be unmounted while it holds open bas
 
 **What P4 gives up against P2**, stated plainly so nobody re-litigates it later: a press operator can no longer *look* at what die is mounted and what could go on it without a supervisor. That information is on the Die Cast screen's tool row already, so the loss is the eligible-die list only.
 
-### 6.3 The standing prerequisite
+### 6.3 The prerequisite — CONFIRMED 2026-09-14
 
-**Do die setters have AD accounts?** P4 requires AD at the door, so if they do not hold accounts the popup solves the *navigation* problem while preserving the *authorization* problem — which would be the worst outcome of this change, because it would look solved. There is no PIN-plus-role posture to fall back on; building one is a real piece of work and is not in this spec.
+**Do die setters have AD accounts? Yes** (Jacques, 2026-09-14). P4 is therefore sound as built: the people who actually perform a changeover can authorize one at the press, and the popup removes the navigation problem without leaving an authorization problem behind it.
 
-This is a fact about MPP's Active Directory, not a design choice, and the decision on posture does not settle it. **Confirm before the FAT sign-off on this screen**, and if the answer is no, the change that follows is a new authorization tier, not a tweak to this popup.
+The question mattered because the failure would have been invisible. P4 requires AD at the door, so had die setters held only PINs, this change would have relocated the Config Tool's authorization wall to the press while *looking* solved — and there is no PIN-plus-role tier to fall back on, since nothing in the system reads `ignitionRole` as an authorization gate. Building one would have been a separate piece of work, not a tweak to this popup.
+
+Recorded here rather than left in a meeting note because it is a fact about MPP's Active Directory that no part of the repo reveals, and it is load-bearing for **every** future decision to put an AD gate on a shop-floor action. If the population of AD account holders ever narrows, this posture is what has to be revisited first.
 
 ---
 
@@ -395,7 +397,7 @@ A changeover is Release then Mount, and both run inside the single window the bu
 ## 9. Decisions — closed 2026-09-14 (Jacques)
 
 **1. Auth posture → P4, gate at the door (§6.2).**
-Not the drafted P2. The button is always pressable; pressing it raises `ElevationModal` when no window is open, and the popup opens only once AD has passed. One replay entry, `"DieMount": "dieMountRequested"`, with the `open` handler on `DieCastBody` rather than on the popup. Mount and Release keep a cheap `isElevated` re-assert so a lapsed window cannot ride the gate's earlier decision into a mutation. Cost of the posture: a press operator can no longer browse the eligible-die list without a supervisor. **Standing prerequisite, unchanged by this decision:** die setters must hold AD accounts — confirm before FAT sign-off (§6.3).
+Not the drafted P2. The button is always pressable; pressing it raises `ElevationModal` when no window is open, and the popup opens only once AD has passed. One replay entry, `"DieMount": "dieMountRequested"`, with the `open` handler on `DieCastBody` rather than on the popup. Mount and Release keep a cheap `isElevated` re-assert so a lapsed window cannot ride the gate's earlier decision into a mutation. Cost of the posture: a press operator can no longer browse the eligible-die list without a supervisor. **Prerequisite, confirmed 2026-09-14:** die setters hold AD accounts, so P4 authorizes the people who actually perform the changeover rather than walling them out (§6.3). No open questions remain on this spec.
 
 **2. Open baskets on release → block, no override, and close the hole (§5.4, §5.4.1).**
 `ToolAssignment_Release` rejects while the die holds an `Open` LOT, in SQL, so the Config Tool's `CellMountCard` inherits it. No supervisor-elevated override: it cannot be a guard clause with a signature on it — it has to say what becomes of the baskets, and every honest answer to that is a subsystem (§5.3.1). The block is acceptable only because the operator can always clear it, and **that was not true when the spec was drafted** — a basket on a deprecated cavity, or one with a `NULL` `ToolCavityId`, would have been counted by the guard and invisible on the screen. So the guard counts only what `Lot_GetOpenByTool` shows (cavity join), and `ToolCavity_Deprecate` gains the matching rejection. Governing rule, recorded for the §5.5 follow-up: *whatever the guard counts, the screen must show.*
@@ -453,4 +455,5 @@ The first two sets must be resolved before the guard ships. The third should be 
 | Version | Date | Author | Change |
 |---|---|---|---|
 | 0.1 | 2026-09-14 | Blue Ridge (with Claude) | Initial draft. Three decisions open (§9). |
+| 0.3 | 2026-09-14 | Blue Ridge (with Claude) | Built and committed — `3616026e` (4 procs, 4 test suites, Core NQ + entity scripts, DieMount popup; 246/246 tests, 39 new) and `bf377911` (DieCastBody repointed). §6.3's prerequisite **confirmed**: die setters hold AD accounts, so P4 authorizes the people who perform the changeover. No open questions remain. Only the §10 runtime click-through is outstanding. |
 | 0.2 | 2026-09-14 | Blue Ridge (with Claude) | All three §9 decisions closed by Jacques. **(1)** Auth posture is **P4 — gate at the door**, not the drafted P2: the button raises `ElevationModal` and the popup opens only after AD passes; replay code `"DieMount": "dieMountRequested"` with the `open` handler on `DieCastBody`, an `intent` discriminator in the stashed params, and an `isElevated` re-assert kept on Mount / Release (§6.2, §7.1, §7.2, §8). §6.3 recast from a gating question to a standing prerequisite. **(2)** Open baskets — **block, no override**; §5.3 gains an override row and §5.3.1 the reasoning against it. §5.4.1 is new and load-bearing: verification against the live procs showed the block's "always resolvable on the same screen" premise was **false** — `Lot.ToolCavityId` is nullable, `Lot_GetOpenByTool` v2.1 hides baskets on deprecated cavities, and `ToolCavity_Deprecate` v1.0 has no open-LOT guard. The release guard is therefore cavity-scoped to what the screen shows, and `ToolCavity_Deprecate` → v1.1 gains the matching rejection (§5.4, §7.3). Governing rule recorded and the §5.5 follow-up coupled to it. **(3)** Eligibility proc as drafted; Config Tool link **removed outright**, no footer link (§7.2). §10 verification extended: SQL cases 4/5/7 new, click-through rewritten for P4, data check gains the deprecated-cavity population. |
