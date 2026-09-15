@@ -2,7 +2,7 @@
 -- Procedure:   Tools.ToolCavity_SaveAll
 -- Author:      Blue Ridge Automation
 -- Created:     2026-06-08
--- Version:     1.3
+-- Version:     1.4
 --
 -- Description:
 --   Bundled SaveAll for a Tool's cavities. Insert + update ONLY -- cavities
@@ -17,6 +17,18 @@
 --   rows, and the collision check is run against the PROJECTED post-save
 --   state so an ItemId edit that moves a cavity onto an occupied letter is
 --   caught as well as a colliding new row.
+--
+--   D13 (design doc section 4.6): a part IS required, but the requirement is
+--   ROW-SCOPED, not blanket. @RowsJson is a bundled reconcile carrying EVERY
+--   cavity on the die, so a blanket "ItemId required" check would reject a
+--   save any time an untouched sibling happens to be unmapped. Instead, only
+--   a row this save is CREATING (Id IS NULL) or CHANGING (any incoming value
+--   differs from the current row) is rejected for a NULL ItemId. An untouched
+--   legacy unmapped row survives with its NULL intact -- the legacy backlog
+--   drains as dies are touched, not in one blocking migration. See
+--   Tools.Tool_Duplicate, which deliberately keeps writing ItemId = NULL when
+--   a source cavity's part has since been deprecated -- that duplicate is a
+--   direct INSERT, never routed through this proc, so it is unaffected.
 --
 -- Parameters: @ToolId BIGINT, @RowsJson NVARCHAR(MAX), @AppUserId BIGINT
 --   RowsJson element: {Id, CavityCode, Description, StatusCode, ItemId}
@@ -55,6 +67,13 @@
 --                      that moves a cavity onto a letter that part already
 --                      uses. That second rejection is new; per-die
 --                      uniqueness could not express it.
+--   2026-09-14 - 1.4 - D13 (design doc section 4.6). A row this save is
+--                      creating or changing must carry a part: reject when
+--                      ItemId is NULL and (Id IS NULL, or any of ItemId /
+--                      StatusCodeId / Description differs from the row's
+--                      current values). Row-scoped deliberately -- an
+--                      untouched unmapped sibling is not evaluated and keeps
+--                      its NULL. Message names the offending cavity letters.
 -- =============================================
 CREATE OR ALTER PROCEDURE Tools.ToolCavity_SaveAll
     @ToolId    BIGINT,
@@ -184,6 +203,53 @@ BEGIN
             WHERE i.Id IS NOT NULL AND c.CavityCode <> i.CavityCode)
         BEGIN
             SET @Message = N'Cavity code is immutable on existing cavities.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
+        END
+
+        -- D13 (4.6): a part is required on any row this save is CREATING or
+        -- CHANGING. Row-scoped -- an untouched existing row (present in the
+        -- payload with every value identical to what is already stored) is
+        -- NOT evaluated here even when it is unmapped, because @RowsJson is a
+        -- bundled reconcile carrying every cavity on the die and a blanket
+        -- check would reject the whole save over an untouched sibling. The
+        -- CavityCode-immutable check above guarantees CavityCode itself
+        -- cannot differ for a matched existing row, so it is not compared.
+        IF EXISTS (
+            SELECT 1 FROM @Incoming i
+            WHERE i.ItemId IS NULL
+              AND (
+                    i.Id IS NULL
+                    OR EXISTS (
+                        SELECT 1 FROM Tools.ToolCavity c
+                        WHERE c.Id = i.Id
+                          AND (
+                                ISNULL(c.ItemId, -1) <> ISNULL(i.ItemId, -1)
+                             OR c.StatusCodeId <> i.StatusCodeId
+                             OR ISNULL(c.Description, N'') <> ISNULL(i.Description, N'')
+                          )
+                    )
+              )
+        )
+        BEGIN
+            DECLARE @NoPartCavities NVARCHAR(200) = (
+                SELECT STRING_AGG(i.CavityCode, N', ') WITHIN GROUP (ORDER BY i.CavityCode)
+                FROM @Incoming i
+                WHERE i.ItemId IS NULL
+                  AND (
+                        i.Id IS NULL
+                        OR EXISTS (
+                            SELECT 1 FROM Tools.ToolCavity c
+                            WHERE c.Id = i.Id
+                              AND (
+                                    ISNULL(c.ItemId, -1) <> ISNULL(i.ItemId, -1)
+                                 OR c.StatusCodeId <> i.StatusCodeId
+                                 OR ISNULL(c.Description, N'') <> ISNULL(i.Description, N'')
+                              )
+                        )
+                  )
+            );
+            SET @Message = N'Cavity ' + ISNULL(@NoPartCavities, N'') + N' requires a part before it can be saved.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ToolCavity', @EntityId=@ToolId, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END

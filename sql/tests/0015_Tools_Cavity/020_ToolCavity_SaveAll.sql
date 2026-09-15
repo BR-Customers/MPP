@@ -14,12 +14,29 @@ BEGIN
 END
 -- Clear any cavities from prior runs (hard delete: test isolation only)
 DELETE FROM Tools.ToolCavity WHERE ToolId = @ToolId;
+
+-- Dedicated part for Tests 1-3, deliberately NOT the MIN(Id)/second-MIN(Id)
+-- Parts.Item pool Tests 7-14 use (@P1/@P2 below) -- reusing that pool here
+-- would map this tool's cavity 'a' onto @P1 and collide with Test 7's own
+-- attempt to add cavity 'a' on @P1 on the same tool.
+DECLARE @SeedPartId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'SA-CAV-SEED-PART');
+IF @SeedPartId IS NULL
+BEGIN
+    CREATE TABLE #SP (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+    INSERT INTO #SP EXEC Parts.Item_Create
+        @ItemTypeId = 4, @PartNumber = N'SA-CAV-SEED-PART', @Description = N'Cavity SaveAll seed part',
+        @UomId = 1, @AppUserId = 1;
+    DROP TABLE #SP;
+END
 GO
 
 -- Test 1: add cavity 'a' (Active) -> Status=1, one active row
+-- D13 (4.6): a new cavity requires a part, so this row carries an ItemId.
 DECLARE @S BIT, @SStr NVARCHAR(1);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-TOOL');
-DECLARE @Json NVARCHAR(MAX) = N'[{"Id":null,"CavityCode":"a","Description":"Cav one","StatusCode":"Active"}]';
+DECLARE @SeedItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'SA-CAV-SEED-PART');
+DECLARE @Json NVARCHAR(MAX) = N'[{"Id":null,"CavityCode":"a","Description":"Cav one","StatusCode":"Active","ItemId":'
+    + CAST(@SeedItemId AS NVARCHAR(20)) + N'}]';
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R1 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R1; DROP TABLE #R1;
@@ -31,10 +48,14 @@ EXEC test.Assert_IsEqual @TestName=N'[CavSaveAdd] One active cavity', @Expected=
 GO
 
 -- Test 2: change 'a' to Scrapped -> Status=1, status persists
+-- D13: the row is changing (status), so its existing ItemId must be echoed
+-- back -- a full-row resave, matching how the editor sends the whole row.
 DECLARE @S BIT, @SStr NVARCHAR(1);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-TOOL');
 DECLARE @CavId BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'a' AND DeprecatedAt IS NULL);
-DECLARE @Json NVARCHAR(MAX) = N'[{"Id":' + CAST(@CavId AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Cav one","StatusCode":"Scrapped"}]';
+DECLARE @CavItemId BIGINT = (SELECT ItemId FROM Tools.ToolCavity WHERE Id=@CavId);
+DECLARE @Json NVARCHAR(MAX) = N'[{"Id":' + CAST(@CavId AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Cav one","StatusCode":"Scrapped","ItemId":'
+    + CAST(@CavItemId AS NVARCHAR(20)) + N'}]';
 CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R2 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R2; DROP TABLE #R2;
@@ -52,7 +73,9 @@ GO
 DECLARE @S BIT, @SStr NVARCHAR(1);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-TOOL');
 DECLARE @CavId BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'a');
-DECLARE @Json NVARCHAR(MAX) = N'[{"Id":' + CAST(@CavId AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Cav one","StatusCode":"Active"}]';
+DECLARE @CavItemId BIGINT = (SELECT ItemId FROM Tools.ToolCavity WHERE Id=@CavId);
+DECLARE @Json NVARCHAR(MAX) = N'[{"Id":' + CAST(@CavId AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Cav one","StatusCode":"Active","ItemId":'
+    + CAST(@CavItemId AS NVARCHAR(20)) + N'}]';
 CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R3 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R3; DROP TABLE #R3;
@@ -199,6 +222,135 @@ DECLARE @S8 NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #X8);
 DROP TABLE #X8;
 EXEC test.Assert_IsEqual @TestName=N'[CavSaveItemMoveCollide] ItemId edit that collides with an existing code is rejected',
     @Expected=N'0', @Actual=@S8;
+GO
+
+-- =============================================
+-- Tests 15-19: D13 -- ToolCavity_SaveAll requires a part on rows this save
+-- touches (2026-09-14, v1.4). See docs/superpowers/specs/
+-- 2026-09-14-diecast-quantity-and-scrap-model-design.md section 4.6.
+--
+-- The validation is ROW-SCOPED: @RowsJson is a bundled reconcile carrying
+-- every cavity on the die, not just the edited one, so a blanket "ItemId
+-- required" check would reject a save whenever any pre-existing row is
+-- unmapped. Only a row this save CREATES or CHANGES is required to carry a
+-- part; an untouched legacy unmapped row survives with its NULL intact.
+-- =============================================
+DECLARE @D13Type BIGINT = (SELECT Id FROM Tools.ToolType WHERE Code = N'Die');
+DECLARE @D13Tool BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-D13' AND DeprecatedAt IS NULL);
+IF @D13Tool IS NULL
+BEGIN
+    DECLARE @D13ActiveStatus BIGINT = (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active');
+    INSERT INTO Tools.Tool (ToolTypeId, Code, Name, StatusCodeId, CreatedAt, CreatedByUserId)
+    VALUES (@D13Type, N'SA-CAV-D13', N'D13 part-required test tool', @D13ActiveStatus, SYSUTCDATETIME(), 1);
+    SET @D13Tool = SCOPE_IDENTITY();
+END
+DELETE FROM Tools.ToolCavity WHERE ToolId = @D13Tool;
+GO
+
+-- Test 15 / @v1: a new cavity with no part rejects
+DECLARE @T4 BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-D13');
+DECLARE @J9 NVARCHAR(MAX) = N'[{"Id":null,"CavityCode":"a","StatusCode":"Active"}]';
+CREATE TABLE #X9 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #X9 EXEC Tools.ToolCavity_SaveAll @ToolId=@T4, @RowsJson=@J9, @AppUserId=1;
+DECLARE @v1 NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #X9);
+DROP TABLE #X9;
+EXEC test.Assert_IsEqual @TestName = N'[D13] a new cavity with no part rejects', @Expected = N'0', @Actual = @v1;
+GO
+
+-- Seed for Tests 16-18: cavity 'a' mapped to a part, cavity 'b' unmapped
+-- (the shrinking legacy state). Direct insert -- this predates the D13 rule
+-- and models a row already in the database, not something authored through
+-- this proc.
+DECLARE @T4 BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-D13');
+DECLARE @D13Part BIGINT = (SELECT MIN(Id) FROM Parts.Item WHERE DeprecatedAt IS NULL);
+DECLARE @D13Active BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, ItemId, CreatedAt, CreatedByUserId)
+VALUES (@T4, N'a', @D13Active, @D13Part, SYSUTCDATETIME(), 1);
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, ItemId, CreatedAt, CreatedByUserId)
+VALUES (@T4, N'b', @D13Active, NULL, SYSUTCDATETIME(), 1);
+GO
+
+-- Test 16 / @v2: an existing row edited to no part rejects. Cavity 'a'
+-- currently carries a part; sending it back with ItemId omitted while also
+-- changing its status is a real edit that removes the part, not a no-op.
+DECLARE @T4 BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-D13');
+DECLARE @AId BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@T4 AND CavityCode=N'a' AND DeprecatedAt IS NULL);
+DECLARE @J10 NVARCHAR(MAX) = N'[{"Id":' + CAST(@AId AS NVARCHAR(20)) + N',"CavityCode":"a","StatusCode":"Scrapped"}]';
+CREATE TABLE #X10 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #X10 EXEC Tools.ToolCavity_SaveAll @ToolId=@T4, @RowsJson=@J10, @AppUserId=1;
+DECLARE @v2 NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #X10);
+DROP TABLE #X10;
+EXEC test.Assert_IsEqual @TestName = N'[D13] an existing row edited to no part rejects', @Expected = N'0', @Actual = @v2;
+GO
+
+-- Tests 17-18 / @v3 + @v4: THE REGRESSION GUARD. Editing the mapped row 'a'
+-- (status change) while the payload also carries the untouched unmapped
+-- sibling 'b' (echoed back with its own current values) must SAVE. A
+-- blanket check would reject this because 'b' has no part -- exactly the
+-- Tool_Duplicate-era failure (2026-09-10) this row-scoped design avoids.
+-- 'b' keeps its NULL.
+DECLARE @T4 BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-D13');
+DECLARE @AId BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@T4 AND CavityCode=N'a' AND DeprecatedAt IS NULL);
+DECLARE @BId BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@T4 AND CavityCode=N'b' AND DeprecatedAt IS NULL);
+DECLARE @AItemId BIGINT = (SELECT ItemId FROM Tools.ToolCavity WHERE Id=@AId);
+DECLARE @BStatusCode NVARCHAR(20) = (SELECT sc.Code FROM Tools.ToolCavity c INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id=c.StatusCodeId WHERE c.Id=@BId);
+DECLARE @J11 NVARCHAR(MAX) =
+    N'[{"Id":' + CAST(@AId AS NVARCHAR(20)) + N',"CavityCode":"a","StatusCode":"Scrapped","ItemId":' + CAST(@AItemId AS NVARCHAR(20)) + N'},'
+  + N'{"Id":' + CAST(@BId AS NVARCHAR(20)) + N',"CavityCode":"b","StatusCode":"' + @BStatusCode + N'"}]';
+CREATE TABLE #X11 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #X11 EXEC Tools.ToolCavity_SaveAll @ToolId=@T4, @RowsJson=@J11, @AppUserId=1;
+DECLARE @v3 NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #X11);
+DROP TABLE #X11;
+EXEC test.Assert_IsEqual @TestName = N'[D13] editing a mapped row saves with an unmapped sibling present', @Expected = N'1', @Actual = @v3;
+
+DECLARE @v4 NVARCHAR(1) = (SELECT CASE WHEN ItemId IS NULL THEN N'1' ELSE N'0' END FROM Tools.ToolCavity WHERE Id=@BId);
+EXEC test.Assert_IsEqual @TestName = N'[D13] the untouched unmapped row keeps its NULL', @Expected = N'1', @Actual = @v4;
+GO
+
+-- Test 19 / @v5: Tool_Duplicate of a deprecated-part cavity still succeeds.
+-- Tool_Duplicate INLINE-inserts cavities directly (never routes through
+-- ToolCavity_SaveAll -- see its header), so it is unaffected by the D13
+-- rule above; this is a confidence check that the two procs stay
+-- independent. Full deprecated-part coverage lives in
+-- sql/tests/0014_Tools_Tool/020_Tool_duplicate.sql Test 4b.
+-- Unguarded, unique codes -- matches the convention in
+-- sql/tests/0014_Tools_Tool/020_Tool_duplicate.sql, whose one-shot fixtures
+-- (DUP-ZRANK etc.) rely on the full DB rebuild Run-Tests.ps1 does before
+-- every run rather than an IF-NOT-EXISTS guard. Deprecating Parts.Item is
+-- one-way, so a guard here could not safely re-run against a non-reset DB
+-- anyway -- the cavity must be created while its part is still active.
+DECLARE @D13SrcType BIGINT = (SELECT Id FROM Tools.ToolType WHERE Code = N'Die');
+DECLARE @D13SrcStatus BIGINT = (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active');
+INSERT INTO Tools.Tool (ToolTypeId, Code, Name, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@D13SrcType, N'SA-CAV-D13-SRC', N'D13 duplicate source tool', @D13SrcStatus, SYSUTCDATETIME(), 1);
+DECLARE @D13SrcTool BIGINT = SCOPE_IDENTITY();
+
+CREATE TABLE #DPI (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #DPI EXEC Parts.Item_Create
+    @ItemTypeId = 4, @PartNumber = N'D13-DUP-PART', @Description = N'D13 duplicate part',
+    @UomId = 1, @AppUserId = 1;
+DROP TABLE #DPI;
+DECLARE @D13DupPart BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'D13-DUP-PART');
+
+-- Cavity created WHILE the part is still active -- ToolCavity_Create itself
+-- rejects a deprecated ItemId on input (mirrors ToolCavity_SaveAll v1.1).
+-- The part is deprecated AFTER, which is exactly the Tool_Duplicate scenario
+-- under test: a cavity whose part was deprecated after it was mapped.
+CREATE TABLE #DCC (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #DCC EXEC Tools.ToolCavity_Create
+    @ToolId = @D13SrcTool, @CavityCode = N'a', @ItemId = @D13DupPart, @AppUserId = 1;
+DROP TABLE #DCC;
+
+CREATE TABLE #DPD (Status BIT, Message NVARCHAR(500));
+INSERT INTO #DPD EXEC Parts.Item_Deprecate @Id = @D13DupPart, @AppUserId = 1;
+DROP TABLE #DPD;
+
+CREATE TABLE #X12 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #X12 EXEC Tools.Tool_Duplicate
+    @SourceToolId = @D13SrcTool, @Code = N'SA-CAV-D13-DUP', @Name = N'D13 duplicate clone', @AppUserId = 1;
+DECLARE @v5 NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #X12);
+DROP TABLE #X12;
+EXEC test.Assert_IsEqual @TestName = N'[D13] Tool_Duplicate of a deprecated-part cavity still succeeds', @Expected = N'1', @Actual = @v5;
 GO
 
 EXEC test.EndTestFile;

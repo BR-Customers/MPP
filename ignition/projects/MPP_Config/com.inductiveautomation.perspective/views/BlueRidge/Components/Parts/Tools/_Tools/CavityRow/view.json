@@ -155,6 +155,37 @@
         "type": "ia.input.text-field"
       },
       {
+        "meta": {
+          "name": "NoPartFlag",
+          "tooltip": {
+            "text": "No part configured -- required before this row can be saved"
+          }
+        },
+        "position": {
+          "basis": "20px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "isNull({view.params.row.itemId})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "path": "material/warning",
+          "style": {
+            "color": "var(--mpp-state-warn-fg)",
+            "height": "18px",
+            "width": "18px"
+          }
+        },
+        "type": "ia.display.icon"
+      },
+      {
         "events": {
           "component": {
             "onActionPerformed": {
@@ -170,7 +201,7 @@
           "name": "PartDropdown"
         },
         "position": {
-          "basis": "260px",
+          "basis": "234px",
           "shrink": 0
         },
         "propConfig": {

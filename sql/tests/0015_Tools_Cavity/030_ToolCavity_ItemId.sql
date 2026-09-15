@@ -44,6 +44,14 @@ GO
 
 -- =============================================
 -- Test 1: SaveAll persists ItemId on INSERT; an unmapped cavity stays NULL
+--
+-- D13 (2026-09-14, design doc 4.6): ToolCavity_SaveAll now rejects any row
+-- it is CREATING with no part, so cavity 'c' can no longer be bundled into
+-- this SaveAll payload unmapped -- that would reject the whole save. It is
+-- seeded directly via Tools.ToolCavity_Create instead (untouched by D13;
+-- @ItemId there stays optional), which is exactly how a legacy unmapped row
+-- exists in the first place. The point under test -- that an unmapped
+-- cavity persists and reads correctly -- is unchanged.
 -- =============================================
 DECLARE @S BIT, @SStr NVARCHAR(1);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CI-CAV-TOOL');
@@ -51,13 +59,17 @@ DECLARE @P1 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'CI-PART-1')
 DECLARE @P2 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'CI-PART-2');
 DECLARE @Json NVARCHAR(MAX) =
     N'[{"Id":null,"CavityCode":"a","Description":"Da","StatusCode":"Active","ItemId":' + CAST(@P1 AS NVARCHAR(20)) + N'},'
-  + N'{"Id":null,"CavityCode":"b","Description":"Db","StatusCode":"Active","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'},'
-  + N'{"Id":null,"CavityCode":"c","Description":"Dc","StatusCode":"Active","ItemId":null}]';
+  + N'{"Id":null,"CavityCode":"b","Description":"Db","StatusCode":"Active","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'}]';
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R1 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R1; DROP TABLE #R1;
 SET @SStr = CAST(@S AS NVARCHAR(1));
 EXEC test.Assert_IsEqual @TestName=N'[CavItemAdd] Status is 1', @Expected=N'1', @Actual=@SStr;
+
+CREATE TABLE #R1C (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R1C EXEC Tools.ToolCavity_Create
+    @ToolId=@ToolId, @CavityCode=N'c', @Description=N'Dc', @ItemId=NULL, @AppUserId=1;
+DROP TABLE #R1C;
 
 DECLARE @P1Str NVARCHAR(20) = CAST(@P1 AS NVARCHAR(20));
 DECLARE @Cav1 NVARCHAR(20) = (SELECT CAST(ISNULL(ItemId,-1) AS NVARCHAR(20))
@@ -129,16 +141,14 @@ EXEC test.Assert_IsEqual @TestName=N'[CavItemDeadPart] Rejected save left ItemId
 GO
 
 -- =============================================
--- Test 5: an existing cavity can be REMAPPED, and a mapping can be CLEARED
+-- Test 5a: an existing cavity can be REMAPPED to a different part -> succeeds
 -- =============================================
 DECLARE @S BIT, @SStr NVARCHAR(1);
 DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CI-CAV-TOOL');
 DECLARE @C1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'a');
-DECLARE @C2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'b');
 DECLARE @P2 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'CI-PART-2');
 DECLARE @Json NVARCHAR(MAX) =
-    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Da","StatusCode":"Active","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'},'
-  + N'{"Id":' + CAST(@C2 AS NVARCHAR(20)) + N',"CavityCode":"b","Description":"Db","StatusCode":"Active","ItemId":null}]';
+    N'[{"Id":' + CAST(@C1 AS NVARCHAR(20)) + N',"CavityCode":"a","Description":"Da","StatusCode":"Active","ItemId":' + CAST(@P2 AS NVARCHAR(20)) + N'}]';
 CREATE TABLE #R5 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R5 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
 SELECT @S = Status FROM #R5; DROP TABLE #R5;
@@ -148,9 +158,32 @@ EXEC test.Assert_IsEqual @TestName=N'[CavItemRemap] Status is 1', @Expected=N'1'
 DECLARE @P2Str NVARCHAR(20) = CAST(@P2 AS NVARCHAR(20));
 DECLARE @NewC1 NVARCHAR(20) = (SELECT CAST(ISNULL(ItemId,-1) AS NVARCHAR(20)) FROM Tools.ToolCavity WHERE Id=@C1);
 EXEC test.Assert_IsEqual @TestName=N'[CavItemRemap] Cavity 1 remapped', @Expected=@P2Str, @Actual=@NewC1;
+GO
 
-DECLARE @NewC2 NVARCHAR(20) = (SELECT CAST(ISNULL(ItemId,-1) AS NVARCHAR(20)) FROM Tools.ToolCavity WHERE Id=@C2);
-EXEC test.Assert_IsEqual @TestName=N'[CavItemRemap] Cavity 2 mapping cleared', @Expected=N'-1', @Actual=@NewC2;
+-- =============================================
+-- Test 5b: clearing an EXISTING mapping via SaveAll is now REJECTED.
+--
+-- D13 (2026-09-14, design doc 4.6): this is precisely the "existing row
+-- edited to no part" case the new rule targets -- clearing a cavity's
+-- ItemId is a real edit, not a no-op, so it must carry a part like any
+-- other changed row. Was previously asserted to succeed and clear the
+-- mapping; that assertion is now the opposite deliberately.
+-- =============================================
+DECLARE @S BIT, @SStr NVARCHAR(1);
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CI-CAV-TOOL');
+DECLARE @C2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId=@ToolId AND CavityCode=N'b');
+DECLARE @PriorItemId BIGINT = (SELECT ItemId FROM Tools.ToolCavity WHERE Id=@C2);
+DECLARE @Json NVARCHAR(MAX) =
+    N'[{"Id":' + CAST(@C2 AS NVARCHAR(20)) + N',"CavityCode":"b","Description":"Db","StatusCode":"Active","ItemId":null}]';
+CREATE TABLE #R5B (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R5B EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
+SELECT @S = Status FROM #R5B; DROP TABLE #R5B;
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'[CavItemClearReject] Clearing a mapping via SaveAll is rejected', @Expected=N'0', @Actual=@SStr;
+
+DECLARE @PriorStr NVARCHAR(20) = CAST(@PriorItemId AS NVARCHAR(20));
+DECLARE @StillC2 NVARCHAR(20) = (SELECT CAST(ISNULL(ItemId,-1) AS NVARCHAR(20)) FROM Tools.ToolCavity WHERE Id=@C2);
+EXEC test.Assert_IsEqual @TestName=N'[CavItemClearReject] Cavity 2 mapping unchanged', @Expected=@PriorStr, @Actual=@StillC2;
 GO
 
 -- =============================================
