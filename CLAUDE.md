@@ -281,6 +281,19 @@ A one-off remediation against live data follows the same shape at smaller scale:
 
 `sql/scripts/Deploy-ProdRelease.ps1` implements 1–3. Rehearse locally first against a DB built at the target's exact migration state (temp worktree at the target's commit + `Reset-DevDatabase.ps1` under a throwaway name) so the guide can state what the preview should print. **The fingerprint includes HEAD — nothing may be committed between preview and execute.** Reference: `notes/2026-09-11_prod-release-runbook-6ma-parallel-run.md`.
 
+**Full process reference: `prod-release-context-pack/`** — read on demand, same pattern as
+`ignition-context-pack/`:
+
+- The contract + non-negotiables     → `01_the_release_contract.md`
+- Scoping a release / risk tests     → `02_scoping_a_release.md`
+- `Deploy-ProdRelease.ps1` output    → `03_deploy_prodrelease.md`
+- Gates (incl. writing a new one)    → `04_preflight_gates.md`
+- Local rehearsal (ProdSim)          → `05_local_rehearsal.md`
+- Scoped exports / import order      → `06_scoped_exports.md`
+- Writing the instruction guide      → `07_writing_the_runbook.md`
+- Running the window / rollback      → `08_the_live_window.md`
+- One-off data remediation           → `09_one_off_remediation.md`
+
 ### Git commits
 
 Omit `Co-Authored-By: Claude` trailer.
