@@ -140,6 +140,54 @@ DECLARE @a5 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q WHERE 
 EXEC test.Assert_IsEqual @TestName = N'[NoTrim] LOT NOT visible at an ineligible line', @Expected = N'0', @Actual = @a5;
 GO
 
+-- ---- assertions: the CLAIM ----
+DECLARE @LotA2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'TSK-030-A');
+DECLARE @Line2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
+DECLARE @Term2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
+DECLARE @Whse2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'WHSE');
+
+CREATE TABLE #RC (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RC EXEC Workorder.MachiningIn_RecordPick
+    @LotId = @LotA2, @LineLocationId = @Line2, @AppUserId = 1, @TerminalLocationId = @Term2;
+DECLARE @cS NVARCHAR(10), @cM NVARCHAR(500);
+SELECT @cS = CAST(Status AS NVARCHAR(10)), @cM = Message FROM #RC; DROP TABLE #RC;
+
+-- B1: the claim succeeds straight out of the warehouse
+EXEC test.Assert_IsEqual @TestName = N'[NoTrim] claim succeeds from WHSE (never touched Trim Storage)', @Expected = N'1', @Actual = @cS;
+
+-- B2: the LOT moved warehouse -> line
+DECLARE @b2 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotMovement
+                            WHERE LotId = @LotA2 AND FromLocationId = @Whse2 AND ToLocationId = @Line2);
+EXEC test.Assert_IsEqual @TestName = N'[NoTrim] movement row records WHSE -> line', @Expected = N'1', @Actual = @b2;
+
+-- B3: exactly one MachiningIn checkpoint on the SAME LOT, stamped to the terminal
+DECLARE @b3 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.ProductionEvent pe
+    INNER JOIN Parts.OperationTemplate ot ON ot.Id = pe.OperationTemplateId
+    INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
+    WHERE pe.LotId = @LotA2 AND oty.Code = N'MachiningIn' AND pe.TerminalLocationId = @Term2);
+EXEC test.Assert_IsEqual @TestName = N'[NoTrim] one MachiningIn checkpoint on the same LOT', @Expected = N'1', @Actual = @b3;
+
+-- B4: the claim is what removes it from the queue -- by route, not by location
+DECLARE @Q2 TABLE (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
+    PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), NextOperationTypeCode NVARCHAR(20), NextSequenceNumber INT);
+INSERT INTO @Q2 EXEC Lots.Lot_GetTrimStorageQueueForLine @LineLocationId = @Line2;
+DECLARE @b4 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @Q2 WHERE Id = @LotA2);
+EXEC test.Assert_IsEqual @TestName = N'[NoTrim] after the claim the LOT is gone from the queue', @Expected = N'0', @Actual = @b4;
+
+-- B5: the other half of visible-but-not-claimable (spec D5). The HELD LOT is in that
+-- same queue (asserted in A4), but the claim must still refuse it -- for the HOLD, not
+-- for its location, and not for its route.
+DECLARE @LotH2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'TSK-030-HOLD');
+CREATE TABLE #RH (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RH EXEC Workorder.MachiningIn_RecordPick
+    @LotId = @LotH2, @LineLocationId = @Line2, @AppUserId = 1, @TerminalLocationId = @Term2;
+DECLARE @hS BIT, @hM NVARCHAR(500);
+SELECT @hS = Status, @hM = Message FROM #RH; DROP TABLE #RH;
+DECLARE @hSc BIT = CASE WHEN @hS = 0 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName = N'[NoTrim] a HELD LOT in the queue is still refused at claim', @Condition = @hSc;
+EXEC test.Assert_Contains @TestName = N'[NoTrim] the hold rejection cites the hold, not the route', @HaystackStr = @hM, @NeedleStr = N'release the hold first';
+GO
+
 -- ---- cleanup (closure BEFORE lots) ----
 DELETE pe FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.LotName LIKE N'TSK-030-%';
 DELETE m  FROM Lots.LotMovement m        INNER JOIN Lots.Lot l ON l.Id = m.LotId  WHERE l.LotName LIKE N'TSK-030-%';

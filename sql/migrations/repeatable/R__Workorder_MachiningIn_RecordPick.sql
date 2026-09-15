@@ -1,8 +1,11 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningIn_RecordPick.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-20
--- Version:     1.1 (2026-08-20, part-scoped CRT) - D4 enforcement: a CRT LOT cannot
+-- Modified:    2026-09-15
+-- Version:     3.0 (2026-09-15, route-driven claim) - the Trim-Storage location gate is
+--              replaced by the LOT's next pending route step; steps 3 and 4 collapse into
+--              one Lots.ufn_NextPendingRouteStep lookup supplying both gate and template.
+--              1.1 (2026-08-20, part-scoped CRT) - D4 enforcement: a CRT LOT cannot
 --              be picked onto a machining line (Lots.ufn_CrtBlocksAdvance). The guard
 --              sits immediately AFTER the B2 Hold/Scrap/Closed rejection, so that
 --              rejection keeps precedence, and BEFORE BEGIN TRANSACTION.
@@ -16,10 +19,16 @@
 --              rename, and the source is NOT closed. Component consumption belongs
 --              downstream (Assembly), not here.
 --
---              The event's TerminalLocationId is REQUIRED and must sit at/under the
---              LINE: this is what Lots.Lot_GetWipQueueByLocation.HasLineEvent keys
---              on, so after this pick the LOT flips to HasLineEvent=1 at the line
---              and leaves the "unworked arrivals" queue (becomes the in-process LOT).
+--              v3.0 (2026-09-15): THE ROUTE IS THE GATE. The old "LOT must sit in Trim
+--              Storage" test is gone -- it stranded castings whose route skips the trim
+--              shop (released to WHSE, reachable by no line). A LOT is claimable when its
+--              next PENDING route step carries the MachiningIn role; step 3 gets both
+--              that gate and the OperationTemplate from one ufn_NextPendingRouteStep call.
+--
+--              The event's TerminalLocationId is REQUIRED and must sit at/under the LINE
+--              so the checkpoint is attributable to it. Writing that checkpoint SATISFIES
+--              the MachiningIn Advance step, which is what removes the LOT from every
+--              line's Lots.Lot_GetTrimStorageQueueForLine read.
 --
 --              Flow (FDS-11-011 + Msg-3915): ALL rejecting validations run BEFORE
 --              BEGIN TRANSACTION (each SELECTs the status row + RETURN, no open txn);
@@ -32,7 +41,10 @@ CREATE OR ALTER PROCEDURE Workorder.MachiningIn_RecordPick
     @LineLocationId     BIGINT,
     @AppUserId          BIGINT,
     @TerminalLocationId BIGINT,
-    @StorageLocationId  BIGINT = NULL   -- v2 (2026-07-23): Trim Storage to claim FROM; NULL => any trim store
+    @StorageLocationId  BIGINT = NULL   -- v3 (2026-09-15): ACCEPTED AND IGNORED. The route
+                                        -- decides what is claimable, not a storage location.
+                                        -- Retained so callers' signatures stay unchanged;
+                                        -- cf. TrimOut_Record.@DestinationCellLocationId.
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -56,7 +68,8 @@ BEGIN
     DECLARE @StatusName  NVARCHAR(100);
     DECLARE @Blocks      BIT;
 
-    DECLARE @MachiningInOtId BIGINT;   -- resolved route-aware once the LOT's item is known (step 3)
+    DECLARE @MachiningInOtId BIGINT;         -- the pending step's template (step 3)
+    DECLARE @NextRole        NVARCHAR(20);   -- the pending step's OperationType role (step 3)
 
     BEGIN TRY
         -- ---- 1. Required parameters ----
@@ -128,22 +141,30 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 3. Resolve the MachiningIn OperationTemplate off THIS LOT's route.
-        -- Route-aware: template codes are M-In-A etc., NOT the role code 'MachiningIn';
-        -- resolve via the OperationType role on the item's latest non-deprecated route
-        -- (mirrors parts/OperationTemplate_GetForRouteRole). ----
-        SET @MachiningInOtId = (
-            SELECT TOP 1 ot.Id
-            FROM Parts.RouteTemplate rt
-            INNER JOIN Parts.RouteStep rs         ON rs.RouteTemplateId = rt.Id
-            INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId AND ot.DeprecatedAt IS NULL
-            INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
-            WHERE rt.ItemId = @ItemId AND rt.DeprecatedAt IS NULL AND oty.Code = N'MachiningIn'
-            ORDER BY rt.VersionNumber DESC, rs.SequenceNumber ASC);
+        -- ---- 3. Resolve the LOT's NEXT PENDING ROUTE STEP. This one lookup is BOTH
+        -- the gate and the template source (spec 2026-09-15 section 3.4): the step must
+        -- carry the MachiningIn role, and that same row's OperationTemplateId is what the
+        -- checkpoint is written against -- so the gate and the template cannot disagree.
+        --
+        -- This REPLACES the old Trim-Storage location test. The LOT may sit anywhere:
+        -- a trim store, or WHSE for a casting whose route skips the trim shop entirely.
+        -- It also replaces the old inline route query, which accepted a DRAFT route
+        -- (DeprecatedAt IS NULL only) and ignored EntryRouteSequence; the shared function
+        -- requires PublishedAt and honours the entry point, so what the operator sees in
+        -- Lots.Lot_GetTrimStorageQueueForLine is exactly what this proc accepts.
+        --
+        -- "Already claimed by another line" needs NO separate test: MachiningIn is an
+        -- Advance role, satisfied by the very ProductionEvent this proc writes below, so
+        -- a claimed LOT's next pending step is no longer MachiningIn. The narrow
+        -- concurrent window is caught by the conditional UPDATE in the transaction. ----
+        SELECT @MachiningInOtId = ns.OperationTemplateId,
+               @NextRole        = ns.OperationTypeCode
+        FROM Lots.ufn_NextPendingRouteStep(@LotId) ns;
 
-        IF @MachiningInOtId IS NULL
+        IF @NextRole IS NULL
         BEGIN
-            SET @Message = N'This part''s route has no active Machining IN operation template.';
+            SET @Message = N'LOT ' + @LotName
+                         + N' has no active published route step pending; check the part''s route.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
@@ -153,21 +174,10 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 4. LOT must currently sit in TRIM STORAGE (v2, 2026-07-23). The line is
-        -- assigned HERE: claiming moves the LOT Trim Storage -> line (step a below), which
-        -- removes it from every OTHER line's storage-filtered queue. If it is no longer in
-        -- Trim Storage it was already claimed by another line. Trim Storage = InventoryLocation
-        -- (def 14) under a TRIM* area; restrict to @StorageLocationId when supplied. ----
-        IF NOT EXISTS (
-            SELECT 1 FROM Location.Location s
-            WHERE s.Id = @FromLoc AND s.LocationTypeDefinitionId = 14 AND s.DeprecatedAt IS NULL
-              AND ( (@StorageLocationId IS NOT NULL AND s.Id = @StorageLocationId)
-                    OR (@StorageLocationId IS NULL
-                        AND EXISTS (SELECT 1 FROM Location.Location a WHERE a.Id = s.ParentLocationId AND a.Code LIKE N'TRIM%')) ))
+        IF @NextRole <> N'MachiningIn'
         BEGIN
-            DECLARE @FromName NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @FromLoc);
-            SET @Message = N'LOT is not in Trim Storage (currently at '
-                         + ISNULL(@FromName, N'an unknown location') + N'); it may already be claimed by another line.';
+            SET @Message = N'LOT ' + @LotName + N' is not ready for Machining IN; its next operation is '
+                         + @NextRole + N'.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',

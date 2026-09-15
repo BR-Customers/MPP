@@ -1,12 +1,14 @@
 -- =============================================
 -- File:         0027_PlantFloor_Machining/020_MachiningIn_RecordPick_guards.sql
 -- Author:       Blue Ridge Automation
--- Rewritten:    2026-07-23 - Trim-Storage model (v2). Rejection guards:
---                 - LOT not in Trim Storage (e.g. still off in a non-storage cell) -> reject
---                 - terminal not part of the line -> reject
---                 - Closed LOT -> reject
+-- Rewritten:    2026-09-15 - route-driven claim. Rejection guards:
+--                 - LOT whose next pending route step is not MachiningIn -> reject,
+--                   EVEN WHEN IT IS SITTING IN TRIM STORAGE (location is no longer a gate)
+--                 - terminal not part of the line -> reject (fixture pre-advanced to
+--                   MachiningIn-pending so this guard reaches the terminal check)
+--                 - Closed LOT -> reject (status guard precedes the route gate)
 --               Fixture: routed casting 5G0-c eligible at the LINE MA1-5GOF; Trim Storage
---               TRIM1-STORE; a non-storage/off-line cell DC1-M05.
+--               TRIM1-STORE; a non-storage/off-line cell DC1-M05 (the off-line terminal).
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -37,20 +39,34 @@ DECLARE @Lot1 BIGINT;
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Origin, @CurrentLocationId = @Line, @PieceCount = 20, @AppUserId = 1, @LotName = N'P5T-GUARD-A';
 SELECT @Lot1 = NewId FROM #C; DELETE FROM #C;
-UPDATE Lots.Lot SET CurrentLocationId = @OffLoc WHERE Id = @Lot1;   -- not in Trim Storage
+-- Deliberately IN Trim Storage: under the route-driven model (2026-09-15) sitting in
+-- the right place is not enough. This LOT has no ProductionEvents, so its next pending
+-- route step is TrimIn -- and that, not its location, is what rejects the claim.
+UPDATE Lots.Lot SET CurrentLocationId = @Store WHERE Id = @Lot1;
 DECLARE @S1 BIT, @M1 NVARCHAR(500);
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R1 EXEC Workorder.MachiningIn_RecordPick @LotId = @Lot1, @LineLocationId = @Line, @AppUserId = 1, @TerminalLocationId = @Term;
 SELECT @S1 = Status, @M1 = Message FROM #R1; DROP TABLE #R1;
 DECLARE @S1c BIT = CASE WHEN @S1 = 0 THEN 1 ELSE 0 END;
-EXEC test.Assert_IsTrue @TestName = N'[MachInGuard] LOT not in Trim Storage is rejected', @Condition = @S1c;
-EXEC test.Assert_Contains @TestName = N'[MachInGuard] rejection cites not in Trim Storage', @HaystackStr = @M1, @NeedleStr = N'not in Trim Storage';
+EXEC test.Assert_IsTrue @TestName = N'[MachInGuard] LOT whose next route step is not MachiningIn is rejected', @Condition = @S1c;
+EXEC test.Assert_Contains @TestName = N'[MachInGuard] rejection names the actual next operation', @HaystackStr = @M1, @NeedleStr = N'next operation is TrimIn';
 
 -- ---- Guard 2: terminal not part of the line (LOT staged in Trim Storage, eligible) ----
 DECLARE @Lot2 BIGINT;
 INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Origin, @CurrentLocationId = @Line, @PieceCount = 20, @AppUserId = 1, @LotName = N'P5T-GUARD-B';
 SELECT @Lot2 = NewId FROM #C; DELETE FROM #C;
 UPDATE Lots.Lot SET CurrentLocationId = @Store WHERE Id = @Lot2;   -- in Trim Storage
+-- Pre-advance past DieCast/TrimIn/TrimOut so the next pending step really is
+-- MachiningIn. Without this the route gate (step 3) rejects first and this guard
+-- would pass for the wrong reason, never reaching the terminal check it exists to test.
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT @Lot2, rs.OperationTemplateId, SYSUTCDATETIME(), 20, 1
+FROM Parts.RouteTemplate rt
+JOIN Parts.RouteStep rs          ON rs.RouteTemplateId = rt.Id
+JOIN Parts.OperationTemplate ot  ON ot.Id = rs.OperationTemplateId
+JOIN Parts.OperationType oty     ON oty.Id = ot.OperationTypeId
+WHERE rt.ItemId = @Item AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+  AND oty.Code IN (N'DieCast', N'TrimIn', N'TrimOut');
 DECLARE @S2 BIT, @M2 NVARCHAR(500);
 CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R2 EXEC Workorder.MachiningIn_RecordPick @LotId = @Lot2, @LineLocationId = @Line, @AppUserId = 1, @TerminalLocationId = @OffLoc;
