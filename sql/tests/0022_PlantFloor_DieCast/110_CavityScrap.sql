@@ -109,6 +109,7 @@ DELETE FROM Tools.ToolCavity WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Co
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'CS-DIE');
 DELETE FROM Tools.Tool WHERE Code = N'CS-DIE';
 DELETE FROM Oee.Shift WHERE Remarks = N'CS-FIXTURE';
+DELETE FROM Oee.Shift WHERE Remarks = N'CS-PRIOR-SHIFT';
 DELETE FROM Oee.ShiftSchedule WHERE Name = N'CS-FIXTURE-SCHED';
 GO
 
@@ -361,6 +362,116 @@ DELETE re FROM Workorder.RejectEvent re JOIN @NewIds n ON n.Id = re.Id;
 DELETE FROM Tools.ToolCavity WHERE Id = @CavIdUnmapped;
 GO
 
+-- =============================================
+-- Workorder.DieCast_GetShiftOutputBreakdown v3.0 -- reconciliation columns
+-- (Task 4, spec 3.2/3.3/5.2). PriorScrapThisShift, DieWideShots, IsPending
+-- APPENDED LAST (positional INSERT-EXEC). Reuses the CS-DIE tool / CS-FIXTURE
+-- shift already established above; mints three dedicated cavities so each
+-- new column is pinned in isolation from the earlier watermark/reject tests.
+-- =============================================
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'CS-DIE');
+DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'CS-FIXTURE' ORDER BY Id DESC);
+DECLARE @CellId BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
+  JOIN Location.LocationTypeDefinition d ON d.Id = l.LocationTypeDefinitionId
+  WHERE d.Code = N'DieCastMachine' AND l.DeprecatedAt IS NULL ORDER BY l.Id);
+DECLARE @ItemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Usr BIGINT = (SELECT TOP 1 Id FROM Location.AppUser ORDER BY Id);
+DECLARE @DefectId BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @OriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @OpenId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Open');
+DECLARE @ActiveCavStatusId BIGINT = (SELECT TOP 1 Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
+DECLARE @NewIds TABLE (Id BIGINT);
+DECLARE @R TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+DECLARE @v NVARCHAR(20);
+
+-- a PRIOR shift, distinct from CS-FIXTURE, on the same schedule -- proves the
+-- SUM is SHIFT-scoped, not lifetime (the exact defect
+-- Lot_GetShiftCavityTally.RejectSum has: it sums a LOT's entire life while
+-- every label around it says "this shift").
+IF NOT EXISTS (SELECT 1 FROM Oee.Shift WHERE Remarks = N'CS-PRIOR-SHIFT')
+    INSERT INTO Oee.Shift (ShiftScheduleId, ActualStart, ActualEnd, Remarks)
+    SELECT (SELECT Id FROM Oee.ShiftSchedule WHERE Name = N'CS-FIXTURE-SCHED'),
+           DATEADD(HOUR, -16, SYSUTCDATETIME()), DATEADD(HOUR, -12, SYSUTCDATETIME()), N'CS-PRIOR-SHIFT';
+DECLARE @PriorShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'CS-PRIOR-SHIFT' ORDER BY Id DESC);
+
+-- cavity 'p' -- dedicated to the prior-scrap assertion, no basket needed
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+SELECT @ToolId, N'p', @ActiveCavStatusId, N'CS cavity p prior-scrap', @ItemId, @Usr;
+DECLARE @CavIdPrior BIGINT = SCOPE_IDENTITY();
+
+-- 12 lot-free scrap in THIS shift ...
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.RejectEvent_Record
+    @LotId = NULL, @DefectCodeId = @DefectId, @Quantity = 12,
+    @ToolCavityId = @CavIdPrior, @ShiftId = @ShiftId, @CellLocationId = @CellId,
+    @AppUserId = @Usr, @OperationTypeCode = N'DieCast';
+INSERT INTO @NewIds (Id) SELECT NewId FROM @R WHERE NewId IS NOT NULL;
+
+-- ... and 7 more in the PRIOR shift, same cavity -- must NOT be summed in
+DELETE FROM @R;
+INSERT INTO @R EXEC Workorder.RejectEvent_Record
+    @LotId = NULL, @DefectCodeId = @DefectId, @Quantity = 7,
+    @ToolCavityId = @CavIdPrior, @ShiftId = @PriorShiftId, @CellLocationId = @CellId,
+    @AppUserId = @Usr, @OperationTypeCode = N'DieCast';
+INSERT INTO @NewIds (Id) SELECT NewId FROM @R WHERE NewId IS NOT NULL;
+
+-- cavity 'g' -- an open basket, no contributions yet this shift (watermark 0)
+-- -- dedicated to the die-wide-net-of-@DieWideShots assertion.
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+SELECT @ToolId, N'g', @ActiveCavStatusId, N'CS cavity g proposed-good', @ItemId, @Usr;
+DECLARE @CavIdGood BIGINT = SCOPE_IDENTITY();
+
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable,
+                      CurrentLocationId, ToolId, ToolCavityId, CreatedAt, CreatedByUserId)
+VALUES (N'CS-GOOD', @ItemId, @OriginId, @OpenId, 0, 0, @CellId, @ToolId, @CavIdGood, SYSUTCDATETIME(), @Usr);
+
+-- cavity 'q' -- no basket at all -- dedicated to the IsPending assertion.
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+SELECT @ToolId, N'q', @ActiveCavStatusId, N'CS cavity q pending', @ItemId, @Usr;
+DECLARE @CavIdPending BIGINT = SCOPE_IDENTITY();
+
+-- read the breakdown once, @DieWideShots = 20 against a counter reading of
+-- 862 -- 862 - 0 (watermark) - 20 (die-wide) = 842 on cavity 'g'.
+CREATE TABLE #Breakdown (
+    ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
+    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
+    CavityDescription NVARCHAR(500), CreditedThrough INT, NewShots INT,
+    CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50),
+    -- v3.0 appended trailing columns (0084 / task 4).
+    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT);
+INSERT INTO #Breakdown EXEC Workorder.DieCast_GetShiftOutputBreakdown
+    @ToolId = @ToolId, @ShiftId = @ShiftId, @CounterReading = 862,
+    @CellLocationId = @CellId, @DieWideShots = 20;
+
+DECLARE @vPrior NVARCHAR(20) = (SELECT CAST(PriorScrapThisShift AS NVARCHAR(20)) FROM #Breakdown WHERE CavityCode = N'p');
+EXEC test.Assert_IsEqual @TestName = N'[Breakdown] PriorScrapThisShift excludes a prior shift',
+    @Expected = N'12', @Actual = @vPrior;
+
+DECLARE @vProposed NVARCHAR(20) = (SELECT CAST(ProposedGood AS NVARCHAR(20)) FROM #Breakdown WHERE CavityCode = N'g');
+EXEC test.Assert_IsEqual @TestName = N'[Breakdown] ProposedGood is net of die-wide',
+    @Expected = N'842', @Actual = @vProposed;
+
+DECLARE @vDieWide NVARCHAR(20) = (SELECT CAST(DieWideShots AS NVARCHAR(20)) FROM #Breakdown WHERE CavityCode = N'g');
+EXEC test.Assert_IsEqual @TestName = N'[Breakdown] DieWideShots echoes the parameter',
+    @Expected = N'20', @Actual = @vDieWide;
+
+DECLARE @vPending NVARCHAR(20) = (SELECT CAST(IsPending AS NVARCHAR(20)) FROM #Breakdown WHERE CavityCode = N'q');
+EXEC test.Assert_IsEqual @TestName = N'[Breakdown] basketless cavity reports IsPending',
+    @Expected = N'1', @Actual = @vPending;
+
+-- a cavity WITH a basket must not be flagged pending
+DECLARE @vNotPending NVARCHAR(20) = (SELECT CAST(IsPending AS NVARCHAR(20)) FROM #Breakdown WHERE CavityCode = N'g');
+EXEC test.Assert_IsEqual @TestName = N'[Breakdown] a cavity with a basket is not IsPending',
+    @Expected = N'0', @Actual = @vNotPending;
+
+DROP TABLE #Breakdown;
+
+-- cleanup the lot-free reject rows this block inserted, BY ID (their LotId is
+-- NULL, so a per-LOT DELETE cannot reach them) -- before the shared teardown
+-- below drops the ToolCavity/Tool rows they FK to.
+DELETE re FROM Workorder.RejectEvent re JOIN @NewIds n ON n.Id = re.Id;
+GO
+
 -- ---- teardown ----
 DECLARE @CsLots TABLE (Id BIGINT PRIMARY KEY);
 INSERT INTO @CsLots (Id) SELECT Id FROM Lots.Lot WHERE LotName LIKE N'CS-%';
@@ -383,5 +494,6 @@ DELETE FROM Tools.ToolCavity WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Co
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'CS-DIE');
 DELETE FROM Tools.Tool WHERE Code = N'CS-DIE';
 DELETE FROM Oee.Shift WHERE Remarks = N'CS-FIXTURE';
+DELETE FROM Oee.Shift WHERE Remarks = N'CS-PRIOR-SHIFT';
 DELETE FROM Oee.ShiftSchedule WHERE Name = N'CS-FIXTURE-SCHED';
 GO

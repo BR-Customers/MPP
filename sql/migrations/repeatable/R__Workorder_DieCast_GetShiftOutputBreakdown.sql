@@ -1,9 +1,41 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCast_GetShiftOutputBreakdown.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-10
--- Version:     2.2
--- Changelog:   2.2 (2026-09-10) Cavity alpha code (0076): CavityNumber ->
+-- Modified:    2026-09-14
+-- Version:     3.0
+-- Changelog:   3.0 (2026-09-14) Reconciliation columns (0084, spec sec 3.2,
+--              3.3, 5.2). New @DieWideShots INT = 0 -- shots already booked
+--              die-wide this entry. ProposedGood for a still-open lot is now
+--              NET of die-wide (floored at 0): today shot loss is purely
+--              additive, so a 2,000-shot shift with 20 warm-up shots proposes
+--              2,000 good per cavity AND books 20 scrap per cavity -- 2,020
+--              parts out of 2,000 shots, and nothing checks. Netting it here
+--              means a clean shift balances to zero variance, so a non-zero
+--              variance on the reconciliation screen (Task 7) means something
+--              actually happened. Three trailing columns APPENDED LAST
+--              (existing consumers capture this proc positionally via
+--              INSERT-EXEC):
+--                * PriorScrapThisShift -- SUM(RejectEvent.Quantity) for this
+--                  CAVITY in this SHIFT (IX_RejectEvent_ShiftCavity, 0084).
+--                  Shift-scoped, unlike the deleted Lot_GetShiftCavityTally.
+--                  RejectSum, which summed a LOT's entire life and over-
+--                  reported on a cross-shift basket.
+--                * DieWideShots -- @DieWideShots echoed back, so a row can
+--                  show raw - dieWide.
+--                * IsPending -- 1 when the cavity has no basket (lo.LotId IS
+--                  NULL). Spec 3.5/3.6: a basketless cavity's shots are
+--                  PENDING, not unaccounted -- they stay behind the cavity's
+--                  watermark and credit to the next basket, because that is
+--                  where the castings physically are. IsPending sits OUTSIDE
+--                  the reconciliation identity and must never be reported as
+--                  variance. ProposedGood for a pending row stays 0
+--                  (unchanged -- lo.LotId IS NULL branch), the input stays
+--                  disabled on the screen (spec 3.5, Task 7).
+--              PriorScrapThisShift is NOT netted out of ProposedGood here --
+--              only die-wide is. The reconciliation (netShots - cavityScrap)
+--              is the screen's job (Task 7); this proc hands over the three
+--              independent ingredients.
+--              2.2 (2026-09-10) Cavity alpha code (0076): CavityNumber ->
 --              CavityCode NVARCHAR(4), and the ordering gains the configured
 --              part key. A 12-cavity family die cutting four parts would
 --              otherwise render a,a,a,a,b,b,b,b -- four unrelated parts
@@ -112,7 +144,7 @@
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCast_GetShiftOutputBreakdown
     @ToolId BIGINT, @ShiftId BIGINT, @CounterReading INT,
-    @CellLocationId BIGINT = NULL
+    @CellLocationId BIGINT = NULL, @DieWideShots INT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -154,13 +186,19 @@ BEGIN
         -- basket already closed this shift keeps what it was credited and is
         -- NOT re-credited. A cavity with no basket proposes nothing -- its
         -- shots show as NewShots below, for the operator to record as scrap.
+        -- v3.0: a still-open lot's proposal is now NET OF DIE-WIDE (spec
+        -- 3.2/3.3), floored at 0. The other two branches are unaffected --
+        -- a pending (no-basket) row stays 0, an already-closed-out row keeps
+        -- whatever it was credited this shift.
         CASE WHEN lo.LotId IS NULL   THEN 0
              WHEN lo.IsOpen = 0      THEN ISNULL(p.PriorGood, 0)
              ELSE CASE WHEN ISNULL(@CounterReading, 0)
-                          - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId) < 0
+                          - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId)
+                          - ISNULL(@DieWideShots, 0) < 0
                        THEN 0
                        ELSE ISNULL(@CounterReading, 0)
                           - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId)
+                          - ISNULL(@DieWideShots, 0)
                   END
         END AS ProposedGood,
         CASE WHEN lo.LotId IS NULL        THEN 0
@@ -180,7 +218,13 @@ BEGIN
         -- APPENDED (v2.1): a cavity with no basket still has a state and a part.
         csc.Code       AS CavityStatusCode,
         tc.ItemId      AS ConfiguredItemId,
-        ci.PartNumber  AS ConfiguredPartNumber
+        ci.PartNumber  AS ConfiguredPartNumber,
+        -- APPENDED (v3.0). Shift-scoped, cavity-keyed -- the number that
+        -- exists nowhere today. Reads the new IX_RejectEvent_ShiftCavity path.
+        ISNULL((SELECT SUM(re.Quantity) FROM Workorder.RejectEvent re
+                WHERE re.ShiftId = @ShiftId AND re.ToolCavityId = tc.Id), 0) AS PriorScrapThisShift,
+        @DieWideShots AS DieWideShots,
+        CAST(CASE WHEN lo.LotId IS NULL THEN 1 ELSE 0 END AS BIT) AS IsPending
     FROM Tools.ToolCavity tc
     INNER JOIN Tools.ToolCavityStatusCode csc ON csc.Id = tc.StatusCodeId
     LEFT  JOIN Relevant  lo ON lo.ToolCavityId = tc.Id

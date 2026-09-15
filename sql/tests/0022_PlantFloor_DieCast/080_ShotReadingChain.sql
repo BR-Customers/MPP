@@ -273,7 +273,9 @@ CREATE TABLE #BD (
     ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
     IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT, ItemId BIGINT,
     CavityDescription NVARCHAR(500), CreditedThrough INT, NewShots INT,
-    CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50));
+    CavityStatusCode NVARCHAR(30), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(50),
+    -- v3.0 appended trailing columns (0084 / task 4).
+    PriorScrapThisShift INT, DieWideShots INT, IsPending BIT);
 INSERT INTO #BD EXEC Workorder.DieCast_GetShiftOutputBreakdown
     @ToolId = @ToolId, @ShiftId = @ShiftId, @CounterReading = 2000, @CellLocationId = @PressA;
 
