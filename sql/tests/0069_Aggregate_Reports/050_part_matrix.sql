@@ -50,12 +50,37 @@ INSERT INTO @cr EXEC Lots.Lot_Create @ItemId = @ItemId, @LotOriginTypeId = @Orig
 SELECT @LotId = NewId FROM @cr;
 INSERT INTO #SF (Tag, Val) VALUES (N'Lot1', @LotId), (N'ItemId', @ItemId);
 
+-- ItemId stamped on every row (spec 4.2): identity now resolves from
+-- re.ItemId, not re.LotId -> Lots.Lot.ItemId, so the fixture must stamp it
+-- the way the real write path does.
 --  Die Cast:  4 + 6 = 10       Supplier: 2       Non-reject scrap: 9
-INSERT INTO Workorder.RejectEvent (LotId, DefectCodeId, Quantity, AppUserId, RecordedAt)
-VALUES (@LotId, @DcSolder, 4, @UserId, SYSUTCDATETIME()),
-       (@LotId, @DcPoros,  6, @UserId, SYSUTCDATETIME()),
-       (@LotId, @DcHsp,    2, @UserId, SYSUTCDATETIME()),
-       (@LotId, @DcTest,   9, @UserId, SYSUTCDATETIME());
+INSERT INTO Workorder.RejectEvent (LotId, ItemId, DefectCodeId, Quantity, AppUserId, RecordedAt)
+VALUES (@LotId, @ItemId, @DcSolder, 4, @UserId, SYSUTCDATETIME()),
+       (@LotId, @ItemId, @DcPoros,  6, @UserId, SYSUTCDATETIME()),
+       (@LotId, @ItemId, @DcHsp,    2, @UserId, SYSUTCDATETIME()),
+       (@LotId, @ItemId, @DcTest,   9, @UserId, SYSUTCDATETIME());
+
+-- ---- THE REGRESSION THIS TASK EXISTS FOR ----
+-- A cavity with no basket (spec 3.5/4.1/4.2): LotId NULL, ItemId stamped
+-- directly on the fact row, a DIFFERENT part (@ItemId2) so it cannot be
+-- confused with the @ItemId rows above. An INNER JOIN through Lots.Lot
+-- would silently drop this row from the Part Matrix.
+DECLARE @ItemId2 BIGINT = (SELECT TOP 1 Id FROM Parts.Item
+    WHERE Id <> @ItemId AND DeprecatedAt IS NULL ORDER BY Id);
+INSERT INTO #SF (Tag, Val) VALUES (N'ItemId2', @ItemId2);
+
+DECLARE @LotFreeId BIGINT, @UnassignedId BIGINT;
+INSERT INTO Workorder.RejectEvent (LotId, ItemId, DefectCodeId, Quantity, AppUserId, RecordedAt)
+VALUES (NULL, @ItemId2, @DcSolder, 5, @UserId, SYSUTCDATETIME());
+SET @LotFreeId = SCOPE_IDENTITY();
+
+-- An unmapped cavity (ItemId also NULL, the shrinking-legacy-state case,
+-- spec 4.1): must bucket as '(unassigned part)', not vanish.
+INSERT INTO Workorder.RejectEvent (LotId, ItemId, DefectCodeId, Quantity, AppUserId, RecordedAt)
+VALUES (NULL, NULL, @DcSolder, 8, @UserId, SYSUTCDATETIME());
+SET @UnassignedId = SCOPE_IDENTITY();
+
+INSERT INTO #SF (Tag, Val) VALUES (N'LotFreeReject', @LotFreeId), (N'UnassignedReject', @UnassignedId);
 GO
 
 DECLARE @n BIGINT, @ItemId BIGINT = (SELECT Val FROM #SF WHERE Tag = N'ItemId');
@@ -70,6 +95,22 @@ EXEC test.Assert_IsEqual @TestName = N'[PartMatrix] root TotalRejects excludes n
 SELECT @n = TotalNonRejectScrap FROM #P WHERE ItemId = @ItemId;
 EXEC test.Assert_IsEqual @TestName = N'[PartMatrix] root reports non-reject scrap separately',
     @Expected = N'9', @Actual = @n;
+
+-- THE REGRESSION THIS TASK EXISTS FOR. With an INNER JOIN to Lots.Lot, a
+-- lot-free reject is DROPPED from the report with no error -- a smaller
+-- number that looks plausible. Assert it is present and attributed to the
+-- right part (@ItemId2, not @ItemId -- proves it resolved via re.ItemId,
+-- not by falling through to some other row's LOT).
+DECLARE @ItemId2 BIGINT = (SELECT Val FROM #SF WHERE Tag = N'ItemId2');
+SELECT @n = TotalRejects FROM #P WHERE ItemId = @ItemId2;
+EXEC test.Assert_IsEqual @TestName = N'[Reports] lot-free scrap appears in the Part Matrix',
+    @Expected = N'5', @Actual = @n;
+
+-- Unmapped-cavity scrap (ItemId NULL, spec 4.1): buckets as
+-- '(unassigned part)' rather than being dropped by the GROUP BY.
+SELECT @n = TotalRejects FROM #P WHERE ItemPartNumber = N'(unassigned part)';
+EXEC test.Assert_IsEqual @TestName = N'[Reports] unmapped-cavity scrap buckets as unassigned, not dropped',
+    @Expected = N'8', @Actual = @n;
 
 -- Party child.
 INSERT INTO #B EXEC Quality.Reject_GetPartMatrixByParty @ItemId = @ItemId;
@@ -121,6 +162,10 @@ EXEC test.Assert_IsEqual @TestName = N'[PartMatrix] a past window returns no par
 GO
 
 DECLARE @LotId BIGINT = (SELECT Val FROM #SF WHERE Tag = N'Lot1');
+-- Lot-free rows carry no LotId to key the delete above on -- remove them by
+-- their own captured Ids.
+DELETE FROM Workorder.RejectEvent
+WHERE Id IN (SELECT Val FROM #SF WHERE Tag IN (N'LotFreeReject', N'UnassignedReject'));
 DELETE FROM Workorder.RejectEvent    WHERE LotId = @LotId;
 DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId = @LotId OR DescendantLotId = @LotId;
 DELETE FROM Lots.LotGenealogy        WHERE ParentLotId = @LotId OR ChildLotId = @LotId;

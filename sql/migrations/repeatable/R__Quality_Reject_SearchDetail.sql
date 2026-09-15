@@ -1,11 +1,19 @@
 -- =============================================
 -- Repeatable:  R__Quality_Reject_SearchDetail.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-25
--- Version:     1.0
+-- Modified:    2026-09-14
+-- Version:     1.1
 -- Description: FDS-12-006 Rejects -- Transaction Detail. Reproduces the legacy
 --              PD "Search Reject" screen: one row per RejectEvent with the
 --              defect, the responsible party and the quantity.
+--
+--              v1.1 (spec 2026-09-14 diecast quantity/scrap, 4.2/5.5): part
+--              identity resolves from re.ItemId (stamped on the fact row),
+--              NOT from re.LotId -> Lots.Lot.ItemId. LotId is nullable
+--              (0084), so both the LOT and Item joins moved to LEFT -- a
+--              lot-free die-cast scrap row now survives with LotId/LotName
+--              NULL, and an unmapped cavity's ItemId (also nullable) shows
+--              as '(unassigned part)' instead of vanishing.
 --
 --              Charge-to comes from Quality.DefectCode.ChargeToPartyId, NOT
 --              from Workorder.RejectEvent.ChargeToArea: in every row of the
@@ -48,7 +56,7 @@ BEGIN
         re.Id                AS RejectEventId,
         re.LotId,
         l.LotName,
-        i.PartNumber         AS ItemPartNumber,
+        ISNULL(i.PartNumber, N'(unassigned part)') AS ItemPartNumber,
         CAST(re.RecordedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS RecordedAt,
         u.DisplayName        AS OperatorName,
         sh.ScheduleName      AS ShiftName,
@@ -60,8 +68,8 @@ BEGIN
         loc.Name             AS RecordedAtLocationName,
         COUNT(*) OVER()      AS TotalCount
     FROM Workorder.RejectEvent re
-    INNER JOIN Lots.Lot          l  ON l.Id  = re.LotId
-    INNER JOIN Parts.Item        i  ON i.Id  = l.ItemId
+    LEFT  JOIN Lots.Lot          l  ON l.Id  = re.LotId
+    LEFT  JOIN Parts.Item        i  ON i.Id  = re.ItemId
     INNER JOIN Quality.DefectCode dc ON dc.Id = re.DefectCodeId
     LEFT  JOIN Quality.ChargeToParty cp ON cp.Id = dc.ChargeToPartyId
     LEFT  JOIN Location.AppUser  u  ON u.Id  = re.AppUserId

@@ -45,21 +45,48 @@ INSERT INTO @cr EXEC Lots.Lot_Create @ItemId = @ItemId, @LotOriginTypeId = @Orig
     @CurrentLocationId = @CellA, @PieceCount = 100, @AppUserId = @UserId,
     @VendorLotNumber = N'VND-RJ-001';
 SELECT @LotId = NewId FROM @cr;
-INSERT INTO #SF (Tag, Val) VALUES (N'Lot1', @LotId);
+INSERT INTO #SF (Tag, Val) VALUES (N'Lot1', @LotId), (N'ItemId', @ItemId);
 
 -- ChargeToArea deliberately set to a WRONG value: the report must ignore it.
-INSERT INTO Workorder.RejectEvent (LotId, DefectCodeId, Quantity, ChargeToArea, AppUserId, RecordedAt)
-VALUES (@LotId, @DcNormal, 7, N'WRONG-SHOULD-BE-IGNORED', @UserId, SYSUTCDATETIME());
-INSERT INTO Workorder.RejectEvent (LotId, DefectCodeId, Quantity, ChargeToArea, AppUserId, RecordedAt)
-VALUES (@LotId, @DcTest, 3, N'WRONG-SHOULD-BE-IGNORED', @UserId, SYSUTCDATETIME());
+-- ItemId stamped on every row (spec 4.2): identity resolves from re.ItemId,
+-- not re.LotId -> Lots.Lot.ItemId.
+INSERT INTO Workorder.RejectEvent (LotId, ItemId, DefectCodeId, Quantity, ChargeToArea, AppUserId, RecordedAt)
+VALUES (@LotId, @ItemId, @DcNormal, 7, N'WRONG-SHOULD-BE-IGNORED', @UserId, SYSUTCDATETIME());
+INSERT INTO Workorder.RejectEvent (LotId, ItemId, DefectCodeId, Quantity, ChargeToArea, AppUserId, RecordedAt)
+VALUES (@LotId, @ItemId, @DcTest, 3, N'WRONG-SHOULD-BE-IGNORED', @UserId, SYSUTCDATETIME());
+
+-- ---- THE REGRESSION THIS TASK EXISTS FOR ----
+-- A cavity with no basket (spec 3.5/4.1/4.2): LotId NULL, ItemId stamped
+-- directly. An INNER JOIN through Lots.Lot would silently drop this row
+-- from the Transaction Detail.
+DECLARE @LotFreeId BIGINT;
+INSERT INTO Workorder.RejectEvent (LotId, ItemId, DefectCodeId, Quantity, AppUserId, RecordedAt)
+VALUES (NULL, @ItemId, @DcNormal, 6, @UserId, SYSUTCDATETIME());
+SET @LotFreeId = SCOPE_IDENTITY();
+INSERT INTO #SF (Tag, Val) VALUES (N'LotFreeReject', @LotFreeId);
 GO
 
-DECLARE @n INT, @s NVARCHAR(100);
+DECLARE @n INT, @s NVARCHAR(100), @ItemId BIGINT = (SELECT Val FROM #SF WHERE Tag = N'ItemId');
 
 INSERT INTO #RD EXEC Quality.Reject_SearchDetail @PartNumberLike = NULL;
 SELECT @n = COUNT(*) FROM #RD WHERE LotName IN (SELECT LotName FROM Lots.Lot WHERE VendorLotNumber = N'VND-RJ-001');
 EXEC test.Assert_IsEqual @TestName = N'[RejectDetail] both fixture rejects returned',
     @Expected = N'2', @Actual = @n;
+
+-- THE REGRESSION THIS TASK EXISTS FOR. With an INNER JOIN to Lots.Lot, a
+-- lot-free reject is DROPPED from the Transaction Detail with no error.
+DECLARE @LotFreeId2 BIGINT = (SELECT Val FROM #SF WHERE Tag = N'LotFreeReject');
+SELECT @n = COUNT(*) FROM #RD WHERE RejectEventId = @LotFreeId2;
+EXEC test.Assert_IsEqual @TestName = N'[Reports] lot-free scrap appears in Transaction Detail',
+    @Expected = N'1', @Actual = @n;
+
+-- ... and its LotId/LotName stay NULL (not dropped, not guessed) while the
+-- part still resolves via the stamped re.ItemId.
+SELECT @n = COUNT(*) FROM #RD rd
+INNER JOIN Parts.Item i ON i.PartNumber = rd.ItemPartNumber
+WHERE rd.RejectEventId = @LotFreeId2 AND rd.LotId IS NULL AND rd.LotName IS NULL AND i.Id = @ItemId;
+EXEC test.Assert_IsEqual @TestName = N'[RejectDetail] lot-free scrap keeps LotId NULL and resolves the right part',
+    @Expected = N'1', @Actual = @n;
 
 -- Charge-to comes from the DEFECT CODE, not the free-text column.
 SELECT @s = MAX(ChargeToPartyName) FROM #RD WHERE DefectCode = N'100';
@@ -98,6 +125,9 @@ EXEC test.Assert_IsEqual @TestName = N'[RejectDetail] a past date window returns
 GO
 
 DECLARE @LotId BIGINT = (SELECT Val FROM #SF WHERE Tag = N'Lot1');
+-- The lot-free row carries no LotId to key the delete below on -- remove it
+-- by its own captured Id.
+DELETE FROM Workorder.RejectEvent WHERE Id = (SELECT Val FROM #SF WHERE Tag = N'LotFreeReject');
 DELETE FROM Workorder.RejectEvent    WHERE LotId = @LotId;
 DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId = @LotId OR DescendantLotId = @LotId;
 DELETE FROM Lots.LotGenealogy        WHERE ParentLotId = @LotId OR ChildLotId = @LotId;

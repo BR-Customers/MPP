@@ -1,9 +1,17 @@
 -- =============================================
 -- Repeatable:  R__Quality_Reject_GetPartMatrixByParty.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-25
--- Version:     1.0
+-- Modified:    2026-09-14
+-- Version:     1.1
 -- Description: FDS-12-006 Part Matrix -- CHILD query, per-part party breakdown.
+--
+--              v1.1 (spec 2026-09-14 diecast quantity/scrap, 4.2/5.5): the
+--              Charged CTE (reject-side numerator) filters on re.ItemId
+--              directly instead of joining Lots.Lot -- LotId is nullable
+--              (0084) and an INNER JOIN through the LOT dropped lot-free
+--              die-cast scrap. The production-denominator joins below
+--              (DieCastGood / TrimGood / MachAsmGood) are about production,
+--              not reject identity, and are unchanged.
 --              Called once per parent row with that row's ItemId (the Reporting
 --              Module binds a child query's placeholders to parent-row columns).
 --
@@ -66,8 +74,7 @@ BEGIN
         SELECT dc.ChargeToPartyId, SUM(CAST(re.Quantity AS BIGINT)) AS RejectQty
         FROM Workorder.RejectEvent re
         INNER JOIN Quality.DefectCode dc ON dc.Id = re.DefectCodeId
-        INNER JOIN Lots.Lot           l  ON l.Id  = re.LotId
-        WHERE l.ItemId = @ItemId
+        WHERE re.ItemId = @ItemId
           AND dc.IsNonRejectScrap = 0
           AND (@FromUtc IS NULL OR re.RecordedAt >= @FromUtc)
           AND (@ToUtc   IS NULL OR re.RecordedAt <  @ToUtc)

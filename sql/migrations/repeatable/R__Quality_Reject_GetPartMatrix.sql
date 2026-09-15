@@ -1,10 +1,18 @@
 -- =============================================
 -- Repeatable:  R__Quality_Reject_GetPartMatrix.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-25
--- Version:     1.0
+-- Modified:    2026-09-14
+-- Version:     1.1
 -- Description: FDS-12-006 Rejects -- Part Matrix, ROOT query. One row per part
 --              that saw any reject activity in the window.
+--
+--              v1.1 (spec 2026-09-14 diecast quantity/scrap, 4.2/5.5): part
+--              identity resolves from re.ItemId (stamped on the fact row),
+--              NOT from re.LotId -> Lots.Lot.ItemId. LotId is nullable
+--              (0084) so an INNER JOIN through the LOT silently dropped
+--              lot-free die-cast scrap. LEFT JOIN Parts.Item so an unmapped
+--              cavity's ItemId (also nullable) buckets as
+--              '(unassigned part)' instead of vanishing.
 --
 --              The legacy report is a cross-tab: parts as COLUMNS, eight per
 --              page, fifteen pages. SQL cannot return a variable column set
@@ -39,18 +47,17 @@ BEGIN
             AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
 
     SELECT
-        i.Id                AS ItemId,
-        i.PartNumber        AS ItemPartNumber,
-        i.Description       AS ItemDescription,
+        i.Id                                         AS ItemId,
+        ISNULL(i.PartNumber, N'(unassigned part)')   AS ItemPartNumber,
+        i.Description                                AS ItemDescription,
         SUM(CASE WHEN dc.IsNonRejectScrap = 0 THEN CAST(re.Quantity AS BIGINT) ELSE 0 END) AS TotalRejects,
         SUM(CASE WHEN dc.IsNonRejectScrap = 1 THEN CAST(re.Quantity AS BIGINT) ELSE 0 END) AS TotalNonRejectScrap
     FROM Workorder.RejectEvent re
     INNER JOIN Quality.DefectCode dc ON dc.Id = re.DefectCodeId
-    INNER JOIN Lots.Lot           l  ON l.Id  = re.LotId
-    INNER JOIN Parts.Item         i  ON i.Id  = l.ItemId
+    LEFT  JOIN Parts.Item         i  ON i.Id  = re.ItemId
     WHERE (@FromUtc IS NULL OR re.RecordedAt >= @FromUtc)
       AND (@ToUtc   IS NULL OR re.RecordedAt <  @ToUtc)
     GROUP BY i.Id, i.PartNumber, i.Description
-    ORDER BY i.PartNumber;
+    ORDER BY ISNULL(i.PartNumber, N'(unassigned part)');
 END
 GO
