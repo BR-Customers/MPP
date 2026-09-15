@@ -590,7 +590,7 @@
                     "component": {
                       "onActionPerformed": {
                         "config": {
-                          "script": "\t# Launch the Config app\u0027s Tools page (separate project; logs in on its own).\n\tsystem.perspective.navigate(url\u003d\"/data/perspective/client/MPP_Config/parts/tools\", newTab\u003dTrue)"
+                          "script": "\tself.view.rootContainer.openDieMount()"
                         },
                         "scope": "G",
                         "type": "script"
@@ -598,29 +598,16 @@
                     }
                   },
                   "meta": {
-                    "name": "ToolConfigButton",
-                    "tooltip": {
-                      "text": "Supervisor access required"
-                    }
+                    "name": "DieMountButton"
                   },
                   "position": {
                     "shrink": 0
-                  },
-                  "propConfig": {
-                    "props.enabled": {
-                      "binding": {
-                        "config": {
-                          "expression": "!isNull({session.custom.elevatedUntil}) && {session.custom.elevatedUntil} \u003e now(5000)"
-                        },
-                        "type": "expr"
-                      }
-                    }
                   },
                   "props": {
                     "style": {
                       "classes": "pf-btn pf-btn-secondary"
                     },
-                    "text": "Tool Config"
+                    "text": "Die Mount"
                   },
                   "type": "ia.input.button"
                 }
@@ -2020,6 +2007,11 @@
     "scripts": {
       "customMethods": [
         {
+          "name": "openDieMount",
+          "params": [],
+          "script": "\t# Gate at the door (decision 1, 2026-09-14): the popup opens only\n\t# inside an elevation window. requireElevation stashes the intent and\n\t# opens ElevationModal; the dieMountRequested handler below re-enters\n\t# here with the window now open.\n\tif BlueRidge.Common.Session.isElevated(self.session):\n\t\tsystem.perspective.openPopup(\"mpp-die-mount\",\n\t\t\t\"BlueRidge/Components/Popups/DieMount\",\n\t\t\tparams\u003d{\"cellLocationId\": self.session.custom.cell.locationId,\n\t\t\t\t\"popupId\": \"mpp-die-mount\",\n\t\t\t\t\"replyMessage\": \"dieMountResult\"},\n\t\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)\n\t\treturn\n\tBlueRidge.Common.Session.requireElevation(\n\t\tself.session, \"DieMount\", \"Die Mount\", {\"intent\": \"open\"})"
+        },
+        {
           "name": "applyCell",
           "params": [
             "cellId"
@@ -2108,6 +2100,20 @@
       ],
       "extensionFunctions": null,
       "messageHandlers": [
+        {
+          "messageType": "dieMountRequested",
+          "pageScope": true,
+          "script": "\t# Elevation replay. The DieMount popup subscribes to this same message\n\t# for its own \"mount\" / \"release\" re-assert; a page-scoped send reaches\n\t# every handler of the name, so each ignores the intents that are not\n\t# its own.\n\tif payload and payload.get(\"intent\") \u003d\u003d \"open\":\n\t\tself.openDieMount()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "dieMountResult",
+          "pageScope": true,
+          "script": "\t# One token bump re-reads activeTool, openBasketInstances, shotStatus\n\t# and cavityOptions together -- a mount or release changes all four.\n\t# refreshBinding from a message handler fails silently; the token is\n\t# the mechanism.\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        },
         {
           "messageType": "mpp-toast",
           "pageScope": false,
