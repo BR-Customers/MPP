@@ -467,7 +467,7 @@
         },
         "Device": {
           "dataType": "String",
-          "value": "MPP_Sim"
+          "value": "6MA CH Camera"
         },
         "OpcServer": {
           "dataType": "String",
@@ -475,6 +475,83 @@
         }
       },
       "tagType": "UdtInstance",
+      "tags": [
+        {
+          "name": "TrayLocked",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]I:0.0/0"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "InspectionComplete",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:10"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "VisionPartNumber",
+          "opcItemPath": "ns=1;s=[6MA CH Camera]N16:2",
+          "opcServer": "Ignition OPC UA Server",
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "Protocol",
+          "tagType": "AtomicTag",
+          "value": "SlcPassPulse"
+        }
+      ],
+      "typeId": "TrayInspectionStation"
+    },
+    {
+      "name": "7MA_CH",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "7MA_CH/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "6MA CH Camera"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "tags": [
+        {
+          "name": "TrayLocked",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]I:0.0/0"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "InspectionComplete",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:10"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "VisionPartNumber",
+          "opcItemPath": "ns=1;s=[6MA CH Camera]N16:2",
+          "opcServer": "Ignition OPC UA Server",
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "Protocol",
+          "tagType": "AtomicTag",
+          "value": "SlcPassPulse"
+        }
+      ],
       "typeId": "TrayInspectionStation"
     },
     {
