@@ -441,13 +441,20 @@ def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=No
 
 
 def getTrimStorageQueueForLine(lineLocationId, _refreshToken=None, storageLocationId=None):
-    """Trim-Storage model (2026-07-23) Machining IN queue for a LINE: the open LOTs sitting
-       in Trim Storage whose next pending route step is MachiningIn AND whose Item is eligible
-       at this line (ancestor cascade). A part eligible at two lines appears in both lines'
-       queues; claiming it (Machining.recordPick) moves it onto the line and off the others.
-       storageLocationId None => all trim stores (both shops). Same column shape as
-       getWipQueueByLocation, so the MachiningIn view row transform is unchanged.
-       Returns list[dict] (empty when no line bound)."""
+    """Machining IN queue for a LINE. THE NAME IS HISTORIC -- as of 2026-09-15 this does
+       NOT look at Trim Storage; the name is kept only because renaming it would force a
+       Designer edit to the MachiningIn view's binding expression.
+
+       Route-driven: the LOTs -- wherever they physically sit -- whose next pending route
+       step is MachiningIn AND whose Item is eligible at this line (ancestor cascade).
+       Trim Storage is one such place; WHSE is another, which is where a casting whose
+       route skips the trim shop is released to. A part eligible at two lines appears in
+       both lines' queues; claiming it (Machining.recordPick) writes the MachiningIn
+       checkpoint, which satisfies that Advance step and drops it off both.
+
+       storageLocationId is accepted and IGNORED (kept so the named query's signature is
+       unchanged). Same column shape as getWipQueueByLocation, so the MachiningIn view row
+       transform is unchanged. Returns list[dict] (empty when no line bound)."""
     lineLocationId = _u(lineLocationId)
     if lineLocationId is None:
         return []

@@ -2,7 +2,7 @@
 -- Procedure:   Quality.DefectCode_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     3.0
+-- Version:     4.0
 --
 -- Description:
 --   Creates a new defect code. Code must be unique. Scoped by
@@ -22,6 +22,9 @@
 --                       codes): SUBJECT . ACTION narrative Description +
 --                       resolved-FK OldValue/NewValue JSON.
 --   2026-08-04 - 3.0 - Scope by Parts.OperationCategory (nullable = plant-wide)
+--   2026-09-15 - 4.0 - @ChargeToPartyId added; duplicate check is now per
+--                       (area, charge-to, code) rather than plant-wide, matching
+--                       UQ_DefectCode_Area_Charge_Code from migration 0087.
 --                       instead of AreaLocationId. Audit JSON carries a Category
 --                       sub-object; NULL renders as "Plant-wide".
 -- =============================================
@@ -29,6 +32,7 @@ CREATE OR ALTER PROCEDURE Quality.DefectCode_Create
     @Code                NVARCHAR(20),
     @Description         NVARCHAR(500),
     @OperationCategoryId BIGINT          = NULL,
+    @ChargeToPartyId     BIGINT          = NULL,
     @IsExcused           BIT             = 0,
     @AppUserId           BIGINT
 AS
@@ -77,9 +81,31 @@ BEGIN
             RETURN;
         END
 
-        IF EXISTS (SELECT 1 FROM Quality.DefectCode WHERE Code = LTRIM(RTRIM(@Code)))
+        -- FK check only when a charge-to party is supplied
+        IF @ChargeToPartyId IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM Quality.ChargeToParty WHERE Id = @ChargeToPartyId)
         BEGIN
-            SET @Message = N'A defect code with this Code already exists.';
+            SET @Message = N'Invalid ChargeToPartyId.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'DefectCode',
+                @EntityId = NULL, @LogEventTypeCode = N'Created',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- A code number is unique per (area, charge-to party), NOT plant-wide.
+        -- The same number is printed on more than one shop-floor sheet -- 133 is
+        -- a die-cast defect AND a machine-shop defect on the same M&A sheet --
+        -- so each (area, charge-to, code) is its own row. Mirrors the
+        -- UQ_DefectCode_Area_Charge_Code index added by migration 0087.
+        IF EXISTS (SELECT 1 FROM Quality.DefectCode
+                    WHERE Code = LTRIM(RTRIM(@Code))
+                      AND ISNULL(OperationCategoryId, -1) = ISNULL(@OperationCategoryId, -1)
+                      AND ISNULL(ChargeToPartyId,   -1) = ISNULL(@ChargeToPartyId,   -1))
+        BEGIN
+            SET @Message = N'That code already exists for this area and charge-to party.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'DefectCode',
                 @EntityId = NULL, @LogEventTypeCode = N'Created',
@@ -92,18 +118,21 @@ BEGIN
         BEGIN TRANSACTION;
 
         INSERT INTO Quality.DefectCode
-            (Code, Description, OperationCategoryId, IsExcused, CreatedAt)
+            (Code, Description, OperationCategoryId, ChargeToPartyId, IsExcused, CreatedAt)
         VALUES
-            (LTRIM(RTRIM(@Code)), LTRIM(RTRIM(@Description)), @OperationCategoryId, ISNULL(@IsExcused, 0), SYSUTCDATETIME());
+            (LTRIM(RTRIM(@Code)), LTRIM(RTRIM(@Description)), @OperationCategoryId, @ChargeToPartyId, ISNULL(@IsExcused, 0), SYSUTCDATETIME());
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
         DECLARE @CatName NVARCHAR(100) =
             ISNULL((SELECT Name FROM Parts.OperationCategory WHERE Id = @OperationCategoryId), N'Plant-wide');
 
+        DECLARE @ChgName NVARCHAR(100) =
+            ISNULL((SELECT Name FROM Quality.ChargeToParty WHERE Id = @ChargeToPartyId), N'Unassigned');
+
         DECLARE @Subject NVARCHAR(600) =
             N'Defect Code ' + LTRIM(RTRIM(@Code)) + N' ' + NCHAR(8212) + N' ' + LTRIM(RTRIM(@Description))
-            + N' (' + @CatName + N')';
+            + N' (' + @CatName + N', charged to ' + @ChgName + N')';
 
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
             @Subject + N' ' + Audit.ufn_MidDot() + N' Created');

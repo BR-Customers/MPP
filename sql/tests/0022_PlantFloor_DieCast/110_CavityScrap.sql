@@ -52,18 +52,18 @@ SET @v = (SELECT CAST(RequiresNote AS NVARCHAR(20)) FROM Workorder.DieCastVarian
 EXEC test.Assert_IsEqual @TestName = N'[0084] Unknown requires a note',
     @Expected = N'1', @Actual = @v;
 
-SET @v = (SELECT CAST(dc.IsNonRejectScrap AS NVARCHAR(20)) FROM Quality.DefectCode dc WHERE dc.Code = N'DC-999');
-EXEC test.Assert_IsEqual @TestName = N'[0084] DC-999 Warmup is non-reject scrap',
+SET @v = (SELECT CAST(dc.IsNonRejectScrap AS NVARCHAR(20)) FROM Quality.DefectCode dc WHERE dc.Code = N'999');
+EXEC test.Assert_IsEqual @TestName = N'[0084] 999 Warmup is non-reject scrap',
     @Expected = N'1', @Actual = @v;
 
 SET @v = (SELECT oc.Code FROM Quality.DefectCode dc
-          JOIN Parts.OperationCategory oc ON oc.Id = dc.OperationCategoryId WHERE dc.Code = N'DC-999');
-EXEC test.Assert_IsEqual @TestName = N'[0084] DC-999 is categorised DieCast',
+          JOIN Parts.OperationCategory oc ON oc.Id = dc.OperationCategoryId WHERE dc.Code = N'999');
+EXEC test.Assert_IsEqual @TestName = N'[0084] 999 is categorised DieCast',
     @Expected = N'DieCast', @Actual = @v;
 
 SET @v = (SELECT cp.Code FROM Quality.DefectCode dc
-          JOIN Quality.ChargeToParty cp ON cp.Id = dc.ChargeToPartyId WHERE dc.Code = N'DC-999');
-EXEC test.Assert_IsEqual @TestName = N'[0084] DC-999 charges to DieCast',
+          JOIN Quality.ChargeToParty cp ON cp.Id = dc.ChargeToPartyId WHERE dc.Code = N'999');
+EXEC test.Assert_IsEqual @TestName = N'[0084] 999 charges to DieCast',
     @Expected = N'DieCast', @Actual = @v;
 
 -- backfill: every pre-existing reject must now carry its LOT's part

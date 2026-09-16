@@ -1,8 +1,21 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_TrimOut_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-06
--- Version:     1.3
+-- Modified:    2026-09-15
+-- Version:     1.4
+-- Change:      v1.4 (2026-09-15, reject identity) - the Trim OUT scrap rows now
+--              STAMP ItemId + CellLocationId + TerminalLocationId. 0084 made a
+--              reject row carry its own identity rather than be resolved through
+--              the LOT, and updated two writers; this one kept the pre-0084
+--              column list. Because Quality.Reject_GetPartMatrix /
+--              Reject_SearchDetail reach the part via LEFT JOIN Parts.Item ON
+--              i.Id = re.ItemId with NO fallback, every trim reject was grouping
+--              under '(unassigned part)' on the plant scrap matrix. ToolId /
+--              ToolCavityId / ShiftId stay NULL: trim runs on no die and this
+--              proc carries no shift context. Sibling fix: R__Lots_
+--              DieCastLot_Release v2.2, R__Workorder_MachiningOut_Mint v2.6.
+--              Guarded by 0024/040_TrimOut_Record_move_whole. Rows written
+--              before this stay NULL-stamped (no backfill here).
 -- Description: Arc 2 Phase 4 (spec sec 4.3). The Trim OUT 1:1 WHOLE-LOT move
 --              (FDS-06-006): writes a closing Workorder.ProductionEvent checkpoint
 --              for the LOT, then moves the WHOLE LOT to @DestinationCellLocationId,
@@ -348,10 +361,21 @@ BEGIN
         -- RejectEvent per line; ProductionEventId NULL by design (attribution is
         -- by LotId + Trim OUT context). The aggregate LOT decrement is in the
         -- move UPDATE below (NOT per-line -- avoids double-decrement).
+        --
+        -- v1.4: STAMPS its part and cell (0084, spec sec 3.3). A reject row
+        -- carries its own identity and is never resolved back through the LOT:
+        -- Quality.Reject_GetPartMatrix and Reject_SearchDetail both reach the
+        -- part via LEFT JOIN Parts.Item ON i.Id = re.ItemId with NO fallback,
+        -- so an unstamped row does not lose a little detail -- it groups under
+        -- '(unassigned part)', and EVERY trim reject in the plant collapses
+        -- into that one bucket on the scrap matrix PDF.
+        -- ToolId / ToolCavityId / ShiftId stay NULL deliberately: trim runs on
+        -- no die and this proc carries no shift context. Inventing a lookup to
+        -- fill them would attribute trim scrap to the casting die.
         IF EXISTS (SELECT 1 FROM @Scrap)
             INSERT INTO Workorder.RejectEvent
-                (ProductionEventId, LotId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, RecordedAt)
-            SELECT NULL, @ParentLotId, s.DefectCodeId, s.Quantity, NULL, N'Trim OUT scrap', @AppUserId, SYSUTCDATETIME()
+                (ProductionEventId, LotId, ItemId, CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
+            SELECT NULL, @ParentLotId, @ItemId, @SourceLocationId, s.DefectCodeId, s.Quantity, NULL, N'Trim OUT scrap', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
             FROM @Scrap s;
 
         -- (b) INLINED whole-LOT move (mirror of Lots.Lot_MoveTo). No split, no children.

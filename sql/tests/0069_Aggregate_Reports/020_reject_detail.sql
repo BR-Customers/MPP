@@ -29,8 +29,8 @@ GO
 DECLARE @ItemId BIGINT, @CellA BIGINT, @LotId BIGINT;
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @UserId    BIGINT = (SELECT MIN(Id) FROM Location.AppUser);
-DECLARE @DcNormal  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'100');  -- Soldering, Die Cast
-DECLARE @DcTest    BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'107');  -- Test Part, non-reject scrap
+DECLARE @DcNormal  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'001');  -- Soldering, Die Cast
+DECLARE @DcTest    BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'008');  -- Test Part, non-reject scrap
 
 -- MaxLotSize IS NULL: Lot_Create REJECTS a PieceCount above the item's cap,
 -- and a rejected create leaves @LotId NULL -> a NOT NULL violation two
@@ -89,7 +89,7 @@ EXEC test.Assert_IsEqual @TestName = N'[RejectDetail] lot-free scrap keeps LotId
     @Expected = N'1', @Actual = @n;
 
 -- Charge-to comes from the DEFECT CODE, not the free-text column.
-SELECT @s = MAX(ChargeToPartyName) FROM #RD WHERE DefectCode = N'100';
+SELECT @s = MAX(ChargeToPartyName) FROM #RD WHERE DefectCode = N'001';
 EXEC test.Assert_IsEqual @TestName = N'[RejectDetail] charge-to resolves from DefectCode, not ChargeToArea',
     @Expected = N'Die Cast', @Actual = @s;
 
@@ -98,21 +98,21 @@ EXEC test.Assert_IsEqual @TestName = N'[RejectDetail] the free-text ChargeToArea
     @Expected = N'0', @Actual = @n;
 
 -- The non-reject-scrap flag rides along so the report can bucket it.
-SELECT @n = CAST(MAX(CAST(IsNonRejectScrap AS INT)) AS INT) FROM #RD WHERE DefectCode = N'107';
+SELECT @n = CAST(MAX(CAST(IsNonRejectScrap AS INT)) AS INT) FROM #RD WHERE DefectCode = N'008';
 EXEC test.Assert_IsEqual @TestName = N'[RejectDetail] Test Part carries IsNonRejectScrap = 1',
     @Expected = N'1', @Actual = @n;
 
-SELECT @n = CAST(MAX(CAST(IsNonRejectScrap AS INT)) AS INT) FROM #RD WHERE DefectCode = N'100';
+SELECT @n = CAST(MAX(CAST(IsNonRejectScrap AS INT)) AS INT) FROM #RD WHERE DefectCode = N'001';
 EXEC test.Assert_IsEqual @TestName = N'[RejectDetail] an ordinary defect carries IsNonRejectScrap = 0',
     @Expected = N'0', @Actual = @n;
 
 -- Defect filter narrows.
 -- EXEC parameters must be literals or @variables -- never an inline
 -- subquery/CAST/CASE (repo convention; SQL Server rejects it outright).
-DECLARE @DcTestId BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'107');
+DECLARE @DcTestId BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'008');
 DELETE FROM #RD;
 INSERT INTO #RD EXEC Quality.Reject_SearchDetail @DefectCodeId = @DcTestId;
-SELECT @n = COUNT(*) FROM #RD WHERE DefectCode <> N'107';
+SELECT @n = COUNT(*) FROM #RD WHERE DefectCode <> N'008';
 EXEC test.Assert_IsEqual @TestName = N'[RejectDetail] @DefectCodeId admits no other defect',
     @Expected = N'0', @Actual = @n;
 

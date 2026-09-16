@@ -33,10 +33,15 @@ GO
 DECLARE @ItemId BIGINT, @CellA BIGINT, @LotId BIGINT;
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @UserId    BIGINT = (SELECT MIN(Id) FROM Location.AppUser);
-DECLARE @DcSolder  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'100');  -- Die Cast
-DECLARE @DcPoros   BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'135');  -- Die Cast
-DECLARE @DcHsp     BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'247');  -- Supplier
-DECLARE @DcTest    BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'107');  -- non-reject scrap
+-- Pick by (Code, area), never by Code alone. Migration 0087 made a code unique
+-- per (area, charge-to) rather than plant-wide, so 135 now exists twice -- once
+-- under Die Cast and once under Machining & Assembly -- and a bare
+-- "WHERE Code = N'135'" scalar subquery raises Msg 512 instead of choosing.
+DECLARE @OcDieCast BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N'DieCast');
+DECLARE @DcSolder  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'001' AND OperationCategoryId = @OcDieCast);
+DECLARE @DcPoros   BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'135' AND OperationCategoryId = @OcDieCast);
+DECLARE @DcHsp     BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'247');  -- Supplier, plant-wide (no area)
+DECLARE @DcTest    BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'008' AND OperationCategoryId = @OcDieCast);  -- non-reject scrap
 
 SELECT TOP 1 @ItemId = eil.ItemId, @CellA = eil.LocationId
 FROM Parts.v_EffectiveItemLocation eil

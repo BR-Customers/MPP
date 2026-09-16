@@ -2,7 +2,7 @@
 -- Procedure:   Quality.DefectCode_List
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     3.0
 --
 -- Description:
 --   Returns defect codes, optionally filtered by active status and/or
@@ -42,12 +42,15 @@ BEGIN
         dc.Code,
         dc.Description,
         dc.OperationCategoryId,
+        dc.ChargeToPartyId,
+        cp.Name                AS ChargeToPartyName,
         oc.Name                AS CategoryName,
         dc.IsExcused,
         dc.CreatedAt,
         dc.DeprecatedAt
     FROM Quality.DefectCode dc
     LEFT JOIN Parts.OperationCategory oc ON dc.OperationCategoryId = oc.Id
+    LEFT JOIN Quality.ChargeToParty   cp ON dc.ChargeToPartyId     = cp.Id
     WHERE (@IncludeDeprecated = 1 OR dc.DeprecatedAt IS NULL)
       AND (@FilterRequested = 0
            OR dc.OperationCategoryId = @EffCatId       -- matches requested category

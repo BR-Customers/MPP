@@ -31,8 +31,8 @@ GO
 DECLARE @ItemId BIGINT, @CellA BIGINT, @LotId BIGINT;
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @UserId    BIGINT = (SELECT MIN(Id) FROM Location.AppUser);
-DECLARE @DcSolder  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'100');  -- Die Cast
-DECLARE @DcTest    BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'107');  -- non-reject scrap
+DECLARE @DcSolder  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'001');  -- Die Cast
+DECLARE @DcTest    BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'008');  -- non-reject scrap
 DECLARE @DcHsp     BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'247');  -- Supplier, no production
 
 SELECT TOP 1 @ItemId = eil.ItemId, @CellA = eil.LocationId
@@ -99,27 +99,27 @@ EXEC test.Assert_IsEqual @TestName = N'[PlantSummary] RejectPercent is reject ov
 -- ---- Non-reject scrap block ----
 INSERT INTO #NR EXEC Quality.Reject_GetNonRejectScrap;
 
--- Migration 0084 added DC-999 (Warmup) as a sixth IsNonRejectScrap=1 code
+-- Migration 0084 added 999 (Warmup) as a sixth IsNonRejectScrap=1 code
 -- alongside the original five from 0067, so the block now lists six rows.
 SELECT @n = COUNT(*) FROM #NR;
 EXEC test.Assert_IsEqual @TestName = N'[NonRejectScrap] all six codes listed even at zero',
     @Expected = N'6', @Actual = @n;
 
-SELECT @n = Quantity FROM #NR WHERE DefectCode = N'107';
+SELECT @n = Quantity FROM #NR WHERE DefectCode = N'008';
 EXEC test.Assert_IsEqual @TestName = N'[NonRejectScrap] the Test Part quantity lands here',
     @Expected = N'5', @Actual = @n;
 
--- DC-999 (Warmup, migration 0084) belongs in this block same as the
+-- 999 (Warmup, migration 0084) belongs in this block same as the
 -- original five -- it is a genuine IsNonRejectScrap=1 code, not a leak.
 -- Widened to six names so this guard still catches an ordinary
 -- (IsNonRejectScrap=0) defect code appearing here.
-SELECT @n = COUNT(*) FROM #NR WHERE DefectCode NOT IN (N'107', N'170', N'199', N'229', N'230', N'DC-999');
+SELECT @n = COUNT(*) FROM #NR WHERE DefectCode NOT IN (N'008', N'170', N'199', N'229', N'230', N'999');
 EXEC test.Assert_IsEqual @TestName = N'[NonRejectScrap] no ordinary defect leaks into the block',
     @Expected = N'0', @Actual = @n;
 
 -- A past window zeroes the block without dropping its rows.
 -- Name updated to "six rows" for consistency with the two assertions above --
--- migration 0084 (DC-999) is the reason the block now has six rows, not five.
+-- migration 0084 (999) is the reason the block now has six rows, not five.
 DELETE FROM #NR;
 INSERT INTO #NR EXEC Quality.Reject_GetNonRejectScrap @FromEt = '2000-01-01', @ToEt = '2000-01-02';
 SELECT @n = SUM(Quantity) FROM #NR;

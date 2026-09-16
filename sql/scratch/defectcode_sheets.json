@@ -1,0 +1,955 @@
+{
+ "DC": [
+  {
+   "sheet": "1",
+   "padded": "001",
+   "sheetDesc": "Soldering",
+   "db": "14",
+   "dbDesc": "Soldering",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "2",
+   "padded": "002",
+   "sheetDesc": "Broken/Bent Pin",
+   "db": "15",
+   "dbDesc": "Broken/Bent Pin",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "4",
+   "padded": "004",
+   "sheetDesc": "Trim Damage",
+   "db": "17",
+   "dbDesc": "Trim Damage",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "5",
+   "padded": "005",
+   "sheetDesc": "Flatness/Bent Parts",
+   "db": "18",
+   "dbDesc": "Bent Part (Air Gap)",
+   "dbCat": "Trim",
+   "rejects": 0
+  },
+  {
+   "sheet": "6",
+   "padded": "006",
+   "sheetDesc": "Breakout (Broken Die)",
+   "db": "19",
+   "dbDesc": "Breakout (Broken Die)",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "7",
+   "padded": "007",
+   "sheetDesc": "Broken Gate",
+   "db": "20",
+   "dbDesc": "Broken Gate",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "8",
+   "padded": "008",
+   "sheetDesc": "Test Part",
+   "db": "21",
+   "dbDesc": "Test Part",
+   "dbCat": "Die Cast",
+   "rejects": 318
+  },
+  {
+   "sheet": "9",
+   "padded": "009",
+   "sheetDesc": "Blisters",
+   "db": "22",
+   "dbDesc": "Blisters",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "10",
+   "padded": "010",
+   "sheetDesc": "Stuck Part / Stuck Piece",
+   "db": "23",
+   "dbDesc": "Stuck Part/Stuck Piece",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "11",
+   "padded": "011",
+   "sheetDesc": "Flow Lines",
+   "db": "24",
+   "dbDesc": "Flow Lines",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "12",
+   "padded": "012",
+   "sheetDesc": "Flash",
+   "db": "25",
+   "dbDesc": "Flash",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "15",
+   "padded": "015",
+   "sheetDesc": "Short Shot",
+   "db": "26",
+   "dbDesc": "Short Shot",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "24",
+   "padded": "024",
+   "sheetDesc": "Raised/Recessed Ejector Pins",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "25",
+   "padded": "025",
+   "sheetDesc": "No Good Date Pin",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "26",
+   "padded": "026",
+   "sheetDesc": "Egg-shaped Hole",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "27",
+   "padded": "027",
+   "sheetDesc": "Porosity in Gate Area",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "29",
+   "padded": "029",
+   "sheetDesc": "Cracks",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "30",
+   "padded": "030",
+   "sheetDesc": "Dimensional",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "32",
+   "padded": "032",
+   "sheetDesc": "Galling/Drags",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "40",
+   "padded": "040",
+   "sheetDesc": "Grease/Oil Contamination",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "41",
+   "padded": "041",
+   "sheetDesc": "Holes Not Punched/Flash in Bolt Holes",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "42",
+   "padded": "042",
+   "sheetDesc": "Flaking",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "44",
+   "padded": "044",
+   "sheetDesc": "Chipped Bolt Pad",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "45",
+   "padded": "045",
+   "sheetDesc": "Over File",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "51",
+   "padded": "051",
+   "sheetDesc": "Robot Dropping Parts",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "52",
+   "padded": "052",
+   "sheetDesc": "Hit Damage/Dents",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "53",
+   "padded": "053",
+   "sheetDesc": "Computer reject/Low Speed",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "54",
+   "padded": "054",
+   "sheetDesc": "Computer reject/High Speed",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "55",
+   "padded": "055",
+   "sheetDesc": "Computer reject/Cycle time",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "56",
+   "padded": "056",
+   "sheetDesc": "Computer reject/Cast Pressure",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "57",
+   "padded": "057",
+   "sheetDesc": "Computer reject/Biscuit Size",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "58",
+   "padded": "058",
+   "sheetDesc": "Computer reject/Rise up time",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "59",
+   "padded": "059",
+   "sheetDesc": "Computer reject/High Speed Length",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "60",
+   "padded": "060",
+   "sheetDesc": "Computer reject/Press up time",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "62",
+   "padded": "062",
+   "sheetDesc": "Inventory Balance",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "257",
+   "padded": "257",
+   "sheetDesc": "QR Code Reject",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  }
+ ],
+ "TRIM": [
+  {
+   "sheet": "100",
+   "padded": "100",
+   "sheetDesc": "Soldering",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "103",
+   "padded": "103",
+   "sheetDesc": "Trim Damage",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "104",
+   "padded": "104",
+   "sheetDesc": "Bent Part (Air Gap)",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "105",
+   "padded": "105",
+   "sheetDesc": "Broken Die (Breakout)",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "106",
+   "padded": "106",
+   "sheetDesc": "Broken Gate",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "107",
+   "padded": "107",
+   "sheetDesc": "Test Part",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "108",
+   "padded": "108",
+   "sheetDesc": "Blisters",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "109",
+   "padded": "109",
+   "sheetDesc": "Stuck Part/ Stuck Piece",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "110",
+   "padded": "110",
+   "sheetDesc": "Flow Lines",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "111",
+   "padded": "111",
+   "sheetDesc": "Flash",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "112",
+   "padded": "112",
+   "sheetDesc": "Short Shot",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "113",
+   "padded": "113",
+   "sheetDesc": "Broken Post",
+   "db": "27",
+   "dbDesc": "Broken Post",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "117",
+   "padded": "117",
+   "sheetDesc": "Raised/ Recessed Ejector Pins",
+   "db": "31",
+   "dbDesc": "Raised/Recessed Ejector Pins",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "118",
+   "padded": "118",
+   "sheetDesc": "No Good Date Pin",
+   "db": "32",
+   "dbDesc": "Broken Date Pin",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "119",
+   "padded": "119",
+   "sheetDesc": "Egg-shaped Hole",
+   "db": "33",
+   "dbDesc": "Egg-shaped Hole",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "120",
+   "padded": "120",
+   "sheetDesc": "Porosity in Gate",
+   "db": "34",
+   "dbDesc": "Porosity in Gate Area",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "121",
+   "padded": "121",
+   "sheetDesc": "Crack",
+   "db": "35",
+   "dbDesc": "Cracks",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "125",
+   "padded": "125",
+   "sheetDesc": "Drags",
+   "db": "39",
+   "dbDesc": "Drags",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "126",
+   "padded": "126",
+   "sheetDesc": "Contamination (Grease/Oil)",
+   "db": "40",
+   "dbDesc": "Contamination (Grease/Oil)",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "127",
+   "padded": "127",
+   "sheetDesc": "Holes Not Punched",
+   "db": "41",
+   "dbDesc": "Holes Not Punched",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "128",
+   "padded": "128",
+   "sheetDesc": "Flaking",
+   "db": "42",
+   "dbDesc": "Flaking",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "129",
+   "padded": "129",
+   "sheetDesc": "Chipped Bolt Pad",
+   "db": "43",
+   "dbDesc": "Chipped Bolt Pad",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "130",
+   "padded": "130",
+   "sheetDesc": "Over File",
+   "db": "44",
+   "dbDesc": "Over File",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "131",
+   "padded": "131",
+   "sheetDesc": "Flash in Bolt Hole",
+   "db": "45",
+   "dbDesc": "Flash In Bolt Hole",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "133",
+   "padded": "133",
+   "sheetDesc": "Hit Damage",
+   "db": "47",
+   "dbDesc": "Hit Damage/Dent/Scratch/Nick",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "134",
+   "padded": "134",
+   "sheetDesc": "Discoloration",
+   "db": "48",
+   "dbDesc": "Discoloration",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "140",
+   "padded": "140",
+   "sheetDesc": "Stuck Media",
+   "db": "73",
+   "dbDesc": "Stuck Media",
+   "dbCat": "Trim",
+   "rejects": 0
+  },
+  {
+   "sheet": "142",
+   "padded": "142",
+   "sheetDesc": "NG Blast/ NG Tumble",
+   "db": "75",
+   "dbDesc": "N/G Blast N/G Tumble",
+   "dbCat": "Trim",
+   "rejects": 0
+  },
+  {
+   "sheet": "143",
+   "padded": "143",
+   "sheetDesc": "Surface Roughness",
+   "db": "76",
+   "dbDesc": "Surface Roughness",
+   "dbCat": "Trim",
+   "rejects": 0
+  },
+  {
+   "sheet": "144",
+   "padded": "144",
+   "sheetDesc": "White Rust",
+   "db": "77",
+   "dbDesc": "White-Rust",
+   "dbCat": "Trim",
+   "rejects": 0
+  },
+  {
+   "sheet": "145",
+   "padded": "145",
+   "sheetDesc": "Drill damage (Broken Drill Bit)",
+   "db": "78",
+   "dbDesc": "Drill Damage",
+   "dbCat": "Trim",
+   "rejects": 0
+  },
+  {
+   "sheet": "147",
+   "padded": "147",
+   "sheetDesc": "Cycle Stop",
+   "db": "80",
+   "dbDesc": "Cycle Stop",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "162",
+   "padded": "162",
+   "sheetDesc": "Misset",
+   "db": "94",
+   "dbDesc": "Misset",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "163",
+   "padded": "163",
+   "sheetDesc": "Chamfer No Good",
+   "db": "95",
+   "dbDesc": "Chamfer No Good",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "197",
+   "padded": "197",
+   "sheetDesc": "Lamination",
+   "db": "55",
+   "dbDesc": "Lamination",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "244",
+   "padded": "244",
+   "sheetDesc": "Dents",
+   "db": "150",
+   "dbDesc": "Dents",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  }
+ ],
+ "MA_DC": [
+  {
+   "sheet": "108",
+   "padded": "108",
+   "sheetDesc": "Blister",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "105",
+   "padded": "105",
+   "sheetDesc": "Break Out",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "121",
+   "padded": "121",
+   "sheetDesc": "Cracks",
+   "db": "35",
+   "dbDesc": "Cracks",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "104",
+   "padded": "104",
+   "sheetDesc": "Bent Part",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "134",
+   "padded": "134",
+   "sheetDesc": "Discolor",
+   "db": "48",
+   "dbDesc": "Discoloration",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "128",
+   "padded": "128",
+   "sheetDesc": "Flaking",
+   "db": "42",
+   "dbDesc": "Flaking",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "110",
+   "padded": "110",
+   "sheetDesc": "Flowlines",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "106",
+   "padded": "106",
+   "sheetDesc": "Broken Gate",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "136",
+   "padded": "136",
+   "sheetDesc": "Hard spot",
+   "db": "50",
+   "dbDesc": "Hard Spot",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "107",
+   "padded": "107",
+   "sheetDesc": "D/C Test Parts",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "133",
+   "padded": "133",
+   "sheetDesc": "Nicks/Dents (Body Damage)",
+   "db": "47",
+   "dbDesc": "Hit Damage/Dent/Scratch/Nick",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "197",
+   "padded": "197",
+   "sheetDesc": "Lamination",
+   "db": "55",
+   "dbDesc": "Lamination",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "135",
+   "padded": "135",
+   "sheetDesc": "Porosity",
+   "db": "49",
+   "dbDesc": "Porosity",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "100",
+   "padded": "100",
+   "sheetDesc": "Solder",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "142",
+   "padded": "142",
+   "sheetDesc": "N/G Shotblast",
+   "db": "75",
+   "dbDesc": "N/G Blast N/G Tumble",
+   "dbCat": "Trim",
+   "rejects": 0
+  },
+  {
+   "sheet": "103",
+   "padded": "103",
+   "sheetDesc": "Trim Press Damage",
+   "db": null,
+   "dbDesc": null,
+   "dbCat": null,
+   "rejects": 0
+  },
+  {
+   "sheet": "144",
+   "padded": "144",
+   "sheetDesc": "White Rust",
+   "db": "77",
+   "dbDesc": "White-Rust",
+   "dbCat": "Trim",
+   "rejects": 0
+  }
+ ],
+ "MA_MS": [
+  {
+   "sheet": "146",
+   "padded": "146",
+   "sheetDesc": "Chatter",
+   "db": "79",
+   "dbDesc": "Chatter",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "147",
+   "padded": "147",
+   "sheetDesc": "Cycle Stop",
+   "db": "80",
+   "dbDesc": "Cycle Stop",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "122",
+   "padded": "122",
+   "sheetDesc": "Dimension",
+   "db": "36",
+   "dbDesc": "Dimensional (All dimensional except pin size and or depth/height)",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "134",
+   "padded": "134",
+   "sheetDesc": "Discolor",
+   "db": "48",
+   "dbDesc": "Discoloration",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "148",
+   "padded": "148",
+   "sheetDesc": "Dropped",
+   "db": "81",
+   "dbDesc": "Dropped",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "149",
+   "padded": "149",
+   "sheetDesc": "Flatness No Good",
+   "db": "82",
+   "dbDesc": "Flatness",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "150",
+   "padded": "150",
+   "sheetDesc": "Hole Size No Good",
+   "db": "83",
+   "dbDesc": "Holesize",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "143",
+   "padded": "143",
+   "sheetDesc": "Surface Roughness",
+   "db": "76",
+   "dbDesc": "Surface Roughness",
+   "dbCat": "Trim",
+   "rejects": 0
+  },
+  {
+   "sheet": "170",
+   "padded": "170",
+   "sheetDesc": "Machine Trial",
+   "db": "102",
+   "dbDesc": "Machine Trial",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "133",
+   "padded": "133",
+   "sheetDesc": "Scratches/Nicks/Dents",
+   "db": "47",
+   "dbDesc": "Hit Damage/Dent/Scratch/Nick",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "138",
+   "padded": "138",
+   "sheetDesc": "Non Clean Up",
+   "db": "52",
+   "dbDesc": "NCU - Non Clean Up",
+   "dbCat": "Die Cast",
+   "rejects": 0
+  },
+  {
+   "sheet": "151",
+   "padded": "151",
+   "sheetDesc": "Thickness No good",
+   "db": "84",
+   "dbDesc": "Thickness",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "152",
+   "padded": "152",
+   "sheetDesc": "Threads No Good",
+   "db": "85",
+   "dbDesc": "Thread Damage",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "153",
+   "padded": "153",
+   "sheetDesc": "Tool Break",
+   "db": "86",
+   "dbDesc": "Tool Break",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "154",
+   "padded": "154",
+   "sheetDesc": "Tool Mark",
+   "db": "87",
+   "dbDesc": "Tool Mark",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  },
+  {
+   "sheet": "224",
+   "padded": "224",
+   "sheetDesc": "Out of Sequence",
+   "db": "135",
+   "dbDesc": "Out of Sequence",
+   "dbCat": "Machining & Assembly",
+   "rejects": 0
+  }
+ ]
+}

@@ -78,8 +78,8 @@ WHERE p.Code = N'MppNonSpecific';
 EXEC test.Assert_IsEqual @TestName = N'[0067] the seven Prod-Control/Quality-Control codes charge to Non-Specific MPP',
     @Expected = N'7', @Actual = @n;
 
--- ---- Non-reject scrap: the five named codes plus DC-999 ----
--- Migration 0084 added a sixth IsNonRejectScrap=1 code, DC-999 (Warmup):
+-- ---- Non-reject scrap: the five named codes plus 999 ----
+-- Migration 0084 added a sixth IsNonRejectScrap=1 code, 999 (Warmup):
 -- warm-up metal was never going to be a part, so counting it inside a die's
 -- reject percentage would make every changeover look like a quality event
 -- (spec 2026-09-14-diecast-quantity-and-scrap-model-design.md, decision D9).
@@ -89,7 +89,7 @@ EXEC test.Assert_IsEqual @TestName = N'[0067/0084] exactly six codes flagged IsN
     @Expected = N'6', @Actual = @n;
 
 SELECT @n = COUNT(*) FROM Quality.DefectCode
-WHERE IsNonRejectScrap = 1 AND Code IN (N'107', N'170', N'229', N'230', N'199');
+WHERE IsNonRejectScrap = 1 AND Code IN (N'008', N'170', N'229', N'230', N'199');
 EXEC test.Assert_IsEqual @TestName = N'[0067] the flagged codes are Test/Trial/Assembled-on-NG',
     @Expected = N'5', @Actual = @n;
 

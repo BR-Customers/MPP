@@ -1,7 +1,21 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
--- Version:     2.5 (2026-08-20, part-scoped CRT enforcement) - D4: the scanned casting
+-- Version:     2.6 (2026-09-15, reject identity) - the Machining OUT scrap rows now
+--              STAMP ItemId + CellLocationId + TerminalLocationId. 0084 made a reject
+--              row carry its own identity rather than be resolved through the LOT, and
+--              updated two writers; this one kept the pre-0084 column list. Because
+--              Quality.Reject_GetPartMatrix / Reject_SearchDetail reach the part via
+--              LEFT JOIN Parts.Item ON i.Id = re.ItemId with NO fallback, every
+--              machining reject was grouping under '(unassigned part)' on the plant
+--              scrap matrix. ItemId is the CONSUMED casting's part (@SrcItem) -- not
+--              @ProducedItemId, which was never made. ToolId / ToolCavityId / ShiftId
+--              stay NULL: a machining line has no die or cavity and the proc carries no
+--              shift. Sibling fix: R__Lots_DieCastLot_Release v2.2, R__Workorder_
+--              TrimOut_Record v1.4. Guarded by 0027/080_MachiningOut_Mint_scrap.
+--              Rows written before this stay NULL-stamped (no backfill here).
+--
+--              2.5 (2026-08-20, part-scoped CRT enforcement) - D4: the scanned casting
 --              (@SourceLotId, the FIFO handle the operator actually presented) is
 --              refused when it is CRT (Lots.ufn_CrtBlocksAdvance). The guard sits
 --              immediately after the B2 blocked-status rejection -- so Hold/Scrap/
@@ -241,8 +255,20 @@ BEGIN
                 VALUES (@SourceLotId, @GoodStatusId, @ClosedStatusId, N'Closed by Machining OUT scrap (fully scrapped).', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
             END
 
-            INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, RecordedAt)
-            SELECT NULL, @SourceLotId, s.DefectCodeId, s.Quantity, NULL, N'Machining OUT scrap', @AppUserId, SYSUTCDATETIME()
+            -- v2.6: STAMPS its part and cell (0084, spec sec 3.3). A reject row
+            -- carries its own identity and is never resolved back through the
+            -- LOT: Quality.Reject_GetPartMatrix and Reject_SearchDetail both
+            -- reach the part via LEFT JOIN Parts.Item ON i.Id = re.ItemId with
+            -- NO fallback, so an unstamped row does not lose a little detail --
+            -- it groups under '(unassigned part)', and EVERY machining reject
+            -- in the plant collapses into that one bucket on the scrap matrix.
+            -- @SrcItem is the CONSUMED casting's part, which is what was
+            -- scrapped -- NOT @ProducedItemId, which was never made.
+            -- ToolId / ToolCavityId / ShiftId stay NULL deliberately: a
+            -- machining line has no die and no cavity, and this proc carries
+            -- no shift context.
+            INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
+            SELECT NULL, @SourceLotId, @SrcItem, @SrcLoc, s.DefectCodeId, s.Quantity, NULL, N'Machining OUT scrap', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
             FROM @Scrap s;
         END
 

@@ -27,19 +27,24 @@ DECLARE @MachAsm BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N
 DECLARE @Defects TABLE (Code NVARCHAR(20), Description NVARCHAR(500), OperationCategoryId BIGINT, IsExcused BIT);
 
 INSERT INTO @Defects (Code, Description, OperationCategoryId, IsExcused) VALUES
-(N'100', N'Soldering', @DieCast, 0),
-(N'101', N'Broken/Bent Pin', @DieCast, 0),
-(N'102', N'Bent Pin', @DieCast, 1),
-(N'103', N'Trim Damage', @DieCast, 0),
-(N'104', N'Flatness/Bent Parts', @DieCast, 0),
-(N'105', N'Breakout (Broken Die)', @DieCast, 0),
-(N'106', N'Broken Gate', @DieCast, 0),
-(N'107', N'Test Part', @DieCast, 0),
-(N'108', N'Blisters', @DieCast, 0),
-(N'109', N'Stuck Part/Stuck Piece', @DieCast, 0),
-(N'110', N'Flow Lines', @DieCast, 0),
-(N'111', N'Flash', @DieCast, 0),
-(N'112', N'Short Shot', @DieCast, 0),
+-- Codes 001-015: the die cast sheet (DCFM-0485) numbering, which is what
+-- MPP_MES_Prod carries. These were seeded 100-112 until 2026-09-15 -- the
+-- TRIM sheet's numbers for the same defects -- which meant a Dev reset could
+-- not reproduce prod. Note 015 (not 013): MPP retires numbers permanently,
+-- so the gaps are real and must not be closed up.
+(N'001', N'Soldering', @DieCast, 0),
+(N'002', N'Broken/Bent Pin', @DieCast, 0),
+(N'003', N'Bent Pin', @DieCast, 1),
+(N'004', N'Trim Damage', @DieCast, 0),
+(N'005', N'Bent Part (Air Gap)', @Trim, 0),
+(N'006', N'Breakout (Broken Die)', @DieCast, 0),
+(N'007', N'Broken Gate', @DieCast, 0),
+(N'008', N'Test Part', @DieCast, 0),
+(N'009', N'Blisters', @DieCast, 0),
+(N'010', N'Stuck Part/Stuck Piece', @DieCast, 0),
+(N'011', N'Flow Lines', @DieCast, 0),
+(N'012', N'Flash', @DieCast, 0),
+(N'015', N'Short Shot', @DieCast, 0),
 (N'113', N'Broken Post', @DieCast, 0),
 (N'114', N'Pin Size', @DieCast, 0),
 (N'115', N'Computer Reject', @DieCast, 1),
@@ -184,15 +189,40 @@ INSERT INTO @Defects (Code, Description, OperationCategoryId, IsExcused) VALUES
 -- The free gaps INSIDE the FRS range (155, 193, 196, 251) sit mid-band where
 -- Flexware could still fill them, so ours start a band of their own.
 (N'260', N'Scale Adjustment', @Trim, 0),
-(N'DC-999', N'Warmup', @DieCast, 0)
+(N'999', N'Warmup', @DieCast, 0)
 ;
 
+-- The guard is (Code, OperationCategoryId), NOT Code alone. Migration 0087
+-- made a code unique per (area, charge-to) rather than plant-wide, and a reset
+-- runs migrations BEFORE seeds -- so by the time this runs, 0087 has already
+-- created 24 of these numbers under a DIFFERENT area (125 Drags under Trim,
+-- say, where this seed files it under Die Cast). A Code-only guard sees the
+-- number, skips the row, and the area this seed is responsible for never gets
+-- it: the fresh-reset database ends at 209 codes where prod has 233, and
+-- 125 loses IsExcused with it.
 INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused)
 SELECT d.Code, d.Description, d.OperationCategoryId, d.IsExcused
 FROM @Defects d
-WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Code = d.Code);
+WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc
+                  WHERE dc.Code = d.Code
+                    AND dc.OperationCategoryId = d.OperationCategoryId);
 
 PRINT 'Seed 030 (FRS defect codes) applied: ' + CAST(@@ROWCOUNT AS NVARCHAR(10)) + ' new rows.';
+
+-- IsExcused belongs to the row wherever it came from. 0087 inserts every code
+-- it adds with IsExcused = 0 (correctly -- it is filing sheet lines, not making
+-- an OEE judgement), and for a code it filed in the SAME area this seed wants
+-- -- 149 Flatness under Machining & Assembly -- the insert above rightly skips
+-- it. Without this the flag is simply lost on a fresh reset, and IsExcused
+-- feeds the OEE quality calculation, so the loss is silent and arithmetic.
+-- Must stay in THIS batch: @Defects does not survive the GO below.
+UPDATE dc SET IsExcused = 1
+  FROM Quality.DefectCode dc
+  JOIN @Defects d ON d.Code = dc.Code
+                 AND d.OperationCategoryId = dc.OperationCategoryId
+ WHERE d.IsExcused = 1 AND dc.IsExcused = 0;
+
+PRINT 'Seed 030 excused flags reconciled: ' + CAST(@@ROWCOUNT AS NVARCHAR(10)) + ' row(s).';
 GO
 
 -- ============================================================
@@ -240,18 +270,28 @@ BEGIN
     UPDATE Quality.DefectCode SET ChargeToPartyId = @cpMachineShop
     WHERE ChargeToPartyId IS NULL AND OperationCategoryId = @ocMachAsm;
 
-    -- DC-999 Warmup: process necessity, not a defect. Counted for material and
+    -- 999 Warmup: process necessity, not a defect. Counted for material and
     -- yield, excluded from the reject percentage, charged to Die Cast so it
     -- stays visible as a departmental cost rather than sitting in Unassigned.
     UPDATE Quality.DefectCode SET IsNonRejectScrap = 1
-    WHERE Code = N'DC-999' AND IsNonRejectScrap = 0;
+    WHERE Code = N'999' AND IsNonRejectScrap = 0;
 
     -- Counted, but excluded from every reject percentage.
-    --   107 Test Part (DC)             170 Machine Trial (MS)
+    --   008 Test Part (DC)             170 Machine Trial (MS)
     --   229 Trial Part (DC)
     --   230 Assembled on to NG (DC)    199 Assembled on to NG (MS)
     UPDATE Quality.DefectCode SET IsNonRejectScrap = 1
-    WHERE IsNonRejectScrap = 0 AND Code IN (N'107', N'170', N'229', N'230', N'199');
+    WHERE IsNonRejectScrap = 0 AND Code IN (N'008', N'170', N'229', N'230', N'199');
+
+    -- NO 'DC - ' DESCRIPTION PREFIX HERE. This block used to mirror migration
+    -- 0086, which prefixed every die-cast-CHARGED description. Migration 0087
+    -- REVERSED that decision and strips the prefix back off: attribution is
+    -- ChargeToPartyId, which 0087 sets per row, not something spelled into the
+    -- label. The seed's copy outlived the decision it mirrored, and because a
+    -- reset runs migrations BEFORE seeds it re-applied the prefix AFTER 0087
+    -- had removed it -- so every fresh Dev/Test database disagreed with prod,
+    -- which never re-runs seeds. Do not reinstate it without also reversing
+    -- 0087.
 
     PRINT 'Seed 030 classification applied (charge-to party + non-reject scrap).';
 END
