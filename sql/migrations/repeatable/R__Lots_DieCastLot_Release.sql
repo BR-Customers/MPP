@@ -1,9 +1,28 @@
 -- ============================================================
 -- Repeatable:  R__Lots_DieCastLot_Release.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-14
--- Version:     2.1
--- Change:      v2.1 -- companion fix for Workorder.ufn_CavityShotWatermark
+-- Modified:    2026-09-15
+-- Version:     2.2
+-- Change:      v2.2 -- the CLOSING SCRAP rows now stamp their own identity
+--              (ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId,
+--              TerminalLocationId), finishing what v2.1 started. v2.1 taught
+--              the CONTRIBUTION row to carry its cavity; the RejectEvent
+--              insert a few lines below it kept the pre-0084 column list and
+--              wrote NULL for all five. Consequence was invisible at the write
+--              and total at the read: DieCast_GetShiftOutputBreakdown scopes
+--              PriorScrapThisShift by ShiftId + ToolCavityId, so Reconcile
+--              Shift's SHIFT SCRAP column reported 0 for scrap that was
+--              genuinely recorded and NO amount of Compute or Refresh would
+--              ever change it. Quality.Reject_GetPartMatrix / _SearchDetail
+--              read re.ItemId, so the same rows also bucketed as an unmapped
+--              part. Live evidence (Dev, 2026-09-15): reject 20054 (lot 20265,
+--              qty 10) beside contribution 20102 (cavity 30, shift 20107) ->
+--              column reported 0. Guarded by Tests 6-7 in
+--              sql/tests/0022_PlantFloor_DieCast/090_ReleasePreview.sql.
+--              NOTE for anyone backfilling: rows already written by <= v2.1
+--              stay NULL-stamped and remain invisible to those reads.
+--
+--              v2.1 -- companion fix for Workorder.ufn_CavityShotWatermark
 --              v3.0 (die-cast quantity + scrap model, spec sec 5.3b), which
 --              reads DieCastContribution.ToolCavityId directly instead of
 --              deriving the cavity via INNER JOIN Lots.Lot. That is only
@@ -153,8 +172,11 @@ BEGIN
             WHERE a.ToolId = l.ToolId AND a.ReleasedAt IS NULL
             ORDER BY a.AssignedAt DESC, a.Id DESC;
 
-        DECLARE @RelToolId BIGINT, @RelToolCavityId BIGINT;
-        SELECT @RelToolId = ToolId, @RelToolCavityId = ToolCavityId FROM Lots.Lot WHERE Id = @LotId;
+        -- v2.2: @RelItemId joins the pair because the closing scrap rows STAMP
+        -- their own identity (0084) rather than reaching it through the LOT.
+        DECLARE @RelToolId BIGINT, @RelToolCavityId BIGINT, @RelItemId BIGINT;
+        SELECT @RelToolId = ToolId, @RelToolCavityId = ToolCavityId, @RelItemId = ItemId
+        FROM Lots.Lot WHERE Id = @LotId;
 
         IF @CounterReading IS NOT NULL AND @CounterReading < 0
         BEGIN SET @Message = N'Counter reading cannot be negative.'; GOTO Fail; END
@@ -226,9 +248,23 @@ BEGIN
 
         -- additive final scrap (inline, mirrors DieCastShiftOutput_Record's additive-reject block:
         -- record only, no PieceCount decrement)
+        --
+        -- v2.2: STAMPS its identity (0084, spec sec 3.3). Die-cast scrap is a
+        -- fact about (Shift, Press, Tool, Cavity, Part) and the row carries
+        -- that itself -- it is never derived back through the LOT. Until now
+        -- this insert kept the pre-0084 column list, and the row it wrote was
+        -- unreachable to every cavity-attributed read:
+        --   * DieCast_GetShiftOutputBreakdown.PriorScrapThisShift filters
+        --     ShiftId + ToolCavityId, so Reconcile Shift's SHIFT SCRAP column
+        --     reported 0 for scrap that was genuinely recorded -- permanently,
+        --     which is why it presented as a broken Refresh;
+        --   * Quality.Reject_GetPartMatrix / _SearchDetail resolve the part
+        --     from re.ItemId, so it also showed as an unmapped part.
+        -- Every value was already resolved above for the contribution row.
         IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) = 1
-            INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, RecordedAt)
-            SELECT NULL, @LotId, s.defectCodeId, s.quantity, NULL, N'Die-cast final release scrap', @AppUserId, SYSUTCDATETIME()
+            INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
+            SELECT NULL, @LotId, @RelItemId, @RelToolId, @RelToolCavityId, @ShiftId, @ResolvedCellLocationId,
+                   s.defectCodeId, s.quantity, NULL, N'Die-cast final release scrap', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
             FROM OPENJSON(@ScrapLinesJson) WITH (defectCodeId BIGINT '$.defectCodeId', quantity INT '$.quantity') s;
 
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)

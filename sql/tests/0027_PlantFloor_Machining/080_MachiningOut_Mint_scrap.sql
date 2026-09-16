@@ -332,6 +332,37 @@ DECLARE @a7Parent NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lot
 EXEC test.Assert_IsEqual @TestName = N'[MoScrap] fully-scrapped casting NOT a genealogy parent', @Expected = N'0', @Actual = @a7Parent;
 DECLARE @rej7 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent WHERE LotId=@A7);
 EXEC test.Assert_IsEqual @TestName = N'[MoScrap] RejectEvent on the fully-scrapped casting', @Expected = N'1', @Actual = @rej7;
+-- 0084 identity stamp (spec sec 3.3). A reject row carries its OWN part: both
+-- Quality.Reject_GetPartMatrix and Reject_SearchDetail resolve the part with
+-- LEFT JOIN Parts.Item ON i.Id = re.ItemId and have NO fallback to the LOT, so
+-- an unstamped row does not merely lose detail -- it groups under
+-- '(unassigned part)' and every machining reject in the plant collapses into
+-- that one bucket on the scrap matrix PDF.
+DECLARE @e7 NVARCHAR(50) = CAST(@Casting AS NVARCHAR(50));
+DECLARE @v7 NVARCHAR(50) = ISNULL(CAST((SELECT TOP 1 ItemId FROM Workorder.RejectEvent
+    WHERE LotId = @A7) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] reject row stamps ItemId (Reject_GetPartMatrix reads it)',
+    @Expected = @e7, @Actual = @v7;
+
+SET @e7 = CAST(@Line AS NVARCHAR(50));
+SET @v7 = ISNULL(CAST((SELECT TOP 1 TerminalLocationId FROM Workorder.RejectEvent
+    WHERE LotId = @A7) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] reject row stamps TerminalLocationId',
+    @Expected = @e7, @Actual = @v7;
+
+-- The report's OWN join, not a column check: this is the thing that was broken.
+SET @v7 = CAST((SELECT COUNT(*) FROM Workorder.RejectEvent re
+                INNER JOIN Parts.Item i ON i.Id = re.ItemId
+                WHERE re.LotId = @A7) AS NVARCHAR(50));
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] reject row resolves a part on the report join',
+    @Expected = N'1', @Actual = @v7;
+
+-- ToolCavityId is die-cast-only (a machining line has no cavity). Asserting it
+-- stays NULL stops a future "stamp everything" pass inventing a cavity here.
+SET @v7 = ISNULL(CAST((SELECT TOP 1 ToolCavityId FROM Workorder.RejectEvent
+    WHERE LotId = @A7) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[MoScrap] reject row leaves ToolCavityId NULL (die-cast only)',
+    @Expected = N'<NULL>', @Actual = @v7;
 GO
 
 -- =============================================

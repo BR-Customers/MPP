@@ -48,6 +48,7 @@ DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHER
 DELETE FROM Tools.Tool WHERE Code = N'RPV-DIE';
 DELETE FROM Oee.Shift WHERE Remarks = N'RPV-FIXTURE';
 DELETE FROM Oee.ShiftSchedule WHERE Name = N'RPV-FIXTURE-SCHED';
+DELETE FROM Quality.DefectCode WHERE Code = N'RPV-DEF';
 GO
 
 -- ---- fixture ----
@@ -60,6 +61,11 @@ DECLARE @ActiveTool BIGINT = (SELECT Id FROM Tools.ToolStatusCode      WHERE Cod
 DECLARE @ActiveCav  BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
 DECLARE @ClosedCav  BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Closed');
 DECLARE @CavItemId  BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+
+-- Quality.DefectCode is empty in dev/test (the FRS 153-defect load is
+-- cutover-only, see 020); Test 6 needs one to hang release scrap on.
+INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused, CreatedAt)
+VALUES (N'RPV-DEF', N'Release preview scrap defect', NULL, 0, @Now);
 
 INSERT INTO Tools.Tool (ToolTypeId, Code, Name, StatusCodeId, ShotCount, CreatedAt, CreatedByUserId)
 VALUES (@DieTypeId, N'RPV-DIE', N'Release preview die', @ActiveTool, 0, @Now, 1);
@@ -303,6 +309,129 @@ EXEC test.Assert_IsEqual @TestName = N'[Preview] an unknown LOT returns no rows'
 GO
 
 -- =============================================
+-- Test 6: RELEASE SCRAP IS CAVITY-ATTRIBUTED (migration 0084, spec sec 3.3).
+--
+--         Die-cast scrap is a fact about (Shift, Press, Tool, Cavity, Part),
+--         and that identity is STAMPED on the reject row -- never derived
+--         through the LOT. This proc's CONTRIBUTION row was taught that on
+--         2026-09-14 (v2.1, for ufn_CavityShotWatermark v3.0); the RejectEvent
+--         insert a few lines below it was missed and kept the pre-0084 column
+--         list -- no ItemId, ToolId, ToolCavityId, ShiftId or CellLocationId.
+--
+--         The cost is invisible at the write and total at the read:
+--         DieCast_GetShiftOutputBreakdown computes PriorScrapThisShift as
+--             WHERE re.ShiftId = @ShiftId AND re.ToolCavityId = tc.Id
+--         so a release-scrap row carrying NULL for both is UNREACHABLE. The
+--         SHIFT SCRAP column on Reconcile Shift reads 0 for scrap that was
+--         genuinely recorded, and no amount of Compute or Refresh will ever
+--         change it -- which is why it presents as a broken refresh rather
+--         than as lost data.
+--
+--         Live evidence (Dev, 2026-09-15): reject 20054, lot 20265, qty 10,
+--         written beside contribution 20102 (cavity 30, shift 20107). The
+--         column reported 0 against an actual 10.
+--
+--         Quality.Reject_GetPartMatrix / _SearchDetail resolve the part from
+--         re.ItemId as well, so the same row also buckets as an unmapped part
+--         in plant scrap reporting.
+-- =============================================
+DECLARE @ToolId  BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'RPV-DIE');
+DECLARE @PressA  BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
+DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'RPV-FIXTURE' ORDER BY Id DESC);
+DECLARE @LotB    BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'RPV-B1');
+DECLARE @CavB    BIGINT = (SELECT ToolCavityId FROM Lots.Lot WHERE Id = @LotB);
+DECLARE @ItemB   BIGINT = (SELECT ItemId FROM Lots.Lot WHERE Id = @LotB);
+DECLARE @Whse    BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE Code = N'WHSE' AND DeprecatedAt IS NULL ORDER BY Id);
+IF @Whse IS NULL SET @Whse = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
+DECLARE @Defect  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'RPV-DEF');
+
+-- Cavity B is credited through 100; close it at reading 200 with 7 scrap.
+DECLARE @Scrap NVARCHAR(MAX) =
+    N'[{"defectCodeId":' + CAST(@Defect AS NVARCHAR(20)) + N',"quantity":7}]';
+DECLARE @R6 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @R6 EXEC Lots.DieCastLot_Release
+    @LotId = @LotB, @StorageLocationId = @Whse, @FinalPieceDelta = NULL,
+    @CounterReading = 200, @ScrapLinesJson = @Scrap, @ShiftId = @ShiftId,
+    @AppUserId = 1, @TerminalLocationId = NULL, @CellLocationId = @PressA;
+DECLARE @v6 NVARCHAR(50) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R6);
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseScrap] release with a scrap line succeeds',
+    @Expected = N'1', @Actual = @v6;
+
+SET @v6 = CAST((SELECT COUNT(*) FROM Workorder.RejectEvent
+                WHERE LotId = @LotB AND DefectCodeId = @Defect) AS NVARCHAR(50));
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseScrap] one reject row written',
+    @Expected = N'1', @Actual = @v6;
+
+-- The five stamps, each asserted on its own so a failure names the column that
+-- was dropped rather than a bare "identity is wrong".
+DECLARE @e6 NVARCHAR(50);
+
+SET @e6 = CAST(@CavB AS NVARCHAR(50));
+SET @v6 = ISNULL(CAST((SELECT ToolCavityId FROM Workorder.RejectEvent
+                       WHERE LotId = @LotB AND DefectCodeId = @Defect) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseScrap] stamps ToolCavityId',
+    @Expected = @e6, @Actual = @v6;
+
+SET @e6 = CAST(@ShiftId AS NVARCHAR(50));
+SET @v6 = ISNULL(CAST((SELECT ShiftId FROM Workorder.RejectEvent
+                       WHERE LotId = @LotB AND DefectCodeId = @Defect) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseScrap] stamps ShiftId',
+    @Expected = @e6, @Actual = @v6;
+
+SET @e6 = CAST(@ItemB AS NVARCHAR(50));
+SET @v6 = ISNULL(CAST((SELECT ItemId FROM Workorder.RejectEvent
+                       WHERE LotId = @LotB AND DefectCodeId = @Defect) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseScrap] stamps ItemId (Reject_GetPartMatrix reads it)',
+    @Expected = @e6, @Actual = @v6;
+
+SET @e6 = CAST(@ToolId AS NVARCHAR(50));
+SET @v6 = ISNULL(CAST((SELECT ToolId FROM Workorder.RejectEvent
+                       WHERE LotId = @LotB AND DefectCodeId = @Defect) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseScrap] stamps ToolId (several dies make one part)',
+    @Expected = @e6, @Actual = @v6;
+
+SET @e6 = CAST(@PressA AS NVARCHAR(50));
+SET @v6 = ISNULL(CAST((SELECT CellLocationId FROM Workorder.RejectEvent
+                       WHERE LotId = @LotB AND DefectCodeId = @Defect) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseScrap] stamps CellLocationId (the press)',
+    @Expected = @e6, @Actual = @v6;
+GO
+
+-- =============================================
+-- Test 7: ...and therefore the SHIFT SCRAP column on Reconcile Shift SEES it.
+--         This is the assertion that guards the reported symptom -- Test 6
+--         pins the columns, this one pins the read that consumes them.
+-- =============================================
+DECLARE @ToolId  BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'RPV-DIE');
+DECLARE @PressA  BIGINT = (SELECT TOP 1 Id FROM Location.Location ORDER BY Id);
+DECLARE @ShiftId BIGINT = (SELECT TOP 1 Id FROM Oee.Shift WHERE Remarks = N'RPV-FIXTURE' ORDER BY Id DESC);
+DECLARE @LotB    BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'RPV-B1');
+DECLARE @CavB    BIGINT = (SELECT ToolCavityId FROM Lots.Lot WHERE Id = @LotB);
+DECLARE @CavA    BIGINT = (SELECT Id FROM Tools.ToolCavity
+                           WHERE ToolId = @ToolId AND CavityCode = N'a');
+
+DECLARE @B TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, LotName NVARCHAR(50),
+                  IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT,
+                  ItemId BIGINT, CavityDescription NVARCHAR(500), CreditedThrough INT, NewShots INT,
+                  CavityStatusCode NVARCHAR(50), ConfiguredItemId BIGINT, ConfiguredPartNumber NVARCHAR(100),
+                  PriorScrapThisShift INT, DieWideShots INT, IsPending BIT);
+INSERT INTO @B EXEC Workorder.DieCast_GetShiftOutputBreakdown
+    @ToolId = @ToolId, @ShiftId = @ShiftId, @CounterReading = 200,
+    @CellLocationId = @PressA, @DieWideShots = 0;
+
+DECLARE @v7 NVARCHAR(50) = ISNULL(CAST((SELECT TOP 1 PriorScrapThisShift FROM @B
+                                        WHERE ToolCavityId = @CavB) AS NVARCHAR(50)), N'<no row>');
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseScrap] SHIFT SCRAP column reports the 7 released',
+    @Expected = N'7', @Actual = @v7;
+
+-- ...and does not smear it across the die. Cavity A released clean in Test 3.
+SET @v7 = ISNULL(CAST((SELECT TOP 1 PriorScrapThisShift FROM @B
+                       WHERE ToolCavityId = @CavA) AS NVARCHAR(50)), N'<no row>');
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseScrap] a clean cavity still reports 0',
+    @Expected = N'0', @Actual = @v7;
+GO
+
+-- =============================================
 -- TEARDOWN. Oee.Shift is GLOBAL state (see 080): a fixture shift left behind
 -- changes what 0046_Shift_Reconcile computes even though everything here
 -- passed.
@@ -329,6 +458,7 @@ DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHER
 DELETE FROM Tools.Tool WHERE Code = N'RPV-DIE';
 DELETE FROM Oee.Shift WHERE Remarks = N'RPV-FIXTURE';
 DELETE FROM Oee.ShiftSchedule WHERE Name = N'RPV-FIXTURE-SCHED';
+DELETE FROM Quality.DefectCode WHERE Code = N'RPV-DEF';
 GO
 
 EXEC test.EndTestFile;

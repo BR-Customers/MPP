@@ -100,6 +100,35 @@ DECLARE @AudCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Audit
     INNER JOIN Audit.LogEventType et ON et.Id = ol.LogEventTypeId
     WHERE et.Code = N'TrimOutRecorded' AND ol.EntityId = @PeId);
 EXEC test.Assert_IsEqual @TestName = N'[TrimOut] TrimOutRecorded audit in OperationLog', @Expected = N'1', @Actual = @AudCnt;
+
+-- 0084 identity stamp (spec sec 3.3). The reject row carries its OWN part:
+-- Quality.Reject_GetPartMatrix and Reject_SearchDetail both resolve the part
+-- with LEFT JOIN Parts.Item ON i.Id = re.ItemId and have NO fallback to the
+-- LOT, so an unstamped row groups under '(unassigned part)' -- every trim
+-- reject in the plant collapsing into one bucket on the scrap matrix PDF.
+DECLARE @rItem NVARCHAR(50) = ISNULL(CAST((SELECT TOP 1 ItemId FROM Workorder.RejectEvent
+    WHERE LotId = @L) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[TrimOut] scrap row stamps ItemId (Reject_GetPartMatrix reads it)',
+    @Expected = N'1', @Actual = @rItem;
+
+DECLARE @rCellExp NVARCHAR(50) = CAST(@Src AS NVARCHAR(50));
+DECLARE @rCell NVARCHAR(50) = ISNULL(CAST((SELECT TOP 1 CellLocationId FROM Workorder.RejectEvent
+    WHERE LotId = @L) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[TrimOut] scrap row stamps the trim cell it happened at',
+    @Expected = @rCellExp, @Actual = @rCell;
+
+-- The report's OWN join, not a column check: this is the thing that was broken.
+DECLARE @rJoin NVARCHAR(50) = CAST((SELECT COUNT(*) FROM Workorder.RejectEvent re
+    INNER JOIN Parts.Item i ON i.Id = re.ItemId WHERE re.LotId = @L) AS NVARCHAR(50));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOut] scrap row resolves a part on the report join',
+    @Expected = N'1', @Actual = @rJoin;
+
+-- Trim has no die and no cavity. Asserting these stay NULL stops a future
+-- "stamp everything" pass copying the die-cast column list wholesale.
+DECLARE @rCav NVARCHAR(50) = ISNULL(CAST((SELECT TOP 1 ToolCavityId FROM Workorder.RejectEvent
+    WHERE LotId = @L) AS NVARCHAR(50)), N'<NULL>');
+EXEC test.Assert_IsEqual @TestName = N'[TrimOut] scrap row leaves ToolCavityId NULL (die-cast only)',
+    @Expected = N'<NULL>', @Actual = @rCav;
 GO
 
 -- ---- cleanup ----
