@@ -406,6 +406,182 @@ ORDER BY de.Id
     Save-Csv $apx "0077_approximate_repair.csv"
     Table $apx @("Id", "Location", "Shift", "ShownNowET", "ShownAfterET", "Minutes")
 }
+# ============================================================
+# Release 2026-09-15 (evening) -- three bodies of work:
+#   0085 + 0087   defect codes scoped by area
+#   0088          reject identity backfill
+#   (repeatable)  Machining IN claimed by route, not by location
+# ============================================================
+
+# ---- 0085 -- DC-999 -> 999 --------------------------------------------------
+if (& $has "0085_defectcode_warmup_999") {
+    $taken = S "SELECT COUNT(*) FROM Quality.DefectCode WHERE Code = N'999'"
+    if ($taken -gt 0) { Finding "BLOCK" "0085" "defect code '999' already exists -- 0085 renames DC-999 into it and will raise rather than clobber" }
+    else { Finding "INFO" "0085" "renames DC-999 -> 999 in place; Id is unchanged so its booked Warmup rejects follow the row" }
+}
+
+# ---- 0087 -- (area, charge-to, code) replaces a plant-wide unique Code -------
+if (& $has "0087_defectcode_area_scoped_codes") {
+    # The one way this release can roll back hard: CREATE UNIQUE INDEX over a
+    # duplicate triple. Zero today only because Code is still globally unique,
+    # so this catches a row added between the preview and the window.
+    $dupes = S "SELECT COUNT(*) FROM (SELECT OperationCategoryId, ChargeToPartyId, Code FROM Quality.DefectCode GROUP BY OperationCategoryId, ChargeToPartyId, Code HAVING COUNT(*) > 1) x"
+    if ($dupes -gt 0) { Finding "BLOCK" "0087" "$dupes duplicate (area, charge-to, code) triple(s) -- CREATE UNIQUE INDEX fails mid-transaction and rolls the whole release back" }
+
+    # 0087 resolves all six of these by code and raises if one is missing.
+    $lookups = S "SELECT (SELECT COUNT(*) FROM Parts.OperationCategory WHERE Code IN (N'DieCast', N'Trim', N'MachiningAssembly')) + (SELECT COUNT(*) FROM Quality.ChargeToParty WHERE Code IN (N'DieCast', N'TrimShop', N'MachineShop'))"
+    if ($lookups -ne 6) { Finding "BLOCK" "0087" "expected 6 lookup rows (3 OperationCategory + 3 ChargeToParty), found $lookups -- 0087 raises on a missing code" }
+
+    # NULLs compare EQUAL in a unique index, so two NULL-charge rows sharing an
+    # area and a number would collide where today they do not.
+    $nullCharge = S "SELECT COUNT(*) FROM Quality.DefectCode WHERE ChargeToPartyId IS NULL"
+    if ($nullCharge -gt 0) { Finding "WARN" "0087" "$nullCharge defect code(s) carry a NULL ChargeToPartyId -- NULLs compare equal in the new unique index. Read them before committing." }
+
+    # IsExcused feeds the OEE quality calculation and 0087 must not disturb it:
+    # 3a updates Description only, 3b hard-codes IsExcused = 0 for genuinely new
+    # rows. Record the count so the post-Execute check can prove it held. (A
+    # fresh-reset ordering bug lost two of these in Dev -- seed 030, fixed
+    # separately; prod never re-runs seeds, so this is the proof it stayed put.)
+    $excused = S "SELECT COUNT(*) FROM Quality.DefectCode WHERE IsExcused = 1 AND Code NOT LIKE N'TEST%'"
+    Finding "INFO" "0087" "$excused excused defect code(s) today -- 0087 touches only Description and inserts at IsExcused = 0, so this must still be $excused after Execute"
+
+    $before = S "SELECT COUNT(*) FROM Quality.DefectCode"
+    Finding "INFO" "0087" "defect codes $before -> expected 233 (78 inserted, 8 re-worded, 0 deleted, no existing Id changed)"
+    $rejects = S "SELECT COUNT(*) FROM Workorder.RejectEvent"
+    Finding "INFO" "0087" "$rejects booked reject(s) key on DefectCodeId (Id, not Code) -- the count must still be $rejects after Execute"
+}
+
+# ---- 0088 -- reject identity backfill ---------------------------------------
+if (& $has "0088_diecast_release_scrap_identity_backfill") {
+    # 0084 repointed every reject reader at RejectEvent.ItemId. Three of the five
+    # writers kept the pre-0084 column list, so what they have written since 0084
+    # went out carries no part and is invisible to the scrap matrix Honda reads
+    # and to Reconcile Shift's SHIFT SCRAP column.
+    $unlab = Q @"
+SELECT ISNULL(re.Remarks, N'(none)') AS Remarks, COUNT(*) AS Rows_,
+       SUM(CASE WHEN re.ItemId IS NULL THEN 1 ELSE 0 END) AS NoPart,
+       SUM(CASE WHEN re.ItemId IS NULL THEN re.Quantity ELSE 0 END) AS QtyNoPart,
+       CAST(MAX(re.RecordedAt) AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(0)) AS LastET
+FROM Workorder.RejectEvent re
+GROUP BY re.Remarks
+HAVING SUM(CASE WHEN re.ItemId IS NULL THEN 1 ELSE 0 END) > 0
+ORDER BY 3 DESC
+"@
+    if ($unlab.Count -gt 0) {
+        Save-Csv $unlab "0088_unlabelled_rejects.csv"
+        Log "  Reject rows carrying no part (invisible to the scrap matrix and to SHIFT SCRAP):"
+        Table $unlab @("Remarks", "Rows_", "NoPart", "QtyNoPart", "LastET")
+    }
+
+    $inScope = S "SELECT COUNT(*) FROM Workorder.RejectEvent WHERE Remarks = N'Die-cast final release scrap' AND (ItemId IS NULL OR ToolId IS NULL OR ToolCavityId IS NULL OR ShiftId IS NULL OR CellLocationId IS NULL)"
+    Finding "INFO" "0088" "$inScope die-cast release-scrap row(s) will be relabelled"
+
+    # The residue 0088 refuses to guess at: a release taken with no counter
+    # reading and no final delta writes no contribution row, so there is nothing
+    # to pair a shift against. A wrong shift moves scrap onto another crew.
+    $orphan = S @"
+SELECT COUNT(*) FROM Workorder.RejectEvent re
+WHERE re.Remarks = N'Die-cast final release scrap'
+  AND (re.ShiftId IS NULL OR re.CellLocationId IS NULL)
+  AND NOT EXISTS (SELECT 1 FROM Workorder.DieCastContribution dc
+                  WHERE dc.LotId = re.LotId
+                    AND ABS(DATEDIFF(SECOND, dc.EventAt, re.RecordedAt)) <= 5)
+"@
+    if ($orphan -gt 0) { Finding "WARN" "0088" "$orphan release-scrap row(s) have no contribution row within 5s to take a shift from -- 0088 leaves these NULL deliberately and prints its own warning. They need a decision, not a re-run." }
+
+    # Out of scope BY DESIGN. The v1.4 / v2.6 proc fixes ship in this same
+    # release and stop new ones, but 0088 backfills only die-cast release scrap.
+    $outScope = S "SELECT COUNT(*) FROM Workorder.RejectEvent WHERE Remarks IN (N'Trim OUT scrap', N'Machining OUT scrap') AND ItemId IS NULL"
+    if ($outScope -gt 0) { Finding "WARN" "0088" "$outScope trim/machining reject(s) stay unlabelled after this release -- 0088 covers die-cast release scrap only. A second backfill is owed; see the runbook." }
+}
+
+# ---- Machining IN claimed by route, not by location -------------------------
+# No versioned migration in this body of work: both changes are CREATE OR ALTER
+# repeatables, so these gates key off the apply list, not $pendingIds.
+if (@($toApply | ForEach-Object { $_.File }) -contains "R__Workorder_MachiningIn_RecordPick.sql") {
+
+    # GATE 1 -- the dangerous one. The OLD proc checked only "is the LOT in trim
+    # storage" plus "does this part's route mention MachiningIn anywhere". It did
+    # NOT check MachiningIn was the step actually due. Every row here is a basket
+    # an operator can claim today and will find refused the morning after.
+    $stranded = Q @"
+SELECT l.Id, l.LotName, i.PartNumber, loc.Name AS AtLocation,
+       ISNULL(ns.OperationTypeCode, N'(no pending step)') AS NextStep
+FROM Lots.Lot l
+JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
+JOIN Parts.Item i ON i.Id = l.ItemId
+JOIN Location.Location loc ON loc.Id = l.CurrentLocationId
+OUTER APPLY Lots.ufn_NextPendingRouteStep(l.Id) ns
+WHERE loc.LocationTypeDefinitionId = 14
+  AND EXISTS (SELECT 1 FROM Location.Location a
+              WHERE a.Id = loc.ParentLocationId AND a.Code LIKE N'TRIM%')
+  AND ISNULL(ns.OperationTypeCode, N'') <> N'MachiningIn'
+ORDER BY loc.Name, i.PartNumber
+"@
+    if ($stranded.Count -gt 0) {
+        Save-Csv $stranded "machining_in_newly_blocked.csv"
+        Finding "BLOCK" "machining-in" "$($stranded.Count) LOT(s) in trim storage are claimable today and would be REFUSED after this release (their next step is not MachiningIn). Record the missing checkpoints first, or run the window when trim storage is empty -- either way the list belongs in the guide."
+        Table $stranded @("Id", "LotName", "PartNumber", "AtLocation", "NextStep")
+    }
+
+    # GATE 3 -- the read now excludes Open. An Open basket parked in trim storage
+    # is already anomalous, but it vanishes from the queue on release.
+    $openInStore = S @"
+SELECT COUNT(*) FROM Lots.Lot l
+JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code = N'Open'
+JOIN Location.Location loc ON loc.Id = l.CurrentLocationId
+WHERE loc.LocationTypeDefinitionId = 14
+  AND EXISTS (SELECT 1 FROM Location.Location a
+              WHERE a.Id = loc.ParentLocationId AND a.Code LIKE N'TRIM%')
+"@
+    if ($openInStore -gt 0) { Finding "BLOCK" "machining-in" "$openInStore Open LOT(s) sit in trim storage and disappear from the Machining IN queue on release (the read now excludes Open). Somebody must know which." }
+
+    # GATE 4 -- the old inline lookup accepted a DRAFT route; ufn_NextPendingRouteStep
+    # requires PublishedAt. A part running on an unpublished route stops being claimable.
+    $draftRoute = Q @"
+SELECT i.PartNumber, COUNT(*) AS OpenLots
+FROM Lots.Lot l
+JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
+JOIN Parts.Item i ON i.Id = l.ItemId
+WHERE NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate rt
+                  WHERE rt.ItemId = l.ItemId AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL)
+  AND EXISTS (SELECT 1 FROM Parts.RouteTemplate rt
+              JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+              JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+              JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+              WHERE rt.ItemId = l.ItemId AND oty.Code = N'MachiningIn')
+GROUP BY i.PartNumber
+"@
+    foreach ($r in $draftRoute) { Finding "BLOCK" "machining-in" "part $($r.PartNumber) has $($r.OpenLots) open LOT(s) and a MachiningIn step on an UNPUBLISHED route -- claimable today, not after. Publish the route first." }
+
+    # GATE 2 -- informational: the size of the behaviour change. Rows at the
+    # Warehouse are the point of the release. Rows at a sort cage, an offsite
+    # facility or a shipping location are the spec's residual risk in real data.
+    $newlyVisible = Q @"
+SELECT loc.Name AS AtLocation, i.PartNumber, COUNT(*) AS Lots
+FROM Lots.Lot l
+JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code NOT IN (N'Closed', N'Open')
+JOIN Parts.Item i ON i.Id = l.ItemId
+JOIN Location.Location loc ON loc.Id = l.CurrentLocationId
+CROSS APPLY Lots.ufn_NextPendingRouteStep(l.Id) ns
+WHERE ns.OperationTypeCode = N'MachiningIn'
+  AND NOT (loc.LocationTypeDefinitionId = 14
+           AND EXISTS (SELECT 1 FROM Location.Location a
+                       WHERE a.Id = loc.ParentLocationId AND a.Code LIKE N'TRIM%'))
+GROUP BY loc.Name, i.PartNumber ORDER BY COUNT(*) DESC
+"@
+    if ($newlyVisible.Count -gt 0) {
+        Save-Csv $newlyVisible "machining_in_newly_visible.csv"
+        Finding "INFO" "machining-in" "$(($newlyVisible | Measure-Object -Property Lots -Sum).Sum) LOT(s) newly appear in Machining IN queues -- quote this in the guide so nobody is surprised by a queue that grew overnight"
+        Table $newlyVisible @("AtLocation", "PartNumber", "Lots")
+    }
+
+    # The two changed procs both call this; the read proc did not before.
+    if (-not (S "SELECT OBJECT_ID(N'Lots.ufn_NextPendingRouteStep')")) {
+        Finding "BLOCK" "machining-in" "Lots.ufn_NextPendingRouteStep does not exist on the target -- both changed procs depend on it"
+    }
+}
+
 if (@($Findings | Where-Object { $_.Gate -match '^00\d\d$' }).Count -eq 0 -and $pending.Count -gt 0) { Log "  No gates fired." "Green" }
 
 # ---------- [6] live activity + backups ----------
