@@ -366,3 +366,31 @@ its own and the old views keep working, because `0087` only adds rows.
 - **Renaming `Lot_GetTrimStorageQueueForLine` → `Lot_GetMachiningInQueueForLine`.** The name is
   now historic and says so in the proc header. Renaming means editing the MachiningIn view's
   binding expression — a Designer change; bundle it with the next Designer session.
+
+---
+
+## 7. Outcome — NOT YET EXECUTED
+
+Fill this in during the window. The next release reads it to establish its baseline, and
+`02_scoping_a_release.md` treats an unfilled Outcome as a reason to reconcile before
+continuing — so an empty section here costs the next person real time.
+
+| | |
+|---|---|
+| Executed at | _(ET)_ |
+| Plan fingerprint used | _(from the prod Preview, not ProdSim's `3664ba967697`)_ |
+| Backup path | _(from `backup.txt` in the Execute report folder)_ |
+| Report folder | `dist/deploy-reports/MPP_MES_Prod_Execute_<stamp>` |
+| Migrations applied | _(expect 4: 0085–0088)_ |
+| Repeatables applied | _(ProdSim said 8; prod may differ)_ |
+| Lock window | _(ProdSim: 0.6s)_ |
+
+**Gates that fired on prod:** _(especially `machining-in` GATE 1 — if it returned rows, record
+how many baskets and what was done about them)_
+
+**Verification results:** _(check 2 must be `233 / 0 / 0`; check 4 must match the Preview's
+excused count)_
+
+**Anything learned the hard way:** _(also add it to `prod-release-context-pack/`, per its
+README — that is how the retyped-fingerprint abort and the pickled `session-props` got
+recorded)_
