@@ -353,7 +353,7 @@
         },
         "Device": {
           "dataType": "String",
-          "value": "MPP_Sim"
+          "value": "6MA CH Camera"
         },
         "OpcServer": {
           "dataType": "String",
@@ -361,6 +361,45 @@
         }
       },
       "tagType": "UdtInstance",
+      "tags": [
+        {
+          "name": "TrayLocked",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]I:0.0/0"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "InspectionComplete",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:10"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "PartNumber",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N7:2"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "VisionPartNumber",
+          "opcItemPath": {
+            "bindType": "parameter",
+            "binding": "ns=1;s=[{Device}]N16:2"
+          },
+          "tagType": "AtomicTag"
+        },
+        {
+          "name": "Protocol",
+          "tagType": "AtomicTag",
+          "value": "SlcPassPulse"
+        }
+      ],
       "typeId": "TrayInspectionStation"
     },
     {
