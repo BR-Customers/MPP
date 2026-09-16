@@ -192,12 +192,37 @@ INSERT INTO @Defects (Code, Description, OperationCategoryId, IsExcused) VALUES
 (N'999', N'Warmup', @DieCast, 0)
 ;
 
+-- The guard is (Code, OperationCategoryId), NOT Code alone. Migration 0087
+-- made a code unique per (area, charge-to) rather than plant-wide, and a reset
+-- runs migrations BEFORE seeds -- so by the time this runs, 0087 has already
+-- created 24 of these numbers under a DIFFERENT area (125 Drags under Trim,
+-- say, where this seed files it under Die Cast). A Code-only guard sees the
+-- number, skips the row, and the area this seed is responsible for never gets
+-- it: the fresh-reset database ends at 209 codes where prod has 233, and
+-- 125 loses IsExcused with it.
 INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused)
 SELECT d.Code, d.Description, d.OperationCategoryId, d.IsExcused
 FROM @Defects d
-WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Code = d.Code);
+WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc
+                  WHERE dc.Code = d.Code
+                    AND dc.OperationCategoryId = d.OperationCategoryId);
 
 PRINT 'Seed 030 (FRS defect codes) applied: ' + CAST(@@ROWCOUNT AS NVARCHAR(10)) + ' new rows.';
+
+-- IsExcused belongs to the row wherever it came from. 0087 inserts every code
+-- it adds with IsExcused = 0 (correctly -- it is filing sheet lines, not making
+-- an OEE judgement), and for a code it filed in the SAME area this seed wants
+-- -- 149 Flatness under Machining & Assembly -- the insert above rightly skips
+-- it. Without this the flag is simply lost on a fresh reset, and IsExcused
+-- feeds the OEE quality calculation, so the loss is silent and arithmetic.
+-- Must stay in THIS batch: @Defects does not survive the GO below.
+UPDATE dc SET IsExcused = 1
+  FROM Quality.DefectCode dc
+  JOIN @Defects d ON d.Code = dc.Code
+                 AND d.OperationCategoryId = dc.OperationCategoryId
+ WHERE d.IsExcused = 1 AND dc.IsExcused = 0;
+
+PRINT 'Seed 030 excused flags reconciled: ' + CAST(@@ROWCOUNT AS NVARCHAR(10)) + ' row(s).';
 GO
 
 -- ============================================================
@@ -258,15 +283,15 @@ BEGIN
     UPDATE Quality.DefectCode SET IsNonRejectScrap = 1
     WHERE IsNonRejectScrap = 0 AND Code IN (N'008', N'170', N'229', N'230', N'199');
 
-    -- Attribution in the label (mirrors migration 0086). The M&A line
-    -- production sheets record all of a line's scrap and split it under
-    -- 'D/C Rejects' / 'M/S Rejects' headings -- that is ATTRIBUTION, so a
-    -- missed audit upstream can be found. Carrying it in the description
-    -- means the operator sees it in the picker. Codes are NOT touched.
-    UPDATE Quality.DefectCode
-       SET Description = N'DC - ' + Description
-     WHERE ChargeToPartyId = @cpDieCast
-       AND Description NOT LIKE N'DC - %';
+    -- NO 'DC - ' DESCRIPTION PREFIX HERE. This block used to mirror migration
+    -- 0086, which prefixed every die-cast-CHARGED description. Migration 0087
+    -- REVERSED that decision and strips the prefix back off: attribution is
+    -- ChargeToPartyId, which 0087 sets per row, not something spelled into the
+    -- label. The seed's copy outlived the decision it mirrored, and because a
+    -- reset runs migrations BEFORE seeds it re-applied the prefix AFTER 0087
+    -- had removed it -- so every fresh Dev/Test database disagreed with prod,
+    -- which never re-runs seeds. Do not reinstate it without also reversing
+    -- 0087.
 
     PRINT 'Seed 030 classification applied (charge-to party + non-reject scrap).';
 END

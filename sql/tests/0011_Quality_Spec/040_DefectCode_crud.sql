@@ -270,9 +270,14 @@ GO
 DECLARE @DefectId BIGINT;
 SELECT @DefectId = Id FROM Quality.DefectCode WHERE Code = N'TEST-DEF-001';
 
+-- Column ORDER must mirror Quality.DefectCode_Get's SELECT exactly -- INSERT-EXEC
+-- matches by position, not by name. v2.0 added ChargeToPartyId + ChargeToPartyName
+-- between OperationCategoryId and CategoryName (migration 0087, a code belongs to
+-- an area and is charged to a party); omitting them raises Msg 213.
 CREATE TABLE #GetResult (
     Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
-    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
+    OperationCategoryId BIGINT, ChargeToPartyId BIGINT,
+    ChargeToPartyName NVARCHAR(200), CategoryName NVARCHAR(200),
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 
@@ -294,7 +299,8 @@ GO
 -- =============================================
 CREATE TABLE #ListResult (
     Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
-    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
+    OperationCategoryId BIGINT, ChargeToPartyId BIGINT,
+    ChargeToPartyName NVARCHAR(200), CategoryName NVARCHAR(200),
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 
@@ -349,7 +355,8 @@ GO
 -- =============================================
 CREATE TABLE #ActiveList (
     Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
-    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
+    OperationCategoryId BIGINT, ChargeToPartyId BIGINT,
+    ChargeToPartyName NVARCHAR(200), CategoryName NVARCHAR(200),
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 
@@ -371,7 +378,8 @@ GO
 -- =============================================
 CREATE TABLE #AllList (
     Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
-    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
+    OperationCategoryId BIGINT, ChargeToPartyId BIGINT,
+    ChargeToPartyName NVARCHAR(200), CategoryName NVARCHAR(200),
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 
@@ -595,7 +603,8 @@ INSERT INTO #QT EXEC Quality.DefectCode_Create
 DROP TABLE #QT;
 
 CREATE TABLE #LT (Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
-    OperationCategoryId BIGINT, CategoryName NVARCHAR(200),
+    OperationCategoryId BIGINT, ChargeToPartyId BIGINT,
+    ChargeToPartyName NVARCHAR(200), CategoryName NVARCHAR(200),
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3));
 INSERT INTO #LT EXEC Quality.DefectCode_List
     @IncludeDeprecated = 0, @OperationCategoryId = NULL, @OperationTypeCode = N'DieCast';
