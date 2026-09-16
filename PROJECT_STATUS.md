@@ -12,6 +12,28 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
+**Last updated:** 2026-09-15 (evening) -- **Defect codes: `999` rename, seed realigned to prod, and die-cast attribution carried in the label. Migrations `0085` + `0086`, neither deployed.**
+
+> ### Defect codes -- what the shop-floor sheets proved (2026-09-15)
+>
+> Three source documents were read against `MPP_MES_Prod`: the die cast press sheet (**DCFM-0485 v18**), the trim shop sheet (**TSFM-0085 v7**), and an **M&A line production sheet**. A read-only risk query -- `sql/scratch/defectcode_renumber_risk.sql`, six sections, run against prod -- established the blast radius before anything was changed.
+>
+> **The decisive number: 152 of 155 defect codes have ZERO reject history in prod.** Only `008` Test Part (78 rejects), `DC-999` Warmup (24) and `003` Bent Pin (1) carry any, all Die Cast, and none needed its code changed. `Workorder.RejectEvent.DefectCodeId` is the single FK (verified on prod, not from the repo) and it keys on `Id`, not `Code` -- so a rename moves no event rows. `RejectEvent.ChargeToArea` is NULL on all 103 events.
+>
+> **Codes are never renumbered.** They exist in systems outside the MES and are honoured as-is. The M&A line sheet's `D/C Rejects` / `M/S Rejects` headings are **attribution, not location** -- the line records all of its own scrap and splits it so a missed upstream audit can be identified. Migration `0086` carries that into the label: every Die-Cast-charged description is prefixed `DC - ` (59 rows). `OperationCategoryId` and `Code` untouched.
+>
+> **`0085`** renames `DC-999` to `999`, the only code in the table that was not three digits. Pure rename, `Id 154` unchanged.
+>
+> **Seed `030` now reproduces prod exactly** -- 155 codes each side, verified by set comparison. Its low range moved `100`-`112` to prod's `001`-`015` (with `005 Bent Part (Air Gap)` under Trim, and `015` not `013` -- MPP retires numbers permanently, the gaps are real). Four `0069_Aggregate_Reports` test files and `0022/110_CavityScrap` carried the Dev-era `107` for Test Part and now use `008`. Applied migrations `0067` / `0084` deliberately still say `DC-999` / `107` -- they are the historical record.
+>
+> **`DieCastBody` shipped to prod with Dev row-Ids pickled into `view.custom.dieWideLines`** (`defectCodeId: 165` / `21`). Prod has no `Id 165`. The prod export confirmed the deployed view is **identical to git HEAD** -- no drift -- so the pickled default is live, and `seedDieWide`'s `if dieWideLines: return` guard means the resolver never fires to correct it. Something at runtime is overwriting it (Warm-up has 24 clean rejects against `Id 154`); the likeliest path is the row's own dropdown via `setDieWideLine`. **Not proven.** The default is now `[]` so resolution is deterministic, and the two lookups are `_byCode("999")` / `_byCode("008")`.
+>
+> **The How-To text is generated** -- `tools/gen_howto_views.py:338` is the source; editing `DieCastShiftOutputHowTo/view.json` directly would be erased on the next run.
+>
+> **OPEN -- not fixed, and it was the session's starting question.** The trim shop's laminated sheet lists 36 codes. A Trim OUT terminal can reach **five** of them (`140` `142` `143` `144` `145`), because `Quality.DefectCode_List` filters on `OperationCategoryId` and prod tags only 8 codes Trim. Eleven of the sheet's codes (`100`-`112`) are not in the database in any form; twenty more sit under Die Cast or Machining & Assembly. **Blocked on a schema decision:** `UQ_DefectCode_Code UNIQUE (Code)` is global, but the same code serves more than one department (`133` and `134` appear under both `D/C Rejects` and `M/S Rejects` on one line sheet), so the key has to become `(OperationCategoryId, Code)` before the missing rows can exist. Machine Shop sheet still outstanding.
+>
+> **Deployment:** `0085` + the `DieCastBody` view edit are **atomic** -- view first and `_byCode("999")` finds nothing; `0085` first and the old view stands on pickled `165`. `0086` is independent. Nothing applied to Dev or Prod; both migrations verified on `MPP_MES_Test` including idempotent re-run.
+
 **Last updated:** 2026-09-15 (early hours) — **Die cast quantity + scrap model: the whole SQL chain and the Ignition backend are built, green and on Dev. `DieCastBody` (Task 8) and the How-To regeneration (Task 10) were in flight at the time of writing.** Design: `docs/superpowers/specs/2026-09-14-diecast-quantity-and-scrap-model-design.md`. Plan: `docs/superpowers/plans/2026-09-14-diecast-quantity-and-scrap-model.md`. See the section immediately below.
 
 > ### Die cast quantity + scrap model — built 2026-09-14/15 (migration `0084`)

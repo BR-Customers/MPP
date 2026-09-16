@@ -7,23 +7,8 @@
     "bulkOpenPendingCount": 0,
     "bulkOpenResult": {},
     "counterReading": "",
-    "dieWideLines": [
-      {
-        "code": "DC-999",
-        "defectCodeId": 165,
-        "fixed": true,
-        "rowLabel": "Warm-up shots",
-        "shots": 0
-      },
-      {
-        "code": "107",
-        "defectCodeId": 21,
-        "fixed": true,
-        "rowLabel": "Quality test shots",
-        "shots": 0
-      }
-    ],
-    "dieWideSeed": 1,
+    "dieWideLines": [],
+    "dieWideSeed": 0,
     "dieWideShots": 0,
     "lotFooter": {
       "empty": 0,
@@ -48,7 +33,7 @@
       "unaccounted": 0,
       "unaccountedNote": ""
     },
-    "refreshToken": 8,
+    "refreshToken": 29,
     "selectedShiftId": 20107,
     "shotLossDefectCodeId": null,
     "shotLossQty": ""
@@ -2635,7 +2620,7 @@
         {
           "name": "seedDieWide",
           "params": [],
-          "script": "\t# D7: the die-wide block carries EXPLICIT NAMED ROWS for Warm-up (DC-999)\n\t# and Quality test (107) -- they are what actually happens every shift, and\n\t# a bare \u0027add a reason\u0027 row is how they stopped being recorded. Resolved by\n\t# CODE off the Die Cast defect list, whose label is \"CODE - Description\"\n\t# (Quality.DefectCode.getForDropdown). A code that is not seeded in this\n\t# environment still gets its row, with the reason left for the operator.\n\tif BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dieWideLines):\n\t\treturn\n\topts \u003d BlueRidge.Quality.DefectCode.getForDropdown(\"DieCast\") or []\n\tdef _byCode(code):\n\t\tfor o in opts:\n\t\t\tlbl \u003d \"%s\" % ((o or {}).get(\"label\") or \"\")\n\t\t\tif lbl \u003d\u003d code or lbl.startswith(code + \" -\"):\n\t\t\t\treturn (o or {}).get(\"value\")\n\t\treturn None\n\tself.view.custom.dieWideLines \u003d [\n\t\t{\"rowLabel\": \"Warm-up shots\", \"code\": \"DC-999\",\n\t\t\t\"defectCodeId\": _byCode(\"DC-999\"), \"shots\": 0, \"fixed\": True},\n\t\t{\"rowLabel\": \"Quality test shots\", \"code\": \"107\",\n\t\t\t\"defectCodeId\": _byCode(\"107\"), \"shots\": 0, \"fixed\": True},\n\t]\n\tself.view.custom.dieWideSeed \u003d (self.view.custom.dieWideSeed or 0) + 1\n\tself._recomputeDieWide()"
+          "script": "\t# D7: the die-wide block carries EXPLICIT NAMED ROWS for Warm-up (999)\n\t# and Quality test (008) -- they are what actually happens every shift, and\n\t# a bare \u0027add a reason\u0027 row is how they stopped being recorded. Resolved by\n\t# CODE off the Die Cast defect list, whose label is \"CODE - Description\"\n\t# (Quality.DefectCode.getForDropdown). A code that is not seeded in this\n\t# environment still gets its row, with the reason left for the operator.\n\tif BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dieWideLines):\n\t\treturn\n\topts \u003d BlueRidge.Quality.DefectCode.getForDropdown(\"DieCast\") or []\n\tdef _byCode(code):\n\t\tfor o in opts:\n\t\t\tlbl \u003d \"%s\" % ((o or {}).get(\"label\") or \"\")\n\t\t\tif lbl \u003d\u003d code or lbl.startswith(code + \" -\"):\n\t\t\t\treturn (o or {}).get(\"value\")\n\t\treturn None\n\tself.view.custom.dieWideLines \u003d [\n\t\t{\"rowLabel\": \"Warm-up shots\", \"code\": \"999\",\n\t\t\t\"defectCodeId\": _byCode(\"999\"), \"shots\": 0, \"fixed\": True},\n\t\t{\"rowLabel\": \"Quality test shots\", \"code\": \"008\",\n\t\t\t\"defectCodeId\": _byCode(\"008\"), \"shots\": 0, \"fixed\": True},\n\t]\n\tself.view.custom.dieWideSeed \u003d (self.view.custom.dieWideSeed or 0) + 1\n\tself._recomputeDieWide()"
         },
         {
           "name": "_recomputeDieWide",

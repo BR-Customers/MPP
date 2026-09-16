@@ -33,10 +33,10 @@ GO
 DECLARE @ItemId BIGINT, @CellA BIGINT, @LotId BIGINT;
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @UserId    BIGINT = (SELECT MIN(Id) FROM Location.AppUser);
-DECLARE @DcSolder  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'100');  -- Die Cast
+DECLARE @DcSolder  BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'001');  -- Die Cast
 DECLARE @DcPoros   BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'135');  -- Die Cast
 DECLARE @DcHsp     BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'247');  -- Supplier
-DECLARE @DcTest    BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'107');  -- non-reject scrap
+DECLARE @DcTest    BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'008');  -- non-reject scrap
 
 SELECT TOP 1 @ItemId = eil.ItemId, @CellA = eil.LocationId
 FROM Parts.v_EffectiveItemLocation eil

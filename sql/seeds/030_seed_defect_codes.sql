@@ -27,19 +27,24 @@ DECLARE @MachAsm BIGINT = (SELECT Id FROM Parts.OperationCategory WHERE Code = N
 DECLARE @Defects TABLE (Code NVARCHAR(20), Description NVARCHAR(500), OperationCategoryId BIGINT, IsExcused BIT);
 
 INSERT INTO @Defects (Code, Description, OperationCategoryId, IsExcused) VALUES
-(N'100', N'Soldering', @DieCast, 0),
-(N'101', N'Broken/Bent Pin', @DieCast, 0),
-(N'102', N'Bent Pin', @DieCast, 1),
-(N'103', N'Trim Damage', @DieCast, 0),
-(N'104', N'Flatness/Bent Parts', @DieCast, 0),
-(N'105', N'Breakout (Broken Die)', @DieCast, 0),
-(N'106', N'Broken Gate', @DieCast, 0),
-(N'107', N'Test Part', @DieCast, 0),
-(N'108', N'Blisters', @DieCast, 0),
-(N'109', N'Stuck Part/Stuck Piece', @DieCast, 0),
-(N'110', N'Flow Lines', @DieCast, 0),
-(N'111', N'Flash', @DieCast, 0),
-(N'112', N'Short Shot', @DieCast, 0),
+-- Codes 001-015: the die cast sheet (DCFM-0485) numbering, which is what
+-- MPP_MES_Prod carries. These were seeded 100-112 until 2026-09-15 -- the
+-- TRIM sheet's numbers for the same defects -- which meant a Dev reset could
+-- not reproduce prod. Note 015 (not 013): MPP retires numbers permanently,
+-- so the gaps are real and must not be closed up.
+(N'001', N'Soldering', @DieCast, 0),
+(N'002', N'Broken/Bent Pin', @DieCast, 0),
+(N'003', N'Bent Pin', @DieCast, 1),
+(N'004', N'Trim Damage', @DieCast, 0),
+(N'005', N'Bent Part (Air Gap)', @Trim, 0),
+(N'006', N'Breakout (Broken Die)', @DieCast, 0),
+(N'007', N'Broken Gate', @DieCast, 0),
+(N'008', N'Test Part', @DieCast, 0),
+(N'009', N'Blisters', @DieCast, 0),
+(N'010', N'Stuck Part/Stuck Piece', @DieCast, 0),
+(N'011', N'Flow Lines', @DieCast, 0),
+(N'012', N'Flash', @DieCast, 0),
+(N'015', N'Short Shot', @DieCast, 0),
 (N'113', N'Broken Post', @DieCast, 0),
 (N'114', N'Pin Size', @DieCast, 0),
 (N'115', N'Computer Reject', @DieCast, 1),
@@ -184,7 +189,7 @@ INSERT INTO @Defects (Code, Description, OperationCategoryId, IsExcused) VALUES
 -- The free gaps INSIDE the FRS range (155, 193, 196, 251) sit mid-band where
 -- Flexware could still fill them, so ours start a band of their own.
 (N'260', N'Scale Adjustment', @Trim, 0),
-(N'DC-999', N'Warmup', @DieCast, 0)
+(N'999', N'Warmup', @DieCast, 0)
 ;
 
 INSERT INTO Quality.DefectCode (Code, Description, OperationCategoryId, IsExcused)
@@ -240,18 +245,28 @@ BEGIN
     UPDATE Quality.DefectCode SET ChargeToPartyId = @cpMachineShop
     WHERE ChargeToPartyId IS NULL AND OperationCategoryId = @ocMachAsm;
 
-    -- DC-999 Warmup: process necessity, not a defect. Counted for material and
+    -- 999 Warmup: process necessity, not a defect. Counted for material and
     -- yield, excluded from the reject percentage, charged to Die Cast so it
     -- stays visible as a departmental cost rather than sitting in Unassigned.
     UPDATE Quality.DefectCode SET IsNonRejectScrap = 1
-    WHERE Code = N'DC-999' AND IsNonRejectScrap = 0;
+    WHERE Code = N'999' AND IsNonRejectScrap = 0;
 
     -- Counted, but excluded from every reject percentage.
-    --   107 Test Part (DC)             170 Machine Trial (MS)
+    --   008 Test Part (DC)             170 Machine Trial (MS)
     --   229 Trial Part (DC)
     --   230 Assembled on to NG (DC)    199 Assembled on to NG (MS)
     UPDATE Quality.DefectCode SET IsNonRejectScrap = 1
-    WHERE IsNonRejectScrap = 0 AND Code IN (N'107', N'170', N'229', N'230', N'199');
+    WHERE IsNonRejectScrap = 0 AND Code IN (N'008', N'170', N'229', N'230', N'199');
+
+    -- Attribution in the label (mirrors migration 0086). The M&A line
+    -- production sheets record all of a line's scrap and split it under
+    -- 'D/C Rejects' / 'M/S Rejects' headings -- that is ATTRIBUTION, so a
+    -- missed audit upstream can be found. Carrying it in the description
+    -- means the operator sees it in the picker. Codes are NOT touched.
+    UPDATE Quality.DefectCode
+       SET Description = N'DC - ' + Description
+     WHERE ChargeToPartyId = @cpDieCast
+       AND Description NOT LIKE N'DC - %';
 
     PRINT 'Seed 030 classification applied (charge-to party + non-reject scrap).';
 END

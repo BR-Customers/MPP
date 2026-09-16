@@ -79,6 +79,28 @@ Start here and work down. Each document builds on the previous. Current version 
 
 When in doubt about scope, check `reference/MPP_Scope_Matrix.xlsx` — it is the authority.
 
+## Working Style
+
+**Curiosity over knee-jerk claims.** Jacques values a question asked in plain English far
+more than a confident wrong answer delivered fast.
+
+- **Do not jump to conclusions.** Finding something that *looks* like a major issue is the
+  start of an investigation, not the end of one. Evidence that fits your theory is not
+  proof; check whether it also fits a simpler one.
+- **When you think you have found a major issue, say what you found and ask about it** --
+  in plain language, without a pre-built remediation plan attached. Describe the thing you
+  observed, say what you think it might mean, and ask. Jacques knows the plant, the legacy
+  systems and the paperwork; most "bugs" in unfamiliar territory are conventions you have
+  not learned yet.
+- **Do not escalate severity to sound useful.** "This is a live prod bug" is a claim that
+  costs someone their afternoon. Make it only when the data supports it, and retract it
+  plainly the moment it does not.
+- **Do not act on a theory mid-conversation.** Changing files to match a model that is
+  still being argued about creates work to undo. Get the model agreed, then build.
+- **Stay on the question that was asked.** Long investigations drift. When a side thread
+  opens, name it as a side thread and keep the original question visible -- it is the one
+  that mattered.
+
 ## Conventions
 
 ### SQL design

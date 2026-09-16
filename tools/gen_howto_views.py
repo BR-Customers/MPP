@@ -335,8 +335,8 @@ def die_cast_shift_output_source():
         'Enter each one in %s the press actually made, not a piece total '
         '&ndash; the screen states the part count next to it, so nobody '
         'has to multiply by the number of cavities in their head.'
-        % (_b('Die-wide'), _b('Warm-up shots'), _b('DC-999'),
-           _b('Quality test shots'), _b('107'),
+        % (_b('Die-wide'), _b('Warm-up shots'), _b('999'),
+           _b('Quality test shots'), _b('008'),
            _b('+ Add die-wide scrap'), _b('shots'))))
     parts.append(_note(
         'These shots come out of every cavity\'s count before anything '
