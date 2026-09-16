@@ -33,12 +33,15 @@ BEGIN
         dc.Code,
         dc.Description,
         dc.OperationCategoryId,
+        dc.ChargeToPartyId,
+        cp.Name                AS ChargeToPartyName,
         oc.Name                AS CategoryName,
         dc.IsExcused,
         dc.CreatedAt,
         dc.DeprecatedAt
     FROM Quality.DefectCode dc
     LEFT JOIN Parts.OperationCategory oc ON dc.OperationCategoryId = oc.Id
+    LEFT JOIN Quality.ChargeToParty   cp ON dc.ChargeToPartyId     = cp.Id
     WHERE dc.Id = @Id;
 END
 GO

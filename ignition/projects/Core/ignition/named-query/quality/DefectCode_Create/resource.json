@@ -47,6 +47,11 @@
       },
       {
         "type": "Parameter",
+        "identifier": "chargeToPartyId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
         "identifier": "isExcused",
         "sqlType": 6
       },
