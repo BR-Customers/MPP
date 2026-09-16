@@ -369,28 +369,87 @@ its own and the old views keep working, because `0087` only adds rows.
 
 ---
 
-## 7. Outcome — NOT YET EXECUTED
+## 7. Outcome -- executed 2026-09-16 04:46 ET
 
-Fill this in during the window. The next release reads it to establish its baseline, and
-`02_scoping_a_release.md` treats an unfilled Outcome as a reason to reconcile before
-continuing — so an empty section here costs the next person real time.
+**Clean. `== COMMITTED`, sqlcmd exit 0 after 1.7s, 0 warnings, no BLOCK gate fired.**
 
 | | |
 |---|---|
-| Executed at | _(ET)_ |
-| Plan fingerprint used | _(from the prod Preview, not ProdSim's `3664ba967697`)_ |
-| Backup path | _(from `backup.txt` in the Execute report folder)_ |
-| Report folder | `dist/deploy-reports/MPP_MES_Prod_Execute_<stamp>` |
-| Migrations applied | _(expect 4: 0085–0088)_ |
-| Repeatables applied | _(ProdSim said 8; prod may differ)_ |
-| Lock window | _(ProdSim: 0.6s)_ |
+| Executed at | 2026-09-16 04:46 ET |
+| Plan fingerprint used | `e343dce4d97d` (prod's own -- ProdSim's was `3664ba967697`) |
+| Backup path | `C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\MPP_MES_Prod_pre-release_0084_20260916_044646.bak` (COPY_ONLY, CHECKSUM, verified) |
+| Report folder | `dist/deploy-reports/MPP_MES_Prod_Execute_20260916_044646` |
+| Migrations applied | 4 -- `0085` `0086` `0087` `0088` |
+| Repeatables applied | 8 (matching ProdSim exactly -- prod carried no hand-patched proc) |
+| Lock window | 1.7s (ProdSim: 0.6s) |
+| Prod HEAD | `10346bbe` |
 
-**Gates that fired on prod:** _(especially `machining-in` GATE 1 — if it returned rows, record
-how many baskets and what was done about them)_
+### The prod-computed numbers were right; the rehearsal's were not
 
-**Verification results:** _(check 2 must be `233 / 0 / 0`; check 4 must match the Preview's
-excused count)_
+This is the section § 3.4 existed for, and it resolved in favour of the handoff:
 
-**Anything learned the hard way:** _(also add it to `prod-release-context-pack/`, per its
-README — that is how the retyped-fingerprint abort and the pickled `session-props` got
-recorded)_
+```
+0087: 8 description(s) matched to the sheet.
+0087: 78 code(s) added.
+```
+
+**8 re-worded and 78 added, exactly as computed against prod** -- 155 + 78 = **233**.
+ProdSim had printed 7 and 89 (ending at 244) because it carries the Dev-era code set. Anyone
+reading a future ProdSim rehearsal of a defect-code migration should expect the same divergence
+and trust the prod-computed figure.
+
+One small miss: `0086` prefixed **60** descriptions where the handoff said 59. Harmless and not
+worth chasing -- `0087` strips every row matching `Description LIKE 'DC - %'`, so the net effect
+on `Description` is zero regardless of the count.
+
+### Gates: no blocks, one number that matters
+
+**`machining-in` GATE 1 returned nothing.** Not one LOT in trim storage was in a state the new
+route gate would refuse, so no basket was stranded and there was nothing to put in the shift
+handover. GATE 3 (Open LOTs in trim storage) and GATE 4 (unpublished routes) were also clean.
+The refusal risk that dominated § 2 did not materialise.
+
+**63 LOTs newly appear in Machining IN queues** -- the size of the behaviour change, and the
+number to quote if anyone asks why a queue grew overnight:
+
+| At location | Part | LOTs |
+|---|---|---|
+| 6MA Cam Holder Line 1 | `12231-6MA -0000` | 14 |
+| 64A Oil Pan | `1120A-64AA` | 8 |
+| Warehouse | `12231-6MA -0000` | 7 |
+| Warehouse | `12235-6MA -0000` | 7 |
+| Warehouse | `12241-6MA -0000` | 5 |
+| 6MA Cam Holder Line 1 | `12242-6MA -0000` | 4 |
+| 6MA Cam Holder Line 1 | `12244-6MA -0000` | 4 |
+| Warehouse | `12245-6MA -0000` | 4 |
+| (10 more rows, 1-3 each) | | 10 |
+
+Every location is a Warehouse or a machining line -- **no sort cage, offsite facility or shipping
+location appeared**, so the spec's § 7 residual risk did not show up in real data either.
+
+### `0088` repaired nothing, and that is the honest result
+
+```
+0088: labelled part/die/cavity on 0 release-scrap row(s).
+0088: every release-scrap row is now fully labelled.
+```
+
+**Zero rows needed relabelling, and the out-of-scope gate for trim/machining scrap did not fire
+either** -- so all 103 booked rejects in prod already carry an `ItemId`. The three unstamped
+writers were a real defect in code and would have bitten the first time anyone recorded closing
+scrap, but between `0084` going out on 2026-09-15 08:53 and this release, **nobody did** -- prod
+is running at cutover volumes (4 open baskets, last die-cast entry 09/15 14:48).
+
+So the urgency stated in § 1 was overstated in effect, though not in kind. The fix is correct
+and belongs in prod; the data damage it was written to stop had not yet happened. Worth
+remembering the next time a writer/reader split like this is found: **check how many bad rows
+exist before describing it as bleeding.**
+
+The trim/machining backfill owed in § 6 is therefore **no longer owed** -- there is nothing to
+backfill. If that changes, the query is the `0088` gate in `Deploy-ProdRelease.ps1`.
+
+### Still to verify
+
+The Ignition exports (Core first) and the three terminal checks in § 4 -- the Trim OUT picker,
+a Machining IN claim end to end with the On-Hold indicator, and a die-cast release with one
+scrap line landing in Reconcile Shift's SHIFT SCRAP column.
