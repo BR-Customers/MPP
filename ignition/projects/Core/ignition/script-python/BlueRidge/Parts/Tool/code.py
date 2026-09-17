@@ -22,6 +22,8 @@
 #       Full meta record with display keys the DetailHeader binds to.
 #   add(data)                                    -> {Status, Message, NewId}
 #   update(data)                                 -> {Status, Message}
+#       Also runs Tools.Tool_CorrectShotCount when the header's Current
+#       Shots differs from the loaded count (note required).
 #   deprecate(toolId)                            -> {Status, Message}
 #   getDuplicateSummary(toolId)                  -> dict | None
 #   getDuplicateSummaryOrEmpty(toolId)           -> dict (binding-safe)
@@ -172,6 +174,89 @@ def getInstancesForFlexRepeater(searchText="", statusCode="All", selectedId=0):
     return [{"tool": r, "selectedId": selectedId} for r in rows]
 
 
+# -----------------------------------------------------------------------------
+# Shot-field helpers (pure -- exec'd by ignition/tests/test_tool_shot_inputs.py)
+#
+# Both shot fields are text-fields so the die manager can type "1,000,000".
+# Values are seeded as formatted strings (a text-field writes strings back,
+# so an int baseline would latch the dirty flag) and parsed on save. Bad
+# input is an error -- never a silent NULL.
+# -----------------------------------------------------------------------------
+
+def _parseShots(value, label):
+    """(int, None) for a whole number (commas/spaces allowed), (None, None)
+    for blank, (None, message) for anything else."""
+    if value is None:
+        return (None, None)
+    if isinstance(value, bool):
+        return (None, "%s must be a whole number of shots (got '%s')." % (label, value))
+    try:
+        integerTypes = (int, long)  # Jython 2.7
+    except NameError:
+        integerTypes = (int,)       # CPython 3 (pytest)
+    if isinstance(value, integerTypes):
+        return (int(value), None)
+    text = ("%s" % value).strip()
+    if text == "":
+        return (None, None)
+    digits = text.replace(",", "").replace(" ", "")
+    if not digits.isdigit():
+        return (None, "%s must be a whole number of shots (got '%s')." % (label, text))
+    return (int(digits), None)
+
+
+def _formatShots(value):
+    """850000 -> '850,000'; None / '' -> ''."""
+    if value is None or value == "":
+        return ""
+    return "{:,}".format(int(value))
+
+
+def _metaForEditor(row):
+    """Tool_Get row -> the meta dict the Tools header binds to."""
+    meta = dict(row)
+    meta["deprecated"] = meta.get("DeprecatedAt") is not None
+    # Nullable text renders as literal "null" in a bidi text-field; seed "".
+    if meta.get("Description") is None:
+        meta["Description"] = ""
+    meta["ShotLimit"] = _formatShots(meta.get("ShotLimit"))
+    loaded = meta.get("ShotCount")
+    meta["ShotCountLoaded"] = int(loaded) if loaded is not None else 0
+    meta["ShotCount"] = _formatShots(meta["ShotCountLoaded"])
+    meta["ShotCountNote"] = ""
+    return meta
+
+
+def _shotEdits(data):
+    """Validate the header's shot fields. Returns
+    {error, shotLimit, shotCount, shotCountChanged, note}."""
+    out = {"error": None, "shotLimit": None, "shotCount": None,
+           "shotCountChanged": False, "note": None}
+    shotLimit, err = _parseShots(data.get("ShotLimit"), "Shot Limit")
+    if err:
+        out["error"] = err
+        return out
+    shotCount, err = _parseShots(data.get("ShotCount"), "Current Shots")
+    if err:
+        out["error"] = err
+        return out
+    if shotCount is None:
+        out["error"] = "Current Shots cannot be blank."
+        return out
+    loaded = data.get("ShotCountLoaded")
+    loaded = int(loaded) if loaded is not None else 0
+    note = ("%s" % (data.get("ShotCountNote") or "")).strip()
+    out["shotLimit"] = shotLimit
+    out["shotCount"] = shotCount
+    out["shotCountChanged"] = shotCount != loaded
+    if out["shotCountChanged"]:
+        if not note:
+            out["error"] = "Enter a note explaining the shot count change."
+            return out
+        out["note"] = note
+    return out
+
+
 def getOne(toolId):
     """Returns the full meta record for a single tool, or None.
 
@@ -184,17 +269,7 @@ def getOne(toolId):
     row = BlueRidge.Common.Db.execOne("parts/Tool_Get", {"id": toolId})
     if row is None:
         return None
-    row["deprecated"] = row.get("DeprecatedAt") is not None
-    # Coerce nullable text to "" so the bidi-bound Description text-field
-    # renders empty instead of the literal "null". update() converts the
-    # empty string back to NULL on save, so the DB keeps its NULL semantics.
-    if row.get("Description") is None:
-        row["Description"] = ""
-    # Same for the nullable ShotLimit (Die shot-limit input); "" renders empty
-    # and update() coerces it back to NULL on save.
-    if row.get("ShotLimit") is None:
-        row["ShotLimit"] = ""
-    return row
+    return _metaForEditor(row)
 
 
 # -----------------------------------------------------------------------------
@@ -253,14 +328,17 @@ def add(data):
 
 
 def update(data):
-    """Update an existing Tool. data: {Id, Name, Description, DieRankCode,
-    StatusCode}. Code is immutable per the underlying proc.
+    """Update an existing Tool. data: the header meta -- {Id, Name,
+    Description, DieRankCode, StatusCode, ShotLimit, ShotCount,
+    ShotCountLoaded, ShotCountNote}. Code is immutable per the proc.
 
-    Tools.Tool_Update covers Name / Description / DieRankId only. Status
-    transitions go through the separate Tools.Tool_UpdateStatus proc, so
-    this function dispatches both in sequence when the caller passes a
-    StatusCode. If the Update leg fails it short-circuits and returns
-    that result; if the Status leg fails its message bubbles up.
+    Legs, each its own proc/transaction, short-circuiting on failure:
+      1. Tools.Tool_Update            Name / Description / DieRank / ShotLimit
+      2. Tools.Tool_CorrectShotCount  only when ShotCount != ShotCountLoaded
+      3. Tools.Tool_UpdateStatus      when a StatusCode is passed
+    Shot fields are validated first (_shotEdits) so a bad number or a
+    missing note writes nothing. After any failure the screen reloads the
+    tool, which shows the true state.
     """
     data = _u(data) or {}
     BlueRidge.Common.Util.log("data=%s" % data)
@@ -269,12 +347,13 @@ def update(data):
     if toolId is None:
         return {"Status": 0, "Message": "Id is required for update"}
 
+    shots = _shotEdits(data)
+    if shots["error"]:
+        return {"Status": 0, "Message": shots["error"]}
+
     dieRankId = _lookupDieRankIdByCode(data.get("DieRankCode"))
     appUserId = BlueRidge.Common.Util._currentAppUserId()
     description = (data.get("Description") or "").strip() or None
-
-    # ShotLimit arrives from a text field (string) or empty; coerce to int/None.
-    shotLimit = BlueRidge.Common.Util.toIntOrNone(data.get("ShotLimit"))
 
     updateResult = BlueRidge.Common.Db.execMutation(
         "parts/Tool_Update",
@@ -283,13 +362,26 @@ def update(data):
             "name":        data.get("Name"),
             "description": description,
             "dieRankId":   dieRankId,
-            "shotLimit":   shotLimit,
+            "shotLimit":   shots["shotLimit"],
             "appUserId":   appUserId,
         },
     )
-
     if not updateResult.get("Status"):
         return updateResult
+
+    if shots["shotCountChanged"]:
+        shotResult = BlueRidge.Common.Db.execMutation(
+            "parts/Tool_CorrectShotCount",
+            {
+                "id":                toolId,
+                "shotCount":         shots["shotCount"],
+                "expectedShotCount": int(data.get("ShotCountLoaded") or 0),
+                "note":              shots["note"],
+                "appUserId":         appUserId,
+            },
+        )
+        if not shotResult.get("Status"):
+            return shotResult
 
     statusCode = data.get("StatusCode")
     if statusCode:
