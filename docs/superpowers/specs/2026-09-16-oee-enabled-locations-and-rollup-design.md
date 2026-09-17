@@ -97,10 +97,30 @@ Location create/update procs, not in Python.
 `Oee.ufn_ResolveOeeEquipment()` returns, evaluated against live data at migration time, **before**
 the function is redefined. Day one is a no-op:
 
-- every die cast press, every trim press, every M&A line → flagged;
-- the seed row `66B - Ins` (an InspectionStation under `66B-TC`) → **not** flagged, because it
-  does not self-scope today either. (Its name "Terminal" versus type InspectionStation looks like a
-  separate data issue; out of scope.)
+- every active die cast machine, every active trim machine, and every production/inspection line
+  → flagged;
+- `66B - Ins` (an InspectionStation under `66B-TC`) → **not** flagged, because it does not
+  self-scope today either.
+
+**Verified against prod (2026-09-17 extract of the live location model):**
+
+- Trim machines in prod: Tumble Trim Shop (`TRIM1`) → Bowl 1, Bowl 2; Blast Trim Shop (`TRIM2`)
+  → WTB Blaster, Hangar Blaster A, Hangar Blaster B, 6MA Debur and Blast (`T1-6MA-DB`). All flagged.
+- Every `DowntimeEvent` in the last 30 days is on a location the backfill flags (`DC1-M10`,
+  `DC1-M11`, `DC2-M202`, `DC3-M305`, `TRIM2-P01`, `T1-6MA-DB`, `MA2-6MACH`), so the write check
+  (3.6) rejects nothing that prod writes today.
+- The only active line-under-a-line (`AO-OP` under `MA2-6FBCHOP`) was a mis-typed Terminal and was
+  corrected in prod on 2026-09-17. With it gone no flagged location in prod has a flagged
+  descendant, so **day one changes no roll-up in prod**.
+
+**Dev differs from prod.** The Dev seed still has the six original trim presses deprecated (so
+Dev's trim terminals would get an empty dropdown) and still has `AO-OP` as a ProductionLine (so
+Dev's `MA2-6FBCHOP` would become a roll-up). Both clear when Dev is re-synced from prod
+(scheduled 2026-09-18). Tests build their own fixtures and do not depend on either.
+
+**Fresh builds.** `Reset-DevDatabase` runs migrations, then repeatables, then seeds, so on a fresh
+database the migration's backfill finds no locations. A seed placed after the location seed
+applies the same rule (Task 1 of the plan).
 
 Because the backfill reads live data, the same migration is correct in Dev and prod, including any
 cells MPP has added through the Config Tool.
@@ -158,13 +178,13 @@ Area/WorkCenter/Cell branching is removed.
 | Other M&A line terminal | its line (flagged) | the line only — **unchanged** |
 | `DC1-T1` (shared) | `DC1` (Area, not flaggable) | every flagged press under DC1 — **unchanged** |
 | `DC1-M01-T1` (dedicated) | `DC1-M01` (flagged) | that press — **unchanged** |
-| `TRIM1-T1` | `TRIM1` | the flagged trim presses — **unchanged** |
+| `TRIM1-T1` / `TRIM2-T1` | `TRIM1` / `TRIM2` | the flagged trim machines (Bowls; Blasters, Debur and Blast) — **unchanged** |
 | Fallback / unregistered | Facility | **nothing** — unchanged |
 
 One behavioural difference: an Area with **no** flagged cells used to return the Area itself (the
-original "scoped to the Trim shop" rule). Trim presses now exist as cells and are flagged by the
-backfill, so this does not occur at MPP today. After this change such an Area returns nothing; a
-shop-level unit would be a new design question (Areas are not flaggable).
+original "scoped to the Trim shop" rule). Both prod trim shops have active machines, so this does
+not occur in prod. After this change such an Area returns nothing; a shop-level unit would be a
+new design question (Areas are not flaggable). In Dev it does occur until the prod re-sync.
 
 **Default selection (`IsDefault`)** changes:
 
@@ -300,7 +320,8 @@ events differ.
 terminals, so downtime can no longer be logged there at all. A "records downtime but excluded from
 OEE reporting" state would be a separate flag; nobody has asked for it.
 
-**Die cast and trim.** Each press is its own unit with its own figure. The Area (`DC1`, `TRIM1`) is
+**Die cast and trim.** Each machine (press, bowl, blaster) is its own unit with its own figure,
+flagged by the migration — nothing to toggle. The Area (`DC1`, `TRIM1`) is
 not flaggable, so there is **no shop-level roll-up** and no "whole shop down" choice in the
 dropdown; a shop-wide stop is logged against each press.
 
@@ -356,7 +377,8 @@ SQL tests (INSERT-EXEC pattern):
 
 ## 7. Open items
 
-1. **Prod preview gate** — the release preview lists what the backfill will flag, so the flagged
-   set can be checked against the plant before the window.
+1. **Prod preview gate** — the release preview lists what the backfill will flag and any flagged
+   location that would have a flagged descendant (should be none after the `AO-OP` fix), so both
+   can be checked against the plant before the window.
 2. **Retirement sequencing** — if Downtime Entry is still deployed when this ships, its choices
    will be rejected (3.6). Confirm with the view clean-up work which goes first.
