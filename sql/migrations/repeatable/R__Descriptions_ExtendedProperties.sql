@@ -748,6 +748,23 @@ BEGIN
                          @level1type = N'TABLE',  @level1name = N'Location',
                          @level2type = N'COLUMN', @level2name = N'CoupledDownstreamCellLocationId';
     END
+
+    IF COL_LENGTH(N'[Location].[Location]', N'IsOeeEnabled') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Location].[Location]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Location].[Location]'), N'IsOeeEnabled', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The definition of a downtime / OEE unit. When 1, this location appears in the plant-floor downtime location dropdown (Oee.DowntimeScope_ListForTerminal), accepts Oee.DowntimeEvent rows, and gets an availability figure from Oee.Shift_GetAvailability. Opt-in per location, settable only on Cell / WorkCenter tier rows whose definition is not a device or store (Location.ufn_CanBeOeeEnabled). A flagged location with flagged descendants reports the MEAN of those descendants instead of its own figure, and its downtime counts against every one of them - this is what lets one line (6MA Cam Holder) carry per-station units (Machining, Assembly A, Assembly B) with no change to the location hierarchy. Migration 0090_location_is_oee_enabled; backfilled from the pre-change self-scoping rule so no existing unit changed.',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'Location',
+                         @level2type = N'COLUMN', @level2name = N'IsOeeEnabled';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The definition of a downtime / OEE unit. When 1, this location appears in the plant-floor downtime location dropdown (Oee.DowntimeScope_ListForTerminal), accepts Oee.DowntimeEvent rows, and gets an availability figure from Oee.Shift_GetAvailability. Opt-in per location, settable only on Cell / WorkCenter tier rows whose definition is not a device or store (Location.ufn_CanBeOeeEnabled). A flagged location with flagged descendants reports the MEAN of those descendants instead of its own figure, and its downtime counts against every one of them - this is what lets one line (6MA Cam Holder) carry per-station units (Machining, Assembly A, Assembly B) with no change to the location hierarchy. Migration 0090_location_is_oee_enabled; backfilled from the pre-change self-scoping rule so no existing unit changed.',
+                         @level0type = N'SCHEMA', @level0name = N'Location',
+                         @level1type = N'TABLE',  @level1name = N'Location',
+                         @level2type = N'COLUMN', @level2name = N'IsOeeEnabled';
+    END
 END
 GO
 
@@ -6691,4 +6708,4 @@ BEGIN
 END
 GO
 
--- 69 table descriptions, 316 column descriptions
+-- 69 table descriptions, 317 column descriptions
