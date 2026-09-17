@@ -30,7 +30,16 @@
       "timestamp": "2026-07-06T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "locationId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "locationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "excludeFinishedGoods",
+        "sqlType": 6
+      }
     ]
   }
 }

@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_Lot_GetLineInventoryByPart.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-09-17
--- Version:     1.2
+-- Version:     1.3
 -- Description: On-hand inventory at a location, grouped by part then FIFO by
 --              arrival. Returns OPEN on-hand LOTs (LotStatusCode <> 'Closed' AND
 --              InventoryAvailable > 0) whose CurrentLocationId = @LocationId, one
@@ -12,6 +12,18 @@
 --              PartNumber ASC, ArrivedAt ASC, LotId ASC so callers see parts grouped
 --              alphabetically by description and FIFO within each part. Read proc;
 --              empty rowset = nothing on hand.
+--
+--              v1.3 (2026-09-17): added @ExcludeFinishedGoods BIT = 0 (LAST param,
+--              default 0 = pre-c35351d3 behaviour, everything on hand returned).
+--              c35351d3 made the FinishedGood exclusion unconditional, which broke
+--              the Scrap Entry popup dropdown (BlueRidge.Lots.Lot.getLineInventoryByPart,
+--              opened from all four M&A terminals -- AssemblySerialized,
+--              AssemblyNonSerialized, MachiningIn, MachiningOutSplit): a FinishedGood
+--              LOT minted and sitting on-hand at Assembly OUT could no longer be
+--              selected to record scrap against, with no explanation to the operator.
+--              Jacques's call (2026-09-17): keep the filter opt-in -- the Line
+--              Inventory popup display (getLineInventoryCards) passes 1, Scrap Entry
+--              passes nothing and keeps seeing finished goods. Column shape unchanged.
 --
 --              v1.2 (2026-09-17): FinishedGood items excluded and ordering by
 --              Description first, for the Line Inventory popup grouping; column
@@ -27,7 +39,8 @@
 --              widen to 8 columns.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.Lot_GetLineInventoryByPart
-    @LocationId BIGINT
+    @LocationId           BIGINT,
+    @ExcludeFinishedGoods BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -58,7 +71,8 @@ BEGIN
     WHERE l.CurrentLocationId = @LocationId
       AND sc.Code <> N'Closed'
       AND l.InventoryAvailable > 0
-      AND i.ItemTypeId <> (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood')
+      AND (@ExcludeFinishedGoods = 0
+           OR i.ItemTypeId <> (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood'))
     ORDER BY ISNULL(i.Description, i.PartNumber) ASC,
              i.PartNumber ASC,
              COALESCE(la.ArrivedAtUtc, l.CreatedAt) ASC,

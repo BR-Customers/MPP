@@ -500,13 +500,15 @@ def getComponentsAtCell(locationId, includeDescendants=True, _refreshToken=None)
 def getLineInventoryCards(locationId, _refreshToken=None):
     """Flex-repeater instances for the line-inventory popup's on-hand list, rendered
        with the Trim InventoryRow card (display-only, selectable=False). Fetches
-       getLineInventoryByPart and maps each row to the card's params; ArrivedAt is
-       precomputed to a display string (repeater-param date rule). Scalar args only
-       (fetch inside) per the ImmutableList re-eval rule. Returns list[dict]."""
+       getLineInventoryByPart (excludeFinishedGoods=True -- an on-hand finished-goods
+       LOT is pure noise in this display) and maps each row to the card's params;
+       ArrivedAt is precomputed to a display string (repeater-param date rule).
+       Scalar args only (fetch inside) per the ImmutableList re-eval rule.
+       Returns list[dict]."""
     locationId = _u(locationId)
     if locationId is None:
         return []
-    rows = getLineInventoryByPart(locationId) or []
+    rows = getLineInventoryByPart(locationId, excludeFinishedGoods=True) or []
     out = []
     pos = 0
     for r in rows:
@@ -568,17 +570,28 @@ def getOrEmpty(lotId=None, lotName=None, _refreshToken=None):
     return out
 
 
-def getLineInventoryByPart(locationId, _refreshToken=None):
+def getLineInventoryByPart(locationId, _refreshToken=None, excludeFinishedGoods=False):
     """Spec 2 Task I2. On-hand open LOTs at a line location, grouped by part then
-       FIFO by arrival, for the inventory check-in popup. Returns list[dict] with
-       ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt.
+       FIFO by arrival, for the inventory check-in popup AND the Scrap Entry LOT
+       dropdown (AssemblySerialized, AssemblyNonSerialized, MachiningIn,
+       MachiningOutSplit). Returns list[dict] with ItemId, PartNumber, Description,
+       LotId, LotName, InventoryAvailable, ArrivedAt.
        _refreshToken is unused server-side; it lets a view's expression binding
-       re-run the read after a check-in by referencing a bumped token."""
+       re-run the read after a check-in by referencing a bumped token.
+       excludeFinishedGoods (2026-09-17, trailing so existing positional/binding
+       callers -- Scrap Entry included -- keep seeing finished goods by default):
+       True drops on-hand FinishedGood LOTs, for the Line Inventory popup display
+       (getLineInventoryCards) where they are noise. Scrap Entry must NOT set this --
+       a FinishedGood LOT minted and sitting on-hand at Assembly OUT is a legitimate
+       scrap target."""
     if locationId is None:
         return []
-    BlueRidge.Common.Util.log("getLineInventoryByPart locationId=%s" % locationId)
+    BlueRidge.Common.Util.log(
+        "getLineInventoryByPart locationId=%s excludeFinishedGoods=%s" % (locationId, excludeFinishedGoods))
     return BlueRidge.Common.Db.execList(
-        "lots/Lot_GetLineInventoryByPart", {"locationId": _u(locationId)})
+        "lots/Lot_GetLineInventoryByPart",
+        {"locationId": _u(locationId),
+         "excludeFinishedGoods": 1 if _u(excludeFinishedGoods) else 0})
 
 
 def getStatusOptions():

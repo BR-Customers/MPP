@@ -132,7 +132,25 @@ DROP TABLE #inv;
 GO
 
 -- =============================================
--- Test: FinishedGood items excluded from line inventory
+-- Test: FinishedGood items excluded from line inventory (@ExcludeFinishedGoods = 1,
+-- the Line Inventory popup display -- getLineInventoryCards)
+-- =============================================
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
+
+CREATE TABLE #inv (Seq INT IDENTITY(1,1), ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500),
+                   LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3), LotStatusCode NVARCHAR(20));
+INSERT INTO #inv (ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt, LotStatusCode)
+    EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell, @ExcludeFinishedGoods = 1;
+
+DECLARE @FgN NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #inv WHERE PartNumber = N'P-I1-FG');
+EXEC test.Assert_IsEqual @TestName = N'[I1] finished goods excluded when @ExcludeFinishedGoods = 1', @Expected = N'0', @Actual = @FgN;
+
+DROP TABLE #inv;
+GO
+
+-- =============================================
+-- Test: @ExcludeFinishedGoods default (0) -- the Scrap Entry LOT dropdown
+-- (getLineInventoryByPart, no flag passed) must still see finished goods
 -- =============================================
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
 
@@ -141,8 +159,8 @@ CREATE TABLE #inv (Seq INT IDENTITY(1,1), ItemId BIGINT, PartNumber NVARCHAR(50)
 INSERT INTO #inv (ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt, LotStatusCode)
     EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
 
-DECLARE @FgN NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #inv WHERE PartNumber = N'P-I1-FG');
-EXEC test.Assert_IsEqual @TestName = N'[I1] finished goods excluded', @Expected = N'0', @Actual = @FgN;
+DECLARE @FgDefaultN NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #inv WHERE PartNumber = N'P-I1-FG');
+EXEC test.Assert_IsEqual @TestName = N'[I1] finished goods still returned by default (@ExcludeFinishedGoods omitted)', @Expected = N'1', @Actual = @FgDefaultN;
 
 DROP TABLE #inv;
 GO
