@@ -57,6 +57,9 @@ DECLARE @Dev BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @TComp BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'Component');
 DECLARE @TSub  BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'SubAssembly');
 DECLARE @TFG   BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood');
+-- Purchased parts are PassThrough (FDS-03-002: vendor-supplied), never Component;
+-- Component is the casting. Matches the prod cutover retype in migration 0089.
+DECLARE @TPass BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'PassThrough');
 DECLARE @PCS BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'PCS');
 DECLARE @EA  BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'EA');
 
@@ -72,7 +75,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'5G0-FG')
     VALUES (@TFG, N'5G0-FG', N'5G0 Front Cover Finished Good', @PCS, @EA, @Now, @Dev);
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'21001 pin')
     INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
-    VALUES (@TComp, N'21001 pin', N'Pin 21001', @PCS, @Now, @Dev);
+    VALUES (@TPass, N'21001 pin', N'Pin 21001', @PCS, @Now, @Dev);
 
 -- ---- 59B Cam Holder family ----
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12231-59B-0000')
@@ -86,7 +89,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12241-59B-0000')
     VALUES (@TComp, N'12241-59B-0000', N'59B Cam Holder EX #1 Casting', 15, 30, @EA, @Now, @Dev);
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'90701-5R0-3000')
     INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
-    VALUES (@TComp, N'90701-5R0-3000', N'Dowel Pin 9x10 (purchased)', @EA, @Now, @Dev);
+    VALUES (@TPass, N'90701-5R0-3000', N'Dowel Pin 9x10 (purchased)', @EA, @Now, @Dev);
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'1223A-59B -A0002')
     INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
     VALUES (@TFG, N'1223A-59B -A0002', N'59B Cam-Rocker Holder Set', @EA, @Now, @Dev);
@@ -100,10 +103,10 @@ IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12270-6NA-M')
     VALUES (@TSub, N'12270-6NA-M', N'6NA Fuel Pump Base Machined (synth SA)', 6, 12, @EA, @Now, @Dev);
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'92900-06014-1B')
     INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
-    VALUES (@TComp, N'92900-06014-1B', N'Stud Bolt 6x14 (purchased)', @EA, @Now, @Dev);
+    VALUES (@TPass, N'92900-06014-1B', N'Stud Bolt 6x14 (purchased)', @EA, @Now, @Dev);
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'94301-08100')
     INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
-    VALUES (@TComp, N'94301-08100', N'Dowel Pin 8x10 (purchased)', @EA, @Now, @Dev);
+    VALUES (@TPass, N'94301-08100', N'Dowel Pin 8x10 (purchased)', @EA, @Now, @Dev);
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12270-6NA -0001')
     INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
     VALUES (@TFG, N'12270-6NA -0001', N'6NA Fuel Pump', @EA, @Now, @Dev);

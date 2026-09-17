@@ -582,6 +582,47 @@ GROUP BY loc.Name, i.PartNumber ORDER BY COUNT(*) DESC
     }
 }
 
+# 0089 -- one-off cutover retype of purchased parts (Component -> PassThrough)
+# and the Cam Rocker Set (-> FinishedGood). The plan is parsed out of the
+# migration itself so there is one list, not two. The migration raises on the
+# same contradictions; this gate surfaces them in the preview instead of mid-
+# transaction, and reports exactly what will change so the guide can quote it.
+if (& $has "0089_item_type_cutover_reclassify") {
+    $m089 = $pending | Where-Object { $_.BaseName -eq "0089_item_type_cutover_reclassify" }
+    $plan = [regex]::Matches((Read-SqlText $m089.FullName), "\(N'([^']+)',\s*N'(\w+)',\s*N'(\w+)'\)") |
+        ForEach-Object { "SELECT N'$($_.Groups[1].Value.Replace("'", "''"))' AS PartNumber, N'$($_.Groups[3].Value)' AS ToType" }
+    if ($plan.Count -eq 0) { Finding "BLOCK" "0089" "could not parse the reclassification list out of the migration" }
+    else {
+        $state = Q @"
+WITH P AS ($($plan -join " UNION ALL "))
+SELECT p.PartNumber, p.ToType, it.Code AS CurType,
+       CASE WHEN i.Id IS NULL THEN 1 ELSE 0 END AS Absent,
+       CASE WHEN EXISTS (SELECT 1 FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+                         JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+                         JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+                         WHERE rt.ItemId = i.Id AND oty.Code = N'DieCast')
+              OR EXISTS (SELECT 1 FROM Lots.Lot l JOIN Lots.LotOriginType lo ON lo.Id = l.LotOriginTypeId
+                         WHERE l.ItemId = i.Id AND lo.Code = N'Manufactured')
+              OR EXISTS (SELECT 1 FROM Tools.ToolCavity tc WHERE tc.ItemId = i.Id AND tc.DeprecatedAt IS NULL)
+            THEN 1 ELSE 0 END AS CastEvidence,
+       (SELECT COUNT(*) FROM Lots.Lot l WHERE l.ItemId = i.Id) AS Lots
+FROM P p
+LEFT JOIN Parts.Item i ON i.PartNumber = p.PartNumber
+LEFT JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
+ORDER BY p.PartNumber
+"@
+        foreach ($r in $state) {
+            if ($r.Absent) { Finding "WARN" "0089" "part '$($r.PartNumber)' is not on the target -- the migration will skip it. Expected on prod: every listed part present." ; continue }
+            if ($r.CurType -notin @("Component", $r.ToType)) { Finding "BLOCK" "0089" "part '$($r.PartNumber)' is $($r.CurType), not Component -- retyped since the evidence was read. Re-run sql/scratch/2026-09-16_item_type_classification_check.sql." }
+            if ($r.ToType -eq "PassThrough" -and $r.CastEvidence) { Finding "BLOCK" "0089" "part '$($r.PartNumber)' is listed as purchased but has a DieCast route, a Manufactured LOT or a die cavity -- take it out of the plan." }
+            if ($r.ToType -eq "FinishedGood" -and $r.CurType -ne "FinishedGood" -and $r.Lots -gt 0) { Finding "BLOCK" "0089" "part '$($r.PartNumber)' would become a Finished Good but has $($r.Lots) LOT(s)." }
+        }
+        $toChange = @($state | Where-Object { -not $_.Absent -and $_.CurType -ne $_.ToType })
+        Save-Csv $state "item_type_reclassify_plan.csv"
+        Finding "INFO" "0089" "retypes $($toChange.Count) of $($plan.Count) listed item(s): $(@($toChange | Where-Object ToType -eq 'PassThrough').Count) -> PassThrough, $(@($toChange | Where-Object ToType -eq 'FinishedGood').Count) -> FinishedGood; one Audit.ConfigLog row each"
+    }
+}
+
 if (@($Findings | Where-Object { $_.Gate -match '^00\d\d$' }).Count -eq 0 -and $pending.Count -gt 0) { Log "  No gates fired." "Green" }
 
 # ---------- [6] live activity + backups ----------
