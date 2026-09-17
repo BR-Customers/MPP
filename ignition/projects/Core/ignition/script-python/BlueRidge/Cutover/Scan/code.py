@@ -112,7 +112,8 @@
 #                      Item.listForCutoverLocation (Components only;
 #                      warehouse = every Component).
 #                      addBasket keeps the LTT minus its last 4 characters
-#                      and clears the cavity (it no longer latches).
+#                      and clears the cavity (it no longer latches);
+#                      loadSession clears it too (Change -> Start Session).
 #                      castDate may arrive as epoch millis from the date
 #                      picker -- _asDate normalises it.
 # =============================================================================
@@ -491,6 +492,9 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId,
     }
     st["toolOptions"], st["cavityOptions"] = tools, cavities
     st["rows"], st["totals"] = [], {"baskets": 0, "pieces": 0}
+    # A cavity belongs to one die and part -- never carry it into a re-latched
+    # session (Change -> Start Session), where it may name another die's cavity.
+    st["entry"]["toolCavityId"], st["entry"]["cavityCode"] = None, ""
     _write(st, session)
     return {"Status": 1, "Message": "Session ready"}
 

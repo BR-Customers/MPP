@@ -25,7 +25,7 @@ The inventory cutover scan (`/shop-floor/cutover-scan`) now starts by asking **w
 - **A line picked:** Entry Step and Destination appear. After a part is chosen, Destination **defaults to the trim store where that part is eligible** (Tumble wins if both, the line if neither). Stock goes to the line only if the operator changes it.
 - The latched header says "Location" and hides the entry-step pill for a store.
 - **Cast date** is Ignition's popup date picker, with the ‹ › day arrows kept. A future date is still refused by `Lot_Create`.
-- **After Add basket** the LTT field keeps all but its last 4 characters (it used to clear). Piece count **and cavity** clear (the cavity used to stay set); the cast date stays set.
+- **After Add basket** the LTT field keeps all but its last 4 characters (it used to clear). Piece count **and cavity** clear (the cavity used to stay set); the cast date stays set. Starting a session again after **Change** also clears the cavity.
 - Everything is shorter and tighter so the setup and entry panels fit without scrolling.
 
 ---
