@@ -5839,12 +5839,12 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Tools].[Tool]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Tools].[Tool]'), N'ShotCount', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v2.2 (migration 0050). Materialized lifetime shot counter. Live-incremented by Workorder.DieCastShiftOutput_Record (v1.2) - no event ledger, no reconcile job. Per-physical-asset state, not configuration: Tool_Duplicate resets it to 0, and no proc exposes a setter (a cross-database import necessarily lands 0).',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v2.2 (migration 0050). Materialized lifetime shot counter. Live-incremented by Workorder.DieCastShiftOutput_Record by the counter-reading delta - no event ledger, no reconcile job. The one setter is Tools.Tool_CorrectShotCount (Config Tool Tools screen): a cutover entry or correction with a mandatory note, audited to Audit.ConfigLog, stale-guarded, and never touching DieCastContribution or the shot watermarks. Per-physical-asset state, not configuration: Tool_Duplicate resets it to 0 (a cross-database import necessarily lands 0).',
                          @level0type = N'SCHEMA', @level0name = N'Tools',
                          @level1type = N'TABLE',  @level1name = N'Tool',
                          @level2type = N'COLUMN', @level2name = N'ShotCount';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v2.2 (migration 0050). Materialized lifetime shot counter. Live-incremented by Workorder.DieCastShiftOutput_Record (v1.2) - no event ledger, no reconcile job. Per-physical-asset state, not configuration: Tool_Duplicate resets it to 0, and no proc exposes a setter (a cross-database import necessarily lands 0).',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v2.2 (migration 0050). Materialized lifetime shot counter. Live-incremented by Workorder.DieCastShiftOutput_Record by the counter-reading delta - no event ledger, no reconcile job. The one setter is Tools.Tool_CorrectShotCount (Config Tool Tools screen): a cutover entry or correction with a mandatory note, audited to Audit.ConfigLog, stale-guarded, and never touching DieCastContribution or the shot watermarks. Per-physical-asset state, not configuration: Tool_Duplicate resets it to 0 (a cross-database import necessarily lands 0).',
                          @level0type = N'SCHEMA', @level0name = N'Tools',
                          @level1type = N'TABLE',  @level1name = N'Tool',
                          @level2type = N'COLUMN', @level2name = N'ShotCount';
