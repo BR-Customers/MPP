@@ -1,16 +1,21 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetLineInventoryByPart.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-20
--- Version:     1.1
+-- Modified:    2026-09-17
+-- Version:     1.2
 -- Description: On-hand inventory at a location, grouped by part then FIFO by
 --              arrival. Returns OPEN on-hand LOTs (LotStatusCode <> 'Closed' AND
 --              InventoryAvailable > 0) whose CurrentLocationId = @LocationId, one
 --              row per LOT. ArrivedAt is the LOT's latest LotMovement.MovedAt into
 --              @LocationId (falling back to Lot.CreatedAt when the LOT never moved
---              in), ET-converted at the read boundary. Ordered PartNumber ASC,
---              ArrivedAt ASC, LotId ASC so callers see parts grouped and FIFO
---              within each part. Read proc; empty rowset = nothing on hand.
+--              in), ET-converted at the read boundary. Ordered Description ASC,
+--              PartNumber ASC, ArrivedAt ASC, LotId ASC so callers see parts grouped
+--              alphabetically by description and FIFO within each part. Read proc;
+--              empty rowset = nothing on hand.
+--
+--              v1.2 (2026-09-17): FinishedGood items excluded and ordering by
+--              Description first, for the Line Inventory popup grouping; column
+--              shape unchanged.
 --
 --              v1.1 (2026-08-20): projects sc.Code AS LotStatusCode. sc was already
 --              joined for the WHERE filter but never SELECTed, so every caller's
@@ -53,7 +58,9 @@ BEGIN
     WHERE l.CurrentLocationId = @LocationId
       AND sc.Code <> N'Closed'
       AND l.InventoryAvailable > 0
-    ORDER BY i.PartNumber ASC,
+      AND i.ItemTypeId <> (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood')
+    ORDER BY ISNULL(i.Description, i.PartNumber) ASC,
+             i.PartNumber ASC,
              COALESCE(la.ArrivedAtUtc, l.CreatedAt) ASC,
              l.Id ASC;
 END;

@@ -25,11 +25,12 @@ GO
 -- ---- cleanup (FK-safe: movement -> event log -> LOTs) ----
 DECLARE @PA0 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-I1-A');
 DECLARE @PB0 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-I1-B');
+DECLARE @PFG0 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-I1-FG');
 DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId
-    WHERE l.ItemId IN (@PA0, @PB0) OR l.LotName LIKE N'I1T-%';
+    WHERE l.ItemId IN (@PA0, @PB0, @PFG0) OR l.LotName LIKE N'I1T-%';
 DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId
-    WHERE l.ItemId IN (@PA0, @PB0) OR l.LotName LIKE N'I1T-%';
-DELETE FROM Lots.Lot WHERE ItemId IN (@PA0, @PB0) OR LotName LIKE N'I1T-%';
+    WHERE l.ItemId IN (@PA0, @PB0, @PFG0) OR l.LotName LIKE N'I1T-%';
+DELETE FROM Lots.Lot WHERE ItemId IN (@PA0, @PB0, @PFG0) OR LotName LIKE N'I1T-%';
 GO
 
 -- ---- fixture ----
@@ -56,6 +57,14 @@ INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'I1T-AZERO', @A, 1, 1, 12, 0,  @Cell, 1, @Now);
 -- one LOT for part B (arrives @Now + 5s) -- proves part grouping (A before B)
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'I1T-B1', @B, 1, 1, 40, 40, @Cell, 1, @Now);
+
+-- FinishedGood item + on-hand LOT -- must be EXCLUDED from the line inventory read
+-- (on an assembly line, on-hand finished-goods rows are pure noise in the popup).
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'P-I1-FG')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES ((SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood'), N'P-I1-FG', N'I1 finished good', 1, @Now, 1);
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt)
+VALUES (N'I1T-FG1', (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-I1-FG'), 1, 1, 9, 9, @Cell, 1, @Now);
 
 DECLARE @A1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-A1');
 DECLARE @A2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'I1T-A2');
@@ -122,14 +131,31 @@ EXEC test.Assert_IsTrue @TestName = N'[LineInv] parts grouped: all P-I1-A rows p
 DROP TABLE #inv;
 GO
 
+-- =============================================
+-- Test: FinishedGood items excluded from line inventory
+-- =============================================
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
+
+CREATE TABLE #inv (Seq INT IDENTITY(1,1), ItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500),
+                   LotId BIGINT, LotName NVARCHAR(50), InventoryAvailable INT, ArrivedAt DATETIME2(3), LotStatusCode NVARCHAR(20));
+INSERT INTO #inv (ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt, LotStatusCode)
+    EXEC Lots.Lot_GetLineInventoryByPart @LocationId = @Cell;
+
+DECLARE @FgN NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #inv WHERE PartNumber = N'P-I1-FG');
+EXEC test.Assert_IsEqual @TestName = N'[I1] finished goods excluded', @Expected = N'0', @Actual = @FgN;
+
+DROP TABLE #inv;
+GO
+
 -- ---- cleanup ----
 DECLARE @PA0 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-I1-A');
 DECLARE @PB0 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-I1-B');
+DECLARE @PFG0 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-I1-FG');
 DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId
-    WHERE l.ItemId IN (@PA0, @PB0) OR l.LotName LIKE N'I1T-%';
+    WHERE l.ItemId IN (@PA0, @PB0, @PFG0) OR l.LotName LIKE N'I1T-%';
 DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId
-    WHERE l.ItemId IN (@PA0, @PB0) OR l.LotName LIKE N'I1T-%';
-DELETE FROM Lots.Lot WHERE ItemId IN (@PA0, @PB0) OR LotName LIKE N'I1T-%';
+    WHERE l.ItemId IN (@PA0, @PB0, @PFG0) OR l.LotName LIKE N'I1T-%';
+DELETE FROM Lots.Lot WHERE ItemId IN (@PA0, @PB0, @PFG0) OR LotName LIKE N'I1T-%';
 GO
 
 EXEC test.EndTestFile;
