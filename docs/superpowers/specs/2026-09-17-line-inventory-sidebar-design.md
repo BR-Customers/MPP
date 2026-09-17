@@ -1,7 +1,7 @@
 # M&A Line Inventory Sidebar -- design
 
 **Date:** 2026-09-17
-**Status:** Design, awaiting Jacques's review
+**Status:** Design approved 2026-09-17; plan next
 **Requested by:** MPP (2026-09-16)
 **Mockup:** `mockup/line_inventory_sidebar_mock.html` (approved layout, 2026-09-17)
 **Migration:** `0091_line_inventory_sidebar` (next free number at time of writing -- `0090` is
@@ -140,8 +140,7 @@ A check-in LOT is created at the same location the Inventory popup's `receiveLoo
     wrapper over `create()` with origin `Received`. The `pieceCount` comes from the row
     (Box Quantity) or from the numpad.
 - **`BlueRidge.Workorder.Assembly`:**
-  - Remove `getComponentProjection`.
-  - Rewire `warnLowInventory` to `getLineInventorySummary` (see § 7).
+  - Remove `getComponentProjection` and `warnLowInventory` (see § 7).
 
 ## 5. Screens
 
@@ -211,20 +210,20 @@ terminal resolution. MachiningIn and AssemblyIn are currently full-width columns
   - a cap rejection shows the proc message;
   - the Inventory popup has no FG rows.
 
-## 7. Existing low-inventory toast
+## 7. Existing low-inventory toast -- retired
 
-`Workorder.Assembly.warnLowInventory` already broadcasts a `lowInventoryWarning` toast to every
-terminal on the line after each tray close (handler in `AppHeaderLarge`). It reads the tray
-projection being retired. It moves to `getLineInventorySummary`, so the toast and the orange
-rows always agree.
+`Workorder.Assembly.warnLowInventory` broadcasts a `lowInventoryWarning` toast to every terminal
+on the line after each tray close. It reads the retired tray projection. Under the 50-FG horizon
+a part stays low until a box is checked in, so it would toast on every tray.
 
-**Open point for Jacques:** the toast fires on *every* tray close while anything is low. Under
-the 50-FG horizon a part stays low from the moment it crosses the line until a box is checked
-in, so that is a toast every tray. Options:
+**Decision (Jacques, 2026-09-17): retire it.** The orange rows already show on every terminal on
+the line, which makes the toast redundant.
 
-- keep as is;
-- fire only when a part *newly* goes low;
-- retire the toast now that the rows turn orange on every terminal.
+- Delete `warnLowInventory` and its two call sites in `BlueRidge/Workorder/Assembly/code.py`
+  (the operator ByCount tray-close path and `plcCompleteTray`).
+- Remove the `lowInventoryWarning` message handler from `Views/ShopFloor/AppHeaderLarge`
+  (Designer).
+- `Location.Terminal_ListByLineOf` / `Terminal.listByLineOf` stay; they are general-purpose.
 
 ## 8. Out of scope
 
