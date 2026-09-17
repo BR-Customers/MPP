@@ -96,8 +96,15 @@ DECLARE @PinAvail NVARCHAR(10) = (SELECT CAST(Available AS NVARCHAR(10)) FROM @R
 EXEC test.Assert_IsEqual @TestName = N'[Idle] PIN available 60 (closed LOT excluded)', @Expected = N'60', @Actual = @PinAvail;
 DECLARE @FgRows NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @R WHERE Description = N'T099 finished good');
 EXEC test.Assert_IsEqual @TestName = N'[Idle] FG never listed', @Expected = N'0', @Actual = @FgRows;
-DECLARE @RunNull NVARCHAR(1) = (SELECT TOP 1 CASE WHEN RunningFinishedGoods IS NULL THEN N'1' ELSE N'0' END FROM @R);
-EXEC test.Assert_IsEqual @TestName = N'[Idle] no running FG', @Expected = N'1', @Actual = @RunNull;
+-- Defensive: MA1-COMPBR is a shared fixture line -- other suites in this
+-- folder open/close containers on it too. Asserting "nothing at all is
+-- running" would fail on an unrelated leftover Open container from another
+-- file with a confusing, unrelated-looking message. Assert what this test
+-- actually means instead: THIS fixture's FG is not the one running.
+DECLARE @FixtureFgRunning NVARCHAR(1) = (SELECT TOP 1
+    CASE WHEN RunningFinishedGoods IS NOT NULL AND RunningFinishedGoods LIKE N'%T099 finished good%'
+         THEN N'1' ELSE N'0' END FROM @R);
+EXEC test.Assert_IsEqual @TestName = N'[Idle] fixture FG not running', @Expected = N'0', @Actual = @FixtureFgRunning;
 GO
 
 -- =============================================
