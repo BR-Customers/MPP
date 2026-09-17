@@ -90,12 +90,16 @@ not the definition — unlike the `IsStockLocation` precedent (0081), which is p
 opt-in is per instance (D2).
 
 **Guard:** the flag may be set only on **Cell** or **WorkCenter** tier locations whose definition is
-not a device or store (`Terminal`, `Printer`, `Scale`, `InventoryLocation`). Enforced in the
-Location create/update procs, not in Python.
+not a device or store (`Terminal`, `Printer`, `Scale`, `InventoryLocation`, `Receiving`). The rule is
+one function, `Location.ufn_CanBeOeeEnabled`, enforced in `Location.Location_SaveAll` (the Config
+Tool's only write path) and read by the editor through
+`Location.LocationTypeDefinition_GetOeeEligibility` — never restated in Python.
 
-**Backfill (in the migration):** set `IsOeeEnabled = 1` for every row the *current*
-`Oee.ufn_ResolveOeeEquipment()` returns, evaluated against live data at migration time, **before**
-the function is redefined. Day one is a no-op:
+**Backfill (in the migration):** set `IsOeeEnabled = 1` for every location the *pre-change* rule
+admitted, evaluated against live data at migration time. The rule is **inlined** in the migration
+rather than calling `Oee.ufn_ResolveOeeEquipment()`, because `Reset-DevDatabase` runs versioned
+migrations before repeatables — the function does not exist yet on a fresh build. Day one is a
+no-op:
 
 - every active die cast machine, every active trim machine, and every production/inspection line
   → flagged;
