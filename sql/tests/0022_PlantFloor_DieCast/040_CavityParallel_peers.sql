@@ -141,19 +141,26 @@ GO
 -- =============================================
 DECLARE @MultiTool BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-CP-MULTI');
 DECLARE @DieCellId BIGINT;
-SELECT TOP 1 @DieCellId = eil.LocationId
-FROM Parts.v_EffectiveItemLocation eil
-INNER JOIN Location.Location l ON l.Id = eil.LocationId
+-- A free die cast machine where at least one part is eligible. Eligibility is
+-- configured at the Area / WorkCenter tier and cascades down (FDS-03-014), so
+-- a -SkipDemoSeed build has NO Direct rows at the Cell itself -- matching on
+-- the cell's own rows left @DieCellId NULL (Msg 515 on ToolAssignment).
+SELECT TOP 1 @DieCellId = l.Id
+FROM Location.Location l
 INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
-INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
-WHERE lt.Code = N'Cell' AND eil.Source = N'Direct'
-  AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta WHERE ta.CellLocationId = eil.LocationId AND ta.ReleasedAt IS NULL)
-ORDER BY eil.LocationId;
+WHERE ltd.Code = N'DieCastMachine' AND l.DeprecatedAt IS NULL
+  AND EXISTS (SELECT 1 FROM Parts.v_EffectiveItemLocation eil
+              WHERE eil.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(l.Id)))
+  AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta WHERE ta.CellLocationId = l.Id AND ta.ReleasedAt IS NULL)
+ORDER BY l.Id;
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
 VALUES (@MultiTool, @DieCellId, SYSUTCDATETIME(), 1);
 
-DECLARE @DieItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @DieCellId AND Source = N'Direct');
+-- same ancestor cascade Lot_Create's eligibility gate uses
+DECLARE @DieItemId BIGINT = (SELECT TOP 1 eil.ItemId FROM Parts.v_EffectiveItemLocation eil
+    WHERE eil.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@DieCellId))
+    ORDER BY eil.ItemId);
 DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @Cav1 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @MultiTool AND CavityCode = N'a' AND DeprecatedAt IS NULL);
 DECLARE @Cav2 BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @MultiTool AND CavityCode = N'b' AND DeprecatedAt IS NULL);
