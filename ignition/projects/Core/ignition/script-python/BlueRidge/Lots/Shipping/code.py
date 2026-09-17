@@ -44,6 +44,27 @@ def reprintLabel(shippingLabelId, printReasonCode=None, appUserId=None, terminal
     return BlueRidge.Common.Db.execMutation("lots/ShippingLabel_Reprint", params)
 
 
+def getLastForTerminal(terminalLocationId):
+    """Most recent non-void shipping label printed at this terminal, or None.
+       Powers a plant-floor "Reprint" button that acts on the last label without
+       the operator knowing a ShippingLabelId (e.g. a dropped/damaged label)."""
+    rows = BlueRidge.Common.Db.execList(
+        "lots/ShippingLabel_GetLastForTerminal", {"terminalLocationId": terminalLocationId})
+    return rows[0] if rows else None
+
+
+def reprintLastForTerminal(terminalLocationId, appUserId=None):
+    """Reprint the most recent shipping label printed at this terminal -- for an
+       operator who dropped or damaged the label they already got, at the
+       terminal itself rather than through the Shipping Dock. {Status, Message}
+       shaped for notifyResult; no label yet at this terminal is a business-rule
+       miss, not an exception."""
+    last = getLastForTerminal(terminalLocationId)
+    if last is None:
+        return {"Status": False, "Message": "No shipping label has printed at this terminal yet."}
+    return reprintLabel(last.get("Id"), appUserId=appUserId, terminalLocationId=terminalLocationId)
+
+
 def ackBanner(shippingLabelId):
     """Acknowledge (dismiss) a print-failure banner (Brief D). Sets BannerAcknowledgedAt
        so the label stops re-broadcasting from PrintFailureGateway.broadcastTick.

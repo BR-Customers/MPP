@@ -47,6 +47,39 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tsid = self.view.custom.alert.shippingLabelId\n\tif sid is None:\n\t\treturn\n\tresult = BlueRidge.Lots.Shipping.reprintLabel(sid)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Label reprinted\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Reprint"
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.alert.shippingLabelId})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              },
+              "text": "Reprint"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tsid = self.view.custom.alert.shippingLabelId\n\tif sid is not None:\n\t\tBlueRidge.Lots.Shipping.ackBanner(sid)\n\tself.view.custom.alert = {\"visible\": False, \"text\": \"\", \"shippingLabelId\": None}"
                   },
                   "scope": "G",
