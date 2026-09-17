@@ -4,49 +4,34 @@
     "activeTabIndex": 0,
     "editDraft": {
       "meta": {
-        "Code": "jkhbj",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1781530515951
-          ],
-          "$ts": 1781544226425
-        },
-        "CreatedByUserId": 2,
-        "DeprecatedAt": {
-          "$": [
-            "ts",
-            192,
-            1781530515951
-          ],
-          "$ts": 1781544231072
-        },
+        "Id": null,
+        "ToolTypeId": null,
+        "ToolTypeCode": "",
+        "ToolTypeName": "",
+        "HasCavities": false,
+        "Code": "",
+        "Name": "",
         "Description": "",
-        "DieRankCode": null,
         "DieRankId": null,
+        "DieRankCode": null,
         "DieRankName": null,
-        "HasCavities": true,
-        "ShotCount": 0,
-        "ShotLimit": null,
-        "Id": 2,
-        "Name": "hbjnjhbhj",
-        "StatusCode": "Retired",
-        "StatusCodeId": 4,
-        "StatusName": "Retired",
-        "ToolTypeCode": "Die",
-        "ToolTypeId": 1,
-        "ToolTypeName": "Die Cast Die",
-        "UpdatedAt": {
-          "$": [
-            "ts",
-            192,
-            1781530515951
-          ],
-          "$ts": 1781544231072
-        },
-        "UpdatedByUserId": 2,
-        "deprecated": true
+        "StatusCodeId": null,
+        "StatusCode": "",
+        "StatusName": "",
+        "CreatedAt": null,
+        "UpdatedAt": null,
+        "CreatedByUserId": null,
+        "UpdatedByUserId": null,
+        "DeprecatedAt": null,
+        "ShotCount": "",
+        "ShotLimit": "",
+        "ShotsRemaining": null,
+        "PercentOfLimit": null,
+        "IsNearLimit": false,
+        "IsOverLimit": false,
+        "ShotCountLoaded": 0,
+        "ShotCountNote": "",
+        "deprecated": false
       }
     },
     "filter": {
@@ -61,49 +46,34 @@
     },
     "selected": {
       "meta": {
-        "Code": "jkhbj",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1782831662967
-          ],
-          "$ts": 1781544226425
-        },
-        "CreatedByUserId": 2,
-        "DeprecatedAt": {
-          "$": [
-            "ts",
-            192,
-            1782831662967
-          ],
-          "$ts": 1781544231072
-        },
+        "Id": null,
+        "ToolTypeId": null,
+        "ToolTypeCode": "",
+        "ToolTypeName": "",
+        "HasCavities": false,
+        "Code": "",
+        "Name": "",
         "Description": "",
-        "DieRankCode": null,
         "DieRankId": null,
+        "DieRankCode": null,
         "DieRankName": null,
-        "HasCavities": true,
-        "ShotCount": 0,
-        "ShotLimit": null,
-        "Id": 2,
-        "Name": "hbjnjhbhj",
-        "StatusCode": "Retired",
-        "StatusCodeId": 4,
-        "StatusName": "Retired",
-        "ToolTypeCode": "Die",
-        "ToolTypeId": 1,
-        "ToolTypeName": "Die Cast Die",
-        "UpdatedAt": {
-          "$": [
-            "ts",
-            192,
-            1782831662967
-          ],
-          "$ts": 1781544231072
-        },
-        "UpdatedByUserId": 2,
-        "deprecated": true
+        "StatusCodeId": null,
+        "StatusCode": "",
+        "StatusName": "",
+        "CreatedAt": null,
+        "UpdatedAt": null,
+        "CreatedByUserId": null,
+        "UpdatedByUserId": null,
+        "DeprecatedAt": null,
+        "ShotCount": "",
+        "ShotLimit": "",
+        "ShotsRemaining": null,
+        "PercentOfLimit": null,
+        "IsNearLimit": false,
+        "IsOverLimit": false,
+        "ShotCountLoaded": 0,
+        "ShotCountNote": "",
+        "deprecated": false
       }
     }
   },
@@ -1091,7 +1061,8 @@
                               "style": {
                                 "classes": "search-input",
                                 "width": "100%"
-                              }
+                              },
+                              "deferUpdates": false
                             },
                             "type": "ia.input.text-field"
                           }
@@ -1122,31 +1093,41 @@
                               "style": {
                                 "classes": "field-label"
                               },
-                              "text": "Total Shots"
+                              "text": "Current Shots"
                             },
                             "type": "ia.display.label"
                           },
                           {
                             "meta": {
-                              "name": "ValueShotCount"
+                              "name": "InputShotCount"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if(isNull({view.custom.editDraft.meta.ShotCount}), '0', toStr({view.custom.editDraft.meta.ShotCount}))"
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.ShotCount"
                                   },
-                                  "type": "expr"
+                                  "type": "property"
                                 }
                               }
                             },
                             "props": {
+                              "deferUpdates": false,
                               "style": {
-                                "padding": "7px 2px",
-                                "fontWeight": "600"
+                                "classes": "search-input",
+                                "width": "100%"
                               }
                             },
-                            "type": "ia.display.label"
+                            "type": "ia.input.text-field"
                           }
                         ],
                         "meta": {
@@ -1173,7 +1154,94 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "{view.custom.editDraft.meta.ToolTypeCode} = 'Die'"
+                            "expression": "{view.custom.editDraft.meta.ToolTypeCode} \u003d \u0027Die\u0027"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-row",
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelShotCountNote"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Shot Count Change Note (required)"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "InputShotCountNote"
+                            },
+                            "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.ShotCountNote"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "search-input",
+                                "width": "100%"
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldShotCountNote"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FieldRowShotCountNote"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.editDraft.meta.ShotCount} !\u003d {view.custom.selected.meta.ShotCount}"
                           },
                           "type": "expr"
                         }
