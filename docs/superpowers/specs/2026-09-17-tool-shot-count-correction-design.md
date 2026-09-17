@@ -1,7 +1,7 @@
 # Tool shot-count correction + comma-friendly shot inputs -- design
 
 **Date:** 2026-09-17
-**Status:** Approved (design), not yet built
+**Status:** Built 2026-09-17 (Dev); not yet deployed
 **Screen:** Config Tool -> Tools (`MPP_Config` view `BlueRidge/Views/Parts/Tools`), die header
 
 ## 1. Problem
@@ -102,6 +102,8 @@ expected; non-Die tool; deprecated tool; audit row written with Delta + Note; no
   reloads to the true state.
 - `getOrEmpty` / empty shapes gain `ShotCountLoaded` and `ShotCountNote`.
 
+> **As built:** the parse/format helpers live in `BlueRidge.Parts.Tool` as private pure functions (`_parseShots`, `_formatShots`, `_metaForEditor`, `_shotEdits`) so `ignition/tests/test_tool_shot_inputs.py` can exec them without a gateway; `Common.Util` is unchanged.
+
 ## 5. View -- `Parts/Tools` header (existing view)
 
 - `FieldShotCount`: label "Total Shots" -> **"Current Shots"**; `ValueShotCount` label
@@ -118,6 +120,8 @@ expected; non-Die tool; deprecated tool; audit row written with Delta + Note; no
 
 Existing view -> edit with the view closed in Designer, then `scan.ps1`, per the
 file-edit boundary.
+
+> **As built:** the note row uses `position.display` (like `FieldRowShotLimit`) rather than `meta.visible`.
 
 ## 6. Out of scope
 

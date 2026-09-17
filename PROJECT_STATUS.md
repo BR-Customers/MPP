@@ -12,6 +12,24 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
+**Last updated:** 2026-09-17 -- **Tools screen: die shot-count correction. New repeatable `Tools.Tool_CorrectShotCount`; no migration. On Dev, not deployed; on-screen check still owed.**
+
+> ### Die shot-count correction (2026-09-17)
+>
+> The Config Tool Tools header's read-only **Total Shots** is now an editable **Current Shots** text field so the die manager can enter a die's real lifetime count at cutover and fix a wrong one later. Changing it reveals a mandatory **Shot Count Change Note**. Save runs `Tool_Update`, then `Tools.Tool_CorrectShotCount`, then status. Spec/plan `docs/superpowers/{specs,plans}/2026-09-17-tool-shot-count-correction*`. Commits `0a629690` `ea5756fe` `ffeb7c18`.
+>
+> **The correction is the shift-reconcile increment, isolated.** It applies `ShotCount + (typed - loaded)` under a row lock (the delta may be negative) and touches nothing else: no `DieCastContribution` row, no watermark, no counter anchor. It refuses the save if a shift output moved the count after the screen loaded. The record is one `Audit.ConfigLog` row -- `<Code> -- <Name> · Shot Count · old -> new · note`, with the full note in `NewValue.Note`.
+>
+> **Shot Limit was silently clearing on a comma.** It was already a text field, but `int(float("1,000,000"))` failed and `toIntOrNone` returned None, so the save wrote `ShotLimit = NULL`. Both shot fields now load with thousands separators, parse commas and spaces, and **reject** anything else with a message. Helpers `_parseShots` / `_formatShots` / `_metaForEditor` / `_shotEdits` in `BlueRidge.Parts.Tool`, pinned by `ignition/tests/test_tool_shot_inputs.py`.
+>
+> **Verified:** `0050_ToolShotCount` 63/63 (22 new) on a throwaway DB; the die-cast shot-reading, anchor, release-preview and cavity-scrap files green; pytest 31/31; proc + descriptions applied to Dev; view scanned. The view was edited by `tools/edit_tools_view_shot_count.py` (JSON round-trip that keeps Designer's `=` escapes), not by hand.
+>
+> **Owed:**
+> - **On-screen check not done** -- the local Perspective trial had expired and needs a gateway sign-in. Walk plan Task 4 step 1 (commas shown, bad limit rejected, note required, correction audited).
+> - **Four die-cast test files error in fixture setup** on a fresh test DB (`030`, `040`, `050`, `070` in `0022_PlantFloor_DieCast`): `Tools.ToolAssignment.CellLocationId` resolves NULL. It happens before any code under test runs; not caused by this change, not yet investigated.
+> - `MPP_MES_Test` was being reset by another session during this work; tests ran on `MPP_MES_Test_ShotFix` (throwaway, can be dropped).
+> - Prod: one repeatable + the extended-properties repeatable, plus a scoped export (Core `parts/Tool_CorrectShotCount` NQ + `BlueRidge/Parts/Tool`; MPP_Config `Parts/Tools` view). Follows `prod-release-context-pack/` when scheduled.
+
 **Last updated:** 2026-09-15 (evening) -- **Defect codes: `999` rename, seed realigned to prod, and die-cast attribution carried in the label. Migrations `0085` + `0086`, neither deployed.**
 
 > ### Defect codes -- what the shop-floor sheets proved (2026-09-15)
