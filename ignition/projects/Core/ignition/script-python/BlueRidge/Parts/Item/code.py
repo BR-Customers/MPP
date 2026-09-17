@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-20
-# Version:          1.4
+# Version:          1.5
 #
 # Description:
 #   Read + mutation surface for the Item Master Configuration Tool
@@ -47,6 +47,10 @@
 #                      getForCutoverLocationDropdown (Components only; the
 #                      warehouse lists every active Component). Option
 #                      shaping shared via _partOptions.
+#   2026-09-17 - 1.5 - Line inventory sidebar (Task 5): boxQuantity /
+#                      lowInventoryHorizon added to _ITEM_SHAPE_KEYS and
+#                      forwarded by update() (NULL-preserving, same rule as
+#                      crtEnabled).
 # =============================================================================
 
 import java.lang
@@ -125,7 +129,7 @@ _ITEM_SHAPE_KEYS = (
     "CreatedAt", "CreatedByUserId",
     "UpdatedAt", "UpdatedByUserId",
     "DeprecatedAt",
-    "CrtEnabled",
+    "CrtEnabled", "BoxQuantity", "LowInventoryHorizon",
 )
 
 
@@ -387,7 +391,9 @@ def update(meta):
     PascalCase tolerated):
         Id, description, macolaPartNumber, defaultSubLotQty,
         maxLotSize, uomId, unitWeight, weightUomId,
-        countryOfOrigin, maxParts, crtEnabled
+        countryOfOrigin, maxParts, crtEnabled,
+        boxQuantity, lowInventoryHorizon (NULL-preserving; 0 clears -- same rule as
+        crtEnabled, enforced in the proc)
 
     Returns {Status, Message}.
 
@@ -425,6 +431,8 @@ def update(meta):
             "maxParts":         _pick("maxParts",         "MaxParts"),
             "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
             "crtEnabled":       None if _crt is None else (1 if _crt else 0),
+            "boxQuantity":         _pick("boxQuantity",         "BoxQuantity"),
+            "lowInventoryHorizon": _pick("lowInventoryHorizon", "LowInventoryHorizon"),
         },
     )
 

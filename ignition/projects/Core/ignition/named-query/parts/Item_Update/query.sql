@@ -10,4 +10,6 @@ EXEC Parts.Item_Update
     @CountryOfOrigin  = :countryOfOrigin,
     @MaxParts         = :maxParts,
     @AppUserId        = :appUserId,
-    @CrtEnabled       = :crtEnabled
+    @CrtEnabled       = :crtEnabled,
+    @BoxQuantity      = :boxQuantity,
+    @LowInventoryHorizon = :lowInventoryHorizon

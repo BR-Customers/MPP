@@ -594,6 +594,100 @@ def getLineInventoryByPart(locationId, _refreshToken=None, excludeFinishedGoods=
          "excludeFinishedGoods": 1 if _u(excludeFinishedGoods) else 0})
 
 
+def getLineInventorySummary(locationId, finishedGoodItemId=None):
+    """Line Inventory sidebar rows (Lots.Lot_GetLineInventorySummary). One dict per
+       part: ItemId, Description, Available, Threshold, IsLow, BoxQuantity,
+       AddLotMode (OneTap/AskQty/None), RunningFinishedGoods, LowInventoryHorizon.
+       Every rule (line resolution, running FG, BOM horizon, button mode) is in the
+       proc. Returns [] when there is no location."""
+    locationId = _u(locationId)
+    if locationId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetLineInventorySummary",
+        {"locationId": locationId, "finishedGoodItemId": _u(finishedGoodItemId)}) or []
+
+
+def _thousands(n):
+    try:
+        return "{:,}".format(int(n))
+    except (ValueError, TypeError):
+        return "%s" % (n,)
+
+
+def getLineInventoryInstances(locationId, finishedGoodItemId=None, _refreshToken=None):
+    """Flex-repeater instances for Components/PlantFloor/LineInventory. Display
+       formatting only (thousands separators, button caption). Scalar args only
+       (ImmutableList re-eval rule); _refreshToken is the ignored re-read arg."""
+    out = []
+    for r in getLineInventorySummary(locationId, finishedGoodItemId):
+        r = r or {}
+        mode = r.get("AddLotMode") or "None"
+        box = r.get("BoxQuantity")
+        if mode == "OneTap":
+            caption = "+" + _thousands(box)
+        elif mode == "AskQty":
+            caption = "+ LOT"
+        else:
+            caption = ""
+        out.append({
+            "itemId":        r.get("ItemId"),
+            "description":   r.get("Description") or "",
+            "available":     r.get("Available") or 0,
+            "availableText": _thousands(r.get("Available") or 0),
+            "isLow":         bool(r.get("IsLow")),
+            "addLotMode":    mode,
+            "boxQuantity":   box,
+            "buttonText":    caption,
+            "locationId":    _u(locationId),
+        })
+    return out
+
+
+def getLineInventoryHeader(locationId, finishedGoodItemId=None, _refreshToken=None):
+    """Subline for the Line Inventory panel header. Always returns a string."""
+    rows = getLineInventorySummary(locationId, finishedGoodItemId)
+    if not rows:
+        return "No inventory at this line"
+    running = rows[0].get("RunningFinishedGoods")
+    horizon = rows[0].get("LowInventoryHorizon")
+    if not running:
+        return "No finished good running"
+    if horizon is None:
+        return "No low-stock horizon set for %s" % running
+    return "Low below %s x %s" % (_thousands(horizon), running)
+
+
+def checkInBox(itemId, locationId, pieceCount, appUserId=None, terminalLocationId=None):
+    """Create one Received LOT of pieceCount at locationId (one box = one LOT).
+       Thin wrapper over create(); Lot_Create's eligibility and cap gates apply.
+       Returns the create() status dict."""
+    data = {
+        "itemId":            _u(itemId),
+        "lotOriginTypeId":   getOriginTypeIdByCode("Received"),
+        "currentLocationId": _u(locationId),
+        "pieceCount":        _u(pieceCount),
+    }
+    return create(data, appUserId, terminalLocationId)
+
+
+def checkInAndNotify(itemId, locationId, pieceCount, description, appUserId=None, terminalLocationId=None):
+    """Perspective-session helper shared by LineInventoryRow and AddLotQty:
+       check in one box, toast the outcome, raise the CRT notice, and tell the
+       page to refresh. Callers pass session.custom.appUserId and the terminal id.
+       Returns the create() status dict."""
+    res = checkInBox(itemId, locationId, pieceCount, appUserId, terminalLocationId)
+    BlueRidge.Common.Ui.notifyResult(
+        res, "Box checked in",
+        "LOT %s - %s - %s pcs" % ((res or {}).get("MintedLotName") or "",
+                                  description or "", _thousands(pieceCount)))
+    if res and res.get("Status"):
+        BlueRidge.Common.Ui.crtNotice(crtNamesFor([res.get("NewId")]))
+        system.perspective.sendMessage("inventoryChanged",
+                                       payload={"lotId": res.get("NewId")}, scope="page")
+    return res
+
+
 def getStatusOptions():
     return [{"label": r["Name"], "value": r["Id"]} for r in BlueRidge.Common.Db.execList("lots/LotStatusCode_List")]
 
