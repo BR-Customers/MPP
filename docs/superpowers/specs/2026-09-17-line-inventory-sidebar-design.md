@@ -111,10 +111,10 @@ A check-in LOT is created at the same location the Inventory popup's `receiveLoo
 ### 4.1 Migration `0091_line_inventory_sidebar`
 
 - `ALTER TABLE Parts.Item ADD BoxQuantity INT NULL, LowInventoryHorizon INT NULL`, with checks:
-  - both columns: `> 0` when set;
+  - both columns: `> 0` when set (the procs map an input of `0` to NULL);
   - `BoxQuantity` only on PassThrough items;
   - `LowInventoryHorizon` only on FinishedGood items.
-  - The `> 0` rule is a table CHECK. The item-type rules are enforced in `Item_Create` /
+  - The `> 0` rule is a table CHECK. The item-type rules are enforced in
     `Item_Update` (a CHECK would have to hard-code ItemType Ids).
 - `DROP PROCEDURE Workorder.Assembly_GetComponentProjection` (and delete its repeatable file).
 - Extended properties on the new columns, so the SchemaGen ERD documents them.
@@ -124,7 +124,7 @@ A check-in LOT is created at the same location the Inventory popup's `receiveLoo
 | Proc | Change |
 |---|---|
 | **`Lots.Lot_GetLineInventorySummary`** (new, read) | `@LocationId BIGINT, @FinishedGoodItemId BIGINT = NULL`. One row per part: `ItemId, Description, Available, Threshold, IsLow, BoxQuantity, AddLotMode`, plus `RunningFinishedGoods` (the resolved FG description(s), repeated on every row, for the header -- one result set). Sorted `IsLow DESC, Description`. Empty set when the location has no WorkCenter ancestor. No OUTPUT params (FDS-11-011). |
-| `Parts.Item_Create` / `Parts.Item_Update` | Accept and validate `@BoxQuantity`, `@LowInventoryHorizon`; ConfigLog JSON gains both. `Item_Update` is a **full replace** (`SET col = @param`, so NULL clears), so every caller -- the `parts/Item_Update` NQ and the Item Master Identity save -- **must pass both values through**, or a save from the editor would wipe them. |
+| `Parts.Item_Update` | Accept and validate `@BoxQuantity`, `@LowInventoryHorizon`; ConfigLog diff and JSON gain both. **NULL-preserving, 0 clears** (the same deliberate deviation `@CrtEnabled` makes from this proc's full-replace semantics): omitted = leave the stored value alone, `0` = clear it, `> 0` = set it. A save from any caller that doesn't know the new fields can therefore never wipe them. `Item_Create` is unchanged -- a new item gets its box size / horizon on its first edit. |
 | `Parts.Item_Get` (+ list reads the editor uses) | Return both columns. |
 | `Lots.Lot_GetLineInventoryByPart` | Exclude FinishedGood items and return `ItemDescription`, so the Inventory popup can drop finished goods and group by description. |
 | `Lots.Lot_Create` | **Unchanged.** The button calls it with origin `Received`. Its existing gates still apply: item eligibility at the location, and the `ItemLocation.MaxQuantity` / `Item.MaxParts` caps. A 5,000 box refused by a cap surfaces the proc's message in the toast, and the fix is config, not code. |
@@ -132,7 +132,7 @@ A check-in LOT is created at the same location the Inventory popup's `receiveLoo
 ### 4.3 Named queries and scripts (Core)
 
 - **New NQ:** `lots/Lot_GetLineInventorySummary` (type Query).
-- **Changed NQs:** `parts/Item_Create` and `parts/Item_Update` gain the two params.
+- **Changed NQ:** `parts/Item_Update` gains the two params; `parts/Item_Get` returns them.
 - **`BlueRidge.Lots.Lot`:**
   - New `getLineInventorySummary(locationId, finishedGoodItemId=None)`, which always returns a
     list (`[]` on empty).
@@ -162,8 +162,8 @@ A check-in LOT is created at the same location the Inventory popup's `receiveLoo
   - **One-tap:** disables for ~2 s after a press (double-tap guard), calls `checkInBox`, toasts
     "Box checked in -- LOT <name> -- <desc> -- <n> pcs" or the proc's message, then sends
     `inventoryChanged`.
-  - **`AskQty`:** embeds the existing `Components/PlantFloor/Numpad` in a small *Add LOT* popup
-    (Cancel / Add N pcs).
+  - **`AskQty`:** opens a new small popup, `Components/PlantFloor/AddLotQty`, which embeds the
+    existing `Components/PlantFloor/Numpad` (Cancel / Add N pcs).
 - **Stylesheet (Core):** `psc-pf-inv-row` and `psc-pf-inv-row-low`, with new tokens
   `--pf-inv-low-bg: rgba(255,145,48,0.16)` and `--pf-inv-low-border: #FF9130`. The plant floor
   is dark-themed, so "light orange" is a pale orange tint, as in the mockup.
@@ -198,8 +198,8 @@ terminal resolution. MachiningIn and AssemblyIn are currently full-width columns
   - FG with NULL horizon (no flag);
   - location with no WorkCenter ancestor (empty set);
   - sort order.
-- **SQL** -- `Item_Create` / `Item_Update`: box size on a non-PassThrough and horizon on a
-  non-FG are rejected; `<= 0` rejected; audit JSON carries both.
+- **SQL** -- `Item_Update`: box size on a non-PassThrough and horizon on a non-FG are rejected;
+  negative rejected; omitted preserves; `0` clears; audit JSON carries both.
 - **SQL** -- `Lot_GetLineInventoryByPart` excludes FG.
 - **Manual (Dev gateway):**
   - each of the five screens shows the panel;
