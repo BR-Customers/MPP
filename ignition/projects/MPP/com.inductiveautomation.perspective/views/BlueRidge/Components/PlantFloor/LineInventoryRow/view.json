@@ -1,0 +1,104 @@
+{
+  "custom": {
+    "busyUntil": 0
+  },
+  "params": {
+    "addLotMode": "None",
+    "available": 0,
+    "availableText": "0",
+    "boxQuantity": null,
+    "buttonText": "",
+    "description": "",
+    "isLow": false,
+    "itemId": null,
+    "locationId": null
+  },
+  "propConfig": {
+    "params.addLotMode": {"paramDirection": "input"},
+    "params.available": {"paramDirection": "input"},
+    "params.availableText": {"paramDirection": "input"},
+    "params.boxQuantity": {"paramDirection": "input"},
+    "params.buttonText": {"paramDirection": "input"},
+    "params.description": {"paramDirection": "input"},
+    "params.isLow": {"paramDirection": "input"},
+    "params.itemId": {"paramDirection": "input"},
+    "params.locationId": {"paramDirection": "input"}
+  },
+  "props": {
+    "defaultSize": {"height": 40, "width": 304}
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "alignItems": "center",
+      "style": {"classes": "pf-inv-row"}
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.isLow}, \"pf-inv-row pf-inv-row-low\", \"pf-inv-row\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Description"},
+        "position": {"basis": "0", "grow": 1},
+        "props": {"style": {"classes": "pf-inv-desc", "minWidth": "0"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "{view.params.description}"}}}
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Available"},
+        "position": {"basis": "54px", "shrink": 0},
+        "props": {"style": {"classes": "pf-inv-qty"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "{view.params.availableText}"}}}
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "Slot"},
+        "position": {"basis": "72px", "shrink": 0},
+        "props": {"justify": "flex-end", "alignItems": "center"},
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "AddButton"},
+            "position": {"shrink": 0},
+            "props": {"style": {"classes": "pf-btn pf-btn-primary pf-inv-btn"}},
+            "propConfig": {
+              "meta.visible": {
+                "binding": {"type": "expr", "config": {"expression": "{view.params.addLotMode} != \"None\""}}
+              },
+              "props.text": {
+                "binding": {"type": "expr", "config": {"expression": "{view.params.buttonText}"}}
+              },
+              "props.enabled": {
+                "binding": {"type": "expr", "config": {"expression": "toMillis(now(500)) > {view.custom.busyUntil}"}}
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tmode = self.view.params.addLotMode\n\tif mode == \"AskQty\":\n\t\tsystem.perspective.openPopup(\"mpp-add-lot\", \"BlueRidge/Components/PlantFloor/AddLotQty\", params={\"itemId\": self.view.params.itemId, \"description\": self.view.params.description, \"locationId\": self.view.params.locationId}, modal=True, showCloseIcon=True)\n\t\treturn\n\tif mode != \"OneTap\":\n\t\treturn\n\t# double-tap guard: the button stays disabled for 2 s\n\tself.view.custom.busyUntil = nowMs + 2000\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tBlueRidge.Lots.Lot.checkInAndNotify(self.view.params.itemId, self.view.params.locationId, self.view.params.boxQuantity, self.view.params.description, self.session.custom.appUserId, termId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

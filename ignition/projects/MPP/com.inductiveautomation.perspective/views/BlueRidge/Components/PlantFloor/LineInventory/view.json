@@ -1,0 +1,115 @@
+{
+  "custom": {
+    "refreshToken": 0
+  },
+  "params": {
+    "finishedGoodItemId": null,
+    "locationId": null
+  },
+  "propConfig": {
+    "params.finishedGoodItemId": {"paramDirection": "input"},
+    "params.locationId": {"paramDirection": "input"}
+  },
+  "props": {
+    "defaultSize": {"height": 700, "width": 320}
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "direction": "column",
+      "style": {"classes": "pf-inv-panel", "height": "100%"}
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "Head"},
+        "position": {"shrink": 0},
+        "props": {"direction": "column", "style": {"classes": "pf-inv-head"}},
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "Title"},
+            "props": {"text": "Line Inventory", "style": {"classes": "pf-inv-title"}}
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "Sub"},
+            "props": {"style": {"classes": "pf-inv-sub"}},
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryHeader\", 30000, {view.params.locationId}, {view.params.finishedGoodItemId}, {view.custom.refreshToken})"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {"name": "Rows"},
+        "position": {"basis": "0", "grow": 1},
+        "props": {
+          "direction": "column",
+          "path": "BlueRidge/Components/PlantFloor/LineInventoryRow",
+          "elementPosition": {"basis": "40px", "shrink": 0, "grow": 0},
+          "useDefaultViewWidth": false,
+          "useDefaultViewHeight": false,
+          "style": {"classes": "pf-inv-list"}
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryInstances\", 30000, {view.params.locationId}, {view.params.finishedGoodItemId}, {view.custom.refreshToken})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "Foot"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-foot"}},
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "DetailButton"},
+            "position": {"shrink": 0},
+            "props": {"text": "Inventory detail...", "style": {"classes": "pf-btn pf-btn-secondary pf-inv-btn", "width": "auto"}},
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.view.params.locationId}, modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
