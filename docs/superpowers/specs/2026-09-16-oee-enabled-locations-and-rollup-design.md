@@ -61,16 +61,17 @@ is hard-coded in three places.
 | D6 | Each station computes its own availability; the line reports the **plain mean** of its stations. No capacity weights — WIP buffers make series/parallel weighting meaningless. | Jacques |
 | D7 | **Planned downtime shrinks the base**; unplanned downtime reduces availability. | Jacques |
 | D8 | "Planned" = `Oee.DowntimeReasonCode.IsExcused = 1`. | Jacques (confirmed 2026-09-16) |
-| D9 | The per-station cells are **built out in the location model before this work** (Jacques + Tom set the conventions). This spec does not create or name them. | Jacques |
+| D9 | Station cells are **not a prerequisite** for this build. They are created per line, when that line is split, following the location conventions Jacques and Tom set. This spec does not create or name them. | Jacques |
 | D10 | Setting up and flagging cells on the rest of the plant's lines is **MPP's responsibility**. Blue Ridge sets up one or two lines with MPP as the worked example. | Jacques |
 | D11 | The legacy data-entry views (Downtime Entry, End of Shift) are being retired separately and are **out of scope**. | Jacques |
 
-### 2.1 Prerequisite
+### 2.1 Station cells are per line, not a prerequisite
 
-The location structure must already contain the station cells for any line that is to be split
-(D9). For 6MA Cam Holder Line 1 that means a Machining cell and an Assembly A and Assembly B cell
-under `MA2-6MACH`, of whatever codes, names and definitions the Jacques/Tom conventions settle on.
-This spec only makes such cells **usable** for downtime and OEE; it assumes they exist.
+This build ships with no station cells anywhere and is complete without them: every press and every
+line is already a downtime/OEE unit after the backfill (3.1). A line is split into stations later,
+one line at a time, by building its station cells and flagging them (3.8). For 6MA Cam Holder
+Line 1 that will be a Machining cell and Assembly A / Assembly B cells under `MA2-6MACH`, with
+whatever codes, names and definitions the Jacques/Tom conventions settle on.
 
 ---
 
@@ -108,9 +109,9 @@ cells MPP has added through the Config Tool.
 eligible locations. `Location.Location_Create` / `Location_Update` gain an `@IsOeeEnabled`
 parameter; the audit JSON includes it.
 
-### 3.2 Station cells (prerequisite, not built here)
+### 3.2 Station cells (created per line, not built here)
 
-The station cells come from the location-model build-out (2.1). This spec neither seeds nor names
+Station cells are created when a line is split (2.1, 3.8). This spec neither seeds nor names
 them. What it needs from them:
 
 - **Cell tier**, a non-device / non-store definition (so the flag guard in 3.1 accepts them);
@@ -266,6 +267,43 @@ SQL change; confirm the popup shows each row's unit name.
 `UX_DowntimeEvent_OneOpenPerLocation` needs no change: the line, A and B are different locations,
 so any combination can be down at once.
 
+### 3.8 Bringing a line online
+
+**Day one (after the release).** The backfill flags every die cast press, every trim press and
+every M&A line. Nothing needs toggling by hand. Every one of them is already a single downtime /
+OEE unit:
+
+- the Downtime Manager at its terminals offers what it offers today (the press list at a shared
+  die cast or trim terminal; the one press at a dedicated terminal; the line, preselected, at an
+  M&A terminal);
+- it gets its own availability figure, now with planned downtime shrinking the base (D7).
+
+**Splitting a line into stations** (6MA Cam Holder Line 1 first; MPP does the rest, D10):
+
+1. Create the station cells under the line in the Plant Hierarchy editor.
+2. Tick *OEE / downtime enabled* on each station.
+
+From that moment, for that line only:
+
+- the Downtime Manager lists **the line plus its stations**, with **no preselection** (3.4);
+- the line's availability becomes the **mean of its stations** (3.5).
+
+No other line, press or terminal changes.
+
+**History does not shift.** Availability is computed at read time, so the split applies to past
+shifts too. Before the split every event was logged against the line, and line downtime counts
+against every station (D5), so each station reproduces the line's old figure exactly and the mean
+of identical figures is that figure. Past shifts read the same; only shifts with station-level
+events differ.
+
+**Unflagging a line is not "OEE off".** It also empties the Downtime Manager at that line's
+terminals, so downtime can no longer be logged there at all. A "records downtime but excluded from
+OEE reporting" state would be a separate flag; nobody has asked for it.
+
+**Die cast and trim.** Each press is its own unit with its own figure. The Area (`DC1`, `TRIM1`) is
+not flaggable, so there is **no shop-level roll-up** and no "whole shop down" choice in the
+dropdown; a shop-wide stop is logged against each press.
+
 ---
 
 ## 4. Side effects to verify
@@ -310,7 +348,7 @@ SQL tests (INSERT-EXEC pattern):
 - **Capacity weighting** of stations — rejected (D6).
 - **The `66B - Ins` naming/type mismatch** — noted, not fixed.
 - **A shop-level (Area) downtime unit** — not flaggable by design (3.4).
-- **Creating or naming station cells** — the location-model build-out (D9, 2.1).
+- **Creating or naming station cells** — done per line when it is split (D9, 3.8).
 - **Flagging the rest of the plant** — MPP (D10).
 - **Downtime Entry / End of Shift** — being retired separately (D11).
 
