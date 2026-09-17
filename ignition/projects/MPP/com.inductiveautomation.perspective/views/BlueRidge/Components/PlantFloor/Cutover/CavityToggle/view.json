@@ -18,7 +18,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 64,
+      "height": 48,
       "width": 72
     }
   },
@@ -44,7 +44,7 @@
         "props": {
           "style": {
             "fontFamily": "var(--mpp-font-mono)",
-            "fontSize": "22px",
+            "fontSize": "18px",
             "fontWeight": 600,
             "textTransform": "none"
           }
@@ -71,7 +71,7 @@
       "dom": {
         "onClick": {
           "config": {
-            "script": "\tst \u003d BlueRidge.Cutover.Scan.getState(self.session)\n\tst[\"entry\"][\"toolCavityId\"] \u003d self.view.params.Id\n\tst[\"entry\"][\"cavityCode\"] \u003d self.view.params.CavityCode\n\tself.session.custom.cutover \u003d st"
+            "script": "\tst = BlueRidge.Cutover.Scan.getState(self.session)\n\tst[\"entry\"][\"toolCavityId\"] = self.view.params.Id\n\tst[\"entry\"][\"cavityCode\"] = self.view.params.CavityCode\n\tself.session.custom.cutover = st"
           },
           "scope": "G",
           "type": "script"
@@ -85,7 +85,7 @@
       "props.style.classes": {
         "binding": {
           "config": {
-            "expression": "if({view.params.Id} \u003d {session.custom.cutover.entry.toolCavityId}, \u0027pf-toggle-btn pf-toggle-btn-selected\u0027, \u0027pf-toggle-btn\u0027)"
+            "expression": "if({view.params.Id} = {session.custom.cutover.entry.toolCavityId}, 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
           },
           "type": "expr"
         }

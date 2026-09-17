@@ -29,17 +29,6 @@
       "actor": "claude",
       "timestamp": "2026-09-17T12:00:00Z"
     },
-    "parameters": [
-      {
-        "type": "Parameter",
-        "identifier": "lineLocationId",
-        "sqlType": 3
-      },
-      {
-        "type": "Parameter",
-        "identifier": "itemId",
-        "sqlType": 3
-      }
-    ]
+    "parameters": []
   }
 }

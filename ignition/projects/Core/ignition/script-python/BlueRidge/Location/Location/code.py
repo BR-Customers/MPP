@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-12
-# Version:          2.0
+# Version:          2.1
 #
 # Description:
 #   Entity-script for Location.Location and its attribute values.
@@ -14,7 +14,10 @@
 #       getAllAreas(includeAll=False)     -> list[{label, value}]
 #       listByTier(tierCode)             -> list[dict]
 #       getDieCastMachineDropdown(itemId) -> list[{label, value}]
-#       getCutoverDestinationDropdown(lineLocationId) -> list[{label, value}]
+#       getCutoverDestinationDropdown(lineLocationId, itemId=None) -> list[{label, value}]
+#       listCutoverDestinations(lineLocationId, itemId=None) -> list[dict]
+#       getCutoverSourceDropdown()       -> list[{label, value}]
+#       listCutoverSources()             -> list[dict]
 #
 #   Write surface (sort-order actions):
 #       handleMoveUp(selected, userId=None, ...)   -> dict | None
@@ -90,6 +93,11 @@
 #                      stores) via location/CutoverDestination_ListForLine.
 #                      The label is the proc's DisplayName: it parent-qualifies
 #                      a colliding name only when it collides.
+#   2026-09-17 - 2.1 - Cutover scan: the first pick may be the warehouse or a
+#                      trim store. listCutoverSources / getCutoverSourceDropdown
+#                      (location/CutoverSource_List). listCutoverDestinations
+#                      exposes the proc's IsDefault; getCutoverDestinationDropdown
+#                      takes itemId (the default follows the part's trim shop).
 # =============================================================================
 
 import java.lang
@@ -1098,22 +1106,52 @@ def getDieCastMachineDropdown(itemId, _refreshToken=None):
     return options
 
 
-def getCutoverDestinationDropdown(lineLocationId, _refreshToken=None):
-    """Where the cutover operator may count stock in, shaped for
-       ia.input.dropdown: [{label: 'Warehouse', value: <LocationId>}].
-       The selected line comes back FIRST and is the default. Always a list.
-
-       DisplayName is computed by the proc, which qualifies a name with its
-       parent only when it collides -- both trim stores are called 'Trim
-       Storage'. Do not re-derive the label here."""
+def listCutoverDestinations(lineLocationId, itemId=None):
+    """Raw rows of location/CutoverDestination_ListForLine:
+       Id, Code, Name, ParentName, IsDefault, DisplayName. The selected line
+       (or store) comes back FIRST. Exactly one row carries IsDefault -- the
+       proc decides it (the part's trim store, else the line; a store picked
+       as the source is its own default). Always a list."""
     lineLocationId = _u(lineLocationId)
+    itemId = _u(itemId)
     try:
-        rows = BlueRidge.Common.Db.execList(
+        return BlueRidge.Common.Db.execList(
             "location/CutoverDestination_ListForLine",
-            {"lineLocationId": lineLocationId}) or []
+            {"lineLocationId": lineLocationId, "itemId": itemId}) or []
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("getCutoverDestinationDropdown failed: %s" % str(e),
+        BlueRidge.Common.Util.log("listCutoverDestinations failed: %s" % str(e),
                                   level="warn")
         return []
+
+
+def getCutoverDestinationDropdown(lineLocationId, itemId=None, _refreshToken=None):
+    """Where the cutover operator may count stock in, shaped for
+       ia.input.dropdown: [{label: 'Warehouse', value: <LocationId>}].
+       The selected line comes back FIRST. Always a list.
+
+       DisplayName is computed by the proc (floor names for the trim stores,
+       parent-qualified only on a collision). Do not re-derive the label
+       here."""
     return [{"label": r.get("DisplayName") or r.get("Name") or r.get("Code") or "",
-             "value": r.get("Id")} for r in rows]
+             "value": r.get("Id")}
+            for r in listCutoverDestinations(lineLocationId, itemId)]
+
+
+def listCutoverSources():
+    """Raw rows of location/CutoverSource_List -- where the stock being
+       counted IS: Id, Code, Name, DisplayName, IsLine, IsDefault. Warehouse
+       first and default, then the two trim stores, then every production
+       line. Always a list."""
+    try:
+        return BlueRidge.Common.Db.execList("location/CutoverSource_List") or []
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("listCutoverSources failed: %s" % str(e),
+                                  level="warn")
+        return []
+
+
+def getCutoverSourceDropdown(_refreshToken=None):
+    """listCutoverSources shaped for ia.input.dropdown ({label, value} only).
+       _refreshToken is ignored -- runScript caches on args."""
+    return [{"label": r.get("DisplayName") or r.get("Name") or r.get("Code") or "",
+             "value": r.get("Id")} for r in listCutoverSources()]

@@ -4,6 +4,7 @@
     "phoneShowRows": false,
     "setupDraft": {
       "lineLocationId": null,
+      "isLine": false,
       "entryRoleCode": "MachiningIn",
       "itemId": null,
       "machineLocationId": null,
@@ -39,8 +40,8 @@
         "props": {
           "direction": "row",
           "style": {
-            "gap": "12px",
-            "padding": "10px 16px",
+            "gap": "8px",
+            "padding": "6px 12px",
             "borderBottom": "1px solid var(--mpp-border-subtle)"
           },
           "alignItems": "center"
@@ -125,8 +126,8 @@
         "props": {
           "direction": "column",
           "style": {
-            "gap": "14px",
-            "padding": "16px",
+            "gap": "8px",
+            "padding": "10px 12px",
             "overflowY": "hidden",
             "flex": "1"
           }
@@ -140,8 +141,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "14px",
-                "padding": "16px",
+                "gap": "8px",
+                "padding": "10px 12px",
                 "classes": "pf-panel"
               }
             },
@@ -185,7 +186,7 @@
                       "style": {
                         "classes": "pf-kpi-sub"
                       },
-                      "text": "Pick the line, entry step and part -- this stays latched for the whole session."
+                      "text": "Pick where the stock is and the part -- this stays latched for the whole session."
                     }
                   }
                 ],
@@ -201,7 +202,7 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "6px",
+                    "gap": "3px",
                     "classes": "pf-field"
                   }
                 },
@@ -215,7 +216,7 @@
                       "style": {
                         "classes": "pf-field-label"
                       },
-                      "text": "Line"
+                      "text": "Location"
                     }
                   },
                   {
@@ -224,28 +225,28 @@
                       "name": "LineDropdown"
                     },
                     "props": {
-                      "placeholder": "Pick the line",
+                      "placeholder": "Pick where the stock is",
                       "style": {
-                        "minHeight": "44px"
+                        "minHeight": "36px"
                       }
                     },
                     "events": {
-                        "component": {
-                          "onActionPerformed": {
-                            "type": "script",
-                            "scope": "G",
-                            "config": {
-                              "script": "\t# Show the default instead of hiding it: stock goes to the line unless\n\t# the operator picks elsewhere. loadSession already falls back to the\n\t# line, but a blank control reads as nothing-chosen.\n\tself.view.custom.setupDraft.destinationLocationId = self.props.value"
-                            }
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.applySetupChange(self.view.custom.setupDraft, \"line\", self.props.value)"
                           }
                         }
-                      },
-                      "propConfig": {
+                      }
+                    },
+                    "propConfig": {
                       "props.options": {
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "runScript(\"BlueRidge.Location.Location.getProductionLinesForDropdown\", 0)"
+                            "expression": "runScript(\"BlueRidge.Location.Location.getCutoverSourceDropdown\", 0)"
                           }
                         }
                       },
@@ -273,7 +274,7 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "6px",
+                    "gap": "3px",
                     "classes": "pf-field"
                   }
                 },
@@ -310,8 +311,8 @@
                         "props": {
                           "direction": "row",
                           "style": {
-                            "minHeight": "40px",
-                            "padding": "0 14px"
+                            "minHeight": "34px",
+                            "padding": "0 10px"
                           },
                           "alignItems": "center",
                           "justify": "center"
@@ -358,8 +359,8 @@
                         "props": {
                           "direction": "row",
                           "style": {
-                            "minHeight": "40px",
-                            "padding": "0 14px"
+                            "minHeight": "34px",
+                            "padding": "0 10px"
                           },
                           "alignItems": "center",
                           "justify": "center"
@@ -403,6 +404,16 @@
                 ],
                 "position": {
                   "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.setupDraft.isLine}"
+                      }
+                    }
+                  }
                 }
               },
               {
@@ -413,7 +424,7 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "6px",
+                    "gap": "3px",
                     "classes": "pf-field"
                   }
                 },
@@ -438,7 +449,7 @@
                     "props": {
                       "placeholder": "Pick the part",
                       "style": {
-                        "minHeight": "44px"
+                        "minHeight": "36px"
                       }
                     },
                     "propConfig": {
@@ -446,7 +457,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
+                            "expression": "runScript(\"BlueRidge.Parts.Item.getForCutoverLocationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
                           }
                         }
                       },
@@ -456,6 +467,17 @@
                           "config": {
                             "path": "view.custom.setupDraft.itemId",
                             "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.applySetupChange(self.view.custom.setupDraft, \"item\", self.props.value)"
                           }
                         }
                       }
@@ -474,7 +496,7 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "6px",
+                    "gap": "3px",
                     "classes": "pf-field"
                   }
                 },
@@ -499,7 +521,7 @@
                     "props": {
                       "placeholder": "Pick the machine",
                       "style": {
-                        "minHeight": "44px"
+                        "minHeight": "36px"
                       }
                     },
                     "propConfig": {
@@ -535,7 +557,7 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "6px",
+                    "gap": "3px",
                     "classes": "pf-field"
                   }
                 },
@@ -560,7 +582,7 @@
                     "props": {
                       "placeholder": "Pick where stock is counted in",
                       "style": {
-                        "minHeight": "44px"
+                        "minHeight": "36px"
                       }
                     },
                     "propConfig": {
@@ -568,7 +590,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "runScript(\"BlueRidge.Location.Location.getCutoverDestinationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
+                            "expression": "runScript(\"BlueRidge.Location.Location.getCutoverDestinationDropdown\", 0, {view.custom.setupDraft.lineLocationId}, {view.custom.setupDraft.itemId})"
                           }
                         }
                       },
@@ -586,6 +608,16 @@
                 ],
                 "position": {
                   "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.setupDraft.isLine}"
+                      }
+                    }
+                  }
                 }
               },
               {
@@ -596,7 +628,8 @@
                 "props": {
                   "text": "Start Session",
                   "style": {
-                    "classes": "pf-btn pf-btn-primary pf-btn-large"
+                    "classes": "pf-btn pf-btn-primary pf-btn-large",
+                    "minHeight": "42px"
                   }
                 },
                 "events": {
@@ -644,7 +677,7 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "14px",
+                "gap": "8px",
                 "flex": "1",
                 "overflow": "hidden"
               }
@@ -658,8 +691,8 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "10px",
-                    "padding": "12px 16px",
+                    "gap": "6px",
+                    "padding": "8px 12px",
                     "classes": "pf-panel"
                   }
                 },
@@ -672,7 +705,7 @@
                     "props": {
                       "direction": "row",
                       "style": {
-                        "gap": "10px"
+                        "gap": "6px"
                       },
                       "alignItems": "center"
                     },
@@ -722,6 +755,14 @@
                               "type": "expr",
                               "config": {
                                 "expression": "if({session.custom.cutover.session.entryRoleCode} = \"MachiningIn\", \"MACHINING IN\", \"ASSEMBLY IN\")"
+                              }
+                            }
+                          },
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "{session.custom.cutover.session.isLine}"
                               }
                             }
                           }
@@ -781,7 +822,7 @@
                       "wrap": "wrap",
                       "direction": "row",
                       "style": {
-                        "gap": "28px",
+                        "gap": "16px",
                         "flexWrap": "wrap"
                       }
                     },
@@ -1106,7 +1147,7 @@
                 "props": {
                   "direction": "row",
                   "style": {
-                    "gap": "14px"
+                    "gap": "8px"
                   }
                 },
                 "children": [
@@ -1118,7 +1159,7 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "12px"
+                        "gap": "8px"
                       }
                     },
                     "children": [
@@ -1142,8 +1183,8 @@
                             "props": {
                               "direction": "row",
                               "style": {
-                                "minHeight": "44px",
-                                "padding": "0 18px"
+                                "minHeight": "36px",
+                                "padding": "0 12px"
                               },
                               "alignItems": "center",
                               "justify": "center"
@@ -1190,8 +1231,8 @@
                             "props": {
                               "direction": "row",
                               "style": {
-                                "minHeight": "44px",
-                                "padding": "0 18px"
+                                "minHeight": "36px",
+                                "padding": "0 12px"
                               },
                               "alignItems": "center",
                               "justify": "center"
@@ -1243,8 +1284,8 @@
                         "props": {
                           "direction": "column",
                           "style": {
-                            "gap": "14px",
-                            "padding": "14px 16px",
+                            "gap": "8px",
+                            "padding": "8px 12px",
                             "classes": "pf-panel"
                           }
                         },
@@ -1257,7 +1298,7 @@
                             "props": {
                               "direction": "column",
                               "style": {
-                                "gap": "6px",
+                                "gap": "3px",
                                 "classes": "pf-field"
                               }
                             },
@@ -1300,8 +1341,8 @@
                                       "deferUpdates": false,
                                       "style": {
                                         "classes": "pf-field-input-mono",
-                                        "fontSize": "17px",
-                                        "minHeight": "48px",
+                                        "fontSize": "15px",
+                                        "minHeight": "38px",
                                         "minWidth": "0px"
                                       }
                                     },
@@ -1331,7 +1372,7 @@
                                       }
                                     },
                                     "position": {
-                                      "basis": "56px",
+                                      "basis": "44px",
                                       "shrink": 0
                                     },
                                     "props": {
@@ -1343,7 +1384,7 @@
                                       },
                                       "style": {
                                         "classes": "pf-btn pf-btn-secondary",
-                                        "minHeight": "48px"
+                                        "minHeight": "38px"
                                       }
                                     },
                                     "events": {
@@ -1382,7 +1423,7 @@
                             "props": {
                               "direction": "column",
                               "style": {
-                                "gap": "6px",
+                                "gap": "3px",
                                 "classes": "pf-field"
                               }
                             },
@@ -1415,7 +1456,7 @@
                                   "style": {
                                     "gap": "8px",
                                     "flexWrap": "wrap",
-                                    "minHeight": "60px"
+                                    "minHeight": "48px"
                                   },
                                   "useDefaultViewHeight": true,
                                   "useDefaultViewWidth": false
@@ -1444,7 +1485,7 @@
                             "props": {
                               "direction": "column",
                               "style": {
-                                "gap": "6px",
+                                "gap": "3px",
                                 "classes": "pf-field"
                               }
                             },
@@ -1483,9 +1524,9 @@
                                       "text": "‹",
                                       "style": {
                                         "classes": "pf-btn pf-btn-secondary",
-                                        "minWidth": "48px",
-                                        "minHeight": "48px",
-                                        "fontSize": "20px"
+                                        "minWidth": "40px",
+                                        "minHeight": "38px",
+                                        "fontSize": "18px"
                                       }
                                     },
                                     "events": {
@@ -1504,92 +1545,36 @@
                                     }
                                   },
                                   {
-                                    "type": "ia.container.flex",
+                                    "type": "ia.input.date-time-input",
                                     "meta": {
-                                      "name": "CastDateBox"
+                                      "name": "CastDatePicker"
                                     },
-                                    "props": {
-                                      "direction": "column",
-                                      "style": {
-                                        "gap": "1px",
-                                        "minHeight": "48px",
-                                        "border": "1px solid var(--mpp-border-default)",
-                                        "borderRadius": "var(--mpp-radius-md)",
-                                        "flex": "1",
-                                        "minWidth": "0px"
-                                      },
-                                      "alignItems": "center",
-                                      "justify": "center"
-                                    },
-                                    "children": [
-                                      {
-                                        "type": "ia.display.label",
-                                        "meta": {
-                                          "name": "CastDateValue"
-                                        },
-                                        "props": {
-                                          "style": {
-                                            "fontSize": "17px",
-                                            "fontWeight": 600
-                                          }
-                                        },
-                                        "propConfig": {
-                                          "props.text": {
-                                            "binding": {
-                                              "type": "expr",
-                                              "config": {
-                                                "expression": "if(isNull({session.custom.cutover.entry.castDate}), \"Tap ‹ or › to set\", dateFormat({session.custom.cutover.entry.castDate}, \"EEE, MMM d yyyy\"))"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ia.display.label",
-                                        "meta": {
-                                          "name": "CastDateRel"
-                                        },
-                                        "props": {
-                                          "style": {
-                                            "classes": "pf-kpi-sub"
-                                          }
-                                        },
-                                        "propConfig": {
-                                          "props.text": {
-                                            "binding": {
-                                              "type": "property",
-                                              "config": {
-                                                "path": "session.custom.cutover.entry.castDate"
-                                              },
-                                              "transforms": [
-                                                {
-                                                  "type": "script",
-                                                  "code": "\tif not value:\n\t\treturn \"\"\n\ttoday = system.date.toMillis(system.date.midnight(system.date.now()))\n\tthen = system.date.toMillis(system.date.midnight(value))\n\tdays = int((today - then) / 86400000)\n\tif days <= 0:\n\t\treturn \"Today\"\n\ttxt = \"%d day%s ago\" % (days, \"\" if days == 1 else \"s\")\n\tif days > 180:\n\t\ttxt += \" - check the year\"\n\treturn txt"
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "props.style.classes": {
-                                            "binding": {
-                                              "type": "property",
-                                              "config": {
-                                                "path": "session.custom.cutover.entry.castDate"
-                                              },
-                                              "transforms": [
-                                                {
-                                                  "type": "script",
-                                                  "code": "\tif not value:\n\t\treturn \"pf-kpi-sub\"\n\ttoday = system.date.toMillis(system.date.midnight(system.date.now()))\n\tthen = system.date.toMillis(system.date.midnight(value))\n\tdays = int((today - then) / 86400000)\n\treturn \"pf-kpi-value-warn\" if days > 180 else \"pf-kpi-sub\""
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ],
                                     "position": {
                                       "basis": "0px",
                                       "grow": 1,
                                       "shrink": 1
+                                    },
+                                    "props": {
+                                      "format": "ddd, MMM D YYYY",
+                                      "pickerMode": "date",
+                                      "style": {
+                                        "classes": "pf-field-select",
+                                        "minHeight": "38px",
+                                        "minWidth": "0px",
+                                        "fontSize": "15px",
+                                        "fontWeight": 600
+                                      }
+                                    },
+                                    "propConfig": {
+                                      "props.value": {
+                                        "binding": {
+                                          "type": "property",
+                                          "config": {
+                                            "path": "session.custom.cutover.entry.castDate",
+                                            "bidirectional": true
+                                          }
+                                        }
+                                      }
                                     }
                                   },
                                   {
@@ -1601,9 +1586,9 @@
                                       "text": "›",
                                       "style": {
                                         "classes": "pf-btn pf-btn-secondary",
-                                        "minWidth": "48px",
-                                        "minHeight": "48px",
-                                        "fontSize": "20px"
+                                        "minWidth": "40px",
+                                        "minHeight": "38px",
+                                        "fontSize": "18px"
                                       }
                                     },
                                     "events": {
@@ -1627,7 +1612,7 @@
                                           "transforms": [
                                             {
                                               "type": "script",
-                                              "code": "\tif not value:\n\t\treturn True\n\treturn system.date.midnight(value) < system.date.midnight(system.date.now())"
+                                              "code": "\treturn BlueRidge.Cutover.Scan.canStepForward(value)"
                                             }
                                           ]
                                         }
@@ -1652,7 +1637,7 @@
                             "props": {
                               "direction": "column",
                               "style": {
-                                "gap": "6px",
+                                "gap": "3px",
                                 "classes": "pf-field"
                               }
                             },
@@ -1679,8 +1664,8 @@
                                   "deferUpdates": false,
                                   "style": {
                                     "classes": "pf-field-input-mono",
-                                    "fontSize": "18px",
-                                    "minHeight": "48px"
+                                    "fontSize": "15px",
+                                    "minHeight": "38px"
                                   }
                                 },
                                 "propConfig": {
@@ -1708,7 +1693,8 @@
                             "props": {
                               "text": "Add basket",
                               "style": {
-                                "classes": "pf-btn pf-btn-primary pf-btn-large"
+                                "classes": "pf-btn pf-btn-primary pf-btn-large",
+                                "minHeight": "42px"
                               }
                             },
                             "events": {
@@ -1746,8 +1732,8 @@
                         "props": {
                           "direction": "column",
                           "style": {
-                            "gap": "14px",
-                            "padding": "14px 16px",
+                            "gap": "8px",
+                            "padding": "8px 12px",
                             "classes": "pf-panel"
                           }
                         },
@@ -1760,7 +1746,7 @@
                             "props": {
                               "direction": "column",
                               "style": {
-                                "gap": "6px",
+                                "gap": "3px",
                                 "classes": "pf-field"
                               }
                             },
@@ -1804,7 +1790,7 @@
                                       "style": {
                                         "classes": "pf-field-input-mono",
                                         "fontSize": "16px",
-                                        "minHeight": "48px",
+                                        "minHeight": "38px",
                                         "minWidth": "0px"
                                       }
                                     },
@@ -1834,7 +1820,7 @@
                                       }
                                     },
                                     "position": {
-                                      "basis": "56px",
+                                      "basis": "44px",
                                       "shrink": 0
                                     },
                                     "props": {
@@ -1846,7 +1832,7 @@
                                       },
                                       "style": {
                                         "classes": "pf-btn pf-btn-secondary",
-                                        "minHeight": "48px"
+                                        "minHeight": "38px"
                                       }
                                     },
                                     "events": {
@@ -1885,7 +1871,7 @@
                             "props": {
                               "direction": "column",
                               "style": {
-                                "gap": "6px",
+                                "gap": "3px",
                                 "classes": "pf-field"
                               }
                             },
@@ -1928,8 +1914,8 @@
                                       "deferUpdates": false,
                                       "style": {
                                         "classes": "pf-field-input-mono",
-                                        "fontSize": "18px",
-                                        "minHeight": "48px",
+                                        "fontSize": "15px",
+                                        "minHeight": "38px",
                                         "minWidth": "0px"
                                       }
                                     },
@@ -1959,7 +1945,7 @@
                                       }
                                     },
                                     "position": {
-                                      "basis": "56px",
+                                      "basis": "44px",
                                       "shrink": 0
                                     },
                                     "props": {
@@ -1971,7 +1957,7 @@
                                       },
                                       "style": {
                                         "classes": "pf-btn pf-btn-secondary",
-                                        "minHeight": "48px"
+                                        "minHeight": "38px"
                                       }
                                     },
                                     "events": {
@@ -2010,7 +1996,7 @@
                             "props": {
                               "direction": "column",
                               "style": {
-                                "gap": "6px",
+                                "gap": "3px",
                                 "classes": "pf-field"
                               }
                             },
@@ -2082,7 +2068,7 @@
                                       }
                                     },
                                     "position": {
-                                      "basis": "56px",
+                                      "basis": "44px",
                                       "shrink": 0
                                     },
                                     "props": {
@@ -2094,7 +2080,7 @@
                                       },
                                       "style": {
                                         "classes": "pf-btn pf-btn-secondary",
-                                        "minHeight": "48px"
+                                        "minHeight": "38px"
                                       }
                                     },
                                     "events": {
@@ -2148,7 +2134,8 @@
                             "props": {
                               "text": "Add box",
                               "style": {
-                                "classes": "pf-btn pf-btn-primary pf-btn-large"
+                                "classes": "pf-btn pf-btn-primary pf-btn-large",
+                                "minHeight": "42px"
                               }
                             },
                             "events": {
@@ -2193,8 +2180,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "10px",
-                        "padding": "12px 14px",
+                        "gap": "6px",
+                        "padding": "8px 10px",
                         "overflow": "hidden",
                         "classes": "pf-panel"
                       }
@@ -2279,7 +2266,7 @@
                         "props": {
                           "direction": "row",
                           "style": {
-                            "padding": "24px 16px",
+                            "padding": "12px 12px",
                             "classes": "pf-empty-state"
                           },
                           "alignItems": "center",
@@ -2325,7 +2312,7 @@
                             "shrink": 0
                           },
                           "style": {
-                            "gap": "6px",
+                            "gap": "3px",
                             "flexWrap": "nowrap",
                             "overflowY": "auto"
                           },
@@ -2398,7 +2385,7 @@
         {
           "name": "openChange",
           "params": [],
-          "script": "\ts = self.session.custom.cutover.session\n\tself.view.custom.setupDraft = {\"lineLocationId\": s.get(\"lineLocationId\"), \"entryRoleCode\": s.get(\"entryRoleCode\"), \"itemId\": s.get(\"itemId\"), \"machineLocationId\": s.get(\"machineLocationId\"), \"destinationLocationId\": s.get(\"destinationLocationId\")}\n\tself.view.custom.forceSetup = True"
+          "script": "\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.draftFromSession(self.session)\n\tself.view.custom.forceSetup = True"
         },
         {
           "name": "onToolChanged",
@@ -2420,6 +2407,17 @@
       ],
       "extensionFunctions": null,
       "messageHandlers": []
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# Opens on the default source (the warehouse); a breakpoint re-render keeps\n\t# the picks and only re-derives isLine.\n\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.initSetup(self.view.custom.setupDraft)"
+          }
+        }
+      }
     }
   }
 }

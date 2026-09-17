@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-20
-# Version:          1.3
+# Version:          1.4
 #
 # Description:
 #   Read + mutation surface for the Item Master Configuration Tool
@@ -24,6 +24,8 @@
 #   update(meta)           -> {Status, Message}
 #   deprecate(itemId)      -> {Status, Message}
 #   emptyMeta()            -> dict (blank shape for AddItem popup)
+#   listForCutoverLocation(locationId) -> list[dict]
+#   getForCutoverLocationDropdown(locationId) -> list[{label, value}]
 #
 # Layer:
 #   View -> BlueRidge.Parts.Item (this module)
@@ -41,7 +43,12 @@
 #                      (PascalCase editDraft from Item_Get) both work.
 #   2026-08-20 - 1.3 - Part-scoped CRT (Task 8): CrtEnabled added to
 #                      _ITEM_SHAPE_KEYS and always sent (1/0) by update().
+#   2026-09-17 - 1.4 - Cutover scan: listForCutoverLocation /
+#                      getForCutoverLocationDropdown (warehouse lists every
+#                      active part). Option shaping shared via _partOptions.
 # =============================================================================
+
+import java.lang
 
 
 _TYPE_BADGE = {
@@ -164,6 +171,11 @@ def getEligibleForLocationDropdown(locationId, operationTypeCode=None, _refreshT
     except Exception as e:
         BlueRidge.Common.Util.log("getEligibleForLocationDropdown failed: %s" % str(e), level="warn")
         return []
+    return _partOptions(rows)
+
+
+def _partOptions(rows):
+    """Item rows -> [{label: '<PartNumber> - <Description>', value: Id}]."""
     out = []
     for r in (rows or []):
         pn = r.get("PartNumber") or ""
@@ -171,6 +183,27 @@ def getEligibleForLocationDropdown(locationId, operationTypeCode=None, _refreshT
         label = ("%s - %s" % (pn, desc)) if desc else pn
         out.append({"label": label, "value": r.get("Id")})
     return out
+
+
+def listForCutoverLocation(locationId):
+    """Raw rows of parts/Item_ListForCutoverLocation: the parts eligible at a
+       line or trim store, or EVERY active part for the warehouse (a cutover
+       destination with no eligibility configured -- the proc decides).
+       Always a list."""
+    locationId = _u(locationId)
+    if locationId is None:
+        return []
+    try:
+        return BlueRidge.Common.Db.execList(
+            "parts/Item_ListForCutoverLocation", {"locationId": locationId}) or []
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("listForCutoverLocation failed: %s" % str(e), level="warn")
+        return []
+
+
+def getForCutoverLocationDropdown(locationId, _refreshToken=None):
+    """listForCutoverLocation shaped for ia.input.dropdown."""
+    return _partOptions(listForCutoverLocation(locationId))
 
 
 def mapItemRowsForList(rows, typeFilter="All Types"):

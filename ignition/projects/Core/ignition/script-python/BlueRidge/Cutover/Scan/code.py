@@ -34,6 +34,10 @@
 #   voidEntry(lotId, appUserId, session)
 #                          -> {Status, Message}
 #   stepCastDate(days, session) -> the new date, capped at today
+#   canStepForward(castDate) -> bool, for the '>' arrow's enabled binding
+#   initSetup(draft)      -> setup draft, defaulted to the warehouse if empty
+#   applySetupChange(draft, field, value) -> setup draft after a line/part pick
+#   draftFromSession(session) -> setup draft rebuilt from the latched session
 #   getState()             -> the full session.custom.cutover shape, every
 #                             key always present (first-paint safe)
 #
@@ -95,9 +99,24 @@
 #                      leave a stale destination. No pick -> the per-line
 #                      getStockDestinationOrEmpty default, i.e. today's
 #                      behaviour, unchanged.
+#   2026-09-17 - 1.5 - The first pick is WHERE THE STOCK IS: the warehouse
+#                      (default), a trim store, or a line
+#                      (Location.listCutoverSources). A store is its own
+#                      destination and asks no entry step; a line defaults its
+#                      destination to the part's trim store (the proc decides).
+#                      New setup helpers initSetup / applySetupChange /
+#                      draftFromSession own the setup draft so the three size
+#                      views stay one-liners; session.isLine drives the header.
+#                      No pick -> the proc's IsDefault row (was
+#                      getStockDestinationOrEmpty). Part list via
+#                      Item.listForCutoverLocation (warehouse = every part).
+#                      addBasket keeps the LTT minus its last 4 characters.
+#                      castDate may arrive as epoch millis from the date
+#                      picker -- _asDate normalises it.
 # =============================================================================
 
 import java.lang
+import java.util
 
 
 def _u(value):
@@ -158,8 +177,21 @@ def _plain(value):
     return [_plain(v) for v in seq]
 
 
+def _asDate(value):
+    """The cast date as a java.util.Date. The date picker writes its value as
+       epoch MILLISECONDS (a number), the arrow buttons write a Date, and
+       Lot_Create's :castDate is sqlType 8 (DateTime) -- so every read of
+       entry.castDate goes through here."""
+    if value is None or isinstance(value, java.util.Date):
+        return value
+    if isinstance(value, (int, long, float)):
+        return system.date.fromMillis(long(value))
+    return value
+
+
 _EMPTY = {
-    "session": {"lineLocationId": None, "lineName": "", "destinationLocationId": None,
+    "session": {"lineLocationId": None, "lineName": "", "isLine": False,
+                "destinationLocationId": None,
                 "destinationName": "", "entryRoleCode": "MachiningIn",
                 "entryRouteSequence": None, "itemId": None, "partNumber": "",
                 "partDescription": "", "toolId": None, "toolName": "",
@@ -270,11 +302,115 @@ def _guard(fn):
     return wrapped
 
 
+# ---------------------------------------------------------------------------
+# Session setup draft
+# ---------------------------------------------------------------------------
+# view.custom.setupDraft in each size view. The views only assign what these
+# return -- ONE write of the whole dict, never key by key (see _write).
+#
+# lineLocationId is the operator's FIRST pick: where the stock being counted
+# is. Despite the name (kept so every binding and loadSession's signature stay
+# put) it may be the warehouse or a trim store. isLine says which:
+#   - a store is its own destination; the view hides Entry step + Destination.
+#     entryRoleCode is pinned to MachiningIn -- stock in a store is castings
+#     waiting on Machining IN, or finished goods/purchased parts, whose routes
+#     have no MachiningIn step and so get no entry sequence either way.
+#   - a line shows both; the destination defaults to the part's trim store.
+# Which store is the default, and which destination a part defaults to, are
+# answered by SQL (Location_ListCutoverSources / _ListCutoverDestinationsForLine).
+
+_EMPTY_DRAFT = {"lineLocationId": None, "isLine": False,
+                "entryRoleCode": "MachiningIn", "itemId": None,
+                "machineLocationId": None, "destinationLocationId": None}
+
+
+def _source(locationId):
+    """The Location_ListCutoverSources row for a pick, or {}."""
+    if locationId is None:
+        return {}
+    for r in BlueRidge.Location.Location.listCutoverSources():
+        if r.get("Id") == locationId:
+            return r
+    return {}
+
+
+def _defaultDestination(locationId, itemId):
+    for r in BlueRidge.Location.Location.listCutoverDestinations(locationId, itemId):
+        if r.get("IsDefault"):
+            return r.get("Id")
+    return locationId
+
+
+def _draft(draft):
+    d = dict(_EMPTY_DRAFT)
+    src = _plain(_u(draft))
+    if isinstance(src, dict):
+        d.update(src)
+    return d
+
+
+def applySetupChange(draft, field, value):
+    """The setup draft after the operator picks a location (field 'line') or a
+       part (field 'item'). Never-throw: a failure returns the draft with the
+       pick applied and nothing else changed."""
+    d = _draft(draft)
+    value = _u(value)
+    try:
+        if field == "line":
+            d["lineLocationId"] = value
+            d["isLine"] = bool(_source(value).get("IsLine"))
+            if not d["isLine"]:
+                d["entryRoleCode"] = "MachiningIn"
+            # The part list is per location -- drop a part the new one does
+            # not offer rather than leave a bare Id showing in the dropdown.
+            if d.get("itemId") is not None:
+                offered = [r.get("Id") for r in
+                           BlueRidge.Parts.Item.listForCutoverLocation(value)]
+                if d["itemId"] not in offered:
+                    d["itemId"], d["machineLocationId"] = None, None
+        elif field == "item":
+            d["itemId"] = value
+        else:
+            return d
+        d["destinationLocationId"] = _defaultDestination(d["lineLocationId"], d["itemId"])
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("applySetupChange(%s) failed: %s" % (field, str(e)),
+                                  level="warn")
+    return d
+
+
+def initSetup(draft):
+    """View startup: an empty draft opens on the default source (the
+       warehouse); a populated one (a breakpoint re-render) just has isLine
+       re-derived."""
+    d = _draft(draft)
+    if d.get("lineLocationId") is None:
+        for r in BlueRidge.Location.Location.listCutoverSources():
+            if r.get("IsDefault"):
+                return applySetupChange(d, "line", r.get("Id"))
+        return d
+    d["isLine"] = bool(_source(d["lineLocationId"]).get("IsLine"))
+    return d
+
+
+def draftFromSession(session):
+    """The setup draft for 'Change': the latched session's picks."""
+    s = getState(session)["session"]
+    d = dict(_EMPTY_DRAFT)
+    for k in _EMPTY_DRAFT:
+        if k in s:
+            d[k] = s.get(k)
+    return d
+
+
 @_guard
 def loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId,
                 destinationLocationId, session):
     """Latch the scan session. Every domain question is asked of SQL; this only
-       assembles the answers. Returns {Status, Message}."""
+       assembles the answers. Returns {Status, Message}.
+
+       lineLocationId is where the stock is -- a line, the warehouse or a trim
+       store (see the setup-draft notes above)."""
     lineLocationId = _u(lineLocationId)
     itemId = _u(itemId)
     entryRoleCode = _u(entryRoleCode)
@@ -282,18 +418,24 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId,
     destinationLocationId = _u(destinationLocationId)
 
     item = BlueRidge.Parts.Item.getOne(itemId) or {}
-    line = BlueRidge.Location.Location.getOne(lineLocationId) or {}
-    dest = BlueRidge.Location.Location.getStockDestinationOrEmpty(lineLocationId)
-    # The operator's pick wins; the per-line default is the fallback. Resolved
-    # against the SAME list the dropdown offered, so the label cannot drift and
-    # a line change cannot leave a stale destination selected.
-    destId = dest.get("DestinationLocationId")
-    destName = dest.get("DestinationName") or ""
-    if destinationLocationId is not None:
-        for opt in BlueRidge.Location.Location.getCutoverDestinationDropdown(lineLocationId):
-            if opt.get("value") == destinationLocationId:
-                destId, destName = destinationLocationId, opt.get("label") or ""
+    src = _source(lineLocationId)
+    isLine = bool(src.get("IsLine"))
+    if not isLine:
+        # A store is its own destination and has no entry step to choose.
+        entryRoleCode = "MachiningIn"
+        destinationLocationId = lineLocationId
+    # The operator's pick wins; the proc's IsDefault row is the fallback.
+    # Resolved against the SAME list the dropdown offered, so the label cannot
+    # drift and a line change cannot leave a stale destination selected.
+    dests = BlueRidge.Location.Location.listCutoverDestinations(lineLocationId, itemId)
+    destId, destName = None, ""
+    for r in dests:
+        if r.get("Id") == destinationLocationId or (destId is None and r.get("IsDefault")):
+            destId, destName = r.get("Id"), r.get("DisplayName") or r.get("Name") or ""
+            if r.get("Id") == destinationLocationId:
                 break
+    if destId is None:
+        return {"Status": 0, "Message": "Pick where the stock is counted in."}
     # EntryRouteSequence is a CASTINGS-ONLY mechanism (design spec 3.4). A
     # SubAssembly's route is a single ConsumeMint step with nothing earlier to
     # skip, and a purchased component has no route at all -- both surface
@@ -334,7 +476,9 @@ def loadSession(lineLocationId, itemId, entryRoleCode, machineLocationId,
 
     st = getState(session)
     st["session"] = {
-        "lineLocationId": lineLocationId, "lineName": line.get("name") or "",
+        "lineLocationId": lineLocationId,
+        "lineName": src.get("DisplayName") or src.get("Name") or "",
+        "isLine": isLine,
         "destinationLocationId": destId,
         "destinationName": destName,
         "entryRoleCode": entryRoleCode, "entryRouteSequence": seq,
@@ -368,6 +512,7 @@ def addBasket(appUserId, terminalLocationId, session):
         return {"Status": 0, "Message": "Scan the LTT barcode."}
     if e.get("toolCavityId") is None:
         return {"Status": 0, "Message": "Tap the cavity shown on the tag."}
+    e["castDate"] = _asDate(e.get("castDate"))
     if e.get("castDate") is None:
         return {"Status": 0, "Message": "Set the cast date from the tag."}
     try:
@@ -391,9 +536,12 @@ def addBasket(appUserId, terminalLocationId, session):
     if not (res and res.get("Status")):
         return res
 
-    # Only the LTT and the count clear. Cavity and cast date LATCH, because
-    # baskets come off the rack grouped by both.
-    e["lotName"], e["pieceCount"] = "", ""
+    # Only the count clears. Cavity and cast date LATCH, because baskets come
+    # off the rack grouped by both. The LTT keeps everything but its last 4
+    # characters: consecutive tags share that prefix, so the operator only
+    # keys the tail for the next basket.
+    e["lotName"] = lotName[:-4] if len(lotName) > 4 else ""
+    e["pieceCount"] = ""
     rows = list(st.get("rows") or [])
     rows.insert(0, {"LotId": res.get("NewId"), "LotName": lotName,
                     "PartNumber": s.get("partNumber"), "CavityCode": e.get("cavityCode"),
@@ -574,7 +722,7 @@ def stepCastDate(days, session):
        basket scanned, so consecutive baskets are zero or one tap."""
     days = _u(days)
     st = getState(session)
-    cur = st["entry"].get("castDate") or system.date.now()
+    cur = _asDate(st["entry"].get("castDate")) or system.date.now()
     nxt = system.date.addDays(cur, days)
     if system.date.isAfter(system.date.midnight(nxt),
                            system.date.midnight(system.date.now())):
@@ -582,4 +730,17 @@ def stepCastDate(days, session):
     st["entry"]["castDate"] = nxt
     _write(st, session)
     return nxt
+
+
+def canStepForward(castDate):
+    """Binding transform for the '>' arrow: enabled while the cast date is
+       before today (or unset). Accepts a Date or the picker's epoch millis."""
+    castDate = _asDate(_u(castDate))
+    if castDate is None:
+        return True
+    try:
+        return system.date.isBefore(system.date.midnight(castDate),
+                                    system.date.midnight(system.date.now()))
+    except (Exception, java.lang.Exception):
+        return True
 

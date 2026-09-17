@@ -1,1 +1,1 @@
-EXEC Location.Location_ListCutoverDestinationsForLine @LineLocationId = :lineLocationId
+EXEC Location.Location_ListCutoverDestinationsForLine @LineLocationId = :lineLocationId, @ItemId = :itemId

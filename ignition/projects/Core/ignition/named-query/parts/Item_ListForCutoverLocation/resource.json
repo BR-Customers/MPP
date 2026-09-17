@@ -32,12 +32,7 @@
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "lineLocationId",
-        "sqlType": 3
-      },
-      {
-        "type": "Parameter",
-        "identifier": "itemId",
+        "identifier": "locationId",
         "sqlType": 3
       }
     ]

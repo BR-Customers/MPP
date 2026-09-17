@@ -3,9 +3,10 @@
     "forceSetup": false,
     "phoneShowRows": false,
     "setupDraft": {
+      "lineLocationId": null,
+      "isLine": false,
       "entryRoleCode": "MachiningIn",
       "itemId": null,
-      "lineLocationId": null,
       "machineLocationId": null,
       "destinationLocationId": null
     },
@@ -52,7 +53,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -69,7 +70,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -94,8 +95,8 @@
           "alignItems": "center",
           "style": {
             "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "gap": "12px",
-            "padding": "10px 16px"
+            "gap": "8px",
+            "padding": "6px 12px"
           }
         },
         "type": "ia.container.flex"
@@ -130,7 +131,7 @@
                       "style": {
                         "classes": "pf-kpi-sub"
                       },
-                      "text": "Pick the line, entry step and part -- this stays latched for the whole session."
+                      "text": "Pick where the stock is and the part -- this stays latched for the whole session."
                     },
                     "type": "ia.display.label"
                   }
@@ -161,7 +162,7 @@
                       "style": {
                         "classes": "pf-field-label"
                       },
-                      "text": "Line"
+                      "text": "Location"
                     },
                     "type": "ia.display.label"
                   },
@@ -170,23 +171,23 @@
                       "name": "LineDropdown"
                     },
                     "events": {
-                        "component": {
-                          "onActionPerformed": {
-                            "type": "script",
-                            "scope": "G",
-                            "config": {
-                              "script": "\t# Show the default instead of hiding it: stock goes to the line unless\n\t# the operator picks elsewhere. loadSession already falls back to the\n\t# line, but a blank control reads as nothing-chosen.\n\tself.view.custom.setupDraft.destinationLocationId = self.props.value"
-                            }
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.applySetupChange(self.view.custom.setupDraft, \"line\", self.props.value)"
                           }
                         }
-                      },
-                      "propConfig": {
+                      }
+                    },
+                    "propConfig": {
                       "props.options": {
                         "binding": {
+                          "type": "expr",
                           "config": {
-                            "expression": "runScript(\"BlueRidge.Location.Location.getProductionLinesForDropdown\", 0)"
-                          },
-                          "type": "expr"
+                            "expression": "runScript(\"BlueRidge.Location.Location.getCutoverSourceDropdown\", 0)"
+                          }
                         }
                       },
                       "props.value": {
@@ -200,9 +201,9 @@
                       }
                     },
                     "props": {
-                      "placeholder": "Pick the line",
+                      "placeholder": "Pick where the stock is",
                       "style": {
-                        "minHeight": "44px"
+                        "minHeight": "36px"
                       }
                     },
                     "type": "ia.input.dropdown"
@@ -218,7 +219,7 @@
                   "direction": "column",
                   "style": {
                     "classes": "pf-field",
-                    "gap": "6px"
+                    "gap": "3px"
                   }
                 },
                 "type": "ia.container.flex"
@@ -255,7 +256,7 @@
                           "dom": {
                             "onClick": {
                               "config": {
-                                "script": "\tself.view.custom.setupDraft.entryRoleCode \u003d \"MachiningIn\""
+                                "script": "\tself.view.custom.setupDraft.entryRoleCode = \"MachiningIn\""
                               },
                               "scope": "G",
                               "type": "script"
@@ -269,7 +270,7 @@
                           "props.style.classes": {
                             "binding": {
                               "config": {
-                                "expression": "if({view.custom.setupDraft.entryRoleCode} \u003d \"MachiningIn\", \u0027pf-toggle-btn pf-toggle-btn-selected\u0027, \u0027pf-toggle-btn\u0027)"
+                                "expression": "if({view.custom.setupDraft.entryRoleCode} = \"MachiningIn\", 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
                               },
                               "type": "expr"
                             }
@@ -279,8 +280,8 @@
                           "alignItems": "center",
                           "justify": "center",
                           "style": {
-                            "minHeight": "40px",
-                            "padding": "0 14px"
+                            "minHeight": "34px",
+                            "padding": "0 10px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -301,7 +302,7 @@
                           "dom": {
                             "onClick": {
                               "config": {
-                                "script": "\tself.view.custom.setupDraft.entryRoleCode \u003d \"AssemblyIn\""
+                                "script": "\tself.view.custom.setupDraft.entryRoleCode = \"AssemblyIn\""
                               },
                               "scope": "G",
                               "type": "script"
@@ -315,7 +316,7 @@
                           "props.style.classes": {
                             "binding": {
                               "config": {
-                                "expression": "if({view.custom.setupDraft.entryRoleCode} \u003d \"AssemblyIn\", \u0027pf-toggle-btn pf-toggle-btn-selected\u0027, \u0027pf-toggle-btn\u0027)"
+                                "expression": "if({view.custom.setupDraft.entryRoleCode} = \"AssemblyIn\", 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
                               },
                               "type": "expr"
                             }
@@ -325,8 +326,8 @@
                           "alignItems": "center",
                           "justify": "center",
                           "style": {
-                            "minHeight": "40px",
-                            "padding": "0 14px"
+                            "minHeight": "34px",
+                            "padding": "0 10px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -353,10 +354,20 @@
                   "direction": "column",
                   "style": {
                     "classes": "pf-field",
-                    "gap": "6px"
+                    "gap": "3px"
                   }
                 },
-                "type": "ia.container.flex"
+                "type": "ia.container.flex",
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.setupDraft.isLine}"
+                      }
+                    }
+                  }
+                }
               },
               {
                 "children": [
@@ -379,10 +390,10 @@
                     "propConfig": {
                       "props.options": {
                         "binding": {
+                          "type": "expr",
                           "config": {
-                            "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
-                          },
-                          "type": "expr"
+                            "expression": "runScript(\"BlueRidge.Parts.Item.getForCutoverLocationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
+                          }
                         }
                       },
                       "props.value": {
@@ -398,10 +409,21 @@
                     "props": {
                       "placeholder": "Pick the part",
                       "style": {
-                        "minHeight": "44px"
+                        "minHeight": "36px"
                       }
                     },
-                    "type": "ia.input.dropdown"
+                    "type": "ia.input.dropdown",
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.applySetupChange(self.view.custom.setupDraft, \"item\", self.props.value)"
+                          }
+                        }
+                      }
+                    }
                   }
                 ],
                 "meta": {
@@ -414,7 +436,7 @@
                   "direction": "column",
                   "style": {
                     "classes": "pf-field",
-                    "gap": "6px"
+                    "gap": "3px"
                   }
                 },
                 "type": "ia.container.flex"
@@ -459,7 +481,7 @@
                     "props": {
                       "placeholder": "Pick the machine",
                       "style": {
-                        "minHeight": "44px"
+                        "minHeight": "36px"
                       }
                     },
                     "type": "ia.input.dropdown"
@@ -475,7 +497,7 @@
                   "direction": "column",
                   "style": {
                     "classes": "pf-field",
-                    "gap": "6px"
+                    "gap": "3px"
                   }
                 },
                 "type": "ia.container.flex"
@@ -501,10 +523,10 @@
                     "propConfig": {
                       "props.options": {
                         "binding": {
+                          "type": "expr",
                           "config": {
-                            "expression": "runScript(\"BlueRidge.Location.Location.getCutoverDestinationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
-                          },
-                          "type": "expr"
+                            "expression": "runScript(\"BlueRidge.Location.Location.getCutoverDestinationDropdown\", 0, {view.custom.setupDraft.lineLocationId}, {view.custom.setupDraft.itemId})"
+                          }
                         }
                       },
                       "props.value": {
@@ -520,7 +542,7 @@
                     "props": {
                       "placeholder": "Pick where stock is counted in",
                       "style": {
-                        "minHeight": "44px"
+                        "minHeight": "36px"
                       }
                     },
                     "type": "ia.input.dropdown"
@@ -536,10 +558,20 @@
                   "direction": "column",
                   "style": {
                     "classes": "pf-field",
-                    "gap": "6px"
+                    "gap": "3px"
                   }
                 },
-                "type": "ia.container.flex"
+                "type": "ia.container.flex",
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.setupDraft.isLine}"
+                      }
+                    }
+                  }
+                }
               },
               {
                 "events": {
@@ -560,7 +592,7 @@
                   "props.enabled": {
                     "binding": {
                       "config": {
-                        "expression": "!isNull({view.custom.setupDraft.lineLocationId}) \u0026\u0026 !isNull({view.custom.setupDraft.itemId})"
+                        "expression": "!isNull({view.custom.setupDraft.lineLocationId}) && !isNull({view.custom.setupDraft.itemId})"
                       },
                       "type": "expr"
                     }
@@ -568,7 +600,8 @@
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-btn pf-btn-primary pf-btn-large"
+                    "classes": "pf-btn pf-btn-primary pf-btn-large",
+                    "minHeight": "42px"
                   },
                   "text": "Start Session"
                 },
@@ -595,8 +628,8 @@
               "direction": "column",
               "style": {
                 "classes": "pf-panel",
-                "gap": "14px",
-                "padding": "16px"
+                "gap": "8px",
+                "padding": "10px 12px"
               }
             },
             "type": "ia.container.flex"
@@ -664,7 +697,7 @@
                           "alignItems": "center",
                           "style": {
                             "cursor": "pointer",
-                            "minHeight": "44px"
+                            "minHeight": "36px"
                           }
                         },
                         "events": {
@@ -673,7 +706,7 @@
                               "type": "script",
                               "scope": "G",
                               "config": {
-                                "script": "\tself.view.custom.headerExpanded \u003d not self.view.custom.headerExpanded"
+                                "script": "\tself.view.custom.headerExpanded = not self.view.custom.headerExpanded"
                               }
                             }
                           }
@@ -687,7 +720,7 @@
                             "props": {
                               "style": {
                                 "color": "var(--mpp-accent-60)",
-                                "fontSize": "18px"
+                                "fontSize": "15px"
                               }
                             },
                             "propConfig": {
@@ -736,7 +769,7 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "10px"
+                        "gap": "6px"
                       }
                     },
                     "type": "ia.container.flex"
@@ -767,7 +800,7 @@
                               "style": {
                                 "classes": "pf-kpi-label"
                               },
-                              "text": "Line"
+                              "text": "Location"
                             }
                           },
                           {
@@ -1077,7 +1110,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if({session.custom.cutover.session.entryRoleCode} \u003d \"MachiningIn\", \"MACHINING IN\", \"ASSEMBLY IN\")"
+                                    "expression": "if({session.custom.cutover.session.entryRoleCode} = \"MachiningIn\", \"MACHINING IN\", \"ASSEMBLY IN\")"
                                   },
                                   "type": "expr"
                                 }
@@ -1093,7 +1126,17 @@
                               "shrink": 0
                             }
                           }
-                        ]
+                        ],
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "{session.custom.cutover.session.isLine}"
+                              }
+                            }
+                          }
+                        }
                       }
                     ],
                     "meta": {
@@ -1102,7 +1145,7 @@
                     "props": {
                       "style": {
                         "flexWrap": "wrap",
-                        "gap": "28px"
+                        "gap": "16px"
                       }
                     },
                     "type": "ia.container.flex",
@@ -1128,8 +1171,8 @@
                   "direction": "column",
                   "style": {
                     "classes": "pf-panel",
-                    "gap": "10px",
-                    "padding": "12px 16px"
+                    "gap": "6px",
+                    "padding": "8px 12px"
                   }
                 },
                 "type": "ia.container.flex"
@@ -1154,7 +1197,7 @@
                           "dom": {
                             "onClick": {
                               "config": {
-                                "script": "\tself.session.custom.cutover.mode \u003d \"cast\""
+                                "script": "\tself.session.custom.cutover.mode = \"cast\""
                               },
                               "scope": "G",
                               "type": "script"
@@ -1168,7 +1211,7 @@
                           "props.style.classes": {
                             "binding": {
                               "config": {
-                                "expression": "if({session.custom.cutover.mode} \u003d \"cast\", \u0027pf-tab pf-tab-active\u0027, \u0027pf-tab\u0027)"
+                                "expression": "if({session.custom.cutover.mode} = \"cast\", 'pf-tab pf-tab-active', 'pf-tab')"
                               },
                               "type": "expr"
                             }
@@ -1178,8 +1221,8 @@
                           "alignItems": "center",
                           "justify": "center",
                           "style": {
-                            "minHeight": "44px",
-                            "padding": "0 18px"
+                            "minHeight": "36px",
+                            "padding": "0 12px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1200,7 +1243,7 @@
                           "dom": {
                             "onClick": {
                               "config": {
-                                "script": "\tself.session.custom.cutover.mode \u003d \"purchased\""
+                                "script": "\tself.session.custom.cutover.mode = \"purchased\""
                               },
                               "scope": "G",
                               "type": "script"
@@ -1214,7 +1257,7 @@
                           "props.style.classes": {
                             "binding": {
                               "config": {
-                                "expression": "if({session.custom.cutover.mode} \u003d \"purchased\", \u0027pf-tab pf-tab-active\u0027, \u0027pf-tab\u0027)"
+                                "expression": "if({session.custom.cutover.mode} = \"purchased\", 'pf-tab pf-tab-active', 'pf-tab')"
                               },
                               "type": "expr"
                             }
@@ -1224,8 +1267,8 @@
                           "alignItems": "center",
                           "justify": "center",
                           "style": {
-                            "minHeight": "44px",
-                            "padding": "0 18px"
+                            "minHeight": "36px",
+                            "padding": "0 12px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1296,8 +1339,8 @@
                                   "placeholder": "Scan LTT barcode",
                                   "style": {
                                     "classes": "pf-field-input-mono",
-                                    "fontSize": "17px",
-                                    "minHeight": "48px",
+                                    "fontSize": "15px",
+                                    "minHeight": "38px",
                                     "minWidth": "0px"
                                   }
                                 },
@@ -1317,7 +1360,7 @@
                                   }
                                 },
                                 "position": {
-                                  "basis": "56px",
+                                  "basis": "44px",
                                   "shrink": 0
                                 },
                                 "props": {
@@ -1329,7 +1372,7 @@
                                   },
                                   "style": {
                                     "classes": "pf-btn pf-btn-secondary",
-                                    "minHeight": "48px"
+                                    "minHeight": "38px"
                                   }
                                 },
                                 "events": {
@@ -1366,7 +1409,7 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "6px"
+                            "gap": "3px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1409,7 +1452,7 @@
                               "style": {
                                 "flexWrap": "wrap",
                                 "gap": "8px",
-                                "minHeight": "60px"
+                                "minHeight": "48px"
                               },
                               "useDefaultViewWidth": false
                             },
@@ -1426,7 +1469,7 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "6px"
+                            "gap": "3px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1468,99 +1511,46 @@
                                 "props": {
                                   "style": {
                                     "classes": "pf-btn pf-btn-secondary",
-                                    "fontSize": "20px",
-                                    "minHeight": "48px",
-                                    "minWidth": "48px"
+                                    "fontSize": "18px",
+                                    "minHeight": "38px",
+                                    "minWidth": "40px"
                                   },
                                   "text": "‹"
                                 },
                                 "type": "ia.input.button"
                               },
                               {
-                                "children": [
-                                  {
-                                    "meta": {
-                                      "name": "CastDateValue"
-                                    },
-                                    "propConfig": {
-                                      "props.text": {
-                                        "binding": {
-                                          "config": {
-                                            "expression": "if(isNull({session.custom.cutover.entry.castDate}), \"Tap ‹ or › to set\", dateFormat({session.custom.cutover.entry.castDate}, \"EEE, MMM d yyyy\"))"
-                                          },
-                                          "type": "expr"
-                                        }
-                                      }
-                                    },
-                                    "props": {
-                                      "style": {
-                                        "fontSize": "17px",
-                                        "fontWeight": 600
-                                      }
-                                    },
-                                    "type": "ia.display.label"
-                                  },
-                                  {
-                                    "meta": {
-                                      "name": "CastDateRel"
-                                    },
-                                    "propConfig": {
-                                      "props.style.classes": {
-                                        "binding": {
-                                          "config": {
-                                            "path": "session.custom.cutover.entry.castDate"
-                                          },
-                                          "transforms": [
-                                            {
-                                              "code": "\tif not value:\n\t\treturn \"pf-kpi-sub\"\n\ttoday \u003d system.date.toMillis(system.date.midnight(system.date.now()))\n\tthen \u003d system.date.toMillis(system.date.midnight(value))\n\tdays \u003d int((today - then) / 86400000)\n\treturn \"pf-kpi-value-warn\" if days \u003e 180 else \"pf-kpi-sub\"",
-                                              "type": "script"
-                                            }
-                                          ],
-                                          "type": "property"
-                                        }
-                                      },
-                                      "props.text": {
-                                        "binding": {
-                                          "config": {
-                                            "path": "session.custom.cutover.entry.castDate"
-                                          },
-                                          "transforms": [
-                                            {
-                                              "code": "\tif not value:\n\t\treturn \"\"\n\ttoday \u003d system.date.toMillis(system.date.midnight(system.date.now()))\n\tthen \u003d system.date.toMillis(system.date.midnight(value))\n\tdays \u003d int((today - then) / 86400000)\n\tif days \u003c\u003d 0:\n\t\treturn \"Today\"\n\ttxt \u003d \"%d day%s ago\" % (days, \"\" if days \u003d\u003d 1 else \"s\")\n\tif days \u003e 180:\n\t\ttxt +\u003d \" - check the year\"\n\treturn txt",
-                                              "type": "script"
-                                            }
-                                          ],
-                                          "type": "property"
-                                        }
-                                      }
-                                    },
-                                    "props": {
-                                      "style": {}
-                                    },
-                                    "type": "ia.display.label"
-                                  }
-                                ],
+                                "type": "ia.input.date-time-input",
                                 "meta": {
-                                  "name": "CastDateBox"
+                                  "name": "CastDatePicker"
                                 },
                                 "position": {
                                   "basis": "0px",
-                                  "grow": 1
+                                  "grow": 1,
+                                  "shrink": 1
                                 },
                                 "props": {
-                                  "alignItems": "center",
-                                  "direction": "column",
-                                  "justify": "center",
+                                  "format": "ddd, MMM D YYYY",
+                                  "pickerMode": "date",
                                   "style": {
-                                    "border": "1px solid var(--mpp-border-default)",
-                                    "borderRadius": "var(--mpp-radius-md)",
-                                    "flex": "1",
-                                    "gap": "1px",
-                                    "minHeight": "48px",
-                                    "minWidth": "0px"
+                                    "classes": "pf-field-select",
+                                    "minHeight": "38px",
+                                    "minWidth": "0px",
+                                    "fontSize": "15px",
+                                    "fontWeight": 600
                                   }
                                 },
-                                "type": "ia.container.flex"
+                                "propConfig": {
+                                  "props.value": {
+                                    "binding": {
+                                      "type": "property",
+                                      "config": {
+                                        "path": "session.custom.cutover.entry.castDate",
+                                        "bidirectional": true
+                                      }
+                                    }
+                                  }
+                                }
                               },
                               {
                                 "events": {
@@ -1588,8 +1578,8 @@
                                       },
                                       "transforms": [
                                         {
-                                          "code": "\tif not value:\n\t\treturn True\n\treturn system.date.midnight(value) \u003c system.date.midnight(system.date.now())",
-                                          "type": "script"
+                                          "type": "script",
+                                          "code": "\treturn BlueRidge.Cutover.Scan.canStepForward(value)"
                                         }
                                       ],
                                       "type": "property"
@@ -1599,9 +1589,9 @@
                                 "props": {
                                   "style": {
                                     "classes": "pf-btn pf-btn-secondary",
-                                    "fontSize": "20px",
-                                    "minHeight": "48px",
-                                    "minWidth": "48px"
+                                    "fontSize": "18px",
+                                    "minHeight": "38px",
+                                    "minWidth": "40px"
                                   },
                                   "text": "›"
                                 },
@@ -1630,7 +1620,7 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "6px"
+                            "gap": "3px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1669,8 +1659,8 @@
                               "placeholder": "Count",
                               "style": {
                                 "classes": "pf-field-input-mono",
-                                "fontSize": "18px",
-                                "minHeight": "48px"
+                                "fontSize": "15px",
+                                "minHeight": "38px"
                               }
                             },
                             "type": "ia.input.numeric-entry-field"
@@ -1686,7 +1676,7 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "6px"
+                            "gap": "3px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1708,7 +1698,8 @@
                         },
                         "props": {
                           "style": {
-                            "classes": "pf-btn pf-btn-primary pf-btn-large"
+                            "classes": "pf-btn pf-btn-primary pf-btn-large",
+                            "minHeight": "42px"
                           },
                           "text": "Add basket"
                         },
@@ -1725,7 +1716,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "{session.custom.cutover.mode} \u003d \"cast\""
+                            "expression": "{session.custom.cutover.mode} = \"cast\""
                           },
                           "type": "expr"
                         }
@@ -1735,8 +1726,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-panel",
-                        "gap": "14px",
-                        "padding": "14px 16px"
+                        "gap": "8px",
+                        "padding": "8px 12px"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1794,7 +1785,7 @@
                                   "style": {
                                     "classes": "pf-field-input-mono",
                                     "fontSize": "16px",
-                                    "minHeight": "48px",
+                                    "minHeight": "38px",
                                     "minWidth": "0px"
                                   }
                                 },
@@ -1814,7 +1805,7 @@
                                   }
                                 },
                                 "position": {
-                                  "basis": "56px",
+                                  "basis": "44px",
                                   "shrink": 0
                                 },
                                 "props": {
@@ -1826,7 +1817,7 @@
                                   },
                                   "style": {
                                     "classes": "pf-btn pf-btn-secondary",
-                                    "minHeight": "48px"
+                                    "minHeight": "38px"
                                   }
                                 },
                                 "events": {
@@ -1863,7 +1854,7 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "6px"
+                            "gap": "3px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1918,8 +1909,8 @@
                                   "placeholder": "Quantity",
                                   "style": {
                                     "classes": "pf-field-input-mono",
-                                    "fontSize": "18px",
-                                    "minHeight": "48px",
+                                    "fontSize": "15px",
+                                    "minHeight": "38px",
                                     "minWidth": "0px"
                                   }
                                 },
@@ -1939,7 +1930,7 @@
                                   }
                                 },
                                 "position": {
-                                  "basis": "56px",
+                                  "basis": "44px",
                                   "shrink": 0
                                 },
                                 "props": {
@@ -1951,7 +1942,7 @@
                                   },
                                   "style": {
                                     "classes": "pf-btn pf-btn-secondary",
-                                    "minHeight": "48px"
+                                    "minHeight": "38px"
                                   }
                                 },
                                 "events": {
@@ -1988,7 +1979,7 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "6px"
+                            "gap": "3px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -2062,7 +2053,7 @@
                                   }
                                 },
                                 "position": {
-                                  "basis": "56px",
+                                  "basis": "44px",
                                   "shrink": 0
                                 },
                                 "props": {
@@ -2074,7 +2065,7 @@
                                   },
                                   "style": {
                                     "classes": "pf-btn pf-btn-secondary",
-                                    "minHeight": "48px"
+                                    "minHeight": "38px"
                                   }
                                 },
                                 "events": {
@@ -2111,7 +2102,7 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "6px"
+                            "gap": "3px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -2148,7 +2139,8 @@
                         },
                         "props": {
                           "style": {
-                            "classes": "pf-btn pf-btn-primary pf-btn-large"
+                            "classes": "pf-btn pf-btn-primary pf-btn-large",
+                            "minHeight": "42px"
                           },
                           "text": "Add box"
                         },
@@ -2165,7 +2157,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "{session.custom.cutover.mode} \u003d \"purchased\""
+                            "expression": "{session.custom.cutover.mode} = \"purchased\""
                           },
                           "type": "expr"
                         }
@@ -2175,8 +2167,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-panel",
-                        "gap": "14px",
-                        "padding": "14px 16px"
+                        "gap": "8px",
+                        "padding": "8px 12px"
                       }
                     },
                     "type": "ia.container.flex"
@@ -2257,7 +2249,7 @@
                         "props": {
                           "style": {
                             "color": "var(--mpp-accent-60)",
-                            "fontSize": "18px"
+                            "fontSize": "15px"
                           }
                         },
                         "type": "ia.display.label"
@@ -2267,7 +2259,7 @@
                       "dom": {
                         "onClick": {
                           "config": {
-                            "script": "\tself.view.custom.phoneShowRows \u003d not self.view.custom.phoneShowRows"
+                            "script": "\tself.view.custom.phoneShowRows = not self.view.custom.phoneShowRows"
                           },
                           "scope": "G",
                           "type": "script"
@@ -2285,8 +2277,8 @@
                       "style": {
                         "classes": "pf-panel",
                         "cursor": "pointer",
-                        "gap": "10px",
-                        "padding": "10px 14px"
+                        "gap": "6px",
+                        "padding": "6px 10px"
                       }
                     },
                     "type": "ia.container.flex"
@@ -2381,7 +2373,7 @@
                           "position.display": {
                             "binding": {
                               "config": {
-                                "expression": "len({session.custom.cutover.rows}) \u003d 0"
+                                "expression": "len({session.custom.cutover.rows}) = 0"
                               },
                               "type": "expr"
                             }
@@ -2392,7 +2384,7 @@
                           "justify": "center",
                           "style": {
                             "classes": "pf-empty-state",
-                            "padding": "24px 16px"
+                            "padding": "12px 12px"
                           }
                         },
                         "type": "ia.container.flex"
@@ -2405,7 +2397,7 @@
                           "position.display": {
                             "binding": {
                               "config": {
-                                "expression": "len({session.custom.cutover.rows}) \u003e 0"
+                                "expression": "len({session.custom.cutover.rows}) > 0"
                               },
                               "type": "expr"
                             }
@@ -2429,7 +2421,7 @@
                           "path": "BlueRidge/Components/PlantFloor/Cutover/SessionRow",
                           "style": {
                             "flexWrap": "nowrap",
-                            "gap": "6px",
+                            "gap": "3px",
                             "overflowY": "auto"
                           },
                           "useDefaultViewWidth": false
@@ -2454,10 +2446,10 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-panel",
-                        "gap": "10px",
+                        "gap": "6px",
                         "maxHeight": "320px",
                         "overflow": "hidden",
-                        "padding": "12px 14px"
+                        "padding": "8px 10px"
                       }
                     },
                     "type": "ia.container.flex"
@@ -2474,7 +2466,7 @@
                   "direction": "column",
                   "style": {
                     "flex": "1",
-                    "gap": "12px",
+                    "gap": "8px",
                     "overflowY": "auto"
                   }
                 },
@@ -2492,7 +2484,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "!isNull({session.custom.cutover.session.itemId}) \u0026\u0026 !{view.custom.forceSetup}"
+                    "expression": "!isNull({session.custom.cutover.session.itemId}) && !{view.custom.forceSetup}"
                   },
                   "type": "expr"
                 }
@@ -2501,7 +2493,7 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "14px"
+                "gap": "8px"
               }
             },
             "type": "ia.container.flex"
@@ -2518,9 +2510,9 @@
           "direction": "column",
           "style": {
             "flex": "1",
-            "gap": "14px",
+            "gap": "8px",
             "overflowY": "auto",
-            "padding": "16px"
+            "padding": "10px 12px"
           }
         },
         "type": "ia.container.flex"
@@ -2542,34 +2534,45 @@
         {
           "name": "startSession",
           "params": [],
-          "script": "\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres \u003d BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineLocationId\"), d.get(\"destinationLocationId\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup \u003d False"
+          "script": "\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres = BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineLocationId\"), d.get(\"destinationLocationId\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup = False"
         },
         {
           "name": "openChange",
           "params": [],
-          "script": "\ts \u003d self.session.custom.cutover.session\n\tself.view.custom.setupDraft \u003d {\"lineLocationId\": s.get(\"lineLocationId\"), \"entryRoleCode\": s.get(\"entryRoleCode\"), \"itemId\": s.get(\"itemId\"), \"machineLocationId\": s.get(\"machineLocationId\"), \"destinationLocationId\": s.get(\"destinationLocationId\")}\n\tself.view.custom.forceSetup \u003d True"
+          "script": "\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.draftFromSession(self.session)\n\tself.view.custom.forceSetup = True"
         },
         {
           "name": "onToolChanged",
           "params": [
             "toolId"
           ],
-          "script": "\tst \u003d BlueRidge.Cutover.Scan.getState(self.session)\n\titemId \u003d st[\"session\"].get(\"itemId\")\n\tst[\"cavityOptions\"] \u003d BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId)\n\tst[\"entry\"][\"toolCavityId\"] \u003d None\n\tst[\"entry\"][\"cavityCode\"] \u003d \"\"\n\tself.session.custom.cutover \u003d st"
+          "script": "\tst = BlueRidge.Cutover.Scan.getState(self.session)\n\titemId = st[\"session\"].get(\"itemId\")\n\tst[\"cavityOptions\"] = BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId)\n\tst[\"entry\"][\"toolCavityId\"] = None\n\tst[\"entry\"][\"cavityCode\"] = \"\"\n\tself.session.custom.cutover = st"
         },
         {
           "name": "addBasket",
           "params": [],
-          "script": "\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tres \u003d BlueRidge.Cutover.Scan.addBasket(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Basket added\", res.get(\"Message\") if res else None)"
+          "script": "\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Cutover.Scan.addBasket(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Basket added\", res.get(\"Message\") if res else None)"
         },
         {
           "name": "addBox",
           "params": [],
-          "script": "\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tres \u003d BlueRidge.Cutover.Scan.addBox(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Box added\", res.get(\"Message\") if res else None)"
+          "script": "\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Cutover.Scan.addBox(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Box added\", res.get(\"Message\") if res else None)"
         }
       ],
       "extensionFunctions": null,
       "messageHandlers": []
     },
-    "type": "ia.container.flex"
+    "type": "ia.container.flex",
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# Opens on the default source (the warehouse); a breakpoint re-render keeps\n\t# the picks and only re-derives isLine.\n\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.initSetup(self.view.custom.setupDraft)"
+          }
+        }
+      }
+    }
   }
 }
