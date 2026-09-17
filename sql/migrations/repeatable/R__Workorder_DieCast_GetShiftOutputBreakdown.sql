@@ -1,9 +1,23 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCast_GetShiftOutputBreakdown.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-14
--- Version:     3.0
--- Changelog:   3.0 (2026-09-14) Reconciliation columns (0084, spec sec 3.2,
+-- Modified:    2026-09-17
+-- Version:     3.1
+-- Changelog:   3.1 (2026-09-17) ProposedGood for a basket RELEASED earlier
+--              this shift is now 0, not PriorGoodThisShift. ProposedGood
+--              means one thing on every row: what THIS entry would credit to
+--              the basket. A released basket is settled -- it takes scrap
+--              only, and Workorder.DieCastShiftOutput_Record rejects any
+--              pieceDelta > 0 on it -- so the only proposal the write proc
+--              would accept is 0. Returning its shift credit here was a
+--              leftover of the v1.0 cumulative split (where the released
+--              lot's credit was one share of @GrossShots); it stopped feeding
+--              anything at v1.3, and since v2.1 put released rows back on
+--              screen every consumer has overridden it (CavityLotRow forces
+--              Good to 0, DieCastBody skips the row in its totals and sends
+--              pieceDelta 0). The shift credit is still returned, unchanged,
+--              as PriorGoodThisShift. Result-set shape unchanged.
+--              3.0 (2026-09-14) Reconciliation columns (0084, spec sec 3.2,
 --              3.3, 5.2). New @DieWideShots INT = 0 -- shots already booked
 --              die-wide this entry. ProposedGood for a still-open lot is now
 --              NET of die-wide (floored at 0): today shot loss is purely
@@ -114,8 +128,9 @@
 --              there is nothing to apportion and nothing to back out.
 --
 --              ProposedGood, therefore:
---                * a non-open (already released/closed-out) lot keeps whatever
---                  it was credited this shift -- PriorGoodThisShift, unchanged;
+--                * a non-open (already released/closed-out) lot proposes 0 --
+--                  it is settled and takes scrap only (v3.1); what it was
+--                  credited this shift is PriorGoodThisShift;
 --                * a still-open lot gets @GrossShots verbatim (floored at 0 as
 --                  a defensive guard; the write proc
 --                  Workorder.DieCastShiftOutput_Record rejects a negative
@@ -187,11 +202,11 @@ BEGIN
         -- NOT re-credited. A cavity with no basket proposes nothing -- its
         -- shots show as NewShots below, for the operator to record as scrap.
         -- v3.0: a still-open lot's proposal is now NET OF DIE-WIDE (spec
-        -- 3.2/3.3), floored at 0. The other two branches are unaffected --
-        -- a pending (no-basket) row stays 0, an already-closed-out row keeps
-        -- whatever it was credited this shift.
+        -- 3.2/3.3), floored at 0. A pending (no-basket) row stays 0.
+        -- v3.1: an already-closed-out row also proposes 0 -- it takes scrap
+        -- only; its shift credit is PriorGoodThisShift above.
         CASE WHEN lo.LotId IS NULL   THEN 0
-             WHEN lo.IsOpen = 0      THEN ISNULL(p.PriorGood, 0)
+             WHEN lo.IsOpen = 0      THEN 0
              ELSE CASE WHEN ISNULL(@CounterReading, 0)
                           - Workorder.ufn_CavityShotWatermark(tc.Id, @ShiftId, @CellLocationId)
                           - ISNULL(@DieWideShots, 0) < 0

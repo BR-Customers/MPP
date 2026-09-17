@@ -249,7 +249,8 @@ DELETE FROM Quality.DefectCode WHERE Id = @DepDefectCode;
 -- ADDITIVE MODEL (proc v1.3, 2026-08-19). @GrossShots is the shots SINCE THE
 -- OPERATOR'S LAST ENTRY, not a climbing shift total, so the open lot proposes
 -- the entered number VERBATIM and no prior claim on the cavity is subtracted
--- from it. A released lot keeps whatever it was credited this shift. The old
+-- from it. A released lot proposes 0 -- it takes scrap only (proc v3.1); its
+-- shift credit is reported as PriorGoodThisShift. The old
 -- "remainder of gross after every other lot on the cavity" arithmetic (and the
 -- floor-at-0 that came with it) is GONE -- the assertions below pin the new
 -- behaviour, including the regression that a small entry against a cavity with
@@ -324,7 +325,7 @@ EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A row IsOpen=0 (released)', 
 DECLARE @aPrior NVARCHAR(10)   = (SELECT CAST(PriorGoodThisShift AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotA);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A PriorGoodThisShift=40', @Expected=N'40', @Actual=@aPrior;
 DECLARE @aProp NVARCHAR(10)    = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotA);
-EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A ProposedGood=40 (keeps its shift credit)', @Expected=N'40', @Actual=@aProp;
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A ProposedGood=0 (released: scrap only, credit is in PriorGoodThisShift)', @Expected=N'0', @Actual=@aProp;
 
 DECLARE @bIsOpen NVARCHAR(10)  = (SELECT CAST(IsOpen AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotB);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B row IsOpen=1 (still open)', @Expected=N'1', @Actual=@bIsOpen;
@@ -370,9 +371,12 @@ DECLARE @B4 TABLE (ToolCavityId BIGINT, CavityCode NVARCHAR(4), LotId BIGINT, Lo
 INSERT INTO @B4 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @CounterReading=5;
 DECLARE @bProp5 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B4 WHERE LotId=@LotB);
 EXEC test.Assert_IsEqual @TestName=N'[MultiLot] small entry (5) against a large prior claim proposes 5, not 0', @Expected=N'5', @Actual=@bProp5;
--- the released lot A is unaffected by the entered number -- it keeps its credit
+-- the released lot A is unaffected by the entered number -- it proposes 0
+-- whatever is entered, and its 40 stays in PriorGoodThisShift
 DECLARE @aProp5 NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B4 WHERE LotId=@LotA);
-EXEC test.Assert_IsEqual @TestName=N'[MultiLot] released lot A keeps its 40 regardless of the entered shots', @Expected=N'40', @Actual=@aProp5;
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] released lot A proposes 0 regardless of the entered shots', @Expected=N'0', @Actual=@aProp5;
+DECLARE @aPrior5 NVARCHAR(10) = (SELECT CAST(PriorGoodThisShift AS NVARCHAR(10)) FROM @B4 WHERE LotId=@LotA);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] released lot A PriorGoodThisShift still 40', @Expected=N'40', @Actual=@aPrior5;
 
 -- ---- cleanup (FK-safe, reverse order) ----
 DELETE FROM Workorder.RejectEvent WHERE LotId IN (@Lot, @LotA, @LotB);
