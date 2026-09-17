@@ -83,7 +83,10 @@ CREATE TABLE #g (
     CreatedByUserId   BIGINT,
     UpdatedByUserId   BIGINT,
     DeprecatedAt      DATETIME2(3),
-    CrtEnabled        BIT
+    CrtEnabled        BIT,
+    -- Line inventory sidebar (0091): BoxQuantity, LowInventoryHorizon appended LAST.
+    BoxQuantity          INT,
+    LowInventoryHorizon  INT
 );
 
 CREATE TABLE #u (Status BIT, Message NVARCHAR(500));

@@ -28,6 +28,7 @@
 --   2026-04-27 - 2.2 - OI-12 correction: MaxParts exposed (moved from ContainerConfig)
 --   2026-08-20 - 2.3 - Part-scoped CRT (Task 8): CrtEnabled appended LAST so the
 --                       Config Tool Item Master Identity checkbox can read it back.
+--   2026-09-17 - BoxQuantity, LowInventoryHorizon appended (line inventory sidebar).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Get
     @Id BIGINT
@@ -56,7 +57,9 @@ BEGIN
         i.CreatedByUserId,
         i.UpdatedByUserId,
         i.DeprecatedAt,
-        i.CrtEnabled          -- APPEND-LAST: see Result set note above
+        i.CrtEnabled,         -- APPEND-LAST: see Result set note above
+        i.BoxQuantity,        -- APPEND-LAST (2026-09-17, 0091)
+        i.LowInventoryHorizon -- APPEND-LAST (2026-09-17, 0091)
     FROM Parts.Item i
     INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
     INNER JOIN Parts.Uom u       ON u.Id  = i.UomId

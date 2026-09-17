@@ -395,7 +395,10 @@ CREATE TABLE #Get1 (
     -- Part-scoped CRT (Task 8). Parts.Item_Get APPENDS new columns LAST, so this
     -- fixed-shape capture must mirror that or the whole file aborts with Msg 213
     -- (a runner ERROR, not a FAIL line).
-    CrtEnabled        BIT
+    CrtEnabled        BIT,
+    -- Line inventory sidebar (0091): BoxQuantity, LowInventoryHorizon appended LAST.
+    BoxQuantity          INT,
+    LowInventoryHorizon  INT
 );
 
 INSERT INTO #Get1
