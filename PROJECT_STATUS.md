@@ -12,7 +12,18 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-09-17 -- **Tools screen: die shot-count correction. New repeatable `Tools.Tool_CorrectShotCount`; no migration. On Dev and screen-verified; not deployed -- release handoff in `notes/2026-09-17_prod-release-handoff-tool-shot-count.md`.**
+**Last updated:** 2026-09-17 -- **Cutover scan: location-first setup (Warehouse / Blast / Tumble Trim Storage / lines), trim-store default destination, cast-date picker, LTT keeps its prefix, compact layout. Two new repeatables + one changed; no migration. On Dev and browser-verified; not deployed -- release handoff in `notes/2026-09-17_prod-release-handoff-cutover-location-first.md`, to ship bundled with the shot-count release.**
+
+> ### Cutover scan -- location first (2026-09-17)
+>
+> Commits `a0d32be7` (SQL: `Location_ListCutoverSources`, `Item_ListForCutoverLocation`, `Location_ListCutoverDestinationsForLine` v2.0; tests `0070/080`, `0070/090`, folder 97/97) and `1da26dfb` (Ignition). The Location dropdown opens on Warehouse. A store is its own destination and hides Entry Step + Destination. At a line, the destination defaults to the part's trim store. Warehouse lists every active part (a cutover destination with no eligibility). Setup draft logic lives in `BlueRidge.Cutover.Scan` (`initSetup` / `applySetupChange` / `draftFromSession`).
+>
+> **Open:**
+> - Trim-store labels are a CASE on Code in both procs (Tumble = `TRIM1-STORE`, Blast = `TRIM2-STORE`). Jacques renamed the stores in prod on 2026-09-17; after the Friday 2026-09-18 prod-backup config sync, drop the CASE so Names drive the label.
+> - A keyboard-wedge scan would append to the kept LTT prefix; camera scan replaces it. Confirm how operators scan.
+> - Add basket not exercised live (harness only).
+
+**Previously (same day):** 2026-09-17 -- **Tools screen: die shot-count correction. New repeatable `Tools.Tool_CorrectShotCount`; no migration. On Dev and screen-verified; not deployed -- release handoff in `notes/2026-09-17_prod-release-handoff-tool-shot-count.md`.**
 
 > ### Die shot-count correction (2026-09-17)
 >
