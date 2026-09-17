@@ -42,7 +42,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 92,
+      "height": 64,
       "width": 640
     }
   },
@@ -101,33 +101,16 @@
           }
         },
         "props": {
-          "style": {}
+          "style": {
+            "marginBottom": "8px",
+            "marginTop": "8px",
+            "maxHeight": "32px"
+          }
         },
         "type": "ia.input.button"
       },
       {
         "children": [
-          {
-            "meta": {
-              "name": "Position"
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "config": {
-                    "expression": "if({view.params.position} \u003d 1, \u0027Position 1 - oldest\u0027, \u0027Position \u0027 + toStr({view.params.position}))"
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-queue-position"
-              }
-            },
-            "type": "ia.display.label"
-          },
           {
             "meta": {
               "name": "LotName"
@@ -237,7 +220,7 @@
         "classes": "pf-inventory-row",
         "gap": "16px",
         "overflow": "hidden",
-        "padding": "12px 16px"
+        "padding": "8px 12px"
       }
     },
     "type": "ia.container.flex"

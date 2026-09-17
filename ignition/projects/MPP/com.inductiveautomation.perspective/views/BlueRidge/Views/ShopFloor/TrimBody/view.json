@@ -30,14 +30,6 @@
         "type": "expr"
       }
     },
-    "custom.destCells": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0, {view.custom.activeLotId}, {view.custom.refreshToken})"
-        },
-        "type": "expr"
-      }
-    },
     "custom.defectCodeTiles": {
       "binding": {
         "config": {
@@ -48,6 +40,14 @@
       "onChange": {
         "enabled": true,
         "script": "\tself.rootContainer.refreshScrapUi()"
+      }
+    },
+    "custom.destCells": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0, {view.custom.activeLotId}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
       }
     },
     "custom.trimInventory": {
@@ -116,7 +116,9 @@
               "grow": 1
             },
             "props": {
-              "direction": "column"
+              "style": {
+                "gap": "8px"
+              }
             },
             "type": "ia.container.flex"
           },
@@ -323,7 +325,7 @@
             },
             "props": {
               "style": {
-                "minHeight": "40px",
+                "minHeight": "36px",
                 "minWidth": "150px"
               },
               "text": "Check IN"
@@ -357,7 +359,7 @@
             },
             "props": {
               "style": {
-                "minHeight": "40px",
+                "minHeight": "36px",
                 "minWidth": "150px"
               },
               "text": "Trim OUT"
@@ -406,7 +408,7 @@
                   "dom": {
                     "onClick": {
                       "config": {
-                        "script": "\tsystem.perspective.openPopup('trimCheckInHowTo',\n\t\t'BlueRidge/Components/Popups/TrimCheckInHowTo',\n\t\tparams={'popupId': 'trimCheckInHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                        "script": "\tsystem.perspective.openPopup(\u0027trimCheckInHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/TrimCheckInHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027trimCheckInHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
                       },
                       "scope": "G",
                       "type": "script"
@@ -689,7 +691,7 @@
                   "dom": {
                     "onClick": {
                       "config": {
-                        "script": "\tsystem.perspective.openPopup('trimCheckOutHowTo',\n\t\t'BlueRidge/Components/Popups/TrimCheckOutHowTo',\n\t\tparams={'popupId': 'trimCheckOutHowTo'},\n\t\tposition={'width': '54%', 'height': '92%'},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                        "script": "\tsystem.perspective.openPopup(\u0027trimCheckOutHowTo\u0027,\n\t\t\u0027BlueRidge/Components/Popups/TrimCheckOutHowTo\u0027,\n\t\tparams\u003d{\u0027popupId\u0027: \u0027trimCheckOutHowTo\u0027},\n\t\tposition\u003d{\u0027width\u0027: \u002754%\u0027, \u0027height\u0027: \u002792%\u0027},\n\t\tmodal\u003dFalse, overlayDismiss\u003dFalse, showCloseIcon\u003dFalse)"
                       },
                       "scope": "G",
                       "type": "script"
@@ -727,18 +729,6 @@
               }
             },
             "type": "ia.container.flex"
-          },
-          {
-            "meta": {
-              "name": "OutSub"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-kpi-sub"
-              },
-              "text": "Pick a LOT from the Trim inventory below (or scan its LTT), enter the count, record any scrap."
-            },
-            "type": "ia.display.label"
           },
           {
             "children": [
@@ -811,7 +801,7 @@
                     "props": {
                       "direction": "column",
                       "elementPosition": {
-                        "basis": "92px",
+                        "basis": "64px",
                         "shrink": 0
                       },
                       "path": "BlueRidge/Components/PlantFloor/Trim/InventoryRow",
@@ -845,102 +835,100 @@
                   {
                     "children": [
                       {
-                        "meta": {
-                          "name": "OutScanLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-label"
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "OutScanLabel"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-label"
+                              },
+                              "text": "Scan LTT Barcode"
+                            },
+                            "type": "ia.display.label"
                           },
-                          "text": "Scan LTT Barcode"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "events": {
-                          "dom": {
-                            "onBlur": {
-                              "config": {
-                                "script": "\tself.view.rootContainer.resolveOutScan()"
-                              },
-                              "scope": "G",
-                              "type": "script"
-                            }
-                          }
-                        },
-                        "meta": {
-                          "name": "OutScanInput"
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.outScan"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "placeholder": "Scan LOT ticket",
-                          "style": {
-                            "classes": "pf-field-input-mono",
-                            "minHeight": "44px",
-                            "textTransform": "uppercase"
-                          }
-                        },
-                        "type": "ia.input.text-field"
-                      },
-                      {
-                        "meta": {
-                          "name": "ActiveLotLabel"
-                        },
-                        "propConfig": {
-                          "props.style.color": {
-                            "binding": {
-                              "config": {
-                                "expression": "if(isNull({view.custom.activeLotId}), \"var(--mpp-text-secondary)\", \"var(--mpp-accent-70)\")"
-                              },
-                              "type": "expr"
-                            }
+                          {
+                            "events": {
+                              "dom": {
+                                "onBlur": {
+                                  "config": {
+                                    "script": "\tself.view.rootContainer.resolveOutScan()"
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            },
+                            "meta": {
+                              "name": "OutScanInput"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.outScan"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "placeholder": "Scan LOT ticket",
+                              "style": {
+                                "classes": "pf-field-input-mono",
+                                "minHeight": "32px",
+                                "textTransform": "uppercase"
+                              }
+                            },
+                            "type": "ia.input.text-field"
                           },
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "if(isNull({view.custom.activeLotId}), \"No LOT selected - tap a card or scan its LTT\", \"LOT \" + coalesce({view.custom.activeLotName}, \"#\" + toStr({view.custom.activeLotId})) + \" selected\")"
+                          {
+                            "meta": {
+                              "name": "ActiveLotLabel"
+                            },
+                            "propConfig": {
+                              "props.style.color": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if(isNull({view.custom.activeLotId}), \"var(--mpp-text-secondary)\", \"var(--mpp-accent-70)\")"
+                                  },
+                                  "type": "expr"
+                                }
                               },
-                              "type": "expr"
-                            }
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if(isNull({view.custom.activeLotId}), \"No LOT selected - tap a card or scan its LTT\", \"LOT \" + coalesce({view.custom.activeLotName}, \"#\" + toStr({view.custom.activeLotId})) + \" selected\")"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-help",
+                                "fontWeight": 600
+                              }
+                            },
+                            "type": "ia.display.label"
                           }
+                        ],
+                        "meta": {
+                          "name": "FlexContainer"
+                        },
+                        "position": {
+                          "basis": "60%"
                         },
                         "props": {
-                          "style": {
-                            "classes": "pf-field-help",
-                            "fontWeight": 600
-                          }
+                          "direction": "column"
                         },
-                        "type": "ia.display.label"
-                      }
-                    ],
-                    "meta": {
-                      "name": "OutScanField"
-                    },
-                    "position": {
-                      "shrink": 0
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-field",
-                        "gap": "4px",
-                        "overflow": "visible"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
+                        "type": "ia.container.flex"
+                      },
                       {
                         "children": [
                           {
@@ -973,16 +961,33 @@
                             "props": {
                               "style": {
                                 "classes": "pf-field-input",
-                                "minHeight": "44px"
+                                "minHeight": "32px"
                               }
                             },
                             "type": "ia.input.numeric-entry-field"
+                          },
+                          {
+                            "meta": {
+                              "name": "ActiveLotLabel"
+                            },
+                            "position": {
+                              "basis": "17px",
+                              "grow": 1
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-help",
+                                "fontWeight": "600"
+                              }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
                         "meta": {
                           "name": "ShotField"
                         },
                         "position": {
+                          "grow": 1,
                           "shrink": 0
                         },
                         "props": {
@@ -994,74 +999,31 @@
                           }
                         },
                         "type": "ia.container.flex"
-                      },
+                      }
+                    ],
+                    "meta": {
+                      "name": "OutScanField"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "justify": "space-around",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "8px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
                       {
                         "children": [
                           {
-                            "children": [
-                              {
-                                "meta": {
-                                  "name": "ScrapLinesHeader"
-                                },
-                                "position": {
-                                  "basis": "0",
-                                  "grow": 1
-                                },
-                                "props": {
-                                  "style": {
-                                    "classes": "pf-field-label"
-                                  },
-                                  "text": "Scrap reasons - tap a reason to add 1"
-                                },
-                                "type": "ia.display.label"
-                              },
-                              {
-                                "meta": {
-                                  "name": "ScrapTotalLabel"
-                                },
-                                "position": {
-                                  "shrink": 0
-                                },
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "config": {
-                                        "expression": "if({view.custom.scrapTotal} \u003e 0, toStr({view.custom.scrapTotal}) + \" pcs scrap\", \"\")"
-                                      },
-                                      "type": "expr"
-                                    }
-                                  }
-                                },
-                                "props": {
-                                  "style": {
-                                    "classes": "pf-kpi-sub",
-                                    "fontWeight": 700
-                                  }
-                                },
-                                "type": "ia.display.label"
-                              }
-                            ],
-                            "meta": {
-                              "name": "ScrapHeaderRow"
-                            },
-                            "position": {
-                              "shrink": 0
-                            },
-                            "props": {
-                              "alignItems": "center",
-                              "style": {
-                                "gap": "8px",
-                                "overflow": "hidden"
-                              }
-                            },
-                            "type": "ia.container.flex"
-                          },
-                          {
                             "meta": {
                               "name": "ScrapNoLotHint"
-                            },
-                            "position": {
-                              "shrink": 0
                             },
                             "propConfig": {
                               "position.display": {
@@ -1086,7 +1048,8 @@
                               "name": "ScrapCodeGrid"
                             },
                             "position": {
-                              "shrink": 0
+                              "basis": " 0",
+                              "grow": 1
                             },
                             "propConfig": {
                               "position.display": {
@@ -1108,7 +1071,6 @@
                             },
                             "props": {
                               "alignContent": "flex-start",
-                              "direction": "row",
                               "elementPosition": {
                                 "basis": "152px",
                                 "grow": 0,
@@ -1116,12 +1078,8 @@
                               },
                               "path": "BlueRidge/Components/PlantFloor/TrimEntry/ScrapCodeTile",
                               "style": {
-                                "flexWrap": "wrap",
-                                "gap": "8px",
-                                "maxHeight": "248px",
-                                "overflowY": "auto"
+                                "gap": "12px"
                               },
-                              "useDefaultViewHeight": true,
                               "useDefaultViewWidth": false,
                               "wrap": "wrap"
                             },
@@ -1141,9 +1099,6 @@
                             },
                             "meta": {
                               "name": "ScrapMoreButton"
-                            },
-                            "position": {
-                              "shrink": 0
                             },
                             "propConfig": {
                               "position.display": {
@@ -1166,27 +1121,38 @@
                             "props": {
                               "style": {
                                 "classes": "pf-btn pf-btn-secondary",
-                                "minHeight": "44px"
+                                "minHeight": "32px"
                               }
                             },
                             "type": "ia.input.button"
-                          },
+                          }
+                        ],
+                        "meta": {
+                          "name": "FlexContainer"
+                        },
+                        "position": {
+                          "basis": "54%",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "4px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
                           {
                             "meta": {
                               "name": "ScrapLinesRepeater"
                             },
                             "position": {
-                              "shrink": 0
+                              "basis": " 0",
+                              "grow": 1
                             },
                             "propConfig": {
-                              "position.display": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "len({view.custom.scrapLineRows}) \u003e 0"
-                                  },
-                                  "type": "expr"
-                                }
-                              },
                               "props.instances": {
                                 "binding": {
                                   "config": {
@@ -1206,28 +1172,64 @@
                               "path": "BlueRidge/Components/PlantFloor/TrimEntry/ScrapLineRow",
                               "style": {
                                 "gap": "6px",
-                                "maxHeight": "176px",
                                 "overflowY": "auto"
                               },
-                              "useDefaultViewHeight": true,
                               "useDefaultViewWidth": false
                             },
                             "type": "ia.display.flex-repeater"
+                          },
+                          {
+                            "children": [
+                              {
+                                "events": {
+                                  "component": {
+                                    "onActionPerformed": {
+                                      "config": {
+                                        "script": "\tself.view.rootContainer.submitTrimOut()"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
+                                "meta": {
+                                  "name": "BtnTrimOut"
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-primary pf-btn-large",
+                                    "minHeight": "44px",
+                                    "minWidth": "160px"
+                                  },
+                                  "text": "Trim OUT"
+                                },
+                                "type": "ia.input.button"
+                              }
+                            ],
+                            "meta": {
+                              "name": "OutActions"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "props": {
+                              "justify": "center",
+                              "style": {
+                                "classes": "pf-actions",
+                                "overflow": "hidden"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           }
                         ],
                         "meta": {
-                          "name": "ScrapLinesField"
+                          "name": "FlexContainer_0"
                         },
                         "position": {
-                          "shrink": 0
+                          "grow": 1
                         },
                         "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "pf-field",
-                            "gap": "4px",
-                            "overflow": "visible"
-                          }
+                          "direction": "column"
                         },
                         "type": "ia.container.flex"
                       }
@@ -1236,13 +1238,13 @@
                       "name": "CountsRow"
                     },
                     "position": {
+                      "grow": 1,
                       "shrink": 0
                     },
                     "props": {
-                      "direction": "column",
                       "style": {
                         "gap": "12px",
-                        "overflow": "visible"
+                        "overflow": "hidden"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1250,54 +1252,58 @@
                   {
                     "children": [
                       {
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "config": {
-                                "script": "\tself.view.rootContainer.submitTrimOut()"
-                              },
-                              "scope": "G",
-                              "type": "script"
-                            }
-                          }
-                        },
                         "meta": {
-                          "name": "BtnTrimOut"
+                          "name": "ScrapLinesHeader"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
                         },
                         "props": {
                           "style": {
-                            "classes": "pf-btn pf-btn-primary pf-btn-large",
-                            "minHeight": "44px",
-                            "minWidth": "160px"
+                            "classes": "pf-field-label"
                           },
-                          "text": "Trim OUT"
+                          "text": "Scrap reasons - tap a reason to add 1"
                         },
-                        "type": "ia.input.button"
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
-                          "name": "OutActionsNote"
+                          "name": "ScrapTotalLabel"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if({view.custom.scrapTotal} \u003e 0, toStr({view.custom.scrapTotal}) + \" pcs scrap\", \"\")"
+                              },
+                              "type": "expr"
+                            }
+                          }
                         },
                         "props": {
                           "style": {
-                            "classes": "pf-kpi-sub"
-                          },
-                          "text": "Whole-LOT move - no split at Trim."
+                            "classes": "pf-kpi-sub",
+                            "fontWeight": 700
+                          }
                         },
                         "type": "ia.display.label"
                       }
                     ],
                     "meta": {
-                      "name": "OutActions"
+                      "name": "ScrapHeaderRow"
                     },
                     "position": {
+                      "basis": "32px",
                       "shrink": 0
                     },
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "classes": "pf-actions",
-                        "gap": "12px",
+                        "gap": "8px",
                         "overflow": "hidden"
                       }
                     },
@@ -1308,14 +1314,14 @@
                   "name": "OutFormCol"
                 },
                 "position": {
-                  "basis": "60%",
+                  "basis": "68%",
                   "shrink": 0
                 },
                 "props": {
                   "direction": "column",
                   "style": {
                     "gap": "12px",
-                    "overflow": "hidden"
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -1357,7 +1363,7 @@
           "direction": "column",
           "style": {
             "classes": "pf-panel",
-            "gap": "12px",
+            "gap": "4px",
             "overflow": "hidden"
           }
         },
@@ -1399,34 +1405,34 @@
         {
           "name": "resolveOutScan",
           "params": [],
-          "script": "\tcode = self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId = r.get(\"Id\")\n\t\tself.view.custom.activeLotName = r.get(\"LotName\")\n\t\tself.view.custom.shotCount = r.get(\"PieceCount\")\n\t\tself.view.custom.lotPieceCount = r.get(\"PieceCount\")\n\t\tself.view.custom.scrapLines = []\n\t\tself.refreshScrapUi()\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
+          "script": "\tcode \u003d self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr \u003d BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId \u003d r.get(\"Id\")\n\t\tself.view.custom.activeLotName \u003d r.get(\"LotName\")\n\t\tself.view.custom.shotCount \u003d r.get(\"PieceCount\")\n\t\tself.view.custom.lotPieceCount \u003d r.get(\"PieceCount\")\n\t\tself.view.custom.scrapLines \u003d []\n\t\tself.refreshScrapUi()\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches \u0027%s\u0027.\" % code, \"warning\")"
         },
         {
           "name": "refreshScrapUi",
           "params": [],
-          "script": "\t# Rebuild every derived scrap prop in ONE pass from the two sources of truth\n\t# (defectCodeTiles = the catalog, scrapLines = what the operator has entered).\n\tm = BlueRidge.Quality.DefectCode.buildScrapEntryModel(self.view.custom.defectCodeTiles, self.view.custom.scrapLines, self.view.custom.scrapShowAll)\n\tself.view.custom.scrapTiles = m[\"tiles\"]\n\tself.view.custom.scrapLineRows = m[\"lines\"]\n\tself.view.custom.scrapTotal = m[\"total\"]\n\tself.view.custom.scrapMoreCount = m[\"moreCount\"]\n\tlp = BlueRidge.Common.Util.toIntOrNone(self.view.custom.lotPieceCount)\n\tself.view.custom.shotCount = None if lp is None else max(0, lp - m[\"total\"])"
+          "script": "\t# Rebuild every derived scrap prop in ONE pass from the two sources of truth\n\t# (defectCodeTiles \u003d the catalog, scrapLines \u003d what the operator has entered).\n\tm \u003d BlueRidge.Quality.DefectCode.buildScrapEntryModel(self.view.custom.defectCodeTiles, self.view.custom.scrapLines, self.view.custom.scrapShowAll)\n\tself.view.custom.scrapTiles \u003d m[\"tiles\"]\n\tself.view.custom.scrapLineRows \u003d m[\"lines\"]\n\tself.view.custom.scrapTotal \u003d m[\"total\"]\n\tself.view.custom.scrapMoreCount \u003d m[\"moreCount\"]\n\tlp \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.lotPieceCount)\n\tself.view.custom.shotCount \u003d None if lp is None else max(0, lp - m[\"total\"])"
         },
         {
           "name": "changeScrap",
           "params": [
             "payload"
           ],
-          "script": "\t# One entry point for every scrap interaction: tile tap / -/+ stepper\n\t# (payload.delta) and typed qty or remove (payload.quantity). Lines are\n\t# keyed by defectCodeId, so a repeat tap counts up instead of duplicating.\n\tif not self.view.custom.activeLotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording scrap.\", \"warning\")\n\t\treturn\n\tlp = BlueRidge.Common.Util.toIntOrNone(self.view.custom.lotPieceCount)\n\tres = BlueRidge.Quality.DefectCode.applyScrapChange(self.view.custom.scrapLines, payload.get(\"defectCodeId\"), payload.get(\"delta\"), payload.get(\"quantity\"), lp)\n\tself.view.custom.scrapLines = res[\"lines\"]\n\tif res[\"clamped\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Scrap capped\", \"Scrap cannot exceed the LOT's %s pieces.\" % lp, \"warning\")\n\tself.refreshScrapUi()"
+          "script": "\t# One entry point for every scrap interaction: tile tap / -/+ stepper\n\t# (payload.delta) and typed qty or remove (payload.quantity). Lines are\n\t# keyed by defectCodeId, so a repeat tap counts up instead of duplicating.\n\tif not self.view.custom.activeLotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording scrap.\", \"warning\")\n\t\treturn\n\tlp \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.lotPieceCount)\n\tres \u003d BlueRidge.Quality.DefectCode.applyScrapChange(self.view.custom.scrapLines, payload.get(\"defectCodeId\"), payload.get(\"delta\"), payload.get(\"quantity\"), lp)\n\tself.view.custom.scrapLines \u003d res[\"lines\"]\n\tif res[\"clamped\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Scrap capped\", \"Scrap cannot exceed the LOT\u0027s %s pieces.\" % lp, \"warning\")\n\tself.refreshScrapUi()"
         },
         {
           "name": "toggleScrapShowAll",
           "params": [],
-          "script": "\tself.view.custom.scrapShowAll = not self.view.custom.scrapShowAll\n\tself.refreshScrapUi()"
+          "script": "\tself.view.custom.scrapShowAll \u003d not self.view.custom.scrapShowAll\n\tself.refreshScrapUi()"
         },
         {
           "name": "submitTrimOut",
           "params": [],
-          "script": "\tlotId = self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForLot(lotId, \"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active 'TrimOut' operation template is published.\", \"error\")\n\t\treturn\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\tscrapLines = []\n\ttotal = 0\n\tfor r in rows:\n\t\tr = r or {}\n\t\td = r.get(\"defectCodeId\")\n\t\tq = BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif d is None and not q:\n\t\t\tcontinue  # skip a blank row\n\t\tif not q or q <= 0 or d is None:\n\t\t\tBlueRidge.Common.Notify.toast(\"Incomplete scrap line\", \"Each scrap line needs a reason and a positive quantity.\", \"warning\")\n\t\t\treturn\n\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\t\ttotal += q\n\tlp = BlueRidge.Common.Util.toIntOrNone(self.view.custom.lotPieceCount) or 0\n\tif total > lp:\n\t\tBlueRidge.Common.Notify.toast(\"Too much scrap\", \"Scrap (%d) exceeds the LOT's pieces (%d).\" % (total, lp), \"warning\")\n\t\treturn\n\tgood = max(0, lp - total)\n\tdata = {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": good,\n\t\t\"scrapLines\": scrapLines,\n\t\t\"destinationCellLocationId\": None,\n\t\t\"sourceLocationId\": self.session.custom.terminal.zoneLocationId,\n\t}\n\tres = BlueRidge.Workorder.TrimOut.record(data, self.session.custom.appUserId, (self.session.custom.terminal.terminalLocationId if self.session.custom.terminal else None))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tself.view.custom.activeLotId = None\n\t\tself.view.custom.activeLotName = None\n\t\tself.view.custom.outScan = \"\"\n\t\tself.view.custom.shotCount = None\n\t\tself.view.custom.lotPieceCount = None\n\t\tself.view.custom.scrapLines = []\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tself.refreshScrapUi()"
+          "script": "\tlotId \u003d self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForLot(lotId, \"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active \u0027TrimOut\u0027 operation template is published.\", \"error\")\n\t\treturn\n\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or []\n\tscrapLines \u003d []\n\ttotal \u003d 0\n\tfor r in rows:\n\t\tr \u003d r or {}\n\t\td \u003d r.get(\"defectCodeId\")\n\t\tq \u003d BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif d is None and not q:\n\t\t\tcontinue  # skip a blank row\n\t\tif not q or q \u003c\u003d 0 or d is None:\n\t\t\tBlueRidge.Common.Notify.toast(\"Incomplete scrap line\", \"Each scrap line needs a reason and a positive quantity.\", \"warning\")\n\t\t\treturn\n\t\tscrapLines.append({\"defectCodeId\": d, \"quantity\": q})\n\t\ttotal +\u003d q\n\tlp \u003d BlueRidge.Common.Util.toIntOrNone(self.view.custom.lotPieceCount) or 0\n\tif total \u003e lp:\n\t\tBlueRidge.Common.Notify.toast(\"Too much scrap\", \"Scrap (%d) exceeds the LOT\u0027s pieces (%d).\" % (total, lp), \"warning\")\n\t\treturn\n\tgood \u003d max(0, lp - total)\n\tdata \u003d {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": good,\n\t\t\"scrapLines\": scrapLines,\n\t\t\"destinationCellLocationId\": None,\n\t\t\"sourceLocationId\": self.session.custom.terminal.zoneLocationId,\n\t}\n\tres \u003d BlueRidge.Workorder.TrimOut.record(data, self.session.custom.appUserId, (self.session.custom.terminal.terminalLocationId if self.session.custom.terminal else None))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tself.view.custom.activeLotId \u003d None\n\t\tself.view.custom.activeLotName \u003d None\n\t\tself.view.custom.outScan \u003d \"\"\n\t\tself.view.custom.shotCount \u003d None\n\t\tself.view.custom.lotPieceCount \u003d None\n\t\tself.view.custom.scrapLines \u003d []\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t\tself.refreshScrapUi()"
         },
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)\n\tself.refreshScrapUi()"
+          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)\n"
         }
       ],
       "extensionFunctions": null,
@@ -1434,14 +1440,14 @@
         {
           "messageType": "trimLotSelected",
           "pageScope": true,
-          "script": "\tself.view.custom.activeLotId = payload.get(\"lotId\")\n\tself.view.custom.activeLotName = payload.get(\"lotName\")\n\tsel = BlueRidge.Lots.Lot.get(lotId=payload.get(\"lotId\"))\n\tself.view.custom.shotCount = sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.lotPieceCount = sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.scrapLines = []\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\tself.view.rootContainer.refreshScrapUi()",
+          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.activeLotName \u003d payload.get(\"lotName\")\n\tsel \u003d BlueRidge.Lots.Lot.get(lotId\u003dpayload.get(\"lotId\"))\n\tself.view.custom.shotCount \u003d sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.lotPieceCount \u003d sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.scrapLines \u003d []\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\tself.view.rootContainer.refreshScrapUi()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "trimInMoved",
           "pageScope": true,
-          "script": "\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\t# TrimIn checkpoint (route Advance step; Phase-4 TODO closed 2026-07-08): without it the\n\t# route-driven queues hold the LOT pending at TrimIn and it never reaches Machining IN.\n\tBlueRidge.Workorder.ProductionEvent.recordTrimInCheckpoint(payload.get(\"lotId\"), self.session.custom.appUserId, termId)\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\t# TrimIn checkpoint (route Advance step; Phase-4 TODO closed 2026-07-08): without it the\n\t# route-driven queues hold the LOT pending at TrimIn and it never reaches Machining IN.\n\tBlueRidge.Workorder.ProductionEvent.recordTrimInCheckpoint(payload.get(\"lotId\"), self.session.custom.appUserId, termId)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },

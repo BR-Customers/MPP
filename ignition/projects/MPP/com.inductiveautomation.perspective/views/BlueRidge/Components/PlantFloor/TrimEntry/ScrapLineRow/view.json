@@ -1,21 +1,257 @@
 {
   "custom": {},
   "params": {
-    "defectCodeId": null,
     "code": "",
+    "defectCodeId": null,
     "description": "",
     "quantity": 0
   },
   "propConfig": {
-    "params.defectCodeId": { "paramDirection": "input" },
-    "params.code": { "paramDirection": "input" },
-    "params.description": { "paramDirection": "input" },
-    "params.quantity": { "paramDirection": "input" }
+    "params.code": {
+      "paramDirection": "input"
+    },
+    "params.defectCodeId": {
+      "paramDirection": "input"
+    },
+    "params.description": {
+      "paramDirection": "input"
+    },
+    "params.quantity": {
+      "paramDirection": "input"
+    }
   },
-  "props": { "defaultSize": { "height": 52, "width": 480 } },
+  "props": {
+    "defaultSize": {
+      "height": 40,
+      "width": 480
+    }
+  },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "CodeLabel"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.code"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-help",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "DescLabel"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.description"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Info"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "gap": "8px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"delta\": -1}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "MinusButton",
+          "tooltip": {
+            "text": "One less"
+          }
+        },
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "20px",
+            "fontWeight": 700,
+            "maxHeight": "32px",
+            "minHeight": "28px",
+            "padding": "0"
+          },
+          "text": "-"
+        },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": self.props.text}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "QtyInput",
+          "tooltip": {
+            "text": "Type a quantity"
+          }
+        },
+        "position": {
+          "basis": "68px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.quantity"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "deferUpdates": false,
+          "placeholder": "qty",
+          "style": {
+            "classes": "pf-field-input",
+            "fontSize": "16px",
+            "fontWeight": 700,
+            "maxHeight": "32px",
+            "minHeight": "28px",
+            "textAlign": "center"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"delta\": 1}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "PlusButton",
+          "tooltip": {
+            "text": "One more"
+          }
+        },
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "20px",
+            "fontWeight": 700,
+            "maxHeight": "32px",
+            "minHeight": "28px",
+            "padding": "0"
+          },
+          "text": "+"
+        },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload\u003d{\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": 0}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "RemoveButton",
+          "tooltip": {
+            "text": "Remove this reason"
+          }
+        },
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "props": {
+          "image": {
+            "icon": {
+              "color": "var(--mpp-state-bad-fg)",
+              "path": "mpp/cancel"
+            }
+          },
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "maxHeight": "32px",
+            "minHeight": "28px",
+            "padding": "0"
+          },
+          "text": ""
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
     "props": {
       "alignItems": "center",
       "style": {
@@ -27,151 +263,6 @@
         "padding": "4px 6px"
       }
     },
-    "children": [
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "Info" },
-        "position": { "basis": "0", "grow": 1, "shrink": 1 },
-        "props": {
-          "direction": "column",
-          "style": { "gap": "0px", "overflow": "hidden" }
-        },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": { "name": "DescLabel" },
-            "propConfig": {
-              "props.text": {
-                "binding": { "type": "property", "config": { "path": "view.params.description" } }
-              }
-            },
-            "props": {
-              "style": {
-                "fontSize": "13px",
-                "fontWeight": 600,
-                "overflow": "hidden",
-                "textOverflow": "ellipsis",
-                "whiteSpace": "nowrap"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": { "name": "CodeLabel" },
-            "propConfig": {
-              "props.text": {
-                "binding": { "type": "property", "config": { "path": "view.params.code" } }
-              }
-            },
-            "props": { "style": { "classes": "pf-field-help", "overflow": "hidden" } }
-          }
-        ]
-      },
-      {
-        "type": "ia.input.button",
-        "meta": { "name": "MinusButton", "tooltip": { "text": "One less" } },
-        "position": { "basis": "44px", "shrink": 0 },
-        "props": {
-          "text": "-",
-          "style": {
-            "classes": "pf-btn pf-btn-secondary",
-            "fontSize": "20px",
-            "fontWeight": 700,
-            "minHeight": "44px",
-            "padding": "0"
-          }
-        },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload={\"defectCodeId\": self.view.params.defectCodeId, \"delta\": -1}, scope=\"page\")"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.input.text-field",
-        "meta": { "name": "QtyInput", "tooltip": { "text": "Type a quantity" } },
-        "position": { "basis": "68px", "shrink": 0 },
-        "props": {
-          "deferUpdates": false,
-          "placeholder": "qty",
-          "style": {
-            "classes": "pf-field-input",
-            "fontSize": "16px",
-            "fontWeight": 700,
-            "minHeight": "44px",
-            "textAlign": "center"
-          }
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": { "type": "property", "config": { "path": "view.params.quantity" } }
-          }
-        },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload={\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": self.props.text}, scope=\"page\")"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.input.button",
-        "meta": { "name": "PlusButton", "tooltip": { "text": "One more" } },
-        "position": { "basis": "44px", "shrink": 0 },
-        "props": {
-          "text": "+",
-          "style": {
-            "classes": "pf-btn pf-btn-secondary",
-            "fontSize": "20px",
-            "fontWeight": 700,
-            "minHeight": "44px",
-            "padding": "0"
-          }
-        },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload={\"defectCodeId\": self.view.params.defectCodeId, \"delta\": 1}, scope=\"page\")"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.input.button",
-        "meta": { "name": "RemoveButton", "tooltip": { "text": "Remove this reason" } },
-        "position": { "basis": "44px", "shrink": 0 },
-        "props": {
-          "text": "",
-          "image": { "icon": { "path": "mpp/cancel", "color": "var(--mpp-state-bad-fg)" } },
-          "style": { "classes": "pf-btn pf-btn-secondary", "minHeight": "44px", "padding": "0" }
-        },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimScrapChanged\", payload={\"defectCodeId\": self.view.params.defectCodeId, \"quantity\": 0}, scope=\"page\")"
-              }
-            }
-          }
-        }
-      }
-    ]
+    "type": "ia.container.flex"
   }
 }
