@@ -501,18 +501,39 @@ def getLineInventoryCards(locationId, _refreshToken=None):
     """Flex-repeater instances for the line-inventory popup's on-hand list, rendered
        with the Trim InventoryRow card (display-only, selectable=False). Fetches
        getLineInventoryByPart (excludeFinishedGoods=True -- an on-hand finished-goods
-       LOT is pure noise in this display) and maps each row to the card's params;
-       ArrivedAt is precomputed to a display string (repeater-param date rule).
-       Scalar args only (fetch inside) per the ImmutableList re-eval rule.
-       Returns list[dict]."""
+       LOT is pure noise in this display), which returns rows grouped by part then
+       FIFO by arrival, and maps each row to the card's params. Whenever ItemId
+       changes, a group-header instance is emitted before that part's LOT cards,
+       carrying the part Description (falling back to PartNumber) in 'item' and the
+       part's on-hand total (summed InventoryAvailable) in 'pieceCount', with an
+       empty 'lotName' and 'isHeader': True -- InventoryRow (shared with Trim, not
+       changed for this) ignores the extra key and renders it as a card showing the
+       description + total. ArrivedAt is precomputed to a display string
+       (repeater-param date rule). Scalar args only (fetch inside) per the
+       ImmutableList re-eval rule. Returns list[dict]."""
     locationId = _u(locationId)
     if locationId is None:
         return []
     rows = getLineInventoryByPart(locationId, excludeFinishedGoods=True) or []
-    out = []
-    pos = 0
+    totals = {}
     for r in rows:
         r = r or {}
+        totals[r.get("ItemId")] = totals.get(r.get("ItemId"), 0) + (r.get("InventoryAvailable") or 0)
+    out = []
+    pos = 0
+    lastItemId = object()
+    for r in rows:
+        r = r or {}
+        itemId = r.get("ItemId")
+        desc = r.get("Description") or r.get("PartNumber") or ""
+        if itemId != lastItemId:
+            lastItemId = itemId
+            out.append({
+                "lotId": None, "lotName": "", "item": desc,
+                "pieceCount": totals.get(itemId, 0), "arrival": "",
+                "position": 0, "lotStatusCode": "", "isSelected": False,
+                "selectable": False, "isHeader": True,
+            })
         pos += 1
         arr = r.get("ArrivedAt")
         arrival = ""
@@ -524,13 +545,14 @@ def getLineInventoryCards(locationId, _refreshToken=None):
         out.append({
             "lotId":         r.get("LotId"),
             "lotName":       r.get("LotName") or "",
-            "item":          r.get("PartNumber") or "",
+            "item":          desc,
             "pieceCount":    r.get("InventoryAvailable") or 0,
             "arrival":       arrival,
             "position":      pos,
             "lotStatusCode": r.get("LotStatusCode") or "",
             "isSelected":    False,
             "selectable":    False,
+            "isHeader":      False,
         })
     return out
 
