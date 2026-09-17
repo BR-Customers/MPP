@@ -12,7 +12,7 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-09-17 -- **Tools screen: die shot-count correction. New repeatable `Tools.Tool_CorrectShotCount`; no migration. On Dev, not deployed; on-screen check still owed.**
+**Last updated:** 2026-09-17 -- **Tools screen: die shot-count correction. New repeatable `Tools.Tool_CorrectShotCount`; no migration. On Dev and screen-verified; not deployed -- release handoff in `notes/2026-09-17_prod-release-handoff-tool-shot-count.md`.**
 
 > ### Die shot-count correction (2026-09-17)
 >
@@ -25,10 +25,10 @@
 > **Verified:** `0050_ToolShotCount` 63/63 (22 new) on a throwaway DB; the die-cast shot-reading, anchor, release-preview and cavity-scrap files green; pytest 31/31; proc + descriptions applied to Dev; view scanned. The view was edited by `tools/edit_tools_view_shot_count.py` (JSON round-trip that keeps Designer's `=` escapes), not by hand.
 >
 > **Owed:**
-> - **On-screen check not done** -- the local Perspective trial had expired and needs a gateway sign-in. Walk plan Task 4 step 1 (commas shown, bad limit rejected, note required, correction audited).
+> - **Screen verified 2026-09-17** on `CAV-TEST-DIE`: bad limit rejected, comma'd limit saved, note enforced, correction audited, stale edit refused, unsaved-changes prompt fires. Die restored via the procs afterwards.
 > - **Four die-cast test files error in fixture setup** on a fresh test DB (`030`, `040`, `050`, `070` in `0022_PlantFloor_DieCast`): `Tools.ToolAssignment.CellLocationId` resolves NULL. It happens before any code under test runs; not caused by this change, not yet investigated.
-> - `MPP_MES_Test` was being reset by another session during this work; tests ran on `MPP_MES_Test_ShotFix` (throwaway, can be dropped).
-> - Prod: one repeatable + the extended-properties repeatable, plus a scoped export (Core `parts/Tool_CorrectShotCount` NQ + `BlueRidge/Parts/Tool`; MPP_Config `Parts/Tools` view). Follows `prod-release-context-pack/` when scheduled.
+> - `MPP_MES_Test` was being reset by another session during this work; tests ran on a throwaway `MPP_MES_Test_ShotFix`, since dropped.
+> - **Prod: packaged for a release agent** -- `notes/2026-09-17_prod-release-handoff-tool-shot-count.md` (scope, four risk tests, rehearsal expectations, post-deploy checks). Note the 0089 runbook's Outcome is still unfilled; confirm prod's high-water mark first.
 
 **Last updated:** 2026-09-15 (evening) -- **Defect codes: `999` rename, seed realigned to prod, and die-cast attribution carried in the label. Migrations `0085` + `0086`, neither deployed.**
 
