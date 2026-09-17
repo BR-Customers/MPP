@@ -919,7 +919,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "FlexContainer"
+                          "name": "ScanCol"
                         },
                         "position": {
                           "basis": "60%"
@@ -968,7 +968,7 @@
                           },
                           {
                             "meta": {
-                              "name": "ActiveLotLabel"
+                              "name": "ShotSpacer"
                             },
                             "position": {
                               "basis": "17px",
@@ -1128,7 +1128,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "FlexContainer"
+                          "name": "ScrapTileCol"
                         },
                         "position": {
                           "basis": "54%",
@@ -1223,7 +1223,7 @@
                           }
                         ],
                         "meta": {
-                          "name": "FlexContainer_0"
+                          "name": "ScrapLinesCol"
                         },
                         "position": {
                           "grow": 1
