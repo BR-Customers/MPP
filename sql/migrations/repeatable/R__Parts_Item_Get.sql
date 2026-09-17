@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Get
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.3
+-- Version:     2.4
 --
 -- Description:
 --   Returns a single Item row by Id joined to ItemType.Name and Uom.Code
@@ -28,7 +28,7 @@
 --   2026-04-27 - 2.2 - OI-12 correction: MaxParts exposed (moved from ContainerConfig)
 --   2026-08-20 - 2.3 - Part-scoped CRT (Task 8): CrtEnabled appended LAST so the
 --                       Config Tool Item Master Identity checkbox can read it back.
---   2026-09-17 - BoxQuantity, LowInventoryHorizon appended (line inventory sidebar).
+--   2026-09-17 - 2.4 - BoxQuantity, LowInventoryHorizon appended (line inventory sidebar).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Get
     @Id BIGINT
