@@ -1230,6 +1230,16 @@
                         ],
                         "position": {
                           "shrink": 0
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "{session.custom.cutover.session.isLine}"
+                              }
+                            }
+                          }
                         }
                       }
                     ]

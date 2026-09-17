@@ -23,7 +23,7 @@ The inventory cutover scan (`/shop-floor/cutover-scan`) now starts by asking **w
 - **Location** (previously "Line") lists Warehouse, Blast Trim Storage (Trim Shop 2), Tumble Trim Storage (Trim Shop 1), then every production line. It **opens on Warehouse**.
 - **A store picked:** Entry Step and Destination are hidden, and the store is the destination. The entry step is Machining IN behind the scenes; finished goods and purchased parts have no such route step and get no entry sequence, exactly as before. The Part list is **Component parts only** (Finished Goods and Sub-Assemblies have no die or cavity, so they were a dead end). **Warehouse lists every active Component**; a trim store lists the Components eligible at its shop.
 - **A line picked:** Entry Step and Destination appear. After a part is chosen, Destination **defaults to the trim store where that part is eligible** (Tumble wins if both, the line if neither). Stock goes to the line only if the operator changes it.
-- The latched header says "Location" and hides the entry-step pill for a store.
+- The latched header says "Location" and hides the entry step for a store. The Desktop view shows the step in TWO places (the pill in the top row and the "Entering at" column); both are hidden.
 - **Cast date** is Ignition's popup date picker, with the ‹ › day arrows kept. A future date is still refused by `Lot_Create`.
 - **After Add basket** the LTT field keeps all but its last 4 characters (it used to clear). Piece count **and cavity** clear (the cavity used to stay set); the cast date stays set. Starting a session again after **Change** also clears the cavity.
 - Everything is shorter and tighter so the setup and entry panels fit without scrolling.
@@ -114,9 +114,10 @@ Rehearse at prod's exact state (`05_local_rehearsal.md`). Expected for this feat
   - MA1-5GOF shows both.
   - Part `5G0-c` defaults the destination to Blast Trim Storage.
   - Start Session works; ‹ moves the date; the picker sets a date and ‹ works after it.
+  - Signed in as the Dev User test PIN, a real basket was added at Warehouse on 12232-6MA: the LOT was created with the right die, cavity and date; the LTT kept its prefix; the cavity and count cleared; Change -> Start Session cleared the cavity. The test LOT (`ZZTESTCAV0001`) was closed afterwards via `Lot_UpdateStatus`.
   - Switching to Tumble Trim Storage hides both fields and clears `5G0-c` (not eligible at Trim Shop 1).
   - No gateway log errors.
-- **Not exercised live:** Add basket (it would create a Dev LOT). The LTT trim, the cavity clear and date coercion were checked with a stubbed-DB harness only. The Components-only filter and the cavity clear (commit after `95896c14`) were not browser-checked: the PIN popup blocked the page.
+- **Not exercised live:** Add basket (it would create a Dev LOT). The LTT trim, the cavity clear and date coercion were checked with a stubbed-DB harness only. The Components-only filter, both cavity clears and the Desktop header fix WERE browser-checked (see above).
 
 Don't rehearse on `MPP_MES_Test`; other sessions reset it. Use a unique throwaway name.
 
