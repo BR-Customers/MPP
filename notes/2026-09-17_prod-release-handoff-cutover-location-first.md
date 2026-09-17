@@ -1,7 +1,7 @@
 # Prod release handoff -- cutover scan: location-first setup
 
 **Written:** 2026-09-17, for the agent who builds and runs the prod release.
-**Branch:** `jacques/working`. **Feature commits:** `a0d32be7` (SQL + tests) and `1da26dfb` (Ignition), plus this note.
+**Branch:** `jacques/working`. **Feature commits:** `a0d32be7` (SQL + tests), `1da26dfb` (Ignition), and a follow-up (Components-only part list; cavity clears on submit), plus this note.
 **Proposed `-Since` for this feature alone:** `485fa593`. Jacques wants this released **together with other pending work** (at least `notes/2026-09-17_prod-release-handoff-tool-shot-count.md`). For the combined release, use the earliest `-Since` of the bundled handoffs; for these two that is `8ba40203`.
 **Builds on:** the cutover destination release (`095bb8c3`, runbook `notes/2026-09-14_prod-release-runbook-cutover-destination.md`), which **is** in prod. That release put migration `0083` (`Location.IsCutoverDestination`) and `Location_ListCutoverDestinationsForLine` v1.0 in prod.
 
@@ -21,11 +21,11 @@ This note is the scoping input for `prod-release-context-pack/07_writing_the_run
 The inventory cutover scan (`/shop-floor/cutover-scan`) now starts by asking **where the stock is**, not which line it belongs to:
 
 - **Location** (previously "Line") lists Warehouse, Blast Trim Storage (Trim Shop 2), Tumble Trim Storage (Trim Shop 1), then every production line. It **opens on Warehouse**.
-- **A store picked:** Entry Step and Destination are hidden, and the store is the destination. The entry step is Machining IN behind the scenes; finished goods and purchased parts have no such route step and get no entry sequence, exactly as before. **Warehouse lists every active part**; a trim store lists the parts eligible at its shop.
+- **A store picked:** Entry Step and Destination are hidden, and the store is the destination. The entry step is Machining IN behind the scenes; finished goods and purchased parts have no such route step and get no entry sequence, exactly as before. The Part list is **Component parts only** (Finished Goods and Sub-Assemblies have no die or cavity, so they were a dead end). **Warehouse lists every active Component**; a trim store lists the Components eligible at its shop.
 - **A line picked:** Entry Step and Destination appear. After a part is chosen, Destination **defaults to the trim store where that part is eligible** (Tumble wins if both, the line if neither). Stock goes to the line only if the operator changes it.
 - The latched header says "Location" and hides the entry-step pill for a store.
 - **Cast date** is Ignition's popup date picker, with the ‹ › day arrows kept. A future date is still refused by `Lot_Create`.
-- **After Add basket** the LTT field keeps all but its last 4 characters (it used to clear). Piece count clears; cavity and date stay set, as before.
+- **After Add basket** the LTT field keeps all but its last 4 characters (it used to clear). Piece count **and cavity** clear (the cavity used to stay set); the cast date stays set.
 - Everything is shorter and tighter so the setup and entry panels fit without scrolling.
 
 ---
@@ -39,7 +39,7 @@ The inventory cutover scan (`/shop-floor/cutover-scan`) now starts by asking **w
 | Object | State on prod (expected) | Effect |
 |---|---|---|
 | `Location.Location_ListCutoverSources` (`R__Location_Location_ListCutoverSources.sql`) | **NEW** | The Location dropdown. |
-| `Parts.Item_ListForCutoverLocation` (`R__Parts_Item_ListForCutoverLocation.sql`) | **NEW** | The Part dropdown (the warehouse gets every part). |
+| `Parts.Item_ListForCutoverLocation` (`R__Parts_Item_ListForCutoverLocation.sql`, v1.1) | **NEW** | The Part dropdown: Components only; the warehouse gets every Component. |
 | `Location.Location_ListCutoverDestinationsForLine` | **CHANGED** v1.0 -> v2.0 | Optional `@ItemId`; `IsDefault` follows the part's trim shop; a store is its own default; Tumble/Blast labels. |
 
 `[4]` should list exactly these three for this feature. Anything else is either from the other bundled handoffs or unexplained; read its diff.
@@ -69,14 +69,14 @@ The three view JSONs were **rewritten by a JSON round-trip** and are fully reind
 
 **Test 1: does anything now refuse what it used to allow?**
 - `loadSession` now returns "Pick where the stock is counted in." when the destination list is empty (only possible for a deprecated or unknown location). It used to fall back to the line. That isn't reachable from the dropdowns.
-- The Part list at a **line** is unchanged (eligibility). At a **store** it is new behaviour, not a refusal.
+- The Part list at a **line** is now **Components only**: an eligible Finished Good or Sub-Assembly is no longer offered. That is deliberate (those have no die or cavity, and Add basket always refused them). At a **store** it is new behaviour.
 - No SQL proc gained a rejection. **No blocking gate.** Add this **informational pre-flight** to the runbook and show the output to Jacques:
   ```sql
   -- (a) the three stores the Location dropdown leads with; expect WHSE, TRIM1-STORE, TRIM2-STORE
   SELECT l.Code, l.Name, p.Name AS Parent
   FROM Location.Location l LEFT JOIN Location.Location p ON p.Id = l.ParentLocationId
   WHERE l.IsCutoverDestination = 1 AND l.DeprecatedAt IS NULL ORDER BY l.Code;
-  -- (b) parts eligible up each store's chain. WHSE must be 0 for "every part" to apply;
+  -- (b) parts (any type) eligible up each store's chain. WHSE must be 0 for "every part" to apply;
   --     trim stores at 0 mean no part will ever default to a trim store.
   SELECT l.Code, COUNT(DISTINCT e.ItemId) AS EligibleParts
   FROM Location.Location l
@@ -107,7 +107,7 @@ Rehearse at prod's exact state (`05_local_rehearsal.md`). Expected for this feat
 - `[5]` nothing new.
 
 **Local evidence (Dev / `MPP_MES_Test`, 2026-09-17):**
-- `0070_Cutover_EntryRoute` 97/97 (15 in 080, 12 in 090).
+- `0070_Cutover_EntryRoute` 99/99 (15 in 080, 14 in 090), on a throwaway DB.
 - The procs return this on Dev: sources `WHSE` (default), `TRIM2-STORE` "Blast Trim Storage", `TRIM1-STORE` "Tumble Trim Storage", then lines.
 - Browser run on Dev, with no LOTs created:
   - Opens on Warehouse with Entry Step and Destination hidden.
@@ -116,7 +116,7 @@ Rehearse at prod's exact state (`05_local_rehearsal.md`). Expected for this feat
   - Start Session works; ‹ moves the date; the picker sets a date and ‹ works after it.
   - Switching to Tumble Trim Storage hides both fields and clears `5G0-c` (not eligible at Trim Shop 1).
   - No gateway log errors.
-- **Not exercised live:** Add basket (it would create a Dev LOT). The LTT trim and date coercion were checked with a stubbed-DB harness only.
+- **Not exercised live:** Add basket (it would create a Dev LOT). The LTT trim, the cavity clear and date coercion were checked with a stubbed-DB harness only. The Components-only filter and the cavity clear (commit after `95896c14`) were not browser-checked: the PIN popup blocked the page.
 
 Don't rehearse on `MPP_MES_Test`; other sessions reset it. Use a unique throwaway name.
 

@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-09-12
-# Version:          1.4
+# Version:          1.5
 #
 # Description:
 #   All behaviour for the inventory cutover scan screen. The screen is hosted
@@ -109,8 +109,10 @@
 #                      views stay one-liners; session.isLine drives the header.
 #                      No pick -> the proc's IsDefault row (was
 #                      getStockDestinationOrEmpty). Part list via
-#                      Item.listForCutoverLocation (warehouse = every part).
-#                      addBasket keeps the LTT minus its last 4 characters.
+#                      Item.listForCutoverLocation (Components only;
+#                      warehouse = every Component).
+#                      addBasket keeps the LTT minus its last 4 characters
+#                      and clears the cavity (it no longer latches).
 #                      castDate may arrive as epoch millis from the date
 #                      picker -- _asDate normalises it.
 # =============================================================================
@@ -536,16 +538,19 @@ def addBasket(appUserId, terminalLocationId, session):
     if not (res and res.get("Status")):
         return res
 
-    # Only the count clears. Cavity and cast date LATCH, because baskets come
-    # off the rack grouped by both. The LTT keeps everything but its last 4
-    # characters: consecutive tags share that prefix, so the operator only
-    # keys the tail for the next basket.
-    e["lotName"] = lotName[:-4] if len(lotName) > 4 else ""
-    e["pieceCount"] = ""
     rows = list(st.get("rows") or [])
     rows.insert(0, {"LotId": res.get("NewId"), "LotName": lotName,
                     "PartNumber": s.get("partNumber"), "CavityCode": e.get("cavityCode"),
                     "CastDate": e.get("castDate"), "PieceCount": pieces})
+
+    # The count and the cavity clear -- the cavity is read off each tag, so it
+    # must be tapped fresh rather than silently carried to the next basket.
+    # The cast date LATCHES (baskets come off the rack grouped by date). The
+    # LTT keeps everything but its last 4 characters: consecutive tags share
+    # that prefix, so the operator only keys the tail for the next basket.
+    e["lotName"] = lotName[:-4] if len(lotName) > 4 else ""
+    e["pieceCount"] = ""
+    e["toolCavityId"], e["cavityCode"] = None, ""
     st["entry"], st["rows"] = e, rows
     st["totals"] = {"baskets": len(rows),
                     "pieces": sum([r.get("PieceCount") or 0 for r in rows])}

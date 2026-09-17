@@ -44,8 +44,9 @@
 #   2026-08-20 - 1.3 - Part-scoped CRT (Task 8): CrtEnabled added to
 #                      _ITEM_SHAPE_KEYS and always sent (1/0) by update().
 #   2026-09-17 - 1.4 - Cutover scan: listForCutoverLocation /
-#                      getForCutoverLocationDropdown (warehouse lists every
-#                      active part). Option shaping shared via _partOptions.
+#                      getForCutoverLocationDropdown (Components only; the
+#                      warehouse lists every active Component). Option
+#                      shaping shared via _partOptions.
 # =============================================================================
 
 import java.lang
@@ -186,9 +187,9 @@ def _partOptions(rows):
 
 
 def listForCutoverLocation(locationId):
-    """Raw rows of parts/Item_ListForCutoverLocation: the parts eligible at a
-       line or trim store, or EVERY active part for the warehouse (a cutover
-       destination with no eligibility configured -- the proc decides).
+    """Raw rows of parts/Item_ListForCutoverLocation: the Components eligible
+       at a line or trim store, or EVERY active Component for the warehouse (a
+       cutover destination with no eligibility configured -- the proc decides).
        Always a list."""
     locationId = _u(locationId)
     if locationId is None:

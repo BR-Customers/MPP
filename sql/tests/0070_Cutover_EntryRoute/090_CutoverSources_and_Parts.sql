@@ -12,6 +12,7 @@
 --               parts eligible there (ancestor cascade, as today). A cutover
 --               destination with NOTHING eligible up its chain -- the
 --               warehouse -- lists every active part: it can hold anything.
+--               Components only (v1.1): other part types have no die/cavity.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -70,48 +71,77 @@ DECLARE @T1   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');
 DECLARE @T1S  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-STORE');
 DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
 
--- An item not already eligible at Trim Shop 1, made eligible there for this file.
+-- A Component and a Finished Good, neither already eligible at Trim Shop 1,
+-- both made eligible there for this file.
 DECLARE @Item BIGINT = (
     SELECT TOP 1 i.Id FROM Parts.Item i
-    WHERE i.DeprecatedAt IS NULL
+    INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
+    WHERE i.DeprecatedAt IS NULL AND it.Code = N'Component'
       AND NOT EXISTS (SELECT 1 FROM Parts.v_EffectiveItemLocation e
                       WHERE e.ItemId = i.Id
                         AND e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@T1S)))
     ORDER BY i.Id);
-INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt) VALUES (@Item, @T1, SYSUTCDATETIME());
+DECLARE @Fg BIGINT = (
+    SELECT TOP 1 i.Id FROM Parts.Item i
+    INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
+    WHERE i.DeprecatedAt IS NULL AND it.Code = N'FinishedGood'
+      AND NOT EXISTS (SELECT 1 FROM Parts.v_EffectiveItemLocation e
+                      WHERE e.ItemId = i.Id
+                        AND e.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@T1S)))
+    ORDER BY i.Id);
+INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt)
+VALUES (@Item, @T1, SYSUTCDATETIME()), (@Fg, @T1, SYSUTCDATETIME());
 
 CREATE TABLE #I (Id BIGINT, PartNumber NVARCHAR(100), Description NVARCHAR(1000),
                  MaxLotSize INT, MaxParts INT);
 CREATE TABLE #E (Id BIGINT, PartNumber NVARCHAR(100), Description NVARCHAR(1000),
                  MaxLotSize INT, MaxParts INT);
 
--- (5) The warehouse (nothing eligible up its chain) lists every active part.
+-- (5) The warehouse (nothing eligible up its chain) lists every active
+--     Component, and nothing else.
 INSERT INTO #I EXEC Parts.Item_ListForCutoverLocation @LocationId = @Whse;
 DECLARE @b1 NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM #I);
-DECLARE @b1e NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM Parts.Item WHERE DeprecatedAt IS NULL);
-EXEC test.Assert_IsEqual @TestName = N'[Parts] warehouse lists every active part',
+DECLARE @b1e NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM Parts.Item i
+                             INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
+                             WHERE i.DeprecatedAt IS NULL AND it.Code = N'Component');
+EXEC test.Assert_IsEqual @TestName = N'[Parts] warehouse lists every active Component',
     @Expected = @b1e, @Actual = @b1;
+DECLARE @b1n NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM #I x
+                             INNER JOIN Parts.Item i ON i.Id = x.Id
+                             INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
+                             WHERE it.Code <> N'Component');
+EXEC test.Assert_IsEqual @TestName = N'[Parts] warehouse lists no other part type',
+    @Expected = N'0', @Actual = @b1n;
 
--- (6) A trim store lists exactly what is eligible there.
+-- (6) A trim store lists exactly the eligible Components there.
 DELETE FROM #I;
 INSERT INTO #I EXEC Parts.Item_ListForCutoverLocation @LocationId = @T1S;
 INSERT INTO #E EXEC Parts.Item_ListEligibleForLocation @LocationId = @T1S;
 DECLARE @b2 NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM #I);
-DECLARE @b2e NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM #E);
-EXEC test.Assert_IsEqual @TestName = N'[Parts] trim store lists its eligible parts',
+DECLARE @b2e NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM #E e
+                             INNER JOIN Parts.Item i ON i.Id = e.Id
+                             INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
+                             WHERE it.Code = N'Component');
+EXEC test.Assert_IsEqual @TestName = N'[Parts] trim store lists its eligible Components',
     @Expected = @b2e, @Actual = @b2;
 DECLARE @b3 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #I WHERE Id = @Item);
-EXEC test.Assert_IsEqual @TestName = N'[Parts] trim store includes a shop-tier eligible part',
+EXEC test.Assert_IsEqual @TestName = N'[Parts] trim store includes a shop-tier eligible Component',
     @Expected = N'1', @Actual = @b3;
+DECLARE @b3f NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #I WHERE Id = @Fg);
+EXEC test.Assert_IsEqual @TestName = N'[Parts] an eligible Finished Good is not offered',
+    @Expected = N'0', @Actual = @b3f;
 
--- (7) A line lists exactly what the eligibility proc lists -- no fallback,
---     even if that is nothing.
+-- (7) A line lists exactly its eligible Components -- no fallback, even if
+--     that is nothing.
 DELETE FROM #I; DELETE FROM #E;
 INSERT INTO #I EXEC Parts.Item_ListForCutoverLocation @LocationId = @Line;
 INSERT INTO #E EXEC Parts.Item_ListEligibleForLocation @LocationId = @Line;
 DECLARE @b4 NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM #I);
-DECLARE @b4e NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM #E);
-EXEC test.Assert_IsEqual @TestName = N'[Parts] a line lists its eligible parts only',
+DECLARE @b4e NVARCHAR(20) = (SELECT CAST(COUNT(*) AS NVARCHAR(20)) FROM #E e
+                             INNER JOIN Parts.Item i ON i.Id = e.Id
+                             INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
+                             WHERE it.Code = N'Component');
+EXEC test.Assert_IsEqual @TestName = N'[Parts] a line lists its eligible Components only',
     @Expected = @b4e, @Actual = @b4;
 
 -- (8) NULL location lists nothing.
@@ -123,7 +153,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Parts] NULL location lists nothing',
 
 DROP TABLE #I;
 DROP TABLE #E;
-DELETE FROM Parts.ItemLocation WHERE ItemId = @Item AND LocationId = @T1;
+DELETE FROM Parts.ItemLocation WHERE ItemId IN (@Item, @Fg) AND LocationId = @T1;
 GO
 
 EXEC test.EndTestFile;
