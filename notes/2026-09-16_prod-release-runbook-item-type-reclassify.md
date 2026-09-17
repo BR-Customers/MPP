@@ -244,18 +244,49 @@ downstream reads the type in a way that would leave residue.
 
 ---
 
-## 7. Outcome — fill in after
+## 7. Outcome -- executed 2026-09-17 06:03 ET
 
-_(still to fill in)_
+**Clean. `== COMMITTED`, sqlcmd exit 0 after 1.4s, no BLOCK gate fired. 34 items retyped, as previewed.**
 
 | | |
 |---|---|
-| Executed at | |
-| Prod starting state | |
-| Plan fingerprint used | |
-| Preview `[5]` printed | |
-| Rehearse printed | |
-| Lock window | |
-| Backup path | |
-| Report folder | |
-| Verification | |
+| Executed at | 2026-09-17 06:03 ET |
+| Prod starting state | 88 applied, highest `0088`; 464 repeatables identical, 0 changed, 0 new |
+| Prod HEAD | `92fd283d` (docs-only after the release commit `192c77c1`; `git diff --stat 192c77c1..HEAD -- ignition/ sql/` empty) |
+| Plan fingerprint used | `4bc594c67226` (prod's own; Dev's was `b33ec19e394d`) |
+| Preview `[5]` printed | `[INFO] 0089: retypes 34 of 34 listed item(s): 33 -> PassThrough, 1 -> FinishedGood; one Audit.ConfigLog row each` -- exactly as predicted |
+| Rehearse printed | `REHEARSAL PASSED and was rolled back. Lock window: 1.9s.` |
+| Execute printed | `0089: retyped 34 item(s); 0 already at target type; 0 listed part(s) not present on this database.` |
+| Lock window | 1.4s (rehearsal 1.9s; Dev 1s) |
+| After commit | `R__Descriptions_ExtendedProperties.sql applied.` / `Every repo migration is recorded.` / `All 0 applied repeatable(s) now match the repo byte-for-byte.` |
+| Backup path | `C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\MPP_MES_Prod_pre-release_0088_20260917_060339.bak` (COPY_ONLY, CHECKSUM, verified) |
+| Report folders | `dist/deploy-reports/MPP_MES_Prod_Preview_20260917_054853`, `..._Rehearse_20260917_060236`, `..._Execute_20260917_060339` |
+| Ignition imports | None, as planned. The script's closing `Import the Ignition exports NOW` line does not apply to this release. |
+| Verification (section 4) | _still to run_ -- type counts, 34 audit rows, the evidence check, and the Item Master Pass-Through filter |
+
+### What went sideways
+
+Two false starts before the rehearsal, neither of which wrote anything:
+
+- **05:50:34 -- `Login failed for user 'Ignition'`** at `[2]`. The run stopped at the connection; the next attempt connected, so most likely a mistyped password at the masked prompt.
+- **05:50:48 -- fingerprint abort.** `-ExpectedPlan` was typed as `4bc59c67223` against the preview's `4bc594c67226` (one `4` dropped, last digit wrong). The guard aborted before any transaction.
+  **The same class of slip as 2026-09-12. Paste the fingerprint; never retype it.**
+
+The 06:02 rehearsal with the pasted fingerprint passed, and Execute followed at 06:03.
+
+### Two prod-only procedures surfaced by the preview
+
+`[4]` warned about two objects on prod with no file in any branch, any worktree, or `MPP_MES_Dev`:
+
+| Object | Created (server time) | By |
+|---|---|---|
+| `Lots.ShippingLabel_GetLastForTerminal` | 2026-09-16 09:57:07 | login `Ignition`, host `IGNSRV`, JDBC |
+| `Oee.DowntimeEvent_RequiresReasonGate` | 2026-09-16 15:04:45 | login `Ignition`, host `IGNSRV`, JDBC |
+
+Source: the SQL default trace (`EventClass 46`, Object:Created). Created through the prod
+Gateway's database connection -- the pattern of Designer's Database Query Browser or a
+Script Console -- and never altered since. Neither has a header. Both are consistent with
+the schema (`Oee.Shift` holds Eastern wall-clock times, so the gate's ET comparison is
+right). They were left untouched by this release. **Open:** asked Hunter whether they are
+his and whether prod-Gateway views or named queries changed with them; then bring both into
+`sql/migrations/repeatable/` and diff the prod Gateway's resources against git.
