@@ -11,7 +11,7 @@ This note is the scoping input for `prod-release-context-pack/07_writing_the_run
 
 ## 0. Check these first
 
-1. **Has 0089 gone out?** Same question as in the shot-count handoff § 0. Its runbook's Outcome is still blank. Ask Jacques; don't fold it in silently.
+1. **0089 is out.** Commit `daa32e16` records it committed to prod cleanly, which answers the shot-count handoff's § 0. Still confirm `[3]` shows prod at `0089` with nothing pending.
 2. **Prod trim-store names.** On 2026-09-17 Jacques **renamed the trim-store locations in prod**. Both procs in this release label `TRIM1-STORE` / `TRIM2-STORE` by **Code**, as `Tumble Trim Storage` / `Blast Trim Storage`, so **the label wins over whatever Name prod now holds**. Read prod's names (gate query in § 3) and show them to Jacques. If they differ from those two strings, he decides whether the CASE should change before release. On Friday 2026-09-18 he is pulling a prod backup to sync config into Dev. Once Dev's names match prod, the CASE can be dropped so Names drive the label. That is a **follow-up, not part of this release**.
 
 ---
