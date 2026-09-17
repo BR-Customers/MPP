@@ -1022,6 +1022,40 @@ BEGIN
                          @level2type = N'COLUMN', @level2name = N'MaxParts';
     END
 
+    IF COL_LENGTH(N'[Parts].[Item]', N'BoxQuantity') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[Item]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[Item]'), N'BoxQuantity', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added 2026-09-17 (migration 0091). Pieces in one purchased box (e.g., dowel pins = 5000). Only on PassThrough items (enforced by Item_Update). Drives the one-tap check-in button on the M&A Line Inventory sidebar: one press creates one Received LOT of this size. NULL = the button asks for a count.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'Item',
+                         @level2type = N'COLUMN', @level2name = N'BoxQuantity';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added 2026-09-17 (migration 0091). Pieces in one purchased box (e.g., dowel pins = 5000). Only on PassThrough items (enforced by Item_Update). Drives the one-tap check-in button on the M&A Line Inventory sidebar: one press creates one Received LOT of this size. NULL = the button asks for a count.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'Item',
+                         @level2type = N'COLUMN', @level2name = N'BoxQuantity';
+    END
+
+    IF COL_LENGTH(N'[Parts].[Item]', N'LowInventoryHorizon') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Parts].[Item]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[Item]'), N'LowInventoryHorizon', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added 2026-09-17 (migration 0091). Only on FinishedGood items. How many more of this finished good the line should always be able to build: a component is flagged low on the Line Inventory sidebar when on hand < rolled-up BOM QtyPer x this value. NULL = no low flag for this FG.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'Item',
+                         @level2type = N'COLUMN', @level2name = N'LowInventoryHorizon';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added 2026-09-17 (migration 0091). Only on FinishedGood items. How many more of this finished good the line should always be able to build: a component is flagged low on the Line Inventory sidebar when on hand < rolled-up BOM QtyPer x this value. NULL = no low flag for this FG.',
+                         @level0type = N'SCHEMA', @level0name = N'Parts',
+                         @level1type = N'TABLE',  @level1name = N'Item',
+                         @level2type = N'COLUMN', @level2name = N'LowInventoryHorizon';
+    END
+
     IF COL_LENGTH(N'[Parts].[Item]', N'UomId') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
@@ -5839,12 +5873,12 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Tools].[Tool]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Tools].[Tool]'), N'ShotCount', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v2.2 (migration 0050). Materialized lifetime shot counter. Live-incremented by Workorder.DieCastShiftOutput_Record by the counter-reading delta - no event ledger, no reconcile job. The one setter is Tools.Tool_CorrectShotCount (Config Tool Tools screen): a cutover entry or correction with a mandatory note, audited to Audit.ConfigLog, stale-guarded, and never touching DieCastContribution or the shot watermarks. Per-physical-asset state, not configuration: Tool_Duplicate resets it to 0 (a cross-database import necessarily lands 0).',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added v2.2 (migration 0050). Materialized lifetime shot counter. Live-incremented by Workorder.DieCastShiftOutput_Record (v1.2) - no event ledger, no reconcile job. Per-physical-asset state, not configuration: Tool_Duplicate resets it to 0 (a cross-database import necessarily lands 0). The one setter is Tools.Tool_CorrectShotCount (2026-09-17, Config Tool Tools screen): the die manager''s cutover entry or correction -- ShotCount + (typed - loaded) under a row lock, refused if the count moved since the screen loaded, mandatory note, one Audit.ConfigLog row (NewValue = {ShotCount, Delta, Note}). It never writes DieCastContribution or moves a shot watermark.',
                          @level0type = N'SCHEMA', @level0name = N'Tools',
                          @level1type = N'TABLE',  @level1name = N'Tool',
                          @level2type = N'COLUMN', @level2name = N'ShotCount';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v2.2 (migration 0050). Materialized lifetime shot counter. Live-incremented by Workorder.DieCastShiftOutput_Record by the counter-reading delta - no event ledger, no reconcile job. The one setter is Tools.Tool_CorrectShotCount (Config Tool Tools screen): a cutover entry or correction with a mandatory note, audited to Audit.ConfigLog, stale-guarded, and never touching DieCastContribution or the shot watermarks. Per-physical-asset state, not configuration: Tool_Duplicate resets it to 0 (a cross-database import necessarily lands 0).',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added v2.2 (migration 0050). Materialized lifetime shot counter. Live-incremented by Workorder.DieCastShiftOutput_Record (v1.2) - no event ledger, no reconcile job. Per-physical-asset state, not configuration: Tool_Duplicate resets it to 0 (a cross-database import necessarily lands 0). The one setter is Tools.Tool_CorrectShotCount (2026-09-17, Config Tool Tools screen): the die manager''s cutover entry or correction -- ShotCount + (typed - loaded) under a row lock, refused if the count moved since the screen loaded, mandatory note, one Audit.ConfigLog row (NewValue = {ShotCount, Delta, Note}). It never writes DieCastContribution or moves a shot watermark.',
                          @level0type = N'SCHEMA', @level0name = N'Tools',
                          @level1type = N'TABLE',  @level1name = N'Tool',
                          @level2type = N'COLUMN', @level2name = N'ShotCount';
@@ -6657,4 +6691,4 @@ BEGIN
 END
 GO
 
--- 69 table descriptions, 314 column descriptions
+-- 69 table descriptions, 316 column descriptions
