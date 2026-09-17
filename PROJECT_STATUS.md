@@ -12,7 +12,17 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-09-17 -- **Cutover scan: location-first setup (Warehouse / Blast / Tumble Trim Storage / lines), trim-store default destination, cast-date picker, LTT keeps its prefix, compact layout. Two new repeatables + one changed; no migration. On Dev and browser-verified; not deployed -- release handoff in `notes/2026-09-17_prod-release-handoff-cutover-location-first.md`, to ship bundled with the shot-count release.**
+**Last updated:** 2026-09-17 -- **Trim OUT compact layout: scrap tiles wrap, the scrap lists scroll inside their boxes, and the buttons stay visible. Four MPP views, no SQL. Browser-verified and signed off by Jacques; not deployed -- release handoff in `notes/2026-09-17_prod-release-handoff-trim-out-layout.md`.**
+
+> ### Trim OUT layout (2026-09-17)
+>
+> Commits `272dafc7` (layout), `1d678f36` (container renames), `1fd6ffe8` (manifest signature). Views: `TrimBody`, `TrimEntry/ScrapCodeTile`, `TrimEntry/ScrapLineRow`, `Trim/InventoryRow`.
+>
+> **Open:**
+> - `InventoryRow` is shared with the Inventory Manager and the Receiving Dock screen. It lost its "Position N - oldest" label and shrank to 64 px while those screens keep 92 px slots. Jacques's call before release.
+> - With no LOT selected, the Trim OUT helper reads "LOT # selected" (`activeLotId` defaults to `""`). Existing bug.
+
+**Previously (same day):** 2026-09-17 -- **Cutover scan: location-first setup (Warehouse / Blast / Tumble Trim Storage / lines), trim-store default destination, cast-date picker, LTT keeps its prefix, compact layout. Two new repeatables + one changed; no migration. On Dev and browser-verified; not deployed -- release handoff in `notes/2026-09-17_prod-release-handoff-cutover-location-first.md`, to ship bundled with the shot-count release.**
 
 > ### Cutover scan -- location first (2026-09-17)
 >
