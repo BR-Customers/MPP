@@ -60,7 +60,17 @@ is hard-coded in three places.
 | D5 | Downtime logged **against the line applies to every flagged station under it** — all stations are impacted. | Jacques |
 | D6 | Each station computes its own availability; the line reports the **plain mean** of its stations. No capacity weights — WIP buffers make series/parallel weighting meaningless. | Jacques |
 | D7 | **Planned downtime shrinks the base**; unplanned downtime reduces availability. | Jacques |
-| D8 | "Planned" = `Oee.DowntimeReasonCode.IsExcused = 1`. | **Assumption — confirm** |
+| D8 | "Planned" = `Oee.DowntimeReasonCode.IsExcused = 1`. | Jacques (confirmed 2026-09-16) |
+| D9 | The per-station cells are **built out in the location model before this work** (Jacques + Tom set the conventions). This spec does not create or name them. | Jacques |
+| D10 | Setting up and flagging cells on the rest of the plant's lines is **MPP's responsibility**. Blue Ridge sets up one or two lines with MPP as the worked example. | Jacques |
+| D11 | The legacy data-entry views (Downtime Entry, End of Shift) are being retired separately and are **out of scope**. | Jacques |
+
+### 2.1 Prerequisite
+
+The location structure must already contain the station cells for any line that is to be split
+(D9). For 6MA Cam Holder Line 1 that means a Machining cell and an Assembly A and Assembly B cell
+under `MA2-6MACH`, of whatever codes, names and definitions the Jacques/Tom conventions settle on.
+This spec only makes such cells **usable** for downtime and OEE; it assumes they exist.
 
 ---
 
@@ -98,27 +108,31 @@ cells MPP has added through the Config Tool.
 eligible locations. `Location.Location_Create` / `Location_Update` gain an `@IsOeeEnabled`
 parameter; the audit JSON includes it.
 
-### 3.2 The 6MA cells
+### 3.2 Station cells (prerequisite, not built here)
 
-Three new Cell-tier locations under `MA2-6MACH`, all flagged:
+The station cells come from the location-model build-out (2.1). This spec neither seeds nor names
+them. What it needs from them:
 
-| Code (proposed) | Name (proposed — MPP's wording wins) | Definition |
-|---|---|---|
-| `MA2-6MACH-MI` | Machining | CNCMachine |
-| `MA2-6MACH-ASM-A` | Assembly A | AssemblyStation |
-| `MA2-6MACH-ASM-B` | Assembly B | AssemblyStation |
+- **Cell tier**, a non-device / non-store definition (so the flag guard in 3.1 accepts them);
+- parented **under the line** (directly, or under an intermediate that is not flagged);
+- **no terminals moved** and no LOTs moved; eligibility rows are not required for downtime.
 
-- **Dev:** added to `sql/seeds/011_seed_locations_mpp_plant.sql`, flagged.
-- **Prod:** created through the Config Tool after the release. Not seeded by the migration — the
-  location authority is `MPP_MES_Site`.
-- No terminal moves, no LOT moves, no eligibility rows. These cells are downtime units only.
+**Rollout:**
+
+- **This release** ships the flag, the Config Tool checkbox and the roll-up. With no station cells
+  flagged anywhere, nothing changes (3.1 backfill).
+- **After the release**, Blue Ridge and MPP set up and flag one or two lines together (6MA Cam
+  Holder Line 1 first) as the worked example; MPP does the rest through the Config Tool (D10).
+- **Tests** create their own fixture line with station cells and do not depend on the Dev seed.
+  If the Jacques/Tom build-out adds the 6MA cells to `sql/seeds/011_seed_locations_mpp_plant.sql`,
+  they should be seeded **flagged**.
 
 ### 3.3 Resolution rules
 
 **`Oee.ufn_ResolveOeeEquipment()`** becomes: flagged and not deprecated. Same output columns. The
 tier / definition exclusions move to the flag guard (3.1), so the function is a plain filter.
 `ShiftOverride_ListEquipment` and `ShiftOverride_Create` keep reading it unchanged — the new 6MA
-cells become overridable equipment automatically.
+station cells become overridable equipment automatically once flagged.
 
 **`Oee.ufn_ResolveDowntimeScope(@Loc)`** becomes: the **nearest flagged location at or above**
 `@Loc`; if none, `@Loc` itself (preserves today's fallback). Its only remaining use is the dropdown
@@ -139,7 +153,7 @@ Area/WorkCenter/Cell branching is removed.
 
 | Terminal | Zone | Rows |
 |---|---|---|
-| `MA2-6MACH-AOUT3` | `MA2-6MACH` (flagged) | the line, Machining, Assembly A, Assembly B |
+| `MA2-6MACH-AOUT3` | `MA2-6MACH` (flagged) | the line, Machining, Assembly A, Assembly B (once the station cells are built and flagged) |
 | Other M&A line terminal | its line (flagged) | the line only — **unchanged** |
 | `DC1-T1` (shared) | `DC1` (Area, not flaggable) | every flagged press under DC1 — **unchanged** |
 | `DC1-M01-T1` (dedicated) | `DC1-M01` (flagged) | that press — **unchanged** |
@@ -223,23 +237,22 @@ keys (fully-shaped default rule).
 `Oee.DowntimeEvent_Start`, `_RecordHistorical` and `_RecordApproximate` **reject** a location that
 is not flagged: *"<Code> is not enabled for downtime."*
 
-The caller inventory shows this **cannot ship on its own**:
+Writers in scope:
 
 | Writer | Location it passes | Effect of the rule |
 |---|---|---|
-| Downtime Manager popup (`Components/Popups/DowntimeManager`) | a row from `DowntimeScope_ListForTerminal` | Fine — always flagged. |
-| Downtime Entry (`/shop-floor/downtime`, `Views/ShopFloor/DowntimeEntry`) | any row of `Location.listByTier('Cell')` — which **includes Terminals** and **excludes lines** | Would reject most choices. Must switch to the flagged list. |
-| End of Shift (`/shop-floor/end-of-shift`, `Views/ShopFloor/EndOfShiftEntry`) → `Oee.EndOfShiftEntry_Submit` | the same `listByTier('Cell')` list; the proc **inserts `DowntimeEvent` directly**, bypassing `_Start` | Not covered unless the proc gets the same check. Lines are not selectable, so M&A breaks can't be logged against a line today. |
+| Downtime Manager popup (`Components/Popups/DowntimeManager`) | a row from `DowntimeScope_ListForTerminal` | Fine — always flagged. This is the supported entry path, planned downtime (lunch/breaks) included. |
 | `BlueRidge.Oee.DowntimePlc` watcher | `_WATCH[].cellLocationId` | `_WATCH` is empty (pre-commissioning); no effect today. Commissioning must use flagged locations. |
 
-So the build includes:
+**Out of scope (D11):** Downtime Entry (`/shop-floor/downtime`) and End of Shift
+(`/shop-floor/end-of-shift`, → `Oee.EndOfShiftEntry_Submit`) are being retired separately. Both
+list every Cell-tier location (terminals included, lines excluded), so **while they remain
+deployed** the new check in `_Start` will reject most Downtime Entry choices. End of Shift inserts
+`DowntimeEvent` directly and is unaffected by the check. Sequencing is the retirement work's
+concern; this build does not modify either view or `EndOfShiftEntry_Submit`.
 
-- Downtime Entry and End of Shift take their location dropdown from a **flagged-location list**
-  (`DowntimeScope_ListForTerminal` when on a registered terminal; a new `Oee.OeeLocation_List`
-  otherwise). These are **existing views → Designer edits**, per the file-edit boundary.
-- `Oee.EndOfShiftEntry_Submit` gets the same flagged check.
-- With D5, a break logged against the line counts against every station on it — the intended
-  outcome for lunch.
+With D5, a break logged against the line in the Downtime Manager counts against every station on
+it — the intended outcome for lunch.
 
 Events already recorded against unflagged locations are **not** modified; they simply do not count
 toward availability (they don't today either).
@@ -258,11 +271,11 @@ so any combination can be down at once.
 ## 4. Side effects to verify
 
 - **`Location.Terminal_ListContextCells`** returns every non-Terminal/Printer Cell under the
-  terminal's parent, so the three new cells will appear in any cell picker for a 6MA terminal. M&A
+  terminal's parent, so station cells will appear in any cell picker for a terminal on that line. M&A
   dedicated screens bind the cell to the zone (`Terminal.bindsCellToZone`), so this is probably
   invisible — **verify in a live session**, don't assume.
 - **`Location.Location_ListCellsForArea`** — same shape; check its callers.
-- **Parts eligibility / WIP queue** — the new cells have no eligibility rows and no terminals, and
+- **Parts eligibility / WIP queue** — station cells need no eligibility rows and hold no terminals, and
   `Lot_GetWipQueueByLocation` and move eligibility anchor on the terminal's zone, so no change is
   expected. Confirm with the existing test suites.
 
@@ -277,8 +290,8 @@ SQL tests (INSERT-EXEC pattern):
 - **Backfill** — after the migration, the flagged set equals the pre-migration self-scoping set
   (on a DB built at the prior migration state).
 - **Dropdown** — the six rows of the 3.4 table, and the three default rules.
-- **Write validation** — `_Start`, `_RecordHistorical`, `_RecordApproximate` and
-  `EndOfShiftEntry_Submit` reject an unflagged location and accept a flagged one.
+- **Write validation** — `_Start`, `_RecordHistorical` and `_RecordApproximate` reject an
+  unflagged location and accept a flagged one.
 - **Roll-up** — the 3.5 worked example exactly; a line stop applied to all stations; a line event
   overlapping a station event counted once; planned overlapping unplanned counted as planned; a
   zero-base child excluded from the mean; a two-level nested roll-up.
@@ -297,14 +310,15 @@ SQL tests (INSERT-EXEC pattern):
 - **Capacity weighting** of stations — rejected (D6).
 - **The `66B - Ins` naming/type mismatch** — noted, not fixed.
 - **A shop-level (Area) downtime unit** — not flaggable by design (3.4).
+- **Creating or naming station cells** — the location-model build-out (D9, 2.1).
+- **Flagging the rest of the plant** — MPP (D10).
+- **Downtime Entry / End of Shift** — being retired separately (D11).
 
 ---
 
 ## 7. Open items
 
-1. **D8** — confirm `IsExcused` is exactly MPP's "planned downtime".
-2. **Names and codes** for the three 6MA cells, from MPP.
-3. **Prod creation** of the 6MA cells — who does it, and when relative to the release.
-4. **Prod preview gate** — list what the backfill will flag, and every `DowntimeEvent` in the last
-   30 days whose location will **not** be flagged, so affected Downtime Entry / End of Shift users
-   are known before the window.
+1. **Prod preview gate** — the release preview lists what the backfill will flag, so the flagged
+   set can be checked against the plant before the window.
+2. **Retirement sequencing** — if Downtime Entry is still deployed when this ships, its choices
+   will be rejected (3.6). Confirm with the view clean-up work which goes first.
