@@ -540,6 +540,31 @@
                 "type": "ia.container.flex",
                 "children": [
                   {
+                    "meta": {
+                      "name": "GoodNA",
+                      "tooltip": {
+                        "text": "Nothing to credit: this basket was released earlier this shift (scrap only), or the cavity has no basket."
+                      }
+                    },
+                    "type": "ia.display.label",
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.params.isPending} || !{view.params.isOpen}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "-"
+                    }
+                  },
+                  {
                     "events": {
                       "dom": {
                         "onBlur": {
@@ -563,6 +588,14 @@
                       "shrink": 1
                     },
                     "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!{view.params.isPending} && {view.params.isOpen}"
+                          },
+                          "type": "expr"
+                        }
+                      },
                       "props.value": {
                         "binding": {
                           "config": {
