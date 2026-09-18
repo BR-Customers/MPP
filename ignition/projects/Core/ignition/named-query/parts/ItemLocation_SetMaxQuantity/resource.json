@@ -32,18 +32,18 @@
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "locationId",
+        "identifier": "itemLocationId",
         "sqlType": 3
       },
       {
         "type": "Parameter",
-        "identifier": "terminalRole",
-        "sqlType": 7
+        "identifier": "maxQuantity",
+        "sqlType": 2
       },
       {
         "type": "Parameter",
-        "identifier": "lineWide",
-        "sqlType": 6
+        "identifier": "appUserId",
+        "sqlType": 3
       }
     ]
   }

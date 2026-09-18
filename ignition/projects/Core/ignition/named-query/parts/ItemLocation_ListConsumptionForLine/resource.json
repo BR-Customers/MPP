@@ -34,16 +34,6 @@
         "type": "Parameter",
         "identifier": "locationId",
         "sqlType": 3
-      },
-      {
-        "type": "Parameter",
-        "identifier": "terminalRole",
-        "sqlType": 7
-      },
-      {
-        "type": "Parameter",
-        "identifier": "lineWide",
-        "sqlType": 6
       }
     ]
   }

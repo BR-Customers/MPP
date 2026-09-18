@@ -647,18 +647,27 @@ def getLineInventoryByPart(locationId, _refreshToken=None, excludeFinishedGoods=
          "excludeFinishedGoods": 1 if _u(excludeFinishedGoods) else 0})
 
 
-def getLineInventorySummary(locationId, finishedGoodItemId=None):
-    """Line Inventory sidebar rows (Lots.Lot_GetLineInventorySummary). One dict per
-       part: ItemId, Description, Available, Threshold, IsLow, BoxQuantity,
-       AddLotMode (OneTap/AskQty/None), RunningFinishedGoods, LowInventoryHorizon.
-       Every rule (line resolution, running FG, BOM horizon, button mode) is in the
-       proc. Returns [] when there is no location."""
+_LINE_INV_VISIBLE_ROWS = 12
+_SCOPE_TEXT = {"Castings": "Castings at this line",
+               "Purchased": "Bought parts at this line",
+               "All": "All parts this line uses"}
+
+
+def getLineInventorySummary(locationId, terminalRole=None, lineWide=False):
+    """Line Inventory rows (Lots.Lot_GetLineInventorySummary v2.0): ItemId, Description,
+       Available, MaxQuantity, Level (Critical/Low/Ok/None), BoxQuantity, AddLotMode
+       (OneTap/AskQty/None), ItemLocationId, ScopeCode. Membership, scope, level and
+       order are decided by the proc. Returns [] when there is no location."""
     locationId = _u(locationId)
     if locationId is None:
         return []
+    role = _u(terminalRole)
+    if role is not None and ("%s" % role).strip() == "":
+        role = None
     return BlueRidge.Common.Db.execList(
         "lots/Lot_GetLineInventorySummary",
-        {"locationId": locationId, "finishedGoodItemId": _u(finishedGoodItemId)}) or []
+        {"locationId": locationId, "terminalRole": role,
+         "lineWide": 1 if _u(lineWide) else 0}) or []
 
 
 def _thousands(n):
@@ -668,12 +677,11 @@ def _thousands(n):
         return "%s" % (n,)
 
 
-def getLineInventoryInstances(locationId, finishedGoodItemId=None, _refreshToken=None):
+def getLineInventoryInstances(locationId, terminalRole=None, lineWide=False, _refreshToken=None):
     """Flex-repeater instances for Components/PlantFloor/LineInventory. Display
-       formatting only (thousands separators, button caption). Scalar args only
-       (ImmutableList re-eval rule); _refreshToken is the ignored re-read arg."""
+       formatting only. Scalar args only; _refreshToken is the ignored re-read arg."""
     out = []
-    for r in getLineInventorySummary(locationId, finishedGoodItemId):
+    for r in getLineInventorySummary(locationId, terminalRole, lineWide):
         r = r or {}
         mode = r.get("AddLotMode") or "None"
         box = r.get("BoxQuantity")
@@ -688,7 +696,7 @@ def getLineInventoryInstances(locationId, finishedGoodItemId=None, _refreshToken
             "description":   r.get("Description") or "",
             "available":     r.get("Available") or 0,
             "availableText": _thousands(r.get("Available") or 0),
-            "isLow":         bool(r.get("IsLow")),
+            "level":         r.get("Level") or "None",
             "addLotMode":    mode,
             "boxQuantity":   box,
             "buttonText":    caption,
@@ -697,18 +705,25 @@ def getLineInventoryInstances(locationId, finishedGoodItemId=None, _refreshToken
     return out
 
 
-def getLineInventoryHeader(locationId, finishedGoodItemId=None, _refreshToken=None):
-    """Subline for the Line Inventory panel header. Always returns a string."""
-    rows = getLineInventorySummary(locationId, finishedGoodItemId)
+def getLineInventoryHeader(locationId, terminalRole=None, lineWide=False, _refreshToken=None):
+    """Scope sentence for the panel header. Always returns a string."""
+    rows = getLineInventorySummary(locationId, terminalRole, lineWide)
     if not rows:
-        return "No inventory at this line"
-    running = rows[0].get("RunningFinishedGoods")
-    horizon = rows[0].get("LowInventoryHorizon")
-    if not running:
-        return "No finished good running"
-    if horizon is None:
-        return "No low-stock horizon set for %s" % running
-    return "Low below %s x %s" % (_thousands(horizon), running)
+        return "Nothing at this line"
+    return _SCOPE_TEXT.get(rows[0].get("ScopeCode"), _SCOPE_TEXT["All"])
+
+
+def getLineInventoryFooter(locationId, terminalRole=None, lineWide=False, _refreshToken=None):
+    """Overflow sentence for the panel footer ('' when every row fits). Counts hidden
+       rows the PROC flagged Low/Critical; it decides nothing itself."""
+    rows = getLineInventorySummary(locationId, terminalRole, lineWide)
+    hidden = rows[_LINE_INV_VISIBLE_ROWS:]
+    if not hidden:
+        return ""
+    flagged = len([r for r in hidden if (r or {}).get("Level") in ("Low", "Critical")])
+    if flagged:
+        return u"+%d more below · %d low" % (len(hidden), flagged)
+    return u"+%d more below · all above 30%%" % len(hidden)
 
 
 def checkInBox(itemId, locationId, pieceCount, appUserId=None, terminalLocationId=None):

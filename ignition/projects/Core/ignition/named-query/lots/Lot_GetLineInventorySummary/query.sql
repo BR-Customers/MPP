@@ -1,1 +1,1 @@
-EXEC Lots.Lot_GetLineInventorySummary @LocationId = :locationId, @FinishedGoodItemId = :finishedGoodItemId
+EXEC Lots.Lot_GetLineInventorySummary @LocationId = :locationId, @TerminalRole = :terminalRole, @LineWide = :lineWide
