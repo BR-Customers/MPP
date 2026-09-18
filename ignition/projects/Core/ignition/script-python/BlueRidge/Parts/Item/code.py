@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-20
-# Version:          1.6
+# Version:          1.7
 #
 # Description:
 #   Read + mutation surface for the Item Master Configuration Tool
