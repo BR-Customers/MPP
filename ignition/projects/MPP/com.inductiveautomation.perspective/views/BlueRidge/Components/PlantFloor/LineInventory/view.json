@@ -79,6 +79,7 @@
                 "events": {
                   "component": {
                     "onActionPerformed": {
+                      "scope": "G",
                       "type": "script",
                       "config": {
                         "script": "\tself.view.custom.lineWide = not bool(self.view.custom.lineWide)"
