@@ -47,7 +47,7 @@ layout, add it as a **right page dock** in Page Configuration. That needs no lay
 five screens, and page-scoped `inventoryChanged` messages still reach it.
 
 `LineInventory` now resolves its own location: `custom.locationId` is `params.locationId` when one
-is passed, else `session.custom.cell.locationId` (commit `LineInventory ... session location`). A
+is passed, else `session.custom.cell.locationId` (commit `d5dfa7d8`). A
 dock passes static values only, so it passes **just `terminalRole`**.
 
 Per page, add a right dock:
