@@ -75,6 +75,10 @@
 > - `MPP_MES_Test` was being reset by another session during this work; tests ran on a throwaway `MPP_MES_Test_ShotFix`, since dropped.
 > - **Prod: packaged for a release agent** -- `notes/2026-09-17_prod-release-handoff-tool-shot-count.md` (scope, four risk tests, rehearsal expectations, post-deploy checks). Note the 0089 runbook's Outcome is still unfilled; confirm prod's high-water mark first.
 
+> ## 🚧 OPEN TODO (raised 2026-09-18) — Line Inventory Tolerances popup: add a high-level role when able
+>
+> `Components/PlantFloor/LineTolerances` (and its editor `LineToleranceEdit`) lets **anyone signed in** set a part's consumption-point `Parts.ItemLocation.MaxQuantity` from a shop-floor terminal (Jacques, 2026-09-17, spec `docs/superpowers/specs/2026-09-17-line-inventory-sidebar-design.md` §3.6). Max is not only the colour scale — it is also `Lots.Lot_Create`'s check-in cap, so a wrong value blocks check-ins. **Add a high-level role when able:** once the AD roles land, gate Save / Clear Max behind a per-action elevation above team lead, using the same role-per-action mechanism planned for the shipping-label reprint (`notes/2026-09-17_handoff-aim-failure-log-and-shipping-reprint.md` §2). Until then it is open by design.
+
 **Last updated:** 2026-09-15 (evening) -- **Defect codes: `999` rename, seed realigned to prod, and die-cast attribution carried in the label. Migrations `0085` + `0086`, neither deployed.**
 
 > ### Defect codes -- what the shop-floor sheets proved (2026-09-15)
