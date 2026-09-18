@@ -128,6 +128,18 @@ def getByScope(scopeLocationId, includeDescendants=True, shiftId=None):
     })
 
 
+def requiresReasonGate(downtimeEventId):
+    """True if changing this event's reason needs supervisor elevation: a past
+       shift whose 30-minute grace window has elapsed
+       (Oee.DowntimeEvent_RequiresReasonGate). A current/open shift, or a past
+       shift still inside grace, is never gated. Called fresh at click time,
+       not cached from the list read, so the window can't go stale between
+       fetch and click. Fails CLOSED (True) if the event has no shift
+       attribution or the lookup comes back empty."""
+    row = BlueRidge.Common.Db.execOne("oee/DowntimeEvent_RequiresReasonGate", {"downtimeEventId": _u(downtimeEventId)})
+    return bool(row.get("RequiresElevation")) if row else True
+
+
 def updateReason(downtimeEventId, downtimeReasonCodeId, terminalLocationId=None, appUserId=None):
     """Change/clear a reason (allows overwrite, unlike B7 assign). {Status, Message}."""
     return BlueRidge.Common.Db.execMutation("oee/DowntimeEvent_UpdateReason", {

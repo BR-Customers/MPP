@@ -401,6 +401,35 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tresult = BlueRidge.Lots.Shipping.reprintLastForTerminal(self.session.custom.terminal.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Label reprinted\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "ReprintButton",
+              "tooltip": {
+                "text": "Reprint the last shipping label at this terminal (dropped or damaged label)"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Reprint"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tsystem.perspective.openPopup(\"mpp-crt-validation\", \"BlueRidge/Components/Popups/CrtValidation\", params={\"terminalLocationId\": self.session.custom.terminal.terminalLocationId, \"lineLocationId\": self.session.custom.cell.locationId}, modal=True, showCloseIcon=True)"
                   },
                   "scope": "G",
