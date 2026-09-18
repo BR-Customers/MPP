@@ -1,6 +1,7 @@
 {
   "custom": {
     "lineWide": false,
+    "locationId": null,
     "refreshToken": 0
   },
   "params": {
@@ -11,7 +12,15 @@
     "custom.footer": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryFooter\", 30000, {view.params.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryFooter\", 30000, {view.custom.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.locationId": {
+      "binding": {
+        "config": {
+          "expression": "if(isNull({view.params.locationId}), {session.custom.cell.locationId}, {view.params.locationId})"
         },
         "type": "expr"
       }
@@ -89,7 +98,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tsystem.perspective.openPopup(\"mpp-line-tolerances\", \"BlueRidge/Components/PlantFloor/LineTolerances\", params\u003d{\"locationId\": self.view.params.locationId}, modal\u003dTrue, showCloseIcon\u003dTrue)"
+                        "script": "\tsystem.perspective.openPopup(\"mpp-line-tolerances\", \"BlueRidge/Components/PlantFloor/LineTolerances\", params\u003d{\"locationId\": self.view.custom.locationId}, modal\u003dTrue, showCloseIcon\u003dTrue)"
                       },
                       "scope": "G",
                       "type": "script"
@@ -129,7 +138,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryHeader\", 30000, {view.params.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
+                    "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryHeader\", 30000, {view.custom.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
                   },
                   "type": "expr"
                 }
@@ -169,7 +178,7 @@
           "props.instances": {
             "binding": {
               "config": {
-                "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryInstances\", 30000, {view.params.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
+                "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryInstances\", 30000, {view.custom.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
               },
               "type": "expr"
             }
@@ -228,7 +237,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.view.params.locationId}, modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.view.custom.locationId}, modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"

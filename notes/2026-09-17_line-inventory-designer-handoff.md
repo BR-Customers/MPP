@@ -40,24 +40,43 @@ are edits to EXISTING views, which go through Designer.
 
 ## 2. Designer steps (Task R6)
 
-### 2.1 Dock the panel on the five M&A screens
+### 2.1 Dock the panel on the M&A pages (page docks, not embeds)
 
-Add an **Embedded View** named `LineInventory` with path
-`BlueRidge/Components/PlantFloor/LineInventory` and position `basis 320px, shrink 0`.
+**Revised 2026-09-18 with Jacques:** instead of embedding `LineInventory` into each screen's
+layout, add it as a **right page dock** in Page Configuration. That needs no layout surgery on the
+five screens, and page-scoped `inventoryChanged` messages still reach it.
 
-- `props.params.locationId`: **Property** binding to `session.custom.cell.locationId`.
-- `props.params.terminalRole`: a literal per screen:
+`LineInventory` now resolves its own location: `custom.locationId` is `params.locationId` when one
+is passed, else `session.custom.cell.locationId` (commit `LineInventory ... session location`). A
+dock passes static values only, so it passes **just `terminalRole`**.
 
-| Screen (`Views/ShopFloor/...`) | `terminalRole` | Layout change |
-|---|---|---|
-| `MachiningIn` | `MachiningIn` | Root is a column. Add a row `ContentRow` (grow 1) after `Header`, move `QueuePanel` + `ActiveLotPanel` into a column `MainCol` (grow 1) inside it, and put the panel after `MainCol`. |
-| `MachiningOutSplit` | `MachiningOut` | Append the panel to the existing `ContentRow`. |
-| `AssemblyIn` | `AssemblyIn` | As for MachiningIn, moving `ScanPanel` + `QueuePanel`. |
-| `AssemblySerialized` | `AssemblyOut` | Delete `Body/ComponentsPanel` and `custom.queueByPartText`. Wrap `Body` in a row with the panel on the right. |
-| `AssemblyNonSerialized` | `AssemblyOut` | Replace `InventorySidebar`'s children (`SidebarLabel`, `SidebarList`, `ProjectionRepeater`) with the panel. Delete `custom.componentProjection` and `custom.queueByPartVertical`. |
+Per page, add a right dock:
+- **View:** `BlueRidge/Components/PlantFloor/LineInventory`.
+- **Display:** `visible`.
+- **Content:** `push`.
+- **Size:** **320**. The rows are laid out for 320px; 300 squeezes the description.
+- **Handle:** `hide`.
+- **View Parameters:** `terminalRole` =
 
-Every screen already has an "Inventory" header button. The panel's **Detail...** button opens the
-same popup, so decide whether to keep both.
+| Page | `terminalRole` |
+|---|---|
+| `/shop-floor/machining-in` | `MachiningIn` |
+| `/shop-floor/machining-out` | `MachiningOut` |
+| `/shop-floor/machining` (both halves) | `MachiningIn` |
+| `/shop-floor/assembly-in` | `AssemblyIn` |
+| `/shop-floor/assembly-serialized` | `AssemblyOut` |
+| `/shop-floor/assembly-nonserialized` | `AssemblyOut` |
+
+Each page needs its OWN value, so do not configure several pages at once with one parameter.
+
+Then, in Designer, remove what the panel replaces:
+- `AssemblySerialized`: `Body/ComponentsPanel` and `custom.queueByPartText`.
+- `AssemblyNonSerialized`: the `InventorySidebar` column and `custom.componentProjection` /
+  `custom.queueByPartVertical`.
+
+Otherwise both screens show the old inventory next to the new panel. Every screen also keeps its
+"Inventory" header button, which opens the same popup as the panel's **Detail...**; decide whether to
+keep both.
 
 ### 2.2 `Components/PlantFloor/InventoryManager`
 
@@ -93,7 +112,7 @@ show on every terminal.
   - `Workorder.Assembly.getComponentProjection` and `warnLowInventory` (+ its 2 call sites);
   - `Components/PlantFloor/ComponentProjectionRow`.
 
-  It is blocked until 2.1, because `AssemblyNonSerialized` still binds the projection.
+  It is blocked until the AssemblyNonSerialized sidebar is removed (2.1), because that sidebar still binds the projection.
 - **Live check:**
   - each screen shows its default scope, and **Line-wide** widens it;
   - a Max set in **Tolerances** recolours the panel on a second terminal within 30 s;
