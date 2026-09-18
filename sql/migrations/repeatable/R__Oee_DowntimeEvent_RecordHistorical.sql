@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Oee_DowntimeEvent_RecordHistorical.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-19
--- Version:     1.1
+-- Modified:    2026-09-17
+-- Version:     1.2
 -- Description: Inserts a fully-past (both times known) CLOSED downtime event from
 --              the Downtime Manager popup (Increment 1) -- operator forgot to log
 --              it live. Logs against @ScopeLocationId (the resolved line/press).
@@ -27,6 +27,7 @@
 --                       historical entry with the FOLLOWING shift's id (or NULL
 --                       near a boundary), mis-bucketing it in every
 --                       ShiftId-scoped report.
+--   2026-09-17 - 1.2 - Rejects a location that is not OEE-enabled.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Oee.DowntimeEvent_RecordHistorical
     @ScopeLocationId      BIGINT,
@@ -70,6 +71,17 @@ BEGIN
             SET @Message = N'Location not found or deprecated.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'DowntimeEvent', @EntityId=NULL,
                 @LogEventTypeCode=N'DowntimeRecordedHistorical', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
+        END
+
+        -- ---- the location must be an OEE / downtime unit (spec 2026-09-16 sec 3.6) ----
+        IF NOT EXISTS (SELECT 1 FROM Location.Location
+                       WHERE Id = @ScopeLocationId AND IsOeeEnabled = 1)
+        BEGIN
+            SET @Message = @LocCode + N' is not enabled for downtime.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'DowntimeEvent', @EntityId=NULL,
+                @LogEventTypeCode=N'DowntimeRecordedHistorical', @FailureReason=@Message,
+                @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
         IF @DowntimeReasonCodeId IS NOT NULL

@@ -23,10 +23,10 @@ IF OBJECT_ID(N'tempdb..#DtApx') IS NOT NULL DROP TABLE #DtApx;
 CREATE TABLE #DtApx (Tag NVARCHAR(20) PRIMARY KEY, Val BIGINT);
 GO
 
-DECLARE @CellId BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
-    INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
-    INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
-    WHERE lt.HierarchyLevel = 4 AND l.DeprecatedAt IS NULL ORDER BY l.Id);
+-- An OEE-enabled unit, not merely "the lowest-Id Cell": since the 2026-09-16
+-- flag change only a flagged location accepts downtime.
+DECLARE @CellId BIGINT = (SELECT TOP 1 e.LocationId FROM Oee.ufn_ResolveOeeEquipment() e
+    WHERE e.DefinitionCode = N'DieCastMachine' ORDER BY e.LocationId);
 INSERT INTO #DtApx (Tag, Val) VALUES (N'CELL', @CellId);
 GO
 

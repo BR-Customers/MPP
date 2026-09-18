@@ -22,10 +22,10 @@ DELETE s FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule sc ON sc.Id = s.ShiftSche
 DELETE FROM Oee.ShiftSchedule WHERE Name LIKE N'P8 BND%';
 GO
 
-DECLARE @CellId BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
-    INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
-    INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
-    WHERE lt.HierarchyLevel = 4 AND l.DeprecatedAt IS NULL ORDER BY l.Id);
+-- An OEE-enabled unit, not merely "the lowest-Id Cell": since the 2026-09-16
+-- flag change only a flagged location accepts downtime.
+DECLARE @CellId BIGINT = (SELECT TOP 1 e.LocationId FROM Oee.ufn_ResolveOeeEquipment() e
+    WHERE e.DefinitionCode = N'DieCastMachine' ORDER BY e.LocationId);
 DECLARE @Op BIGINT = (SELECT Id FROM Oee.DowntimeSourceCode WHERE Code = N'Operator');
 
 DECLARE @sched BIGINT, @shift BIGINT;

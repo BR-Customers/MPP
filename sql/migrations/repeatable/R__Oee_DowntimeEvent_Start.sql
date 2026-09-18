@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Oee_DowntimeEvent_Start.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-16
--- Version:     1.0
+-- Modified:    2026-09-17
+-- Version:     1.2
 -- Description: Opens a downtime event at a machine/Cell (Arc 2 Phase 8,
 --              FDS-09-005/010). B3: rejects if an open event already exists for
 --              @LocationId (clean pre-check before the filtered-unique
@@ -11,6 +11,7 @@
 --              Operator or PLC. Audits 'DowntimeStarted' to Audit.OperationLog.
 --              Returns SELECT @Status, @Message, @NewId. No OUTPUT params
 --              (FDS-11-011). RAISERROR (not THROW) in the nested CATCH.
+--              v1.2 (2026-09-17): rejects a location that is not OEE-enabled.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Oee.DowntimeEvent_Start
@@ -61,6 +62,19 @@ BEGIN
         IF @LocCode IS NULL
         BEGIN
             SET @Message = N'Location not found or deprecated.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'DowntimeEvent', @EntityId = NULL,
+                @LogEventTypeCode = N'DowntimeStarted', @FailureReason = @Message,
+                @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ---- the location must be an OEE / downtime unit (spec 2026-09-16 sec 3.6) ----
+        IF NOT EXISTS (SELECT 1 FROM Location.Location
+                       WHERE Id = @LocationId AND IsOeeEnabled = 1)
+        BEGIN
+            SET @Message = @LocCode + N' is not enabled for downtime.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'DowntimeEvent', @EntityId = NULL,
                 @LogEventTypeCode = N'DowntimeStarted', @FailureReason = @Message,
