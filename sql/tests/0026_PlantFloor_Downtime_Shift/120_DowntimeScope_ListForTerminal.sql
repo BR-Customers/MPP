@@ -36,6 +36,7 @@ GO
 
 IF OBJECT_ID(N'tempdb..#ScOut') IS NOT NULL DROP TABLE #ScOut;
 CREATE TABLE #ScOut (
+    Seq             INT           IDENTITY(1,1) NOT NULL,
     ScopeLocationId BIGINT        NULL,
     Code            NVARCHAR(50)  NULL,
     Name            NVARCHAR(200) NULL,
@@ -48,8 +49,8 @@ GO
 -- Test 1: shared area terminal -> one row per ACTIVE flagged press, no default.
 -- =============================================
 DECLARE @DcT BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-DC-T1');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @DcT;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @DcT;
 
 DECLARE @c1 NVARCHAR(200) = (SELECT STUFF((SELECT N',' + Code FROM #ScOut ORDER BY Code
     FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N''));
@@ -66,8 +67,8 @@ GO
 -- =============================================
 DECLARE @DcT BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-DC-T1');
 DECLARE @M2  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-DC-M2');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @DcT, @ActiveCellLocationId = @M2;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @DcT, @ActiveCellLocationId = @M2;
 DECLARE @d2 NVARCHAR(50) = (SELECT Code FROM #ScOut WHERE IsDefault = 1);
 EXEC test.Assert_IsEqual @TestName = N'[DtScope] the active press is preselected',
      @Expected = N'ZZ-OEE-DC-M2', @Actual = @d2;
@@ -78,8 +79,8 @@ GO
 -- =============================================
 DECLARE @DcT BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-DC-T1');
 DECLARE @A   BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-L-A');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @DcT, @ActiveCellLocationId = @A;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @DcT, @ActiveCellLocationId = @A;
 DECLARE @d3 INT = (SELECT COUNT(*) FROM #ScOut WHERE IsDefault = 1);
 EXEC test.Assert_RowCount @TestName = N'[DtScope] an active cell outside the list gives no default',
      @ExpectedCount = 0, @ActualCount = @d3;
@@ -89,8 +90,8 @@ GO
 -- Test 4: dedicated machine terminal -> that machine, preselected.
 -- =============================================
 DECLARE @M1T BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-DC-M1-T1');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @M1T;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @M1T;
 DECLARE @c4 NVARCHAR(200) = (SELECT STUFF((SELECT N',' + Code FROM #ScOut ORDER BY Code
     FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N''));
 DECLARE @d4 NVARCHAR(10) = (SELECT CAST(IsDefault AS NVARCHAR(10)) FROM #ScOut);
@@ -105,8 +106,8 @@ GO
 -- =============================================
 DECLARE @PT BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-P-T1');
 DECLARE @P  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-P');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @PT, @ActiveCellLocationId = @P;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @PT, @ActiveCellLocationId = @P;
 DECLARE @c5 NVARCHAR(200) = (SELECT STUFF((SELECT N',' + Code FROM #ScOut ORDER BY Code
     FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N''));
 DECLARE @d5 NVARCHAR(10) = (SELECT CAST(IsDefault AS NVARCHAR(10)) FROM #ScOut);
@@ -122,12 +123,13 @@ GO
 -- =============================================
 DECLARE @LT BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-L-T1');
 DECLARE @L  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-L');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @LT, @ActiveCellLocationId = @L;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @LT, @ActiveCellLocationId = @L;
 
--- Tree order is assertable because the proc returns rows in it; capture with a
--- row number over the natural order by inserting into an ordered temp table.
-DECLARE @c6 NVARCHAR(400) = (SELECT STUFF((SELECT N',' + Code FROM #ScOut
+-- Tree order is assertable because the proc returns rows in it; #ScOut's Seq
+-- IDENTITY column captures INSERT-EXEC capture order (physical read order is
+-- not guaranteed), so ORDER BY Seq below reads back what the proc returned.
+DECLARE @c6 NVARCHAR(400) = (SELECT STUFF((SELECT N',' + Code FROM #ScOut ORDER BY Seq
     FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N''));
 EXEC test.Assert_IsEqual @TestName = N'[DtScope] split line lists the line then its stations, in tree order',
      @Expected = N'ZZ-OEE-L,ZZ-OEE-L-MI,ZZ-OEE-L-A,ZZ-OEE-L-B', @Actual = @c6;
@@ -142,8 +144,8 @@ GO
 -- =============================================
 DECLARE @LT BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-L-T1');
 DECLARE @A  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-L-A');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @LT, @ActiveCellLocationId = @A;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @LT, @ActiveCellLocationId = @A;
 DECLARE @d7 NVARCHAR(50) = (SELECT Code FROM #ScOut WHERE IsDefault = 1);
 EXEC test.Assert_IsEqual @TestName = N'[DtScope] an active station preselects itself',
      @Expected = N'ZZ-OEE-L-A', @Actual = @d7;
@@ -154,9 +156,9 @@ GO
 -- =============================================
 UPDATE Location.Location SET IsOeeEnabled = 0 WHERE Code = N'ZZ-OEE-L-B';
 DECLARE @LT BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-L-T1');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @LT;
-DECLARE @c8 NVARCHAR(400) = (SELECT STUFF((SELECT N',' + Code FROM #ScOut
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @LT;
+DECLARE @c8 NVARCHAR(400) = (SELECT STUFF((SELECT N',' + Code FROM #ScOut ORDER BY Seq
     FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N''));
 EXEC test.Assert_IsEqual @TestName = N'[DtScope] an un-flagged station leaves the dropdown',
      @Expected = N'ZZ-OEE-L,ZZ-OEE-L-MI,ZZ-OEE-L-A', @Actual = @c8;
@@ -168,27 +170,27 @@ GO
 -- and NULL all return an empty set.
 -- =============================================
 DECLARE @ET BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-E-T1');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @ET;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @ET;
 DECLARE @c9 INT = (SELECT COUNT(*) FROM #ScOut);
 EXEC test.Assert_RowCount @TestName = N'[DtScope] an area with no flagged equipment returns nothing',
      @ExpectedCount = 0, @ActualCount = @c9;
 
 DECLARE @Fb BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'FALLBACK-TERMINAL');
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @Fb;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = @Fb;
 DECLARE @c9b INT = (SELECT COUNT(*) FROM #ScOut);
 EXEC test.Assert_RowCount @TestName = N'[DtScope] the fallback terminal (Site zone) returns nothing',
      @ExpectedCount = 0, @ActualCount = @c9b;
 
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = -1;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = -1;
 DECLARE @c9c INT = (SELECT COUNT(*) FROM #ScOut);
 EXEC test.Assert_RowCount @TestName = N'[DtScope] an unknown terminal returns nothing',
      @ExpectedCount = 0, @ActualCount = @c9c;
 
-DELETE FROM #ScOut;
-INSERT INTO #ScOut EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = NULL;
+TRUNCATE TABLE #ScOut;
+INSERT INTO #ScOut (ScopeLocationId, Code, Name, Kind, IsDefault) EXEC Oee.DowntimeScope_ListForTerminal @TerminalLocationId = NULL;
 DECLARE @c9d INT = (SELECT COUNT(*) FROM #ScOut);
 EXEC test.Assert_RowCount @TestName = N'[DtScope] NULL terminal returns nothing',
      @ExpectedCount = 0, @ActualCount = @c9d;
