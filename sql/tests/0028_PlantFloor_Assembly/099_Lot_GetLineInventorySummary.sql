@@ -66,10 +66,12 @@ INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) VALUES
 
 DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR');
 DECLARE @Closed BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
+DECLARE @Hold BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Hold');
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES
     (N'T099-PIN1',  @Pi, 2, 1,       40, 40, @Line, 1, @Now),
     (N'T099-PIN2',  @Pi, 2, 1,       20, 20, @Line, 1, @Now),
     (N'T099-PINX',  @Pi, 2, @Closed, 99, 99, @Line, 1, @Now),   -- closed: excluded
+    (N'T099-PINH',  @Pi, 2, @Hold, 1000, 1000, @Line, 1, @Now), -- held: excluded
     (N'T099-CAST1', @Ca, 1, 1,        5,  5, @Line, 1, @Now),
     (N'T099-BOLT1', @Bo, 2, 1,        7,  7, @Line, 1, @Now),
     (N'T099-FG1',   @Fg, 1, 1,       30, 30, @Line, 1, @Now);   -- FG: never listed
@@ -93,7 +95,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Idle] 3 on-hand parts (PIN, CAST, BOLT)'
 DECLARE @Low NVARCHAR(10) = (SELECT CAST(SUM(CAST(IsLow AS INT)) AS NVARCHAR(10)) FROM @R);
 EXEC test.Assert_IsEqual @TestName = N'[Idle] nothing low', @Expected = N'0', @Actual = @Low;
 DECLARE @PinAvail NVARCHAR(10) = (SELECT CAST(Available AS NVARCHAR(10)) FROM @R WHERE Description = N'T099 dowel pin');
-EXEC test.Assert_IsEqual @TestName = N'[Idle] PIN available 60 (closed LOT excluded)', @Expected = N'60', @Actual = @PinAvail;
+EXEC test.Assert_IsEqual @TestName = N'[Idle] PIN available 60 (closed and held LOTs excluded)', @Expected = N'60', @Actual = @PinAvail;
 DECLARE @FgRows NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @R WHERE Description = N'T099 finished good');
 EXEC test.Assert_IsEqual @TestName = N'[Idle] FG never listed', @Expected = N'0', @Actual = @FgRows;
 -- Defensive: MA1-COMPBR is a shared fixture line -- other suites in this

@@ -2,15 +2,23 @@
 -- Repeatable:  R__Lots_Lot_GetLineInventorySummary.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-17
--- Version:     1.0
+-- Version:     1.1
+-- Change (1.1, 2026-09-17, Jacques's decision): held LOTs must not count as
+--              available. The @OnHand pool now requires
+--              Lots.LotStatusCode.BlocksProduction = 0 (in addition to
+--              excluding Closed/Open) rather than only excluding Closed --
+--              so a LOT on Hold (or Scrap, or any future blocking status)
+--              no longer inflates a part's Available quantity.
 -- Description: The M&A Line Inventory sidebar's single read (spec
 --              2026-09-17-line-inventory-sidebar-design.md). One row per part.
 --
 --              LINE. @LocationId (the terminal's session cell) resolves up to its
 --              WorkCenter ancestor -- the same resolution as
---              Location.Terminal_ListByLineOf. The pool is every open LOT
---              (status <> Closed, InventoryAvailable > 0) at that WorkCenter or
---              any descendant (line-resident flow).
+--              Location.Terminal_ListByLineOf. The pool is every non-blocking,
+--              non-Open, non-Closed LOT (Lots.LotStatusCode.BlocksProduction = 0,
+--              code not in Closed/Open, InventoryAvailable > 0) at that WorkCenter
+--              or any descendant (line-resident flow) -- a LOT on Hold or Scrap
+--              is not available.
 --
 --              RUNNING FINISHED GOODS. Every FinishedGood with an OPEN
 --              Lots.Container anywhere under the line, plus @FinishedGoodItemId
@@ -66,7 +74,6 @@ BEGIN
 
     DECLARE @FgTypeId          BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood');
     DECLARE @PassThroughTypeId BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'PassThrough');
-    DECLARE @ClosedStatusId    BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
     DECLARE @OpenContainerId   BIGINT = (SELECT Id FROM Lots.ContainerStatusCode WHERE Code = N'Open');
 
     -- 1. the line and everything under it
@@ -132,8 +139,10 @@ BEGIN
     INSERT INTO @OnHand (ItemId, Available)
     SELECT l.ItemId, SUM(l.InventoryAvailable)
     FROM Lots.Lot l
+    INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
     WHERE l.CurrentLocationId IN (SELECT Id FROM @LineLocs)
-      AND l.LotStatusId <> @ClosedStatusId
+      AND sc.BlocksProduction = 0
+      AND sc.Code NOT IN (N'Closed', N'Open')
       AND l.InventoryAvailable > 0
     GROUP BY l.ItemId;
 

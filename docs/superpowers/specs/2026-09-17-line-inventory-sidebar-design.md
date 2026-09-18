@@ -34,7 +34,7 @@ of all five M&A screens. It lists the line's parts, one compact row each:
 | Row element | Rule |
 |---|---|
 | **Description** | `Parts.Item.Description`, never the part number. Wraps to two lines, then clips. |
-| **Available** | Sum of `Lot.InventoryAvailable` over the line's open LOTs of that part. |
+| **Available** | Sum of `Lot.InventoryAvailable` over the line's open LOTs of that part, excluding a LOT whose status blocks production (Hold, Scrap) -- a held LOT is not available (Jacques, 2026-09-17). |
 | **Button** | Only on **PassThrough** parts (the bought parts -- see § 3.1). |
 | **Low** | Whole row tinted light orange with a bright orange border. No badge, no shortfall number. |
 
@@ -103,8 +103,10 @@ the trays left in the current container) is retired -- Jacques, 2026-09-17.
 
 The terminal's session cell (`session.custom.cell.locationId`) resolves up to its **WorkCenter**
 ancestor, which is the same resolution `Location.Terminal_ListByLineOf` uses. The inventory pool
-is the open LOTs at that WorkCenter and every descendant, consistent with the line-resident flow.
-A check-in LOT is created at the same location the Inventory popup's `receiveLoose` uses today.
+is the non-blocking (not Hold/Scrap), non-Closed, non-Open LOTs at that WorkCenter and every
+descendant, consistent with the line-resident flow -- a held or scrapped LOT does not count as
+available (Jacques, 2026-09-17). A check-in LOT is created at the same location the Inventory
+popup's `receiveLoose` uses today.
 
 ## 4. Data
 
