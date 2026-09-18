@@ -91,3 +91,21 @@ sql/scratch/aim_*.txt
 
 # Ignition project export zips built by build-project-exports.ps1 (rebuildable artifacts)
 dist/
+
+# Local-only working files, kept out of git (2026-09-18): prod project exports
+# (rollback copies / drift checks -- rebuild with a fresh export), prod-data query
+# outputs, vendor reference downloads, and a local tag export.
+/defectcode_risk_prod.txt
+/item_type_check.txt
+/notes/*_line-run-audit-*.txt
+/reference/Core_*.zip
+/reference/MPP_*.zip
+/reference/IND570.zip
+/reference/IND570/
+/reference/IND570_Shared_Data_Reference.pdf
+/reference/IND570_Shared_Data_Reference.txt
+/sql/scratch/_prod_*.txt
+/sql/scratch/2026-09-11_dc_lot_inventory_check.sql
+/sql/scratch/2026-09-11_reopen_prematurely_released_dc_lots.sql
+/sql/scratch/2026-09-16_legacy_*.sql
+/ignition/tags/instances/PlcDevices_tags.json
