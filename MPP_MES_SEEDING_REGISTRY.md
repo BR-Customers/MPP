@@ -1,8 +1,8 @@
 # MPP MES — Seeding Registry
 
 **Document:** FDS-MPP-MES-SEED-001
-**Version:** 1.0 — Initial draft
-**Date:** 2026-04-27
+**Version:** 1.5
+**Date:** 2026-09-12
 **Prepared By:** Blue Ridge Automation
 **Prepared For:** Madison Precision Products, Inc. (Madison, IN)
 
@@ -20,6 +20,7 @@ This registry tracks every seed-data item the MES requires from sources **extern
 | 1.1 | 2026-08-18 | Blue Ridge Automation | Adds **S-12 — Macola part-number list** (workbook `MACOLA NUMBERS FOR INVENTORYupdate 6-15-26.xlsx`, received 2026-06-15, partially loaded to Dev). Records the governing rule that a Macola number comes only from a column headed `MACOLA #`, the finished-good gap it exposes, and the reconciliation outcome. Cross-references added to S-05 (Parts master) and S-06 (BOM export), both of which this workbook partially satisfies. |
 | 1.2 | 2026-08-20 | Blue Ridge Automation | Adds **S-13 — Label template ZPL bodies**. Dev carries MPP's real LOT-ticket layouts, loaded out-of-band; no migration or seed reproduces them, so a fresh deploy ships migration 0021's placeholder. Records the CRT `{CrtMark}` interaction (D8) and why a blanket `{LotName}` replace is unsafe — the Master and Void templates carry a `{LotName}` inside a `^BC` barcode field. |
 | 1.3 | 2026-08-20 | Blue Ridge Automation | Narrows **S-13** to what was actually captured. A byte-exact comparison of the four Dev bodies against the migrations showed only the **Primary** layout is unreproduced; Container is a verbatim copy of migration `0054`, and Master/Void are migration `0021`'s placeholder plus `0065`'s `{CrtMark}` patch. Seed `032` is scoped to Primary so it cannot outrank those migrations; Status, Blocking, and "What is owed" updated to match. |
+| 1.5 | 2026-09-12 | Blue Ridge Automation | Adds **S-14 -- Die (tool) master list**. MPP delivered `Copy of Asset #'s for Dies.xlsx` (asset tags, 170 die molds + 28 trim dies) and a saved `Die Shots Report` from the legacy MES (343 part x die rows). Fused into `reference/seed_data/die_roster.csv` (253 physical dies) + `die_cavities.csv` (371 cavity rows). Records the gap this closes -- S-07/S-08 covered die ranks and the compatibility matrix, but nothing covered `Tools.Tool` itself. |
 | 1.4 | 2026-08-20 | Blue Ridge Automation | Rewrites the CRT interaction in **S-13**. The `{CrtMark}` inline token is withdrawn: a CRT LOT now prints its normal ticket unchanged plus a SEPARATE `CrtBanner` label (migration `0066`). MPP's label layouts are no longer edited by the CRT feature at all, so the `{CrtMark}` placement decision is no longer owed and the barcode hazard is no longer a CRT concern — the hazard note is retained because it still governs any future edit to those templates. |
 
 ---
@@ -52,8 +53,9 @@ This registry tracks every seed-data item the MES requires from sources **extern
 | S-11 | AIM pool config tuning | `Lots.AimPoolConfig` (defaults already seeded 50/30/20/10) | 🟡 Received (defaults) | MPP for post-deploy tuning | No |
 | S-12 | Macola part-number list | `Parts.Item.MacolaPartNumber` (+ partial `Parts.BomLine`) | 🟡 Received (partial) | MPP IT / Materials — FG Macola numbers still missing | No |
 | S-13 | Label template ZPL bodies | `Lots.LabelTemplate.ZplBody` | 🟡 Received (partial — Primary seeded; Master/Void still placeholders) | MPP — to supply the real Master/Void layouts for version control | No |
+| S-14 | Die (tool) master list | `Tools.Tool` + `Tools.ToolCavity` | 🟡 Received (partial) | MPP Tooling -- cavity counts for single-part dies, ownership of untagged families, restated descriptions | No |
 
-**Counts:** 6 ⬜ Owed · 6 🟡 Received · 0 ✅ Loaded (Dev) · 0 🔵 Verified (Cutover)
+**Counts:** 6 ⬜ Owed · 7 🟡 Received · 0 ✅ Loaded (Dev) · 0 🔵 Verified (Cutover)
 
 **True blockers:** 1 (S-08 die rank compatibility — and even this has a supervisor-override workaround until populated).
 
@@ -282,6 +284,71 @@ This registry tracks every seed-data item the MES requires from sources **extern
 **Resolved 2026-08-20 (Primary only).** Hunter confirmed the Dev Primary body is the production label, so it is captured in `sql/seeds/032_seed_label_templates_mpp.sql` and a fresh `Deploy-Prod.ps1` reproduces it. The seed is deliberately scoped to Primary: a byte-exact comparison showed the Dev Container body is a verbatim copy of `0054`'s ZPL and the Dev Master/Void bodies are `0021`'s placeholder, so seeding them would only put an unconditional `UPDATE` ahead of the migrations that own them and silently revert any future revision.
 
 **The seeded body is MPP's layout UNMODIFIED.** Seeds run after migrations, so an earlier revision of this seed had to carry the `{CrtMark}` token itself or migration `0065`'s patch would be undone on every deploy. With the token withdrawn (migration `0066`), the seed carries the original Lot line `^A0,64,48^FO100,100^FD{LotName}^FS` and Blue Ridge holds no edit of its own inside MPP's layout — which is the outcome worth preserving here: when MPP hands over a revised Primary, it can be dropped in verbatim. Status stays 🟡 until MPP confirms the printed result.
+
+---
+
+### S-14 -- Die (Tool) Master List
+
+**Status:** 🟡 Received (partial)
+**Source:** Two artefacts delivered 2026-09-12 -- `reference/Copy of Asset #'s for Dies.xlsx`
+(MPP's fixed-asset register for tooling: 170 die molds `DM0001`-`DM0170`, 28 trim dies
+`TD0001`-`TD0028`) and `reference/Aug 17_ 2026 Die Shots Report.html` (a saved page from the
+legacy MES, 343 part x die rows, as-of 8/18/2026).
+**Target:** `Tools.Tool` (`Code`, `Name`, `ShotCount`, `ShotLimit`) + `Tools.ToolCavity`
+(`CavityCode`, `ItemId`)
+**Owner:** MPP Tooling
+**Blocking:** No. `Tools.Tool` CRUD, the shot counter (migration `0050`) and per-cavity
+lifecycle (`0072` / `0076`) are all built; this is the content that goes in them.
+
+**Why this is here.** S-07 and S-08 cover die *ranks* and the rank *compatibility matrix*.
+Nothing covered the die master itself. `MPP_MES_Dev` holds 17 `Tools.Tool` rows, almost all
+test fixtures -- the die master is effectively unseeded.
+
+**Delivered artefacts (in repo):**
+
+| File | Rows | Contents |
+|---|---|---|
+| `reference/seed_data/die_roster.csv` | 253 | One row per physical die -- asset tag, status, generation, cavity count, shot counts, vendor, acquisition date |
+| `reference/seed_data/die_cavities.csv` | 371 | One row per (die, cavity) with the Macola part number -- shaped for `Tools.ToolCavity` |
+| `reference/seed_data/die_shots_report.csv` | 343 | Flat extract of the report as-published (pre-existing) |
+| `reference/seed_data/parsers/build_die_roster.py` | -- | Regenerates the first two from the two source files |
+
+Full analysis: `notes/2026-09-12_die-asset-register-and-shot-report.md`.
+
+**Coverage.** 138 of 198 asset rows matched to a shot record; 60 unmatched (30 of those are
+trim dies, which the die-cast shots report does not cover); 55 dies appear in the report with
+**no MPP asset number at all**.
+
+**What is owed:**
+
+1. **Ownership of the untagged families** -- 5A2, 5K8, 5LA, 5MH, RXO, RNA, RDJ, RNO, R1A, R5A,
+   R70, SZAX, PGE, P8A run at MPP with no asset tag, several of them *Current* dies with 200k+
+   shots. Are they customer-owned / consigned (so never capitalised), or simply older than the
+   register's 2019 start? Determines whether `Tools.Tool.Code` can be the asset tag for every
+   die or needs a synthetic code for consigned tooling.
+2. **True cavity count for single-part dies.** The report only reveals *distinct part numbers
+   cast per shot*, so a die with four identical cavities making one part number reads as 1
+   cavity. 131 roster rows are in that class. MPP has to supply the real count.
+3. **Restated descriptions for ~44 register rows.** The register's `Description` degrades in
+   later years -- `DM0108` is `2,3,4 M`, `DM0132` is `64A G`. Blue Ridge hand-restated them
+   from their neighbours (`DESC_FIX` in the parser); MPP should confirm or correct.
+4. **`Shot Life Planned = 0` on 154 report rows** -- never configured, or deliberately
+   unlimited? Drives whether `Tools.Tool.ShotLimit` is `NULL` or a real number.
+
+**Also resolved by a direct pull.** The report is served from
+`http://backupsrv.mppnet.com/mpp/DieCast/DieShotsReport.aspx?date=<d>&status=<s>` -- it is
+parameterised, so the underlying table can be read straight off EXCSRV05 (`MES` / `EMMD`)
+rather than scraped, which would also give the per-die rows without the part x die duplication.
+
+**Two things the legacy data does NOT map cleanly.**
+
+- Legacy status `C`/`B`/`W`/`A` (Current / Backup / Waiting for Approval / Approved) is a
+  *mount-eligibility* axis, orthogonal to `Tools.ToolStatusCode`
+  (`Active` / `UnderRepair` / `Scrapped` / `Retired`, which is *condition*). Needs an OI:
+  extend the code table, or carry it as a `ToolAttribute`.
+- Legacy shot counters are per **(part, die)** row, not per die, and have drifted a few
+  hundred counts apart within a family die. Our `Tools.Tool.ShotCount` is per die and is the
+  better model; take the cluster max on load and accept the drift as unrecoverable.
 
 ---
 

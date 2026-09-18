@@ -1,0 +1,499 @@
+<title>Reading MPP's Die Records</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#E8ECEE; --surface:#FCFDFD; --surface-2:#F1F4F5;
+  --ink:#131A1E; --ink-2:#56656C; --ink-3:#7D8B91;
+  --rule:#C3CDD2; --rule-soft:#DCE3E6;
+  --accent:#9C4718; --accent-soft:#F2E3D8;
+  --s-current:#166348; --s-current-bg:#DCEDE5;
+  --s-backup:#28547E;  --s-backup-bg:#DDE7F1;
+  --s-wait:#7D5A12;    --s-wait-bg:#F0E8D3;
+  --s-none:#5F6D73;    --s-none-bg:#E2E8EA;
+  --over:#9C1F1F;      --over-bg:#F4DDDD;
+  --bar:#5C7078; --bar-track:#D3DBDF;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#10161A; --surface:#192126; --surface-2:#1F282E;
+  --ink:#E4EAED; --ink-2:#96A5AC; --ink-3:#71818A;
+  --rule:#2E3A41; --rule-soft:#242E34;
+  --accent:#E08A55; --accent-soft:#36241A;
+  --s-current:#6FCBA4; --s-current-bg:#17332A;
+  --s-backup:#8CB8E4;  --s-backup-bg:#182734;
+  --s-wait:#D8B463;    --s-wait-bg:#312814;
+  --s-none:#93A2A9;    --s-none-bg:#222C32;
+  --over:#E88585;      --over-bg:#35191A;
+  --bar:#7C929B; --bar-track:#2A353B;
+}}
+:root[data-theme="dark"]{
+  --ground:#10161A; --surface:#192126; --surface-2:#1F282E;
+  --ink:#E4EAED; --ink-2:#96A5AC; --ink-3:#71818A;
+  --rule:#2E3A41; --rule-soft:#242E34;
+  --accent:#E08A55; --accent-soft:#36241A;
+  --s-current:#6FCBA4; --s-current-bg:#17332A;
+  --s-backup:#8CB8E4;  --s-backup-bg:#182734;
+  --s-wait:#D8B463;    --s-wait-bg:#312814;
+  --s-none:#93A2A9;    --s-none-bg:#222C32;
+  --over:#E88585;      --over-bg:#35191A;
+  --bar:#7C929B; --bar-track:#2A353B;
+}
+
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);
+  font:400 16px/1.65 "IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.page{max-width:900px;margin:0 auto;padding:0 20px 90px}
+p{margin:0 0 1em;max-width:68ch}
+ul{margin:0 0 1em;padding-left:1.15em;max-width:68ch}
+li{margin-bottom:.4em}
+strong{font-weight:600}
+code,.mono{font-family:"IBM Plex Mono",monospace;font-size:.92em;
+  font-variant-numeric:tabular-nums}
+
+/* masthead */
+header.top{border-top:3px solid var(--accent);background:var(--surface);
+  border-left:1px solid var(--rule);border-right:1px solid var(--rule);
+  border-bottom:1px solid var(--rule);padding:30px 32px 26px;margin-bottom:36px}
+header.top h1{margin:0;font:700 46px/0.96 "Barlow Condensed",Impact,sans-serif;
+  letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+header.top .deck{margin:12px 0 0;font-size:17px;color:var(--ink-2);max-width:60ch}
+header.top .src{margin-top:20px;padding-top:15px;border-top:1px solid var(--rule-soft);
+  display:flex;flex-wrap:wrap;gap:26px}
+header.top .src div{font:400 12.5px/1.5 "IBM Plex Mono",monospace;color:var(--ink-2)}
+header.top .src span{display:block;font:600 10px/1.5 "Barlow Condensed",sans-serif;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+
+/* sections */
+section{margin-bottom:44px}
+.eyebrow{font:600 10.5px/1.5 "Barlow Condensed",sans-serif;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+h2{margin:0 0 14px;font:600 30px/1.12 "Barlow Condensed",sans-serif;
+  letter-spacing:.01em;text-transform:uppercase;text-wrap:balance;
+  padding-bottom:9px;border-bottom:1px solid var(--rule)}
+h3{margin:26px 0 9px;font:600 15px/1.35 "IBM Plex Sans",sans-serif}
+
+/* key finding */
+.find{background:var(--surface);border:1px solid var(--rule);
+  border-left:4px solid var(--accent);padding:17px 20px;margin:22px 0}
+.find .lbl{font:600 10.5px/1.5 "Barlow Condensed",sans-serif;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+.find p:last-child{margin-bottom:0}
+
+.formula{background:var(--surface);border:1px solid var(--rule);padding:15px 20px;
+  margin:18px 0;font:500 15px/1.6 "IBM Plex Mono",monospace;overflow-x:auto}
+.formula em{color:var(--accent);font-style:normal;font-weight:600}
+
+/* tables */
+.tw{overflow-x:auto;margin:20px 0;border:1px solid var(--rule);background:var(--surface)}
+table{border-collapse:collapse;width:100%}
+caption{caption-side:bottom;text-align:left;padding:10px 14px 0;font-size:13px;
+  color:var(--ink-3);line-height:1.55}
+th{font:600 10.5px/1.4 "Barlow Condensed",sans-serif;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-2);text-align:left;padding:9px 14px;
+  background:var(--surface-2);border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:8px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top;
+  font-size:14.5px}
+tr:last-child td{border-bottom:none}
+td.n,th.n{text-align:right;font-family:"IBM Plex Mono",monospace;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.pill{display:inline-block;padding:1px 7px;border-radius:2px;white-space:nowrap;
+  font:600 10px/1.8 "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.p-c{background:var(--s-current-bg);color:var(--s-current)}
+.p-b{background:var(--s-backup-bg);color:var(--s-backup)}
+.p-w{background:var(--s-wait-bg);color:var(--s-wait)}
+.p-n{background:var(--s-none-bg);color:var(--s-none)}
+.p-o{background:var(--over-bg);color:var(--over)}
+
+/* generation ladder */
+.ladder tr.g-C{background:var(--s-current-bg)}
+.ladder td.gen{font:700 19px/1 "Barlow Condensed",sans-serif;width:1.6em;
+  text-align:center;color:var(--ink-2)}
+.ladder tr.g-C td.gen{color:var(--s-current)}
+.bar{height:6px;background:var(--bar-track);position:relative;margin:4px 0 3px;
+  max-width:180px}
+.bar i{display:block;height:100%;background:var(--bar)}
+.bar i.hot{background:var(--over)}
+.bar u{position:absolute;top:-2px;bottom:-2px;left:100%;width:1px;
+  background:var(--ink-3);opacity:.7}
+.cap{font:400 11.5px/1.4 "IBM Plex Mono",monospace;color:var(--ink-2);
+  font-variant-numeric:tabular-nums}
+.cap.warn{color:var(--s-wait);font-weight:500}
+.dash{color:var(--ink-3)}
+
+/* collapse diagram */
+.collapse{display:grid;grid-template-columns:1fr auto 1fr;gap:0;margin:20px 0;
+  border:1px solid var(--rule);background:var(--surface);align-items:stretch}
+.collapse .side{padding:16px 18px}
+.collapse .side.b{border-left:1px solid var(--rule)}
+.collapse .arrow{display:flex;align-items:center;justify-content:center;width:44px;
+  background:var(--surface-2);border-left:1px solid var(--rule);
+  border-right:1px solid var(--rule);color:var(--accent);font-size:19px}
+.collapse h4{margin:0 0 9px;font:600 10.5px/1.5 "Barlow Condensed",sans-serif;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+.collapse ul{list-style:none;padding:0;margin:0;font:400 12.8px/1.9 "IBM Plex Mono",monospace}
+.collapse .grp{margin-bottom:11px}
+.collapse .grp:last-child{margin-bottom:0}
+.collapse .grp b{display:block;font:600 13px/1.6 "IBM Plex Mono",monospace;color:var(--accent)}
+
+/* breakdown bar */
+.bd{display:flex;height:32px;margin:16px 0 8px;border:1px solid var(--rule);
+  overflow:hidden;background:var(--surface)}
+.bd span{display:flex;align-items:center;justify-content:center;
+  font:600 11px/1 "Barlow Condensed",sans-serif;letter-spacing:.09em;
+  text-transform:uppercase;color:#fff;white-space:nowrap;overflow:hidden}
+.bd .a{background:#8A9298;flex:84 1 0}
+.bd .b{background:var(--over);flex:46 1 0}
+.bdkey{display:flex;flex-wrap:wrap;gap:18px;font-size:13.5px;color:var(--ink-2);
+  margin-bottom:6px}
+.bdkey i{display:inline-block;width:11px;height:11px;margin-right:6px;
+  vertical-align:-1px}
+
+.qs{counter-reset:q;list-style:none;padding:0;max-width:68ch}
+.qs li{counter-increment:q;position:relative;padding-left:34px;margin-bottom:13px}
+.qs li::before{content:counter(q);position:absolute;left:0;top:1px;
+  font:600 12px/1.55 "IBM Plex Mono",monospace;color:var(--accent);
+  border:1px solid var(--rule);width:22px;height:22px;text-align:center}
+
+footer{border-top:1px solid var(--rule);padding-top:18px;font-size:13.5px;
+  color:var(--ink-3);line-height:1.75;max-width:68ch}
+footer a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:680px){
+  header.top h1{font-size:34px}
+  header.top{padding:22px 20px}
+  .collapse{grid-template-columns:1fr}
+  .collapse .side.b{border-left:none;border-top:1px solid var(--rule)}
+  .collapse .arrow{width:auto;height:34px;border:none;
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    transform:rotate(90deg) scale(1);}
+}
+</style>
+
+<div class="page">
+
+<header class="top">
+  <h1>Reading MPP&rsquo;s Die Records</h1>
+  <p class="deck">What the tooling asset register and the legacy Die Shots Report each
+  contain, how their rows are actually structured, and what the C&nbsp;/&nbsp;B&nbsp;/&nbsp;W&nbsp;/&nbsp;A
+  column really means.</p>
+  <div class="src">
+    <div><span>Asset register</span>Copy of Asset #'s for Dies.xlsx</div>
+    <div><span>Shots report</span>Aug 17_ 2026 Die Shots Report.html</div>
+    <div><span>Report as of</span>18 Aug 2026</div>
+  </div>
+</header>
+
+<section>
+  <div class="eyebrow">Copy of Asset #&rsquo;s for Dies.xlsx</div>
+  <h2>The asset register</h2>
+  <p>MPP&rsquo;s fixed-asset register for tooling. Two sheets, four columns each &mdash;
+  <code>Tag&nbsp;#</code>, <code>Description</code>, <code>VENDOR</code>, <code>DATE</code>.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Sheet</th><th class="n">Tags allocated</th><th class="n">Populated</th><th>Range</th></tr></thead>
+    <tbody>
+      <tr><td>Die Mold</td><td class="n">210</td><td class="n">170</td><td class="mono">DM0001&ndash;DM0210</td></tr>
+      <tr><td>Trim Die</td><td class="n">63</td><td class="n">28</td><td class="mono">TD0001&ndash;TD0063</td></tr>
+    </tbody>
+    <caption>The trailing empty rows are pre-allocated tag numbers reserved for future
+    purchases, not missing data.</caption>
+  </table></div>
+
+  <p><code>DATE</code> is the acquisition date, not a service date. The series opens
+  2019-01-28 and runs to 2026-08-20 at a steady 20&ndash;28 dies a year.</p>
+
+  <p>The <code>Description</code> is an implicit three-part key:</p>
+  <div class="formula">&nbsp;&nbsp;59B&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;C/H #2,3,4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;die "K"<br>
+  <em>&lt;family&gt;</em>&nbsp;&nbsp;&nbsp;<em>&lt;component&gt;</em>&nbsp;&nbsp;&nbsp;<em>&lt;generation&gt;</em></div>
+
+  <p>The <strong>generation letter</strong> carries the weight. Dies are replaced
+  alphabetically, so <code>59B/5PA Fuel Pump</code> walks L&nbsp;&rarr;&nbsp;M&nbsp;&rarr;&nbsp;N
+  &hellip; &rarr;&nbsp;W across <code>DM0001</code>&hellip;<code>DM0092</code>. It is the only
+  thing separating one physical die from its predecessor.</p>
+
+  <h3>Where the register is soft</h3>
+  <ul>
+    <li><strong>Vendors are free text</strong> &mdash; 20 spellings for 8 real vendors
+      (<code>Accu-Die</code> / <code>Accudie</code> / <code>Accu Die</code> /
+      <code>Accu- die</code> / <code>Accudie-Die</code>).</li>
+    <li><strong>Two trim dies sit on the Die Mold sheet</strong> &mdash;
+      <code>DM0087</code> and <code>DM0088</code>.</li>
+    <li><strong>Descriptions decay over time.</strong> Early rows are complete
+      (<code>59B C/H IN/EX 1,5 die G</code>); later ones drop the component, the family, or
+      both. <code>DM0108</code> reads <code>2,3,4 M</code>. <code>DM0132</code> reads
+      <code>64A G</code>. Around 44 rows need restating before the register can stand as a
+      system of record.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="eyebrow">Aug 17_ 2026 Die Shots Report.html</div>
+  <h2>The shots report</h2>
+  <p>A saved page from the legacy MES. Its source URL is still in the file:</p>
+  <div class="formula">http://backupsrv.mppnet.com/mpp/DieCast/DieShotsReport.aspx<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;?date=<em>8/18/2026</em>&amp;status=<em>0</em></div>
+  <p>It takes a date and a status, which means the legacy database holds this queryable
+  as-of &mdash; the table can be read straight off <code>EXCSRV05</code> rather than scraped.
+  343 data rows sit under nine customer group headings: Honda Anna (183), Honda (140), then
+  Aisin, American Honda, Astemo, Elesys, EMP, FPI and Honda Alabama.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Code</th><th>Legend</th><th class="n">Rows</th><th class="n">Physical dies</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-c">C</span></td><td>Current</td><td class="n">103</td><td class="n">76</td></tr>
+      <tr><td><span class="pill p-b">B</span></td><td>Backup</td><td class="n">73</td><td class="n">52</td></tr>
+      <tr><td><span class="pill p-w">W</span></td><td>Waiting for Approval</td><td class="n">166</td><td class="n">96</td></tr>
+      <tr><td><span class="pill p-n">A</span></td><td>Approved</td><td class="n">1</td><td class="n">&mdash;</td></tr>
+      <tr><td><span class="pill p-n">O</span></td><td>OutSourced</td><td class="n">0</td><td class="n">0</td></tr>
+    </tbody>
+    <caption>The row count and the die count differ because of the structure in the next
+    section. The single <span class="mono">A</span> row is a data-entry slip, not a state.</caption>
+  </table></div>
+</section>
+
+<section>
+  <div class="eyebrow">Structure</div>
+  <h2>A row is a part, not a die</h2>
+  <p>A die appears <strong>once per part number it casts</strong>. Everything confusing about
+  this report follows from that one fact.</p>
+
+  <p>Take the 59B cam holder, generation K. The report prints die <code>K</code> ten times
+  under ten part numbers &mdash; but there are two shot counts hiding in those ten rows, and
+  therefore two physical dies:</p>
+
+  <div class="collapse">
+    <div class="side">
+      <h4>10 rows in the report</h4>
+      <div class="grp">
+        <b>389,349 shots</b>
+        <ul><li>187-090 &nbsp;In Cam No 1</li><li>191-090 &nbsp;In Cam No 5</li>
+            <li>192-090 &nbsp;In Cam Ex 1</li><li>196-090 &nbsp;In Cam Ex 5</li></ul>
+      </div>
+      <div class="grp">
+        <b>369,908 shots</b>
+        <ul><li>188-090 &nbsp;In Cam No 2</li><li>189-090 &nbsp;In Cam No 3</li>
+            <li>190-090 &nbsp;In Cam No 4</li><li>193-090 &nbsp;In Cam Ex 2</li>
+            <li>194-090 &nbsp;In Cam Ex 3</li><li>195-090 &nbsp;In Cam Ex 4</li></ul>
+      </div>
+    </div>
+    <div class="arrow" aria-hidden="true">&rarr;</div>
+    <div class="side b">
+      <h4>2 physical dies in the register</h4>
+      <div class="grp">
+        <b>DM0059</b>
+        <ul><li>59B C/H #1,5 die &ldquo;K&rdquo;</li><li>4 cavities</li>
+            <li>Accu-Die, 2021-03-08</li></ul>
+      </div>
+      <div class="grp">
+        <b>DM0060</b>
+        <ul><li>59B C/H #2,3,4 die &ldquo;K&rdquo;</li><li>6 cavities</li>
+            <li>Accu-Die, 2021-03-08</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <p>The part numbers in each cluster <em>are</em> that die&rsquo;s cavities &mdash; one shot
+  fills all of them at once. Which is why the counts inside a cluster are near-identical but
+  not equal: part 189 shows 216,434 where its siblings show 216,057. The legacy system
+  increments a counter <strong>per (part, die) row</strong>, not per die, and the rows have
+  drifted a few hundred counts apart.</p>
+
+  <div class="find">
+    <span class="lbl">Consequence</span>
+    <p>The two figures at the bottom of the report count <strong>rows</strong>, not dies.
+    &ldquo;Total Dies in Mass Production: 103&rdquo; is 103 part-die rows &mdash; the real
+    number is <strong>76 dies</strong>. Collapsing the whole report gives 224 physical dies,
+    not 343.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">The status column</div>
+  <h2>What C / B / W / A means</h2>
+
+  <h3>It belongs to the die, not the part</h3>
+  <p>Of 224 physical dies, exactly <strong>one</strong> has its parts disagreeing about status
+  &mdash; part <code>656-090</code>, die B, flagged <code>A</code> while the three other parts
+  cast by that same die read <code>W</code>. That is the entire population of
+  &ldquo;Approved&rdquo; in the report. Across every part-die pair in the file, there are
+  <strong>zero</strong> genuine conflicts. So a die has one status, printed once per part it
+  makes.</p>
+
+  <h3>&ldquo;Current&rdquo; is not exclusive</h3>
+  <p>82 parts have exactly one Current die &mdash; but six do not.
+  <code>152-090</code> and <code>143-090</code> (the 59B/5PA fuel pump) each carry
+  <strong>five</strong> Current dies, <code>155-090</code> four, <code>624-090</code> three.
+  Current means &ldquo;in the production rotation&rdquo;, not &ldquo;the one that is
+  mounted&rdquo;. Sixteen parts have no Current die at all &mdash; PGE, P8A, RDJ, RNA, R70,
+  RNO, the Aisin water pump, and the new Astemo / 6VJ / 6MD programs, which are all still
+  Waiting.</p>
+
+  <h3>The generations form a ladder</h3>
+  <p>Read one family down its generation letters and the whole scheme falls out. Here is the
+  59B cam holder, every generation MPP has owned:</p>
+
+  <div class="tw"><table class="ladder">
+    <thead><tr>
+      <th>Gen</th><th>Acquired</th>
+      <th>#1,5 die &mdash; 4 cavities</th><th>#2,3,4 die &mdash; 6 cavities</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="gen">G</td><td class="mono">2019-01-28</td>
+        <td><span class="mono">DM0004</span> <span class="pill p-n">no record</span></td>
+        <td><span class="mono">DM0005</span> <span class="pill p-n">no record</span></td></tr>
+      <tr><td class="gen">H</td><td class="mono">2019-06-28</td>
+        <td><span class="mono">DM0019</span> <span class="pill p-b">Backup</span>
+          <div class="bar"><i class="hot" style="width:100%"></i><u></u></div>
+          <div class="cap">220,773 of 150,000</div></td>
+        <td><span class="mono">DM0020</span> <span class="pill p-b">Backup</span>
+          <div class="bar"><i class="hot" style="width:100%"></i><u></u></div>
+          <div class="cap">211,824 of 150,000</div></td></tr>
+      <tr><td class="gen">J</td><td class="mono">2020-07-21</td>
+        <td><span class="mono">DM0035</span> <span class="pill p-b">Backup</span>
+          <div class="bar"><i class="hot" style="width:100%"></i><u></u></div>
+          <div class="cap">261,620 of 150,000</div></td>
+        <td><span class="mono">DM0036</span> <span class="pill p-b">Backup</span>
+          <div class="bar"><i class="hot" style="width:100%"></i><u></u></div>
+          <div class="cap">273,207 of 150,000</div></td></tr>
+      <tr class="g-C"><td class="gen">K</td><td class="mono">2021-03-08</td>
+        <td><span class="mono">DM0059</span> <span class="pill p-c">Current</span>
+          <div class="bar"><i class="hot" style="width:100%"></i><u></u></div>
+          <div class="cap">379,874 of 150,000</div></td>
+        <td><span class="mono">DM0060</span> <span class="pill p-c">Current</span>
+          <div class="bar"><i class="hot" style="width:100%"></i><u></u></div>
+          <div class="cap">360,334 of 150,000</div></td></tr>
+      <tr><td class="gen">L</td><td class="mono">2021-10-28</td>
+        <td><span class="mono">DM0071</span> <span class="pill p-w">Waiting</span>
+          <div class="bar"><i style="width:0"></i></div>
+          <div class="cap warn">316,657 &middot; no limit set</div></td>
+        <td><span class="mono">DM0072</span> <span class="pill p-w">Waiting</span>
+          <div class="bar"><i style="width:0"></i></div>
+          <div class="cap warn">323,325 &middot; no limit set</div></td></tr>
+      <tr><td class="gen">M</td><td class="mono">2024-01-16</td>
+        <td><span class="mono">DM0107</span> <span class="pill p-w">Waiting</span>
+          <div class="bar"><i style="width:0"></i></div>
+          <div class="cap warn">117,744 &middot; no limit set</div></td>
+        <td><span class="mono">DM0108</span> <span class="pill p-w">Waiting</span>
+          <div class="bar"><i style="width:0"></i></div>
+          <div class="cap warn">87,891 &middot; no limit set</div></td></tr>
+      <tr><td class="gen">N</td><td class="mono">2025-02-11</td>
+        <td><span class="mono">DM0129</span> <span class="pill p-w">Waiting</span>
+          <div class="bar"><i style="width:0"></i></div>
+          <div class="cap warn">62,907 &middot; no limit set</div></td>
+        <td><span class="mono">DM0130</span> <span class="pill p-w">Waiting</span>
+          <div class="bar"><i style="width:0"></i></div>
+          <div class="cap warn">83,458 &middot; no limit set</div></td></tr>
+      <tr><td class="gen">O</td><td class="mono">2026-05-13</td>
+        <td><span class="mono">DM0159</span> <span class="pill p-n">no record</span></td>
+        <td><span class="mono">DM0160</span> <span class="pill p-n">no record</span></td></tr>
+    </tbody>
+    <caption>Every generation is a pair &mdash; a 4-cavity die covering journals 1 and 5, and a
+    6-cavity die covering 2, 3 and 4. G and O are in the register but not yet (or no longer) in
+    the shots report. The tick on each bar marks the 150,000 planned life.</caption>
+  </table></div>
+
+  <p>K is running. H and J sit behind it as backup. L, M and N were bought in 2021, 2024 and
+  2025 and are all still &ldquo;Waiting for Approval&rdquo; &mdash; while carrying 63,000 to
+  323,000 shots each. A die awaiting approval should not have run a third of a million parts.</p>
+
+  <div class="find">
+    <span class="lbl">What &ldquo;Waiting&rdquo; actually gates</span>
+    <p>It is the <strong>shot life</strong> that is awaiting approval, not the die. Every single
+    Current die (76 of 76) and every single Backup die (52 of 52) has a planned shot life set.
+    Of the 96 Waiting dies, <strong>85 have no shot life at all</strong> &mdash; the column
+    reads 0.</p>
+    <p>So the sequence is: the die is bought, it runs, and at some point its planned life is
+    signed off and it enters the Current/Backup rotation. Until that signature it shows as
+    Waiting with a zero limit &mdash; which is also why the report paints it red.</p>
+  </div>
+
+  <p>The eleven exceptions prove it from the other side: <code>143-090</code> dies T and U,
+  <code>648-090</code> dies C and E, <code>125-090</code>/<code>126-090</code> die G and a few
+  others are Waiting <em>with</em> a life set &mdash; dies that had been approved and have since
+  been stood down.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Aug 17_ 2026 Die Shots Report.html</div>
+  <h2>The red flag, and why 227 is wrong</h2>
+  <p>The report paints the <code>Shot Life Planned</code> cell red on some rows. The rule is
+  exact &mdash; it reproduces all 343 rows with no mismatches:</p>
+
+  <div class="formula">red &nbsp;&hArr;&nbsp; Status &lt;&gt; <em>'B'</em>
+  &nbsp;&nbsp;AND&nbsp;&nbsp; <em>GoodShots</em> &gt; <em>ShotLifePlanned</em></div>
+
+  <p>Two things are buried in that. It tests <strong>Good</strong> shots, not Total &mdash; so
+  a die past its life on total shots but under it on good ones goes unflagged. And it silently
+  exempts <strong>Backup</strong> dies.</p>
+
+  <p>The footer reports <strong>227 dies over planned life</strong>. At the physical-die level
+  that is 130 dies, and they are not the same thing:</p>
+
+  <div class="bdkey">
+    <span><i style="background:#8A9298"></i>84 have no approved limit at all</span>
+    <span><i style="background:var(--over)"></i>46 are genuinely past an approved life</span>
+  </div>
+  <div class="bd">
+    <span class="a">84 &mdash; no limit set</span>
+    <span class="b">46 &mdash; truly over</span>
+  </div>
+  <p style="font-size:13.5px;color:var(--ink-3);max-width:68ch">
+  Of the 46 genuinely over their limit, 39 are Current dies still in the rotation.</p>
+
+  <div class="find">
+    <span class="lbl">The number is wrong in both directions</span>
+    <p>It <strong>over-counts</strong>, because 84 of the 130 flagged dies have no approved
+    limit to exceed &mdash; the flag says nothing about wear.</p>
+    <p>And it <strong>under-counts</strong>, because the rule exempts Backup:
+    <strong>45 of the 52 Backup dies are past their approved life and are never shown as
+    such</strong>. Those are the dies MPP would fall back on.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Where the two disagree</div>
+  <h2>Dies with no asset number</h2>
+  <p>The two documents share no identifier &mdash; the only key is the human-readable
+  description. Matching on family, component and generation letter, then splitting die sets by
+  journal position and cam bank, joins 138 of 198 register rows to a shot record. Thirty of the
+  sixty that fail are trim dies, which a die-cast shots report legitimately does not cover.</p>
+
+  <p>The part that matters runs the other way: <strong>55 dies appear in the shots report with
+  no MPP asset number at all</strong>, and they cluster by family rather than scattering &mdash;
+  5A2, 5K8, 5LA, 5MH, RXO, RNA, RDJ, RNO, R1A, R5A, R70, SZAX, PGE, P8A. Mostly Honda Anna and
+  other-customer parts, and several are Current dies with 200,000+ shots on them.</p>
+
+  <p>Either those dies are customer-owned and MPP never capitalised them, or they predate the
+  register&rsquo;s 2019 start. The first fits better &mdash; <code>5A2 Fuel Pump die T</code> is
+  a recent Current die and still untagged &mdash; but neither document settles it.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Open</div>
+  <h2>What the documents cannot tell us</h2>
+  <ol class="qs">
+    <li>Are the untagged families <strong>customer-owned</strong>, or simply older than the
+      register?</li>
+    <li><strong>True cavity count for single-part dies.</strong> The report reveals only
+      distinct part numbers cast per shot, so a die with four identical cavities making one
+      part number reads as one cavity. <code>DM0170 5GO N die 4 cavity</code> says so in its own
+      description and still comes out as 1.</li>
+    <li>Is a zero <strong>Shot Life Planned</strong> always &ldquo;not yet approved&rdquo;, or
+      is it sometimes deliberate?</li>
+    <li>Confirmation of the ~44 <strong>restated register descriptions</strong>.</li>
+  </ol>
+</section>
+
+<footer>
+  Derived from <code>Copy of Asset #'s for Dies.xlsx</code> (170 die molds, 28 trim dies) and
+  <code>Aug 17_ 2026 Die Shots Report.html</code> (343 part&nbsp;&times;&nbsp;die rows, as of
+  18 Aug 2026). Every figure here is computed from those two files.<br>
+  Companion: the <a href="https://claude.ai/code/artifact/13b5102c-e1fe-4fe4-a52c-ff24399483ba">MPP
+  Die Roster</a> &mdash; all 253 dies, filterable by status.
+  Working files: <code>reference/seed_data/die_roster.csv</code>,
+  <code>die_cavities.csv</code>,
+  <code>notes/2026-09-12_die-asset-register-and-shot-report.md</code>.
+</footer>
+
+</div>

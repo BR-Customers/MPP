@@ -1,0 +1,372 @@
+AssetTag,Description,Status,CavityCode,MacolaPart,PartName
+DM0003,5PA Oil Pan die G,B,a,624-090,5PA Oil Pan
+DM0006,5PA Oil Pan die I,B,a,624-090,5PA Oil Pan
+DM0007,"RPY c/h IN 5, EX 5,6 die D",B,a,124-090,RPY Holder Comp No 5 in Cam
+DM0007,"RPY c/h IN 5, EX 5,6 die D",B,b,129-090,RPY Holder Comp No 5 Ex Cam
+DM0007,"RPY c/h IN 5, EX 5,6 die D",B,c,130-090,RPY Holder Comp No 6 Ex Cam
+DM0010,5PA Oil Pan die H,C,a,624-090,5PA Oil Pan
+DM0011,6B2 r/s #5 die C,B,a,629-090,6B2 HOLDER COMP NO5 R/S (DC)
+DM0012,RPY Compressor Bracket die D,B,a,643-090,RPY COMPRESSOR BRACKET MPP
+DM0013,RPY Cam Holder Ex #1-4 die D,B,a,125-090,RPY Holder Comp No 1 Ex Cam
+DM0013,RPY Cam Holder Ex #1-4 die D,B,b,126-090,RPY Holder Comp No 2 Ex Cam
+DM0013,RPY Cam Holder Ex #1-4 die D,B,c,127-090,RPY Holder Comp No 3 Ex Cam
+DM0013,RPY Cam Holder Ex #1-4 die D,B,d,128-090,RPY Holder Comp No 4 Ex Cam
+DM0014,5BA Side Cover die G,B,a,154-090,5BA Side Cover
+DM0015,"5G0 R/S 1,2,3 Die I",B,a,578-090,5GO R/S #1    DC
+DM0015,"5G0 R/S 1,2,3 Die I",B,b,579-090,5GO R/S #2    DC
+DM0015,"5G0 R/S 1,2,3 Die I",B,c,580-090,5GO R/S #3    DC
+DM0016,"RPY c/h IN 1,2,3,4 die D",B,a,120-090,RPY Holder Comp No 1 In Cam
+DM0016,"RPY c/h IN 1,2,3,4 die D",B,b,121-090,RPY Holder Comp No 2 In Cam
+DM0016,"RPY c/h IN 1,2,3,4 die D",B,c,122-090,RPY Holder Comp No 3 In Cam
+DM0016,"RPY c/h IN 1,2,3,4 die D",B,d,123-090,RPY Holder Comp No 4 In Cam
+DM0017,64AA Oil Pan die A,C,a,648-090,64A Oil Pan
+DM0018,5J6-1 Oil Pan die H,C,a,155-090,5J6-1 OIL PAN     DC
+DM0019,"59B c/h IN EX 1,5 die H",B,a,187-090,59B In Cam No 1 MPP
+DM0019,"59B c/h IN EX 1,5 die H",B,b,191-090,59B In Cam No 5 MPP
+DM0019,"59B c/h IN EX 1,5 die H",B,c,192-090,59B In Cam Ex 1 MPP
+DM0019,"59B c/h IN EX 1,5 die H",B,d,196-090,59B In Cam Ex 5 MPP
+DM0020,"59B c/h IN EX 2,3,4 die H",B,a,188-090,59B In Cam No 2 MPP
+DM0020,"59B c/h IN EX 2,3,4 die H",B,b,189-090,59B In Cam No 3 MPP
+DM0020,"59B c/h IN EX 2,3,4 die H",B,c,190-090,59B In Cam No 4 MPP
+DM0020,"59B c/h IN EX 2,3,4 die H",B,d,193-090,59B In Cam Ex 2 MPP
+DM0020,"59B c/h IN EX 2,3,4 die H",B,e,194-090,59B In Cam Ex 3 MPP
+DM0020,"59B c/h IN EX 2,3,4 die H",B,f,195-090,59B In Cam Ex 4 MPP
+DM0022,5BA Side Cover Die H,C,a,154-090,5BA Side Cover
+DM0023,6B2 Fuel Pump die D,C,a,631-090,6B2 BASE COMP FUEL PUMP (DC)
+DM0024,"59B/5PA Fuel Pump die ""N""",C,a,143-090,5PA Fuel Pump
+DM0024,"59B/5PA Fuel Pump die ""N""",C,b,152-090,59B Base Comp Fuel Pump
+DM0026,"5J6-1 Oil Pan die ""I""",C,a,155-090,5J6-1 OIL PAN     DC
+DM0027,"RPY R/S #1 die ""G""",B,a,135-090,RPY Holder Comp No 1 Rkr Shaft
+DM0028,"RPY R/S #2,3,4 die ""G""",B,a,136-090,RPY Holder Comp No 2 Rkr Shaft
+DM0028,"RPY R/S #2,3,4 die ""G""",B,b,137-090,RPY Holder Comp No 3 Rkr Shaft
+DM0028,"RPY R/S #2,3,4 die ""G""",B,c,138-090,RPY Holder Comp No 4 Rkr Shaft
+DM0029,"RPY C/H Ex. #1-4 die ""F""",C,a,125-090,RPY Holder Comp No 1 Ex Cam
+DM0029,"RPY C/H Ex. #1-4 die ""F""",C,b,126-090,RPY Holder Comp No 2 Ex Cam
+DM0029,"RPY C/H Ex. #1-4 die ""F""",C,c,127-090,RPY Holder Comp No 3 Ex Cam
+DM0029,"RPY C/H Ex. #1-4 die ""F""",C,d,128-090,RPY Holder Comp No 4 Ex Cam
+DM0030,"RPY C/H Ex. Lwr. #1-4 die ""F""",C,a,131-090,RPY Holder Comp No 1 Exh Cam Lwr
+DM0030,"RPY C/H Ex. Lwr. #1-4 die ""F""",C,b,132-090,RPY Holder Comp No 2 Exh Cam Lwr
+DM0030,"RPY C/H Ex. Lwr. #1-4 die ""F""",C,c,133-090,RPY Holder Comp No 3 Exh Cam Lwr
+DM0030,"RPY C/H Ex. Lwr. #1-4 die ""F""",C,d,134-090,RPY Holder Comp No 4 Exh Cam Lwr
+DM0031,"6B2 R/S #5 die ""D""",C,a,629-090,6B2 HOLDER COMP NO5 R/S (DC)
+DM0032,"5PA Oil Pan die ""J""",C,a,624-090,5PA Oil Pan
+DM0033,"59B/5PA Fuel Pump die ""P""",C,a,143-090,5PA Fuel Pump
+DM0033,"59B/5PA Fuel Pump die ""P""",C,b,152-090,59B Base Comp Fuel Pump
+DM0034,"59B/5PA Fuel Pump die ""Q""",C,a,143-090,5PA Fuel Pump
+DM0034,"59B/5PA Fuel Pump die ""Q""",C,b,152-090,59B Base Comp Fuel Pump
+DM0035,"59B C/H #1,5 die ""J""",B,a,187-090,59B In Cam No 1 MPP
+DM0035,"59B C/H #1,5 die ""J""",B,b,191-090,59B In Cam No 5 MPP
+DM0035,"59B C/H #1,5 die ""J""",B,c,192-090,59B In Cam Ex 1 MPP
+DM0035,"59B C/H #1,5 die ""J""",B,d,196-090,59B In Cam Ex 5 MPP
+DM0036,"59B C/H #2,3,4 die ""J""",B,a,188-090,59B In Cam No 2 MPP
+DM0036,"59B C/H #2,3,4 die ""J""",B,b,189-090,59B In Cam No 3 MPP
+DM0036,"59B C/H #2,3,4 die ""J""",B,c,190-090,59B In Cam No 4 MPP
+DM0036,"59B C/H #2,3,4 die ""J""",B,d,193-090,59B In Cam Ex 2 MPP
+DM0036,"59B C/H #2,3,4 die ""J""",B,e,194-090,59B In Cam Ex 3 MPP
+DM0036,"59B C/H #2,3,4 die ""J""",B,f,195-090,59B In Cam Ex 4 MPP
+DM0037,"5BA R/S #5 die ""H""",B,a,140-090,5BAA Holder Comp #5 R/S
+DM0038,"5GO R/S #1,2,3 die ""J""",C,a,578-090,5GO R/S #1    DC
+DM0038,"5GO R/S #1,2,3 die ""J""",C,b,579-090,5GO R/S #2    DC
+DM0038,"5GO R/S #1,2,3 die ""J""",C,c,580-090,5GO R/S #3    DC
+DM0039,"RPY Compressor Bracket die ""E""",C,a,643-090,RPY COMPRESSOR BRACKET MPP
+DM0040,"RPY C/H IN #1-4 die ""F""",C,a,120-090,RPY Holder Comp No 1 In Cam
+DM0040,"RPY C/H IN #1-4 die ""F""",C,b,121-090,RPY Holder Comp No 2 In Cam
+DM0040,"RPY C/H IN #1-4 die ""F""",C,c,122-090,RPY Holder Comp No 3 In Cam
+DM0040,"RPY C/H IN #1-4 die ""F""",C,d,123-090,RPY Holder Comp No 4 In Cam
+DM0041,"5PA Oil Pan die ""K""",C,a,624-090,5PA Oil Pan
+DM0042,"5J6-1 Oil Pan die ""J""",C,a,155-090,5J6-1 OIL PAN     DC
+DM0043,"5J6-1 Oil Pan die ""K""",C,a,155-090,5J6-1 OIL PAN     DC
+DM0044,"RPY C/H #5,5,6 die ""F""",C,a,124-090,RPY Holder Comp No 5 in Cam
+DM0044,"RPY C/H #5,5,6 die ""F""",C,b,129-090,RPY Holder Comp No 5 Ex Cam
+DM0044,"RPY C/H #5,5,6 die ""F""",C,c,130-090,RPY Holder Comp No 6 Ex Cam
+DM0045,"64AA Oil Pan die ""B""",C,a,648-090,64A Oil Pan
+DM0046,"59B/5PA Fuel Pump die ""R""",C,a,143-090,5PA Fuel Pump
+DM0046,"59B/5PA Fuel Pump die ""R""",C,b,152-090,59B Base Comp Fuel Pump
+DM0047,"59B/5PA Fuel Pump die ""S""",C,a,143-090,5PA Fuel Pump
+DM0047,"59B/5PA Fuel Pump die ""S""",C,b,152-090,59B Base Comp Fuel Pump
+DM0048,"6B2 Fuel Pump die ""E""",W,a,631-090,6B2 BASE COMP FUEL PUMP (DC)
+DM0049,"6FBA Oil Pan die ""A""",C,a,646-090,6FB Oil Pan
+DM0050,"6MA C/H #1,5 die ""A""",C,a,652-090,6MAA HOLDCOMP NO1 INTAKE (DC)
+DM0050,"6MA C/H #1,5 die ""A""",C,b,656-090,6MAA HOLDCOMP NO5 INTAKE (DC)
+DM0050,"6MA C/H #1,5 die ""A""",C,c,657-090,6MAA HOLDCOMP NO1 EXHAUST (DC)
+DM0050,"6MA C/H #1,5 die ""A""",C,d,661-090,6MAA HOLDCOMP NO5 EXHAUST (DC)
+DM0051,"6MA C/H #2,3,4 die ""A""",C,a,653-090,6MAA HOLDCOMP NO2 INTAKE (DC)
+DM0051,"6MA C/H #2,3,4 die ""A""",C,b,654-090,6MAA HOLDCOMP NO3 INTAKE (DC)
+DM0051,"6MA C/H #2,3,4 die ""A""",C,c,655-090,6MAA HOLDCOMP NO4 INTAKE (DC)
+DM0051,"6MA C/H #2,3,4 die ""A""",C,d,658-090,6MAA HOLDCOMP NO2 EXHAUST (DC)
+DM0051,"6MA C/H #2,3,4 die ""A""",C,e,659-090,6MAA HOLDCOMP NO3 EXHAUST (DC)
+DM0051,"6MA C/H #2,3,4 die ""A""",C,f,660-090,6MAA HOLDCOMP NO4 EXHAUST (DC)
+DM0052,"6FBA Oil Passage die ""A""",C,a,645-090,"6FB Holder Comp, Oil Pass FRDC"
+DM0054,"6MA Oil Pan die ""A""",B,a,664-090,6MA Oil Pan (69F Finished)
+DM0055,"5BA R/S #5 die ""I""",B,a,140-090,5BAA Holder Comp #5 R/S
+DM0056,"6B2 R/S #5 die ""E""",C,a,629-090,6B2 HOLDER COMP NO5 R/S (DC)
+DM0057,"RPY R/S #1 die ""H""",C,a,135-090,RPY Holder Comp No 1 Rkr Shaft
+DM0058,"RPY R/S #2,3,4 die ""H""",C,a,136-090,RPY Holder Comp No 2 Rkr Shaft
+DM0058,"RPY R/S #2,3,4 die ""H""",C,b,137-090,RPY Holder Comp No 3 Rkr Shaft
+DM0058,"RPY R/S #2,3,4 die ""H""",C,c,138-090,RPY Holder Comp No 4 Rkr Shaft
+DM0059,"59B C/H #1,5 die ""K""",C,a,187-090,59B In Cam No 1 MPP
+DM0059,"59B C/H #1,5 die ""K""",C,b,191-090,59B In Cam No 5 MPP
+DM0059,"59B C/H #1,5 die ""K""",C,c,192-090,59B In Cam Ex 1 MPP
+DM0059,"59B C/H #1,5 die ""K""",C,d,196-090,59B In Cam Ex 5 MPP
+DM0060,"59B C/H #2,3,4 die ""K""",C,a,188-090,59B In Cam No 2 MPP
+DM0060,"59B C/H #2,3,4 die ""K""",C,b,189-090,59B In Cam No 3 MPP
+DM0060,"59B C/H #2,3,4 die ""K""",C,c,190-090,59B In Cam No 4 MPP
+DM0060,"59B C/H #2,3,4 die ""K""",C,d,193-090,59B In Cam Ex 2 MPP
+DM0060,"59B C/H #2,3,4 die ""K""",C,e,194-090,59B In Cam Ex 3 MPP
+DM0060,"59B C/H #2,3,4 die ""K""",C,f,195-090,59B In Cam Ex 4 MPP
+DM0061,"5BA Side Cover die ""I""",W,a,154-090,5BA Side Cover
+DM0062,"64A Oil Pan die ""C""",W,a,648-090,64A Oil Pan
+DM0063,"6NA Fuel Pump die ""A""",C,a,637-090,6NA FUEL PUMP
+DM0064,"5GO R/S #1,2,3 die ""K""",W,a,578-090,5GO R/S #1    DC
+DM0064,"5GO R/S #1,2,3 die ""K""",W,b,579-090,5GO R/S #2    DC
+DM0064,"5GO R/S #1,2,3 die ""K""",W,c,580-090,5GO R/S #3    DC
+DM0066,"5BA R/S #5 die ""J""",W,a,140-090,5BAA Holder Comp #5 R/S
+DM0067,RPY Cam Holder Ex #1-4 die G,W,a,125-090,RPY Holder Comp No 1 Ex Cam
+DM0067,RPY Cam Holder Ex #1-4 die G,W,b,126-090,RPY Holder Comp No 2 Ex Cam
+DM0067,RPY Cam Holder Ex #1-4 die G,W,c,127-090,RPY Holder Comp No 3 Ex Cam
+DM0067,RPY Cam Holder Ex #1-4 die G,W,d,128-090,RPY Holder Comp No 4 Ex Cam
+DM0068,"RPY Compressor Bracket die ""F""",W,a,643-090,RPY COMPRESSOR BRACKET MPP
+DM0069,"6MA Oil Pan die ""B""",C,a,664-090,6MA Oil Pan (69F Finished)
+DM0070,"6MA Oil Pan die ""C""",W,a,664-090,6MA Oil Pan (69F Finished)
+DM0071,"59B C/H #1,5 die ""L""",W,a,187-090,59B In Cam No 1 MPP
+DM0071,"59B C/H #1,5 die ""L""",W,b,191-090,59B In Cam No 5 MPP
+DM0071,"59B C/H #1,5 die ""L""",W,c,192-090,59B In Cam Ex 1 MPP
+DM0071,"59B C/H #1,5 die ""L""",W,d,196-090,59B In Cam Ex 5 MPP
+DM0072,"59B C/H #2,3,4 die ""L""",W,a,188-090,59B In Cam No 2 MPP
+DM0072,"59B C/H #2,3,4 die ""L""",W,b,189-090,59B In Cam No 3 MPP
+DM0072,"59B C/H #2,3,4 die ""L""",W,c,190-090,59B In Cam No 4 MPP
+DM0072,"59B C/H #2,3,4 die ""L""",W,d,193-090,59B In Cam Ex 2 MPP
+DM0072,"59B C/H #2,3,4 die ""L""",W,e,194-090,59B In Cam Ex 3 MPP
+DM0072,"59B C/H #2,3,4 die ""L""",W,f,195-090,59B In Cam Ex 4 MPP
+DM0073,RPY Cam Holder Ex Lower #1-4 die G,W,a,131-090,RPY Holder Comp No 1 Exh Cam Lwr
+DM0073,RPY Cam Holder Ex Lower #1-4 die G,W,b,132-090,RPY Holder Comp No 2 Exh Cam Lwr
+DM0073,RPY Cam Holder Ex Lower #1-4 die G,W,c,133-090,RPY Holder Comp No 3 Exh Cam Lwr
+DM0073,RPY Cam Holder Ex Lower #1-4 die G,W,d,134-090,RPY Holder Comp No 4 Exh Cam Lwr
+DM0074,"59B/5PA Fuel Pump die ""T""",W,a,143-090,5PA Fuel Pump
+DM0074,"59B/5PA Fuel Pump die ""T""",W,b,152-090,59B Base Comp Fuel Pump
+DM0075,"59B/5PA Fuel Pump die ""U""",W,a,143-090,5PA Fuel Pump
+DM0075,"59B/5PA Fuel Pump die ""U""",W,b,152-090,59B Base Comp Fuel Pump
+DM0076,"6MA C/H #1,5 die ""B""",W,a,652-090,6MAA HOLDCOMP NO1 INTAKE (DC)
+DM0076,"6MA C/H #1,5 die ""B""",W,b,656-090,6MAA HOLDCOMP NO5 INTAKE (DC)
+DM0076,"6MA C/H #1,5 die ""B""",W,c,657-090,6MAA HOLDCOMP NO1 EXHAUST (DC)
+DM0076,"6MA C/H #1,5 die ""B""",W,d,661-090,6MAA HOLDCOMP NO5 EXHAUST (DC)
+DM0077,"6MA C/H #2,3,4 die ""B""",W,a,653-090,6MAA HOLDCOMP NO2 INTAKE (DC)
+DM0077,"6MA C/H #2,3,4 die ""B""",W,b,654-090,6MAA HOLDCOMP NO3 INTAKE (DC)
+DM0077,"6MA C/H #2,3,4 die ""B""",W,c,655-090,6MAA HOLDCOMP NO4 INTAKE (DC)
+DM0077,"6MA C/H #2,3,4 die ""B""",W,d,658-090,6MAA HOLDCOMP NO2 EXHAUST (DC)
+DM0077,"6MA C/H #2,3,4 die ""B""",W,e,659-090,6MAA HOLDCOMP NO3 EXHAUST (DC)
+DM0077,"6MA C/H #2,3,4 die ""B""",W,f,660-090,6MAA HOLDCOMP NO4 EXHAUST (DC)
+DM0078,"6FBA Oil Pan die ""B""",W,a,646-090,6FB Oil Pan
+DM0079,"5BA R/S #5 die ""K""",W,a,140-090,5BAA Holder Comp #5 R/S
+DM0080,"6NA Fuel Pump die ""B""",W,a,637-090,6NA FUEL PUMP
+DM0081,"5GO R/S 1,2,3 Die L",W,a,578-090,5GO R/S #1    DC
+DM0081,"5GO R/S 1,2,3 Die L",W,b,579-090,5GO R/S #2    DC
+DM0081,"5GO R/S 1,2,3 Die L",W,c,580-090,5GO R/S #3    DC
+DM0082,"64a oil pan die ""D""",W,a,648-090,64A Oil Pan
+DM0083,"64A oil pan die ""E'",W,a,648-090,64A Oil Pan
+DM0084,6MDW Intake Manifold Plate Die A,W,a,674-090,6MD Intake Manifold
+DM0085,5BS Rocker Shaft # L,W,a,140-090,5BAA Holder Comp #5 R/S
+DM0086,5BA Rocker Shaft #M,W,a,140-090,5BAA Holder Comp #5 R/S
+DM0089,RPY Rocker Shaft #1 die J,W,a,135-090,RPY Holder Comp No 1 Rkr Shaft
+DM0090,"RPY Rocker Shaft #2,3,4 die J",W,a,136-090,RPY Holder Comp No 2 Rkr Shaft
+DM0090,"RPY Rocker Shaft #2,3,4 die J",W,b,137-090,RPY Holder Comp No 3 Rkr Shaft
+DM0090,"RPY Rocker Shaft #2,3,4 die J",W,c,138-090,RPY Holder Comp No 4 Rkr Shaft
+DM0091,59B/5PA Fuel Pump V,W,a,143-090,5PA Fuel Pump
+DM0091,59B/5PA Fuel Pump V,W,b,152-090,59B Base Comp Fuel Pump
+DM0093,6Na fuel pump B,W,a,637-090,6NA FUEL PUMP
+DM0094,5BA rocker shaft #L,W,a,140-090,5BAA Holder Comp #5 R/S
+DM0095,5J6-1 Oil Pan die L,W,a,155-090,5J6-1 OIL PAN     DC
+DM0096,6VJ Fuel Pump A,W,a,638-090,6VJ Fuel Pump
+DM0097,5J6-1 Oil Pan die L,W,a,155-090,5J6-1 OIL PAN     DC
+DM0098,5Ba #5 R/S M,W,a,140-090,5BAA Holder Comp #5 R/S
+DM0099,6B2 Rocker Shaft #5 die F,W,a,629-090,6B2 HOLDER COMP NO5 R/S (DC)
+DM0100,RPY Cam Holder IN.1-4 G,W,a,120-090,RPY Holder Comp No 1 In Cam
+DM0100,RPY Cam Holder IN.1-4 G,W,b,121-090,RPY Holder Comp No 2 In Cam
+DM0100,RPY Cam Holder IN.1-4 G,W,c,122-090,RPY Holder Comp No 3 In Cam
+DM0100,RPY Cam Holder IN.1-4 G,W,d,123-090,RPY Holder Comp No 4 In Cam
+DM0101,"RPY Cam holder 5,5,6 G",W,a,124-090,RPY Holder Comp No 5 in Cam
+DM0101,"RPY Cam holder 5,5,6 G",W,b,129-090,RPY Holder Comp No 5 Ex Cam
+DM0101,"RPY Cam holder 5,5,6 G",W,c,130-090,RPY Holder Comp No 6 Ex Cam
+DM0102,6MA Oil Pan D,W,a,664-090,6MA Oil Pan (69F Finished)
+DM0103,6MA Oil pan E,W,a,664-090,6MA Oil Pan (69F Finished)
+DM0104,64A oil Pan F,W,a,648-090,64A Oil Pan
+DM0105,6Na fuel pump C,W,a,637-090,6NA FUEL PUMP
+DM0106,59B/5PA Fuel Pump die V,W,a,143-090,5PA Fuel Pump
+DM0106,59B/5PA Fuel Pump die V,W,b,152-090,59B Base Comp Fuel Pump
+DM0107,59B Cam holder In 1/5 Ex 1/5 M,W,a,187-090,59B In Cam No 1 MPP
+DM0107,59B Cam holder In 1/5 Ex 1/5 M,W,b,191-090,59B In Cam No 5 MPP
+DM0107,59B Cam holder In 1/5 Ex 1/5 M,W,c,192-090,59B In Cam Ex 1 MPP
+DM0107,59B Cam holder In 1/5 Ex 1/5 M,W,d,196-090,59B In Cam Ex 5 MPP
+DM0108,"59B Cam Holder #2,3,4 die M",W,a,188-090,59B In Cam No 2 MPP
+DM0108,"59B Cam Holder #2,3,4 die M",W,b,189-090,59B In Cam No 3 MPP
+DM0108,"59B Cam Holder #2,3,4 die M",W,c,190-090,59B In Cam No 4 MPP
+DM0108,"59B Cam Holder #2,3,4 die M",W,d,193-090,59B In Cam Ex 2 MPP
+DM0108,"59B Cam Holder #2,3,4 die M",W,e,194-090,59B In Cam Ex 3 MPP
+DM0108,"59B Cam Holder #2,3,4 die M",W,f,195-090,59B In Cam Ex 4 MPP
+DM0109,"6MA Cam Holder 1,5, C",W,a,652-090,6MAA HOLDCOMP NO1 INTAKE (DC)
+DM0109,"6MA Cam Holder 1,5, C",W,b,656-090,6MAA HOLDCOMP NO5 INTAKE (DC)
+DM0109,"6MA Cam Holder 1,5, C",W,c,657-090,6MAA HOLDCOMP NO1 EXHAUST (DC)
+DM0109,"6MA Cam Holder 1,5, C",W,d,661-090,6MAA HOLDCOMP NO5 EXHAUST (DC)
+DM0110,"6MA Cam Holder 2,3,4 C",W,a,653-090,6MAA HOLDCOMP NO2 INTAKE (DC)
+DM0110,"6MA Cam Holder 2,3,4 C",W,b,654-090,6MAA HOLDCOMP NO3 INTAKE (DC)
+DM0110,"6MA Cam Holder 2,3,4 C",W,c,655-090,6MAA HOLDCOMP NO4 INTAKE (DC)
+DM0110,"6MA Cam Holder 2,3,4 C",W,d,658-090,6MAA HOLDCOMP NO2 EXHAUST (DC)
+DM0110,"6MA Cam Holder 2,3,4 C",W,e,659-090,6MAA HOLDCOMP NO3 EXHAUST (DC)
+DM0110,"6MA Cam Holder 2,3,4 C",W,f,660-090,6MAA HOLDCOMP NO4 EXHAUST (DC)
+DM0111,RPY rocker shaft #1  J,W,a,135-090,RPY Holder Comp No 1 Rkr Shaft
+DM0112,"RPY Rocker shaft 2,3,4 J",W,a,136-090,RPY Holder Comp No 2 Rkr Shaft
+DM0112,"RPY Rocker shaft 2,3,4 J",W,b,137-090,RPY Holder Comp No 3 Rkr Shaft
+DM0112,"RPY Rocker shaft 2,3,4 J",W,c,138-090,RPY Holder Comp No 4 Rkr Shaft
+DM0113,"RPY Cam Holder Ex Lower 1,2,3,4 die H",W,a,131-090,RPY Holder Comp No 1 Exh Cam Lwr
+DM0113,"RPY Cam Holder Ex Lower 1,2,3,4 die H",W,b,132-090,RPY Holder Comp No 2 Exh Cam Lwr
+DM0113,"RPY Cam Holder Ex Lower 1,2,3,4 die H",W,c,133-090,RPY Holder Comp No 3 Exh Cam Lwr
+DM0113,"RPY Cam Holder Ex Lower 1,2,3,4 die H",W,d,134-090,RPY Holder Comp No 4 Exh Cam Lwr
+DM0114,"RPY Cam Holder Ex 1,2,3,4 die H",W,a,125-090,RPY Holder Comp No 1 Ex Cam
+DM0114,"RPY Cam Holder Ex 1,2,3,4 die H",W,b,126-090,RPY Holder Comp No 2 Ex Cam
+DM0114,"RPY Cam Holder Ex 1,2,3,4 die H",W,c,127-090,RPY Holder Comp No 3 Ex Cam
+DM0114,"RPY Cam Holder Ex 1,2,3,4 die H",W,d,128-090,RPY Holder Comp No 4 Ex Cam
+DM0115,Astemo Inner Housing die A,W,a,683-090,Inner Housing
+DM0116,Astemo Inverter Cover Single die A,W,a,681-090,Cover Inverter Single
+DM0117,Astemo Intermediate Case Single die A,W,a,679-090,CASE COMP INTERMEDIATE SINGLE
+DM0118,5J6-1 Oil Pan die M,W,a,155-090,5J6-1 OIL PAN     DC
+DM0119,6FB oil Pan C,W,a,646-090,6FB Oil Pan
+DM0120,6FB oil Pan Cover Insert #2 C Die,W,a,646-090,6FB Oil Pan
+DM0121,6MDW Intake Manifold Plate Die B,W,a,674-090,6MD Intake Manifold
+DM0122,5Ba Rocker Shaft #5 N,W,a,140-090,5BAA Holder Comp #5 R/S
+DM0123,6FB Cam Holder #1 B,W,a,644-090,"6FB Holder Comp, No 1 Cam R"
+DM0124,"6MA Cam Holder #1,5 die D",W,a,652-090,6MAA HOLDCOMP NO1 INTAKE (DC)
+DM0124,"6MA Cam Holder #1,5 die D",W,b,656-090,6MAA HOLDCOMP NO5 INTAKE (DC)
+DM0124,"6MA Cam Holder #1,5 die D",W,c,657-090,6MAA HOLDCOMP NO1 EXHAUST (DC)
+DM0124,"6MA Cam Holder #1,5 die D",W,d,661-090,6MAA HOLDCOMP NO5 EXHAUST (DC)
+DM0125,"6MA Cam Holder #2,3,4 die D",W,a,653-090,6MAA HOLDCOMP NO2 INTAKE (DC)
+DM0125,"6MA Cam Holder #2,3,4 die D",W,b,654-090,6MAA HOLDCOMP NO3 INTAKE (DC)
+DM0125,"6MA Cam Holder #2,3,4 die D",W,c,655-090,6MAA HOLDCOMP NO4 INTAKE (DC)
+DM0125,"6MA Cam Holder #2,3,4 die D",W,d,658-090,6MAA HOLDCOMP NO2 EXHAUST (DC)
+DM0125,"6MA Cam Holder #2,3,4 die D",W,e,659-090,6MAA HOLDCOMP NO3 EXHAUST (DC)
+DM0125,"6MA Cam Holder #2,3,4 die D",W,f,660-090,6MAA HOLDCOMP NO4 EXHAUST (DC)
+DM0126,6MA Oil Pan die E,W,a,664-090,6MA Oil Pan (69F Finished)
+DM0127,6VJ Fuel Pump B,W,a,638-090,6VJ Fuel Pump
+DM0128,6VJ Fuel Pump C,W,a,638-090,6VJ Fuel Pump
+DM0129,"59B cam Hilder 1,5, N",W,a,187-090,59B In Cam No 1 MPP
+DM0129,"59B cam Hilder 1,5, N",W,b,191-090,59B In Cam No 5 MPP
+DM0129,"59B cam Hilder 1,5, N",W,c,192-090,59B In Cam Ex 1 MPP
+DM0129,"59B cam Hilder 1,5, N",W,d,196-090,59B In Cam Ex 5 MPP
+DM0130,"59B Cam Holder #2,3,4 die N",W,a,188-090,59B In Cam No 2 MPP
+DM0130,"59B Cam Holder #2,3,4 die N",W,b,189-090,59B In Cam No 3 MPP
+DM0130,"59B Cam Holder #2,3,4 die N",W,c,190-090,59B In Cam No 4 MPP
+DM0130,"59B Cam Holder #2,3,4 die N",W,d,193-090,59B In Cam Ex 2 MPP
+DM0130,"59B Cam Holder #2,3,4 die N",W,e,194-090,59B In Cam Ex 3 MPP
+DM0130,"59B Cam Holder #2,3,4 die N",W,f,195-090,59B In Cam Ex 4 MPP
+DM0131,5J6-1 Oil Pan die N,W,a,155-090,5J6-1 OIL PAN     DC
+DM0132,64A Oil Pan die G,W,a,648-090,64A Oil Pan
+DM0136,6MA Oil Pan G,W,a,664-090,6MA Oil Pan (69F Finished)
+DM0137,Astemo Inverter Cover Dual die A,W,a,682-090,Cover Inverter Dual
+DM0138,Astemo Intermediate Case Dual die A,W,a,680-090,Case comp Intermediate Dual
+DM0140,66VT Fuel Pump Die A,W,a,686-090,66V Fuel Pump
+DM0141,RPY Rocker Shaft #1 die K,W,a,135-090,RPY Holder Comp No 1 Rkr Shaft
+DM0142,"RPY Rocker Shaft #2,3,4 die K",W,a,136-090,RPY Holder Comp No 2 Rkr Shaft
+DM0142,"RPY Rocker Shaft #2,3,4 die K",W,b,137-090,RPY Holder Comp No 3 Rkr Shaft
+DM0142,"RPY Rocker Shaft #2,3,4 die K",W,c,138-090,RPY Holder Comp No 4 Rkr Shaft
+DM0143,5BA Rocker Shaft #5 die O,W,a,140-090,5BAA Holder Comp #5 R/S
+DM0144,6FB oil pan D,W,a,646-090,6FB Oil Pan
+DM0145,64A oil pan H,W,a,648-090,64A Oil Pan
+DM0146,6FB Cam Holder #1 die C,W,a,644-090,"6FB Holder Comp, No 1 Cam R"
+DM0147,"6MA Cam Holder #1,5 die F",W,a,652-090,6MAA HOLDCOMP NO1 INTAKE (DC)
+DM0147,"6MA Cam Holder #1,5 die F",W,b,656-090,6MAA HOLDCOMP NO5 INTAKE (DC)
+DM0147,"6MA Cam Holder #1,5 die F",W,c,657-090,6MAA HOLDCOMP NO1 EXHAUST (DC)
+DM0147,"6MA Cam Holder #1,5 die F",W,d,661-090,6MAA HOLDCOMP NO5 EXHAUST (DC)
+DM0148,"6Ma cam Holder in/Ex 1,2,3,4 F",W,a,653-090,6MAA HOLDCOMP NO2 INTAKE (DC)
+DM0148,"6Ma cam Holder in/Ex 1,2,3,4 F",W,b,654-090,6MAA HOLDCOMP NO3 INTAKE (DC)
+DM0148,"6Ma cam Holder in/Ex 1,2,3,4 F",W,c,655-090,6MAA HOLDCOMP NO4 INTAKE (DC)
+DM0148,"6Ma cam Holder in/Ex 1,2,3,4 F",W,d,658-090,6MAA HOLDCOMP NO2 EXHAUST (DC)
+DM0148,"6Ma cam Holder in/Ex 1,2,3,4 F",W,e,659-090,6MAA HOLDCOMP NO3 EXHAUST (DC)
+DM0148,"6Ma cam Holder in/Ex 1,2,3,4 F",W,f,660-090,6MAA HOLDCOMP NO4 EXHAUST (DC)
+DM0149,"6FBA oil pan die ""E""",W,a,646-090,6FB Oil Pan
+DM0150,"6NA Fuel Pump die ""D""",W,a,637-090,6NA FUEL PUMP
+DM0151,"6VJ Fuel Pump die ""D""",W,a,638-090,6VJ Fuel Pump
+DM0152,RPY Comp Bracket G,W,a,643-090,RPY COMPRESSOR BRACKET MPP
+DM0153,"5GO R/S 1,2,3 Die ""M""",W,a,578-090,5GO R/S #1    DC
+DM0153,"5GO R/S 1,2,3 Die ""M""",W,b,579-090,5GO R/S #2    DC
+DM0153,"5GO R/S 1,2,3 Die ""M""",W,c,580-090,5GO R/S #3    DC
+DM0157,"RPY CamHolder 5,5,6 H",W,a,125-090,RPY Holder Comp No 1 Ex Cam
+DM0157,"RPY CamHolder 5,5,6 H",W,b,126-090,RPY Holder Comp No 2 Ex Cam
+DM0157,"RPY CamHolder 5,5,6 H",W,c,127-090,RPY Holder Comp No 3 Ex Cam
+DM0157,"RPY CamHolder 5,5,6 H",W,d,128-090,RPY Holder Comp No 4 Ex Cam
+DM0157,"RPY CamHolder 5,5,6 H",W,e,131-090,RPY Holder Comp No 1 Exh Cam Lwr
+DM0157,"RPY CamHolder 5,5,6 H",W,f,132-090,RPY Holder Comp No 2 Exh Cam Lwr
+DM0157,"RPY CamHolder 5,5,6 H",W,g,133-090,RPY Holder Comp No 3 Exh Cam Lwr
+DM0157,"RPY CamHolder 5,5,6 H",W,h,134-090,RPY Holder Comp No 4 Exh Cam Lwr
+DM0158,RPY Cam Holder Intake H,W,a,125-090,RPY Holder Comp No 1 Ex Cam
+DM0158,RPY Cam Holder Intake H,W,b,126-090,RPY Holder Comp No 2 Ex Cam
+DM0158,RPY Cam Holder Intake H,W,c,127-090,RPY Holder Comp No 3 Ex Cam
+DM0158,RPY Cam Holder Intake H,W,d,128-090,RPY Holder Comp No 4 Ex Cam
+DM0158,RPY Cam Holder Intake H,W,e,131-090,RPY Holder Comp No 1 Exh Cam Lwr
+DM0158,RPY Cam Holder Intake H,W,f,132-090,RPY Holder Comp No 2 Exh Cam Lwr
+DM0158,RPY Cam Holder Intake H,W,g,133-090,RPY Holder Comp No 3 Exh Cam Lwr
+DM0158,RPY Cam Holder Intake H,W,h,134-090,RPY Holder Comp No 4 Exh Cam Lwr
+,CIVIC RNA WATER PUMP -- die 7,B,a,472-090,CIVIC RNA WATER PUMP
+,5K8 Oil Pan -- die C,C,a,157-090,5K8 Oil Pan
+,HEAT SINK (ELESYS) -- die II/JJ,B,a,545-090,HEAT SINK (ELESYS)
+,HEAT SINK (ELESYS) -- die UU/VV,C,a,545-090,HEAT SINK (ELESYS)
+,B Adaptor DC -- die 1,C,a,150-090,B Adaptor DC
+,C Adaptor DC -- die 1,C,a,151-090,C Adaptor DC
+,5MH Oil Pan DC -- die A,B,a,450-090,5MH Oil Pan DC
+,5MH Oil Pan DC -- die B,C,a,450-090,5MH Oil Pan DC
+,5J6-A000 Oil Pan -- die C,C,a,156-090,5J6-A000 Oil Pan
+,5LA Oil Pan -- die D,C,a,510-090,5LA Oil Pan
+,5LA Oil Pan -- die H,B,a,510-090,5LA Oil Pan
+,6B2 BASE COMP FUEL PUMP (DC) -- die B,B,a,631-090,6B2 BASE COMP FUEL PUMP (DC)
+,RPY Fuel Pump -- die B,B,a,153-090,RPY Fuel Pump
+,RPY Fuel Pump -- die C,C,a,153-090,RPY Fuel Pump
+,RPY Holder Comp No 1 Exh Cam Lwr -- die D,B,a,131-090,RPY Holder Comp No 1 Exh Cam Lwr
+,RPY Holder Comp No 1 Exh Cam Lwr -- die D,B,b,132-090,RPY Holder Comp No 2 Exh Cam Lwr
+,RPY Holder Comp No 1 Exh Cam Lwr -- die D,B,c,133-090,RPY Holder Comp No 3 Exh Cam Lwr
+,RPY Holder Comp No 1 Exh Cam Lwr -- die D,B,d,134-090,RPY Holder Comp No 4 Exh Cam Lwr
+,RPY Holder Comp No 1 Rkr Shaft -- die I,W,a,135-090,RPY Holder Comp No 1 Rkr Shaft
+,RPY Holder Comp No 2 Rkr Shaft -- die I,W,a,136-090,RPY Holder Comp No 2 Rkr Shaft
+,RPY Holder Comp No 2 Rkr Shaft -- die I,W,b,137-090,RPY Holder Comp No 3 Rkr Shaft
+,RPY Holder Comp No 2 Rkr Shaft -- die I,W,c,138-090,RPY Holder Comp No 4 Rkr Shaft
+,RPY Holder Comp No 5 Rkr Shaft -- die B,C,a,139-090,RPY Holder Comp No 5 Rkr Shaft
+,RPY Holder Comp No 5 Rkr Shaft -- die C,W,a,139-090,RPY Holder Comp No 5 Rkr Shaft
+,5A2 Fuel Pump -- die S,B,a,567-090,5A2 Fuel Pump
+,5A2 Fuel Pump -- die T,C,a,567-090,5A2 Fuel Pump
+,5A2 HOLDER COMP NO 1-2 EX CAM -- die D,B,a,588-090,5A2 HOLDER COMP NO 1-2 EX CAM
+,5A2 HOLDER COMP NO 1 IN CAM DC -- die D,B,a,583-090,5A2 HOLDER COMP NO 1 IN CAM DC
+,5A2 HOLDER COMP NO 1 IN CAM DC -- die D,B,b,589-090,5A2 HOLDER COMP NO 3 EX CAM DC
+,5A2 HOLDER COMP NO 4 EX CAM DC -- die E,C,a,590-090,5A2 HOLDER COMP NO 4 EX CAM DC
+,5A2 HOLDER COMP NO 4 EX CAM DC -- die E,C,b,591-090,5A2 HOLDER COMP NO 5 EX CAM DC
+,5A2 HOLDER COMP NO 1-2 EX CAM -- die E,C,a,588-090,5A2 HOLDER COMP NO 1-2 EX CAM
+,5A2 HOLDER COMP NO 1 IN CAM DC -- die E,C,a,583-090,5A2 HOLDER COMP NO 1 IN CAM DC
+,5A2 HOLDER COMP NO 1 IN CAM DC -- die E,C,b,589-090,5A2 HOLDER COMP NO 3 EX CAM DC
+,5A2 HOLDER COMP NO 2 IN CAM DC -- die G,C,a,584-090,5A2 HOLDER COMP NO 2 IN CAM DC
+,5A2 HOLDER COMP NO 2 IN CAM DC -- die G,C,b,585-090,5A2 HOLDER COMP NO 3 IN CAM DC
+,5A2 HOLDER COMP NO 2 IN CAM DC -- die G,C,c,586-090,5A2 HOLDER COMP NO 4 IN CAM DC
+,5A2 HOLDER COMP NO 2 IN CAM DC -- die G,C,d,587-090,5A2 HOLDER COMP NO 5 IN CAM DC
+,5A2 HOLDER COMP NO 6 EX CAM DC -- die C,C,a,592-090,5A2 HOLDER COMP NO 6 EX CAM DC
+,5A2 R/S #5  DC -- die R,C,a,597-090,5A2 R/S #5  DC
+,5A2 R/S #1    DC -- die R,C,a,593-090,5A2 R/S #1    DC
+,5A2 R/S #1    DC -- die S,B,a,593-090,5A2 R/S #1    DC
+,5A2 R/S #4    DC -- die I,B,a,596-090,5A2 R/S #4    DC
+,5A2 R/S #3    DC -- die I,B,a,595-090,5A2 R/S #3    DC
+,5A2 R/S #2    DC -- die I,B,a,594-090,5A2 R/S #2    DC
+,5A2 R/S #3    DC -- die J,C,a,595-090,5A2 R/S #3    DC
+,5A2 R/S #2    DC -- die J,C,a,594-090,5A2 R/S #2    DC
+,5A2 R/S #4    DC -- die J,C,a,596-090,5A2 R/S #4    DC
+,5A2 R/S #5  DC -- die Q,B,a,597-090,5A2 R/S #5  DC
+,6AT (RT4) Cooler RTN -- die 7A/7B,C,a,569-090,6AT (RT4) Cooler RTN
+,6AT (RV2) CAP A L SIDE -- die 6A/6B,C,a,566-090,6AT (RV2) CAP A L SIDE
+,"6FB Holder Comp, No 1 Cam R -- die A & B",C,a,644-090,"6FB Holder Comp, No 1 Cam R"
+,6MA Oil Pan (69F Finished) -- die F,W,a,664-090,6MA Oil Pan (69F Finished)
+,Housing Half Shaft Support -- die K/L,B,a,540-090,Housing Half Shaft Support
+,Housing Half Shaft Support -- die M/N,C,a,540-090,Housing Half Shaft Support
+,P8A Oil Pan DC -- die M,B,a,118-090,P8A Oil Pan DC
+,PGE Oil Pan DC -- die E,B,a,111-090,PGE Oil Pan DC
+,R1A OIL PAN                 DC -- die E,C,a,560-090,R1A OIL PAN                 DC
+,R5A (CRV) OIL PAN -- die H,C,a,561-090,R5A (CRV) OIL PAN
+,R70 Thermo Cover -- die Q/R,B,a,518-090,R70 Thermo Cover
+,RDJ Oil Pan DC -- die I,B,a,423-090,RDJ Oil Pan DC
+,RNA Oil Pan -- die M,B,a,470-090,RNA Oil Pan
+,RNO (RNOX) OIL PAN          DC -- die P,B,a,573-090,RNO (RNOX) OIL PAN          DC
+,RXO oil pan -- die A,C,a,559-090,RXO oil pan
+,SZAX BASE SUPPORT HALF SHAFT -- die M,B,a,574-090,SZAX BASE SUPPORT HALF SHAFT
+,SZAX BASE SUPPORT HALF SHAFT -- die N,C,a,574-090,SZAX BASE SUPPORT HALF SHAFT

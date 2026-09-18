@@ -18,6 +18,9 @@ CSV files extracted from `reference/MPP_FRS_Draft.pdf` (Flexware FRS v1.0, 3/15/
 | `opc_tags.csv` | Appendix C (pp 87–91) | ~150 | (Ignition OPC config — not a SQL table) | OPC tag catalog for OmniServer and TOPServer |
 | `downtime_reason_codes.csv` | Appendix D (pp 92–105) | ~660 | `DowntimeReasonCode` | Operator-selectable downtime reasons by area and type |
 | `defect_codes.csv` | Appendix E (pp 106–110) | ~145 | `DefectCode` | Reject/scrap defect codes by area |
+| `die_shots_report.csv` | `Aug 17_ 2026 Die Shots Report.html` | 343 | — (source extract) | Flat part × die extract of the legacy MES die-shots page, as published |
+| `die_roster.csv` | the above + `Copy of Asset #'s for Dies.xlsx` | 253 | `Tools.Tool` | **One row per physical die** — asset tag, status, generation letter, cavity count, shot counts, vendor |
+| `die_cavities.csv` | same | 371 | `Tools.ToolCavity` | One row per (die, cavity) with the Macola part number |
 
 ---
 
@@ -121,3 +124,28 @@ node parse_appendix_e.js
 # Regenerate Excel workbook
 node build_seed_workbook.js
 ```
+
+---
+
+## Die roster (`die_roster.csv` / `die_cavities.csv`)
+
+These two are **not** FRS extracts — they are built from the two tooling artefacts MPP
+delivered on 2026-09-12, and they are derived, not raw. Regenerate with:
+
+```bash
+python reference/seed_data/parsers/build_die_roster.py
+```
+
+The Die Shots Report lists a die **once per part number it casts**, so its 343 rows are not
+343 dies. The parser collapses them into physical dies by clustering near-identical shot
+counts within a (family, component, generation-letter) bucket, then joins the asset register
+on the same key plus journal position / cam bank. The part numbers in each cluster are that
+die's cavities.
+
+Seeding-registry item: **S-14**. Full analysis, including the two things the legacy data does
+not map cleanly and the four open questions for MPP:
+`notes/2026-09-12_die-asset-register-and-shot-report.md`.
+
+> **`CavityCount` is a lower bound.** It counts *distinct part numbers cast per shot*. A die
+> with four identical cavities making one part number reads as 1 — the report cannot see it.
+> MPP has to supply the true count for single-part dies.
