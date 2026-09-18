@@ -1,7 +1,7 @@
 # M&A Line Inventory Sidebar -- design
 
 **Date:** 2026-09-17 (revision 2, same day)
-**Status:** Revision 2 approved 2026-09-17; delta plan next
+**Status:** Built 2026-09-18 on Dev (panel docked on the six M&A pages); live floor check and MPP data entry (Max per consumption part, Box Quantity per bought part) owed; not deployed to prod
 **Requested by:** MPP (2026-09-16)
 **Mockups:**
 - `mockup/line_inventory_sidebar_mock.html` -- row look and density (approved)

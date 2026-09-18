@@ -40,6 +40,12 @@ are edits to EXISTING views, which go through Designer.
 
 ## 2. Designer steps (Task R6)
 
+> **DONE 2026-09-18 -- all of section 2 and Task R7 were applied as FILE edits with Designer closed**
+> (Jacques asked for them to be done rather than handed off): `ea4f05eb` docks on the six pages,
+> old sidebars removed, InventoryManager binding, AppHeaderLarge handler; `7641bc89` Item Master
+> Box Quantity field; `06415105` tray projection retired (migration `0095`, applied to Dev). Full SQL
+> suite 3836/3836. The steps below are kept as the record of what was changed.
+
 ### 2.1 Dock the panel on the M&A pages (page docks, not embeds)
 
 **Revised 2026-09-18 with Jacques:** instead of embedding `LineInventory` into each screen's
