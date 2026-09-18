@@ -103,6 +103,48 @@ EXEC test.Assert_IsEqual @TestName = N'[DtScope] an un-flagged station resolves 
 UPDATE Location.Location SET IsOeeEnabled = 1 WHERE Code = N'ZZ-OEE-L-B';
 GO
 
+-- =============================================
+-- Test 5: ufn_OeeAncestors walks PAST a deprecated intermediate -- a
+-- deprecated, unflagged cell does not stop the walk, it is just skipped
+-- from the output (header contract on R__Oee_ufn_OeeAncestors.sql: "a
+-- station under a deprecated intermediate still finds its line").
+-- =============================================
+DECLARE @LineId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-L');
+DECLARE @AssemblyStationDefId BIGINT = (SELECT Id FROM Location.LocationTypeDefinition WHERE Code = N'AssemblyStation');
+
+INSERT INTO Location.Location
+    (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, IsOeeEnabled, DeprecatedAt)
+VALUES
+    (@AssemblyStationDefId, @LineId, N'OEE Deprecated Cell', N'ZZ-OEE-L-DEPZ', N'OEE test fixture', 5, 0, SYSUTCDATETIME());
+
+DECLARE @ZId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-L-DEPZ');
+
+INSERT INTO Location.Location
+    (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, IsOeeEnabled, DeprecatedAt)
+VALUES
+    (@AssemblyStationDefId, @ZId, N'OEE Station Under Deprecated Cell', N'ZZ-OEE-L-DEPZ-S', N'OEE test fixture', 1, 0, NULL);
+
+DECLARE @SId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-OEE-L-DEPZ-S');
+
+DECLARE @ancCount NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Oee.ufn_OeeAncestors(@SId));
+EXEC test.Assert_IsEqual @TestName = N'[OeeAnc] a station under a deprecated intermediate has exactly one flagged ancestor',
+     @Expected = N'1', @Actual = @ancCount;
+
+DECLARE @ancCode NVARCHAR(50) = (SELECT TOP 1 l.Code FROM Oee.ufn_OeeAncestors(@SId) a
+                                 INNER JOIN Location.Location l ON l.Id = a.AncestorLocationId
+                                 ORDER BY a.Distance);
+EXEC test.Assert_IsEqual @TestName = N'[OeeAnc] that ancestor is the line, found past the deprecated cell',
+     @Expected = N'ZZ-OEE-L', @Actual = @ancCode;
+
+DECLARE @ancDistance NVARCHAR(10) = (SELECT CAST(a.Distance AS NVARCHAR(10)) FROM Oee.ufn_OeeAncestors(@SId) a);
+EXEC test.Assert_IsEqual @TestName = N'[OeeAnc] the line is Distance 2 (through the skipped deprecated cell)',
+     @Expected = N'2', @Actual = @ancDistance;
+
+DECLARE @rS NVARCHAR(50) = (SELECT Code FROM Location.Location WHERE Id = Oee.ufn_ResolveDowntimeScope(@SId));
+EXEC test.Assert_IsEqual @TestName = N'[DtScope] a station under a deprecated intermediate resolves to the line',
+     @Expected = N'ZZ-OEE-L', @Actual = @rS;
+GO
+
 EXEC test.OeeFixture_Teardown;
 GO
 
