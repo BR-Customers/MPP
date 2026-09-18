@@ -2,7 +2,7 @@
 -- Procedure:   Oee.Shift_GetAvailability
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-19
--- Version:     2.0
+-- Version:     2.0.1
 --
 -- Description:
 --   Per-equipment availability for one runtime shift instance: planned minutes
@@ -46,10 +46,14 @@
 --      are merged by clock so one stretch of downtime is counted once, and a
 --      minute covered by anything planned counts as planned.
 --
---   MINUTE GRID. Coverage is measured at each minute's midpoint, which is
---   exact for whole-minute events (everything the UI records) and drops a
---   sub-minute event that spans no midpoint -- the same rounding the old
---   DATEDIFF(MINUTE, ...) had.
+--   MINUTE GRID. Coverage is measured at each minute's midpoint. That is
+--   exact for minute-aligned events (such as the tests use); a live event
+--   is second-precision (Oee.DowntimeEvent_Start / _End stamp
+--   SYSUTCDATETIME(), and _RecordApproximate stamps SYSUTCDATETIME() minus
+--   N minutes), so a live event carries an error of at most about one
+--   minute per event edge, unbiased -- comparable to the old
+--   DATEDIFF(MINUTE, ...) rounding. A unit's figure can therefore differ
+--   from v1.0 by about a minute's worth even with no planned events.
 --
 --   TIME BASIS. Oee.Shift.ActualStart, Oee.ShiftSchedule.StartTime and
 --   Oee.ShiftOverride.StartTime are all LOCAL (Eastern) wall clock (OI-38), so
@@ -90,6 +94,7 @@
 -- Change Log:
 --   2026-08-19 - 1.0 - Initial version (backlog 6.1 / 6.2).
 --   2026-09-17 - 2.0 - Base-shrinking availability + ancestor inheritance + mean roll-up.
+--   2026-09-17 - 2.0.1 - Review fixes: no null-aggregate warning, honest minute-grid note, single rounding.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.Shift_GetAvailability
     @ShiftId    BIGINT,
@@ -136,7 +141,7 @@ BEGIN
         PlannedDowntimeMinutes   INT           NOT NULL DEFAULT 0,
         UnplannedDowntimeMinutes INT           NOT NULL DEFAULT 0,
         DowntimeEventCount       INT           NOT NULL DEFAULT 0,
-        AvailabilityRaw          DECIMAL(9,6)  NULL,
+        AvailabilityRaw          DECIMAL(19,10) NULL,
         Done                     BIT           NOT NULL DEFAULT 0
     );
 
@@ -216,7 +221,9 @@ BEGIN
     -- 4. Merge by TIME, not by adding events up: two events that overlap cost
     --    the operator one stretch of clock, and a minute covered by anything
     --    PLANNED is planned. Measured on a minute grid (each minute's
-    --    midpoint), which is exact for the whole-minute events the UI records.
+    --    midpoint) -- exact for minute-aligned events; a second-precision
+    --    live event carries at most about a minute's error per edge (see
+    --    MINUTE GRID above).
     -- ================================================================
     ;WITH D(n) AS (
         SELECT n FROM (VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9)) v(n)
@@ -266,7 +273,7 @@ BEGIN
                CASE
                    WHEN PlannedMinutes - PlannedDowntimeMinutes <= 0 THEN NULL
                    WHEN PlannedMinutes - PlannedDowntimeMinutes - UnplannedDowntimeMinutes <= 0 THEN 0
-                   ELSE CAST(PlannedMinutes - PlannedDowntimeMinutes - UnplannedDowntimeMinutes AS DECIMAL(19,6))
+                   ELSE CAST(PlannedMinutes - PlannedDowntimeMinutes - UnplannedDowntimeMinutes AS DECIMAL(28,10))
                         / (PlannedMinutes - PlannedDowntimeMinutes)
                END,
            Done = 1
@@ -287,6 +294,7 @@ BEGIN
             SELECT AVG(ch.AvailabilityRaw) AS AvgAvailability
             FROM #Unit ch
             WHERE ch.FlaggedParentId = u.LocationId
+              AND ch.AvailabilityRaw IS NOT NULL
         ) c
         WHERE u.Done = 0
           AND NOT EXISTS (SELECT 1 FROM #Unit ch WHERE ch.FlaggedParentId = u.LocationId AND ch.Done = 0);
