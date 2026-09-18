@@ -697,10 +697,10 @@
                 },
                 "position": {
                   "basis": "360px",
-                  "shrink": 0
+                  "grow": 1
                 },
                 "propConfig": {
-                  "props.url": {
+                  "props.src": {
                     "binding": {
                       "config": {
                         "expression": "{session.custom.terminal.visionAppUrl}"
@@ -716,14 +716,14 @@
                     "minHeight": "320px"
                   }
                 },
-                "type": "ia.display.inline-frame"
+                "type": "ia.display.iframe"
               }
             ],
             "meta": {
               "name": "TrayPanel"
             },
             "position": {
-              "shrink": 0
+              "grow": 1
             },
             "propConfig": {
               "position.display": {
