@@ -65,10 +65,18 @@ def setMaxQuantity(itemLocationId, maxQuantity, appUserId=None):
          "appUserId": appUserId})
 
 
-def saveMaxAndNotify(itemLocationId, rawValue):
+def saveMaxAndNotify(itemLocationId, rawValue, appUserId=None):
     """Tolerances popup save: a blank value clears Max; a non-number is refused here
        (input parsing, not a business rule); everything else is the proc's call.
-       Toasts the outcome and, on success, tells the page to recolour."""
+       Toasts the outcome and, on success, tells the page to recolour.
+
+       CALLERS MUST PASS appUserId=session.custom.appUserId. This path is not
+       routed through Common.Util._currentAppUserId() -- that helper reads
+       system.perspective.getSessionInfo(), which returns a LIST, so it always
+       falls back to the dev user (Id 2) and every Tolerances save gets
+       misattributed. Fixing _currentAppUserId itself is separate, wider work;
+       until then, this proc follows the same explicit-appUserId pattern as
+       Lots.Lot.checkInAndNotify."""
     raw = ("%s" % (_u(rawValue) if _u(rawValue) is not None else "")).strip().replace(",", "")
     if raw == "":
         value = None
@@ -78,7 +86,7 @@ def saveMaxAndNotify(itemLocationId, rawValue):
         except (ValueError, TypeError):
             BlueRidge.Common.Notify.toast("Invalid number", "Enter a whole number, or clear Max.", "warning")
             return {"Status": 0, "Message": "Invalid number"}
-    res = setMaxQuantity(itemLocationId, value)
+    res = setMaxQuantity(itemLocationId, value, appUserId)
     BlueRidge.Common.Ui.notifyResult(res, "Max saved")
     if res and res.get("Status"):
         system.perspective.sendMessage("inventoryChanged", payload={}, scope="page")

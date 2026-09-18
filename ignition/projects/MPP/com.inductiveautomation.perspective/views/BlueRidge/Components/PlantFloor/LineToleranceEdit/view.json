@@ -28,12 +28,12 @@
         {
           "name": "submit",
           "params": [],
-          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tres = BlueRidge.Parts.ItemLocation.saveMaxAndNotify(self.view.params.itemLocationId, self.view.custom.qty)\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-line-tolerance-edit\")"
+          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tres = BlueRidge.Parts.ItemLocation.saveMaxAndNotify(self.view.params.itemLocationId, self.view.custom.qty, self.session.custom.appUserId)\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-line-tolerance-edit\")"
         },
         {
           "name": "clearMax",
           "params": [],
-          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tres = BlueRidge.Parts.ItemLocation.saveMaxAndNotify(self.view.params.itemLocationId, \"\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-line-tolerance-edit\")"
+          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tres = BlueRidge.Parts.ItemLocation.saveMaxAndNotify(self.view.params.itemLocationId, \"\", self.session.custom.appUserId)\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-line-tolerance-edit\")"
         }
       ],
       "extensionFunctions": null,
