@@ -72,8 +72,11 @@ Add a **Box Quantity** field bidi-bound to `view.custom.state.editDraft.BoxQuant
 `ItemTypeName = "Pass-Through"`.
 - Add `"BoxQuantity": ""` to BOTH `state.selected` and `state.editDraft` defaults.
 - Add `"BoxQuantity": _s(row.get("BoxQuantity"))` to `load()`.
-- In `handleSave()`, add `payload["BoxQuantity"] = _toNum(draft.get("BoxQuantity"))`. An emptied
-  field clears: `Item.update` maps a blank value to 0, and the proc treats 0 as clear.
+- In `handleSave()`, add `payload["BoxQuantity"] = draft.get("BoxQuantity")` -- the RAW draft value,
+  not `_toNum(draft.get("BoxQuantity"))`. `_toNum("")` returns `None`, and `Item.update` treats `None`
+  as "leave alone," so `_toNum` would silently reintroduce the can't-clear bug: an emptied field would
+  send nothing and the old BoxQuantity would stick. Sending the raw value lets a blank arrive as `""`,
+  which `Item.update` maps to `0`, and the proc treats `0` as clear.
 
 ### 2.4 `Views/ShopFloor/AppHeaderLarge`
 
@@ -106,6 +109,13 @@ Nothing colours until this is set:
 
 **Max is also the check-in cap.** `Lots.Lot_Create` refuses a Received LOT that would push the pieces
 at the line past Max. Set it to the most the line should ever hold, not the reorder point.
+
+**The box rule.** A one-tap check-in only fits while `Available <= Max - Box`, so Max has to leave
+room for a whole box, not just for "some" stock. To refill an orange row (<= 30% of Max) at all, Max
+must be at least about `Box / 0.7` -- for example, 5,000-piece boxes need a Max of about 7,200 or
+more. For a red row (<= 10% of Max) Max must be at least about `Box / 0.9`. Set Max too tight relative
+to the box size and every refusal will look like held stock is eating the space, when the real cause
+is Max leaving less headroom than one box needs.
 
 ## 5. Dev caveats
 

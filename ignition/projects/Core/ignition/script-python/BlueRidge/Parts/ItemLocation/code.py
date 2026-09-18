@@ -1,6 +1,11 @@
-"""BlueRidge.Parts.ItemLocation - thin read access to ItemLocation eligibility.
+"""BlueRidge.Parts.ItemLocation - eligibility reads plus the Line Inventory
+   Tolerances popup's list/save (listConsumptionForLine, getToleranceInstances,
+   setMaxQuantity, saveMaxAndNotify). No longer read-only as of the 2026-09-17
+   Line Inventory sidebar work.
 
-   Wrappers only; no business logic. Arc 2 Phase 4 (Movement Scan FDS-02-012)."""
+   Wrappers only; no business logic -- every rule (consumption point only,
+   > 0, not below Min) lives in the procs. Arc 2 Phase 4 (Movement Scan
+   FDS-02-012)."""
 
 
 def _u(value):

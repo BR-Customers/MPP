@@ -633,8 +633,8 @@ def getLineInventoryByPart(locationId, _refreshToken=None, excludeFinishedGoods=
        re-run the read after a check-in by referencing a bumped token.
        excludeFinishedGoods (2026-09-17, trailing so existing positional/binding
        callers -- Scrap Entry included -- keep seeing finished goods by default):
-       True drops on-hand FinishedGood LOTs, for the Line Inventory popup display
-       (getLineInventoryCards) where they are noise. Scrap Entry must NOT set this --
+       True drops on-hand FinishedGood LOTs, for the Inventory popup display
+       (getInventoryPopupCards) where they are noise. Scrap Entry must NOT set this --
        a FinishedGood LOT minted and sitting on-hand at Assembly OUT is a legitimate
        scrap target."""
     if locationId is None:

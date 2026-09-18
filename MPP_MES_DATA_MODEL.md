@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 2.9 | 2026-09-18 | Blue Ridge Automation | **`Parts.ItemLocation.MaxQuantity` description corrected** -- it was still described as a per-scan-in hint (v1.8/OI-18 wording). As of the Line Inventory sidebar (rev 2, migration `0091`+), it is the consumption-point lineside cap `Lots.Lot_Create` enforces against a Received LOT, AND the colour scale for the Line Inventory panel (orange at or below 30% of Max, red at or below 10%), editable from the shop floor through the Tolerances popup (`Parts.ItemLocation_SetMaxQuantity`). No schema change -- documentation catching up to the rev-2 build. |
 | 2.8 | 2026-09-17 | Blue Ridge Automation | Parts.Item.LowInventoryHorizon retired (migration 0094); Line Inventory colours by ItemLocation.MaxQuantity. |
 | 2.7 | 2026-09-17 | Blue Ridge Automation | Parts.Item.BoxQuantity + LowInventoryHorizon (migration 0091) for the M&A Line Inventory sidebar. |
 | 2.6 | 2026-09-17 | Blue Ridge Automation | **`Tools.Tool.ShotCount` gains a setter.** `Tools.Tool_CorrectShotCount` lets the die manager enter a die's actual lifetime count at cutover or fix a wrong one, with a mandatory note audited to `Audit.ConfigLog`. Stale-guarded against a shift output landing mid-edit; touches no `DieCastContribution` row or watermark. Spec `docs/superpowers/specs/2026-09-17-tool-shot-count-correction-design.md`. |
@@ -502,7 +503,7 @@ Part-to-location eligibility (which parts can run where) **plus consumption meta
 | ItemId | BIGINT | FK → Item.Id, NOT NULL | |
 | LocationId | BIGINT | FK → Location.Id, NOT NULL | **v1.9d:** any tier (Area, WorkCenter, Cell). Eligibility at a Cell = ItemLocation row exists for the Cell OR any ancestor. |
 | MinQuantity | INT | NULL | Minimum pieces per scan-in at this Cell for this Item. Added v1.8 (OI-18). |
-| MaxQuantity | INT | NULL | Maximum pieces per scan-in — rejects over-scan. Added v1.8 (OI-18). |
+| MaxQuantity | INT | NULL | **v2.9 (2026-09-18):** the consumption-point lineside cap. `Lots.Lot_Create` refuses a Received LOT that would push the pieces at this consumption point past it. It is also the Line Inventory panel's colour scale (orange at or below 30% of Max, red at or below 10%; no Max = no colour). Editable from the shop floor through the Tolerances popup (`Parts.ItemLocation_SetMaxQuantity`), which touches only this column and audits every change. Set it to the most the point should ever hold, not a reorder point — a Max set with no headroom for a whole box refuses every check-in of that box size. Superseded the v1.8 (OI-18) "maximum pieces per scan-in" wording, which predates the consumption-point cap and the panel. |
 | DefaultQuantity | INT | NULL | Pre-populated quantity on the Allocations scan form. Added v1.8 (OI-18). |
 | IsConsumptionPoint | BIT | NOT NULL, DEFAULT 0 | `1` = this Cell consumes this Item (input); `0` = this Cell produces this Item (output) or is merely eligible. Added v1.8 (OI-18). |
 | CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT GETDATE() | |

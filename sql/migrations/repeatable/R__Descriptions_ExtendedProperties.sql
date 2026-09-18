@@ -1725,12 +1725,12 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Parts].[ItemLocation]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[ItemLocation]'), N'MaxQuantity', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Maximum pieces per scan-in - rejects over-scan. Added v1.8 (OI-18).',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'v2.9 (2026-09-18): the consumption-point lineside cap. Lots.Lot_Create refuses a Received LOT that would push the pieces at this consumption point past it. It is also the Line Inventory panel''s colour scale (orange at or below 30% of Max, red at or below 10%; no Max = no colour). Editable from the shop floor through the Tolerances popup (Parts.ItemLocation_SetMaxQuantity), which touches only this column and audits every change. Set it to the most the point should ever hold, not a reorder point - a Max set with no headroom for a whole box refuses every check-in of that box size. Superseded the v1.8 (OI-18) "maximum pieces per scan-in" wording, which predates the consumption-point cap and the panel.',
                          @level0type = N'SCHEMA', @level0name = N'Parts',
                          @level1type = N'TABLE',  @level1name = N'ItemLocation',
                          @level2type = N'COLUMN', @level2name = N'MaxQuantity';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Maximum pieces per scan-in - rejects over-scan. Added v1.8 (OI-18).',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'v2.9 (2026-09-18): the consumption-point lineside cap. Lots.Lot_Create refuses a Received LOT that would push the pieces at this consumption point past it. It is also the Line Inventory panel''s colour scale (orange at or below 30% of Max, red at or below 10%; no Max = no colour). Editable from the shop floor through the Tolerances popup (Parts.ItemLocation_SetMaxQuantity), which touches only this column and audits every change. Set it to the most the point should ever hold, not a reorder point - a Max set with no headroom for a whole box refuses every check-in of that box size. Superseded the v1.8 (OI-18) "maximum pieces per scan-in" wording, which predates the consumption-point cap and the panel.',
                          @level0type = N'SCHEMA', @level0name = N'Parts',
                          @level1type = N'TABLE',  @level1name = N'ItemLocation',
                          @level2type = N'COLUMN', @level2name = N'MaxQuantity';

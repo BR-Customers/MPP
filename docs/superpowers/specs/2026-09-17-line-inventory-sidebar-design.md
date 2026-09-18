@@ -15,6 +15,7 @@
 |---|---|---|
 | 1 | 2026-09-17 | Low = on hand below (rolled-up BOM qty per finished good x the running FG's `LowInventoryHorizon`). Every BOM part listed. Built as far as Task 8 (see the plan). |
 | 2 | 2026-09-17 | **The line's consumption eligibility drives the panel, and the line's `MaxQuantity` drives the colour.** Revision 1 broke at real scale: the RPY and 5BA cam-holder sets roll up to 40-42 parts, and machined sub-assemblies sat orange all day with no button to clear them. Revision 2 changes four things: it lists the parts the line consumes (`Parts.ItemLocation.IsConsumptionPoint`); it colours by % of Max (orange <= 30%, red <= 10%); each terminal type defaults to the parts its operator acts on, with a line-wide toggle; and a Tolerances popup sets Max from the terminal. `Item.LowInventoryHorizon` and the BOM rollup are retired. Box quantity, one-tap and numpad check-in, the held-stock exclusion and the Receiving Dock / popup fixes are kept. |
+| 2 (final review) | 2026-09-18 | **Correction pass, no scope change.** 3.5 corrected: a check-in refusal on an orange row is usually the box rule (Max leaves less headroom than one box needs), not held stock -- the box rule (`Max >= Box / 0.7` orange, `Box / 0.9` red) is now spelled out here rather than only implied. 4.2 gains the `ScopeCode` column (`Lot_GetLineInventorySummary`) and the `RowLocationCode` / `LineLocationCode` columns (`ItemLocation_ListConsumptionForLine` v1.1, added so the Tolerances popup can flag a Max shared with an ancestor Area). |
 
 ---
 
@@ -132,8 +133,14 @@ explains it:
 | Where | the line and everything under it | the exact location the LOT is created at (the line, since terminals zone up to it) |
 | Held LOTs | excluded (not available) | **included** (they still take up space) |
 
-So a part can show orange while a check-in is still refused, when held stock fills the space. The
-refusal message already reads `N present, cap M`. `Lot_Create` is **not** changed by this work.
+**The box rule.** A one-tap check-in only fits while `Available <= Max - Box`, so Max has to leave
+room for a whole box, not just for some stock. To ever refill an orange row (<= 30% of Max), Max must
+be at least about `Box / 0.7` -- for example, 5,000-piece boxes need a Max of about 7,200 or more; for
+a red row (<= 10% of Max), at least about `Box / 0.9`. **This, not held stock, is the usual reason a
+check-in gets refused on a row that still shows orange** -- Max was set without headroom for one whole
+box. Held stock filling the space (the differing pools above) is the rarer case. Refused check-ins
+should not be blamed on held stock by default; check the box size against Max first. The refusal
+message already reads `N present, cap M`. `Lot_Create` is **not** changed by this work.
 
 ### 3.6 The Tolerances popup
 
@@ -170,9 +177,9 @@ refusal message already reads `N present, cap M`. `Lot_Create` is **not** change
 
 | Proc | Change |
 |---|---|
-| **`Lots.Lot_GetLineInventorySummary`** | **Rewritten** as v2.0. Signature `@LocationId BIGINT, @TerminalRole NVARCHAR(30) = NULL, @LineWide BIT = 0`. `@TerminalRole` is the operation-type role code (`MachiningIn` / `MachiningOut` / `AssemblyIn` / `AssemblyOut`), mapped to an item type in SQL per section 3.1. NULL or `@LineWide = 1` means no type filter. Returns one row per part: `ItemId, Description, Available, MaxQuantity, Level` (`Critical`/`Low`/`Ok`/`None`), `BoxQuantity, AddLotMode` (`OneTap`/`AskQty`/`None`), `ItemLocationId` (the consumption row Max came from, NULL if none). The overflow footer is computed by the view from row count, so the proc keeps one plain result set. Sorted per section 3.3. The FG-hint parameter and all BOM/running-FG logic are removed. |
+| **`Lots.Lot_GetLineInventorySummary`** | **Rewritten** as v2.0. Signature `@LocationId BIGINT, @TerminalRole NVARCHAR(30) = NULL, @LineWide BIT = 0`. `@TerminalRole` is the operation-type role code (`MachiningIn` / `MachiningOut` / `AssemblyIn` / `AssemblyOut`), mapped to an item type in SQL per section 3.1. NULL or `@LineWide = 1` means no type filter. Returns one row per part: `ItemId, Description, Available, MaxQuantity, Level` (`Critical`/`Low`/`Ok`/`None`), `BoxQuantity, AddLotMode` (`OneTap`/`AskQty`/`None`), `ItemLocationId` (the consumption row Max came from, NULL if none), `ScopeCode` (`Component`/`PassThrough`/`All` -- what the header's scope sentence is keyed from). The overflow footer is computed by the view from row count, so the proc keeps one plain result set. Sorted per section 3.3. The FG-hint parameter and all BOM/running-FG logic are removed. |
 | **`Parts.ItemLocation_SetMaxQuantity`** (new) | `@ItemLocationId BIGINT, @MaxQuantity INT = NULL, @AppUserId BIGINT`. Status-row mutation; ConfigLog row using the Description convention (`<part> - Eligibility - Updated MaxQuantity a->b @ <location>`, with the mid-dot and arrow per the audit convention); validations per section 3.6. |
-| **`Parts.ItemLocation_ListConsumptionForLine`** (new, read) | `@LocationId BIGINT`. The popup's list: `ItemLocationId, ItemId, Description, Available, MaxQuantity, MinQuantity`, over the consumption rows resolved per section 3.2 (nearest wins per part), with Available computed as in section 2. |
+| **`Parts.ItemLocation_ListConsumptionForLine`** (new, read) | `@LocationId BIGINT`. The popup's list: `ItemLocationId, ItemId, Description, Available, MaxQuantity, MinQuantity, RowLocationCode` (where the winning consumption row actually lives), `LineLocationCode` (v1.1 -- the resolved line's own Code, so the popup can tell a row shared with an ancestor Area from one scoped to this line), over the consumption rows resolved per section 3.2 (nearest wins per part), with Available computed as in section 2. |
 | `Parts.Item_Update` | Remove `@LowInventoryHorizon` and its validation, diff and audit. `@BoxQuantity` stays as built (NULL-preserving, 0 clears, type check only on set/change). |
 | `Parts.Item_Get` | Drop the `LowInventoryHorizon` column (it was appended last, so only the fixed-shape test captures need narrowing). |
 | `Lots.Lot_GetLineInventoryByPart` | Unchanged (v1.3: `@ExcludeFinishedGoods`, description ordering). |
