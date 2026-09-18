@@ -2,7 +2,7 @@
 -- Procedure:   Location.Location_SaveAll
 -- Author:      Blue Ridge Automation
 -- Created:     2026-05-18
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Bundled save for a Location instance and its LocationAttribute values
@@ -52,6 +52,8 @@
 --                                             LocationAttribute row (if any) is deleted on update;
 --                                             no row inserted on create. Empty array means "no
 --                                             attribute values" (valid).
+--   @IsOeeEnabled BIT = NULL                - OEE / downtime unit flag. NULL = 0 on create,
+--                                             unchanged on update.
 --
 -- Result set:
 --   Single row with Status (BIT), Message (NVARCHAR), NewId (BIGINT).
@@ -72,6 +74,7 @@
 --
 -- Change Log:
 --   2026-05-18 - 1.0 - Initial version
+--   2026-09-17 - 1.1 - @IsOeeEnabled + type guard (OEE-enabled locations spec).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Location_SaveAll
     @Id                       BIGINT          = NULL,
@@ -82,7 +85,8 @@ CREATE OR ALTER PROCEDURE Location.Location_SaveAll
     @Description              NVARCHAR(500)   = NULL,
     @SortOrder                INT             = NULL,
     @AppUserId                BIGINT,
-    @AttributeValuesJson      NVARCHAR(MAX)   = N'[]'
+    @AttributeValuesJson      NVARCHAR(MAX)   = N'[]',
+    @IsOeeEnabled             BIT             = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -117,6 +121,7 @@ BEGIN
                 @Name                     AS Name,
                 @Description              AS Description,
                 @SortOrder                AS SortOrder,
+                @IsOeeEnabled             AS IsOeeEnabled,
                 JSON_QUERY(ISNULL(@AttributeValuesJson, N'[]')) AS AttributeValues
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
@@ -159,6 +164,24 @@ BEGIN
         IF @DefHierarchyLevel IS NULL
         BEGIN
             SET @Message = N'Invalid or deprecated LocationTypeDefinitionId.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId           = @AppUserId,
+                @LogEntityTypeCode   = N'Location',
+                @EntityId            = @Id,
+                @LogEventTypeCode    = @EventCode,
+                @FailureReason       = @Message,
+                @ProcedureName       = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ====================
+        -- OEE / downtime unit eligibility (spec 2026-09-16 sec 3.1)
+        -- ====================
+        IF @IsOeeEnabled = 1 AND Location.ufn_CanBeOeeEnabled(@LocationTypeDefinitionId) = 0
+        BEGIN
+            SET @Message = N'This location type cannot be OEE / downtime enabled (only lines and equipment cells can).';
             EXEC Audit.Audit_LogFailure
                 @AppUserId           = @AppUserId,
                 @LogEntityTypeCode   = N'Location',
@@ -353,9 +376,9 @@ BEGIN
             BEGIN TRANSACTION;
 
             INSERT INTO Location.Location
-                (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, CreatedAt)
+                (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, IsOeeEnabled, CreatedAt)
             VALUES
-                (@LocationTypeDefinitionId, @ParentLocationId, @Name, @Code, @Description, @SortOrder, SYSUTCDATETIME());
+                (@LocationTypeDefinitionId, @ParentLocationId, @Name, @Code, @Description, @SortOrder, ISNULL(@IsOeeEnabled, 0), SYSUTCDATETIME());
 
             SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
@@ -463,7 +486,7 @@ BEGIN
             SET @OldValue = (
                 SELECT
                     (SELECT Id, ParentLocationId, LocationTypeDefinitionId,
-                            Code, Name, Description, SortOrder
+                            Code, Name, Description, SortOrder, IsOeeEnabled
                      FROM Location.Location WHERE Id = @Id
                      FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Location,
                     JSON_QUERY((
@@ -483,10 +506,11 @@ BEGIN
             BEGIN TRANSACTION;
 
             UPDATE Location.Location
-            SET Name        = @Name,
-                Code        = @Code,
-                Description = @Description,
-                SortOrder   = COALESCE(@SortOrder, SortOrder)
+            SET Name         = @Name,
+                Code         = @Code,
+                Description  = @Description,
+                SortOrder    = COALESCE(@SortOrder, SortOrder),
+                IsOeeEnabled = COALESCE(@IsOeeEnabled, IsOeeEnabled)
             WHERE Id = @Id;
 
             -- DELETE rows whose LocationAttributeDefinitionId is missing from incoming,
@@ -528,7 +552,7 @@ BEGIN
             SET @NewValue = (
                 SELECT
                     (SELECT Id, ParentLocationId, LocationTypeDefinitionId,
-                            Code, Name, Description, SortOrder
+                            Code, Name, Description, SortOrder, IsOeeEnabled
                      FROM Location.Location WHERE Id = @Id
                      FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Location,
                     JSON_QUERY((
