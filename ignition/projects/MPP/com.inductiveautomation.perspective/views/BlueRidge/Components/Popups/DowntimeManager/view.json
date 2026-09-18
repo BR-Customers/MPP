@@ -98,7 +98,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.rootContainer.applyScope(self.props.value)"
+                    "script": "\tself.view.rootContainer.pickScope(self.props.value)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -633,7 +633,14 @@
           "params": [
             "activeCellLocationId"
           ],
-          "script": "\t# Day-one feedback item 3. The downtime unit is resolved by SQL from the\n\t# TERMINAL, not from session.custom.cell -- the Trim screen deliberately\n\t# CLEARS that cell (no Trim Press context cells exist), which is why the\n\t# manager used to open at trim with no scope and no rows. Feeding the\n\t# operator pick back in as the active cell re-flags it IsDefault, so one\n\t# proc serves both the initial seed and every subsequent pick.\n\timport BlueRidge.Oee.Downtime as D\n\tt \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.terminal) or {}\n\td \u003d D.getDefaultScopeForTerminal(t.get(\"terminalLocationId\"), activeCellLocationId)\n\tself.view.custom.scopeLocationId \u003d d.get(\"ScopeLocationId\")\n\tself.view.custom.scopeName \u003d d.get(\"Name\") or \"\"\n\tself.refreshRows()"
+          "script": "\t# Day-one feedback item 3. The downtime unit is resolved by SQL from the\n\t# TERMINAL, not from session.custom.cell -- the Trim screen deliberately\n\t# CLEARS that cell (no Trim Press context cells exist), which is why the\n\t# manager used to open at trim with no scope and no rows. This is the\n\t# FIRST-OPEN seed only (events.system.onStartup) -- it applies the proc\u0027s\n\t# DEFAULT rule, which returns no default at a split line. Every subsequent\n\t# operator pick goes through pickScope instead, which honours the pick.\n\timport BlueRidge.Oee.Downtime as D\n\tt \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.terminal) or {}\n\td \u003d D.getDefaultScopeForTerminal(t.get(\"terminalLocationId\"), activeCellLocationId)\n\tself.view.custom.scopeLocationId \u003d d.get(\"ScopeLocationId\")\n\tself.view.custom.scopeName \u003d d.get(\"Name\") or \"\"\n\tself.refreshRows()"
+        },
+        {
+          "name": "pickScope",
+          "params": [
+            "locationId"
+          ],
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\tt \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.terminal) or {}\n\td \u003d D.getScopeForPick(t.get(\"terminalLocationId\"), locationId)\n\tself.view.custom.scopeLocationId \u003d d.get(\"ScopeLocationId\")\n\tself.view.custom.scopeName \u003d d.get(\"Name\") or \"\"\n\tself.refreshRows()"
         },
         {
           "name": "refreshRows",
