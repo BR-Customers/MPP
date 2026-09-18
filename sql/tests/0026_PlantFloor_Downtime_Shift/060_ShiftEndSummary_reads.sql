@@ -25,6 +25,7 @@ SELECT TOP 1 @ItemId = eil.ItemId, @CellId = eil.LocationId
 FROM Parts.v_EffectiveItemLocation eil
 WHERE eil.ItemId IN (SELECT Id FROM Parts.Item WHERE MaxLotSize IS NULL)   -- uncapped: fixture PieceCount 50 exceeds the 24-30 seed basket caps
   AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta WHERE ta.CellLocationId = eil.LocationId AND ta.ReleasedAt IS NULL)
+  AND EXISTS (SELECT 1 FROM Oee.ufn_ResolveOeeEquipment() e WHERE e.LocationId = eil.LocationId)  -- must accept downtime (2026-09-16 flag change)
 ORDER BY eil.LocationId;
 
 DECLARE @cr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));

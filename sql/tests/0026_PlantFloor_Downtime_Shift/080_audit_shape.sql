@@ -15,10 +15,10 @@ IF OBJECT_ID(N'tempdb..#AudFix') IS NOT NULL DROP TABLE #AudFix;
 CREATE TABLE #AudFix (Tag NVARCHAR(20) PRIMARY KEY, Val BIGINT);
 GO
 
-DECLARE @CellId BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
-    INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
-    INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
-    WHERE lt.HierarchyLevel = 4 AND l.DeprecatedAt IS NULL ORDER BY l.Id);
+-- An OEE-enabled unit, not merely "the lowest-Id Cell": since the 2026-09-16
+-- flag change only a flagged location accepts downtime.
+DECLARE @CellId BIGINT = (SELECT TOP 1 e.LocationId FROM Oee.ufn_ResolveOeeEquipment() e
+    WHERE e.DefinitionCode = N'DieCastMachine' ORDER BY e.LocationId);
 DECLARE @Op BIGINT = (SELECT Id FROM Oee.DowntimeSourceCode WHERE Code = N'Operator');
 DECLARE @s TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO @s EXEC Oee.DowntimeEvent_Start @LocationId = @CellId, @DowntimeSourceCodeId = @Op, @AppUserId = 1;
