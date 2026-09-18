@@ -197,6 +197,39 @@ EXEC test.Assert_IsEqual @TestName = N'[OeeSave] the flag is still on after the 
 GO
 
 -- =============================================
+-- Test 8b: the refusal names the location's CURRENT (persisted) code, not an
+-- incoming rename -- a same-call Code change must not be reflected in a
+-- message for a save that was rejected outright (the rename never persists).
+-- =============================================
+DECLARE @M1        BIGINT        = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-LOCF-M1');
+DECLARE @Area      BIGINT        = (SELECT Val FROM #LocF WHERE Tag = N'AREA');
+DECLARE @PressDef  BIGINT        = (SELECT Id FROM Location.LocationTypeDefinition WHERE Code = N'DieCastMachine');
+DECLARE @OrigCode  NVARCHAR(50)  = N'ZZ-LOCF-M1';
+DECLARE @NewCode   NVARCHAR(50)  = N'ZZ-LOCF-M1-RN';
+
+DECLARE @r8b TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @r8b EXEC Location.Location_SaveAll
+    @Id = @M1, @ParentLocationId = @Area, @LocationTypeDefinitionId = @PressDef,
+    @Name = N'OEE Flag Press Renamed', @Code = @NewCode, @AppUserId = 1, @IsOeeEnabled = 0;
+DECLARE @s8b NVARCHAR(10)   = (SELECT CAST(Status AS NVARCHAR(10)) FROM @r8b);
+DECLARE @m8b NVARCHAR(500)  = (SELECT Message FROM @r8b);
+-- @NewCode ("...-RN") contains @OrigCode as a leading substring, so a plain
+-- Assert_Contains on @OrigCode would pass even against the bug (which
+-- interpolates the INCOMING @Code). Assert the exact expected message
+-- instead -- that fails on the bug (message would carry @NewCode) and
+-- passes once the proc names the persisted Code.
+DECLARE @ExpectedMsg8b NVARCHAR(500) = N'Cannot turn off OEE / downtime for ' + @OrigCode
+                                     + N': it has an open downtime event. End it first.';
+EXEC test.Assert_IsEqual @TestName = N'[OeeSave] renamed-and-unflagged save with an open downtime event is still refused',
+     @Expected = N'0', @Actual = @s8b;
+EXEC test.Assert_IsEqual @TestName = N'[OeeSave] the rejection names the CURRENT code, not the incoming rename',
+     @Expected = @ExpectedMsg8b, @Actual = @m8b;
+DECLARE @c8b NVARCHAR(50) = (SELECT Code FROM Location.Location WHERE Id = @M1);
+EXEC test.Assert_IsEqual @TestName = N'[OeeSave] the stored code is unchanged after the refused rename',
+     @Expected = @OrigCode, @Actual = @c8b;
+GO
+
+-- =============================================
 -- Test 9: un-flag succeeds once the open downtime event is closed.
 -- =============================================
 DECLARE @M1       BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-LOCF-M1');
