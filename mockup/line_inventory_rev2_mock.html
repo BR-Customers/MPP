@@ -1,0 +1,161 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Line inventory &mdash; revision 2</title><style>
+:root{
+  --mpp-neutral-10:#0B1220; --mpp-neutral-20:#111A2E; --mpp-neutral-30:#172238;
+  --mpp-neutral-40:#1F2C44; --mpp-neutral-50:#2C3A55; --mpp-neutral-60:#425270;
+  --mpp-neutral-70:#697A98; --mpp-neutral-80:#9AA8BF; --mpp-neutral-90:#C9D2E0;
+  --mpp-neutral-100:#F0F3F8;
+  --mpp-accent-20:#093240; --mpp-accent-40:#126680; --mpp-accent-50:#1888A8;
+  --mpp-accent-60:#22A8CC; --mpp-accent-70:#4BC2E0; --mpp-accent-90:#B0E5F3;
+  --mpp-state-good-bg:#0C2B1E; --mpp-state-good-fg:#4ADE80; --mpp-state-good-border:#17482F;
+  /* NEW: low-inventory row tokens (proposed additions to the Core stylesheet) */
+  --pf-inv-low-bg:rgba(255,145,48,0.16);
+  --pf-inv-low-border:#FF9130;
+  --surface-canvas:var(--mpp-neutral-10);
+  --surface-raised:var(--mpp-neutral-20);
+  --surface-card:var(--mpp-neutral-30);
+  --border-subtle:var(--mpp-neutral-50);
+  --border-default:var(--mpp-neutral-60);
+  --text-primary:var(--mpp-neutral-100);
+  --text-secondary:var(--mpp-neutral-90);
+  --text-tertiary:var(--mpp-neutral-70);
+  --font-sans:Inter,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'JetBrains Mono','Roboto Mono',Consolas,monospace;
+  --fs-xs:14px; --fs-sm:15px; --fs-base:17px; --fs-md:19px;
+  --fs-lg:22px; --fs-xl:27px; --fs-2xl:34px;
+}
+*{box-sizing:border-box}
+body{background:#05080f;color:var(--text-primary);font-family:var(--font-sans);
+     margin:0;padding:28px 20px 80px;font-size:var(--fs-base);line-height:1.45}
+.page{max-width:1240px;margin:0 auto}
+h1{font-size:var(--fs-xl);margin:0 0 4px;letter-spacing:-0.01em}
+.sub{color:var(--text-tertiary);font-size:var(--fs-sm);margin:0 0 26px;max-width:900px}
+.band{display:flex;align-items:baseline;gap:10px;margin:40px 0 12px}
+.band .n{font-family:var(--font-mono);color:var(--mpp-accent-70);font-size:var(--fs-sm)}
+.band h2{font-size:var(--fs-lg);margin:0}
+.note{color:var(--text-tertiary);font-size:var(--fs-sm);margin:0 0 14px;max-width:900px}
+.note b{color:var(--text-secondary)}
+.row-flex{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+
+/* ---------- terminal frame ---------- */
+.term{background:var(--surface-canvas);border:1px solid var(--border-subtle);border-radius:8px;
+      overflow:hidden;display:grid;grid-template-rows:64px 1fr;height:760px}
+.term-head{background:var(--surface-raised);border-bottom:1px solid var(--border-subtle);
+      display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.term-head .t{font-size:var(--fs-lg);font-weight:600}
+.term-head .s{color:var(--text-tertiary);font-size:var(--fs-sm)}
+.chip{background:var(--mpp-neutral-40);border:1px solid var(--border-default);border-radius:5px;
+      padding:6px 12px;font-size:var(--fs-sm);color:var(--text-secondary)}
+.term-body{display:flex;gap:16px;padding:16px;min-height:0}
+.main{flex:1;display:flex;flex-direction:column;gap:16px;min-width:0}
+.ghost{flex:1;background:var(--surface-raised);border:1px dashed var(--border-default);border-radius:5px;
+       display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);font-size:var(--fs-sm);
+       text-align:center;padding:12px}
+
+/* ---------- the sidebar (the component under design) ---------- */
+.inv{width:320px;flex:0 0 320px;background:var(--surface-raised);border:1px solid var(--border-subtle);
+     border-radius:5px;display:flex;flex-direction:column;min-height:0}
+.inv-head{padding:14px 16px 10px;border-bottom:1px solid var(--border-subtle)}
+.inv-head .t{font-size:var(--fs-md);font-weight:600}
+.inv-head .s{font-size:var(--fs-xs);color:var(--text-tertiary);margin-top:2px}
+.inv-list{padding:8px;display:flex;flex-direction:column;gap:4px;overflow:hidden;flex:1}
+.item{background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:5px;
+      height:40px;padding:0 6px 0 10px;display:flex;align-items:center;gap:8px}
+.item.low{background:var(--pf-inv-low-bg);border:2px solid var(--pf-inv-low-border);padding:0 5px 0 9px}
+.item .desc{flex:1;min-width:0;font-size:14px;line-height:1.15;color:var(--text-secondary);
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item .qty{font-family:var(--font-mono);font-size:var(--fs-base);font-weight:600;white-space:nowrap;
+      text-align:right;min-width:54px}
+.item.low .qty{color:#FFC08A}
+.item .slot{width:72px;flex:0 0 72px;display:flex;justify-content:flex-end}
+.btn{min-height:48px;border-radius:5px;border:1px solid var(--mpp-accent-50);background:var(--mpp-accent-50);
+     color:#fff;font-size:var(--fs-base);font-weight:500;font-family:var(--font-sans);cursor:pointer;width:100%}
+.btn.mini{min-height:0;height:28px;width:72px;padding:0 6px;font-size:13px;font-family:var(--font-mono)}
+.btn.sec{background:transparent;border-color:var(--border-default);color:var(--text-secondary)}
+.btn.sec.mini{font-family:var(--font-sans)}
+.btn:disabled{background:var(--mpp-neutral-40);border-color:var(--mpp-neutral-50);color:var(--text-tertiary);cursor:not-allowed}
+.inv-foot{padding:6px 8px;border-top:1px solid var(--border-subtle);display:flex;justify-content:flex-end}
+
+/* ---------- toast ---------- */
+.toast{width:340px;background:var(--mpp-state-good-bg);border:1px solid var(--mpp-state-good-border);
+       border-radius:5px;padding:12px 14px}
+.toast .t{color:var(--mpp-state-good-fg);font-weight:600;font-size:var(--fs-sm)}
+.toast .m{color:var(--text-secondary);font-size:var(--fs-sm)}
+
+/* ---------- popups ---------- */
+.popup{background:var(--surface-raised);border:1px solid var(--border-default);border-radius:8px;
+       box-shadow:0 20px 50px rgba(0,0,0,.5);overflow:hidden}
+.popup-head{padding:14px 18px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between}
+.popup-head .t{font-size:var(--fs-md);font-weight:600}
+.popup-body{padding:16px 18px}
+.numdisp{font-family:var(--font-mono);font-size:var(--fs-2xl);text-align:right;background:var(--mpp-neutral-10);
+         border:1px solid var(--border-default);border-radius:5px;padding:8px 14px;margin:10px 0 12px}
+.pad{display:grid;grid-template-columns:repeat(3,72px);gap:8px}
+.pad div{height:60px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:5px;
+         display:flex;align-items:center;justify-content:center;font-size:var(--fs-lg)}
+.popup-foot{padding:12px 18px;border-top:1px solid var(--border-subtle);display:flex;gap:10px}
+.grp{border:1px solid var(--border-subtle);border-radius:5px;margin-bottom:10px;overflow:hidden}
+.grp.low{border:2px solid var(--pf-inv-low-border)}
+.grp-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-card)}
+.grp.low .grp-h{background:var(--pf-inv-low-bg)}
+.grp-h .d{font-weight:600;font-size:var(--fs-sm)}
+.grp-h .q{font-family:var(--font-mono);font-size:var(--fs-md)}
+.lot{display:grid;grid-template-columns:1fr 90px 90px;padding:8px 14px;border-top:1px solid var(--border-subtle);
+     font-size:var(--fs-sm);color:var(--text-secondary)}
+.lot span:nth-child(1){font-family:var(--font-mono)}
+.lot span:nth-child(2),.lot span:nth-child(3){text-align:right;font-family:var(--font-mono)}
+.q-list{margin:10px 0 0;padding-left:18px;color:var(--text-secondary);font-size:var(--fs-sm)}
+.q-list li{margin-bottom:6px}
+
+.item.crit{background:rgba(239,68,68,0.18);border:2px solid #F05252;padding:0 5px 0 9px}
+.item.crit .qty{color:#FCA5A5}
+.inv-head2{padding:10px 12px 8px;border-bottom:1px solid var(--border-subtle)}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.inv-head2 .t{font-size:var(--fs-md);font-weight:600}
+.inv-head2 .s{font-size:13px;color:var(--text-tertiary);margin-top:3px}
+.hbtns{display:flex;gap:6px}
+.tog,.tbtn{height:28px;padding:0 9px;border-radius:5px;font-size:12px;font-family:var(--font-sans);cursor:pointer;
+  background:transparent;border:1px solid var(--border-default);color:var(--text-secondary)}
+.tog.on{background:var(--mpp-accent-20);border-color:var(--mpp-accent-60);color:var(--mpp-accent-90)}
+.inv-foot3{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px 6px 12px;
+  border-top:1px solid var(--border-subtle);font-size:13px;color:var(--text-tertiary);min-height:41px}
+.warnfoot{color:#FFC08A;font-weight:600}
+.flow{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.cap{font-size:12px;color:var(--text-tertiary);margin:6px 0 0;text-align:center;width:320px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary);margin:4px 0 16px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
+.warnline{font-size:13px;color:#FFC08A;background:rgba(255,145,48,0.10);border:1px solid rgba(255,145,48,0.35);
+  border-radius:5px;padding:7px 10px;margin-bottom:10px}
+.thead,.trow{display:grid;grid-template-columns:1fr 80px 110px 64px;gap:8px;align-items:center}
+.thead{font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;padding:0 2px 6px}
+.trow{padding:5px 2px;border-top:1px solid var(--border-subtle)}
+.tdesc{font-size:14px;color:var(--text-secondary)}
+.tav{font-family:var(--font-mono);text-align:right}
+.tin{height:30px;background:var(--mpp-neutral-10);border:1px solid var(--border-default);border-radius:5px;
+  color:var(--text-primary);font-family:var(--font-mono);text-align:right;padding:0 8px;width:100%;box-sizing:border-box}
+.tmore{font-size:12px;color:var(--text-tertiary);padding-top:8px}
+</style></head><body><div class="page">
+<h1>Line Inventory &mdash; revision 2</h1>
+<p class="sub">The real consumption list for <b>MA2-RPY6B2</b> (25 parts: 20 castings, 4 fasteners and a steel ball; the
+fasteners and ball are shown as bought parts, as migration 0089 types them in prod). Stock levels and Max values are
+illustrative. Colour comes from the line's <b>Max</b> for each part; one casting has no Max, so it never colours and sorts last.</p>
+<div class="legend"><span><span class="sw" style="background:rgba(239,68,68,0.35);border:2px solid #F05252"></span>red &le; 10% of Max</span>
+<span><span class="sw" style="background:rgba(255,145,48,0.30);border:2px solid #FF9130"></span>orange &le; 30% of Max</span>
+<span><span class="sw" style="background:#172238;border:1px solid #2C3A55"></span>above 30%, or no Max set</span></div>
+
+<div class="band"><span class="n">01</span><h2>Default scope per terminal</h2></div>
+<p class="note">Machining terminals show the castings; assembly terminals show the bought parts. Most urgent first;
+the footer names what is hidden. Only bought parts have a check-in button.</p>
+<div class="flow"><div><div class="inv" style="height:660px"><div class="inv-head2"><div class="hrow"><div class="t">Line Inventory</div><div class="hbtns"><button class="tog">Line-wide</button><button class="tbtn">Tolerances</button></div></div><div class="s">Castings at this line</div></div><div class="inv-list"><div class="item crit"><div class="desc">RPY Rocker Shaft #3</div><div class="qty">1</div><div class="slot"></div></div><div class="item crit"><div class="desc">RPY Rocker Shaft #2</div><div class="qty">16</div><div class="slot"></div></div><div class="item crit"><div class="desc">RPY Cam Holder Ex #3</div><div class="qty">22</div><div class="slot"></div></div><div class="item low"><div class="desc">RPY Rocker Shaft #4</div><div class="qty">40</div><div class="slot"></div></div><div class="item low"><div class="desc">RPY Lower Cam Holder #4</div><div class="qty">43</div><div class="slot"></div></div><div class="item low"><div class="desc">RPY Cam Holder In #4</div><div class="qty">57</div><div class="slot"></div></div><div class="item"><div class="desc">6B2 Fuel Pump Raw</div><div class="qty">94</div><div class="slot"></div></div><div class="item"><div class="desc">RPY Cam Holder Ex #2</div><div class="qty">109</div><div class="slot"></div></div><div class="item"><div class="desc">RPY Cam Holder Ex #5</div><div class="qty">188</div><div class="slot"></div></div><div class="item"><div class="desc">RPY Lower Cam Holder #1</div><div class="qty">191</div><div class="slot"></div></div><div class="item"><div class="desc">RPY Cam Holder In #2</div><div class="qty">192</div><div class="slot"></div></div><div class="item"><div class="desc">RPY Lower Cam Holder #3</div><div class="qty">205</div><div class="slot"></div></div></div><div class="inv-foot3"><span class="ftxt">+8 more below &middot; all above 30%</span><button class="btn sec mini" style="width:auto;padding:0 10px">Detail&hellip;</button></div></div><div class="cap">Machining IN &mdash; castings (20)</div></div>
+<div><div class="inv" style="height:660px"><div class="inv-head2"><div class="hrow"><div class="t">Line Inventory</div><div class="hbtns"><button class="tog">Line-wide</button><button class="tbtn">Tolerances</button></div></div><div class="s">Bought parts at this line</div></div><div class="inv-list"><div class="item crit"><div class="desc">6x12 Stud Bolt</div><div class="qty">180</div><div class="slot"><button class="btn mini">+2,000</button></div></div><div class="item crit"><div class="desc">Steel Ball</div><div class="qty">60</div><div class="slot"><button class="btn mini">+ LOT</button></div></div><div class="item crit"><div class="desc">9x14 Dowel Pin</div><div class="qty">900</div><div class="slot"><button class="btn mini">+5,000</button></div></div><div class="item"><div class="desc">10x12 Dowel Pin</div><div class="qty">5,400</div><div class="slot"><button class="btn mini">+5,000</button></div></div><div class="item"><div class="desc">6x50 Stud Bolt</div><div class="qty">2,600</div><div class="slot"><button class="btn mini">+2,000</button></div></div></div><div class="inv-foot3"><span class="ftxt"></span><button class="btn sec mini" style="width:auto;padding:0 10px">Detail&hellip;</button></div></div><div class="cap">Assembly OUT &mdash; bought parts (5)</div></div></div>
+
+<div class="band"><span class="n">02</span><h2>Line-wide toggled on</h2></div>
+<p class="note">Every part the line consumes, still most urgent first. Tap <b>Line-wide</b> again to go back.</p>
+<div class="flow"><div><div class="inv" style="height:660px"><div class="inv-head2"><div class="hrow"><div class="t">Line Inventory</div><div class="hbtns"><button class="tog on">Line-wide</button><button class="tbtn">Tolerances</button></div></div><div class="s">All parts this line uses</div></div><div class="inv-list"><div class="item crit"><div class="desc">RPY Rocker Shaft #3</div><div class="qty">1</div><div class="slot"></div></div><div class="item crit"><div class="desc">6x12 Stud Bolt</div><div class="qty">180</div><div class="slot"><button class="btn mini">+2,000</button></div></div><div class="item crit"><div class="desc">Steel Ball</div><div class="qty">60</div><div class="slot"><button class="btn mini">+ LOT</button></div></div><div class="item crit"><div class="desc">RPY Rocker Shaft #2</div><div class="qty">16</div><div class="slot"></div></div><div class="item crit"><div class="desc">9x14 Dowel Pin</div><div class="qty">900</div><div class="slot"><button class="btn mini">+5,000</button></div></div><div class="item crit"><div class="desc">RPY Cam Holder Ex #3</div><div class="qty">22</div><div class="slot"></div></div><div class="item low"><div class="desc">RPY Rocker Shaft #4</div><div class="qty">40</div><div class="slot"></div></div><div class="item low"><div class="desc">RPY Lower Cam Holder #4</div><div class="qty">43</div><div class="slot"></div></div><div class="item low"><div class="desc">RPY Cam Holder In #4</div><div class="qty">57</div><div class="slot"></div></div><div class="item"><div class="desc">6B2 Fuel Pump Raw</div><div class="qty">94</div><div class="slot"></div></div><div class="item"><div class="desc">RPY Cam Holder Ex #2</div><div class="qty">109</div><div class="slot"></div></div><div class="item"><div class="desc">10x12 Dowel Pin</div><div class="qty">5,400</div><div class="slot"><button class="btn mini">+5,000</button></div></div></div><div class="inv-foot3"><span class="ftxt">+13 more below &middot; all above 30%</span><button class="btn sec mini" style="width:auto;padding:0 10px">Detail&hellip;</button></div></div><div class="cap">Machining IN &mdash; line-wide (25)</div></div></div>
+
+<div class="band"><span class="n">03</span><h2>Tolerances popup</h2></div>
+<p class="note">Opened from the panel header. Anyone signed in may save. One Save per row &mdash; it changes only that
+part's Max at this line and writes an audit row. A blank Max clears it (the part stops colouring).</p>
+<div class="popup" style="width:540px"><div class="popup-head"><div class="t">Tolerances &mdash; MA2-RPY6B2</div><div style="color:var(--text-tertiary)">&#10005;</div></div><div class="popup-body"><div class="warnline">Max is also the most this line can hold &mdash; a check-in that would go over it is refused.</div><div class="thead"><span>Part</span><span>Available</span><span>Max</span><span></span></div><div class="trow"><div class="tdesc">9x14 Dowel Pin</div><div class="tav">900</div><input class="tin" value="10,000"><button class="btn mini">Save</button></div><div class="trow"><div class="tdesc">10x12 Dowel Pin</div><div class="tav">5,400</div><input class="tin" value="10,000"><button class="btn mini">Save</button></div><div class="trow"><div class="tdesc">6x12 Stud Bolt</div><div class="tav">180</div><input class="tin" value="4,000"><button class="btn mini">Save</button></div><div class="trow"><div class="tdesc">6x50 Stud Bolt</div><div class="tav">2,600</div><input class="tin" value="4,000"><button class="btn mini">Save</button></div><div class="trow"><div class="tdesc">Steel Ball</div><div class="tav">60</div><input class="tin" value="1,000"><button class="btn mini">Save</button></div><div class="trow"><div class="tdesc">RPY Rocker Shaft #3</div><div class="tav">1</div><input class="tin" value="240"><button class="btn mini">Save</button></div><div class="trow"><div class="tdesc">RPY Rocker Shaft #2</div><div class="tav">16</div><input class="tin" value="240"><button class="btn mini">Save</button></div><div class="trow"><div class="tdesc">RPY Cam Holder Ex #3</div><div class="tav">22</div><input class="tin" value="240"><button class="btn mini">Save</button></div><div class="tmore">&hellip; 18 more (the list scrolls here &mdash; it is a config popup, not the terminal panel)</div></div></div>
+</div></body></html>

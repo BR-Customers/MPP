@@ -1,236 +1,280 @@
 # M&A Line Inventory Sidebar -- design
 
-**Date:** 2026-09-17
-**Status:** Design approved 2026-09-17; plan next
+**Date:** 2026-09-17 (revision 2, same day)
+**Status:** Revision 2 approved 2026-09-17; delta plan next
 **Requested by:** MPP (2026-09-16)
-**Mockup:** `mockup/line_inventory_sidebar_mock.html` (approved layout, 2026-09-17)
-**Migration:** `0091_line_inventory_sidebar` (next free number at time of writing -- `0090` is
-claimed by the OEE-enabled-locations spec; re-check before build)
+**Mockups:**
+- `mockup/line_inventory_sidebar_mock.html` -- row look and density (approved)
+- `mockup/line_inventory_options_mock.html` -- the layout options that led to revision 2
+- `mockup/line_inventory_rev2_mock.html` -- revision 2
 **Screens:** Machining IN, Machining OUT, Assembly IN, Assembly OUT (serialized + non-serialized)
+
+## Revision history
+
+| Rev | Date | Change |
+|---|---|---|
+| 1 | 2026-09-17 | Low = on hand below (rolled-up BOM qty per finished good x the running FG's `LowInventoryHorizon`). Every BOM part listed. Built as far as Task 8 (see the plan). |
+| 2 | 2026-09-17 | **The line's consumption eligibility drives the panel, and the line's `MaxQuantity` drives the colour.** Revision 1 broke at real scale: the RPY and 5BA cam-holder sets roll up to 40-42 parts, and machined sub-assemblies sat orange all day with no button to clear them. Revision 2 changes four things: it lists the parts the line consumes (`Parts.ItemLocation.IsConsumptionPoint`); it colours by % of Max (orange <= 30%, red <= 10%); each terminal type defaults to the parts its operator acts on, with a line-wide toggle; and a Tolerances popup sets Max from the terminal. `Item.LowInventoryHorizon` and the BOM rollup are retired. Box quantity, one-tap and numpad check-in, the held-stock exclusion and the Receiving Dock / popup fixes are kept. |
 
 ---
 
 ## 1. Problem
 
-Operators on the Machining & Assembly lines cannot see or manage line-side stock easily, and
-that gap is costing accurate accounting of their work.
+Operators on the Machining & Assembly lines cannot see or manage line-side stock easily, and that
+gap is costing accurate accounting of their work.
 
 - **Machining IN shows no inventory at all.** It is only reachable through the Inventory popup.
-- **Assembly OUT (serialized) shows a single text label** -- `"PN: N pcs | PN: N pcs"` -- which
-  is poor Ignition practice and hard to read.
-- **Assembly OUT (non-serialized)** has a sidebar, but it lists part *numbers* and flags a part
-  low only against the trays left in the *current container*. A part can be one container away
-  from running out and show nothing.
-- **The Inventory popup lists every open LOT**, finished goods included. On an assembly line
-  that is mostly finished-good noise.
-- **Bought parts have no quick way in.** Dowel pins arrive in 5,000-piece boxes. Checking one in
+- **Assembly OUT (serialized) shows a single text label** -- `"PN: N pcs | PN: N pcs"` -- which is
+  poor Ignition practice and hard to read.
+- **Assembly OUT (non-serialized)** has a sidebar, but it lists part *numbers* and flags a part low
+  only against the trays left in the *current container*.
+- **The Inventory popup lists every open LOT**, finished goods included -- mostly noise on an
+  assembly line.
+- **Bought parts have no quick way in.** Dowel pins arrive in 5,000-piece boxes, and checking one in
   means the full receive flow.
 
 ## 2. What we are building
 
-One shared component, **Line Inventory**. It is a tall, 320px-wide panel docked on the right
-of all five M&A screens. It lists the line's parts, one compact row each:
+One shared component, **Line Inventory**: a tall, 320px-wide panel docked on the right of all five
+M&A screens. It has one compact row per part.
 
 | Row element | Rule |
 |---|---|
-| **Description** | `Parts.Item.Description`, never the part number. Wraps to two lines, then clips. |
-| **Available** | Sum of `Lot.InventoryAvailable` over the line's open LOTs of that part, excluding a LOT whose status blocks production (Hold, Scrap) -- a held LOT is not available (Jacques, 2026-09-17). |
-| **Button** | Only on **PassThrough** parts (the bought parts -- see § 3.1). |
-| **Low** | Whole row tinted light orange with a bright orange border. No badge, no shortfall number. |
+| **Description** | `Parts.Item.Description`, never the part number (the part number is the fallback only when Description is empty). Wraps to two lines, then clips. |
+| **Available** | Sum of `Lot.InventoryAvailable` over the line's LOTs of that part whose status does not block production. It excludes `Closed` and `Open` LOTs and any status with `LotStatusCode.BlocksProduction = 1` (Hold, Scrap). **A held LOT is not available** (Jacques, 2026-09-17). |
+| **Colour** | From the part's **Max** at this line (section 3.2): orange at <= 30%, red at <= 10%, none when no Max is set. It colours the whole row with a matching border. No badge and no shortfall number. |
+| **Button** | Only on **PassThrough** parts, the bought parts (section 3.4). |
 
-**Order:** low rows first, then alphabetical by description.
+**Density:** rows are 40px with 4px gaps and ~28px buttons, so **12 rows fit with no scrolling**.
+Jacques's bar is "8-10 rows on a screen, no scrolling"; that is a hard requirement.
 
-**Density:** rows are 40px with 4px gaps and ~28px buttons, so **12 rows fit with no scrolling**
-on a terminal. Jacques's bar is "8-10 rows on a screen, no scrolling"; that is a hard
-requirement, not a nicety.
+**Overflow:** past the rows that fit, a one-line footer says what is hidden and whether any of it is
+coloured, e.g. `+8 more below - all above 30%` or `+3 more below - 2 low`. The list is sorted most
+urgent first, so the hidden rows are always the healthiest.
 
 **Finished goods are never listed.**
 
 ## 3. Rules
 
-### 3.1 Which parts get a button
+All of these are decided in SQL (`Lots.Lot_GetLineInventorySummary`), per the
+no-business-logic-in-Python rule. The views render what they are told.
 
-Migration `0089` (in prod since 2026-09-16) retyped the 33 bought parts from `Component` to
-`PassThrough`, per FDS-03-002 (`Component` = manufactured intermediate, `PassThrough` =
-vendor-supplied). So "purchased" is now simply **`ItemType = PassThrough`**.
+### 3.1 Which parts are listed
+
+1. **Consumption parts.** Every part with an active `Parts.ItemLocation` row where
+   `IsConsumptionPoint = 1`, at the terminal's line or any ancestor of it. This is the same hierarchy
+   cascade eligibility already uses. These are listed **even at 0 on hand**, because a part that has
+   run out is the one that most needs attention.
+2. **Anything else on hand.** Every other non-FG part with available stock at the line.
+3. **Terminal scope.** Each terminal type defaults to the parts its operator acts on:
+
+   | Terminal role | Default scope |
+   |---|---|
+   | Machining IN, Machining OUT | `Component` (the castings) |
+   | Assembly IN, Assembly OUT | `PassThrough` (the bought parts) |
+
+   A **Show line-wide parts** toggle in the panel header widens the list to every part from rules 1
+   and 2. The toggle is per panel (per session and view) and resets when the screen reloads.
+
+Why this beats revision 1's BOM rollup:
+- Machined sub-assemblies are made on the line, not brought to it, so they are not consumption rows
+  and never sit orange.
+- The list no longer depends on knowing which finished good is running, so it works when the line
+  is idle.
+- The data already exists: on Dev there are 172 consumption rows, all set at the line tier.
+
+### 3.2 Colour
+
+For each listed part, **Max** = the `MaxQuantity` of the **nearest** consumption row walking up
+from the terminal's line (`Depth ASC`), exactly as `Lots.Lot_Create`'s consumption-point cap
+resolves it.
+
+| Level | Rule | Row |
+|---|---|---|
+| `Critical` | `Available <= 10% of Max` | red tint, bright red border |
+| `Low` | `Available <= 30% of Max` | orange tint, bright orange border |
+| `Ok` | above 30% | plain |
+| `None` | no Max configured | plain |
+
+**A part with no Max never changes colour**, so the Tolerances popup is also how a part gets its
+warning. `MinQuantity` and `DefaultQuantity` are not used by the panel (Jacques, 2026-09-17).
+
+### 3.3 Order
+
+Most urgent first, by `Available / Max` ascending, so the part nearest empty is on top. Parts with
+no Max come after every part that has one, then all are ordered by description, then `ItemId`.
+
+### 3.4 The check-in button (unchanged from revision 1)
 
 | Item type | Button | What one press does |
 |---|---|---|
-| PassThrough, **Box Quantity set** | `+5,000` (the box size) | One tap: creates one `Received` LOT of Box Quantity pieces. |
-| PassThrough, **no Box Quantity** | `+ LOT` | Opens the plant-floor numpad for a count, then creates one `Received` LOT. |
-| Component, SubAssembly, RawMaterial | none | Made parts arrive on their own route. |
-| FinishedGood | -- | Never listed. |
+| PassThrough, **Box Quantity set** | `+5,000` (the part's `Parts.Item.BoxQuantity`) | One tap creates one `Received` LOT of that many pieces, attributed to the signed-in operator. |
+| PassThrough, **no Box Quantity** | `+ LOT` | Opens the numpad popup for a count, then creates one `Received` LOT. |
+| anything else | none | Made parts arrive on their own route. |
 
-The mode is decided in SQL and returned as `AddLotMode` (`OneTap` / `AskQty` / `None`), per the
-no-business-logic-in-Python rule. The view only renders what it is told.
+- **Box quantity lives on the part**, one size everywhere (Jacques, 2026-09-17).
+- **One LOT per box.** No vendor lot is captured.
+- **Double-tap guard.** Both the row button and the numpad's Add button disable for 2 s after a
+  press.
 
-**One LOT per box.** Each press is its own LOT (per-box genealogy), attributed to the signed-in
-operator. No vendor lot is captured.
+### 3.5 Max is also the lineside cap -- read this before setting it
 
-### 3.2 When a part is low
+`Lots.Lot_Create` already **refuses** a Received LOT that would push the pieces at a consumption
+point past its `MaxQuantity`. So setting Max does two things: it sets the colour scale, and it caps
+check-ins. For example, a Max of 500 means a 5,000-piece box can never be checked in there.
 
-1. **Finished-good setting.** New `Parts.Item.LowInventoryHorizon INT NULL`, set per finished
-   good in Item Master (MPP's intent: 50). It means "warn me when the line can't build this many
-   more".
-2. **Running finished good(s).** The line's running finished goods are:
-   - the item of every **open** `Lots.Container` at any location under the line; plus
-   - the finished good the Assembly OUT screen has selected
-     (`view.custom.selectedFinishedGoodItemId`), passed in as an optional hint, so a line that
-     has chosen its part but not yet opened a container still gets warnings.
-3. **Requirement per part.** For each running finished good that has a horizon, walk its active
-   BOM tree:
-   - A BOM is active when `PublishedAt IS NOT NULL AND DeprecatedAt IS NULL`, taking the highest
-     `VersionNumber`.
-   - Multiply `QtyPer` down the levels, so a casting under a SubAssembly counts
-     `casting-per-SA x SA-per-FG` per finished good.
-   - `Threshold = CEILING(rolled QtyPer x LowInventoryHorizon)`.
-   - When two running finished goods need the same part, take the **larger** threshold.
-4. **Low** = `Available < Threshold`.
-5. **No low flag** when the line has no running finished good, or none of them has a horizon.
-   The panel header says so ("No finished good running").
+The cap and the panel count slightly different pools. The difference is deliberate, and the popup
+explains it:
 
-**This replaces the tray projection.** `Workorder.Assembly_GetComponentProjection` (on hand vs.
-the trays left in the current container) is retired -- Jacques, 2026-09-17.
+| | Panel (colour) | `Lot_Create` cap |
+|---|---|---|
+| Quantity | `InventoryAvailable` | `PieceCount` |
+| Where | the line and everything under it | the exact location the LOT is created at (the line, since terminals zone up to it) |
+| Held LOTs | excluded (not available) | **included** (they still take up space) |
 
-### 3.3 Which parts are listed
+So a part can show orange while a check-in is still refused, when held stock fills the space. The
+refusal message already reads `N present, cap M`. `Lot_Create` is **not** changed by this work.
 
-- **Running finished good(s):** every non-FG part in their rolled-up BOM, **shown even at 0**. A
-  part that has run out is the one that most needs its button.
-- **Everything on hand:** plus every other non-FG part with an open LOT at the line.
-- **Idle line:** only on-hand parts.
+### 3.6 The Tolerances popup
 
-### 3.4 Where "the line" is
-
-The terminal's session cell (`session.custom.cell.locationId`) resolves up to its **WorkCenter**
-ancestor, which is the same resolution `Location.Terminal_ListByLineOf` uses. The inventory pool
-is the non-blocking (not Hold/Scrap), non-Closed, non-Open LOTs at that WorkCenter and every
-descendant, consistent with the line-resident flow -- a held or scrapped LOT does not count as
-available (Jacques, 2026-09-17). A check-in LOT is created at the same location the Inventory
-popup's `receiveLoose` uses today.
+- Opened from a **Tolerances** button in the panel header.
+- Lists the consumption parts of the terminal's line (rule 3.1.1, line-wide, ignoring the terminal
+  scope). Each row shows the part description, current available, and an editable **Max**.
+- **Anyone signed in may save** (Jacques, 2026-09-17). Presence by PIN is enough; no AD elevation.
+- Saving writes through a new proc, `Parts.ItemLocation_SetMaxQuantity`, which touches **only**
+  `MaxQuantity` and writes a ConfigLog row per change.
+  - It does not reuse `Parts.ItemLocation_SetConsumptionMetadata`: that proc replaces every column
+    it is given, so it would wipe Min and Default.
+  - It edits the consumption row the colour was resolved from, which may be at an ancestor of the
+    line (section 3.2).
+  - It rejects a negative Max, and a Max below a configured `MinQuantity` (the same rule
+    `ItemLocation_Add` enforces). A blank field clears Max, and the part then stops colouring.
+- The popup carries a one-line warning under its title: *"Max is also the most this line can hold
+  -- a check-in that would go over it is refused."*
 
 ## 4. Data
 
-### 4.1 Migration `0091_line_inventory_sidebar`
+### 4.1 Migrations
 
-- `ALTER TABLE Parts.Item ADD BoxQuantity INT NULL, LowInventoryHorizon INT NULL`, with checks:
-  - both columns: `> 0` when set (the procs map an input of `0` to NULL);
-  - `BoxQuantity` only on PassThrough items;
-  - `LowInventoryHorizon` only on FinishedGood items.
-  - The `> 0` rule is a table CHECK. The item-type rules are enforced in
-    `Item_Update` (a CHECK would have to hard-code ItemType Ids).
-- `DROP PROCEDURE Workorder.Assembly_GetComponentProjection` (and delete its repeatable file).
-- Extended properties on the new columns, so the SchemaGen ERD documents them.
+- **`0091_line_inventory_sidebar`** (built, on Dev): `Parts.Item.BoxQuantity` and
+  `Parts.Item.LowInventoryHorizon`.
+- **New migration, `0092` or the next free number:**
+  - drop `Parts.Item.LowInventoryHorizon` and its CHECK;
+  - drop `Workorder.Assembly_GetComponentProjection` (and delete its repeatable file in the same
+    commit, so `Update-Prod` doesn't recreate it).
+
+  0091 is already recorded on Dev, so it cannot be edited; the drop has to be forward.
+  `LowInventoryHorizon` has never reached prod.
 
 ### 4.2 Procs
 
 | Proc | Change |
 |---|---|
-| **`Lots.Lot_GetLineInventorySummary`** (new, read) | `@LocationId BIGINT, @FinishedGoodItemId BIGINT = NULL`. One row per part: `ItemId, Description, Available, Threshold, IsLow, BoxQuantity, AddLotMode`, plus `RunningFinishedGoods` (the resolved FG description(s), repeated on every row, for the header -- one result set). Sorted `IsLow DESC, Description`. Empty set when the location has no WorkCenter ancestor. No OUTPUT params (FDS-11-011). |
-| `Parts.Item_Update` | Accept and validate `@BoxQuantity`, `@LowInventoryHorizon`; ConfigLog diff and JSON gain both. **NULL-preserving, 0 clears** (the same deliberate deviation `@CrtEnabled` makes from this proc's full-replace semantics): omitted = leave the stored value alone, `0` = clear it, `> 0` = set it. A save from any caller that doesn't know the new fields can therefore never wipe them. `Item_Create` is unchanged -- a new item gets its box size / horizon on its first edit. |
-| `Parts.Item_Get` (+ list reads the editor uses) | Return both columns. |
-| `Lots.Lot_GetLineInventoryByPart` | Exclude FinishedGood items and return `ItemDescription`, so the Inventory popup can drop finished goods and group by description. |
-| `Lots.Lot_Create` | **Unchanged.** The button calls it with origin `Received`. Its existing gates still apply: item eligibility at the location, and the `ItemLocation.MaxQuantity` / `Item.MaxParts` caps. A 5,000 box refused by a cap surfaces the proc's message in the toast, and the fix is config, not code. |
+| **`Lots.Lot_GetLineInventorySummary`** | **Rewritten** as v2.0. Signature `@LocationId BIGINT, @TerminalRole NVARCHAR(30) = NULL, @LineWide BIT = 0`. `@TerminalRole` is the operation-type role code (`MachiningIn` / `MachiningOut` / `AssemblyIn` / `AssemblyOut`), mapped to an item type in SQL per section 3.1. NULL or `@LineWide = 1` means no type filter. Returns one row per part: `ItemId, Description, Available, MaxQuantity, Level` (`Critical`/`Low`/`Ok`/`None`), `BoxQuantity, AddLotMode` (`OneTap`/`AskQty`/`None`), `ItemLocationId` (the consumption row Max came from, NULL if none). The overflow footer is computed by the view from row count, so the proc keeps one plain result set. Sorted per section 3.3. The FG-hint parameter and all BOM/running-FG logic are removed. |
+| **`Parts.ItemLocation_SetMaxQuantity`** (new) | `@ItemLocationId BIGINT, @MaxQuantity INT = NULL, @AppUserId BIGINT`. Status-row mutation; ConfigLog row using the Description convention (`<part> - Eligibility - Updated MaxQuantity a->b @ <location>`, with the mid-dot and arrow per the audit convention); validations per section 3.6. |
+| **`Parts.ItemLocation_ListConsumptionForLine`** (new, read) | `@LocationId BIGINT`. The popup's list: `ItemLocationId, ItemId, Description, Available, MaxQuantity, MinQuantity`, over the consumption rows resolved per section 3.2 (nearest wins per part), with Available computed as in section 2. |
+| `Parts.Item_Update` | Remove `@LowInventoryHorizon` and its validation, diff and audit. `@BoxQuantity` stays as built (NULL-preserving, 0 clears, type check only on set/change). |
+| `Parts.Item_Get` | Drop the `LowInventoryHorizon` column (it was appended last, so only the fixed-shape test captures need narrowing). |
+| `Lots.Lot_GetLineInventoryByPart` | Unchanged (v1.3: `@ExcludeFinishedGoods`, description ordering). |
+| `Lots.Lot_Create` | **Unchanged.** Its eligibility gate and consumption-point cap apply to check-ins (section 3.5). |
 
 ### 4.3 Named queries and scripts (Core)
 
-- **New NQ:** `lots/Lot_GetLineInventorySummary` (type Query).
-- **Changed NQ:** `parts/Item_Update` gains the two params; `parts/Item_Get` returns them.
+- **NQ changes:**
+  - `lots/Lot_GetLineInventorySummary` takes the new parameters.
+  - New `parts/ItemLocation_ListConsumptionForLine`.
+  - New `parts/ItemLocation_SetMaxQuantity` (type Query, status row).
+  - `parts/Item_Update` drops `lowInventoryHorizon`.
 - **`BlueRidge.Lots.Lot`:**
-  - New `getLineInventorySummary(locationId, finishedGoodItemId=None)`, which always returns a
-    list (`[]` on empty).
-  - New `checkInBox(itemId, locationId, pieceCount, appUserId, terminalLocationId)`, a thin
-    wrapper over `create()` with origin `Received`. The `pieceCount` comes from the row
-    (Box Quantity) or from the numpad.
-- **`BlueRidge.Workorder.Assembly`:**
-  - Remove `getComponentProjection` and `warnLowInventory` (see § 7).
+  - `getLineInventoryInstances(locationId, terminalRole=None, lineWide=False, _refreshToken=None)` --
+    rows gain `level`, and `isLow` is replaced by `level`.
+  - `getLineInventoryHeader(...)` -- same arguments. It returns the scope sentence ("Castings at this
+    line" / "Bought parts at this line" / "All parts this line uses").
+  - `getLineInventoryFooter(...)` -- the overflow sentence, or `""`.
+  - `checkInBox` / `checkInAndNotify` -- unchanged.
+- **`BlueRidge.Parts.ItemLocation`:** `listConsumptionForLine(locationId)` and
+  `setMaxQuantity(itemLocationId, maxQuantity)`. The Max wrapper maps a blank to NULL (clear) and
+  sends `inventoryChanged` so the panel recolours.
+- **`BlueRidge.Parts.Item.update`:** drop the `lowInventoryHorizon` key.
 
 ## 5. Screens
 
-### 5.1 New views (file-authored, MPP project)
+### 5.1 New and changed views (file-authored; all created today)
 
-- **`Components/PlantFloor/LineInventory`** -- the panel.
-  - **Params:** `locationId`, `finishedGoodItemId` (optional).
-  - **Header:** "Line Inventory" plus a subline ("Low below 50 x <FG>" / "No finished good
-    running").
-  - **Body:** a flex repeater of rows with no scrolling (`overflow: hidden`).
-  - **Footer:** a small *Inventory detail...* button that opens the existing `InventoryManager`
-    popup.
-  - **Refresh:** on `inventoryChanged` (page-scoped, already broadcast), and on a slow poll
-    (30 s) so a check-in at one terminal shows on the others.
-  - **Defaults:** every bound custom prop is pre-declared with a shaped default.
-- **`Components/PlantFloor/LineInventoryRow`** -- one row: description, available, button
-  slot.
-  - **Button:** `+<BoxQuantity>` or `+ LOT`, hidden when `AddLotMode = None`.
-  - **One-tap:** disables for ~2 s after a press (double-tap guard), calls `checkInBox`, toasts
-    "Box checked in -- LOT <name> -- <desc> -- <n> pcs" or the proc's message, then sends
-    `inventoryChanged`.
-  - **`AskQty`:** opens a new small popup, `Components/PlantFloor/AddLotQty`, which embeds the
-    existing `Components/PlantFloor/Numpad` (Cancel / Add N pcs).
-- **Stylesheet (Core):** `psc-pf-inv-row` and `psc-pf-inv-row-low`, with new tokens
-  `--pf-inv-low-bg: rgba(255,145,48,0.16)` and `--pf-inv-low-border: #FF9130`. The plant floor
-  is dark-themed, so "light orange" is a pale orange tint, as in the mockup.
+- **`Components/PlantFloor/LineInventory`**
+  - New params `terminalRole` (string) and `custom.lineWide` (bool, default false).
+  - Header: title, scope sentence, a **Line-wide** toggle button and a **Tolerances** button.
+  - Footer: the overflow sentence plus the existing *Inventory detail...* button.
+  - The `finishedGoodItemId` param is removed.
+- **`Components/PlantFloor/LineInventoryRow`** -- `isLow` becomes `level`, which picks the class:
+  `pf-inv-row`, `pf-inv-row pf-inv-row-low`, or `pf-inv-row pf-inv-row-crit`.
+- **`Components/PlantFloor/LineTolerances`** (new popup)
+  - A list of consumption parts, each with description, available and a numeric Max field.
+  - One Save per row (row-scoped, so there is no bundled dirty-state machine), plus the section 3.6
+    warning line.
+  - The numeric field uses the plant-floor numpad popup pattern, because terminals have no keyboard.
+- **Stylesheet (Core):** add `--pf-inv-crit-bg: rgba(239,68,68,0.18)`, `--pf-inv-crit-border:
+  #F05252` and `.psc-pf-inv-row-crit`, mirroring the low pair.
 
-### 5.2 Changes to existing views (Designer, per the view-edit boundary)
+### 5.2 Existing views (Designer)
 
 | View | Change |
 |---|---|
-| `Views/ShopFloor/MachiningIn` | Root content becomes a row: existing column + `LineInventory` on the right. |
-| `Views/ShopFloor/MachiningOutSplit` | Add `LineInventory` to the right of the existing `ContentRow`. |
-| `Views/ShopFloor/AssemblyIn` | Same as Machining IN. |
-| `Views/ShopFloor/AssemblySerialized` | Remove `ComponentsPanel` (the single label) and `queueByPartText`; dock `LineInventory` right; pass the selected / open-container FG. |
-| `Views/ShopFloor/AssemblyNonSerialized` | Replace `InventorySidebar`'s contents (`SidebarList` label + `ProjectionRepeater`) with `LineInventory`; remove `componentProjection` / `queueByPartVertical`; pass the FG. |
-| `Components/PlantFloor/InventoryManager` (popup) | Group by part description with LOTs underneath; finished goods excluded (via the proc); low groups use the same orange treatment. |
-| `Components/PlantFloor/ComponentProjectionRow` | Deleted (no remaining users). |
-| Item Master -> Identity (`MPP_Config`) | *Box Quantity* field (enabled for PassThrough) and *Low-Inventory Horizon* field (enabled for FinishedGood), in the shaped `editDraft`. |
+| `Views/ShopFloor/MachiningIn` | Dock `LineInventory` right, `terminalRole = "MachiningIn"`. |
+| `Views/ShopFloor/MachiningOutSplit` | Dock right, `terminalRole = "MachiningOut"`. |
+| `Views/ShopFloor/AssemblyIn` | Dock right, `terminalRole = "AssemblyIn"`. |
+| `Views/ShopFloor/AssemblySerialized` | Remove `ComponentsPanel` + `queueByPartText`; dock right, `terminalRole = "AssemblyOut"`. |
+| `Views/ShopFloor/AssemblyNonSerialized` | Replace `InventorySidebar`'s contents with the panel, `terminalRole = "AssemblyOut"`; remove `componentProjection` / `queueByPartVertical`. |
+| `Components/PlantFloor/InventoryManager` | Switch the `OnHandRepeater` binding from `getLineInventoryCards` to `getInventoryPopupCards` (finished goods excluded, descriptions). `getLineInventoryCards` keeps its original behaviour for the Receiving Dock. |
+| `Views/ShopFloor/AppHeaderLarge` | Remove the `lowInventoryWarning` handler (the toast is retired, section 7). |
+| Item Master -> Identity (`MPP_Config`) | Add the **Box Quantity** field (enabled for PassThrough). No horizon field. |
 
-Whoever builds this should check that the width fits each screen's existing content at
-terminal resolution. MachiningIn and AssemblyIn are currently full-width columns.
+All five screens pass `session.custom.cell.locationId` as `locationId`.
 
 ## 6. Testing
 
-- **SQL** -- new `sql/tests/0028_PlantFloor_Assembly/1xx_Lot_GetLineInventorySummary.sql`
-  (INSERT-EXEC pattern). Cases:
-  - multi-level rollup (casting under an SA under an FG);
-  - two running FGs sharing a part (larger threshold wins);
-  - selected-FG hint with no open container;
-  - idle line (no low flags, only on-hand parts);
-  - zero-on-hand BOM part listed;
-  - FG items excluded;
-  - `AddLotMode` for PassThrough with and without a box size, and for Component;
-  - FG with NULL horizon (no flag);
-  - location with no WorkCenter ancestor (empty set);
-  - sort order.
-- **SQL** -- `Item_Update`: box size on a non-PassThrough and horizon on a non-FG are rejected;
-  negative rejected; omitted preserves; `0` clears; audit JSON carries both.
-- **SQL** -- `Lot_GetLineInventoryByPart` excludes FG.
+- **SQL, `Lot_GetLineInventorySummary` v2.0:**
+  - consumption parts listed at 0;
+  - an on-hand non-consumption part listed;
+  - FG never listed;
+  - held and closed LOTs excluded from Available;
+  - each terminal role's scope and `@LineWide`;
+  - Max resolved from the nearest ancestor row when two tiers have one;
+  - the 10% / 30% boundaries, **at** and just above each;
+  - a part with no Max gets `None` and sorts after parts that have one;
+  - the sort order;
+  - `AddLotMode`;
+  - an area-level location returns an empty set.
+- **SQL, `ItemLocation_SetMaxQuantity`:**
+  - sets Max, and changes only Max (Min and Default untouched);
+  - a blank clears it;
+  - negative rejected;
+  - below Min rejected;
+  - audit row written;
+  - an unknown or deprecated row rejected.
+- **SQL, `ItemLocation_ListConsumptionForLine`:** nearest-row resolution, and Available as in
+  section 2.
+- **SQL, cleanup:** `Item_Update` and `Item_Get` tests narrowed by the dropped column; the projection
+  test file deleted with its proc.
 - **Manual (Dev gateway):**
-  - each of the five screens shows the panel;
-  - 10+ rows without scrolling;
-  - a one-tap check-in creates one LOT and refreshes a second terminal on the same line;
-  - a double tap creates one LOT;
-  - the numpad path works;
-  - a cap rejection shows the proc message;
-  - the Inventory popup has no FG rows.
+  - each screen shows its default scope and the toggle widens it;
+  - 12 rows fit and the footer is correct;
+  - setting a Max in the popup recolours the panel on a second terminal within 30 s;
+  - a one-tap check-in over Max is refused with the `N present, cap M` message.
+- **Dev needs migration `0089`** (the PassThrough retype) before any button renders, because Dev has
+  no PassThrough parts today. Applying it is Jacques's call.
 
 ## 7. Existing low-inventory toast -- retired
 
-`Workorder.Assembly.warnLowInventory` broadcasts a `lowInventoryWarning` toast to every terminal
-on the line after each tray close. It reads the retired tray projection. Under the 50-FG horizon
-a part stays low until a box is checked in, so it would toast on every tray.
-
-**Decision (Jacques, 2026-09-17): retire it.** The orange rows already show on every terminal on
-the line, which makes the toast redundant.
-
-- Delete `warnLowInventory` and its two call sites in `BlueRidge/Workorder/Assembly/code.py`
-  (the operator ByCount tray-close path and `plcCompleteTray`).
-- Remove the `lowInventoryWarning` message handler from `Views/ShopFloor/AppHeaderLarge`
-  (Designer).
-- `Location.Terminal_ListByLineOf` / `Terminal.listByLineOf` stay; they are general-purpose.
+`Workorder.Assembly.warnLowInventory` toasted every terminal on the line after each tray close,
+reading the tray projection. **Retired (Jacques, 2026-09-17):** the coloured rows show on every
+terminal. Delete `warnLowInventory` and its two call sites, remove the `AppHeaderLarge` handler, and
+drop the projection proc (section 4.1).
 
 ## 8. Out of scope
 
-- AIM failure logging, and the shipping-label reprint with the role-gated elevation -- designed
-  in the same session and queued behind this (separate specs).
-- Removing the Shipping Dock screen -- benched (it is the only UI for Ship Container and Void
-  Label).
-- Vendor lot capture on check-in; a per-line box size; showing the shortfall number.
+- AIM failure logging, the shipping-label reprint and the Shipping Dock removal. These are separate
+  work; see `notes/2026-09-17_handoff-aim-failure-log-and-shipping-reprint.md`.
+- Vendor lot capture on check-in, per-line box size, a shortfall number, an undo for a mis-pressed
+  check-in, and grouped header rows in the Inventory popup (a later Designer pass).
+- Changing `Lots.Lot_Create`'s consumption-point cap to match the panel's pool (section 3.5).
