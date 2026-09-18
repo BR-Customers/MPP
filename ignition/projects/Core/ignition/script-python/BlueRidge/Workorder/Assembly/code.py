@@ -157,8 +157,6 @@ def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocatio
         result["ContainerComplete"] = BlueRidge.Lots.Container.complete(
             result.get("ContainerId"), operatorConfirmed=True,
             appUserId=appUserId, terminalLocationId=term)
-    if result and result.get("Status"):
-        warnLowInventory(cellLocationId, fgItem, closureMethod)
     return result
 
 
@@ -240,52 +238,6 @@ def notifyInventoryChanged(cellLocationId, terminalLocationId):
     BlueRidge.Workorder.PlcWatcher.broadcastPageMessage("inventoryChanged", payload)
 
 
-def warnLowInventory(cellLocationId, finishedGoodItemId, closureMethod):
-    """Backlog: "when an inventory is low, all terminals on the line should get a
-       warning." Called after a tray close (both the operator ByCount path and
-       plcCompleteTray) to re-check the SAME IsLow flag already computed for the
-       Assembly OUT sidebar (Workorder.Assembly_GetComponentProjection -- on-hand
-       vs what is still needed to finish the CURRENT container), and if anything
-       is low, broadcast a 'lowInventoryWarning' toast to every terminal on the
-       same line (Location.Terminal_ListByLineOf: every Terminal sharing the
-       triggering cell's ancestor WorkCenter), not just the terminal that
-       happened to close the tray.
-
-       v1 fires every time IsLow is true after a close, not only on the
-       false->true transition -- simple, and a repeated non-blocking toast while
-       genuinely low is a lesser risk than a missed one; revisit with session-level
-       dedup if it proves noisy in practice.
-
-       Best-effort, mirrors notifyInventoryChanged: never raises into the
-       completion path, enumerates every open session/page (GATEWAY-scope
-       sendMessage has no "current session" to default to), and terminals with no
-       'lowInventoryWarning' handler simply ignore it."""
-    try:
-        rows = getComponentProjection(cellLocationId, finishedGoodItemId, closureMethod) or []
-        low = [r for r in rows if r.get("IsLow")]
-        if not low:
-            return
-        terminalIds = [t.get("TerminalLocationId") for t in
-                      (BlueRidge.Location.Terminal.listByLineOf(cellLocationId) or [])]
-        if not terminalIds:
-            return
-        parts = [r.get("PartNumber") or r.get("ItemPartNumber") or "?" for r in low]
-        payload = {"terminalIds": terminalIds, "cellLocationId": cellLocationId, "parts": parts}
-        for s in (system.perspective.getSessionInfo() or []):
-            sid = s["id"]
-            for pid in (s["pageIds"] or []):
-                try:
-                    system.perspective.sendMessage(
-                        "lowInventoryWarning", payload=payload,
-                        scope="page", sessionId=sid, pageId=pid)
-                except (Exception, java.lang.Exception) as e:
-                    BlueRidge.Common.Util.log(
-                        "warnLowInventory send failed sid=%s pid=%s: %s"
-                        % (sid, pid, e), level="warn")
-    except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("warnLowInventory failed: %s" % e, level="warn")
-
-
 def plcCompleteTray(terminalLocationId, closureMethod):
     """Shared PLC-triggered tray close for ByWeight / ByVision. Resolves the close
        context headlessly, then mints the FG LOT + consumes BOM via the SAME
@@ -310,7 +262,6 @@ def plcCompleteTray(terminalLocationId, closureMethod):
     # unless we push). Best-effort; only fires on a real close.
     if result and result.get("Status"):
         notifyInventoryChanged(ctx.get("cellLocationId"), terminalLocationId)
-        warnLowInventory(ctx.get("cellLocationId"), ctx.get("finishedGoodItemId"), closureMethod)
     return result
 
 
@@ -361,24 +312,6 @@ def getRecommendedFinishedGoodId(cellLocationId):
         if r.get("IsRecommended"):
             return r.get("Id")
     return None
-
-
-def getComponentProjection(cellLocationId, finishedGoodItemId, closureMethod=None, _refreshToken=None):
-    """DISPLAY-ONLY: per active-BOM component of the finished good, how many will be consumed
-       to COMPLETE the current container + a low-stock flag, for the Assembly OUT line-inventory
-       panel. NOT a gate -- the authoritative sufficiency check is in Assembly_CompleteTray.
-       Thin glue: all math lives in Workorder.Assembly_GetComponentProjection. Returns
-       list[dict] (empty = nothing to show). `_refreshToken` is the ignored runScript re-read
-       arg, consistent with getComponentsAtCell / getOpenByCell."""
-    cellLocationId = BlueRidge.Common.Util.extractQualifiedValues(cellLocationId)
-    finishedGoodItemId = BlueRidge.Common.Util.extractQualifiedValues(finishedGoodItemId)
-    closureMethod = BlueRidge.Common.Util.extractQualifiedValues(closureMethod)
-    if cellLocationId is None or finishedGoodItemId is None:
-        return []
-    return BlueRidge.Common.Db.execList(
-        "workorder/Assembly_GetComponentProjection",
-        {"locationId": cellLocationId, "finishedGoodItemId": finishedGoodItemId,
-         "closureMethod": closureMethod})
 
 
 def completeBoxToPrinter(containerId, terminalLocationId, printerLocationId, appUserId=None):
