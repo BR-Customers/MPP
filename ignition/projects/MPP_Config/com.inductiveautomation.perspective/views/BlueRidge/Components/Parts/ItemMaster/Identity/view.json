@@ -2,6 +2,7 @@
   "custom": {
     "state": {
       "editDraft": {
+        "BoxQuantity": "",
         "CountryOfOrigin": "",
         "CrtEnabled": false,
         "DefaultSubLotQty": "",
@@ -21,6 +22,7 @@
         "WeightUomId": null
       },
       "selected": {
+        "BoxQuantity": "",
         "CountryOfOrigin": "",
         "CrtEnabled": false,
         "DefaultSubLotQty": "",
@@ -1023,6 +1025,69 @@
                   "name": "Label",
                   "tooltip": {
                     "enabled": true,
+                    "text": "Pieces in one purchased box (Pass-Through parts only). Drives the one-tap check-in button on the shop-floor Line Inventory panel; blank \u003d the button asks for a count."
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Box Quantity"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.state.editDraft.ItemTypeName} \u003d \"Pass-Through\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.state.editDraft.BoxQuantity"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Pass-Through only",
+                  "style": {
+                    "classes": "search-input",
+                    "width": "120px"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "FieldBoxQuantity"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
                     "text": "Enable CRT - every LOT of this part minted while this is on is tagged CRT and cannot advance until Quality clears it."
                   }
                 },
@@ -1099,7 +1164,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\titemId \u003d self.view.params.value\n\trow \u003d BlueRidge.Parts.Item.getOneOrEmpty(itemId)\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\tloaded \u003d {\n\t\t\"Id\":               row.get(\"Id\"),\n\t\t\"PartNumber\":       _s(row.get(\"PartNumber\")),\n\t\t\"Description\":      _s(row.get(\"Description\")),\n\t\t\"ItemTypeId\":       row.get(\"ItemTypeId\"),\n\t\t\"ItemTypeName\":     _s(row.get(\"ItemTypeName\")),\n\t\t\"UomId\":            row.get(\"UomId\"),\n\t\t\"UomCode\":          _s(row.get(\"UomCode\")),\n\t\t\"WeightUomId\":      row.get(\"WeightUomId\"),\n\t\t\"WeightUomCode\":    _s(row.get(\"WeightUomCode\")),\n\t\t\"MacolaPartNumber\": _s(row.get(\"MacolaPartNumber\")),\n\t\t\"CountryOfOrigin\":  _s(row.get(\"CountryOfOrigin\")),\n\t\t\"UnitWeight\":       _s(row.get(\"UnitWeight\")),\n\t\t\"DefaultSubLotQty\": _s(row.get(\"DefaultSubLotQty\")),\n\t\t\"MaxLotSize\":       _s(row.get(\"MaxLotSize\")),\n\t\t\"MaxParts\":         _s(row.get(\"MaxParts\")),\n\t\t\"CrtEnabled\":       bool(row.get(\"CrtEnabled\")),\n\t}\n\t_pid \u003d BlueRidge.Parts.Item.getPlcId(itemId)\n\tloaded[\"PlcId\"] \u003d (_pid.get(\"PlcId\") if _pid else None)\n\tself.view.custom.state \u003d {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
+          "script": "\titemId \u003d self.view.params.value\n\trow \u003d BlueRidge.Parts.Item.getOneOrEmpty(itemId)\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\tloaded \u003d {\n\t\t\"Id\":               row.get(\"Id\"),\n\t\t\"PartNumber\":       _s(row.get(\"PartNumber\")),\n\t\t\"Description\":      _s(row.get(\"Description\")),\n\t\t\"ItemTypeId\":       row.get(\"ItemTypeId\"),\n\t\t\"ItemTypeName\":     _s(row.get(\"ItemTypeName\")),\n\t\t\"UomId\":            row.get(\"UomId\"),\n\t\t\"UomCode\":          _s(row.get(\"UomCode\")),\n\t\t\"WeightUomId\":      row.get(\"WeightUomId\"),\n\t\t\"WeightUomCode\":    _s(row.get(\"WeightUomCode\")),\n\t\t\"MacolaPartNumber\": _s(row.get(\"MacolaPartNumber\")),\n\t\t\"CountryOfOrigin\":  _s(row.get(\"CountryOfOrigin\")),\n\t\t\"UnitWeight\":       _s(row.get(\"UnitWeight\")),\n\t\t\"DefaultSubLotQty\": _s(row.get(\"DefaultSubLotQty\")),\n\t\t\"MaxLotSize\":       _s(row.get(\"MaxLotSize\")),\n\t\t\"MaxParts\":         _s(row.get(\"MaxParts\")),\n\t\t\"BoxQuantity\":      _s(row.get(\"BoxQuantity\")),\n\t\t\"CrtEnabled\":       bool(row.get(\"CrtEnabled\")),\n\t}\n\t_pid \u003d BlueRidge.Parts.Item.getPlcId(itemId)\n\tloaded[\"PlcId\"] \u003d (_pid.get(\"PlcId\") if _pid else None)\n\tself.view.custom.state \u003d {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
         },
         {
           "name": "handleSave",
