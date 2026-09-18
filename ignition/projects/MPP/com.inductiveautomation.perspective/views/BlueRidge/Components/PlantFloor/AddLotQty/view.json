@@ -1,6 +1,7 @@
 {
   "custom": {
-    "qty": ""
+    "qty": "",
+    "busyUntil": 0
   },
   "params": {
     "description": "",
@@ -27,7 +28,7 @@
         {
           "name": "submit",
           "params": [],
-          "script": "\traw = (\"%s\" % (self.view.custom.qty or \"\")).strip()\n\tif not raw.isdigit() or int(raw) <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"Quantity required\", \"Enter how many pieces are in the box.\", \"warning\")\n\t\treturn\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Lots.Lot.checkInAndNotify(self.view.params.itemId, self.view.params.locationId, int(raw), self.view.params.description, self.session.custom.appUserId, termId)\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-add-lot\")"
+          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\traw = (\"%s\" % (self.view.custom.qty or \"\")).strip()\n\tif not raw.isdigit() or int(raw) <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"Quantity required\", \"Enter how many pieces are in the box.\", \"warning\")\n\t\treturn\n\t# double-tap guard: the button stays disabled for 2 s\n\tself.view.custom.busyUntil = nowMs + 2000\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Lots.Lot.checkInAndNotify(self.view.params.itemId, self.view.params.locationId, int(raw), self.view.params.description, self.session.custom.appUserId, termId)\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-add-lot\")"
         }
       ],
       "extensionFunctions": null,
@@ -95,7 +96,8 @@
             "position": {"basis": "0", "grow": 1},
             "props": {"style": {"classes": "pf-btn pf-btn-primary", "minHeight": "36px"}},
             "propConfig": {
-              "props.text": {"binding": {"type": "expr", "config": {"expression": "\"Add \" + if(len({view.custom.qty}) = 0, \"0\", {view.custom.qty}) + \" pcs\""}}}
+              "props.text": {"binding": {"type": "expr", "config": {"expression": "\"Add \" + if(len({view.custom.qty}) = 0, \"0\", {view.custom.qty}) + \" pcs\""}}},
+              "props.enabled": {"binding": {"type": "expr", "config": {"expression": "toMillis(now(500)) > {view.custom.busyUntil}"}}}
             },
             "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
               "config": {"script": "\tself.view.rootContainer.submit()"}}}}
