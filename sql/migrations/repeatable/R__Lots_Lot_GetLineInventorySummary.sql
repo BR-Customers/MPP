@@ -2,59 +2,56 @@
 -- Repeatable:  R__Lots_Lot_GetLineInventorySummary.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-17
--- Version:     1.1
--- Change (1.1, 2026-09-17, Jacques's decision): held LOTs must not count as
---              available. The @OnHand pool now requires
---              Lots.LotStatusCode.BlocksProduction = 0 (in addition to
---              excluding Closed/Open) rather than only excluding Closed --
---              so a LOT on Hold (or Scrap, or any future blocking status)
---              no longer inflates a part's Available quantity.
--- Description: The M&A Line Inventory sidebar's single read (spec
---              2026-09-17-line-inventory-sidebar-design.md). One row per part.
+-- Version:     2.0
+-- Description: The M&A Line Inventory sidebar's single read (spec revision 2,
+--              docs/superpowers/specs/2026-09-17-line-inventory-sidebar-design.md).
+--              One row per part.
 --
 --              LINE. @LocationId (the terminal's session cell) resolves up to its
---              WorkCenter ancestor -- the same resolution as
---              Location.Terminal_ListByLineOf. The pool is every non-blocking,
---              non-Open, non-Closed LOT (Lots.LotStatusCode.BlocksProduction = 0,
---              code not in Closed/Open, InventoryAvailable > 0) at that WorkCenter
---              or any descendant (line-resident flow) -- a LOT on Hold or Scrap
---              is not available.
+--              WorkCenter ancestor (LocationTypeId 4, as Terminal_ListByLineOf).
 --
---              RUNNING FINISHED GOODS. Every FinishedGood with an OPEN
---              Lots.Container anywhere under the line, plus @FinishedGoodItemId
---              (the FG the Assembly OUT screen has selected before a container
---              opens).
+--              MEMBERSHIP. Parts with an active IsConsumptionPoint = 1 ItemLocation
+--              row at the line or any ancestor (listed even at 0 on hand), plus every
+--              other part with available stock at the line. FinishedGood never.
 --
---              THRESHOLD. For each running FG with a LowInventoryHorizon, walk
---              its active BOM tree (Published, not Deprecated, highest
---              VersionNumber per parent), multiplying QtyPer down the levels and
---              summing a child reached by several paths. Threshold =
---              CEILING(rolled qty x horizon); the larger wins across FGs.
---              IsLow = Threshold IS NOT NULL AND Available < Threshold.
+--              AVAILABLE. SUM(InventoryAvailable) over LOTs at the line or any
+--              descendant with InventoryAvailable > 0 whose status has
+--              BlocksProduction = 0 and is not Closed or Open. A held LOT is not
+--              available (Jacques, 2026-09-17).
 --
---              ROWS. Every non-FG part in a running FG's tree (even at 0 on
---              hand) plus every other non-FG part on hand. FinishedGood items
---              are never returned.
+--              MAX. The MaxQuantity of the NEAREST consumption row walking up from the
+--              line (Depth ASC) -- the same resolution as Lots.Lot_Create 6b, whose cap
+--              this value also is. ItemLocationId names that row so the Tolerances
+--              popup edits the row the colour came from.
 --
---              ADD-LOT MODE. PassThrough with BoxQuantity -> OneTap; PassThrough
---              without -> AskQty; anything else -> None.
+--              LEVEL. Integer maths, no rounding: Critical when Available*10 <= Max,
+--              Low when Available*10 <= Max*3, else Ok; None when Max is NULL or <= 0.
 --
---              HEADER. RunningFinishedGoods (comma-joined descriptions) and
---              LowInventoryHorizon (the largest running horizon) are repeated on
---              every row so the proc keeps one result set.
+--              SCOPE. @TerminalRole MachiningIn/MachiningOut -> Component ('Castings');
+--              AssemblyIn/AssemblyOut -> PassThrough ('Purchased'); NULL, unknown or
+--              @LineWide = 1 -> no filter ('All'). ScopeCode is repeated on every row so
+--              the proc keeps ONE result set.
 --
---              ORDER. IsLow DESC, Description, ItemId.
+--              ORDER. Positive Max first by Available/Max ascending (most urgent on
+--              top), then no-Max parts; ties and the no-Max group by Description,
+--              then ItemId.
 --
---              FDS-11-011: no OUTPUT params; empty set = nothing to show
---              (NULL location or no WorkCenter ancestor).
+--              ADD-LOT MODE. PassThrough + BoxQuantity -> OneTap; PassThrough without
+--              -> AskQty; otherwise None.
 --
---              BOM recursion is capped at 10 levels (MPP trees are 2-3 deep);
---              the active-BOM set is materialized first because a recursive CTE
---              member may not contain an aggregate.
+--              FDS-11-011: no OUTPUT params; empty set = nothing to show.
+--
+-- Change Log:
+--   2026-09-17 - 1.0 - BOM rollup x finished-good horizon (spec revision 1).
+--   2026-09-17 - 1.1 - Held (BlocksProduction) LOTs excluded from Available.
+--   2026-09-17 - 2.0 - Spec revision 2: consumption eligibility + % of Max; terminal
+--                      scope + line-wide; BOM / running-FG logic and the
+--                      @FinishedGoodItemId parameter removed.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.Lot_GetLineInventorySummary
-    @LocationId         BIGINT,
-    @FinishedGoodItemId BIGINT = NULL
+    @LocationId   BIGINT,
+    @TerminalRole NVARCHAR(30) = NULL,
+    @LineWide     BIT          = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -74,7 +71,18 @@ BEGIN
 
     DECLARE @FgTypeId          BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood');
     DECLARE @PassThroughTypeId BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'PassThrough');
-    DECLARE @OpenContainerId   BIGINT = (SELECT Id FROM Lots.ContainerStatusCode WHERE Code = N'Open');
+
+    -- scope: role -> item type (NULL = no filter)
+    DECLARE @ScopeTypeCode NVARCHAR(30) =
+        CASE WHEN ISNULL(@LineWide, 0) = 1 THEN NULL
+             WHEN @TerminalRole IN (N'MachiningIn', N'MachiningOut') THEN N'Component'
+             WHEN @TerminalRole IN (N'AssemblyIn', N'AssemblyOut')   THEN N'PassThrough'
+             ELSE NULL END;
+    DECLARE @ScopeTypeId BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = @ScopeTypeCode);
+    DECLARE @ScopeCode NVARCHAR(20) =
+        CASE @ScopeTypeCode WHEN N'Component' THEN N'Castings'
+                            WHEN N'PassThrough' THEN N'Purchased'
+                            ELSE N'All' END;
 
     -- 1. the line and everything under it
     DECLARE @LineLocs TABLE (Id BIGINT NOT NULL PRIMARY KEY);
@@ -85,90 +93,68 @@ BEGIN
     )
     INSERT INTO @LineLocs (Id) SELECT Id FROM Descendants;
 
-    -- 2. running finished goods
-    DECLARE @Running TABLE (ItemId BIGINT NOT NULL PRIMARY KEY, Horizon INT NULL, Description NVARCHAR(500) NULL);
-    INSERT INTO @Running (ItemId, Horizon, Description)
-    SELECT i.Id, i.LowInventoryHorizon, ISNULL(i.Description, i.PartNumber)
-    FROM Parts.Item i
-    WHERE i.ItemTypeId = @FgTypeId
-      AND (   i.Id = @FinishedGoodItemId
-           OR EXISTS (SELECT 1 FROM Lots.Container c
-                      WHERE c.ItemId = i.Id
-                        AND c.ContainerStatusCodeId = @OpenContainerId
-                        AND c.CurrentLocationId IN (SELECT Id FROM @LineLocs)));
+    -- 2. the line and its ancestors, with depth (nearest = 0)
+    DECLARE @Chain TABLE (Id BIGINT NOT NULL PRIMARY KEY, Depth INT NOT NULL);
+    WITH Up AS (
+        SELECT l.Id, l.ParentLocationId, 0 AS Depth FROM Location.Location l WHERE l.Id = @LineId
+        UNION ALL
+        SELECT p.Id, p.ParentLocationId, u.Depth + 1
+        FROM Location.Location p INNER JOIN Up u ON u.ParentLocationId = p.Id
+    )
+    INSERT INTO @Chain (Id, Depth) SELECT Id, Depth FROM Up;
 
-    -- 3. active BOM per parent (materialized: no aggregate inside the recursion)
-    DECLARE @ActiveBom TABLE (ParentItemId BIGINT NOT NULL PRIMARY KEY, BomId BIGINT NOT NULL);
-    INSERT INTO @ActiveBom (ParentItemId, BomId)
-    SELECT x.ParentItemId, x.Id
+    -- 3. nearest consumption row per part
+    DECLARE @Consume TABLE (ItemId BIGINT NOT NULL PRIMARY KEY, ItemLocationId BIGINT NOT NULL, MaxQuantity INT NULL);
+    INSERT INTO @Consume (ItemId, ItemLocationId, MaxQuantity)
+    SELECT x.ItemId, x.Id, x.MaxQuantity
     FROM (
-        SELECT b.ParentItemId, b.Id,
-               ROW_NUMBER() OVER (PARTITION BY b.ParentItemId ORDER BY b.VersionNumber DESC, b.Id DESC) AS rn
-        FROM Parts.Bom b
-        WHERE b.PublishedAt IS NOT NULL AND b.DeprecatedAt IS NULL
+        SELECT il.ItemId, il.Id, il.MaxQuantity,
+               ROW_NUMBER() OVER (PARTITION BY il.ItemId ORDER BY c.Depth ASC, il.Id ASC) AS rn
+        FROM Parts.ItemLocation il
+        INNER JOIN @Chain c ON c.Id = il.LocationId
+        WHERE il.IsConsumptionPoint = 1 AND il.DeprecatedAt IS NULL
     ) x
     WHERE x.rn = 1;
 
-    -- 4. rolled-up requirement per part, largest across running FGs
-    DECLARE @Req TABLE (ItemId BIGINT NOT NULL PRIMARY KEY, Threshold INT NULL);
-    WITH Tree AS (
-        SELECT r.ItemId AS RootItemId, bl.ChildItemId,
-               CAST(bl.QtyPer AS DECIMAL(18,4)) AS RolledQty, 1 AS Depth
-        FROM @Running r
-        INNER JOIN @ActiveBom ab   ON ab.ParentItemId = r.ItemId
-        INNER JOIN Parts.BomLine bl ON bl.BomId = ab.BomId
-        UNION ALL
-        SELECT t.RootItemId, bl.ChildItemId,
-               CAST(t.RolledQty * bl.QtyPer AS DECIMAL(18,4)), t.Depth + 1
-        FROM Tree t
-        INNER JOIN @ActiveBom ab   ON ab.ParentItemId = t.ChildItemId
-        INNER JOIN Parts.BomLine bl ON bl.BomId = ab.BomId
-        WHERE t.Depth < 10
-    )
-    INSERT INTO @Req (ItemId, Threshold)
-    SELECT n.ChildItemId,
-           MAX(CASE WHEN r.Horizon IS NULL THEN NULL
-                    ELSE CAST(CEILING(n.Qty * r.Horizon) AS INT) END)
-    FROM (SELECT RootItemId, ChildItemId, SUM(RolledQty) AS Qty
-          FROM Tree GROUP BY RootItemId, ChildItemId) n
-    INNER JOIN @Running r ON r.ItemId = n.RootItemId
-    GROUP BY n.ChildItemId;
-
-    -- 5. on hand at the line
+    -- 4. available at the line (held / blocking / closed / open excluded)
     DECLARE @OnHand TABLE (ItemId BIGINT NOT NULL PRIMARY KEY, Available INT NOT NULL);
     INSERT INTO @OnHand (ItemId, Available)
     SELECT l.ItemId, SUM(l.InventoryAvailable)
     FROM Lots.Lot l
     INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
     WHERE l.CurrentLocationId IN (SELECT Id FROM @LineLocs)
+      AND l.InventoryAvailable > 0
       AND sc.BlocksProduction = 0
       AND sc.Code NOT IN (N'Closed', N'Open')
-      AND l.InventoryAvailable > 0
     GROUP BY l.ItemId;
 
-    DECLARE @RunningText NVARCHAR(1000) =
-        (SELECT STRING_AGG(Description, N', ') WITHIN GROUP (ORDER BY Description) FROM @Running);
-    DECLARE @Horizon INT = (SELECT MAX(Horizon) FROM @Running);
-
-    -- 6. rows
+    -- 5. rows
     SELECT
         i.Id                                   AS ItemId,
         ISNULL(i.Description, i.PartNumber)    AS Description,
         ISNULL(oh.Available, 0)                AS Available,
-        rq.Threshold                           AS Threshold,
-        CAST(CASE WHEN rq.Threshold IS NOT NULL AND ISNULL(oh.Available, 0) < rq.Threshold
-                  THEN 1 ELSE 0 END AS BIT)    AS IsLow,
+        cp.MaxQuantity                         AS MaxQuantity,
+        CAST(CASE WHEN cp.MaxQuantity IS NULL OR cp.MaxQuantity <= 0 THEN N'None'
+                  WHEN ISNULL(oh.Available, 0) * 10 <= cp.MaxQuantity     THEN N'Critical'
+                  WHEN ISNULL(oh.Available, 0) * 10 <= cp.MaxQuantity * 3 THEN N'Low'
+                  ELSE N'Ok' END AS NVARCHAR(10)) AS Level,
         i.BoxQuantity                          AS BoxQuantity,
         CAST(CASE WHEN i.ItemTypeId <> @PassThroughTypeId THEN N'None'
                   WHEN i.BoxQuantity IS NOT NULL THEN N'OneTap'
                   ELSE N'AskQty' END AS NVARCHAR(10)) AS AddLotMode,
-        @RunningText                           AS RunningFinishedGoods,
-        @Horizon                               AS LowInventoryHorizon
+        cp.ItemLocationId                      AS ItemLocationId,
+        @ScopeCode                             AS ScopeCode
     FROM Parts.Item i
-    LEFT JOIN @OnHand oh ON oh.ItemId = i.Id
-    LEFT JOIN @Req    rq ON rq.ItemId = i.Id
-    WHERE (oh.ItemId IS NOT NULL OR rq.ItemId IS NOT NULL)
+    LEFT JOIN @OnHand  oh ON oh.ItemId = i.Id
+    LEFT JOIN @Consume cp ON cp.ItemId = i.Id
+    WHERE (oh.ItemId IS NOT NULL OR cp.ItemId IS NOT NULL)
       AND i.ItemTypeId <> @FgTypeId
-    ORDER BY IsLow DESC, Description ASC, i.Id ASC;
+      AND (@ScopeTypeId IS NULL OR i.ItemTypeId = @ScopeTypeId)
+    ORDER BY
+        CASE WHEN cp.MaxQuantity > 0 THEN 0 ELSE 1 END,
+        CASE WHEN cp.MaxQuantity > 0
+             THEN CAST(ISNULL(oh.Available, 0) AS DECIMAL(18,6)) / cp.MaxQuantity END,
+        ISNULL(i.Description, i.PartNumber),
+        i.Id;
 END;
 GO
