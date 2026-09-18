@@ -28,21 +28,81 @@
       "viewPath": "BlueRidge/Views/ShopFloor/AimPoolConfig"
     },
     "/shop-floor/assembly-in": {
+      "docks": {
+        "right": [
+          {
+            "anchor": "fixed",
+            "autoBreakpoint": 480,
+            "content": "push",
+            "handle": "hide",
+            "iconUrl": "",
+            "id": "lineInventory",
+            "modal": false,
+            "resizable": false,
+            "show": "visible",
+            "size": 320,
+            "viewParams": {
+              "terminalRole": "AssemblyIn"
+            },
+            "viewPath": "BlueRidge/Components/PlantFloor/LineInventory"
+          }
+        ]
+      },
       "title": "Assembly IN",
       "viewPath": "BlueRidge/Views/ShopFloor/AssemblyIn"
     },
     "/shop-floor/assembly-nonserialized": {
+      "docks": {
+        "cornerPriority": "top-bottom",
+        "right": [
+          {
+            "anchor": "fixed",
+            "autoBreakpoint": 480,
+            "content": "push",
+            "handle": "hide",
+            "iconUrl": "",
+            "id": "lineInventory",
+            "modal": false,
+            "resizable": false,
+            "show": "visible",
+            "size": 320,
+            "viewParams": {
+              "terminalRole": "AssemblyOut"
+            },
+            "viewPath": "BlueRidge/Components/PlantFloor/LineInventory"
+          }
+        ]
+      },
       "title": "Assembly (Non-Serialized)",
       "viewPath": "BlueRidge/Views/ShopFloor/AssemblyNonSerialized"
     },
     "/shop-floor/assembly-serialized": {
+      "docks": {
+        "right": [
+          {
+            "anchor": "fixed",
+            "autoBreakpoint": 480,
+            "content": "push",
+            "handle": "hide",
+            "iconUrl": "",
+            "id": "lineInventory",
+            "modal": false,
+            "resizable": false,
+            "show": "visible",
+            "size": 320,
+            "viewParams": {
+              "terminalRole": "AssemblyOut"
+            },
+            "viewPath": "BlueRidge/Components/PlantFloor/LineInventory"
+          }
+        ]
+      },
       "title": "Assembly (Serialized)",
       "viewPath": "BlueRidge/Views/ShopFloor/AssemblySerialized"
     },
     "/shop-floor/cutover-scan": {
       "title": "Inventory Cutover Scan",
-      "viewPath": "BlueRidge/Views/ShopFloor/CutoverScan",
-      "viewParams": {}
+      "viewPath": "BlueRidge/Views/ShopFloor/CutoverScan"
     },
     "/shop-floor/die-cast": {
       "title": "Die Cast Entry",
@@ -89,14 +149,74 @@
       "viewPath": "BlueRidge/Views/ShopFloor/LotSearch"
     },
     "/shop-floor/machining": {
+      "docks": {
+        "right": [
+          {
+            "anchor": "fixed",
+            "autoBreakpoint": 480,
+            "content": "push",
+            "handle": "hide",
+            "iconUrl": "",
+            "id": "lineInventory",
+            "modal": false,
+            "resizable": false,
+            "show": "visible",
+            "size": 320,
+            "viewParams": {
+              "terminalRole": "MachiningIn"
+            },
+            "viewPath": "BlueRidge/Components/PlantFloor/LineInventory"
+          }
+        ]
+      },
       "title": "Machining IN / OUT",
       "viewPath": "BlueRidge/Views/ShopFloor/MachiningStation"
     },
     "/shop-floor/machining-in": {
+      "docks": {
+        "right": [
+          {
+            "anchor": "fixed",
+            "autoBreakpoint": 480,
+            "content": "push",
+            "handle": "hide",
+            "iconUrl": "",
+            "id": "lineInventory",
+            "modal": false,
+            "resizable": false,
+            "show": "visible",
+            "size": 320,
+            "viewParams": {
+              "terminalRole": "MachiningIn"
+            },
+            "viewPath": "BlueRidge/Components/PlantFloor/LineInventory"
+          }
+        ]
+      },
       "title": "Machining IN",
       "viewPath": "BlueRidge/Views/ShopFloor/MachiningIn"
     },
     "/shop-floor/machining-out": {
+      "docks": {
+        "right": [
+          {
+            "anchor": "fixed",
+            "autoBreakpoint": 480,
+            "content": "push",
+            "handle": "hide",
+            "iconUrl": "",
+            "id": "lineInventory",
+            "modal": false,
+            "resizable": false,
+            "show": "visible",
+            "size": 320,
+            "viewParams": {
+              "terminalRole": "MachiningOut"
+            },
+            "viewPath": "BlueRidge/Components/PlantFloor/LineInventory"
+          }
+        ]
+      },
       "title": "Machining OUT - Split",
       "viewPath": "BlueRidge/Views/ShopFloor/MachiningOutSplit"
     },
@@ -162,6 +282,7 @@
         "viewPath": "BlueRidge/Components/NotifyHost"
       }
     ],
+    "cornerPriority": "top-bottom",
     "left": [
       {
         "anchor": "fixed",

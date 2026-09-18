@@ -502,7 +502,7 @@
                   "props.instances": {
                     "binding": {
                       "config": {
-                        "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryCards\", 0, {view.params.locationId}, {view.custom.refreshToken})"
+                        "expression": "runScript(\"BlueRidge.Lots.Lot.getInventoryPopupCards\", 0, {view.params.locationId}, {view.custom.refreshToken})"
                       },
                       "type": "expr"
                     }

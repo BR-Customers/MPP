@@ -1,9 +1,6 @@
 {
   "custom": {
-    "queueByPartVertical": "",
     "closureMethodTracker": "",
-    "componentProjection": [],
-    "queueByPartText": "",
     "container": {
       "AccumulatedParts": 0,
       "ClosedTrays": 0,
@@ -109,20 +106,6 @@
         "type": "expr"
       }
     },
-    "custom.componentProjection": {
-      "binding": {
-        "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Workorder.Assembly.getComponentProjection\", 0, {session.custom.cell.locationId}, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}), {session.custom.closureMethod}, {view.custom.refreshToken}), \"\")"
-        },
-        "transforms": [
-          {
-            "code": "\treturn value or []",
-            "type": "script"
-          }
-        ],
-        "type": "expr"
-      }
-    },
     "custom.container": {
       "binding": {
         "config": {
@@ -131,34 +114,6 @@
         "transforms": [
           {
             "code": "\trows \u003d value or []\n\tr \u003d rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemId\": r.get(\"ItemId\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False, \"ClosureMethod\": r.get(\"ClosureMethod\") or \"\"}",
-            "type": "script"
-          }
-        ],
-        "type": "expr"
-      }
-    },
-    "custom.queueByPartText": {
-      "binding": {
-        "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
-        },
-        "transforms": [
-          {
-            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
-            "type": "script"
-          }
-        ],
-        "type": "expr"
-      }
-    },
-    "custom.queueByPartVertical": {
-      "binding": {
-        "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
-        },
-        "transforms": [
-          {
-            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"\\n\".join([\"%s   %d pcs\" % (k, totals[k]) for k in order])",
             "type": "script"
           }
         ],
@@ -1430,109 +1385,6 @@
                 "props": {
                   "direction": "column",
                   "gap": "12px"
-                },
-                "type": "ia.container.flex"
-              },
-              {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "SidebarLabel"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-field-label"
-                      },
-                      "text": "Components at this cell"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "SidebarList"
-                    },
-                    "position": {
-                      "grow": 1
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "path": "view.custom.queueByPartVertical"
-                          },
-                          "type": "property"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-field-input-mono",
-                        "lineHeight": "2.0",
-                        "whiteSpace": "pre-line"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ProjectionHeader"
-                    },
-                    "props": {
-                      "style": {
-                        "fontSize": "13px",
-                        "fontWeight": 600,
-                        "marginTop": "8px",
-                        "opacity": 0.75
-                      },
-                      "text": "Projected to finish container"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ProjectionRepeater"
-                    },
-                    "propConfig": {
-                      "props.instances": {
-                        "binding": {
-                          "config": {
-                            "expression": "{view.custom.componentProjection}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "direction": "column",
-                      "gap": 4,
-                      "path": "BlueRidge/Components/PlantFloor/ComponentProjectionRow"
-                    },
-                    "type": "ia.display.flex-repeater"
-                  }
-                ],
-                "meta": {
-                  "name": "InventorySidebar"
-                },
-                "position": {
-                  "basis": "320px",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "config": {
-                        "expression": "{session.custom.closureMethod} \u003d \"ByWeight\" || {session.custom.closureMethod} \u003d \"ByCount\" || {session.custom.closureMethod} \u003d \"ByVision\""
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
-                "props": {
-                  "direction": "column",
-                  "gap": "8px",
-                  "style": {
-                    "classes": "pf-panel"
-                  }
                 },
                 "type": "ia.container.flex"
               }
