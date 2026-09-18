@@ -482,7 +482,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tsid \u003d self.view.custom.scopeLocationId\n\tif sid is None:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"Pick a machine at the top of this window first.\"}, \"\")\n\t\treturn\n\tres \u003d DE.start(sid)\n\tUi.notifyResult(res, \"Downtime started\")\n\tself.view.rootContainer.refreshRows()"
+                    "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tsid \u003d self.view.custom.scopeLocationId\n\tif sid is None:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"Pick a machine at the top of this window first.\"}, \"\")\n\t\treturn\n\tres \u003d DE.start(sid, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tUi.notifyResult(res, \"Downtime started\")\n\tself.view.rootContainer.refreshRows()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -653,21 +653,21 @@
         {
           "messageType": "dtReasonSelected",
           "pageScope": true,
-          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\t# Supervisor-only for a PAST shift once its 30-minute grace window has\n\t# elapsed (Oee.DowntimeEvent_RequiresReasonGate) -- a current/open shift, or\n\t# a past shift still inside grace, needs no elevation. requireElevation\n\t# stashes {code, params} and opens the ElevationModal; on success\n\t# Session.dispatchElevatedAction re-sends THIS message and the isElevated\n\t# test below passes. refreshRows on the deferred path snaps the dropdown\n\t# back to the stored reason so a cancelled elevation leaves no phantom\n\t# selection on screen.\n\tif D.requiresReasonGate(p.get(\"downtimeEventId\")) and not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeReason\", \"Edit downtime reason\", p)\n\t\tself.refreshRows()\n\t\treturn\n\tres \u003d D.updateReason(p.get(\"downtimeEventId\"), p.get(\"reasonCodeId\"))\n\tUi.notifyResult(res, \"Reason updated\")\n\tself.refreshRows()",
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\t# Supervisor-only for a PAST shift once its 30-minute grace window has\n\t# elapsed (Oee.DowntimeEvent_RequiresReasonGate) -- a current/open shift, or\n\t# a past shift still inside grace, needs no elevation. requireElevation\n\t# stashes {code, params} and opens the ElevationModal; on success\n\t# Session.dispatchElevatedAction re-sends THIS message and the isElevated\n\t# test below passes. refreshRows on the deferred path snaps the dropdown\n\t# back to the stored reason so a cancelled elevation leaves no phantom\n\t# selection on screen.\n\tif D.requiresReasonGate(p.get(\"downtimeEventId\")) and not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeReason\", \"Edit downtime reason\", p)\n\t\tself.refreshRows()\n\t\treturn\n\tres \u003d D.updateReason(p.get(\"downtimeEventId\"), p.get(\"reasonCodeId\"), appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tUi.notifyResult(res, \"Reason updated\")\n\tself.refreshRows()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "dtEndRequested",
           "pageScope": true,
-          "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tres \u003d DE.end(payload[\"downtimeEventId\"])\n\tUi.notifyResult(res, \"Downtime ended\")\n\tself.refreshRows()",
+          "script": "\timport BlueRidge.Oee.DowntimeEvent as DE\n\timport BlueRidge.Common.Ui as Ui\n\tres \u003d DE.end(payload[\"downtimeEventId\"], appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tUi.notifyResult(res, \"Downtime ended\")\n\tself.refreshRows()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "dtVoidRequested",
           "pageScope": true,
-          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\t# Supervisor-only (auth backlog 4.1) - voiding is irreversible.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeVoid\", \"Void downtime event\", p)\n\t\treturn\n\tres \u003d D.void(p.get(\"downtimeEventId\"))\n\tUi.notifyResult(res, \"Downtime voided\")\n\tself.refreshRows()",
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\tp \u003d BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\t# Supervisor-only (auth backlog 4.1) - voiding is irreversible.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(self.session, \"DowntimeVoid\", \"Void downtime event\", p)\n\t\treturn\n\tres \u003d D.void(p.get(\"downtimeEventId\"), appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tUi.notifyResult(res, \"Downtime voided\")\n\tself.refreshRows()",
           "sessionScope": false,
           "viewScope": false
         },
