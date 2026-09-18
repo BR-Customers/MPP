@@ -33,6 +33,8 @@
 > - **Verified:** `082_ShippingLabel_ListRecentByCell` 22/22; the `0029_PlantFloor_Hold_Sort_Shipping_Aim` folder 111/111 (throwaway `MPP_MES_Test_Reprint`); proc applied to Dev and returns the five MA2-59B containers; scan clean, footer renders.
 > - **Owed:** live check on a terminal -- open the popup, pick a label, reprint with a real AD account, confirm the new `ShippingLabel` row (`Initial=0`, reason, approver as `PrintedByUserId`), the `ElevationGranted` row naming `ShippingLabelReprint`, and the print. Also confirm the header/footer fit on the real terminal resolution.
 > - **Section 3 (remove the Shipping Dock) stays benched** -- it is still the only UI that ships a container or voids a label.
+> - **Also `0093_printreasoncode_ascii_name`** (`f6dbd872`): print reason `ReprintDamaged` renamed to ASCII `Reprint - Damaged` -- sqlcmd had stored its em-dash as mojibake. Applied to Dev.
+> - **Release handoff: `notes/2026-09-17_prod-release-handoff-assembly-out-reprint.md`.** Two calls for Jacques before any release: (1) HEAD also carries `0090` (OEE, incl. a new downtime refusal) and `0091` (line inventory) with **no release handoff**, and `Deploy-ProdRelease` ships everything at HEAD -- this feature separates cleanly onto a release branch; (2) **`0093` blocks the line-inventory plan's unwritten `0092` if it reaches prod first** (pending below the high-water mark) -- the line-inventory work should take `0094`.
 
 **Last updated:** 2026-09-17 -- **Trim OUT compact layout: scrap tiles wrap, the scrap lists scroll inside their boxes, and the buttons stay visible. Four MPP views, no SQL. Browser-verified and signed off by Jacques; not deployed -- release handoff in `notes/2026-09-17_prod-release-handoff-trim-out-layout.md`.**
 
