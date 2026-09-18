@@ -37,7 +37,8 @@
     "refreshToken": 29,
     "selectedShiftId": null,
     "shotLossDefectCodeId": null,
-    "shotLossQty": ""
+    "shotLossQty": "",
+    "watchedCellId": null
   },
   "params": {
     "areaId": "",
@@ -150,6 +151,18 @@
           "expression": "runScript(\"BlueRidge.Lots.Lot.getTerminalRecentCreations\", 0, {session.custom.terminal.terminalLocationId}, 15, {view.custom.refreshToken})"
         },
         "type": "expr"
+      }
+    },
+    "custom.watchedCellId": {
+      "binding": {
+        "config": {
+          "path": "session.custom.cell.locationId"
+        },
+        "type": "property"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# The session\u0027s cell changed (press dropdown, another page, or this view\n\t# being handed back on return). Start clean for the new press -- see\n\t# resetForPress. Skip the no-op evaluation where nothing changed.\n\tprev \u003d previousValue.value if previousValue is not None else None\n\tcur \u003d currentValue.value if currentValue is not None else None\n\tif prev \u003d\u003d cur:\n\t\treturn\n\tself.rootContainer.resetForPress()"
       }
     },
     "params.cellPickerEnabled": {
@@ -2573,7 +2586,12 @@
           "params": [
             "cellId"
           ],
-          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tprev \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tif prev.get(\"locationId\") \u003d\u003d row.get(\"value\"):\n\t\treturn\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}\n\t# Everything below belongs to the PREVIOUS die. The bound props\n\t# (activeTool, shotStatus, itemOptions, openBasketInstances) key off\n\t# session.custom.cell and re-read themselves; this imperative state does\n\t# not, and Submit builds its lines from view.custom.breakdown -- so\n\t# leaving it would let an operator submit the old die\u0027s cavities against\n\t# the new press.\n\tself.view.custom.breakdown \u003d []\n\tself.view.custom.breakdownEntries \u003d {}\n\tself.view.custom.counterReading \u003d \"\"\n\tself.view.custom.pendingSubmit \u003d \"\"\n\tself.view.custom.bulkOpenDraft \u003d {}\n\tself.view.custom.bulkOpenResult \u003d {}\n\tself.view.custom.bulkOpenPendingCount \u003d 0\n\tself.view.custom.pendingReleaseLotId \u003d None\n\tself.view.custom.pendingReleaseLotName \u003d \"\"\n\tself.view.custom.pendingVoidLotId \u003d None\n\tself.view.custom.pendingVoidLotName \u003d \"\"\n\t# die-wide shot counts are per-die; re-seed the named rows at zero\n\tself.view.custom.dieWideLines \u003d []\n\tself.view.custom.dieWideShots \u003d 0\n\tself.seedDieWide()\n\t# The reporting shift is not carried across presses, and is never\n\t# pre-selected -- the operator picks it (2026-09-18).\n\tself.view.custom.selectedShiftId \u003d None\n\t# force the runScript bindings to re-read even where their other\n\t# arguments are unchanged (runScript caches on its arguments)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\tself.recomputeTotals()"
+          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tprev \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tif prev.get(\"locationId\") \u003d\u003d row.get(\"value\"):\n\t\treturn\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}\n\t# The per-press reset lives in resetForPress(); custom.watchedCellId also\n\t# runs it when the cell changes by any other route.\n\tself.resetForPress()"
+        },
+        {
+          "name": "resetForPress",
+          "params": [],
+          "script": "\t# Everything imperative on this screen belongs to ONE press. Called by\n\t# applyCell (press dropdown) and by custom.watchedCellId\u0027s onChange, which\n\t# fires whenever session.custom.cell changes by ANY route -- another page\n\t# setting its own cell, or Perspective handing this view back with its old\n\t# state when an operator returns (startup() does not run again then).\n\t# Idempotent: running it twice for one change is harmless.\n\t# Everything below belongs to the PREVIOUS die. The bound props\n\t# (activeTool, shotStatus, itemOptions, openBasketInstances) key off\n\t# session.custom.cell and re-read themselves; this imperative state does\n\t# not, and Submit builds its lines from view.custom.breakdown -- so\n\t# leaving it would let an operator submit the old die\u0027s cavities against\n\t# the new press.\n\tself.view.custom.breakdown \u003d []\n\tself.view.custom.breakdownEntries \u003d {}\n\tself.view.custom.counterReading \u003d \"\"\n\tself.view.custom.pendingSubmit \u003d \"\"\n\tself.view.custom.bulkOpenDraft \u003d {}\n\tself.view.custom.bulkOpenResult \u003d {}\n\tself.view.custom.bulkOpenPendingCount \u003d 0\n\tself.view.custom.pendingReleaseLotId \u003d None\n\tself.view.custom.pendingReleaseLotName \u003d \"\"\n\tself.view.custom.pendingVoidLotId \u003d None\n\tself.view.custom.pendingVoidLotName \u003d \"\"\n\t# die-wide shot counts are per-die; re-seed the named rows at zero\n\tself.view.custom.dieWideLines \u003d []\n\tself.view.custom.dieWideShots \u003d 0\n\tself.seedDieWide()\n\t# The reporting shift is not carried across presses, and is never\n\t# pre-selected -- the operator picks it (2026-09-18).\n\tself.view.custom.selectedShiftId \u003d None\n\t# force the runScript bindings to re-read even where their other\n\t# arguments are unchanged (runScript caches on its arguments)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\tself.recomputeTotals()"
         },
         {
           "name": "startup",
@@ -2733,13 +2751,6 @@
           "pageScope": true,
           "script": "\t# One token bump re-reads activeTool, openBasketInstances, shotStatus\n\t# and cavityOptions together -- a mount or release changes all four.\n\t# refreshBinding from a message handler fails silently; the token is\n\t# the mechanism.\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
-          "viewScope": false
-        },
-        {
-          "messageType": "mpp-toast",
-          "pageScope": false,
-          "script": "\tBlueRidge.Common.Notify._handle(self, payload)",
-          "sessionScope": true,
           "viewScope": false
         },
         {
