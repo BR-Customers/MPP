@@ -12,7 +12,13 @@
                     over oee/DowntimeScope_ListForTerminal. resolveScope stays
                     for callers that already hold a cell; the new pair is what a
                     screen with NO cell context (trim) and a shared terminal
-                    serving many machines (die cast) must use."""
+                    serving many machines (die cast) must use.
+       2026-09-17 - Add getScopeForPick: honours an operator's deliberate PICK
+                    of a line in the Downtime Manager, distinct from the
+                    DEFAULT rule (which refuses to preselect a split line).
+                    resolveScope/getDefaultScopeIdForTerminal docstrings
+                    corrected -- IsOeeEnabled locations, not "WorkCenter
+                    line"/AppHeader-specific."""
 
 
 def _u(v):
@@ -24,7 +30,8 @@ def _uid():
 
 
 def resolveScope(cellLocationId):
-    """Cell/terminal location -> downtime scope (nearest WorkCenter line, or self).
+    """Cell/terminal location -> downtime scope (nearest OEE-enabled location,
+       Location.IsOeeEnabled, at or above the cell; else the cell itself).
        Returns a BIGINT id or None."""
     if cellLocationId is None:
         return None
@@ -80,9 +87,38 @@ def getDefaultScopeForTerminal(terminalLocationId, activeCellLocationId=None):
     return dict(_EMPTY_SCOPE)
 
 
+def getScopeForPick(terminalLocationId, pickedLocationId):
+    """The scope row for a location the operator PICKED in the Downtime Manager,
+       as a FULLY SHAPED dict (never None / {}). The pick is honoured only if it
+       is one of the units this terminal may log against
+       (Oee.DowntimeScope_ListForTerminal); anything else returns the empty
+       shape (ScopeLocationId None).
+
+       Distinct from getDefaultScopeForTerminal on purpose: the DEFAULT rule
+       refuses to preselect a line that has station units under it (so a
+       one-side jam is not silently charged to the whole line), but an operator
+       who deliberately picks that line must get it.
+
+       ScopeLocationId comes back from the NQ as a Java Long/BIGINT and
+       pickedLocationId may arrive as a Long or a plain int (dropdown
+       props.value) -- Jython's == across those is not reliable, so both
+       sides are compared as long()."""
+    picked = _u(pickedLocationId)
+    if picked is None:
+        return dict(_EMPTY_SCOPE)
+    pickedLong = long(picked)
+    for r in (listScopesForTerminal(terminalLocationId) or []):
+        rowId = r.get("ScopeLocationId")
+        if rowId is not None and long(rowId) == pickedLong:
+            d = dict(_EMPTY_SCOPE)
+            d.update(r)
+            return d
+    return dict(_EMPTY_SCOPE)
+
+
 def getDefaultScopeIdForTerminal(terminalLocationId, activeCellLocationId=None):
-    """Scalar form of getDefaultScopeForTerminal for a plain id binding
-       (the AppHeader open-downtime badge). BIGINT id or None."""
+    """Scalar form of getDefaultScopeForTerminal for a plain id binding.
+       BIGINT id or None."""
     return getDefaultScopeForTerminal(terminalLocationId, activeCellLocationId).get("ScopeLocationId")
 
 

@@ -1,5 +1,7 @@
 {
-  "custom": {},
+  "custom": {
+    "scopeLocationId": null
+  },
   "params": {},
   "propConfig": {
     "custom.idleTick": {
@@ -31,7 +33,7 @@
     "custom.scopeLocationId": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Oee.Downtime.getDefaultScopeIdForTerminal\", 0, {session.custom.terminal.terminalLocationId}, {session.custom.cell.locationId})"
+          "expression": "runScript(\"BlueRidge.Oee.Downtime.resolveScope\", 0, {session.custom.cell.locationId})"
         },
         "type": "expr"
       }
