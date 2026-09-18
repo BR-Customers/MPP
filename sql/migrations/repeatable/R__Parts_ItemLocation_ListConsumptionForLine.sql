@@ -2,7 +2,7 @@
 -- Repeatable:  R__Parts_ItemLocation_ListConsumptionForLine.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-17
--- Version:     1.0
+-- Version:     1.1
 -- Description: Read proc behind the Line Inventory "Tolerances" popup (Task R3,
 --              docs/superpowers/specs/2026-09-17-line-inventory-sidebar-design.md).
 --              One row per consumption part known to a line, so the popup can list
@@ -41,7 +41,15 @@
 -- Result set:
 --   ItemLocationId BIGINT, ItemId BIGINT, Description NVARCHAR(500),
 --   Available INT, MaxQuantity INT NULL, MinQuantity INT NULL,
---   RowLocationCode NVARCHAR(50). Ordered by Description, then ItemId.
+--   RowLocationCode NVARCHAR(50), LineLocationCode NVARCHAR(50).
+--   Ordered by Description, then ItemId.
+--
+--   LineLocationCode (v1.1) is the resolved line's (the @LocationId's WorkCenter
+--   ancestor) own Code, trailing so it does not disturb the fixed-shape v1.0
+--   capture tables. Comparing it to RowLocationCode is how the popup shows
+--   "Shared: <code>" when the consumption row that set Max lives on an
+--   ancestor Area rather than the line itself -- editing that row changes
+--   every line under the area, not just this one.
 --
 -- Dependencies:
 --   Tables: Parts.ItemLocation, Parts.Item, Parts.ItemType, Location.Location,
@@ -49,6 +57,9 @@
 --   Funcs:  Location.ufn_AncestorLocationIds
 --
 -- Change Log:
+--   2026-09-17 - 1.1 - Trailing LineLocationCode column (the resolved line's own
+--                       Code) so callers can tell a shared/ancestor Max row from
+--                       one scoped to this line (Task FINAL-REVIEW-5).
 --   2026-09-17 - 1.0 - Initial version (Line Inventory Tolerances popup, Task R3)
 -- ============================================================
 CREATE OR ALTER PROCEDURE Parts.ItemLocation_ListConsumptionForLine
@@ -71,6 +82,7 @@ BEGIN
     IF @LineId IS NULL
         RETURN;
 
+    DECLARE @LineLocationCode NVARCHAR(50) = (SELECT Code FROM Location.Location WHERE Id = @LineId);
     DECLARE @FgTypeId BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood');
 
     -- source of truth: Lots.Lot_GetLineInventorySummary -- 1. the line and everything under it
@@ -125,7 +137,8 @@ BEGIN
         ISNULL(oh.Available, 0)              AS Available,
         il.MaxQuantity                       AS MaxQuantity,
         il.MinQuantity                       AS MinQuantity,
-        loc.Code                             AS RowLocationCode
+        loc.Code                             AS RowLocationCode,
+        @LineLocationCode                    AS LineLocationCode
     FROM @Consume cp
     INNER JOIN Parts.Item i           ON i.Id = cp.ItemId
     INNER JOIN Parts.ItemLocation il  ON il.Id = cp.ItemLocationId

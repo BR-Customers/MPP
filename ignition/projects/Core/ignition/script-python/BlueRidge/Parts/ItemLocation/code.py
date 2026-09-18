@@ -28,9 +28,12 @@ def checkEligibilityOrEmpty(itemId, locationId):
 
 
 def listConsumptionForLine(locationId, _refreshToken=None):
-    """Consumption parts for the Tolerances popup (Parts.ItemLocation_ListConsumptionForLine):
-       ItemLocationId, ItemId, Description, Available, MaxQuantity, MinQuantity,
-       RowLocationCode. Returns [] when there is no location."""
+    """Consumption parts for the Tolerances popup (Parts.ItemLocation_ListConsumptionForLine
+       v1.1): ItemLocationId, ItemId, Description, Available, MaxQuantity, MinQuantity,
+       RowLocationCode, LineLocationCode. RowLocationCode is where the consumption row
+       that set Max actually lives; LineLocationCode is the line the popup was opened
+       for. They differ when Max was set on an ancestor Area, in which case editing it
+       here changes every line under that Area. Returns [] when there is no location."""
     locationId = _u(locationId)
     if locationId is None:
         return []
@@ -39,17 +42,25 @@ def listConsumptionForLine(locationId, _refreshToken=None):
 
 
 def getToleranceInstances(locationId, _refreshToken=None):
-    """Flex-repeater instances for Components/PlantFloor/LineTolerances. Display only."""
+    """Flex-repeater instances for Components/PlantFloor/LineTolerances. Display only.
+
+       sharedNote flags a row whose Max lives on an ancestor Area rather than this
+       line (RowLocationCode != LineLocationCode) -- saving it there changes every
+       line under that Area, not just this one."""
     out = []
     for r in listConsumptionForLine(locationId):
         r = r or {}
         mx = r.get("MaxQuantity")
+        rowLoc = r.get("RowLocationCode") or ""
+        lineLoc = r.get("LineLocationCode") or ""
+        sharedNote = ("Shared: " + rowLoc) if (rowLoc and rowLoc != lineLoc) else ""
         out.append({
             "itemLocationId": r.get("ItemLocationId"),
             "description":    r.get("Description") or "",
             "availableText":  BlueRidge.Lots.Lot._thousands(r.get("Available") or 0),
             "maxText":        "not set" if mx is None else BlueRidge.Lots.Lot._thousands(mx),
             "maxQuantity":    mx,
+            "sharedNote":     sharedNote,
         })
     return out
 

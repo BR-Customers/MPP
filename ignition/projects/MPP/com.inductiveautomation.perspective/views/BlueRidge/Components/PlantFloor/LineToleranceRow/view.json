@@ -5,14 +5,16 @@
     "description": "",
     "availableText": "",
     "maxText": "",
-    "maxQuantity": null
+    "maxQuantity": null,
+    "sharedNote": ""
   },
   "propConfig": {
     "params.itemLocationId": {"paramDirection": "input"},
     "params.description": {"paramDirection": "input"},
     "params.availableText": {"paramDirection": "input"},
     "params.maxText": {"paramDirection": "input"},
-    "params.maxQuantity": {"paramDirection": "input"}
+    "params.maxQuantity": {"paramDirection": "input"},
+    "params.sharedNote": {"paramDirection": "input"}
   },
   "props": {
     "defaultSize": {"height": 40, "width": 520}
@@ -31,7 +33,14 @@
         "position": {"basis": "0", "grow": 1},
         "props": {"style": {"classes": "pf-inv-desc", "minWidth": "0"}},
         "propConfig": {
-          "props.text": {"binding": {"type": "expr", "config": {"expression": "{view.params.description}"}}}
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.description} + if(len({view.params.sharedNote}) > 0, \" (\" + {view.params.sharedNote} + \")\", \"\")"
+              }
+            }
+          }
         }
       },
       {

@@ -88,7 +88,7 @@ GO
 -- =============================================
 DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
 CREATE TABLE #R (ItemLocationId BIGINT, ItemId BIGINT, Description NVARCHAR(500), Available INT,
-                 MaxQuantity INT, MinQuantity INT, RowLocationCode NVARCHAR(50));
+                 MaxQuantity INT, MinQuantity INT, RowLocationCode NVARCHAR(50), LineLocationCode NVARCHAR(50));
 INSERT INTO #R EXEC Parts.ItemLocation_ListConsumptionForLine @LocationId = @Term;
 DELETE FROM #R WHERE Description NOT LIKE N'T071 %';
 
@@ -101,6 +101,8 @@ DECLARE @AAvail NVARCHAR(10) = (SELECT CAST(Available AS NVARCHAR(10)) FROM #R W
 EXEC test.Assert_IsEqual @TestName = N'[List] A Available 50 (held excluded)', @Expected = N'50', @Actual = @AAvail;
 DECLARE @ALoc NVARCHAR(50) = (SELECT RowLocationCode FROM #R WHERE Description = N'T071 both tiers');
 EXEC test.Assert_IsEqual @TestName = N'[List] A RowLocationCode is the line', @Expected = N'MA1-COMPBR', @Actual = @ALoc;
+DECLARE @ALineLoc NVARCHAR(50) = (SELECT LineLocationCode FROM #R WHERE Description = N'T071 both tiers');
+EXEC test.Assert_IsEqual @TestName = N'[List] A LineLocationCode is the resolved line', @Expected = N'MA1-COMPBR', @Actual = @ALineLoc;
 
 DECLARE @BMax NVARCHAR(10) = (SELECT CAST(MaxQuantity AS NVARCHAR(10)) FROM #R WHERE Description = N'T071 area only');
 EXEC test.Assert_IsEqual @TestName = N'[List] B Max 70', @Expected = N'70', @Actual = @BMax;
@@ -116,7 +118,7 @@ GO
 -- =============================================
 DECLARE @Area BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1');
 CREATE TABLE #E (ItemLocationId BIGINT, ItemId BIGINT, Description NVARCHAR(500), Available INT,
-                 MaxQuantity INT, MinQuantity INT, RowLocationCode NVARCHAR(50));
+                 MaxQuantity INT, MinQuantity INT, RowLocationCode NVARCHAR(50), LineLocationCode NVARCHAR(50));
 INSERT INTO #E EXEC Parts.ItemLocation_ListConsumptionForLine @LocationId = @Area;
 DECLARE @EN NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #E);
 EXEC test.Assert_IsEqual @TestName = N'[Empty] MA1 (area) call -> empty', @Expected = N'0', @Actual = @EN;
