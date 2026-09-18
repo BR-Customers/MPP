@@ -2,7 +2,7 @@
 -- Repeatable:  R__Oee_ufn_ResolveOeeEquipment.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-19
--- Version:     1.0
+-- Version:     2.0
 -- Description: THE definition of "a piece of equipment" for OEE purposes --
 --              the set of Location.Location rows that downtime is logged
 --              against and that an OEE figure can be computed for.
