@@ -4,9 +4,6 @@
       "title": "MPP MES",
       "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
     },
-    "/breakpoint-example": {
-      "viewPath": "Breakpoint Example"
-    },
     "/dev/launcher": {
       "title": "Dev Launcher",
       "viewPath": "BlueRidge/Views/Dev/DevLauncher"
