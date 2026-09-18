@@ -165,7 +165,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if(endsWith({view.custom.footer}, \" low\"), \"pf-inv-foottxt pf-inv-foottxt-warn\", \"pf-inv-foottxt\")"
+                    "expression": "if(endsWith({view.custom.footer}, \"attention\"), \"pf-inv-foottxt pf-inv-foottxt-warn\", \"pf-inv-foottxt\")"
                   }
                 }
               }
