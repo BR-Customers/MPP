@@ -38,6 +38,7 @@
         "code": "",
         "description": "",
         "id": null,
+        "isOeeEnabled": false,
         "locationTypeDefinitionId": null,
         "name": "",
         "parentLocationId": null,
@@ -48,6 +49,7 @@
         "code": "",
         "description": "",
         "id": null,
+        "isOeeEnabled": false,
         "locationTypeDefinitionId": null,
         "name": "",
         "parentLocationId": null,
@@ -1282,6 +1284,87 @@
                         ],
                         "meta": {
                           "name": "FieldRow2"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "field-row",
+                            "gap": "12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "events": {
+                                  "component": {
+                                    "onActionPerformed": {
+                                      "config": {
+                                        "script": "\tself.view.rootContainer.touchEditDraft()"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
+                                "meta": {
+                                  "name": "OeeEnabledCheck"
+                                },
+                                "propConfig": {
+                                  "props.enabled": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "runScript(\"BlueRidge.Location.Location.canBeOeeEnabled\", 0, {view.custom.state.editDraft.locationTypeDefinitionId})"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  },
+                                  "props.selected": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "view.custom.state.editDraft.isOeeEnabled"
+                                      },
+                                      "type": "property"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "text": "OEE / downtime enabled"
+                                },
+                                "type": "ia.input.checkbox"
+                              },
+                              {
+                                "meta": {
+                                  "name": "OeeEnabledHint"
+                                },
+                                "props": {
+                                  "style": {
+                                    "color": "var(--mpp-text-tertiary)",
+                                    "fontSize": "11px"
+                                  },
+                                  "text": "Only production lines and equipment cells can be OEE enabled."
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
+                            "meta": {
+                              "name": "OeeEnabledField"
+                            },
+                            "props": {
+                              "direction": "column",
+                              "style": {
+                                "classes": "field",
+                                "gap": "4px"
+                              }
+                            },
+                            "type": "ia.container.flex"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldRow3"
                         },
                         "props": {
                           "style": {
