@@ -1,0 +1,217 @@
+{
+  "custom": {
+    "isSelected": false
+  },
+  "params": {
+    "shippingLabelId": null,
+    "serial": "",
+    "partNumber": "",
+    "description": "",
+    "quantity": 0,
+    "createdAt": "",
+    "printStatus": "",
+    "isReprint": false
+  },
+  "propConfig": {
+    "params.shippingLabelId": {
+      "paramDirection": "input"
+    },
+    "params.serial": {
+      "paramDirection": "input"
+    },
+    "params.partNumber": {
+      "paramDirection": "input"
+    },
+    "params.description": {
+      "paramDirection": "input"
+    },
+    "params.quantity": {
+      "paramDirection": "input"
+    },
+    "params.createdAt": {
+      "paramDirection": "input"
+    },
+    "params.printStatus": {
+      "paramDirection": "input"
+    },
+    "params.isReprint": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 72,
+      "width": 760
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "overflow": "hidden"
+      }
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.custom.isSelected}, 'pf-inventory-row pf-queue-row-selected', 'pf-inventory-row')"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "shippingReprintRowSelected",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# Every row hears every selection; each lights itself only if the pick is its own.\n\tself.view.custom.isSelected = (payload or {}).get(\"shippingLabelId\") == self.view.params.shippingLabelId"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Info"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Serial"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-name"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.serial"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Detail"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-detail"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.partNumber} + ' - ' + {view.params.description} + ' | ' + toStr({view.params.quantity}) + ' pcs | ' + {view.params.createdAt} + if({view.params.isReprint}, ' | reprint', '')"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "StatusPill"
+        },
+        "props": {
+          "style": {}
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.printStatus"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.printStatus} = 'Printed', 'pf-pill pf-pill-good', if({view.params.printStatus} = 'Failed', 'pf-pill pf-pill-bad', 'pf-pill pf-pill-warn'))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "SelectButton"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"shippingReprintRowSelected\", payload={\"shippingLabelId\": self.view.params.shippingLabelId}, scope=\"page\")"
+              }
+            }
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.custom.isSelected}, 'Selected', 'Select')"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.custom.isSelected}, 'pf-btn pf-btn-primary', 'pf-btn pf-btn-secondary')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {}
+        }
+      }
+    ]
+  }
+}

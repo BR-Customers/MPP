@@ -1594,6 +1594,53 @@
           }
         },
         "type": "ia.container.flex"
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ReprintShippingLabelButton"
+            },
+            "position": {
+              "basis": "220px",
+              "shrink": 0
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-shipping-reprint\", \"BlueRidge/Components/PlantFloor/ShippingLabelReprint\", params\u003d{\"cellLocationId\": self.session.custom.cell.locationId, \"terminalLocationId\": self.session.custom.terminal.terminalLocationId}, modal\u003dTrue, showCloseIcon\u003dTrue)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Reprint Shipping Label",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            }
+          }
+        ]
       }
     ],
     "events": {

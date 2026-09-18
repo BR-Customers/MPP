@@ -1,0 +1,493 @@
+{
+  "custom": {
+    "rows": [],
+    "selectedId": null,
+    "reason": "",
+    "adAccount": "",
+    "password": ""
+  },
+  "params": {
+    "cellLocationId": null,
+    "terminalLocationId": null
+  },
+  "propConfig": {
+    "params.cellLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.terminalLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.rows": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "if(isNull({view.params.cellLocationId}), \"\", runScript(\"BlueRidge.Lots.Shipping.listRecentByCell\", 0, {view.params.cellLocationId}))"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\treturn value or []"
+          }
+        ]
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 640,
+      "width": 880
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "scripts": {
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "shippingReprintRowSelected",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.selectedId = (payload or {}).get(\"shippingLabelId\")"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "props": {
+              "text": "Reprint Shipping Label",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "700"
+              }
+            },
+            "position": {
+              "grow": 1
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Prompt"
+            },
+            "props": {
+              "text": "Pick the label to reprint and the reason. A supervisor's AD sign-in approves this one reprint; the operator stays signed in.",
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "13px"
+              }
+            },
+            "position": {
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "EmptyState"
+            },
+            "props": {
+              "text": "No shipping labels at this line yet.",
+              "style": {
+                "classes": "pf-empty-state"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.rows}) = 0"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "LabelRepeater"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.rows"
+                  },
+                  "transforms": [
+                    {
+                      "type": "script",
+                      "code": "\t# Flat scalar dicts only -- a list-of-dicts nested inside an instance kills the\n\t# repeater silently (feedback_ignition_transform_wrapper_list_kills_repeater).\n\tout = []\n\tfor r in (value or []):\n\t\tcreated = r.get(\"CreatedAt\")\n\t\ttry:\n\t\t\tcreatedStr = system.date.format(created, \"MM/dd HH:mm\") if created else \"\"\n\t\texcept:\n\t\t\tcreatedStr = str(created) if created else \"\"\n\t\tout.append({\n\t\t\t\"shippingLabelId\": r.get(\"Id\"),\n\t\t\t\"serial\": r.get(\"Serial\") or \"\",\n\t\t\t\"partNumber\": r.get(\"PartNumber\") or \"\",\n\t\t\t\"description\": r.get(\"ItemDescription\") or \"\",\n\t\t\t\"quantity\": r.get(\"Quantity\") or 0,\n\t\t\t\"createdAt\": createdStr,\n\t\t\t\"printStatus\": r.get(\"PrintStatus\") or \"\",\n\t\t\t\"isReprint\": not r.get(\"Initial\")\n\t\t})\n\treturn out"
+                    }
+                  ]
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "useDefaultViewHeight": true,
+              "elementPosition": {
+                "basis": "72px",
+                "shrink": 0
+              },
+              "elementStyle": {
+                "overflow": "hidden",
+                "marginBottom": "6px"
+              },
+              "path": "BlueRidge/Components/PlantFloor/ShippingLabelReprintRow",
+              "style": {
+                "overflowY": "auto"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FormRow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "gap": "12px",
+                "overflow": "visible"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ReasonField"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ReasonLabel"
+                    },
+                    "props": {
+                      "text": "Reason",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {
+                      "name": "ReasonDropdown"
+                    },
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.reason",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "options": [
+                        {
+                          "label": "printer jam",
+                          "value": "printer jam"
+                        },
+                        {
+                          "label": "network error",
+                          "value": "network error"
+                        },
+                        {
+                          "label": "damaged label",
+                          "value": "damaged label"
+                        },
+                        {
+                          "label": "print failed",
+                          "value": "print failed"
+                        },
+                        {
+                          "label": "smudged",
+                          "value": "smudged"
+                        }
+                      ],
+                      "placeholder": {
+                        "text": "Select a reason"
+                      },
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "AccountField"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "AccountLabel"
+                    },
+                    "props": {
+                      "text": "Supervisor AD account",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "AccountInput"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.adAccount",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "domain\\username",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "PasswordField"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "PasswordLabel"
+                    },
+                    "props": {
+                      "text": "Password",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.password-field",
+                    "meta": {
+                      "name": "PasswordInput"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.password",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "basis": "110px",
+              "shrink": 0
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(\"mpp-shipping-reprint\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Cancel",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ReprintButton"
+            },
+            "position": {
+              "basis": "150px",
+              "shrink": 0
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tok = BlueRidge.Lots.Shipping.reprintFromPopup(self.view.custom.adAccount, self.view.custom.password,\n\t\tself.view.custom.selectedId, self.view.custom.reason, self.view.params.terminalLocationId)\n\tself.view.custom.password = \"\"   # never retained, success or not\n\tif ok:\n\t\tsystem.perspective.closePopup(\"mpp-shipping-reprint\")"
+                  }
+                }
+              }
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.selectedId}) && len({view.custom.reason}) > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Reprint",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -12,6 +12,28 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
+> ## 🚧 OPEN TODO (raised 2026-09-17) — AIM integration writes nothing to the Failure Log
+>
+> MPP asked (2026-09-16) for Failure Log auditing on the AIM stack: every failure row carrying the **Location**, the **LOT** and the metadata. Today nothing in Ignition can write `Audit.FailureLog` at all -- there is no NQ and no Python writer; `Audit.Audit_LogFailure` is the silent proc mutation procs call internally. AIM failures land only in `Audit.InterfaceLog` (and not even there when AIM is disabled / not configured) or the gateway log.
+>
+> **Decided with Jacques:** log **every failed attempt** (post, timer retry, pool top-up, bad or mismatched reply, AIM disabled / not configured, exceptions), knowing the retry timer writes a row per owed container per tick while AIM is down. `FailureLog` gets real nullable `LocationId` + `LotId` FK columns; everything else (container, AIM serial, endpoint **without the path token**, HTTP status, attempt count, terminal, InterfaceLog id) goes in `AttemptedParameters` JSON. Gateway-timer failures attribute to AppUser 1.
+>
+> **Shape of the build:** migration (check FailureLog's partition alignment first -- `project_mpp_partition_aligned_pk`); optional `@LocationId`/`@LotId` on `Audit_LogFailure`; a status-row wrapper `Audit.FailureLog_Record` + Core NQ (type `Query`); a never-raising `BlueRidge.Audit.FailureLog.record(...)`; calls from `AimHttp`, `AimPost.postOne`/`retryTick`, `AimPoolGateway.topupTick`, `Container.complete`/`validateCrt`; Location + LOT columns in the Audit Browser. Migration number: `0090`-`0092` are claimed by the OEE and line-inventory specs -- take the next free one and re-check. Full findings, file/line references and the side notes (the `aim-pool-alarm` nobody listens to, the unused hold/release stubs, the synchronous post) are in **`notes/2026-09-17_handoff-aim-failure-log-and-shipping-reprint.md` section 1**. Brainstorm with Jacques before building.
+
+**Last updated:** 2026-09-17 (evening) -- **Assembly OUT: elevated shipping-label reprint (handoff section 2). One new read proc, two new views, a footer bar on both Assembly OUT screens; no migration. Proc tested and on Dev; views scanned; NOT live-verified -- needs a PIN sign-in + a real AD elevation, which the dev gateway cannot do. Not deployed.**
+
+> ### Shipping-label reprint at Assembly OUT (2026-09-17)
+>
+> Spec: `docs/superpowers/specs/2026-09-17-assembly-out-shipping-label-reprint-design.md`. A **Reprint Shipping Label** button in a new `Footer` bar on `AssemblySerialized` + `AssemblyNonSerialized` opens `Components/PlantFloor/ShippingLabelReprint`: the last 10 labels for containers at or under the cell (one row per container, newest non-void label, via the new `Lots.ShippingLabel_ListRecentByCell`), a free-text reason (printer jam / network error / damaged label / print failed / smudged, stored in the existing `ShippingLabel.PrintReasonCode NVARCHAR(50)`), and a supervisor AD account + password.
+>
+> - **Elevation is the stateless one-shot form** (`Popups/CrtValidation`), NOT `requireElevation`: the reprint is attributed to the approver and the operator stays signed in. `requireElevation` runs `beginElevatedWindow`, which makes the supervisor the session user for 300 s. Action code `ShippingLabelReprint` reaches `AppUser_AuthenticateAd` and its audit row. **No role gate** -- any active AD-mapped user approves, as for every protected action; Jacques will add AD roles in a week or two.
+> - **The reprint now actually prints.** `Shipping.reprintLabel` only inserts the `Initial=0` row; nothing dispatched it, so it waited up to ~5 min for `PrintFailureGateway.sweepTick`. The popup goes through the new `Shipping.reprintAndDispatch`, which dispatches immediately. **The Shipping Dock's own Reprint button still has the delay** -- left alone because section 3 is parked.
+> - The Assembly views were edited by `tools/add_assembly_out_reprint_footer.py`: a text splice verified by re-parse (original + exactly one node), not a re-dump -- both files mix escaped and unescaped strings. **Close both views in Designer before re-running it**, and reload them in Designer after pulling.
+> - Print-failure toast (`Lots/Container`) now says "Reprint it from Assembly OUT."
+> - **Verified:** `082_ShippingLabel_ListRecentByCell` 22/22; the `0029_PlantFloor_Hold_Sort_Shipping_Aim` folder 111/111 (throwaway `MPP_MES_Test_Reprint`); proc applied to Dev and returns the five MA2-59B containers; scan clean, footer renders.
+> - **Owed:** live check on a terminal -- open the popup, pick a label, reprint with a real AD account, confirm the new `ShippingLabel` row (`Initial=0`, reason, approver as `PrintedByUserId`), the `ElevationGranted` row naming `ShippingLabelReprint`, and the print. Also confirm the header/footer fit on the real terminal resolution.
+> - **Section 3 (remove the Shipping Dock) stays benched** -- it is still the only UI that ships a container or voids a label.
+
 **Last updated:** 2026-09-17 -- **Trim OUT compact layout: scrap tiles wrap, the scrap lists scroll inside their boxes, and the buttons stay visible. Four MPP views, no SQL. Browser-verified and signed off by Jacques; not deployed -- release handoff in `notes/2026-09-17_prod-release-handoff-trim-out-layout.md`.**
 
 > ### Trim OUT layout (2026-09-17)

@@ -100,7 +100,7 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
             BlueRidge.Workorder.PlcWatcher.notifyAlarm(
                 terminalLocationId, "Label not printed",
                 "The container was completed but its shipping label did not print. "
-                "Reprint from the Shipping Dock.", level="warning")
+                "Reprint it from Assembly OUT.", level="warning")
     # Report the completed container to AIM. Runs AFTER the proc committed and is fully
     # guarded: complete, print and post are three separate steps (FDS-07-005/006a/012).
     # A failure leaves the row owed; AimPostTimer retries it. NEVER lose the container.
