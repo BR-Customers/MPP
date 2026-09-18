@@ -1,34 +1,279 @@
 {
   "custom": {
-    "refreshToken": 0,
     "lineWide": false,
-    "footer": ""
+    "refreshToken": 0
   },
   "params": {
     "locationId": null,
     "terminalRole": ""
   },
   "propConfig": {
-    "params.locationId": {"paramDirection": "input"},
-    "params.terminalRole": {"paramDirection": "input"},
     "custom.footer": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryFooter\", 30000, {view.params.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
-        }
+        },
+        "type": "expr"
       }
+    },
+    "params.locationId": {
+      "paramDirection": "input"
+    },
+    "params.terminalRole": {
+      "paramDirection": "input"
     }
   },
   "props": {
-    "defaultSize": {"height": 700, "width": 320}
+    "defaultSize": {
+      "height": 700,
+      "width": 320
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {"name": "root"},
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-inv-title"
+                  },
+                  "text": "Line Inventory"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.custom.lineWide \u003d not bool(self.view.custom.lineWide)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "LineWideButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.custom.lineWide}, \"pf-btn pf-inv-hbtn pf-inv-hbtn-on\", \"pf-btn pf-inv-hbtn\")"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {},
+                  "text": "Line-wide"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.openPopup(\"mpp-line-tolerances\", \"BlueRidge/Components/PlantFloor/LineTolerances\", params\u003d{\"locationId\": self.view.params.locationId}, modal\u003dTrue, showCloseIcon\u003dTrue)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "TolerancesButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-inv-hbtn"
+                  },
+                  "text": "Tolerances"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "HeadRow"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-inv-hrow"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "Sub"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryHeader\", 30000, {view.params.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-inv-sub"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Head"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-inv-head"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "Rows"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryInstances\", 30000, {view.params.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "elementPosition": {
+            "basis": "40px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/LineInventoryRow",
+          "style": {
+            "classes": "pf-inv-list"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "type": "ia.display.flex-repeater"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "FootText"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if(indexOf({view.custom.footer}, \"attention\") \u003e\u003d 0, \"pf-inv-foottxt pf-inv-foottxt-warn\", \"pf-inv-foottxt\")"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.footer"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {}
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.view.params.locationId}, modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DetailButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary pf-inv-btn",
+                "width": "auto"
+              },
+              "text": "Detail..."
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Foot"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-inv-foot"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
     "props": {
       "direction": "column",
-      "style": {"classes": "pf-inv-panel", "height": "100%"}
+      "style": {
+        "classes": "pf-inv-panel",
+        "height": "100%"
+      }
     },
     "scripts": {
       "customMethods": [],
@@ -37,160 +282,12 @@
         {
           "messageType": "inventoryChanged",
           "pageScope": true,
+          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+          "viewScope": false
         }
       ]
     },
-    "children": [
-      {
-        "type": "ia.container.flex",
-        "meta": {"name": "Head"},
-        "position": {"shrink": 0},
-        "props": {"direction": "column", "style": {"classes": "pf-inv-head"}},
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": {"name": "HeadRow"},
-            "props": {"style": {"classes": "pf-inv-hrow"}},
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {"name": "Title"},
-                "position": {"grow": 1},
-                "props": {"text": "Line Inventory", "style": {"classes": "pf-inv-title"}}
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {"name": "LineWideButton"},
-                "position": {"shrink": 0},
-                "props": {"text": "Line-wide", "style": {"classes": "pf-btn pf-inv-hbtn"}},
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "if({view.custom.lineWide}, \"pf-btn pf-inv-hbtn pf-inv-hbtn-on\", \"pf-btn pf-inv-hbtn\")"
-                      }
-                    }
-                  }
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "scope": "G",
-                      "type": "script",
-                      "config": {
-                        "script": "\tself.view.custom.lineWide = not bool(self.view.custom.lineWide)"
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {"name": "TolerancesButton"},
-                "position": {"shrink": 0},
-                "props": {"text": "Tolerances", "style": {"classes": "pf-btn pf-inv-hbtn"}},
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tsystem.perspective.openPopup(\"mpp-line-tolerances\", \"BlueRidge/Components/PlantFloor/LineTolerances\", params={\"locationId\": self.view.params.locationId}, modal=True, showCloseIcon=True)"
-                      }
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {"name": "Sub"},
-            "props": {"style": {"classes": "pf-inv-sub"}},
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryHeader\", 30000, {view.params.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
-                  }
-                }
-              }
-            }
-          }
-        ]
-      },
-      {
-        "type": "ia.display.flex-repeater",
-        "meta": {"name": "Rows"},
-        "position": {"basis": "0", "grow": 1},
-        "props": {
-          "direction": "column",
-          "path": "BlueRidge/Components/PlantFloor/LineInventoryRow",
-          "elementPosition": {"basis": "40px", "shrink": 0, "grow": 0},
-          "useDefaultViewWidth": false,
-          "useDefaultViewHeight": false,
-          "style": {"classes": "pf-inv-list"}
-        },
-        "propConfig": {
-          "props.instances": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryInstances\", 30000, {view.params.locationId}, {view.params.terminalRole}, {view.custom.lineWide}, {view.custom.refreshToken})"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {"name": "Foot"},
-        "position": {"shrink": 0},
-        "props": {"style": {"classes": "pf-inv-foot"}},
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {"name": "FootText"},
-            "position": {"grow": 1},
-            "props": {"style": {"classes": "pf-inv-foottxt"}},
-            "propConfig": {
-              "props.text": {
-                "binding": {"type": "property", "config": {"path": "view.custom.footer"}}
-              },
-              "props.style.classes": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if(endsWith({view.custom.footer}, \"attention\"), \"pf-inv-foottxt pf-inv-foottxt-warn\", \"pf-inv-foottxt\")"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {"name": "DetailButton"},
-            "position": {"shrink": 0},
-            "props": {"text": "Detail...", "style": {"classes": "pf-btn pf-btn-secondary pf-inv-btn", "width": "auto"}},
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.view.params.locationId}, modal=False, showCloseIcon=True, draggable=True, resizable=True)"
-                  }
-                }
-              }
-            }
-          }
-        ]
-      }
-    ]
+    "type": "ia.container.flex"
   }
 }
