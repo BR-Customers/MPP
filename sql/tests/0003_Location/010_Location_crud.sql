@@ -270,7 +270,7 @@ CREATE TABLE #R (
     Name NVARCHAR(200), Code NVARCHAR(50), Description NVARCHAR(500),
     SortOrder INT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3),
     LocationTypeDefinitionName NVARCHAR(200), LocationTypeDefinitionIcon NVARCHAR(100),
-    LocationTypeName NVARCHAR(200)
+    LocationTypeName NVARCHAR(200), IsOeeEnabled BIT
 );
 INSERT INTO #R EXEC Location.Location_Get @Id = @EnterpriseId;
 SELECT @Count = COUNT(*),
