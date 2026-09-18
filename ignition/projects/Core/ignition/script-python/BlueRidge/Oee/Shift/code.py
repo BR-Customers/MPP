@@ -138,6 +138,19 @@ def getRecentOptions(_arg=None):
     return out
 
 
+def labelFor(shiftId, _arg=None):
+    """The getRecentOptions label for one shift id, for the die-cast
+       submit-confirmation popup's headline. Always returns a string (binding
+       source): '' for no shift, 'Shift #<id>' when the id is older than the
+       picker's window."""
+    if shiftId is None:
+        return ""
+    for o in getRecentOptions() or []:
+        if ("%s" % o.get("value")) == ("%s" % shiftId):
+            return o.get("label") or ""
+    return "Shift #%s" % shiftId
+
+
 def getForInstant(locationId, instantUtc=None):
     """Which shift does an instant belong to ON THIS EQUIPMENT?
        (Oee.Shift_GetForInstant -> Oee.ufn_ShiftIdForInstant, the single
