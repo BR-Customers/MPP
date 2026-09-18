@@ -722,8 +722,8 @@ def getLineInventoryFooter(locationId, terminalRole=None, lineWide=False, _refre
         return ""
     flagged = len([r for r in hidden if (r or {}).get("Level") in ("Low", "Critical")])
     if flagged:
-        return u"+%d more below · %d low" % (len(hidden), flagged)
-    return u"+%d more below · all above 30%%" % len(hidden)
+        return u"+%d more below \u00b7 %d low" % (len(hidden), flagged)
+    return u"+%d more below \u00b7 all above 30%%" % len(hidden)
 
 
 def checkInBox(itemId, locationId, pieceCount, appUserId=None, terminalLocationId=None):
