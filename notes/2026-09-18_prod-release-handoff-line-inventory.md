@@ -241,12 +241,12 @@ Both resources are still identified, so the hand step above is correct. But if a
 
 ### Test 1 -- does anything now refuse what it used to allow?
 
-**`Lots.Lot_Create` itself is unchanged in this range.** Its consumption-point cap (section 6b, since v1.1, 2026-08-20) is **already live on prod**. It applies to Received-origin LOTs and works like this:
+**`Lots.Lot_Create` v1.7 (added to this release 2026-09-18, Jacques's decision): held stock no longer counts against the cap.** The consumption-point cap itself (section 6b, since v1.1, 2026-08-20) is **already live on prod**. It applies to Received-origin LOTs and works like this:
 
 1. Walk up from the LOT's destination.
 2. Take the nearest active `IsConsumptionPoint = 1` row for the part.
 3. **If that row's `MaxQuantity` is NULL, it's unrestricted.**
-4. Otherwise refuse when `(non-Closed PieceCount already at that exact location) + new pieces > Max`. The message is `... (N present, cap M).`
+4. Otherwise refuse when `(usable PieceCount already at that exact location) + new pieces > Max`, where usable = not Closed and not a status that blocks production (Hold, Scrap). The message is `... (N usable on hand, held stock not counted; cap M).` Releasing a hold is not a check-in and is never capped, so a release can leave the line over Max; further check-ins are refused until usage brings it back under. This matches the sidebar's Available figure.
 
 `Item.MaxParts` (section 6) is a second, older Received cap.
 

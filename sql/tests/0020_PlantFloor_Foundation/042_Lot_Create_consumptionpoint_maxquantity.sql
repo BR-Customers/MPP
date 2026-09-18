@@ -138,6 +138,54 @@ DECLARE @s5cond BIT = CASE WHEN @s5 = 0 THEN 1 ELSE 0 END;
 EXEC test.Assert_IsTrue @TestName = N'[CpMaxQty] WorkCenter-tier cap cascades to a Cell receive (Status 0)', @Condition = @s5cond;
 GO
 
+-- =============================================
+-- Test 6 (v1.7, Jacques 2026-09-18): held stock is not accessible, so it does
+-- not count against the cap. A released hold MAY push the line over Max (the
+-- release is not a check-in); further check-ins are refused until usage brings
+-- the usable quantity back under Max.
+-- =============================================
+DECLARE @Item BIGINT = (SELECT Val FROM #CP WHERE Tag = N'ITEM');
+DECLARE @Cell BIGINT = (SELECT Val FROM #CP WHERE Tag = N'CELL');
+DECLARE @WC   BIGINT = (SELECT Val FROM #CP WHERE Tag = N'WC');
+DECLARE @Recv BIGINT = (SELECT Val FROM #CP WHERE Tag = N'RECV');
+DECLARE @Now6 DATETIME2(3) = SYSUTCDATETIME();
+-- reset: no LOTs, cap 50 at the Cell only
+DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.ItemId = @Item;
+DELETE m  FROM Lots.LotMovement m  INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.ItemId = @Item;
+DELETE h  FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.ItemId = @Item;
+DELETE cl FROM Lots.LotGenealogyClosure cl INNER JOIN Lots.Lot l ON l.Id = cl.AncestorLotId OR l.Id = cl.DescendantLotId WHERE l.ItemId = @Item;
+DELETE FROM Lots.Lot WHERE ItemId = @Item;
+DELETE FROM Parts.ItemLocation WHERE ItemId = @Item;
+INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MaxQuantity, CreatedAt)
+VALUES (@Item, @Cell, 1, 50, @Now6);
+-- 40 received, then put on Hold
+DECLARE @r6a TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO @r6a EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Recv, @CurrentLocationId = @Cell, @PieceCount = 40, @AppUserId = 1;
+DECLARE @HeldLot BIGINT = (SELECT NewId FROM @r6a);
+UPDATE Lots.Lot SET LotStatusId = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Hold') WHERE Id = @HeldLot;
+-- 30 more: 40 held are NOT counted -> 0 + 30 <= 50 -> accepted
+DECLARE @r6b TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO @r6b EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Recv, @CurrentLocationId = @Cell, @PieceCount = 30, @AppUserId = 1;
+DECLARE @ok6b BIT = (SELECT Status FROM @r6b);
+EXEC test.Assert_IsTrue @TestName = N'[CpMaxQty] held stock does not count against the cap (40 held + 30 of 50 accepted)', @Condition = @ok6b;
+-- usable stock is still capped: 30 usable + 25 = 55 > 50 -> refused
+DECLARE @r6c TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO @r6c EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Recv, @CurrentLocationId = @Cell, @PieceCount = 25, @AppUserId = 1;
+DECLARE @s6c BIT = (SELECT Status FROM @r6c);
+DECLARE @s6ccond BIT = CASE WHEN @s6c = 0 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName = N'[CpMaxQty] usable stock still capped (30 usable + 25 > 50 refused)', @Condition = @s6ccond;
+DECLARE @m6c NVARCHAR(500) = (SELECT Message FROM @r6c);
+EXEC test.Assert_Contains @TestName = N'[CpMaxQty] refusal says held stock is not counted', @HaystackStr = @m6c, @NeedleStr = N'held stock not counted';
+-- the hold is released: the line is now over Max (70 > 50), which is allowed
+UPDATE Lots.Lot SET LotStatusId = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good') WHERE Id = @HeldLot;
+-- ...and any further check-in is refused until usage brings it back under Max
+DECLARE @r6d TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO @r6d EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Recv, @CurrentLocationId = @Cell, @PieceCount = 1, @AppUserId = 1;
+DECLARE @s6d BIT = (SELECT Status FROM @r6d);
+DECLARE @s6dcond BIT = CASE WHEN @s6d = 0 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName = N'[CpMaxQty] over Max after a released hold: next check-in refused', @Condition = @s6dcond;
+GO
+
 -- ---- cleanup ----
 DECLARE @ItC BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P-CPMAXQTY');
 DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.ItemId = @ItC;

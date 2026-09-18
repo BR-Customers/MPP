@@ -1,11 +1,21 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Create.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-14
--- Version:     1.6
+-- Modified:    2026-09-18
+-- Version:     1.7
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
 --              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +
 --              FDS-05-034/-035).
+--
+--              v1.7 (2026-09-18, Jacques): the step-6b consumption-point cap
+--              counts only USABLE stock. A LOT whose status blocks production
+--              (Hold, Scrap) is not accessible, so it no longer uses up the
+--              line's Max. Releasing a hold is not a check-in and is never
+--              capped, so a release may leave the line over Max; further
+--              check-ins are then refused until usage brings the usable
+--              quantity back under Max. Matches the Line Inventory sidebar's
+--              Available (Lot_GetLineInventorySummary v1.1). Step 6 (Item.MaxParts)
+--              is unchanged.
 --
 --              v1.6 (2026-09-14, migration 0082): @ProducedAtLocationId -- the
 --              die cast machine the cutover operator read off the paper tag.
@@ -516,13 +526,14 @@ BEGIN
                     INNER JOIN Lots.LotStatusCode s3 ON s3.Id = l3.LotStatusId
                     WHERE l3.CurrentLocationId = @CurrentLocationId
                       AND l3.ItemId = @ItemId
-                      AND s3.Code <> N'Closed');
+                      AND s3.Code <> N'Closed'
+                      AND s3.BlocksProduction = 0);   -- v1.7: held/scrap stock is not usable
                 IF @CpExistingParts + @PieceCount > @CpMaxQuantity
                 BEGIN
                     SET @Message = N'Receiving ' + CAST(@PieceCount AS NVARCHAR(20))
                         + N' would exceed the consumption-point max configured for this item at '
                         + ISNULL(@CpLocationName, N'this location') + N' ('
-                        + CAST(@CpExistingParts AS NVARCHAR(20)) + N' present, cap '
+                        + CAST(@CpExistingParts AS NVARCHAR(20)) + N' usable on hand, held stock not counted; cap '
                         + CAST(@CpMaxQuantity AS NVARCHAR(20)) + N').';
                     EXEC Audit.Audit_LogFailure
                         @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
