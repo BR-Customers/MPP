@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.4
+-- Version:     2.6
 --
 -- Description:
 --   Updates mutable fields of an active Item. PartNumber and ItemTypeId
@@ -71,6 +71,20 @@
 --                       NULL-PRESERVING with 0 = clear (same deliberate deviation as
 --                       @CrtEnabled): a caller that does not know the fields can never
 --                       wipe them. Result-set shape UNCHANGED (Status, Message).
+--   2026-09-17 - 2.6 - Final review fix: the PassThrough/FinishedGood type gates on
+--                       @BoxQuantity / @LowInventoryHorizon now reject only when a
+--                       POSITIVE value is being SET or CHANGED (differs from the
+--                       value already stored), not merely present. Previously an
+--                       item ever retyped away from PassThrough (migration 0089
+--                       shows retypes happen) would fail every later save while
+--                       stuck holding a BoxQuantity the editor can't clear (the
+--                       field is disabled for non-PassThrough types). Passing back
+--                       the stored value, omitting the field, or clearing it (0)
+--                       all still succeed regardless of current type. Current
+--                       values read early into @CurrentBoxQuantity /
+--                       @CurrentLowInventoryHorizon for the gate; the later
+--                       @OldBoxQuantity / @OldLowInventoryHorizon read (for the
+--                       audit diff) is unchanged. Result-set shape UNCHANGED.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Update
     @Id               BIGINT,
@@ -214,8 +228,29 @@ BEGIN
             INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
             WHERE i.Id = @Id);
 
-        -- Business rule: a box quantity belongs to a bought (PassThrough) part
-        IF ISNULL(@BoxQuantity, 0) > 0 AND @TypeCode <> N'PassThrough'
+        -- Current stored BoxQuantity / LowInventoryHorizon, read early so the
+        -- type-gate checks below can tell "setting/changing" a positive value
+        -- (reject when the type is wrong) apart from "passing the stored value
+        -- back unchanged" (must succeed even if the item was retyped away from
+        -- the required type since the value was set -- migration 0089 shows
+        -- retypes happen). Re-read again below into @OldBoxQuantity /
+        -- @OldLowInventoryHorizon for the audit field-diff -- duplicating this
+        -- single-row SELECT is simpler than restructuring the diff block.
+        DECLARE @CurrentBoxQuantity         INT;
+        DECLARE @CurrentLowInventoryHorizon INT;
+        SELECT @CurrentBoxQuantity         = BoxQuantity,
+               @CurrentLowInventoryHorizon = LowInventoryHorizon
+        FROM Parts.Item WHERE Id = @Id;
+
+        -- Business rule: a box quantity belongs to a bought (PassThrough) part.
+        -- Gate only fires when a positive value is being SET or CHANGED (differs
+        -- from what's already stored) -- passing the same stored value back,
+        -- omitting it, or clearing it (0) all succeed regardless of current
+        -- type, so a part retyped away from PassThrough isn't permanently
+        -- rejected on every later save with no way to clear the disabled field.
+        IF ISNULL(@BoxQuantity, 0) > 0
+           AND ISNULL(@BoxQuantity, 0) <> ISNULL(@CurrentBoxQuantity, 0)
+           AND @TypeCode <> N'PassThrough'
         BEGIN
             SET @Message = N'Box quantity can only be set on a PassThrough part.';
             EXEC Audit.Audit_LogFailure
@@ -227,8 +262,11 @@ BEGIN
             RETURN;
         END
 
-        -- Business rule: a low-inventory horizon belongs to a FinishedGood
-        IF ISNULL(@LowInventoryHorizon, 0) > 0 AND @TypeCode <> N'FinishedGood'
+        -- Business rule: a low-inventory horizon belongs to a FinishedGood.
+        -- Same set-or-change gate as BoxQuantity above.
+        IF ISNULL(@LowInventoryHorizon, 0) > 0
+           AND ISNULL(@LowInventoryHorizon, 0) <> ISNULL(@CurrentLowInventoryHorizon, 0)
+           AND @TypeCode <> N'FinishedGood'
         BEGIN
             SET @Message = N'Low-inventory horizon can only be set on a FinishedGood.';
             EXEC Audit.Audit_LogFailure

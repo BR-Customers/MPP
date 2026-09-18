@@ -120,6 +120,55 @@ EXEC test.Assert_IsEqual @TestName = N'[Reject] negative BoxQuantity', @Expected
 GO
 
 -- =============================================
+-- Phase 5b: retype away from PassThrough -- stored value survives a same-value
+-- save, blocks a changed value, and 0 still clears (review fix, proc v2.6)
+-- =============================================
+DECLARE @Pt BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'T030-PT');
+DECLARE @ComponentTypeId BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'Component');
+
+-- Re-establish a known BoxQuantity on the PassThrough fixture (Phase 4 cleared it).
+DECLARE @RSeed TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @RSeed EXEC Parts.Item_Update @Id = @Pt, @Description = N'T030 dowel pin v2', @UomId = 1, @AppUserId = 1, @BoxQuantity = 3000;
+DECLARE @SeedOk NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @RSeed);
+EXEC test.Assert_IsEqual @TestName = N'[Retype] seed BoxQuantity succeeds', @Expected = N'1', @Actual = @SeedOk;
+
+-- Fixture-only shortcut: Item_Update deliberately cannot retype (PartNumber +
+-- ItemTypeId are immutable per the proc), so retype the fixture row directly.
+UPDATE Parts.Item SET ItemTypeId = @ComponentTypeId WHERE Id = @Pt;
+
+-- (a) Same stored value passed back -- must SUCCEED even though the item is now
+-- a Component (not PassThrough).
+DECLARE @Ra TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @Ra EXEC Parts.Item_Update @Id = @Pt, @Description = N'T030 dowel pin v2', @UomId = 1, @AppUserId = 1, @BoxQuantity = 3000;
+DECLARE @Sa NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @Ra);
+EXEC test.Assert_IsEqual @TestName = N'[Retype] same value on retyped item succeeds', @Expected = N'1', @Actual = @Sa;
+DECLARE @BoxA NVARCHAR(10) = (SELECT CAST(BoxQuantity AS NVARCHAR(10)) FROM Parts.Item WHERE Id = @Pt);
+EXEC test.Assert_IsEqual @TestName = N'[Retype] BoxQuantity unchanged at 3000', @Expected = N'3000', @Actual = @BoxA;
+
+-- (b) A DIFFERENT positive value on the retyped item -- must be REJECTED.
+DECLARE @Rb TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @Rb EXEC Parts.Item_Update @Id = @Pt, @Description = N'T030 dowel pin v2', @UomId = 1, @AppUserId = 1, @BoxQuantity = 4000;
+DECLARE @Sb NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @Rb);
+EXEC test.Assert_IsEqual @TestName = N'[Retype] different value on retyped item rejected', @Expected = N'0', @Actual = @Sb;
+DECLARE @Mb NVARCHAR(500) = (SELECT Message FROM @Rb);
+EXEC test.Assert_Contains @TestName = N'[Retype] reject message names PassThrough', @HaystackStr = @Mb, @NeedleStr = N'PassThrough';
+DECLARE @BoxB NVARCHAR(10) = (SELECT CAST(BoxQuantity AS NVARCHAR(10)) FROM Parts.Item WHERE Id = @Pt);
+EXEC test.Assert_IsEqual @TestName = N'[Retype] BoxQuantity still 3000 after rejected change', @Expected = N'3000', @Actual = @BoxB;
+
+-- (c) 0 still clears on the retyped item.
+DECLARE @Rc TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @Rc EXEC Parts.Item_Update @Id = @Pt, @Description = N'T030 dowel pin v2', @UomId = 1, @AppUserId = 1, @BoxQuantity = 0;
+DECLARE @Sc NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @Rc);
+EXEC test.Assert_IsEqual @TestName = N'[Retype] 0 clears on retyped item succeeds', @Expected = N'1', @Actual = @Sc;
+DECLARE @IsNullC NVARCHAR(1) = (SELECT CASE WHEN BoxQuantity IS NULL THEN N'1' ELSE N'0' END FROM Parts.Item WHERE Id = @Pt);
+EXEC test.Assert_IsEqual @TestName = N'[Retype] BoxQuantity cleared to NULL', @Expected = N'1', @Actual = @IsNullC;
+
+-- Restore the fixture back to PassThrough so it doesn't confuse itself if this
+-- file is ever re-run without a full reset, and so its type matches its name.
+UPDATE Parts.Item SET ItemTypeId = (SELECT Id FROM Parts.ItemType WHERE Code = N'PassThrough') WHERE Id = @Pt;
+GO
+
+-- =============================================
 -- Phase 6: Item_Get returns both (last two columns)
 -- =============================================
 DECLARE @Fg BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'T030-FG');
