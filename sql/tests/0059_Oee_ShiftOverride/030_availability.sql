@@ -12,6 +12,11 @@
 --
 -- EXEC parameters are literals or @variables only (project convention), so
 -- every asserted value is hoisted into a local first.
+--
+-- 2026-09-17: result set widened by five columns (PlannedDowntimeMinutes,
+-- UnplannedDowntimeMinutes, BaseMinutes, IsRollup, ParentLocationId). These
+-- fixtures use unexcused downtime only, so their availability figures are
+-- unchanged by the base-shrinking formula.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -51,7 +56,9 @@ DECLARE @a1 TABLE (ShiftId BIGINT, ShiftScheduleId BIGINT, ScheduleName NVARCHAR
     StartLocal DATETIME2(3), EndLocal DATETIME2(3), PlannedMinutes INT,
     DowntimeMinutes INT, UnexcusedDowntimeMinutes INT, RunMinutes INT,
     Availability DECIMAL(5,4), DowntimeEventCount INT, IsOverridden BIT,
-    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500));
+    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500),
+    PlannedDowntimeMinutes INT, UnplannedDowntimeMinutes INT, BaseMinutes INT,
+    IsRollup BIT, ParentLocationId BIGINT);
 INSERT INTO @a1 EXEC Oee.Shift_GetAvailability @ShiftId = @Shift1, @LocationId = @EqA;
 
 DECLARE @p1 NVARCHAR(10) = (SELECT CAST(PlannedMinutes AS NVARCHAR(10)) FROM @a1);
@@ -89,7 +96,9 @@ DECLARE @a2 TABLE (ShiftId BIGINT, ShiftScheduleId BIGINT, ScheduleName NVARCHAR
     StartLocal DATETIME2(3), EndLocal DATETIME2(3), PlannedMinutes INT,
     DowntimeMinutes INT, UnexcusedDowntimeMinutes INT, RunMinutes INT,
     Availability DECIMAL(5,4), DowntimeEventCount INT, IsOverridden BIT,
-    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500));
+    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500),
+    PlannedDowntimeMinutes INT, UnplannedDowntimeMinutes INT, BaseMinutes INT,
+    IsRollup BIT, ParentLocationId BIGINT);
 INSERT INTO @a2 EXEC Oee.Shift_GetAvailability @ShiftId = @Shift2, @LocationId = @EqA2;
 
 DECLARE @dm2 NVARCHAR(10) = (SELECT CAST(DowntimeMinutes AS NVARCHAR(10)) FROM @a2);
@@ -132,7 +141,9 @@ DECLARE @a3 TABLE (ShiftId BIGINT, ShiftScheduleId BIGINT, ScheduleName NVARCHAR
     StartLocal DATETIME2(3), EndLocal DATETIME2(3), PlannedMinutes INT,
     DowntimeMinutes INT, UnexcusedDowntimeMinutes INT, RunMinutes INT,
     Availability DECIMAL(5,4), DowntimeEventCount INT, IsOverridden BIT,
-    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500));
+    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500),
+    PlannedDowntimeMinutes INT, UnplannedDowntimeMinutes INT, BaseMinutes INT,
+    IsRollup BIT, ParentLocationId BIGINT);
 INSERT INTO @a3 EXEC Oee.Shift_GetAvailability @ShiftId = @Shift3, @LocationId = @EqB3;
 
 DECLARE @dm3 NVARCHAR(10) = (SELECT CAST(DowntimeMinutes AS NVARCHAR(10)) FROM @a3);
@@ -175,7 +186,9 @@ DECLARE @a4 TABLE (ShiftId BIGINT, ShiftScheduleId BIGINT, ScheduleName NVARCHAR
     StartLocal DATETIME2(3), EndLocal DATETIME2(3), PlannedMinutes INT,
     DowntimeMinutes INT, UnexcusedDowntimeMinutes INT, RunMinutes INT,
     Availability DECIMAL(5,4), DowntimeEventCount INT, IsOverridden BIT,
-    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500));
+    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500),
+    PlannedDowntimeMinutes INT, UnplannedDowntimeMinutes INT, BaseMinutes INT,
+    IsRollup BIT, ParentLocationId BIGINT);
 INSERT INTO @a4 EXEC Oee.Shift_GetAvailability @ShiftId = @Shift4, @LocationId = @EqB4;
 
 DECLARE @p4 NVARCHAR(10) = (SELECT CAST(PlannedMinutes AS NVARCHAR(10)) FROM @a4);
@@ -197,7 +210,9 @@ DECLARE @a4b TABLE (ShiftId BIGINT, ShiftScheduleId BIGINT, ScheduleName NVARCHA
     StartLocal DATETIME2(3), EndLocal DATETIME2(3), PlannedMinutes INT,
     DowntimeMinutes INT, UnexcusedDowntimeMinutes INT, RunMinutes INT,
     Availability DECIMAL(5,4), DowntimeEventCount INT, IsOverridden BIT,
-    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500));
+    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500),
+    PlannedDowntimeMinutes INT, UnplannedDowntimeMinutes INT, BaseMinutes INT,
+    IsRollup BIT, ParentLocationId BIGINT);
 INSERT INTO @a4b EXEC Oee.Shift_GetAvailability @ShiftId = @Shift4, @LocationId = @EqA4;
 DECLARE @p4b NVARCHAR(10) = (SELECT CAST(PlannedMinutes AS NVARCHAR(10)) FROM @a4b);
 EXEC test.Assert_IsEqual @TestName = N'[AV.override] a DIFFERENT press keeps planned 480 on the same shift',
@@ -221,7 +236,9 @@ DECLARE @a5 TABLE (ShiftId BIGINT, ShiftScheduleId BIGINT, ScheduleName NVARCHAR
     StartLocal DATETIME2(3), EndLocal DATETIME2(3), PlannedMinutes INT,
     DowntimeMinutes INT, UnexcusedDowntimeMinutes INT, RunMinutes INT,
     Availability DECIMAL(5,4), DowntimeEventCount INT, IsOverridden BIT,
-    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500));
+    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500),
+    PlannedDowntimeMinutes INT, UnplannedDowntimeMinutes INT, BaseMinutes INT,
+    IsRollup BIT, ParentLocationId BIGINT);
 INSERT INTO @a5 EXEC Oee.Shift_GetAvailability @ShiftId = @Shift5, @LocationId = @EqA5;
 DECLARE @dm5 NVARCHAR(10) = (SELECT CAST(DowntimeMinutes AS NVARCHAR(10)) FROM @a5);
 EXEC test.Assert_IsEqual @TestName = N'[AV.void] voided downtime excluded',
@@ -240,7 +257,9 @@ DECLARE @a6 TABLE (ShiftId BIGINT, ShiftScheduleId BIGINT, ScheduleName NVARCHAR
     StartLocal DATETIME2(3), EndLocal DATETIME2(3), PlannedMinutes INT,
     DowntimeMinutes INT, UnexcusedDowntimeMinutes INT, RunMinutes INT,
     Availability DECIMAL(5,4), DowntimeEventCount INT, IsOverridden BIT,
-    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500));
+    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500),
+    PlannedDowntimeMinutes INT, UnplannedDowntimeMinutes INT, BaseMinutes INT,
+    IsRollup BIT, ParentLocationId BIGINT);
 INSERT INTO @a6 EXEC Oee.Shift_GetAvailability @ShiftId = @Shift6;
 
 DECLARE @eqCnt  NVARCHAR(10) = CAST((SELECT COUNT(*) FROM Oee.ufn_ResolveOeeEquipment()) AS NVARCHAR(10));
@@ -257,7 +276,9 @@ DECLARE @a6b TABLE (ShiftId BIGINT, ShiftScheduleId BIGINT, ScheduleName NVARCHA
     StartLocal DATETIME2(3), EndLocal DATETIME2(3), PlannedMinutes INT,
     DowntimeMinutes INT, UnexcusedDowntimeMinutes INT, RunMinutes INT,
     Availability DECIMAL(5,4), DowntimeEventCount INT, IsOverridden BIT,
-    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500));
+    ShiftOverrideId BIGINT, OverrideReason NVARCHAR(500),
+    PlannedDowntimeMinutes INT, UnplannedDowntimeMinutes INT, BaseMinutes INT,
+    IsRollup BIT, ParentLocationId BIGINT);
 INSERT INTO @a6b EXEC Oee.Shift_GetAvailability @ShiftId = 99999999;
 DECLARE @unkCnt INT = (SELECT COUNT(*) FROM @a6b);
 EXEC test.Assert_RowCount @TestName = N'[AV.unknown] unknown shift -> empty result set',
