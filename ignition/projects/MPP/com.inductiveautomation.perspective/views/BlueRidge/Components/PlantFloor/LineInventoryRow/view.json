@@ -57,7 +57,7 @@
       {
         "type": "ia.display.label",
         "meta": {"name": "Available"},
-        "position": {"basis": "54px", "shrink": 0},
+        "position": {"basis": "64px", "shrink": 0},
         "props": {"style": {"classes": "pf-inv-qty"}},
         "propConfig": {
           "props.text": {"binding": {"type": "expr", "config": {"expression": "{view.params.availableText}"}}}
