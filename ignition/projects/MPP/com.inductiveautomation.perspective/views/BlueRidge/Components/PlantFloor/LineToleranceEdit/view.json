@@ -1,0 +1,138 @@
+{
+  "custom": {
+    "qty": "",
+    "busyUntil": 0
+  },
+  "params": {
+    "description": "",
+    "itemLocationId": null,
+    "currentMax": null
+  },
+  "propConfig": {
+    "params.description": {"paramDirection": "input"},
+    "params.itemLocationId": {"paramDirection": "input"},
+    "params.currentMax": {"paramDirection": "input"}
+  },
+  "props": {
+    "defaultSize": {"height": 700, "width": 440}
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "direction": "column",
+      "style": {"gap": "10px", "padding": "16px", "classes": "pf-inv-panel"}
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "submit",
+          "params": [],
+          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tres = BlueRidge.Parts.ItemLocation.saveMaxAndNotify(self.view.params.itemLocationId, self.view.custom.qty)\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-line-tolerance-edit\")"
+        },
+        {
+          "name": "clearMax",
+          "params": [],
+          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tres = BlueRidge.Parts.ItemLocation.saveMaxAndNotify(self.view.params.itemLocationId, \"\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-line-tolerance-edit\")"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "toleranceKeyPressed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\ta = payload.get(\"action\") if payload else None\n\tq = self.view.custom.qty or \"\"\n\tif a == \"key\":\n\t\tif len(q) < 6:\n\t\t\tself.view.custom.qty = q + (\"%s\" % payload.get(\"key\"))\n\telif a == \"backspace\":\n\t\tself.view.custom.qty = q[:-1]\n\telif a == \"clear\":\n\t\tself.view.custom.qty = \"\"\n\telif a == \"enter\":\n\t\tself.submit()"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Title"},
+        "position": {"shrink": 0},
+        "props": {"text": "Set Max", "style": {"classes": "pf-inv-title"}}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Part"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-sub"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "{view.params.description}"}}}
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Current"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-sub"}},
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.params.currentMax}), \"Current: not set\", \"Current: \" + toStr({view.params.currentMax}))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "QtyDisplay"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-qty", "fontSize": "34px", "padding": "6px 12px"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "if(len({view.custom.qty}) = 0, \"0\", {view.custom.qty})"}}}
+        }
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {"name": "Numpad"},
+        "position": {"basis": "424px", "shrink": 0},
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/Numpad",
+          "params": {"messageName": "toleranceKeyPressed"}
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "Buttons"},
+        "position": {"shrink": 0},
+        "props": {"style": {"gap": "10px"}},
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "Cancel"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"text": "Cancel", "style": {"classes": "pf-btn pf-btn-secondary", "minHeight": "36px"}},
+            "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+              "config": {"script": "\tsystem.perspective.closePopup(\"mpp-line-tolerance-edit\")"}}}}
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "ClearMax"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"text": "Clear Max", "style": {"classes": "pf-btn pf-btn-secondary", "minHeight": "36px"}},
+            "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+              "config": {"script": "\tself.view.rootContainer.clearMax()"}}}}
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "Save"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"style": {"classes": "pf-btn pf-btn-primary", "minHeight": "36px"}},
+            "propConfig": {
+              "props.text": {"binding": {"type": "expr", "config": {"expression": "\"Save \" + if(len({view.custom.qty}) = 0, \"-\", {view.custom.qty})"}}},
+              "props.enabled": {"binding": {"type": "expr", "config": {"expression": "toMillis(now(500)) > {view.custom.busyUntil}"}}}
+            },
+            "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+              "config": {"script": "\tself.view.rootContainer.submit()"}}}}
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "custom": {
+    "refreshToken": 0
+  },
+  "params": {
+    "locationId": null
+  },
+  "propConfig": {
+    "params.locationId": {"paramDirection": "input"}
+  },
+  "props": {
+    "defaultSize": {"height": 620, "width": 560}
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "direction": "column",
+      "style": {"gap": "10px", "padding": "16px", "classes": "pf-inv-panel"}
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Title"},
+        "position": {"shrink": 0},
+        "props": {"text": "Tolerances", "style": {"classes": "pf-inv-title"}}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Warn"},
+        "position": {"shrink": 0},
+        "props": {
+          "text": "Max is also the most this line can hold -- a check-in that would go over it is refused.",
+          "style": {"classes": "pf-inv-warn"}
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "Header"},
+        "position": {"shrink": 0},
+        "props": {"style": {"fontSize": "12px", "opacity": 0.7}},
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "PartHeader"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"text": "Part"}
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "AvailableHeader"},
+            "position": {"basis": "64px", "shrink": 0},
+            "props": {"text": "Available"}
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "MaxHeader"},
+            "position": {"basis": "72px", "shrink": 0},
+            "props": {"text": "Max"}
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "ActionHeader"},
+            "position": {"basis": "64px", "shrink": 0},
+            "props": {"text": ""}
+          }
+        ]
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {"name": "Rows"},
+        "position": {"basis": "0", "grow": 1},
+        "props": {
+          "direction": "column",
+          "path": "BlueRidge/Components/PlantFloor/LineToleranceRow",
+          "elementPosition": {"basis": "40px", "shrink": 0, "grow": 0},
+          "useDefaultViewWidth": false,
+          "useDefaultViewHeight": false,
+          "style": {"gap": "4px", "overflowY": "auto"}
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Parts.ItemLocation.getToleranceInstances\", 0, {view.params.locationId}, {view.custom.refreshToken})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {"name": "Close"},
+        "position": {"shrink": 0},
+        "props": {"text": "Close", "style": {"classes": "pf-btn pf-btn-secondary"}},
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.closePopup(\"mpp-line-tolerances\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

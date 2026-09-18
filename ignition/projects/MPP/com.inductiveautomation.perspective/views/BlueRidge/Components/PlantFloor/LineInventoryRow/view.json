@@ -9,7 +9,7 @@
     "boxQuantity": null,
     "buttonText": "",
     "description": "",
-    "isLow": false,
+    "level": "None",
     "itemId": null,
     "locationId": null
   },
@@ -20,7 +20,7 @@
     "params.boxQuantity": {"paramDirection": "input"},
     "params.buttonText": {"paramDirection": "input"},
     "params.description": {"paramDirection": "input"},
-    "params.isLow": {"paramDirection": "input"},
+    "params.level": {"paramDirection": "input"},
     "params.itemId": {"paramDirection": "input"},
     "params.locationId": {"paramDirection": "input"}
   },
@@ -39,7 +39,7 @@
         "binding": {
           "type": "expr",
           "config": {
-            "expression": "if({view.params.isLow}, \"pf-inv-row pf-inv-row-low\", \"pf-inv-row\")"
+            "expression": "if({view.params.level} = \"Critical\", \"pf-inv-row pf-inv-row-crit\", if({view.params.level} = \"Low\", \"pf-inv-row pf-inv-row-low\", \"pf-inv-row\"))"
           }
         }
       }

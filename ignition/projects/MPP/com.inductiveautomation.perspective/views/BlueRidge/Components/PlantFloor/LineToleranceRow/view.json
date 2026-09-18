@@ -1,0 +1,74 @@
+{
+  "custom": {},
+  "params": {
+    "itemLocationId": null,
+    "description": "",
+    "availableText": "",
+    "maxText": "",
+    "maxQuantity": null
+  },
+  "propConfig": {
+    "params.itemLocationId": {"paramDirection": "input"},
+    "params.description": {"paramDirection": "input"},
+    "params.availableText": {"paramDirection": "input"},
+    "params.maxText": {"paramDirection": "input"},
+    "params.maxQuantity": {"paramDirection": "input"}
+  },
+  "props": {
+    "defaultSize": {"height": 40, "width": 520}
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "alignItems": "center",
+      "style": {"classes": "pf-inv-row"}
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Description"},
+        "position": {"basis": "0", "grow": 1},
+        "props": {"style": {"classes": "pf-inv-desc", "minWidth": "0"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "{view.params.description}"}}}
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Available"},
+        "position": {"basis": "64px", "shrink": 0},
+        "props": {"style": {"classes": "pf-inv-qty"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "{view.params.availableText}"}}}
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Max"},
+        "position": {"basis": "72px", "shrink": 0},
+        "props": {"style": {"classes": "pf-inv-qty"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "{view.params.maxText}"}}}
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {"name": "EditButton"},
+        "position": {"basis": "64px", "shrink": 0},
+        "props": {"text": "Edit", "style": {"classes": "pf-btn pf-btn-secondary pf-inv-btn"}},
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.openPopup(\"mpp-line-tolerance-edit\", \"BlueRidge/Components/PlantFloor/LineToleranceEdit\", params={\"itemLocationId\": self.view.params.itemLocationId, \"description\": self.view.params.description, \"currentMax\": self.view.params.maxQuantity}, modal=True, showCloseIcon=True)"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

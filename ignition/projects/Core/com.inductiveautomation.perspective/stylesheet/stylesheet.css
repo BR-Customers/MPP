@@ -3075,5 +3075,58 @@ button {
 .psc-pf-inv-foot {
     padding: 6px 8px;
     border-top: 1px solid var(--mpp-border-subtle);
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ---- Line Inventory rev 2 (2026-09-17): critical level, header controls, footer, tolerances ---- */
+:root {
+    --pf-inv-crit-bg: rgba(239, 68, 68, 0.18);
+    --pf-inv-crit-border: #F05252;
+}
+.psc-pf-inv-row-crit {
+    background: var(--pf-inv-crit-bg);
+    border: 2px solid var(--pf-inv-crit-border);
+    padding: 0 5px 0 9px;
+}
+.psc-pf-inv-row-crit .psc-pf-inv-qty {
+    color: #FCA5A5;
+}
+.psc-pf-inv-hrow {
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+.psc-pf-inv-hbtn {
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 0 9px !important;
+    font-size: 12px !important;
+    background: transparent;
+    border: 1px solid var(--mpp-border-default);
+    color: var(--mpp-text-secondary);
+}
+.psc-pf-inv-hbtn-on {
+    background: var(--mpp-accent-20);
+    border-color: var(--mpp-accent-60);
+    color: var(--mpp-accent-90);
+}
+.psc-pf-inv-foottxt {
+    font-size: 13px;
+    color: var(--mpp-text-secondary);
+    opacity: 0.8;
+}
+.psc-pf-inv-foottxt-warn {
+    color: #FFC08A;
+    font-weight: 600;
+    opacity: 1;
+}
+.psc-pf-inv-warn {
+    font-size: 13px;
+    color: #FFC08A;
+    background: rgba(255, 145, 48, 0.10);
+    border: 1px solid rgba(255, 145, 48, 0.35);
+    border-radius: var(--mpp-radius-md);
+    padding: 7px 10px;
 }
