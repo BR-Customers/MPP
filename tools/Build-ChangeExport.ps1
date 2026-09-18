@@ -37,7 +37,15 @@ param(
     [string]$Since,                      # git ref: everything changed AFTER this
     [string]$Until   = "HEAD",
     [string]$Label   = "change",
-    [string]$OutDir  = "dist\ignition-exports"
+    [string]$OutDir  = "dist\ignition-exports",
+    # Repo-relative resource FOLDERS to leave out although the range touched them,
+    # e.g. a gateway-specific resource such as MPP_Config's ignition/global-props.
+    # Each must be in the changed set, or the build refuses (a typo must not
+    # silently ship the thing you meant to hold back).
+    [string[]]$ExcludeResource = @(),
+    # Repo-relative resource FOLDERS to ship although the range did not touch
+    # them -- e.g. one the target gateway is known to be missing.
+    [string[]]$IncludeResource = @()
 )
 
 Set-StrictMode -Version Latest
@@ -133,13 +141,34 @@ if ($skipped.Count -gt 0) {
     Write-Host ("  Skipped {0} resource(s) whose only change was dropping thumbnail.png from the manifest." -f $skipped.Count) -ForegroundColor DarkGray
 }
 
+function Resolve-ResourceDir([string]$repoRel) {
+    $d = Join-Path $Snapshot (($repoRel.Trim().TrimEnd('/', '\')) -replace '/', '\')
+    if (-not (Test-Path (Join-Path $d "resource.json"))) {
+        throw "'$repoRel' is not a resource folder at $Until (no resource.json)."
+    }
+    return $d
+}
+$excludedHits = @()
+foreach ($x in $ExcludeResource) {
+    $d = Resolve-ResourceDir $x
+    if (-not $resourceDirs.Remove($d)) { throw "-ExcludeResource '$x' was not in the changed set for $Since..$Until." }
+    $excludedHits += $x
+    Write-Host "  EXCLUDED by request: $x" -ForegroundColor Yellow
+}
+$includedHits = @()
+foreach ($x in $IncludeResource) {
+    $d = Resolve-ResourceDir $x
+    if ($resourceDirs.Add($d)) { $includedHits += $x; Write-Host "  INCLUDED by request: $x" -ForegroundColor Yellow }
+    else { Write-Host "  -IncludeResource '$x' was already in the changed set." -ForegroundColor DarkGray }
+}
+
 if ($resourceDirs.Count -eq 0) { Write-Host "  No owning resource folders found." -ForegroundColor Yellow; return }
 
 # ------------------------------------------------------------
 # 2. Group by project and build one archive each
 # ------------------------------------------------------------
 $stamp = Get-Date -Format "yyyy-MM-dd_HHmm"
-$outFull = Join-Path $RepoRoot $OutDir
+$outFull = if ([IO.Path]::IsPathRooted($OutDir)) { $OutDir } else { Join-Path $RepoRoot $OutDir }
 if (-not (Test-Path $outFull)) { New-Item -ItemType Directory -Force $outFull | Out-Null }
 
 $built = @()
@@ -264,6 +293,8 @@ foreach ($proj in $Projects) {
     }
     $lines += ""
 }
+if ($includedHits.Count -gt 0) { $lines += "== INCLUDED by request (not changed in range; shipped as at $Until)"; $lines += $includedHits; $lines += "" }
+if ($excludedHits.Count -gt 0) { $lines += "== EXCLUDED by request (changed in range, deliberately NOT shipped)"; $lines += $excludedHits; $lines += "" }
 if ($deleted.Count -gt 0) { $lines += "== DELETED in range (remove by hand in the Designer)"; $lines += $deleted }
 $lines | Set-Content -Encoding UTF8 $contents
 Remove-Item -Recurse -Force $Snapshot -ErrorAction SilentlyContinue
