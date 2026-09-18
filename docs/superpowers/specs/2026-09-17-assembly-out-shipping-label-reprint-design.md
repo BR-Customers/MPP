@@ -88,5 +88,11 @@ fallback past a newer void label, serial, quantity, status, ET conversion, order
 ## Found, not changed
 
 - The Shipping Dock reprint button never dispatches (see above).
-- `Lots.PrintReasonCode` seed row 2 is `N'Reprint — Damaged'` with an em-dash (ASCII-only seed rule).
-- `Lots.Container_ListShipped` and `Lots.Lot_GetShippedContainers` have no NQ and no caller.
+- `Lots.PrintReasonCode` seed row 2 carried an em-dash, stored as mojibake by sqlcmd. **Fixed after the
+  fact** by migration `0093_printreasoncode_ascii_name` (Name -> `Reprint - Damaged`, keyed on Code).
+- ~~`Lots.Container_ListShipped` and `Lots.Lot_GetShippedContainers` have no NQ and no caller.~~ **Wrong.**
+  Both are live report data sources, called from the report definitions' `data.bin` (tracked, but gzip-compressed,
+  so a plain grep misses them): `Container_ListShipped` feeds the **Shipping History** report
+  (FDS-12-011, 2026-08-25; scoped to Complete OR Shipped since 2026-08-26 because nothing but the
+  Shipping Dock sets Shipped), and `Lot_GetShippedContainers` feeds the shipped-container band of the
+  **Lot Detail** genealogy report (2026-08-12). Neither depends on the Shipping Dock existing.
