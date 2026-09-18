@@ -1056,23 +1056,6 @@ BEGIN
                          @level2type = N'COLUMN', @level2name = N'BoxQuantity';
     END
 
-    IF COL_LENGTH(N'[Parts].[Item]', N'LowInventoryHorizon') IS NOT NULL
-    BEGIN
-        IF EXISTS (SELECT 1 FROM sys.extended_properties
-                   WHERE major_id = OBJECT_ID(N'[Parts].[Item]')
-                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Parts].[Item]'), N'LowInventoryHorizon', 'ColumnId')
-                     AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added 2026-09-17 (migration 0091). Only on FinishedGood items. How many more of this finished good the line should always be able to build: a component is flagged low on the Line Inventory sidebar when on hand < rolled-up BOM QtyPer x this value. NULL = no low flag for this FG.',
-                         @level0type = N'SCHEMA', @level0name = N'Parts',
-                         @level1type = N'TABLE',  @level1name = N'Item',
-                         @level2type = N'COLUMN', @level2name = N'LowInventoryHorizon';
-        ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added 2026-09-17 (migration 0091). Only on FinishedGood items. How many more of this finished good the line should always be able to build: a component is flagged low on the Line Inventory sidebar when on hand < rolled-up BOM QtyPer x this value. NULL = no low flag for this FG.',
-                         @level0type = N'SCHEMA', @level0name = N'Parts',
-                         @level1type = N'TABLE',  @level1name = N'Item',
-                         @level2type = N'COLUMN', @level2name = N'LowInventoryHorizon';
-    END
-
     IF COL_LENGTH(N'[Parts].[Item]', N'UomId') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
@@ -6708,4 +6691,4 @@ BEGIN
 END
 GO
 
--- 69 table descriptions, 317 column descriptions
+-- 69 table descriptions, 316 column descriptions

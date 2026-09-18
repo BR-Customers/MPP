@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.6
+-- Version:     2.7
 --
 -- Description:
 --   Updates mutable fields of an active Item. PartNumber and ItemTypeId
@@ -85,6 +85,16 @@
 --                       @CurrentLowInventoryHorizon for the gate; the later
 --                       @OldBoxQuantity / @OldLowInventoryHorizon read (for the
 --                       audit diff) is unchanged. Result-set shape UNCHANGED.
+--   2026-09-17 - 2.7 - Retired @LowInventoryHorizon (migration 0094): Line
+--                       Inventory rev 2 colours by the line's ItemLocation.
+--                       MaxQuantity instead of a finished-good horizon. Removed
+--                       the parameter, its @Params/@OldValue/@NewValue JSON
+--                       entries, the FinishedGood-only type gate, the
+--                       @OldLowInventoryHorizon/@CurrentLowInventoryHorizon
+--                       reads, its @Diff CASE, and its SET assignment.
+--                       @BoxQuantity behaviour is byte-for-byte unchanged
+--                       apart from losing its half of the combined negative
+--                       check's message. Result-set shape UNCHANGED.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Update
     @Id               BIGINT,
@@ -99,8 +109,7 @@ CREATE OR ALTER PROCEDURE Parts.Item_Update
     @MaxParts         INT            = NULL,
     @AppUserId        BIGINT,
     @CrtEnabled          BIT            = NULL,
-    @BoxQuantity         INT            = NULL,
-    @LowInventoryHorizon INT            = NULL
+    @BoxQuantity         INT            = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -126,7 +135,7 @@ BEGIN
                 @UnitWeight AS UnitWeight, @WeightUomId AS WeightUomId,
                 @CountryOfOrigin AS CountryOfOrigin,
                 @MaxParts AS MaxParts,
-                @CrtEnabled AS CrtEnabled, @BoxQuantity AS BoxQuantity, @LowInventoryHorizon AS LowInventoryHorizon
+                @CrtEnabled AS CrtEnabled, @BoxQuantity AS BoxQuantity
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
@@ -209,11 +218,10 @@ BEGIN
             RETURN;
         END
 
-        -- Business rule: BoxQuantity / LowInventoryHorizon never negative (0 = clear)
-        IF (@BoxQuantity IS NOT NULL AND @BoxQuantity < 0)
-           OR (@LowInventoryHorizon IS NOT NULL AND @LowInventoryHorizon < 0)
+        -- Business rule: BoxQuantity never negative (0 = clear)
+        IF @BoxQuantity IS NOT NULL AND @BoxQuantity < 0
         BEGIN
-            SET @Message = N'Box quantity and low-inventory horizon cannot be negative.';
+            SET @Message = N'Box quantity cannot be negative.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Item',
                 @EntityId = @Id, @LogEventTypeCode = N'Updated',
@@ -228,18 +236,16 @@ BEGIN
             INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
             WHERE i.Id = @Id);
 
-        -- Current stored BoxQuantity / LowInventoryHorizon, read early so the
-        -- type-gate checks below can tell "setting/changing" a positive value
-        -- (reject when the type is wrong) apart from "passing the stored value
-        -- back unchanged" (must succeed even if the item was retyped away from
-        -- the required type since the value was set -- migration 0089 shows
-        -- retypes happen). Re-read again below into @OldBoxQuantity /
-        -- @OldLowInventoryHorizon for the audit field-diff -- duplicating this
-        -- single-row SELECT is simpler than restructuring the diff block.
-        DECLARE @CurrentBoxQuantity         INT;
-        DECLARE @CurrentLowInventoryHorizon INT;
-        SELECT @CurrentBoxQuantity         = BoxQuantity,
-               @CurrentLowInventoryHorizon = LowInventoryHorizon
+        -- Current stored BoxQuantity, read early so the type-gate check below
+        -- can tell "setting/changing" a positive value (reject when the type
+        -- is wrong) apart from "passing the stored value back unchanged"
+        -- (must succeed even if the item was retyped away from the required
+        -- type since the value was set -- migration 0089 shows retypes
+        -- happen). Re-read again below into @OldBoxQuantity for the audit
+        -- field-diff -- duplicating this single-row SELECT is simpler than
+        -- restructuring the diff block.
+        DECLARE @CurrentBoxQuantity INT;
+        SELECT @CurrentBoxQuantity = BoxQuantity
         FROM Parts.Item WHERE Id = @Id;
 
         -- Business rule: a box quantity belongs to a bought (PassThrough) part.
@@ -262,22 +268,6 @@ BEGIN
             RETURN;
         END
 
-        -- Business rule: a low-inventory horizon belongs to a FinishedGood.
-        -- Same set-or-change gate as BoxQuantity above.
-        IF ISNULL(@LowInventoryHorizon, 0) > 0
-           AND ISNULL(@LowInventoryHorizon, 0) <> ISNULL(@CurrentLowInventoryHorizon, 0)
-           AND @TypeCode <> N'FinishedGood'
-        BEGIN
-            SET @Message = N'Low-inventory horizon can only be set on a FinishedGood.';
-            EXEC Audit.Audit_LogFailure
-                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Item',
-                @EntityId = @Id, @LogEventTypeCode = N'Updated',
-                @FailureReason = @Message, @ProcedureName = @ProcName,
-                @AttemptedParameters = @Params;
-            SELECT @Status AS Status, @Message AS Message;
-            RETURN;
-        END
-
         -- ===== Capture OLD scalar values BEFORE the UPDATE (for field-diff) =====
         DECLARE @OldPartNumber       NVARCHAR(50);
         DECLARE @OldDescription      NVARCHAR(500);
@@ -290,8 +280,7 @@ BEGIN
         DECLARE @OldCountryOfOrigin  NVARCHAR(2);
         DECLARE @OldMaxParts         INT;
         DECLARE @OldCrtEnabled       BIT;
-        DECLARE @OldBoxQuantity         INT;
-        DECLARE @OldLowInventoryHorizon INT;
+        DECLARE @OldBoxQuantity      INT;
 
         SELECT @OldPartNumber       = PartNumber,
                @OldDescription      = Description,
@@ -304,8 +293,7 @@ BEGIN
                @OldCountryOfOrigin  = CountryOfOrigin,
                @OldMaxParts         = MaxParts,
                @OldCrtEnabled       = CrtEnabled,
-               @OldBoxQuantity         = BoxQuantity,
-               @OldLowInventoryHorizon = LowInventoryHorizon
+               @OldBoxQuantity      = BoxQuantity
         FROM Parts.Item WHERE Id = @Id;
 
         -- Resolve the NULL-preserving CRT flag against the row's current value BEFORE
@@ -317,8 +305,6 @@ BEGIN
         -- NULL = leave alone; 0 = clear; > 0 = set.
         SET @BoxQuantity = CASE WHEN @BoxQuantity IS NULL THEN @OldBoxQuantity
                                 WHEN @BoxQuantity = 0 THEN NULL ELSE @BoxQuantity END;
-        SET @LowInventoryHorizon = CASE WHEN @LowInventoryHorizon IS NULL THEN @OldLowInventoryHorizon
-                                        WHEN @LowInventoryHorizon = 0 THEN NULL ELSE @LowInventoryHorizon END;
 
         -- Resolved-FK OldValue snapshot (pre-update state)
         DECLARE @OldValue NVARCHAR(MAX) = (
@@ -336,7 +322,7 @@ BEGIN
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS WeightUom,
                 i.CountryOfOrigin,
                 i.MaxParts,
-                i.CrtEnabled, i.BoxQuantity, i.LowInventoryHorizon
+                i.CrtEnabled, i.BoxQuantity
             FROM Parts.Item i
             WHERE i.Id = @Id
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
@@ -385,9 +371,6 @@ BEGIN
                  ELSE N'' END,
             CASE WHEN ISNULL(@OldBoxQuantity, -1) <> ISNULL(@BoxQuantity, -1)
                  THEN N', BoxQuantity ' + ISNULL(CAST(@OldBoxQuantity AS NVARCHAR(20)), N'null') + @Arrow + ISNULL(CAST(@BoxQuantity AS NVARCHAR(20)), N'null')
-                 ELSE N'' END,
-            CASE WHEN ISNULL(@OldLowInventoryHorizon, -1) <> ISNULL(@LowInventoryHorizon, -1)
-                 THEN N', LowInventoryHorizon ' + ISNULL(CAST(@OldLowInventoryHorizon AS NVARCHAR(20)), N'null') + @Arrow + ISNULL(CAST(@LowInventoryHorizon AS NVARCHAR(20)), N'null')
                  ELSE N'' END
         ), 1, 2, N'');  -- strip leading ", "
 
@@ -413,7 +396,7 @@ BEGIN
             CountryOfOrigin  = @CountryOfOrigin,
             MaxParts         = @MaxParts,
             CrtEnabled       = @CrtEnabled,
-            BoxQuantity = @BoxQuantity, LowInventoryHorizon = @LowInventoryHorizon,
+            BoxQuantity      = @BoxQuantity,
             UpdatedAt        = SYSUTCDATETIME(),
             UpdatedByUserId  = @AppUserId
         WHERE Id = @Id;
@@ -434,7 +417,7 @@ BEGIN
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS WeightUom,
                 i.CountryOfOrigin,
                 i.MaxParts,
-                i.CrtEnabled, i.BoxQuantity, i.LowInventoryHorizon
+                i.CrtEnabled, i.BoxQuantity
             FROM Parts.Item i
             WHERE i.Id = @Id
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER

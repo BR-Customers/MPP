@@ -2,9 +2,11 @@
 -- File:         0008_Parts_Item/030_Item_BoxQuantity_Horizon.sql
 -- Author:       Blue Ridge Automation
 -- Created:      2026-09-17
--- Description:  Parts.Item.BoxQuantity / LowInventoryHorizon (migration 0091) and
---               their Parts.Item_Update rules (line inventory sidebar spec).
---               Phase 1: columns + positive CHECKs exist.
+-- Description:  Parts.Item.BoxQuantity (migration 0091) and its Parts.Item_Update
+--               rules (line inventory sidebar spec). LowInventoryHorizon (also
+--               0091) was retired by migration 0094 -- Line Inventory rev 2
+--               colours a part by the line's ItemLocation.MaxQuantity instead of
+--               a finished-good horizon. Phase 1 now asserts the column is gone.
 --               Phase 2+: Item_Update validation / preserve / clear / audit.
 -- =============================================
 SET NOCOUNT ON;
@@ -20,6 +22,7 @@ DELETE FROM Parts.Item WHERE PartNumber LIKE N'T030-%';
 GO
 
 -- ---- fixture: one PassThrough, one FinishedGood, one Component ----
+-- (FinishedGood fixture kept: still exercised elsewhere in this file.)
 DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId) VALUES
     ((SELECT Id FROM Parts.ItemType WHERE Code = N'PassThrough'),  N'T030-PT', N'T030 dowel pin', 1, @Now, 1),
@@ -33,7 +36,7 @@ GO
 DECLARE @HasBox NVARCHAR(1) = CASE WHEN COL_LENGTH('Parts.Item', 'BoxQuantity') IS NULL THEN N'0' ELSE N'1' END;
 EXEC test.Assert_IsEqual @TestName = N'[Schema] Item.BoxQuantity exists', @Expected = N'1', @Actual = @HasBox;
 DECLARE @HasHz NVARCHAR(1) = CASE WHEN COL_LENGTH('Parts.Item', 'LowInventoryHorizon') IS NULL THEN N'0' ELSE N'1' END;
-EXEC test.Assert_IsEqual @TestName = N'[Schema] Item.LowInventoryHorizon exists', @Expected = N'1', @Actual = @HasHz;
+EXEC test.Assert_IsEqual @TestName = N'[Schema] Item.LowInventoryHorizon retired (0094)', @Expected = N'0', @Actual = @HasHz;
 GO
 
 DECLARE @Err NVARCHAR(1) = N'0';
@@ -46,30 +49,16 @@ END CATCH
 EXEC test.Assert_IsEqual @TestName = N'[Schema] CHECK rejects BoxQuantity = 0', @Expected = N'1', @Actual = @Err;
 GO
 
-DECLARE @Err NVARCHAR(1) = N'0';
-BEGIN TRY
-    EXEC(N'UPDATE Parts.Item SET LowInventoryHorizon = -5 WHERE PartNumber = N''T030-FG''');
-END TRY
-BEGIN CATCH
-    SET @Err = N'1';
-END CATCH
-EXEC test.Assert_IsEqual @TestName = N'[Schema] CHECK rejects negative horizon', @Expected = N'1', @Actual = @Err;
-GO
-
 -- =============================================
 -- Phase 2: set on the right type
 -- =============================================
 DECLARE @Pt BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'T030-PT');
-DECLARE @Fg BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'T030-FG');
 DECLARE @R TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @R EXEC Parts.Item_Update @Id = @Pt, @Description = N'T030 dowel pin', @UomId = 1, @AppUserId = 1, @BoxQuantity = 5000;
-INSERT INTO @R EXEC Parts.Item_Update @Id = @Fg, @Description = N'T030 finished',  @UomId = 1, @AppUserId = 1, @LowInventoryHorizon = 50;
 DECLARE @Ok NVARCHAR(10) = (SELECT CAST(SUM(CAST(Status AS INT)) AS NVARCHAR(10)) FROM @R);
-EXEC test.Assert_IsEqual @TestName = N'[Update] both sets succeed', @Expected = N'2', @Actual = @Ok;
+EXEC test.Assert_IsEqual @TestName = N'[Update] set succeeds', @Expected = N'1', @Actual = @Ok;
 DECLARE @Box NVARCHAR(10) = (SELECT CAST(BoxQuantity AS NVARCHAR(10)) FROM Parts.Item WHERE Id = @Pt);
 EXEC test.Assert_IsEqual @TestName = N'[Update] BoxQuantity stored', @Expected = N'5000', @Actual = @Box;
-DECLARE @Hz NVARCHAR(10) = (SELECT CAST(LowInventoryHorizon AS NVARCHAR(10)) FROM Parts.Item WHERE Id = @Fg);
-EXEC test.Assert_IsEqual @TestName = N'[Update] horizon stored', @Expected = N'50', @Actual = @Hz;
 DECLARE @Log NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog WHERE EntityId = @Pt ORDER BY Id DESC);
 EXEC test.Assert_Contains @TestName = N'[Update] audit prose names BoxQuantity', @HaystackStr = @Log, @NeedleStr = N'BoxQuantity';
 GO
@@ -107,11 +96,6 @@ DECLARE @S1 NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @R1);
 EXEC test.Assert_IsEqual @TestName = N'[Reject] BoxQuantity on a Component', @Expected = N'0', @Actual = @S1;
 DECLARE @M1 NVARCHAR(500) = (SELECT Message FROM @R1);
 EXEC test.Assert_Contains @TestName = N'[Reject] message names PassThrough', @HaystackStr = @M1, @NeedleStr = N'PassThrough';
-
-DECLARE @R2 TABLE (Status BIT, Message NVARCHAR(500));
-INSERT INTO @R2 EXEC Parts.Item_Update @Id = @Pt, @Description = N'T030 dowel pin v2', @UomId = 1, @AppUserId = 1, @LowInventoryHorizon = 50;
-DECLARE @S2 NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @R2);
-EXEC test.Assert_IsEqual @TestName = N'[Reject] horizon on a PassThrough', @Expected = N'0', @Actual = @S2;
 
 DECLARE @R3 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @R3 EXEC Parts.Item_Update @Id = @Pt, @Description = N'T030 dowel pin v2', @UomId = 1, @AppUserId = 1, @BoxQuantity = -1;
@@ -169,19 +153,21 @@ UPDATE Parts.Item SET ItemTypeId = (SELECT Id FROM Parts.ItemType WHERE Code = N
 GO
 
 -- =============================================
--- Phase 6: Item_Get returns both (last two columns)
+-- Phase 6: Item_Get returns BoxQuantity (last column)
 -- =============================================
-DECLARE @Fg BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'T030-FG');
+DECLARE @Pt BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'T030-PT');
+DECLARE @RSetBox TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @RSetBox EXEC Parts.Item_Update @Id = @Pt, @Description = N'T030 dowel pin v2', @UomId = 1, @AppUserId = 1, @BoxQuantity = 7500;
 CREATE TABLE #G (
     Id BIGINT, ItemTypeId BIGINT, ItemTypeName NVARCHAR(100), PartNumber NVARCHAR(50), Description NVARCHAR(500),
     MacolaPartNumber NVARCHAR(50), DefaultSubLotQty INT, MaxLotSize INT, UomId BIGINT, UomCode NVARCHAR(20),
     UnitWeight DECIMAL(10,4), WeightUomId BIGINT, WeightUomCode NVARCHAR(20), CountryOfOrigin NVARCHAR(2),
     MaxParts INT, CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), CreatedByUserId BIGINT, UpdatedByUserId BIGINT,
-    DeprecatedAt DATETIME2(3), CrtEnabled BIT, BoxQuantity INT, LowInventoryHorizon INT);
-INSERT INTO #G EXEC Parts.Item_Get @Id = @Fg;
-DECLARE @GHz NVARCHAR(10) = (SELECT CAST(LowInventoryHorizon AS NVARCHAR(10)) FROM #G);
+    DeprecatedAt DATETIME2(3), CrtEnabled BIT, BoxQuantity INT);
+INSERT INTO #G EXEC Parts.Item_Get @Id = @Pt;
+DECLARE @GBox NVARCHAR(10) = (SELECT CAST(BoxQuantity AS NVARCHAR(10)) FROM #G);
 DROP TABLE #G;
-EXEC test.Assert_IsEqual @TestName = N'[Get] horizon returned', @Expected = N'50', @Actual = @GHz;
+EXEC test.Assert_IsEqual @TestName = N'[Get] BoxQuantity returned', @Expected = N'7500', @Actual = @GBox;
 GO
 
 -- ---- cleanup ----

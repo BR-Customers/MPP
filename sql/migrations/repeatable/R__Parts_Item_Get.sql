@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Get
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.4
+-- Version:     2.5
 --
 -- Description:
 --   Returns a single Item row by Id joined to ItemType.Name and Uom.Code
@@ -29,6 +29,9 @@
 --   2026-08-20 - 2.3 - Part-scoped CRT (Task 8): CrtEnabled appended LAST so the
 --                       Config Tool Item Master Identity checkbox can read it back.
 --   2026-09-17 - 2.4 - BoxQuantity, LowInventoryHorizon appended (line inventory sidebar).
+--   2026-09-17 - 2.5 - LowInventoryHorizon retired (migration 0094): Line Inventory
+--                       rev 2 colours by the line's ItemLocation.MaxQuantity instead
+--                       of a finished-good horizon. BoxQuantity is now the last column.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Get
     @Id BIGINT
@@ -58,8 +61,7 @@ BEGIN
         i.UpdatedByUserId,
         i.DeprecatedAt,
         i.CrtEnabled,         -- APPEND-LAST: see Result set note above
-        i.BoxQuantity,        -- APPEND-LAST (2026-09-17, 0091)
-        i.LowInventoryHorizon -- APPEND-LAST (2026-09-17, 0091)
+        i.BoxQuantity         -- APPEND-LAST (2026-09-17, 0091)
     FROM Parts.Item i
     INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
     INNER JOIN Parts.Uom u       ON u.Id  = i.UomId

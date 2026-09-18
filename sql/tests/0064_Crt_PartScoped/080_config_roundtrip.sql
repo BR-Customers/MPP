@@ -84,9 +84,9 @@ CREATE TABLE #g (
     UpdatedByUserId   BIGINT,
     DeprecatedAt      DATETIME2(3),
     CrtEnabled        BIT,
-    -- Line inventory sidebar (0091): BoxQuantity, LowInventoryHorizon appended LAST.
-    BoxQuantity          INT,
-    LowInventoryHorizon  INT
+    -- Line inventory sidebar (0091): BoxQuantity appended LAST. (LowInventoryHorizon,
+    -- also 0091, was retired by migration 0094.)
+    BoxQuantity       INT
 );
 
 CREATE TABLE #u (Status BIT, Message NVARCHAR(500));

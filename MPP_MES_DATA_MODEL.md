@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 2.8 | 2026-09-17 | Blue Ridge Automation | Parts.Item.LowInventoryHorizon retired (migration 0094); Line Inventory colours by ItemLocation.MaxQuantity. |
 | 2.7 | 2026-09-17 | Blue Ridge Automation | Parts.Item.BoxQuantity + LowInventoryHorizon (migration 0091) for the M&A Line Inventory sidebar. |
 | 2.6 | 2026-09-17 | Blue Ridge Automation | **`Tools.Tool.ShotCount` gains a setter.** `Tools.Tool_CorrectShotCount` lets the die manager enter a die's actual lifetime count at cutover or fix a wrong one, with a mandatory note audited to `Audit.ConfigLog`. Stale-guarded against a shift output landing mid-edit; touches no `DieCastContribution` row or watermark. Spec `docs/superpowers/specs/2026-09-17-tool-shot-count-correction-design.md`. |
 | 2.5 | 2026-09-14 | Blue Ridge Automation | **`Lots.Lot.ProducedAtLocationId`** (migration `0082`) — a nullable FK to `Location.Location` recording the die cast machine that produced a LOT. Populated only by the inventory cutover scan, whose operator reads the machine off the paper tag; every other mint leaves it NULL because a die cast terminal's parent already names the machine. Spec `docs/superpowers/specs/2026-09-14-cutover-machine-eligibility-design.md`. |
@@ -334,7 +335,6 @@ Item master, bills of material, routes, operation templates, container configura
 | MaxLotSize | INT | NULL | **Repurposed v1.9 as `PartsPerBasket`.** One LOT = one basket = one LTT label at Die Cast / Trim / intermediate Machining, so "max parts per LOT" IS basket capacity. Config Tool Item screen labels this field `PartsPerBasket`. Distinct from `MaxParts` (see next row). Formal column rename deferred. |
 | MaxParts | INT | NULL | **Added v1.9c (OI-12 correction).** Hard cap on pieces of this Item allowed at any single Location (e.g., "no more than 500 5G0 parts at any one Cell"). Scan-in mutation (LotMovement to a Cell) sums existing pieces of this Item already present at the destination Location across all open LOTs + incoming quantity; rejects if result > `MaxParts`. Complements `LinesideLimit` (LocationAttribute on Cell — per-Location aggregate cap across **all** Items). Stops operators from over-scanning to avoid re-scan friction. |
 | BoxQuantity | INT | NULL, CHECK > 0 | **Added 2026-09-17 (migration 0091).** Pieces in one purchased box (e.g., dowel pins = 5000). Only on PassThrough items (enforced by Item_Update). Drives the one-tap check-in button on the M&A Line Inventory sidebar: one press creates one Received LOT of this size. NULL = the button asks for a count. |
-| LowInventoryHorizon | INT | NULL, CHECK > 0 | **Added 2026-09-17 (migration 0091).** Only on FinishedGood items. How many more of this finished good the line should always be able to build: a component is flagged low on the Line Inventory sidebar when on hand < rolled-up BOM QtyPer x this value. NULL = no low flag for this FG. |
 | UomId | BIGINT | FK → Uom.Id, NOT NULL | Counting UOM |
 | UnitWeight | DECIMAL(10,4) | NULL | Weight per piece |
 | WeightUomId | BIGINT | FK → Uom.Id, NULL | Weight UOM |

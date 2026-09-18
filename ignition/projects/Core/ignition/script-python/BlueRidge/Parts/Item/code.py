@@ -57,6 +57,11 @@
 #                      NULL, which the proc reads as "leave alone", so clearing
 #                      the field silently kept the old value. None (omitted key)
 #                      is unaffected.
+#   2026-09-17 - 1.7 - Retired lowInventoryHorizon (migration 0094): Line
+#                      Inventory rev 2 colours by the line's ItemLocation.
+#                      MaxQuantity instead of a finished-good horizon. Removed
+#                      from _ITEM_SHAPE_KEYS and no longer forwarded by
+#                      update(). boxQuantity handling is unchanged.
 # =============================================================================
 
 import java.lang
@@ -135,7 +140,7 @@ _ITEM_SHAPE_KEYS = (
     "CreatedAt", "CreatedByUserId",
     "UpdatedAt", "UpdatedByUserId",
     "DeprecatedAt",
-    "CrtEnabled", "BoxQuantity", "LowInventoryHorizon",
+    "CrtEnabled", "BoxQuantity",
 )
 
 
@@ -392,7 +397,7 @@ def add(meta):
 
 
 def _blankToClear(v):
-    """Transport-mapping helper for boxQuantity / lowInventoryHorizon ONLY.
+    """Transport-mapping helper for boxQuantity ONLY.
 
     The Item Master editor turns an emptied number field into "" (not None),
     but Parts.Item_Update's NULL-preserving contract treats None as 'omitted --
@@ -417,8 +422,8 @@ def update(meta):
         Id, description, macolaPartNumber, defaultSubLotQty,
         maxLotSize, uomId, unitWeight, weightUomId,
         countryOfOrigin, maxParts, crtEnabled,
-        boxQuantity, lowInventoryHorizon (NULL-preserving; 0 clears -- same rule as
-        crtEnabled, enforced in the proc)
+        boxQuantity (NULL-preserving; 0 clears -- same rule as crtEnabled,
+        enforced in the proc)
 
     Returns {Status, Message}.
 
@@ -430,12 +435,11 @@ def update(meta):
     explicit falsy crtEnabled to clear it -- which is what the Item Master
     Identity checkbox does on every save.
 
-    boxQuantity / lowInventoryHorizon share crtEnabled's NULL-preserving rule, but
-    the Item Master editor emits "" (not None) for an emptied number field. "" is
-    mapped to 0 (clear) here via _blankToClear so an operator clearing the field
-    actually clears it instead of the omitted-key "leave alone" path silently
-    keeping the old value. An omitted key (None) is unaffected -- still "leave
-    alone".
+    boxQuantity shares crtEnabled's NULL-preserving rule, but the Item Master
+    editor emits "" (not None) for an emptied number field. "" is mapped to 0
+    (clear) here via _blankToClear so an operator clearing the field actually
+    clears it instead of the omitted-key "leave alone" path silently keeping
+    the old value. An omitted key (None) is unaffected -- still "leave alone".
     """
     m = _u(meta) or {}
     BlueRidge.Common.Util.log("meta=%s" % m)
@@ -463,8 +467,7 @@ def update(meta):
             "maxParts":         _pick("maxParts",         "MaxParts"),
             "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
             "crtEnabled":       None if _crt is None else (1 if _crt else 0),
-            "boxQuantity":         _blankToClear(_pick("boxQuantity",         "BoxQuantity")),
-            "lowInventoryHorizon": _blankToClear(_pick("lowInventoryHorizon", "LowInventoryHorizon")),
+            "boxQuantity":      _blankToClear(_pick("boxQuantity", "BoxQuantity")),
         },
     )
 

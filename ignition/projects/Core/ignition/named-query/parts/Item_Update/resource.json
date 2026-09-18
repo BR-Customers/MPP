@@ -94,11 +94,6 @@
         "type": "Parameter",
         "identifier": "boxQuantity",
         "sqlType": 2
-      },
-      {
-        "type": "Parameter",
-        "identifier": "lowInventoryHorizon",
-        "sqlType": 2
       }
     ]
   }

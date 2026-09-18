@@ -396,9 +396,9 @@ CREATE TABLE #Get1 (
     -- fixed-shape capture must mirror that or the whole file aborts with Msg 213
     -- (a runner ERROR, not a FAIL line).
     CrtEnabled        BIT,
-    -- Line inventory sidebar (0091): BoxQuantity, LowInventoryHorizon appended LAST.
-    BoxQuantity          INT,
-    LowInventoryHorizon  INT
+    -- Line inventory sidebar (0091): BoxQuantity appended LAST. (LowInventoryHorizon,
+    -- also 0091, was retired by migration 0094.)
+    BoxQuantity       INT
 );
 
 INSERT INTO #Get1
