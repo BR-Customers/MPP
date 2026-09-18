@@ -4,11 +4,14 @@
 -- Created:     2026-09-17
 -- Version:     1.0
 -- Description: The OEE-enabled STRICT ancestors of a location, nearest first
---              (Distance 1 = parent). Two callers:
+--              (Distance 1 = parent). Three callers:
 --                * Oee.ufn_ResolveDowntimeScope -- nearest flagged ancestor.
 --                * Oee.Shift_GetAvailability -- downtime logged against a
 --                  flagged ancestor counts against every station under it
 --                  ("if the line is down, all stations are impacted").
+--                * Oee.DowntimeScope_ListForTerminal -- flags a scope option
+--                  whose subtree contains a flagged descendant, so the
+--                  terminal's scope picker can mark it as a roll-up.
 --              Deprecated ancestors are skipped but do NOT stop the walk, so a
 --              station under a deprecated intermediate still finds its line.
 --

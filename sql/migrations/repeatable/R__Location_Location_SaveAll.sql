@@ -2,7 +2,7 @@
 -- Procedure:   Location.Location_SaveAll
 -- Author:      Blue Ridge Automation
 -- Created:     2026-05-18
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   Bundled save for a Location instance and its LocationAttribute values
@@ -75,6 +75,8 @@
 -- Change Log:
 --   2026-05-18 - 1.0 - Initial version
 --   2026-09-17 - 1.1 - @IsOeeEnabled + type guard (OEE-enabled locations spec).
+--   2026-09-17 - 1.2 - Update mode refuses to un-flag a location that has an
+--                       open, non-voided Oee.DowntimeEvent.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Location_SaveAll
     @Id                       BIGINT          = NULL,
@@ -470,6 +472,30 @@ BEGIN
                        WHERE Code = @Code AND DeprecatedAt IS NULL AND Id <> @Id)
             BEGIN
                 SET @Message = N'A location with this Code already exists.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId           = @AppUserId,
+                    @LogEntityTypeCode   = N'Location',
+                    @EntityId            = @Id,
+                    @LogEventTypeCode    = N'Updated',
+                    @FailureReason       = @Message,
+                    @ProcedureName       = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+                RETURN;
+            END
+
+            -- Cannot un-flag a location that has an open downtime event: it would drop
+            -- out of the Downtime Manager dropdown with no way to end the event, and a
+            -- later re-flag would count the stale open event up to "now" in every
+            -- overlapping shift.
+            IF @IsOeeEnabled = 0
+               AND EXISTS (SELECT 1 FROM Location.Location
+                           WHERE Id = @Id AND IsOeeEnabled = 1)
+               AND EXISTS (SELECT 1 FROM Oee.DowntimeEvent
+                           WHERE LocationId = @Id AND EndedAt IS NULL AND VoidedAt IS NULL)
+            BEGIN
+                SET @Message = N'Cannot turn off OEE / downtime for ' + @Code
+                             + N': it has an open downtime event. End it first.';
                 EXEC Audit.Audit_LogFailure
                     @AppUserId           = @AppUserId,
                     @LogEntityTypeCode   = N'Location',

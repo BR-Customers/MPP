@@ -167,7 +167,76 @@ EXEC test.Assert_RowCount @TestName = N'[OeeElig] unknown definition -> empty re
      @ExpectedCount = 0, @ActualCount = @e5;
 GO
 
+-- =============================================
+-- Test 8: cannot un-flag a location with an open downtime event.
+-- =============================================
+DECLARE @M1       BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-LOCF-M1');
+DECLARE @Area     BIGINT = (SELECT Val FROM #LocF WHERE Tag = N'AREA');
+DECLARE @PressDef BIGINT = (SELECT Id FROM Location.LocationTypeDefinition WHERE Code = N'DieCastMachine');
+DECLARE @Src      BIGINT = (SELECT Id FROM Oee.DowntimeSourceCode WHERE Code = N'Operator');
+
+DECLARE @rStart TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @rStart EXEC Oee.DowntimeEvent_Start
+    @LocationId = @M1, @DowntimeSourceCodeId = @Src, @AppUserId = 1;
+DECLARE @DtEventId BIGINT = (SELECT NewId FROM @rStart);
+EXEC test.Assert_IsNotNull @TestName = N'[OeeSave] fixture: downtime started on M1', @Value = @DtEventId;
+
+DECLARE @r8 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @r8 EXEC Location.Location_SaveAll
+    @Id = @M1, @ParentLocationId = @Area, @LocationTypeDefinitionId = @PressDef,
+    @Name = N'OEE Flag Press Renamed', @Code = N'ZZ-LOCF-M1', @AppUserId = 1, @IsOeeEnabled = 0;
+DECLARE @s8 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @r8);
+DECLARE @m8 NVARCHAR(500) = (SELECT Message FROM @r8);
+EXEC test.Assert_IsEqual @TestName = N'[OeeSave] cannot un-flag a location with an open downtime event',
+     @Expected = N'0', @Actual = @s8;
+EXEC test.Assert_Contains @TestName = N'[OeeSave] the rejection names the open downtime event',
+     @HaystackStr = @m8, @NeedleStr = N'open downtime event';
+DECLARE @f8 NVARCHAR(10) = (SELECT CAST(IsOeeEnabled AS NVARCHAR(10)) FROM Location.Location WHERE Id = @M1);
+EXEC test.Assert_IsEqual @TestName = N'[OeeSave] the flag is still on after the refused un-flag',
+     @Expected = N'1', @Actual = @f8;
+GO
+
+-- =============================================
+-- Test 9: un-flag succeeds once the open downtime event is closed.
+-- =============================================
+DECLARE @M1       BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'ZZ-LOCF-M1');
+DECLARE @Area     BIGINT = (SELECT Val FROM #LocF WHERE Tag = N'AREA');
+DECLARE @PressDef BIGINT = (SELECT Id FROM Location.LocationTypeDefinition WHERE Code = N'DieCastMachine');
+DECLARE @DtEventId BIGINT = (SELECT TOP 1 de.Id FROM Oee.DowntimeEvent de
+                              WHERE de.LocationId = @M1 AND de.EndedAt IS NULL AND de.VoidedAt IS NULL);
+
+DECLARE @rEnd TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @rEnd EXEC Oee.DowntimeEvent_End @DowntimeEventId = @DtEventId, @AppUserId = 1;
+DECLARE @sEnd NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @rEnd);
+EXEC test.Assert_IsEqual @TestName = N'[OeeSave] fixture: downtime ended on M1', @Expected = N'1', @Actual = @sEnd;
+
+DECLARE @r9 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @r9 EXEC Location.Location_SaveAll
+    @Id = @M1, @ParentLocationId = @Area, @LocationTypeDefinitionId = @PressDef,
+    @Name = N'OEE Flag Press Renamed', @Code = N'ZZ-LOCF-M1', @AppUserId = 1, @IsOeeEnabled = 0;
+DECLARE @s9 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @r9);
+EXEC test.Assert_IsEqual @TestName = N'[OeeSave] un-flag succeeds once the downtime event is closed',
+     @Expected = N'1', @Actual = @s9;
+DECLARE @f9 NVARCHAR(10) = (SELECT CAST(IsOeeEnabled AS NVARCHAR(10)) FROM Location.Location WHERE Id = @M1);
+EXEC test.Assert_IsEqual @TestName = N'[OeeSave] the flag is off after the successful un-flag',
+     @Expected = N'0', @Actual = @f9;
+GO
+
 -- ---- cleanup ----
+-- FK-safe order: audit rows referencing the downtime events, then the events
+-- themselves, then attributes, then the locations (mirrors
+-- test.OeeFixture_Teardown's ordering for the ZZ-OEE fixture).
+DELETE ol
+FROM Audit.OperationLog ol
+INNER JOIN Oee.DowntimeEvent de ON de.Id = ol.EntityId
+INNER JOIN Location.Location l  ON l.Id  = de.LocationId
+WHERE l.Code LIKE N'ZZ-LOCF%'
+  AND ol.LogEntityTypeId = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DowntimeEvent');
+
+DELETE de FROM Oee.DowntimeEvent de
+INNER JOIN Location.Location l ON l.Id = de.LocationId
+WHERE l.Code LIKE N'ZZ-LOCF%';
+
 DELETE la FROM Location.LocationAttribute la
 INNER JOIN Location.Location l ON l.Id = la.LocationId WHERE l.Code LIKE N'ZZ-LOCF%';
 DELETE FROM Location.Location WHERE Code LIKE N'ZZ-LOCF%';

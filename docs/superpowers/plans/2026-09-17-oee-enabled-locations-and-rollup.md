@@ -3133,16 +3133,22 @@ production / inspection line. Nothing else.
 
 ## Gate 2 — nothing becomes a roll-up on day one
 
+Not just a direct parent/child pair -- a flagged location with a flagged
+GRANDCHILD (or deeper descendant) under an unflagged intermediate becomes a
+roll-up too, so this walks the full ancestor chain via `Oee.ufn_OeeAncestors`.
+**Run this AFTER the deploy** -- it uses a function the release creates.
+
 ```sql
-SELECT p.Code AS FlaggedParent, c.Code AS FlaggedChild
-FROM Location.Location p
-INNER JOIN Location.Location c ON c.ParentLocationId = p.Id
-WHERE p.DeprecatedAt IS NULL AND c.DeprecatedAt IS NULL
-  AND p.IsOeeEnabled = 1 AND c.IsOeeEnabled = 1;
+SELECT DISTINCT a_loc.Code AS FlaggedAncestor, d.Code AS FlaggedDescendant
+FROM Location.Location d
+CROSS APPLY Oee.ufn_OeeAncestors(d.Id) a
+JOIN Location.Location a_loc ON a_loc.Id = a.AncestorLocationId
+WHERE d.IsOeeEnabled = 1 AND d.DeprecatedAt IS NULL
+ORDER BY 1, 2;
 ```
 
 Expect **zero rows**. A row here means some location will stop reporting its own
-availability and start reporting the mean of its children the moment this ships.
+availability and start reporting the mean of its descendants the moment this ships.
 `AO-OP` under `MA2-6FBCHOP` was exactly that case and was corrected in prod on
 2026-09-17 (it was a mis-typed Terminal).
 
@@ -3153,13 +3159,17 @@ SELECT l.Code, l.Name, COUNT(*) AS Events30d,
        SUM(CASE WHEN de.EndedAt IS NULL THEN 1 ELSE 0 END) AS StillOpen
 FROM Oee.DowntimeEvent de
 INNER JOIN Location.Location l ON l.Id = de.LocationId
-WHERE de.StartedAt >= DATEADD(DAY, -30, SYSUTCDATETIME())
+WHERE (de.StartedAt >= DATEADD(DAY, -30, SYSUTCDATETIME()) OR de.EndedAt IS NULL)
+  AND de.VoidedAt IS NULL
 GROUP BY l.Code, l.Name
 ORDER BY Events30d DESC;
 ```
 
-Every row must appear in Gate 1's list. On 2026-09-17 that was true: `DC1-M11`,
-`MA2-6MACH`, `DC3-M305`, `TRIM2-P01`, `T1-6MA-DB`, `DC1-M10`, `DC2-M202`.
+Every row must appear in Gate 1's list. The window is the last 30 days, plus
+any event that is still open regardless of age, so a stale open event on a
+location that will not be flagged does not slip past this gate. On 2026-09-17
+that was true: `DC1-M11`, `MA2-6MACH`, `DC3-M305`, `TRIM2-P01`, `T1-6MA-DB`,
+`DC1-M10`, `DC2-M202`.
 
 ## Known interaction
 
