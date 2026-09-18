@@ -10,9 +10,12 @@
 #       log(msg)                       function-trace logger with auto-fill
 #                                      of calling module + function via
 #                                      inspect.currentframe().f_back
-#       _currentAppUserId()            session.custom.appUserId resolver
-#                                      with dev fallback (returns 2 until
-#                                      the initials/AD login wiring lands)
+#       requireAppUserId(appUserId)    pass-through for a mutation's
+#                                      caller-supplied AppUser.Id; logs an
+#                                      ERROR naming the entity function
+#                                      when the caller supplied none
+#       systemAppUserId()              AppUser.Id 1 (SYS) for gateway-
+#                                      scope work with no session
 #       extractQualifiedValues(data)   unwrap QualifiedValue through nested
 #                                      lists / tuples / dicts (binding
 #                                      handoffs sometimes arrive wrapped)
@@ -75,6 +78,20 @@
 #                      ia.display.markdown component with escapeHtml=false.
 #                      Resolved-FK sub-objects collapse to 'Code — Name'.
 #                      Slice 2.5 of the audit-readability refactor.
+#   2026-09-18 - 1.5 - FIX: _currentAppUserId() removed. It read
+#                      system.perspective.getSessionInfo()["custom"], but that
+#                      API returns a LIST of every session on the gateway, so
+#                      the index threw, the bare except swallowed it, and EVERY
+#                      call returned the DEV constant (AppUser 2). Every
+#                      Config Tool save, every Movement Scan move and both
+#                      gateway timers were audited as 'Dev User' -- on prod
+#                      too. A project script cannot identify "the calling
+#                      session" at all, so there is no fallback any more:
+#                      callers pass appUserId (views via
+#                      Common.Session.currentAppUserId(self.session); gateway
+#                      scope via systemAppUserId()). requireAppUserId() only
+#                      makes a missing one loud; the proc's own required-
+#                      parameter guard refuses the write.
 # =============================================================================
 
 import re
@@ -84,11 +101,6 @@ from java.util import Map as JavaMap
 from java.util import Collection as JavaCollection
 from java.lang import Throwable
 
-
-# Dev fallback for _currentAppUserId. Swap-in target is session.custom.appUserId
-# set at login by the initials/AD elevation flow. Until that lands, returning a
-# known-valid AppUser.Id keeps mutation audit attribution working in dev.
-_DEV_APP_USER_ID = 2
 
 # The verified system AppUser (bootstrap row Id=1, Initials 'SYS' -- migration
 # 0012). Unattended gateway processes (PLC watchers, timers) attribute their
@@ -138,30 +150,34 @@ def log(msg, level="debug"):
     getattr(system.util.getLogger(module), level)("%s() %s" % (func, msg))
 
 
-def _currentAppUserId():
+def requireAppUserId(appUserId):
     """
-    Resolves the calling session's AppUser.Id for audit attribution on
-    mutations. Reads session.custom.appUserId (set at login). Falls back
-    to a dev constant when the session has no appUserId set so dev work
-    can proceed without the login flow wired.
+    The AppUser.Id a mutation stamps as @AppUserId -- always the one its
+    CALLER supplied. Returns it unwrapped (a binding hand-off can arrive as a
+    QualifiedValue).
 
-    Pass the returned value to any mutation proc as @AppUserId. Callers
-    should NOT hold appUserId values across function boundaries -- this
-    helper is the only sanctioned source.
+    There is deliberately no fallback. A project script has no way to find
+    "the calling session": system.perspective.getSessionInfo() returns a LIST
+    of every session on the gateway, and guessing from it is what audited
+    every save as 'Dev User' until 2026-09-18. So the caller decides:
+      - a view passes BlueRidge.Common.Session.currentAppUserId(self.session)
+      - gateway scope (timers, PLC watchers) passes systemAppUserId()
 
-    Returns:
-        long: AppUser.Id. Dev fallback while initials/AD wiring is pending.
+    When the caller supplied none this logs an ERROR naming the entity
+    function that was called without one, and returns None. The proc's own
+    required-parameter guard then refuses the write, so a missing user is a
+    visible failure -- never a change credited to somebody else.
     """
-    try:
-        info = system.perspective.getSessionInfo()
-        appUserId = info["custom"].get("appUserId") if info else None
-        if appUserId is not None:
-            return appUserId
-    except Exception:
-        # getSessionInfo() unavailable outside a session-scoped call
-        # (e.g., timer scripts, startup hooks). Fall through to dev value.
-        pass
-    return _DEV_APP_USER_ID
+    v = extractQualifiedValues(appUserId)
+    if v is None:
+        frame  = inspect.currentframe().f_back
+        module = frame.f_globals.get("__name__", "unknown")
+        func   = frame.f_code.co_name
+        system.util.getLogger(module).error(
+            "%s() called with no appUserId -- the write will be refused. The "
+            "calling view must pass Common.Session.currentAppUserId(self.session); "
+            "gateway scope passes Common.Util.systemAppUserId()." % func)
+    return v
 
 
 def toIntOrNone(v):

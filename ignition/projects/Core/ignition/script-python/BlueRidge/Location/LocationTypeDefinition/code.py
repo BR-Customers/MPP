@@ -181,8 +181,8 @@ def handleSaveAll(meta, attributes, userId=None):
             {Id: long|None, AttributeName, DataType, IsRequired, DefaultValue,
              Uom, Description}
             SortOrder is derived from the array index (1-based).
-        userId (long): Override for AppUser.Id attribution; defaults to
-                       BlueRidge.Common.Util._currentAppUserId().
+        userId (long): AppUser.Id to attribute. Required -- the view passes
+                       Common.Session.currentAppUserId(self.session).
 
     Returns:
         dict or None:
@@ -195,8 +195,7 @@ def handleSaveAll(meta, attributes, userId=None):
             by Common.Ui.notifyResult; caller leaves view state alone.
     """
     BlueRidge.Common.Util.log("meta=%s attributes(n)=%d" % (meta, len(attributes or [])))
-    if userId is None:
-        userId = BlueRidge.Common.Util._currentAppUserId()
+    userId = BlueRidge.Common.Util.requireAppUserId(userId)
 
     isCreate     = meta.get("Id") is None
     cleanedAttrs = [_cleanAttributeRow(a) for a in (attributes or [])]
@@ -245,7 +244,8 @@ def handleDeprecate(definitionId, locationTypeId, userId=None):
         locationTypeId (long): The current tier (so we can refresh the list
                                after the deprecate lands). Caller already
                                has this in view scope.
-        userId (long):        Override; defaults to Common.Util._currentAppUserId().
+        userId (long):        AppUser.Id to attribute. Required -- the view
+                              passes Common.Session.currentAppUserId(self.session).
 
     Returns:
         dict or None:
@@ -254,8 +254,7 @@ def handleDeprecate(definitionId, locationTypeId, userId=None):
             On failure: None (toast already fired).
     """
     BlueRidge.Common.Util.log("definitionId=%s" % definitionId)
-    if userId is None:
-        userId = BlueRidge.Common.Util._currentAppUserId()
+    userId = BlueRidge.Common.Util.requireAppUserId(userId)
 
     result = BlueRidge.Common.Db.execMutation(
         "location/LocationTypeDefinition_Deprecate",

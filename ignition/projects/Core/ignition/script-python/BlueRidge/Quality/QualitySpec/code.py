@@ -407,16 +407,16 @@ def getActiveVersionForItemOrEmpty(itemId, _refreshToken=None):
 
 # ---------- mutations ----------
 
-def createSpec(data):
+def createSpec(data, appUserId=None):
     data = _u(data) or {}
     return BlueRidge.Common.Db.execMutation("quality/QualitySpec_Create", {
         "name": data.get("name"), "itemId": data.get("itemId"),
         "operationTemplateId": data.get("operationTemplateId"),
         "description": data.get("description"),
-        "appUserId": BlueRidge.Common.Util._currentAppUserId()})
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
 
 
-def updateSpecHeader(data):
+def updateSpecHeader(data, appUserId=None):
     # Quality.QualitySpec_Update does SET ItemId=@ItemId,
     # OperationTemplateId=@OperationTemplateId (both default NULL). Pass the
     # current itemId + operationTemplateId through so a name/description edit
@@ -427,16 +427,16 @@ def updateSpecHeader(data):
         "itemId": data.get("itemId"),
         "operationTemplateId": data.get("operationTemplateId"),
         "description": data.get("description"),
-        "appUserId": BlueRidge.Common.Util._currentAppUserId()})
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
 
 
-def deprecateSpec(specId):
+def deprecateSpec(specId, appUserId=None):
     return BlueRidge.Common.Db.execMutation("quality/QualitySpec_Deprecate", {
         "qualitySpecId": _u(specId),
-        "appUserId": BlueRidge.Common.Util._currentAppUserId()})
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
 
 
-def createNewVersion(specId, sourceVersionId=None):
+def createNewVersion(specId, sourceVersionId=None, appUserId=None):
     """Routes: no versions -> QualitySpecVersion_Create (v1); else clone the
     currently SELECTED version (sourceVersionId) as the template, falling back
     to the latest non-deprecated when no/invalid selection is given.
@@ -450,7 +450,7 @@ def createNewVersion(specId, sourceVersionId=None):
     if len(vers) == 0:
         return BlueRidge.Common.Db.execMutation("quality/QualitySpecVersion_Create",
             {"qualitySpecId": specId, "effectiveFrom": None,
-             "appUserId": BlueRidge.Common.Util._currentAppUserId()})
+             "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
     # The single-Draft-per-spec rule is enforced by
     # QualitySpecVersion_CreateNewVersion (returns Status=0 if a Draft
     # exists); no duplicate Python pre-check.
@@ -465,10 +465,10 @@ def createNewVersion(specId, sourceVersionId=None):
         source = (nonDep[0] if nonDep else vers[0]).get("Id")
     return BlueRidge.Common.Db.execMutation("quality/QualitySpecVersion_CreateNewVersion",
         {"sourceVersionId": source, "effectiveFrom": None,
-         "appUserId": BlueRidge.Common.Util._currentAppUserId()})
+         "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
 
 
-def saveDraft(versionId, effectiveFrom, attributes):
+def saveDraft(versionId, effectiveFrom, attributes, appUserId=None):
     payload = []
     for a in (_u(attributes) or []):
         a = _u(a) or {}
@@ -482,24 +482,24 @@ def saveDraft(versionId, effectiveFrom, attributes):
         "qualitySpecVersionId": _u(versionId),
         "effectiveFrom": _u(effectiveFrom),
         "attributesJson": BlueRidge.Common.Util.convertWrapperObjectToJson(payload),
-        "appUserId": BlueRidge.Common.Util._currentAppUserId()})
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
 
 
-def publish(versionId, effectiveFrom, attributes):
+def publish(versionId, effectiveFrom, attributes, appUserId=None):
     """Save-then-publish (the proc _Publish takes only @Id). Saves draft
     first so attribute + EffectiveFrom edits commit, then flips state."""
-    saved = saveDraft(versionId, effectiveFrom, attributes)
+    saved = saveDraft(versionId, effectiveFrom, attributes, appUserId=appUserId)
     if not saved.get("Status"):
         return saved
     return BlueRidge.Common.Db.execMutation("quality/QualitySpecVersion_Publish", {
-        "id": _u(versionId), "appUserId": BlueRidge.Common.Util._currentAppUserId()})
+        "id": _u(versionId), "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
 
 
-def discardDraft(versionId):
+def discardDraft(versionId, appUserId=None):
     return BlueRidge.Common.Db.execMutation("quality/QualitySpecVersion_DiscardDraft", {
-        "id": _u(versionId), "appUserId": BlueRidge.Common.Util._currentAppUserId()})
+        "id": _u(versionId), "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})
 
 
-def deprecateVersion(versionId):
+def deprecateVersion(versionId, appUserId=None):
     return BlueRidge.Common.Db.execMutation("quality/QualitySpecVersion_Deprecate", {
-        "id": _u(versionId), "appUserId": BlueRidge.Common.Util._currentAppUserId()})
+        "id": _u(versionId), "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)})

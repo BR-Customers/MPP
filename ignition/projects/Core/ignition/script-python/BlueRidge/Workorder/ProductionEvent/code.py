@@ -44,8 +44,7 @@ def record(data, appUserId=None, terminalLocationId=None):
         % (data, appUserId, terminalLocationId)
     )
     d = _u(data) or {}
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "lotId":                d.get("lotId"),
         "operationTemplateId":  d.get("operationTemplateId"),

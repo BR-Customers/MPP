@@ -2,16 +2,15 @@
 
    Wrappers only; no business logic. Arc 2 Phase 7 (Hold / FDS-08-007a). place +
    release route through BlueRidge.Common.Db.execMutation (status-row procs); the
-   getOpen* reads route through execList. appUserId defaults to the current
-   operator via BlueRidge.Common.Util._currentAppUserId() when None. Each entry
+   getOpen* reads route through execList. appUserId is the caller's
+   (Common.Session.currentAppUserId(self.session)); there is no default. Each entry
    logs at default INFO."""
 
 
 def place(holdTypeCodeId, lotId=None, containerId=None, reason=None, appUserId=None, terminalLocationId=None):
     """Place a hold on exactly one of a LOT or a Container. Rejects if an open hold
        already exists for the target. Returns {Status, Message, NewId (HoldEventId)}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "place holdTypeCodeId=%s lotId=%s containerId=%s appUserId=%s"
         % (holdTypeCodeId, lotId, containerId, appUserId))
@@ -24,8 +23,7 @@ def place(holdTypeCodeId, lotId=None, containerId=None, reason=None, appUserId=N
 def release(holdEventId, releaseRemarks=None, appUserId=None, terminalLocationId=None):
     """Release a single open hold -- restores the LOT to its prior status / a
        Container to Complete. Returns {Status, Message}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "release holdEventId=%s appUserId=%s" % (holdEventId, appUserId))
     params = {"holdEventId": holdEventId, "releaseRemarks": releaseRemarks,
@@ -107,8 +105,7 @@ def placeBulk(lotIds, holdTypeCodeId, reason=None, appUserId=None, terminalLocat
     """Place a hold on each LOT id in lotIds in one operator action (FDS-08-006).
        Loops place() per LOT (each its own status-row call -- no nested INSERT-EXEC).
        Returns {Status, Message, Placed, Failed}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     placed = 0
     failed = 0
     errs = []

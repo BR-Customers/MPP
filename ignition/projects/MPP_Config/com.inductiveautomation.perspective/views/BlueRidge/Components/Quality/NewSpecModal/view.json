@@ -505,7 +505,7 @@
         {
           "name": "handleCreate",
           "params": [],
-          "script": "\tdraft \u003d self.view.custom.draft or {}\n\tname \u003d (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a spec name before creating.\", \"warning\")\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.createSpec(self.view.custom.draft)\n\tBlueRidge.Common.Ui.notifyResult(res, successTitle\u003d\"Spec created\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"qsSpecCreated\", {\"specId\": res.get(\"NewId\")}, scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+          "script": "\tdraft \u003d self.view.custom.draft or {}\n\tname \u003d (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a spec name before creating.\", \"warning\")\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.createSpec(self.view.custom.draft, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(res, successTitle\u003d\"Spec created\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"qsSpecCreated\", {\"specId\": res.get(\"NewId\")}, scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
         },
         {
           "name": "handleClose",

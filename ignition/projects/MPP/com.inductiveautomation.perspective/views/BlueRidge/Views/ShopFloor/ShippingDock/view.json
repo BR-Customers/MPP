@@ -397,7 +397,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\td \u003d self.view.custom.draft\n\tlabelId \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"shippingLabelId\"))\n\tif labelId is None:\n\t\tself.view.custom.lastResult \u003d {\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}, \"Ship Container\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.Shipping.ship(labelId)\n\tself.view.custom.lastResult \u003d {\"Status\": bool(result and result.get(\"Status\")), \"Message\": (result.get(\"Message\") if result else \"\") or \"\"}\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container shipped\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft \u003d {\"shippingLabelId\": \"\"}"
+                            "script": "\td \u003d self.view.custom.draft\n\tlabelId \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"shippingLabelId\"))\n\tif labelId is None:\n\t\tself.view.custom.lastResult \u003d {\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}, \"Ship Container\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.Shipping.ship(labelId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tself.view.custom.lastResult \u003d {\"Status\": bool(result and result.get(\"Status\")), \"Message\": (result.get(\"Message\") if result else \"\") or \"\"}\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container shipped\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft \u003d {\"shippingLabelId\": \"\"}"
                           },
                           "scope": "G",
                           "type": "script"
@@ -420,7 +420,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\td \u003d self.view.custom.draft\n\tlabelId \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"shippingLabelId\"))\n\tif labelId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id to reprint.\"}, \"Reprint Label\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.Shipping.reprintLabel(labelId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Label reprinted\")"
+                            "script": "\td \u003d self.view.custom.draft\n\tlabelId \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"shippingLabelId\"))\n\tif labelId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id to reprint.\"}, \"Reprint Label\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.Shipping.reprintLabel(labelId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Label reprinted\")"
                           },
                           "scope": "G",
                           "type": "script"

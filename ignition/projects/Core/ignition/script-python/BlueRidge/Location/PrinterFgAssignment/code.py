@@ -60,8 +60,7 @@ def saveAll(stationTerminalLocationId, assignments, appUserId=None):
     """Full-replace the station's FG<->printer assignments. `assignments` is a
        list of {PrinterLocationId, ItemId|None, SortOrder}. Returns {Status,
        Message, NewId}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     tid = BlueRidge.Common.Util.extractQualifiedValues(stationTerminalLocationId)
     rows = BlueRidge.Common.Util.extractQualifiedValues(assignments) or []
     params = {

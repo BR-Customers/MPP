@@ -470,7 +470,7 @@
         {
           "name": "handleSave",
           "params": [],
-          "script": "\tmode  \u003d self.view.custom.mode\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\tif mode \u003d\u003d \u0027create\u0027:\n\t\tresult \u003d BlueRidge.Parts.DieRank.add(meta)\n\t\tsuccess \u003d \u0027Die rank created\u0027\n\telse:\n\t\tresult \u003d BlueRidge.Parts.DieRank.update(meta)\n\t\tsuccess \u003d \u0027Die rank updated\u0027\n\tBlueRidge.Common.Ui.notifyResult(result, success)\n\tif result and result.get(\u0027Status\u0027):\n\t\tself.view.custom.selected \u003d {\u0027meta\u0027: dict(meta)}\n\t\tsystem.perspective.sendMessage(\u0027dieRankRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)"
+          "script": "\tmode  \u003d self.view.custom.mode\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\tif mode \u003d\u003d \u0027create\u0027:\n\t\tresult \u003d BlueRidge.Parts.DieRank.add(meta, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\t\tsuccess \u003d \u0027Die rank created\u0027\n\telse:\n\t\tresult \u003d BlueRidge.Parts.DieRank.update(meta, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\t\tsuccess \u003d \u0027Die rank updated\u0027\n\tBlueRidge.Common.Ui.notifyResult(result, success)\n\tif result and result.get(\u0027Status\u0027):\n\t\tself.view.custom.selected \u003d {\u0027meta\u0027: dict(meta)}\n\t\tsystem.perspective.sendMessage(\u0027dieRankRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)"
         },
         {
           "name": "handleDelete",
@@ -488,7 +488,7 @@
         {
           "messageType": "editRankDeleteConfirmed",
           "pageScope": true,
-          "script": "\taction \u003d payload.get(\u0027action\u0027) if payload else None\n\tif action !\u003d \u0027confirm\u0027:\n\t\treturn\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\trankId \u003d meta.get(\u0027Id\u0027)\n\tif rankId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.DieRank.deprecate(rankId)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Die rank removed\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tsystem.perspective.sendMessage(\u0027dieRankRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)",
+          "script": "\taction \u003d payload.get(\u0027action\u0027) if payload else None\n\tif action !\u003d \u0027confirm\u0027:\n\t\treturn\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\trankId \u003d meta.get(\u0027Id\u0027)\n\tif rankId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.DieRank.deprecate(rankId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Die rank removed\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tsystem.perspective.sendMessage(\u0027dieRankRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)",
           "sessionScope": false,
           "viewScope": false
         },

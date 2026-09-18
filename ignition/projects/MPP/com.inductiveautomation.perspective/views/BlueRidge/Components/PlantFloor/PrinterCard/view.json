@@ -201,7 +201,7 @@
               "component": {
                 "onActionPerformed": {
                   "type": "script", "scope": "G",
-                  "config": { "script": "\tresult = BlueRidge.Workorder.Assembly.completeTray(self.view.params.assignedItemId, BlueRidge.Common.Util.toIntOrNone(self.view.custom.partsCount), self.view.params.cellLocationId, closureMethod=\"ByCount\", terminalLocationId=self.view.params.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tsystem.perspective.sendMessage(\"printerCardsRefresh\", scope=\"page\")" }
+                  "config": { "script": "\tresult = BlueRidge.Workorder.Assembly.completeTray(self.view.params.assignedItemId, BlueRidge.Common.Util.toIntOrNone(self.view.custom.partsCount), self.view.params.cellLocationId, closureMethod=\"ByCount\", terminalLocationId=self.view.params.terminalLocationId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tsystem.perspective.sendMessage(\"printerCardsRefresh\", scope=\"page\")" }
                 }
               }
             },
@@ -219,7 +219,7 @@
           "component": {
             "onActionPerformed": {
               "type": "script", "scope": "G",
-              "config": { "script": "\tresult = BlueRidge.Workorder.Assembly.completeBoxToPrinter(self.view.params.openContainerId, self.view.params.terminalLocationId, self.view.params.printerLocationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Box completed\")\n\tsystem.perspective.sendMessage(\"printerCardsRefresh\", scope=\"page\")" }
+              "config": { "script": "\tresult = BlueRidge.Workorder.Assembly.completeBoxToPrinter(self.view.params.openContainerId, self.view.params.terminalLocationId, self.view.params.printerLocationId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Box completed\")\n\tsystem.perspective.sendMessage(\"printerCardsRefresh\", scope=\"page\")" }
             }
           }
         },

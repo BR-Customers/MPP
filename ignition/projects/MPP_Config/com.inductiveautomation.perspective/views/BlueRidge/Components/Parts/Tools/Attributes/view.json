@@ -404,7 +404,7 @@
         {
           "name": "handleSave",
           "params": [],
-          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool before saving.\", \"warning\")\n\t\treturn\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\trows \u003d draft.get(\"rows\") or []\n\tresult \u003d BlueRidge.Parts.Tool.saveAttributesAll(toolId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Attributes saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
+          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool before saving.\", \"warning\")\n\t\treturn\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\trows \u003d draft.get(\"rows\") or []\n\tresult \u003d BlueRidge.Parts.Tool.saveAttributesAll(toolId, rows, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Attributes saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
         },
         {
           "name": "handleDiscard",

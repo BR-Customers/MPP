@@ -49,16 +49,14 @@ def createUser(attributes):
        (initials, displayName, pin, adAccount, ignitionRole, appUserId).
        Initials and pin must each be unique. Returns {Status, Message, NewId}."""
     BlueRidge.Common.Util.log("initials=%s" % attributes.get("initials"))
-    if not attributes.get("appUserId"):
-        attributes["appUserId"] = BlueRidge.Common.Util._currentAppUserId()
+    attributes["appUserId"] = BlueRidge.Common.Util.requireAppUserId(attributes.get("appUserId"))
     return BlueRidge.Common.Db.execOne("location/AppUser_Create", attributes)
 
 
 def deprecateUser(chosenId, appUserId):
     """Soft-delete (deprecate) an AppUser. Returns {Status, Message}."""
     BlueRidge.Common.Util.log("id=%s appUserId=%s" % (chosenId, appUserId))
-    if not appUserId:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     return BlueRidge.Common.Db.execOne(
         "location/AppUser_Deprecate",
         {"id": chosenId, "appUserId": appUserId},
@@ -87,8 +85,7 @@ def updateUser(attributes):
        (id, initials, displayName, pin, adAccount, ignitionRole, appUserId).
        Returns {Status, Message}."""
     BlueRidge.Common.Util.log("initials=%s" % attributes.get("initials"))
-    if not attributes.get("appUserId"):
-        attributes["appUserId"] = BlueRidge.Common.Util._currentAppUserId()
+    attributes["appUserId"] = BlueRidge.Common.Util.requireAppUserId(attributes.get("appUserId"))
     return BlueRidge.Common.Db.execOne("location/AppUser_Update", attributes)
 
 
@@ -162,6 +159,22 @@ def getActiveByPin(pin):
     return BlueRidge.Common.Db.execOne(
         "location/AppUser_GetActiveByPin",
         {"pin": pin},
+    )
+
+
+def getActiveByAdAccount(adAccount):
+    """Resolve an ACTIVE (non-deprecated) AppUser by AD account name -- the
+       attribution gate for an AD-authenticated session (Configuration Tool),
+       used by Common.Session.currentAppUserId. Unknown AND deprecated
+       accounts both return None; the DeprecatedAt filter is enforced in SQL
+       (Location.AppUser_GetActiveByAdAccount), not here. Returns a dict or
+       None."""
+    BlueRidge.Common.Util.log("adAccount=%s" % adAccount)
+    if not adAccount:
+        return None
+    return BlueRidge.Common.Db.execOne(
+        "location/AppUser_GetActiveByAdAccount",
+        {"adAccount": adAccount},
     )
 
 

@@ -541,8 +541,8 @@ def handleMoveUp(selected, userId=None,
     Args:
         selected (dict): The view's selected-location dict. Must carry
                          keys 'id' and 'name'.
-        userId (long):   Override for the AppUser.Id attribution. Defaults
-                         to BlueRidge.Common.Util._currentAppUserId().
+        userId (long):   AppUser.Id to attribute. Required -- the view passes
+                         Common.Session.currentAppUserId(self.session).
         treeRootId,
         treeExpandDepth,
         treeDefaultIcon: buildTree args used for the post-mutation rebuild.
@@ -555,8 +555,7 @@ def handleMoveUp(selected, userId=None,
     """
     selected = _u(selected)
     BlueRidge.Common.Util.log("selected=%s" % selected)
-    if userId is None:
-        userId = BlueRidge.Common.Util._currentAppUserId()
+    userId = BlueRidge.Common.Util.requireAppUserId(userId)
 
     result = BlueRidge.Common.Db.execMutation(
         "location/MoveSortOrderUp",
@@ -582,8 +581,7 @@ def handleMoveDown(selected, userId=None,
     """
     selected = _u(selected)
     BlueRidge.Common.Util.log("selected=%s" % selected)
-    if userId is None:
-        userId = BlueRidge.Common.Util._currentAppUserId()
+    userId = BlueRidge.Common.Util.requireAppUserId(userId)
 
     result = BlueRidge.Common.Db.execMutation(
         "location/MoveSortOrderDown",
@@ -912,7 +910,8 @@ def handleSaveAll(meta, attributes, userId=None,
            attributes (list[dict]): editDraft['attributes'] shape from
                         buildAttributesForType. Only id/definitionId/value
                         are forwarded to the proc; the rest are display.
-           userId (long): Override; defaults to Common.Util._currentAppUserId().
+           userId (long): AppUser.Id to attribute. Required -- the view
+                        passes Common.Session.currentAppUserId(self.session).
            treeRootId / treeExpandDepth / treeDefaultIcon: buildTree args
                         for the post-save tree refresh.
 
@@ -928,8 +927,7 @@ def handleSaveAll(meta, attributes, userId=None,
     BlueRidge.Common.Util.log(
         "meta=%s attributes(n)=%d" % (meta, len(attributes or []))
     )
-    if userId is None:
-        userId = BlueRidge.Common.Util._currentAppUserId()
+    userId = BlueRidge.Common.Util.requireAppUserId(userId)
 
     # Project editor attribute rows into the proc's expected JSON shape:
     # {LocationAttributeDefinitionId, Value}. Empty Value collapses to ""
@@ -1020,8 +1018,7 @@ def handleDeprecate(locationId, userId=None,
        Status=0 with a friendly message and the toast surfaces it."""
     locationId = _u(locationId)
     BlueRidge.Common.Util.log("locationId=%s" % locationId)
-    if userId is None:
-        userId = BlueRidge.Common.Util._currentAppUserId()
+    userId = BlueRidge.Common.Util.requireAppUserId(userId)
 
     # Capture the parent BEFORE deprecating, so we can re-anchor the
     # tree refresh on it (operator keeps context; selection lands on

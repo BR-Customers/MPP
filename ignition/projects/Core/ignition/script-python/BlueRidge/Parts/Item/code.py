@@ -354,7 +354,7 @@ def itemMasterTabObjects(sectionDirty, activeTab):
     return out
 
 
-def add(meta):
+def add(meta, appUserId=None):
     """Create a new Item. meta keys (camelCase OR PascalCase tolerated):
         partNumber, itemTypeId, description, macolaPartNumber,
         defaultSubLotQty, maxLotSize, uomId, unitWeight, weightUomId,
@@ -391,7 +391,7 @@ def add(meta):
             "weightUomId":      _pick("weightUomId",      "WeightUomId"),
             "countryOfOrigin":  _pick("countryOfOrigin",  "CountryOfOrigin"),
             "maxParts":         _pick("maxParts",         "MaxParts"),
-            "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":        BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
@@ -415,7 +415,7 @@ def _blankToClear(v):
     return v
 
 
-def update(meta):
+def update(meta, appUserId=None):
     """Update an existing Item in place. PartNumber + ItemTypeId are
     immutable per the proc; do not pass them. meta keys (camelCase OR
     PascalCase tolerated):
@@ -465,14 +465,14 @@ def update(meta):
             "weightUomId":      _pick("weightUomId",      "WeightUomId"),
             "countryOfOrigin":  _pick("countryOfOrigin",  "CountryOfOrigin"),
             "maxParts":         _pick("maxParts",         "MaxParts"),
-            "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":        BlueRidge.Common.Util.requireAppUserId(appUserId),
             "crtEnabled":       None if _crt is None else (1 if _crt else 0),
             "boxQuantity":      _blankToClear(_pick("boxQuantity", "BoxQuantity")),
         },
     )
 
 
-def deprecate(itemId):
+def deprecate(itemId, appUserId=None):
     """Soft-delete the Item by Id. Returns {Status, Message}. The proc
     (v3.0, 2026-07-07) CASCADE-deprecates the part's owned config artifacts
     (RouteTemplate / Bom-as-parent / ItemLocation / ContainerConfig) and
@@ -485,7 +485,7 @@ def deprecate(itemId):
         "parts/Item_Deprecate",
         {
             "id":        itemId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
@@ -548,8 +548,7 @@ def getPlcId(itemId):
 
 def setPlcId(itemId, plcId, appUserId=None):
     """Set the item's PLC/vision recipe integer. Returns {Status, Message}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log("itemId=%s plcId=%s" % (itemId, plcId))
     return BlueRidge.Common.Db.execMutation(
         "parts/Item_SetPlcId",

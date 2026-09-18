@@ -3,7 +3,7 @@
 
    Wrappers only; no business logic. Arc 2 Phase 6 (Assembly / Container). Entry
    logs at default INFO. Routes through BlueRidge.Common.Db.execMutation;
-   appUserId defaults to the current operator when None."""
+   appUserId is the caller's (no default)."""
 
 
 def mint(itemId, producingLotId, appUserId=None, terminalLocationId=None,
@@ -12,8 +12,7 @@ def mint(itemId, producingLotId, appUserId=None, terminalLocationId=None,
        serialNumber: PLC/etch-supplied serial; None/empty => auto-generate from
        the identifier sequence (FDS-06-012 NoRead bypass). Returns
        {Status, Message, NewId (SerializedPartId), SerialNumber}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "mint itemId=%s producingLotId=%s serialNumber=%s appUserId=%s"
         % (itemId, producingLotId, serialNumber, appUserId))

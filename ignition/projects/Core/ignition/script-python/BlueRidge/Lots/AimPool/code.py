@@ -2,8 +2,8 @@
 
    Wrappers only; no business logic. Arc 2 Phase 6 (AIM shipper-ID pooling).
    topup/claim route through BlueRidge.Common.Db.execMutation (status-row procs);
-   getDepth routes through execList. claim's appUserId defaults to the current
-   operator when None. topup is system-driven (the AIM fetch loop), so it carries
+   getDepth routes through execList. claim/markPosted take the caller's
+   appUserId (no default). topup is system-driven (the AIM fetch loop), so it carries
    no appUserId."""
 
 
@@ -22,8 +22,7 @@ def topup(aimShipperId, fetchedInterfaceLogId=None):
 def claim(containerId, appUserId=None):
     """Claim the next available AIM shipper ID from the pool, binding it to a
        container. Returns {Status, Message, AimShipperId}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "claim containerId=%s appUserId=%s"
         % (containerId, appUserId))
@@ -76,8 +75,7 @@ def listUnposted(top=50):
 def markPosted(poolId, note, appUserId=None):
     """Human-confirmed resolution for a row AIM already has but never acknowledged.
        Returns {Status, Message}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     return BlueRidge.Common.Db.execMutation(
         "lots/AimShipperIdPool_MarkPosted",
         {"id": poolId, "appUserId": appUserId, "note": note})

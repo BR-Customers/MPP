@@ -121,8 +121,7 @@ def printLabel(data, appUserId=None, terminalLocationId=None):
        (Named printLabel, not 'print' -- Jython 2 keyword.)"""
     BlueRidge.Common.Util.log("printLabel data=%s" % data)
     d = _u(data) or {}
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     printer = _sessionPrinter()
     # Default-resolve label type / reason when the caller (e.g. Receiving) omits them.
     labelTypeCodeId = d.get("labelTypeCodeId") or _labelTypeIdByCode("Primary")
@@ -142,8 +141,7 @@ def reprint(lotId, printReasonCodeId, appUserId=None, terminalLocationId=None):
     """Re-render (non-Initial reason) + synchronously dispatch. Same dispatch tail
        as printLabel. Returns {Status, Message, NewId}."""
     BlueRidge.Common.Util.log("reprint lotId=%s printReasonCodeId=%s" % (lotId, printReasonCodeId))
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     printer = _sessionPrinter()
     reasonId = _u(printReasonCodeId) or _firstNonInitialReasonId()
     res = BlueRidge.Common.Db.execMutation("lots/LotLabel_Reprint", {

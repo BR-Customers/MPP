@@ -242,7 +242,7 @@
         {
           "name": "commitPick",
           "params": [],
-          "script": "\tlotId = self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tres = BlueRidge.Workorder.Machining.recordPick(\n\t\tlotId, self.view.params.cellLocationId, None, self.view.params.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResultCrtAware(res, \"Machining IN\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lotId}, scope=\"page\")\n\t\tself.view.custom.scanCode = \"\"\n\t\tself.view.custom.lot = {}\n\t\tself.view.custom.phase = \"scan\""
+          "script": "\tlotId = self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tres = BlueRidge.Workorder.Machining.recordPick(\n\t\tlotId, self.view.params.cellLocationId, BlueRidge.Common.Session.currentAppUserId(self.session), self.view.params.terminalLocationId)\n\tBlueRidge.Common.Ui.notifyResultCrtAware(res, \"Machining IN\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lotId}, scope=\"page\")\n\t\tself.view.custom.scanCode = \"\"\n\t\tself.view.custom.lot = {}\n\t\tself.view.custom.phase = \"scan\""
         }
       ],
       "extensionFunctions": null,

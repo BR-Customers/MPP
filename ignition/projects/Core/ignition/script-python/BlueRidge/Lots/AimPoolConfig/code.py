@@ -2,8 +2,8 @@
 
    Wrappers only; no business logic. Arc 2 Phase 7 (AIM pool threshold admin;
    AD-elevated). get routes through BlueRidge.Common.Db.execList (single-row read);
-   update routes through execMutation (status-row proc). appUserId defaults to the
-   current operator via BlueRidge.Common.Util._currentAppUserId() when None. Logs at
+   update routes through execMutation (status-row proc). appUserId is the caller's
+   (Common.Session.currentAppUserId(self.session)); there is no default. Logs at
    default INFO."""
 
 
@@ -34,8 +34,7 @@ def update(targetBufferDepth, topupThreshold, alarmWarningDepth, alarmCriticalDe
        reads before making any AIM network call (Migration 0050) -- it defaults to 0
        (off) in the database and must be explicitly flipped True here to arm real
        AIM traffic in an environment."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "update targetBufferDepth=%s topupThreshold=%s alarmWarningDepth=%s alarmCriticalDepth=%s "
         "aimBaseUrl=%s aimCompanyCode=%s aimPathToken=%s postWarningAgeMinutes=%s "

@@ -2088,27 +2088,27 @@
         {
           "name": "handleNewSpec",
           "params": [],
-          "script": "\tres \u003d BlueRidge.Quality.QualitySpec.createSpec({\"name\": \"New Quality Spec\", \"itemId\": None, \"operationTemplateId\": None, \"description\": \"\"})\n\tBlueRidge.Common.Ui.notifyResult(res, \"Quality spec created\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshSpecs()\n\t\tnewId \u003d res.get(\"NewId\")\n\t\tif newId:\n\t\t\tself.view.custom.selectedSpecId \u003d newId"
+          "script": "\tres \u003d BlueRidge.Quality.QualitySpec.createSpec({\"name\": \"New Quality Spec\", \"itemId\": None, \"operationTemplateId\": None, \"description\": \"\"}, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Quality spec created\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshSpecs()\n\t\tnewId \u003d res.get(\"NewId\")\n\t\tif newId:\n\t\t\tself.view.custom.selectedSpecId \u003d newId"
         },
         {
           "name": "handleSaveHeader",
           "params": [],
-          "script": "\tdraft \u003d self.view.custom.specHeader.editDraft or {}\n\tname \u003d (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a spec name before saving.\", \"warning\")\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.updateSpecHeader(draft)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Spec saved\")\n\tif res and res.get(\"Status\"):\n\t\tsaved \u003d dict(draft)\n\t\tself.view.custom.specHeader \u003d {\"selected\": dict(saved), \"editDraft\": dict(saved)}\n\t\tself.refreshSpecs()"
+          "script": "\tdraft \u003d self.view.custom.specHeader.editDraft or {}\n\tname \u003d (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a spec name before saving.\", \"warning\")\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.updateSpecHeader(draft, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Spec saved\")\n\tif res and res.get(\"Status\"):\n\t\tsaved \u003d dict(draft)\n\t\tself.view.custom.specHeader \u003d {\"selected\": dict(saved), \"editDraft\": dict(saved)}\n\t\tself.refreshSpecs()"
         },
         {
           "name": "handleNewVersion",
           "params": [],
-          "script": "\tspecId \u003d self.view.custom.selectedSpecId\n\tif not specId:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.createNewVersion(specId, self.view.custom.activeVersionId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"New draft version created\")\n\tif not (res and res.get(\"Status\")):\n\t\treturn\n\tnewId \u003d res.get(\"NewId\")\n\tself.refreshVersions()\n\tself.refreshSpecs()\n\tif newId:\n\t\tself.view.custom.activeVersionId \u003d newId"
+          "script": "\tspecId \u003d self.view.custom.selectedSpecId\n\tif not specId:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.createNewVersion(specId, self.view.custom.activeVersionId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(res, \"New draft version created\")\n\tif not (res and res.get(\"Status\")):\n\t\treturn\n\tnewId \u003d res.get(\"NewId\")\n\tself.refreshVersions()\n\tself.refreshSpecs()\n\tif newId:\n\t\tself.view.custom.activeVersionId \u003d newId"
         },
         {
           "name": "handleSaveDraft",
           "params": [],
-          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"No draft version is active.\", \"warning\")\n\t\treturn\n\teff \u003d draft.get(\"effectiveFromDisplay\") or \"\"\n\teff \u003d eff.strip() if isinstance(eff, basestring) else eff\n\tif not eff:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before saving.\", \"warning\")\n\t\treturn\n\tattrs \u003d draft.get(\"attributes\") or []\n\tres \u003d BlueRidge.Quality.QualitySpec.saveDraft(vid, eff, attrs)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Draft saved\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()"
+          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"No draft version is active.\", \"warning\")\n\t\treturn\n\teff \u003d draft.get(\"effectiveFromDisplay\") or \"\"\n\teff \u003d eff.strip() if isinstance(eff, basestring) else eff\n\tif not eff:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before saving.\", \"warning\")\n\t\treturn\n\tattrs \u003d draft.get(\"attributes\") or []\n\tres \u003d BlueRidge.Quality.QualitySpec.saveDraft(vid, eff, attrs, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Draft saved\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()"
         },
         {
           "name": "handlePublish",
           "params": [],
-          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"No draft version is active.\", \"warning\")\n\t\treturn\n\teff \u003d draft.get(\"effectiveFromDisplay\") or \"\"\n\teff \u003d eff.strip() if isinstance(eff, basestring) else eff\n\tif not eff:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before publishing.\", \"warning\")\n\t\treturn\n\tattrs \u003d draft.get(\"attributes\") or []\n\tif not attrs:\n\t\tBlueRidge.Common.Notify.toast(\"At least one attribute required\", \"Add at least one attribute before publishing.\", \"warning\")\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.publish(vid, eff, attrs)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version published\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()\n\t\tself.refreshSpecs()"
+          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"No draft version is active.\", \"warning\")\n\t\treturn\n\teff \u003d draft.get(\"effectiveFromDisplay\") or \"\"\n\teff \u003d eff.strip() if isinstance(eff, basestring) else eff\n\tif not eff:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before publishing.\", \"warning\")\n\t\treturn\n\tattrs \u003d draft.get(\"attributes\") or []\n\tif not attrs:\n\t\tBlueRidge.Common.Notify.toast(\"At least one attribute required\", \"Add at least one attribute before publishing.\", \"warning\")\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.publish(vid, eff, attrs, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version published\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()\n\t\tself.refreshSpecs()"
         },
         {
           "name": "openDeprecateSpecConfirm",
@@ -2191,21 +2191,21 @@
         {
           "messageType": "qsConfirmDeprecateSpecResult",
           "pageScope": true,
-          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tspecId \u003d self.view.custom.selectedSpecId\n\tif not specId:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.deprecateSpec(specId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Spec deprecated\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.selectedSpecId \u003d None\n\t\tself.refreshSpecs()",
+          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tspecId \u003d self.view.custom.selectedSpecId\n\tif not specId:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.deprecateSpec(specId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Spec deprecated\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.selectedSpecId \u003d None\n\t\tself.refreshSpecs()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "qsConfirmDiscardResult",
           "pageScope": true,
-          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.discardDraft(vid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Draft discarded\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.activeVersionId \u003d None\n\t\tself.refreshVersions()\n\t\tself.refreshSpecs()\n\t\tvers \u003d self.view.custom.versions or []\n\t\tif vers:\n\t\t\tself.view.custom.activeVersionId \u003d vers[0].get(\"Id\")",
+          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.discardDraft(vid, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Draft discarded\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.activeVersionId \u003d None\n\t\tself.refreshVersions()\n\t\tself.refreshSpecs()\n\t\tvers \u003d self.view.custom.versions or []\n\t\tif vers:\n\t\t\tself.view.custom.activeVersionId \u003d vers[0].get(\"Id\")",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "qsConfirmDeprecateVersionResult",
           "pageScope": true,
-          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tsel \u003d self.view.custom.state.selected or {}\n\tvid \u003d sel.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.deprecateVersion(vid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version deprecated\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()\n\t\tself.refreshSpecs()",
+          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tsel \u003d self.view.custom.state.selected or {}\n\tvid \u003d sel.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.deprecateVersion(vid, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version deprecated\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()\n\t\tself.refreshSpecs()",
           "sessionScope": false,
           "viewScope": false
         },

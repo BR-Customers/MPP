@@ -1,8 +1,8 @@
 """BlueRidge.Lots.Lot - thin access to LOT create / read / status / move procs.
 
-   Wrappers only; no business logic. Mutation attribution defaults appUserId to
-   the session-resolved current user when the caller passes None; the plant
-   floor passes appUserId / terminalLocationId explicitly."""
+   Wrappers only; no business logic. Mutation attribution is the caller's: views
+   pass appUserId (Common.Session.currentAppUserId(self.session)) and
+   terminalLocationId explicitly; there is no default user."""
 
 import java.lang
 
@@ -46,8 +46,7 @@ def create(data, appUserId=None, terminalLocationId=None, lotName=None):
         % (data, appUserId, terminalLocationId, lotName)
     )
     d = _u(data) or {}
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "itemId":             d.get("itemId"),
         "lotOriginTypeId":    d.get("lotOriginTypeId"),
@@ -141,8 +140,7 @@ def updateStatus(data, appUserId=None, terminalLocationId=None):
         % (data, appUserId, terminalLocationId)
     )
     d = _u(data) or {}
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "lotId":              d.get("lotId"),
         "newLotStatusId":     d.get("newLotStatusId"),
@@ -160,8 +158,7 @@ def moveTo(lotId, toLocationId, appUserId=None, terminalLocationId=None):
         "lotId=%s toLocationId=%s appUserId=%s terminalLocationId=%s"
         % (lotId, toLocationId, appUserId, terminalLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "lotId":              lotId,
         "toLocationId":       toLocationId,
@@ -395,8 +392,7 @@ def moveToValidated(lotId, toLocationId, operationTypeCode=None, overrideAppUser
         "lotId=%s toLocationId=%s operationTypeCode=%s overrideAppUserId=%s appUserId=%s terminalLocationId=%s"
         % (lotId, toLocationId, operationTypeCode, overrideAppUserId, appUserId, terminalLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "lotId":              _u(lotId),
         "toLocationId":       _u(toLocationId),
@@ -931,8 +927,7 @@ def openDieCast(data):
     BlueRidge.Common.Util.log("openDieCast data=%s" % data)
     d = _u(data) or {}
     appUserId = d.get("appUserId")
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "itemId":             d.get("itemId"),
         "currentLocationId":  d.get("currentLocationId"),
@@ -956,8 +951,7 @@ def releaseDieCast(data):
     BlueRidge.Common.Util.log("releaseDieCast data=%s" % data)
     d = _u(data) or {}
     appUserId = d.get("appUserId")
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     scrapLines = _u(d.get("scrapLines")) or []
     params = {
         "lotId":              d.get("lotId"),
@@ -983,8 +977,7 @@ def voidDieCast(lotId, appUserId=None, terminalLocationId=None):
         "voidDieCast lotId=%s appUserId=%s terminalLocationId=%s"
         % (lotId, appUserId, terminalLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "lotId":              _u(lotId),
         "appUserId":          appUserId,
@@ -1134,8 +1127,7 @@ def recordScrapAtCurrentLocation(lotId, defectCodeId, quantity, remarks=None,
     lotId        = _u(lotId)
     defectCodeId = _u(defectCodeId)
     quantity     = BlueRidge.Common.Util.toIntOrNone(_u(quantity))
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
 
     if lotId is None:
         return {"Status": False, "Message": "No LOT selected.", "NewId": None}
@@ -1173,8 +1165,7 @@ def rectifyPieceCount(lotId, newPieceCount, reason, appUserId=None, terminalLoca
     lotId         = _u(lotId)
     newPieceCount = BlueRidge.Common.Util.toIntOrNone(_u(newPieceCount))
     reason        = ("%s" % (_u(reason) or "")).strip()
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
 
     if lotId is None:
         return {"Status": False, "Message": "No LOT selected.", "NewId": None}
@@ -1203,8 +1194,7 @@ def setCrt(lotId, appUserId=None, terminalLocationId=None):
         "setCrt lotId=%s appUserId=%s terminalLocationId=%s"
         % (lotId, appUserId, terminalLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "lotId":              _u(lotId),
         "appUserId":          appUserId,
@@ -1221,8 +1211,7 @@ def clearCrt(lotId, appUserId=None, terminalLocationId=None):
         "clearCrt lotId=%s appUserId=%s terminalLocationId=%s"
         % (lotId, appUserId, terminalLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "lotId":              _u(lotId),
         "appUserId":          appUserId,

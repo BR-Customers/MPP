@@ -189,6 +189,31 @@ supervisor covering a break instead does a plain PIN sign-in from the
 operator bar, which confers no privilege because nothing reads
 `session.custom.user.ignitionRole` as an authorization gate.
 
+### Mutation attribution -- the caller passes `appUserId` (2026-09-18)
+
+**Every mutation's `@AppUserId` is supplied by its caller. No entity function
+resolves or defaults it.** A project-library script cannot find "the calling
+session": `system.perspective.getSessionInfo()` returns a LIST of every session
+on the gateway. The old `Common.Util._currentAppUserId()` indexed that list,
+threw, swallowed it, and returned the DEV user (AppUser 2) on every call, so
+every Config Tool save, every Movement Scan move and both gateway timers were
+audited as 'Dev User', on prod too. It is gone; do not reintroduce a fallback.
+
+- **Views** pass `appUserId=BlueRidge.Common.Session.currentAppUserId(self.session)`
+  (Location handlers take it as `userId=`). That helper returns
+  `session.custom.appUserId` (PIN sign-in; the supervisor during an elevation
+  window), else resolves the **AD login** (`session.props.auth.user.userName`)
+  through `Location.AppUser_GetActiveByAdAccount`, per call and never cached.
+  MPP_Config requires AD login, so a Config Tool user **must have an active
+  `AppUser` row whose `AdAccount` equals their login name exactly**, or every
+  save is refused with a toast saying so.
+- **Gateway scope** (timers, PLC watchers) passes `Common.Util.systemAppUserId()`
+  (AppUser 1, SYS).
+- Entity functions call `Common.Util.requireAppUserId(appUserId)`: a pass-through
+  that logs an ERROR naming the function when the id is missing. The proc's own
+  required-parameter guard then refuses the write, so a missing user is a visible
+  failure and never a change credited to someone else.
+
 ### Die cast — cavity-attributed scrap and the reconciliation model (2026-09-14)
 
 **Designed, not yet built.** Spec: `docs/superpowers/specs/2026-09-14-diecast-quantity-and-scrap-model-design.md`. Plan: `docs/superpowers/plans/2026-09-14-diecast-quantity-and-scrap-model.md` (migration `0084`). Durable rules:

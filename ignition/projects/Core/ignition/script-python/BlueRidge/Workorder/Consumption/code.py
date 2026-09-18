@@ -2,8 +2,8 @@
 
    Wrappers only; no business logic. Arc 2 Phase 6 (Assembly consumption with
    BOM validation). Entry logs at default INFO. Routes through
-   BlueRidge.Common.Db.execMutation; appUserId defaults to the current operator
-   when None."""
+   BlueRidge.Common.Db.execMutation; appUserId is the caller's (no
+   default)."""
 
 
 def recordWithBomCheck(sourceLotId, producingLotId, cellLocationId, consumedPieceCount,
@@ -14,8 +14,7 @@ def recordWithBomCheck(sourceLotId, producingLotId, cellLocationId, consumedPiec
        carry a supervisor's elevation when the BOM check is bypassed.
        containerSerialId optionally ties the consumption to a serialized part.
        Returns {Status, Message, NewId (ConsumptionEventId)}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "recordWithBomCheck sourceLotId=%s producingLotId=%s cellLocationId=%s consumedPieceCount=%s appUserId=%s"
         % (sourceLotId, producingLotId, cellLocationId, consumedPieceCount, appUserId))

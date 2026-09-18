@@ -1,8 +1,8 @@
 """BlueRidge.Oee.Shift - thin access to shift start/end + active/open lookups.
 
-   Wrappers only; no business logic. Mutation attribution defaults appUserId to
-   the session-resolved current user when the caller passes None; the plant
-   floor passes appUserId / terminalLocationId explicitly."""
+   Wrappers only; no business logic. Mutation attribution is the caller's: views
+   pass appUserId (Common.Session.currentAppUserId(self.session)) and
+   terminalLocationId explicitly; there is no default user."""
 
 import java.lang
 
@@ -15,8 +15,7 @@ def start(shiftScheduleId, actualStart=None, remarks=None, appUserId=None,
         "shiftScheduleId=%s actualStart=%s appUserId=%s terminalLocationId=%s"
         % (shiftScheduleId, actualStart, appUserId, terminalLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "shiftScheduleId":    shiftScheduleId,
         "actualStart":        actualStart,
@@ -33,8 +32,7 @@ def end(actualEnd=None, remarks=None, appUserId=None, terminalLocationId=None):
         "actualEnd=%s appUserId=%s terminalLocationId=%s"
         % (actualEnd, appUserId, terminalLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "actualEnd":          actualEnd,
         "remarks":            remarks,
@@ -90,8 +88,7 @@ def acknowledgeHandover(shiftId, cellLocationId=None, appUserId=None, terminalLo
     """Record that the operator reviewed the shift-end summary (FDS-09-015).
        Audit-only; the shift-time data is already committed. Returns {Status, Message}."""
     BlueRidge.Common.Util.log("shiftId=%s cellLocationId=%s" % (shiftId, cellLocationId))
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "shiftId":            shiftId,
         "cellLocationId":     cellLocationId,
@@ -214,8 +211,7 @@ def reconcile(nowLocal=None, appUserId=None, terminalLocationId=None):
     """Reconcile Oee.Shift instances to the schedule up to nowLocal (LOCAL time).
        Thin wrapper -- all logic in Oee.Shift_Reconcile. Returns
        {Status, Message, ShiftsClosed, ShiftsBackfilled, ShiftOpened}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     return BlueRidge.Common.Db.execMutation("oee/Shift_Reconcile", {
         "nowLocal":           nowLocal,
         "appUserId":          appUserId,
@@ -225,12 +221,13 @@ def reconcile(nowLocal=None, appUserId=None, terminalLocationId=None):
 
 def tickShiftBoundary(nowLocal=None):
     """Gateway-timer entrypoint (ShiftBoundaryTicker, 60s). Delegates to
-       Oee.Shift_Reconcile via reconcile(). Guarded: a gateway timer must never
+       Oee.Shift_Reconcile via reconcile(), attributed to the SYS user (no
+       session in gateway scope -- Common.Util.systemAppUserId). Guarded: a gateway timer must never
        throw uncaught (must catch Java Throwables too, not just Python).
        Returns the reconcile status dict, or an error dict on failure."""
     BlueRidge.Common.Util.log("tick nowLocal=%s" % nowLocal, level="debug")
     try:
-        return reconcile(nowLocal)
+        return reconcile(nowLocal, appUserId=BlueRidge.Common.Util.systemAppUserId())
     except (Exception, java.lang.Exception) as e:
         BlueRidge.Common.Util.log("tickShiftBoundary error: %s" % e, level="error")
         return {"Status": 0, "Message": "reconcile error: %s" % e}

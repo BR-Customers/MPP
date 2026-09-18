@@ -102,8 +102,7 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None, cellLocatio
         % (data, appUserId, terminalLocationId, cellLocationId)
     )
     d = _u(data) or {}
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     if cellLocationId is None:
         cellLocationId = d.get("cellLocationId")
     lines = _u(d.get("lines")) or []
@@ -373,8 +372,7 @@ def recordCounterAnchor(toolId, shiftId, declaredReading, reasonId, note=None,
         "recordCounterAnchor toolId=%s shiftId=%s declaredReading=%s reasonId=%s cellLocationId=%s"
         % (toolId, shiftId, declaredReading, reasonId, cellLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     note = _u(note)
     if note is not None:
         note = str(note).strip() or None

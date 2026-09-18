@@ -125,7 +125,7 @@ def getOne(id):
         return None
 
 
-def add(meta):
+def add(meta, appUserId=None):
     """Create. meta = {name, description, daysOfWeekBitmask, startTime, endTime, effectiveFrom}.
        times as 'HH:MM', date as 'YYYY-MM-DD'. Returns {Status, Message, NewId}."""
     BlueRidge.Common.Util.log("meta=%s" % meta)
@@ -137,12 +137,12 @@ def add(meta):
         "endTime":           m.get("endTime"),
         "daysOfWeekBitmask": int(m.get("daysOfWeekBitmask") or 0),
         "effectiveFrom":     m.get("effectiveFrom"),
-        "appUserId":         BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId":         BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/ShiftSchedule_Create", params)
 
 
-def update(meta):
+def update(meta, appUserId=None):
     """Update. meta adds {id}. Returns {Status, Message}."""
     BlueRidge.Common.Util.log("meta=%s" % meta)
     m = _u(meta) or {}
@@ -154,17 +154,17 @@ def update(meta):
         "endTime":           m.get("endTime"),
         "daysOfWeekBitmask": int(m.get("daysOfWeekBitmask") or 0),
         "effectiveFrom":     m.get("effectiveFrom"),
-        "appUserId":         BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId":         BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/ShiftSchedule_Update", params)
 
 
-def deprecate(id):
+def deprecate(id, appUserId=None):
     """Soft-delete by Id. Returns {Status, Message}."""
     BlueRidge.Common.Util.log("id=%s" % id)
     params = {
         "id":        _u(id),
-        "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/ShiftSchedule_Deprecate", params)
 

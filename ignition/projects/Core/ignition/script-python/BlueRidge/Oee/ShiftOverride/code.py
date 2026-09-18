@@ -155,7 +155,7 @@ def getOne(id):
 
 
 # ---- mutations ----
-def add(meta):
+def add(meta, appUserId=None):
     """Create. meta = {locationId, shiftScheduleId, businessDate, startTime,
        endTime, reason}. times 'HH:MM', date 'YYYY-MM-DD', all LOCAL.
        Returns {Status, Message, NewId}."""
@@ -168,12 +168,12 @@ def add(meta):
         "startTime":       m.get("startTime"),
         "endTime":         m.get("endTime"),
         "reason":          m.get("reason"),
-        "appUserId":       BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId":       BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/ShiftOverride_Create", params)
 
 
-def update(meta):
+def update(meta, appUserId=None):
     """Update the window / reason. meta = {id, startTime, endTime, reason}.
        The KEY (equipment, shift, date) is immutable -- moving an override is a
        deprecate + create, so the audit trail shows two distinct assertions.
@@ -185,23 +185,23 @@ def update(meta):
         "startTime": m.get("startTime"),
         "endTime":   m.get("endTime"),
         "reason":    m.get("reason"),
-        "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/ShiftOverride_Update", params)
 
 
-def deprecate(id):
+def deprecate(id, appUserId=None):
     """Soft-delete by Id; the equipment falls back to the global shift window.
        Returns {Status, Message}."""
     BlueRidge.Common.Util.log("id=%s" % id)
     params = {
         "id":        _u(id),
-        "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/ShiftOverride_Deprecate", params)
 
 
-def apply(id):
+def apply(id, appUserId=None):
     """Re-run the ATTRIBUTION RESTAMP for an override (Oee.ShiftOverride_Apply).
 
        NOT needed on the normal path: add() / update() / deprecate() already
@@ -216,7 +216,7 @@ def apply(id):
     BlueRidge.Common.Util.log("id=%s" % id)
     params = {
         "shiftOverrideId": _u(id),
-        "appUserId":       BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId":       BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/ShiftOverride_Apply", params)
 

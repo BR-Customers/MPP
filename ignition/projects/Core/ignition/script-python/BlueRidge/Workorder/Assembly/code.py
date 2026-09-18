@@ -3,8 +3,8 @@
    Wrappers only; no business logic. Arc 2 Phase 6 (FDS-06-008 uncoupled path:
    the operator scans a machined component LOT into an Assembly Cell's queue so it
    can be consumed at the fill). Entry logs at default INFO. Routes through
-   BlueRidge.Common.Db.execMutation; appUserId defaults to the current operator
-   when None."""
+   BlueRidge.Common.Db.execMutation; appUserId is the caller's (no
+   default): the operator's from a view, systemAppUserId() from a PLC watcher."""
 
 import system.perspective
 import java.lang
@@ -16,8 +16,7 @@ def scanIn(cellLocationId, lotName=None, lotId=None, appUserId=None, terminalLoc
        accepted too. Validates the LOT's Item is a BOM component of an assembly
        produced at the cell; a non-component LOT rejects. Returns {Status, Message,
        NewId (LotMovementId)}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "scanIn lotName=%s lotId=%s cellLocationId=%s appUserId=%s"
         % (lotName, lotId, cellLocationId, appUserId))
@@ -35,8 +34,7 @@ def completeTray(finishedGoodItemId, pieceCount, cellLocationId,
        ContainerFull is 1 the caller (view) should complete the container via
        BlueRidge.Lots.Container.complete (AIM claim + ShippingLabel) - this proc does
        NOT complete the container (Spec 2 delegation)."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "completeTray finishedGoodItemId=%s pieceCount=%s cellLocationId=%s appUserId=%s"
         % (finishedGoodItemId, pieceCount, cellLocationId, appUserId))
@@ -110,7 +108,7 @@ def getDefaultFinishedGoodId(cellLocationId, terminalLocationId=None, closureMet
 
 
 def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocationId, closureMethod=None,
-                       terminalLocationId=None):
+                       terminalLocationId=None, appUserId=None):
     """View helper for the assembly tray-complete button. Resolves the finished-good
        Item, validates the parts count, and mints the FG LOT via completeTray.
        closureMethod is the terminal's active mode (session.custom.closureMethod) - it
@@ -153,11 +151,12 @@ def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocatio
     if term is None:
         term = cellLocationId
     result = completeTray(fgItem, cnt, cellLocationId, closureMethod=closureMethod,
-                          terminalLocationId=term)
+                          appUserId=appUserId, terminalLocationId=term)
     if (result and result.get("Status") and result.get("ContainerFull")
             and result.get("ContainerId") is not None and result.get("TraysPerContainer") == 1):
         result["ContainerComplete"] = BlueRidge.Lots.Container.complete(
-            result.get("ContainerId"), operatorConfirmed=True, terminalLocationId=term)
+            result.get("ContainerId"), operatorConfirmed=True,
+            appUserId=appUserId, terminalLocationId=term)
     if result and result.get("Status"):
         warnLowInventory(cellLocationId, fgItem, closureMethod)
     return result
@@ -388,8 +387,7 @@ def completeBoxToPrinter(containerId, terminalLocationId, printerLocationId, app
        the ShippingLabel; the dispatch (routed to printerLocationId) does the ZPL.
        Returns {Status, Message}. On a completed-but-unprinted box the ShippingLabel
        row persists (re-dispatchable), so a print miss is never a lost record."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     cid = BlueRidge.Common.Util.extractQualifiedValues(containerId)
     res = BlueRidge.Lots.Container.complete(cid, operatorConfirmed=True,
                                             appUserId=appUserId, terminalLocationId=terminalLocationId)

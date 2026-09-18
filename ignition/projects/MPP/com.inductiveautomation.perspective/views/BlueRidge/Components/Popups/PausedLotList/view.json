@@ -337,7 +337,7 @@
             "pauseEventId",
             "lotId"
           ],
-          "script": "\tresult \u003d BlueRidge.Lots.LotPause.resume(pauseEventId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Resumed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pauses \u003d BlueRidge.Lots.LotPause.getByLocation(self.view.params.locationId) or []\n\t\tsystem.perspective.sendMessage(\"pausedLotResumed\", {\"lotId\": lotId}, scope\u003d\"page\")"
+          "script": "\tresult \u003d BlueRidge.Lots.LotPause.resume(pauseEventId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Resumed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pauses \u003d BlueRidge.Lots.LotPause.getByLocation(self.view.params.locationId) or []\n\t\tsystem.perspective.sendMessage(\"pausedLotResumed\", {\"lotId\": lotId}, scope\u003d\"page\")"
         }
       ],
       "extensionFunctions": null,

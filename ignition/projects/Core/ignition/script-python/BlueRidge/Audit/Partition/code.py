@@ -1,6 +1,6 @@
 """BlueRidge.Audit.Partition - thin access to the sliding-window partition
-   maintenance proc. Wrappers only; no business logic. Defaults appUserId to the
-   session-resolved current user when None; callers may pass it explicitly."""
+   maintenance proc. Wrappers only; no business logic. appUserId is the caller's;
+   the gateway timer passes Common.Util.systemAppUserId() (SYS)."""
 
 
 def maintain(asOfUtc, retentionMonths=None, appUserId=None, terminalLocationId=None):
@@ -10,8 +10,7 @@ def maintain(asOfUtc, retentionMonths=None, appUserId=None, terminalLocationId=N
         "asOfUtc=%s retentionMonths=%s appUserId=%s terminalLocationId=%s"
         % (asOfUtc, retentionMonths, appUserId, terminalLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "asOfUtc":            asOfUtc,
         "appUserId":          appUserId,

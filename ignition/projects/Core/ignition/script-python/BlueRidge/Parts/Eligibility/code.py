@@ -51,7 +51,7 @@ def listLocationOptions():
     ) or []
 
 
-def handleSaveAll(itemId, rows):
+def handleSaveAll(itemId, rows, appUserId=None):
     """Submit the editor's full editDraft.rows list to the SaveAll proc.
 
     `rows` is a list of dicts with keys:
@@ -83,7 +83,7 @@ def handleSaveAll(itemId, rows):
     params = {
         "itemId":    itemId,
         "rowsJson":  BlueRidge.Common.Util.convertWrapperObjectToJson(cleaned),
-        "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation(
         "parts/ItemLocation_SaveAllForItem",

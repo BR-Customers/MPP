@@ -73,8 +73,7 @@ def getToleranceInstances(locationId, _refreshToken=None):
 def setMaxQuantity(itemLocationId, maxQuantity, appUserId=None):
     """Parts.ItemLocation_SetMaxQuantity. maxQuantity None clears Max. The proc owns
        every rule (consumption point only, > 0, not below Min). Returns {Status, Message}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     return BlueRidge.Common.Db.execMutation(
         "parts/ItemLocation_SetMaxQuantity",
         {"itemLocationId": _u(itemLocationId), "maxQuantity": _u(maxQuantity),
@@ -86,13 +85,9 @@ def saveMaxAndNotify(itemLocationId, rawValue, appUserId=None):
        (input parsing, not a business rule); everything else is the proc's call.
        Toasts the outcome and, on success, tells the page to recolour.
 
-       CALLERS MUST PASS appUserId=session.custom.appUserId. This path is not
-       routed through Common.Util._currentAppUserId() -- that helper reads
-       system.perspective.getSessionInfo(), which returns a LIST, so it always
-       falls back to the dev user (Id 2) and every Tolerances save gets
-       misattributed. Fixing _currentAppUserId itself is separate, wider work;
-       until then, this proc follows the same explicit-appUserId pattern as
-       Lots.Lot.checkInAndNotify."""
+       CALLERS MUST PASS appUserId (session.custom.appUserId on the plant floor)
+       -- the same explicit-appUserId pattern as Lots.Lot.checkInAndNotify. There
+       is no fallback: Common.Util.requireAppUserId only logs a missing one."""
     raw = ("%s" % (_u(rawValue) if _u(rawValue) is not None else "")).strip().replace(",", "")
     if raw == "":
         value = None

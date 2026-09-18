@@ -3,15 +3,15 @@
    Wrappers only; no business logic. Arc 2 Phase 6 (Assembly / Container). Each
    entry logs at default INFO (meaningful shop-floor events, not debug noise).
    Mutations route through BlueRidge.Common.Db.execMutation (status-row procs);
-   the read routes through execList. appUserId defaults to the current operator
-   via BlueRidge.Common.Util._currentAppUserId() when None."""
+   the read routes through execList. appUserId is the caller's (a view's
+   Common.Session.currentAppUserId(self.session), a PLC watcher's
+   Common.Util.systemAppUserId()); there is no default."""
 
 
 def open(itemId, containerConfigId, cellLocationId, appUserId=None, terminalLocationId=None):
     """Open a new container at a Cell against an item + container config.
        Returns {Status, Message, NewId (ContainerId)}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "open itemId=%s containerConfigId=%s cellLocationId=%s appUserId=%s"
         % (itemId, containerConfigId, cellLocationId, appUserId))
@@ -24,8 +24,7 @@ def open(itemId, containerConfigId, cellLocationId, appUserId=None, terminalLoca
 def trayClose(containerId, trayPosition, partsCount, closureMethod=None, appUserId=None, terminalLocationId=None):
     """Close a tray within a container, recording its parts count + closure method.
        Returns {Status, Message, NewId (ContainerTrayId), ContainerAccumulatedParts}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "trayClose containerId=%s trayPosition=%s partsCount=%s closureMethod=%s appUserId=%s"
         % (containerId, trayPosition, partsCount, closureMethod, appUserId))
@@ -40,8 +39,7 @@ def serialAdd(containerId, serializedPartId, containerTrayId=None, trayPosition=
     """Add a serialized part to a container (optionally pinned to a tray /
        tray position). hardwareInterlockBypassed flags a manual override of the
        PLC interlock. Returns {Status, Message, NewId (ContainerSerialId)}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "serialAdd containerId=%s serializedPartId=%s containerTrayId=%s trayPosition=%s bypass=%s appUserId=%s"
         % (containerId, serializedPartId, containerTrayId, trayPosition, hardwareInterlockBypassed, appUserId))
@@ -59,8 +57,7 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
        {Status, Message, ShippingLabelId, AimShipperId, LabelPrint (dispatch outcome,
        present only when a ShippingLabelId was claimed)}."""
     from java.lang import Throwable
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "complete containerId=%s operatorConfirmed=%s plcCompletionConfirmed=%s appUserId=%s"
         % (containerId, operatorConfirmed, plcCompletionConfirmed, appUserId))

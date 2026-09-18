@@ -25,10 +25,6 @@ def _u(v):
     return BlueRidge.Common.Util.extractQualifiedValues(v)
 
 
-def _uid():
-    return BlueRidge.Common.Util._currentAppUserId()
-
-
 def resolveScope(cellLocationId):
     """Cell/terminal location -> downtime scope (nearest OEE-enabled location,
        Location.IsOeeEnabled, at or above the cell; else the cell itself).
@@ -132,17 +128,17 @@ def getByScope(scopeLocationId, includeDescendants=True, shiftId=None):
     })
 
 
-def updateReason(downtimeEventId, downtimeReasonCodeId, terminalLocationId=None):
+def updateReason(downtimeEventId, downtimeReasonCodeId, terminalLocationId=None, appUserId=None):
     """Change/clear a reason (allows overwrite, unlike B7 assign). {Status, Message}."""
     return BlueRidge.Common.Db.execMutation("oee/DowntimeEvent_UpdateReason", {
         "downtimeEventId":      _u(downtimeEventId),
         "downtimeReasonCodeId": _u(downtimeReasonCodeId),
-        "appUserId":            _uid(),
+        "appUserId":            BlueRidge.Common.Util.requireAppUserId(appUserId),
         "terminalLocationId":   _u(terminalLocationId),
     })
 
 
-def updateTimes(downtimeEventId, startedAtEt, endedAtEt=None, remarks=None, terminalLocationId=None):
+def updateTimes(downtimeEventId, startedAtEt, endedAtEt=None, remarks=None, terminalLocationId=None, appUserId=None):
     """Retroactive time correction (+ optional remarks). ET wall-clock strings
        'yyyy-MM-dd HH:mm:ss'. {Status, Message}."""
     return BlueRidge.Common.Db.execMutation("oee/DowntimeEvent_UpdateTimes", {
@@ -150,13 +146,13 @@ def updateTimes(downtimeEventId, startedAtEt, endedAtEt=None, remarks=None, term
         "startedAtEt":        _u(startedAtEt),
         "endedAtEt":          _u(endedAtEt),
         "remarks":            _u(remarks),
-        "appUserId":          _uid(),
+        "appUserId":          BlueRidge.Common.Util.requireAppUserId(appUserId),
         "terminalLocationId": _u(terminalLocationId),
     })
 
 
 def recordHistorical(scopeLocationId, startedAtEt, endedAtEt, downtimeReasonCodeId=None,
-                     remarks=None, terminalLocationId=None):
+                     remarks=None, terminalLocationId=None, appUserId=None):
     """Enter a fully-past closed event. ET wall-clock strings. {Status, Message, NewId}."""
     return BlueRidge.Common.Db.execMutation("oee/DowntimeEvent_RecordHistorical", {
         "scopeLocationId":      _u(scopeLocationId),
@@ -164,13 +160,13 @@ def recordHistorical(scopeLocationId, startedAtEt, endedAtEt, downtimeReasonCode
         "endedAtEt":            _u(endedAtEt),
         "downtimeReasonCodeId": _u(downtimeReasonCodeId),
         "remarks":              _u(remarks),
-        "appUserId":            _uid(),
+        "appUserId":            BlueRidge.Common.Util.requireAppUserId(appUserId),
         "terminalLocationId":   _u(terminalLocationId),
     })
 
 
 def recordApproximate(scopeLocationId, durationMinutes, shiftId=None, downtimeReasonCodeId=None,
-                      remarks=None, terminalLocationId=None):
+                      remarks=None, terminalLocationId=None, appUserId=None):
     """Enter a duration-only ('approximate') past event -- operator knows the
        duration but not the exact window. shiftId None -> current open shift.
        {Status, Message, NewId}."""
@@ -180,16 +176,16 @@ def recordApproximate(scopeLocationId, durationMinutes, shiftId=None, downtimeRe
         "shiftId":              _u(shiftId),
         "downtimeReasonCodeId": _u(downtimeReasonCodeId),
         "remarks":              _u(remarks),
-        "appUserId":            _uid(),
+        "appUserId":            BlueRidge.Common.Util.requireAppUserId(appUserId),
         "terminalLocationId":   _u(terminalLocationId),
     })
 
 
-def void(downtimeEventId, voidReason=None, terminalLocationId=None):
+def void(downtimeEventId, voidReason=None, terminalLocationId=None, appUserId=None):
     """Soft-void (closes if open). {Status, Message}."""
     return BlueRidge.Common.Db.execMutation("oee/DowntimeEvent_Void", {
         "downtimeEventId":    _u(downtimeEventId),
         "voidReason":         _u(voidReason),
-        "appUserId":          _uid(),
+        "appUserId":          BlueRidge.Common.Util.requireAppUserId(appUserId),
         "terminalLocationId": _u(terminalLocationId),
     })

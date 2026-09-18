@@ -267,7 +267,7 @@ def listUoms():
 
 # ---------- Phase 6 mutations ----------
 
-def handleCreateOrCloneVersion(parentItemId, sourceBomId=None):
+def handleCreateOrCloneVersion(parentItemId, sourceBomId=None, appUserId=None):
     """Routes '+ New Version' to either Bom_Create (no Bom exists yet
     for this Item) or Bom_CreateNewVersion. Both produce a Draft.
     Returns {Status, Message, NewId}.
@@ -304,7 +304,7 @@ def handleCreateOrCloneVersion(parentItemId, sourceBomId=None):
                 {
                     "parentItemId":  parentItemId,
                     "effectiveFrom": None,
-                    "appUserId":     BlueRidge.Common.Util._currentAppUserId(),
+                    "appUserId":     BlueRidge.Common.Util.requireAppUserId(appUserId),
                 },
             )
 
@@ -360,7 +360,7 @@ def handleCreateOrCloneVersion(parentItemId, sourceBomId=None):
             {
                 "parentBomId":   sourceId,
                 "effectiveFrom": None,
-                "appUserId":     BlueRidge.Common.Util._currentAppUserId(),
+                "appUserId":     BlueRidge.Common.Util.requireAppUserId(appUserId),
             },
         )
     except Exception as e:
@@ -370,7 +370,7 @@ def handleCreateOrCloneVersion(parentItemId, sourceBomId=None):
                 "NewId": None}
 
 
-def handleSaveDraft(bomId, effectiveFrom, lines):
+def handleSaveDraft(bomId, effectiveFrom, lines, appUserId=None):
     """Bundled save of a Draft BOM. `lines` is list[dict] in display
     shape; this serializes the proc-relevant fields to JSON and calls
     Bom_SaveDraft."""
@@ -393,12 +393,12 @@ def handleSaveDraft(bomId, effectiveFrom, lines):
             "id":            bomId,
             "effectiveFrom": effectiveFrom,
             "linesJson":     linesJson,
-            "appUserId":     BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":     BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def handlePublish(bomId, effectiveFrom=None, lines=None):
+def handlePublish(bomId, effectiveFrom=None, lines=None, appUserId=None):
     """Publish a Draft. Optionally also reconciles lines in the same
     atomic (save-and-publish). Pass `lines` None to publish without
     saving line edits."""
@@ -423,31 +423,31 @@ def handlePublish(bomId, effectiveFrom=None, lines=None):
             "id":            bomId,
             "effectiveFrom": effectiveFrom,
             "linesJson":     linesJson,
-            "appUserId":     BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":     BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def handleDeprecate(bomId):
+def handleDeprecate(bomId, appUserId=None):
     """Deprecate a Published BOM."""
     bomId = _u(bomId)
     return BlueRidge.Common.Db.execMutation(
         "parts/Bom_Deprecate",
         {
             "id":        bomId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def handleDiscardDraft(bomId):
+def handleDiscardDraft(bomId, appUserId=None):
     """Physically delete a Draft BOM + cascade BomLines."""
     bomId = _u(bomId)
     return BlueRidge.Common.Db.execMutation(
         "parts/Bom_DiscardDraft",
         {
             "id":        bomId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 

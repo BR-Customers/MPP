@@ -107,7 +107,7 @@ def getEntitiesForDropdown():
    The corollary: **a bare `log()` is invisible in normal operation, so anything that must be seen has to say so.** Handled-exception paths pass `level="warn"`; things that break production pass `level="error"`. When retrofitting an existing codebase, don't grep the message text for words like "failed" — it appears in plenty of harmless traces and plenty of real faults never say it. Parse the AST and ask the structural question instead: *is this call inside an `except` handler?* That one test cleanly separated 90 fault sites from 269 traces in the project above. Then hand-check the handful of misconfiguration diagnostics that sit *outside* `except` blocks, and leave anything on a short timer at debug — promoting a message that fires every 5 s to `warn` just trades one kind of log spam for another.
 2. **Docstrings carry purpose / args / returns.** Use the same shape across modules so generated docs are uniform.
 3. **Callers pass a dict, never a JSON string.** Older patterns dual-mode the first arg with `if isinstance(data, str): data = system.util.jsonDecode(data)`. Drop that: the type guards exist because the calling convention is ambiguous. If a view truly has a JSON string (rare), decode at the boundary, not in every entity function.
-4. **AppUserId from the session, not the caller.** Mutations call `<integrator>.Common.Util._currentAppUserId()` and pass `@AppUserId` to the proc. The proc stamps audit columns (`CreatedAt`, `LastEditedAt`, etc.) — script-side stamping is wrong because the proc's `getdate()` is the canonical write time and the client clock isn't trustworthy.
+4. **AppUserId comes from the caller, who holds the session.** Every mutation takes an `appUserId` argument and passes it to the proc as `@AppUserId`. A view supplies it from the session object it already holds (`self.session`); gateway-scope code (timers, tag-change scripts) supplies a dedicated system user. **A project script cannot find "the calling session" on its own** (see the warning under `Common.Util` below), so never give an entity function a fallback that guesses. The proc stamps audit columns (`CreatedAt`, `LastEditedAt`, etc.) — script-side stamping is wrong because the proc's `getdate()` is the canonical write time and the client clock isn't trustworthy.
 5. **Optimistic locking via `RowVersion`.** Update and Deprecate procs accept `@RowVersion` and return `Status=0` with a "modified by another user" message on mismatch. Views load `RowVersion` with the row, keep it untouched during the edit session, and pass it through on save.
 6. **Deprecate, not hard-delete.** The proc soft-deletes by setting `DeprecatedAt` (or similar). Hard `DELETE` only when the row is truly transient (in-progress draft being abandoned) — and even then, prefer a dedicated `Discard<Entity>` proc over generic DELETE.
 
@@ -319,12 +319,17 @@ def log(msg, level="debug"):
     func   = frame.f_code.co_name
     getattr(system.util.getLogger(module), level)("%s() %s" % (func, msg))
 
-def _currentAppUserId():
-    """Resolves the calling session's appUserId from session.custom.appUserId
-       (set at login). Mutations pass this to procs as @AppUserId for audit
-       attribution. Underscore-prefixed because callers should not be passing
-       around appUserId values — the helper is the only sanctioned source."""
-    return system.perspective.getSessionInfo()["custom"].get("appUserId")
+def requireAppUserId(appUserId):
+    """Pass-through for the caller-supplied AppUser.Id. Logs an ERROR naming
+       the entity function when the caller supplied none, and returns None so
+       the proc's required-parameter guard refuses the write. No fallback."""
+    v = extractQualifiedValues(appUserId)
+    if v is None:
+        frame = inspect.currentframe().f_back
+        system.util.getLogger(frame.f_globals.get("__name__", "unknown")).error(
+            "%s() called with no appUserId" % frame.f_code.co_name)
+    return v
+
 
 def extractQualifiedValues(data):
     """Recursively unwrap QualifiedValue (from tag/property bindings) through
@@ -346,6 +351,23 @@ def convertWrapperObjectToJson(obj):
        a view hands a self.custom.* dict to a script that forwards it to a NQ."""
     return TypeUtilities.pyToGson(obj)
 ```
+
+> **Do not resolve the user with `system.perspective.getSessionInfo()`.** It returns a **list of every session on the gateway**, not the calling one, and a project-library function has no API for "the current session". An earlier version of this pack showed `getSessionInfo()["custom"].get("appUserId")`; wrapped in a broad `except` with a fallback id, that indexes a list, throws, and silently returns the fallback on **every** call. One project audited every configuration save, every LOT move and two gateway timers to a placeholder dev user for months, production included. Pass the session (or the resolved id) in from the view instead:
+>
+> ```python
+> # Common/Session: resolve from the session object the view holds
+> def currentAppUserId(session):
+>     uid = session.custom.appUserId          # set by a terminal PIN / initials sign-in
+>     if uid is not None:
+>         return uid
+>     if session.props.auth.authenticated:    # IdP login (e.g. AD) -- resolve per call, never cache
+>         row = <integrator>.Location.AppUser.getActiveByAdAccount(session.props.auth.user.userName)
+>         return row.get("Id") if row else None
+>     return None
+>
+> # view event
+> <integrator>.Items.Item.update(draft, appUserId=<integrator>.Common.Session.currentAppUserId(self.session))
+> ```
 
 `extractQualifiedValues` and `convertWrapperObjectToJson` solve a class of "value comes back wrapped and SQL parameter binding fails" problems you'll otherwise hit repeatedly.
 
@@ -405,7 +427,8 @@ The previous-generation pattern (seen in older Ignition projects) had a `log(msg
 A Save button's `onActionPerformed` is a one-liner that delegates to the entity script and routes the result through `notifyResult`:
 
 ```python
-result = <integrator>.Items.Item.update(self.view.custom.editDraft)
+result = <integrator>.Items.Item.update(self.view.custom.editDraft,
+    appUserId=<integrator>.Common.Session.currentAppUserId(self.session))
 <integrator>.Common.Ui.notifyResult(result, successTitle="Saved")
 if result.get("Status"):
     self.view.custom.selected = dict(self.view.custom.editDraft)

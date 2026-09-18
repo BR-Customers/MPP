@@ -336,7 +336,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tcellId \u003d self.view.custom.filter.cellLocationId\n\tif cellId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Oee.DowntimeEvent.start(cellId, downtimeReasonCodeId\u003dself.view.custom.newReasonCodeId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime started\")\n\tself.view.custom.filter \u003d dict(self.view.custom.filter)"
+                            "script": "\tcellId \u003d self.view.custom.filter.cellLocationId\n\tif cellId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Oee.DowntimeEvent.start(cellId, downtimeReasonCodeId\u003dself.view.custom.newReasonCodeId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime started\")\n\tself.view.custom.filter \u003d dict(self.view.custom.filter)"
                           },
                           "scope": "G",
                           "type": "script"
@@ -434,14 +434,14 @@
         {
           "messageType": "downtimeEndRequested",
           "pageScope": true,
-          "script": "\tBlueRidge.Oee.DowntimeEvent.end(payload[\"downtimeEventId\"])\n\tself.view.custom.filter \u003d dict(self.view.custom.filter)",
+          "script": "\tBlueRidge.Oee.DowntimeEvent.end(payload[\"downtimeEventId\"], appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tself.view.custom.filter \u003d dict(self.view.custom.filter)",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "downtimeAssignRequested",
           "pageScope": true,
-          "script": "\trid \u003d self.view.custom.newReasonCodeId\n\tif rid is not None:\n\t\tBlueRidge.Oee.DowntimeEvent.assignReason(payload[\"downtimeEventId\"], rid)\n\t\tself.view.custom.filter \u003d dict(self.view.custom.filter)",
+          "script": "\trid \u003d self.view.custom.newReasonCodeId\n\tif rid is not None:\n\t\tBlueRidge.Oee.DowntimeEvent.assignReason(payload[\"downtimeEventId\"], rid, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\t\tself.view.custom.filter \u003d dict(self.view.custom.filter)",
           "sessionScope": false,
           "viewScope": false
         }

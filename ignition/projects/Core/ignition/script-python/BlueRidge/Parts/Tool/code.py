@@ -276,7 +276,7 @@ def getOne(toolId):
 # Tool mutations
 # -----------------------------------------------------------------------------
 
-def add(data):
+def add(data, appUserId=None):
     """Insert a new Tool. data: {Code, Name, Description, DieRankCode, ...}.
 
     Resolution rules:
@@ -322,12 +322,12 @@ def add(data):
             "description":  description,
             "dieRankId":    dieRankId,
             "statusCodeId": statusCodeId,
-            "appUserId":    BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":    BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def update(data):
+def update(data, appUserId=None):
     """Update an existing Tool. data: the header meta -- {Id, Name,
     Description, DieRankCode, StatusCode, ShotLimit, ShotCount,
     ShotCountLoaded, ShotCountNote}. Code is immutable per the proc.
@@ -352,7 +352,7 @@ def update(data):
         return {"Status": 0, "Message": shots["error"]}
 
     dieRankId = _lookupDieRankIdByCode(data.get("DieRankCode"))
-    appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     description = (data.get("Description") or "").strip() or None
 
     updateResult = BlueRidge.Common.Db.execMutation(
@@ -399,7 +399,7 @@ def update(data):
     return updateResult
 
 
-def deprecate(toolId):
+def deprecate(toolId, appUserId=None):
     """Soft-delete. Returns {Status, Message}."""
     toolId = _u(toolId)
     BlueRidge.Common.Util.log("toolId=%s" % toolId)
@@ -407,7 +407,7 @@ def deprecate(toolId):
         "parts/Tool_Deprecate",
         {
             "id":        toolId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
@@ -500,7 +500,7 @@ def getDuplicateSummaryOrEmpty(toolId, _refreshToken=None):
     return row
 
 
-def handleDuplicate(sourceToolId, code, name):
+def handleDuplicate(sourceToolId, code, name, appUserId=None):
     """Clone a die's configuration onto a new Code / Name.
 
     COPIES  ToolType, Description, DieRank, ShotLimit, every non-deprecated
@@ -535,7 +535,7 @@ def handleDuplicate(sourceToolId, code, name):
             "sourceToolId": sourceToolId,
             "code":         code,
             "name":         name,
-            "appUserId":    BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":    BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
@@ -752,7 +752,7 @@ def toolTabObjects(sectionDirty, activeTab):
     return out
 
 
-def addAttributeDefinition(toolTypeId, code, name, dataType, isRequired=False):
+def addAttributeDefinition(toolTypeId, code, name, dataType, isRequired=False, appUserId=None):
     """Insert a new ToolAttributeDefinition row scoped to a ToolType.
     Returns {Status, Message, NewId}."""
     toolTypeId = _u(toolTypeId)
@@ -779,7 +779,7 @@ def addAttributeDefinition(toolTypeId, code, name, dataType, isRequired=False):
             "name":       name,
             "dataType":   dataType,
             "isRequired": 1 if isRequired else 0,
-            "appUserId":  BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":  BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
@@ -873,7 +873,7 @@ def getCellsForDropdown(toolId=None):
 # Per-tab mutations (Cavity / Attribute / Assignment)
 # -----------------------------------------------------------------------------
 
-def createCavity(toolId, cavityCode, description=None, itemId=None):
+def createCavity(toolId, cavityCode, description=None, itemId=None, appUserId=None):
     """Insert a new ToolCavity. Returns {Status, Message, NewId}.
 
        itemId is the OPTIONAL cavity-to-part map for family dies (0072).
@@ -896,12 +896,12 @@ def createCavity(toolId, cavityCode, description=None, itemId=None):
             "cavityCode":  ("%s" % cavityCode).strip().lower(),
             "description": description,
             "itemId":      itemId,
-            "appUserId":   BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":   BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def updateCavityStatus(cavityId, statusCode):
+def updateCavityStatus(cavityId, statusCode, appUserId=None):
     """Set the StatusCode on a ToolCavity (Active / Closed / Scrapped).
     Returns {Status, Message}."""
     cavityId = _u(cavityId)
@@ -914,12 +914,12 @@ def updateCavityStatus(cavityId, statusCode):
         {
             "id":         cavityId,
             "statusCode": statusCode,
-            "appUserId":  BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":  BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def deprecateCavity(cavityId):
+def deprecateCavity(cavityId, appUserId=None):
     """Soft-delete a ToolCavity. Returns {Status, Message}."""
     cavityId = _u(cavityId)
     BlueRidge.Common.Util.log("cavityId=%s" % cavityId)
@@ -929,12 +929,12 @@ def deprecateCavity(cavityId):
         "parts/ToolCavity_Deprecate",
         {
             "id":        cavityId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def upsertAttribute(toolId, defId, value):
+def upsertAttribute(toolId, defId, value, appUserId=None):
     """Insert or update a ToolAttribute row. Returns {Status, Message}."""
     toolId = _u(toolId)
     defId  = _u(defId)
@@ -949,12 +949,12 @@ def upsertAttribute(toolId, defId, value):
             "toolId":    toolId,
             "defId":     defId,
             "value":     "" if value is None else unicode(value),
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def removeAttribute(toolId, defId):
+def removeAttribute(toolId, defId, appUserId=None):
     """Remove a ToolAttribute row. Returns {Status, Message}."""
     toolId = _u(toolId)
     defId  = _u(defId)
@@ -966,12 +966,12 @@ def removeAttribute(toolId, defId):
         {
             "toolId":    toolId,
             "defId":     defId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def saveAttributesAll(toolId, rows):
+def saveAttributesAll(toolId, rows, appUserId=None):
     """Bundled SaveAll for the Attributes section. `rows` is the editDraft
     rows list with keys: id (BIGINT|None), toolAttributeDefinitionId (BIGINT),
     value (string). Returns {Status, Message, NewId}."""
@@ -993,12 +993,12 @@ def saveAttributesAll(toolId, rows):
         {
             "toolId":    toolId,
             "rowsJson":  BlueRidge.Common.Util.convertWrapperObjectToJson(cleaned),
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def saveCavitiesAll(toolId, rows):
+def saveCavitiesAll(toolId, rows, appUserId=None):
     """Bundled SaveAll for the Cavities section. `rows` keys: id (BIGINT|None),
     cavityCode (str), description (string|None), statusCode (str),
     itemId (BIGINT|None -- the 0072 cavity-to-part map, optional).
@@ -1032,12 +1032,12 @@ def saveCavitiesAll(toolId, rows):
         {
             "toolId":    toolId,
             "rowsJson":  BlueRidge.Common.Util.convertWrapperObjectToJson(cleaned),
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def assignToCell(toolId, cellLocationId, notes=None):
+def assignToCell(toolId, cellLocationId, notes=None, appUserId=None):
     """Open a ToolAssignment to the named cell. Proc enforces single-active
     invariant. Returns {Status, Message, NewId}."""
     toolId = _u(toolId)
@@ -1055,12 +1055,12 @@ def assignToCell(toolId, cellLocationId, notes=None):
             "toolId":         toolId,
             "cellLocationId": cellLocationId,
             "notes":          notes,
-            "appUserId":      BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":      BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def releaseAssignment(toolId, notes=None):
+def releaseAssignment(toolId, notes=None, appUserId=None):
     """Close the currently-active ToolAssignment for this tool.
     Returns {Status, Message}."""
     toolId = _u(toolId)
@@ -1072,7 +1072,7 @@ def releaseAssignment(toolId, notes=None):
         "parts/ToolAssignment_Release",
         {
             "toolId":    toolId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
             "notes":     notes,
         },
     )

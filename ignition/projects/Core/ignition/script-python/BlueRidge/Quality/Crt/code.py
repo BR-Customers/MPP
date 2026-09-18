@@ -45,8 +45,7 @@ def flagMissed(lotId, remarks, appUserId=None, terminalLocationId=None):
         "flagMissed lotId=%s remarks=%s appUserId=%s terminalLocationId=%s"
         % (lotId, remarks, appUserId, terminalLocationId)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "lotId":              _u(lotId),
         "remarks":            _u(remarks),

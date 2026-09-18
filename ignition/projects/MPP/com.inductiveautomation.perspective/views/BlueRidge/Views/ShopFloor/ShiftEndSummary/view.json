@@ -122,7 +122,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tcellId \u003d self.view.custom.filter.cellLocationId\n\tshift \u003d BlueRidge.Oee.Shift.getOpen()\n\tif shift:\n\t\tresult \u003d BlueRidge.Oee.Shift.acknowledgeHandover(shift[\"Id\"], cellId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Handover acknowledged\")\n\telse:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open shift to acknowledge.\"}, \"Handover acknowledged\")"
+                    "script": "\tcellId \u003d self.view.custom.filter.cellLocationId\n\tshift \u003d BlueRidge.Oee.Shift.getOpen()\n\tif shift:\n\t\tresult \u003d BlueRidge.Oee.Shift.acknowledgeHandover(shift[\"Id\"], cellId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Handover acknowledged\")\n\telse:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open shift to acknowledge.\"}, \"Handover acknowledged\")"
                   },
                   "scope": "G",
                   "type": "script"

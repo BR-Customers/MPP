@@ -16,7 +16,6 @@ def getByLocation(locationId):
 def resume(pauseEventId, resumedRemarks=None, appUserId=None):
     """Close an open pause. Returns {Status, Message}."""
     BlueRidge.Common.Util.log("pauseEventId=%s" % pauseEventId)
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {"pauseEventId": pauseEventId, "resumedRemarks": resumedRemarks, "appUserId": appUserId}
     return BlueRidge.Common.Db.execMutation("lots/LotPause_Resume", params)

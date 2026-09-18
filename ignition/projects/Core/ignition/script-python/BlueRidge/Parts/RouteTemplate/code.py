@@ -264,7 +264,7 @@ def getOperationTemplatesByArea(areaLocationId=None, includeDeprecated=False):
     return getOperationTemplatesByType(None, includeDeprecated)
 
 
-def createInitial(itemId, name=None, effectiveFrom=None):
+def createInitial(itemId, name=None, effectiveFrom=None, appUserId=None):
     """Creates the first Draft RouteTemplate (VersionNumber=1) for an Item
     that has no existing routes. Wraps Parts.RouteTemplate_Create which
     produces an empty Draft with no steps. The caller then drives the user
@@ -277,7 +277,7 @@ def createInitial(itemId, name=None, effectiveFrom=None):
     itemId        = _u(itemId)
     name          = _u(name)
     effectiveFrom = _u(effectiveFrom)
-    appUserId     = BlueRidge.Common.Util._currentAppUserId()
+    appUserId     = BlueRidge.Common.Util.requireAppUserId(appUserId)
     if not name:
         name = "Route v1"
     return BlueRidge.Common.Db.execMutation(
@@ -291,14 +291,14 @@ def createInitial(itemId, name=None, effectiveFrom=None):
     )
 
 
-def createNewVersion(parentRouteTemplateId, effectiveFrom=None):
+def createNewVersion(parentRouteTemplateId, effectiveFrom=None, appUserId=None):
     """Clones the parent RouteTemplate into a new Draft, copying every
     RouteStep. Rejects if any active Draft already exists for the parent's
     Item.
     """
     parentRouteTemplateId = _u(parentRouteTemplateId)
     effectiveFrom         = _u(effectiveFrom)
-    appUserId             = BlueRidge.Common.Util._currentAppUserId()
+    appUserId             = BlueRidge.Common.Util.requireAppUserId(appUserId)
     return BlueRidge.Common.Db.execMutation(
         "parts/RouteTemplate_CreateNewVersion",
         {
@@ -309,7 +309,7 @@ def createNewVersion(parentRouteTemplateId, effectiveFrom=None):
     )
 
 
-def saveAll(id, name, effectiveFrom, stepsList):
+def saveAll(id, name, effectiveFrom, stepsList, appUserId=None):
     """Bundled save: persists header (Name, EffectiveFrom) + step
     reconciliation in one atomic call. Only accepts active Drafts.
 
@@ -323,7 +323,7 @@ def saveAll(id, name, effectiveFrom, stepsList):
     name          = _u(name)
     effectiveFrom = _u(effectiveFrom)
     stepsList     = _u(stepsList)
-    appUserId     = BlueRidge.Common.Util._currentAppUserId()
+    appUserId     = BlueRidge.Common.Util.requireAppUserId(appUserId)
 
     payload = []
     for s in (stepsList or []):
@@ -347,7 +347,7 @@ def saveAll(id, name, effectiveFrom, stepsList):
     )
 
 
-def publish(id, effectiveFrom=None, name=None):
+def publish(id, effectiveFrom=None, name=None, appUserId=None):
     """Flips a Draft to Published. Optional @EffectiveFrom and @Name
     overrides; NULL preserves the row's existing values. Rejects on
     already-published, deprecated, or zero-step Drafts.
@@ -355,7 +355,7 @@ def publish(id, effectiveFrom=None, name=None):
     id            = _u(id)
     effectiveFrom = _u(effectiveFrom)
     name          = _u(name)
-    appUserId     = BlueRidge.Common.Util._currentAppUserId()
+    appUserId     = BlueRidge.Common.Util.requireAppUserId(appUserId)
     return BlueRidge.Common.Db.execMutation(
         "parts/RouteTemplate_Publish",
         {
@@ -367,32 +367,32 @@ def publish(id, effectiveFrom=None, name=None):
     )
 
 
-def discardDraft(id):
+def discardDraft(id, appUserId=None):
     """Hard-deletes an unpublished Draft + its RouteStep children.
     Rejects on Published, Deprecated, or non-existent rows.
     """
     id        = _u(id)
-    appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     return BlueRidge.Common.Db.execMutation(
         "parts/RouteTemplate_DiscardDraft",
         {"id": id, "appUserId": appUserId},
     )
 
 
-def deprecate(id):
+def deprecate(id, appUserId=None):
     """Soft-deletes a RouteTemplate (sets DeprecatedAt). No FK guard --
     production rows reference the immutable per-LOT snapshot, not the
     template, so deprecation does not break in-flight work.
     """
     id        = _u(id)
-    appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     return BlueRidge.Common.Db.execMutation(
         "parts/RouteTemplate_Deprecate",
         {"id": id, "appUserId": appUserId},
     )
 
 
-def publishWithSave(id, name, effectiveFrom, stepsList):
+def publishWithSave(id, name, effectiveFrom, stepsList, appUserId=None):
     """Chained Save -> Publish behind a single Publish click on the Routes
     tab (Phase 5 UX detail per spec section 6.9). Runs saveAll first;
     if that succeeds, runs publish. Publish receives the just-saved Name
@@ -409,6 +409,7 @@ def publishWithSave(id, name, effectiveFrom, stepsList):
         name          = name,
         effectiveFrom = effectiveFrom,
         stepsList     = stepsList,
+        appUserId     = appUserId,
     )
     if not saveRes or not saveRes.get("Status"):
         return saveRes
@@ -416,6 +417,7 @@ def publishWithSave(id, name, effectiveFrom, stepsList):
         id            = id,
         effectiveFrom = effectiveFrom,
         name          = name,
+        appUserId     = appUserId,
     )
 
 

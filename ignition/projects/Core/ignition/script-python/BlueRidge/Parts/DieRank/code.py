@@ -190,13 +190,12 @@ def saveCompatibilityMatrix(data, appUserId=None):
     # parses). The ONE fix: the DieRanks view passes session.custom.appUserId,
     # which is empty in dev (login flow not wired), and DieRankCompatibility_SaveAll
     # REJECTS a NULL @AppUserId ("Required parameter missing") -- that is what broke
-    # the save. Resolve via _currentAppUserId() (the standard helper, with a dev
-    # fallback) when the caller's value is empty, like the sibling mutations do.
+    # the save. Since 2026-09-18 the view passes Common.Session.currentAppUserId,
+    # which resolves the Config Tool's AD login; there is no fallback.
     jsonData = system.util.jsonEncode(data)
     if not data:
         return
-    if not appUserId:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log("data=%s" % data)
     return BlueRidge.Common.Db.execMutation(
         "parts/DieRankCompatibility_SaveAll",
@@ -204,7 +203,7 @@ def saveCompatibilityMatrix(data, appUserId=None):
     )
 
 
-def add(data):
+def add(data, appUserId=None):
     """Insert. data: {Code, Name, Description}.
     Returns {Status, Message, NewId}."""
     data = _u(data) or {}
@@ -215,12 +214,12 @@ def add(data):
             "code":        data.get("Code"),
             "name":        data.get("Name"),
             "description": data.get("Description"),
-            "appUserId":   BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":   BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def update(data):
+def update(data, appUserId=None):
     """Update existing row. data: {Id, Name, Description}. Code is
     immutable per the underlying proc."""
     data = _u(data) or {}
@@ -233,12 +232,12 @@ def update(data):
             "id":          data.get("Id"),
             "name":        data.get("Name"),
             "description": data.get("Description"),
-            "appUserId":   BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":   BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def deprecate(dieRankId):
+def deprecate(dieRankId, appUserId=None):
     """Soft-delete. Returns {Status, Message}. Proc rejects if any
     active Tool or DieRankCompatibility row references this rank."""
     dieRankId = _u(dieRankId)
@@ -249,12 +248,12 @@ def deprecate(dieRankId):
         "parts/DieRank_Deprecate",
         {
             "id":        dieRankId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def setCompatibility(fromCode, toCode, compatible):
+def setCompatibility(fromCode, toCode, compatible, appUserId=None):
     """Toggle a single matrix cell. View passes rank Codes; the proc
     takes Ids and canonicalises the pair, so we resolve Codes -> Ids
     from the current rank list before dispatching.
@@ -280,6 +279,6 @@ def setCompatibility(fromCode, toCode, compatible):
             "rankA":     rankAId,
             "rankB":     rankBId,
             "canMix":    1 if compatible else 0,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )

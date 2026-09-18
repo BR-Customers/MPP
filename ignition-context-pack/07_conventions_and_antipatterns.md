@@ -359,14 +359,20 @@ if({row.EffectiveFrom} > today(), 'Effective ' + dateFormat({row.EffectiveFrom},
 
 ## Audit user attribution — `session.custom.appUserId`
 
-At login, resolve the operator's identity (typically from an AD lookup or initials-based attribution) into an internal `AppUserId` and store it on the session:
+At sign-in, resolve the operator's identity (typically from an AD lookup or initials/PIN attribution) into an internal `AppUserId` and store it on the session:
 
 ```python
-# In a login flow:
-self.session.custom.appUserId = <integrator>.Common.User.resolveByAd(self.session.props.auth.user.userName)
+# In a terminal sign-in flow:
+self.session.custom.appUserId = <resolved AppUser.Id>
 ```
 
-Every mutation passes this to the proc as `@AppUserId`. Entity scripts inject it via `<integrator>.Common.Util._currentAppUserId()` so views never have to remember.
+Every mutation passes it to the proc as `@AppUserId`, and **the view supplies it** â€” entity functions take an `appUserId` argument:
+
+```python
+<integrator>.Items.Item.update(draft, appUserId=<integrator>.Common.Session.currentAppUserId(self.session))
+```
+
+Entity scripts must NOT fetch it themselves. A project-library function cannot identify the calling session: `system.perspective.getSessionInfo()` returns every session on the gateway, and a helper built on it quietly attributes everything to whatever fallback id it carries (see `03_script_python.md` â†’ `Common.Util`). Gateway-scope code (timers, tag-change scripts) has no session and passes a dedicated system user explicitly. For an IdP-authenticated project, resolve `session.props.auth.user.userName` to the AppUser per call rather than caching it on the session, so a re-login as someone else never inherits the previous person's id.
 
 Why a resolved internal id (not the AD username): the database uses `BIGINT FK → AppUser.Id` for all author columns. Resolving once at login amortizes the AD lookup and gives the rest of the application a stable, type-safe identifier.
 

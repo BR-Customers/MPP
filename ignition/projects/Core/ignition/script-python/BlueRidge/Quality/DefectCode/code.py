@@ -154,7 +154,7 @@ def getOne(defectCodeId):
     )
 
 
-def add(data):
+def add(data, appUserId=None):
     """Insert. data: {Code, Description, OperationCategoryId, IsExcused}.
     A missing/None OperationCategoryId is a valid plant-wide code.
     Returns {Status, Message, NewId}."""
@@ -167,12 +167,12 @@ def add(data):
             "description":         data.get("Description"),
             "operationCategoryId": data.get("OperationCategoryId"),
             "isExcused":           bool(data.get("IsExcused")),
-            "appUserId":           BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":           BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def update(data):
+def update(data, appUserId=None):
     """Update existing row. data: {Id, Description, OperationCategoryId, IsExcused}.
     Code is immutable on update (per the underlying proc). A missing/None
     OperationCategoryId is a valid plant-wide code."""
@@ -185,12 +185,12 @@ def update(data):
             "description":         data.get("Description"),
             "operationCategoryId": data.get("OperationCategoryId"),
             "isExcused":           bool(data.get("IsExcused")),
-            "appUserId":           BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":           BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def deprecate(defectCodeId):
+def deprecate(defectCodeId, appUserId=None):
     """Soft-delete. Returns {Status, Message}."""
     defectCodeId = _u(defectCodeId)
     BlueRidge.Common.Util.log("defectCodeId=%s" % defectCodeId)
@@ -198,7 +198,7 @@ def deprecate(defectCodeId):
         "quality/DefectCode_Deprecate",
         {
             "id":        defectCodeId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 

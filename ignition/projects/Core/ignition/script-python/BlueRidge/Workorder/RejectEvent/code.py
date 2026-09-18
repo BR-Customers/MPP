@@ -20,8 +20,7 @@ def record(data, appUserId=None, terminalLocationId=None, allowHeldLot=False):
         % (data, appUserId, terminalLocationId)
     )
     d = _u(data) or {}
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "lotId":              d.get("lotId"),
         "defectCodeId":       d.get("defectCodeId"),

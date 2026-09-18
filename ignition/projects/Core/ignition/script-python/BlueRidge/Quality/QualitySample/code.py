@@ -29,8 +29,7 @@ def record(data, appUserId=None, terminalLocationId=None):
         % (data, appUserId, terminalLocationId)
     )
     d = _u(data) or {}
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     results = _u(d.get("results")) or []
     params = {
         "lotId":                d.get("lotId"),
@@ -137,8 +136,7 @@ def addAttachment(qualitySampleId, fileName, fileType, filePath, appUserId=None)
         "addAttachment qualitySampleId=%s fileName=%s fileType=%s"
         % (qualitySampleId, fileName, fileType)
     )
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "qualitySampleId": _u(qualitySampleId),
         "fileName":        _u(fileName),

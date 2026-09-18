@@ -118,7 +118,7 @@ def getByItemAndMethodOrEmpty(itemId, method, _refreshToken=None):
     return out
 
 
-def add(data):
+def add(data, appUserId=None):
     """Create a new active ContainerConfig for an Item.
 
     data: {ItemId, TraysPerContainer, PartsPerTray, IsSerialized,
@@ -144,12 +144,12 @@ def add(data):
             "closureMethod":     data.get("ClosureMethod"),
             "targetWeight":      data.get("TargetWeight"),
             "toleranceWeight":   data.get("ToleranceWeight"),
-            "appUserId":         BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":         BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def deprecate(configId):
+def deprecate(configId, appUserId=None):
     """Soft-delete (deprecate) one active ContainerConfig row by Id. Used by the
        per-method Item Master editor to REMOVE a pack-out (e.g. clear ByVision so
        a part is only ByCount + ByWeight). Returns {Status, Message}."""
@@ -157,11 +157,11 @@ def deprecate(configId):
     BlueRidge.Common.Util.log("deprecate configId=%s" % configId)
     return BlueRidge.Common.Db.execMutation(
         "parts/ContainerConfig_Deprecate",
-        {"id": configId, "appUserId": BlueRidge.Common.Util._currentAppUserId()},
+        {"id": configId, "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId)},
     )
 
 
-def update(data):
+def update(data, appUserId=None):
     """Update an existing active ContainerConfig in place. ItemId is
     immutable per the proc -- to re-associate with a different Item,
     deprecate this one and add a new one.
@@ -185,6 +185,6 @@ def update(data):
             "closureMethod":     data.get("ClosureMethod"),
             "targetWeight":      data.get("TargetWeight"),
             "toleranceWeight":   data.get("ToleranceWeight"),
-            "appUserId":         BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":         BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )

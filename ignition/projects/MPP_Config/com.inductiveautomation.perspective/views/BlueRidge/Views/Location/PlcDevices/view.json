@@ -653,7 +653,7 @@
         {
           "name": "save",
           "params": [],
-          "script": "\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\td[\"terminalLocationId\"] \u003d self.view.custom.selectedTerminalId\n\tresult \u003d BlueRidge.Location.TerminalPlcDevice.save(d)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Mapping saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.mode \u003d \"view\"\n\t\tself.view.custom.mappings \u003d BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(self.view.custom.selectedTerminalId)"
+          "script": "\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\td[\"terminalLocationId\"] \u003d self.view.custom.selectedTerminalId\n\tresult \u003d BlueRidge.Location.TerminalPlcDevice.save(d, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Mapping saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.mode \u003d \"view\"\n\t\tself.view.custom.mappings \u003d BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(self.view.custom.selectedTerminalId)"
         }
       ],
       "extensionFunctions": null,
@@ -668,7 +668,7 @@
         {
           "messageType": "plcMappingDeprecate",
           "pageScope": true,
-          "script": "\tp \u003d payload or {}\n\tresult \u003d BlueRidge.Location.TerminalPlcDevice.deprecate(p.get(\"id\"))\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Mapping removed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.mappings \u003d BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(self.view.custom.selectedTerminalId)",
+          "script": "\tp \u003d payload or {}\n\tresult \u003d BlueRidge.Location.TerminalPlcDevice.deprecate(p.get(\"id\"), appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Mapping removed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.mappings \u003d BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(self.view.custom.selectedTerminalId)",
           "sessionScope": false,
           "viewScope": false
         }

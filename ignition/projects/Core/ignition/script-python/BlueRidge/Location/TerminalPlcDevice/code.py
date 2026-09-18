@@ -3,7 +3,7 @@
    Thin wrappers over the Plan 2 Core NQs (no business logic). The mapping row is
    a pointer: which UDT instance(s) a terminal drives. OPC addressing lives on the
    UDT instance parameters, not here (spec Sec 4.2). Routes through
-   BlueRidge.Common.Db.*; appUserId defaults to the current operator when None.
+   BlueRidge.Common.Db.*; appUserId is the caller's (no default).
 """
 
 import system.tag
@@ -120,8 +120,7 @@ def save(data, appUserId=None):
        toast with no view-side changes needed. 2026-08-20 incident."""
     if not data.get("terminalLocationId"):
         return {"Status": 0, "Message": "Select a terminal first."}
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     params = {
         "id": data.get("id"),
         "terminalLocationId": data.get("terminalLocationId"),
@@ -137,8 +136,7 @@ def save(data, appUserId=None):
 
 def deprecate(id, appUserId=None):
     """Soft-delete a mapping row. Returns {Status, Message}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log("id=%s" % id)
     return BlueRidge.Common.Db.execMutation(
         "location/TerminalPlcDevice_Deprecate",

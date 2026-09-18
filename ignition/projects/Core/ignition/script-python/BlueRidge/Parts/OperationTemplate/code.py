@@ -499,7 +499,7 @@ def getAvailableDataCollectionFields(operationTemplateId):
 # Mutations
 # -----------------------------------------------------------------------------
 
-def add(data):
+def add(data, appUserId=None):
     """Insert a new OperationTemplate (version 1 of a new Code). data:
     {Code, Name, AreaLocationId, Description}.
     Returns {Status, Message, NewId}."""
@@ -526,12 +526,12 @@ def add(data):
             "name":            name,
             "operationTypeId": operationTypeId,
             "description":     data.get("Description"),
-            "appUserId":       BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":       BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def update(data):
+def update(data, appUserId=None):
     """Update an existing OperationTemplate. data: {Id, Name,
     OperationTypeId, Description}. Code + VersionNumber are immutable.
     Returns {Status, Message}."""
@@ -549,12 +549,12 @@ def update(data):
             "name":            data.get("Name"),
             "operationTypeId": data.get("OperationTypeId"),
             "description":     data.get("Description"),
-            "appUserId":       BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":       BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def deprecate(operationTemplateId):
+def deprecate(operationTemplateId, appUserId=None):
     """Soft-delete. Returns {Status, Message}."""
     operationTemplateId = _u(operationTemplateId)
     BlueRidge.Common.Util.log("id=%s" % operationTemplateId)
@@ -564,12 +564,12 @@ def deprecate(operationTemplateId):
         "parts/OperationTemplate_Deprecate",
         {
             "id":        operationTemplateId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def createNewVersion(parentOperationTemplateId):
+def createNewVersion(parentOperationTemplateId, appUserId=None):
     """Clone the parent template into VersionNumber+1, replicating all
     active OperationTemplateField rows. Returns {Status, Message, NewId}."""
     parentOperationTemplateId = _u(parentOperationTemplateId)
@@ -580,12 +580,12 @@ def createNewVersion(parentOperationTemplateId):
         "parts/OperationTemplate_CreateNewVersion",
         {
             "parentOperationTemplateId": parentOperationTemplateId,
-            "appUserId":                 BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":                 BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def publish(operationTemplateId):
+def publish(operationTemplateId, appUserId=None):
     """Flip a Draft OperationTemplate to Published (FAT-OQ-030). Auto-deprecates
     the prior published version of the same Code (single-Published invariant,
     enforced in the proc). Returns {Status, Message}."""
@@ -597,12 +597,12 @@ def publish(operationTemplateId):
         "parts/OperationTemplate_Publish",
         {
             "id":        operationTemplateId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def discardDraft(operationTemplateId):
+def discardDraft(operationTemplateId, appUserId=None):
     """Hard-delete an unpublished Draft OperationTemplate + its field rows
     (FAT-OQ-030). Rejects a Published or Deprecated row (proc-enforced).
     Returns {Status, Message}."""
@@ -614,12 +614,12 @@ def discardDraft(operationTemplateId):
         "parts/OperationTemplate_DiscardDraft",
         {
             "id":        operationTemplateId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def addField(operationTemplateId, dataCollectionFieldId, isRequired=True):
+def addField(operationTemplateId, dataCollectionFieldId, isRequired=True, appUserId=None):
     """Attach a DataCollectionField to this template. Returns
     {Status, Message, NewId}."""
     operationTemplateId   = _u(operationTemplateId)
@@ -637,12 +637,12 @@ def addField(operationTemplateId, dataCollectionFieldId, isRequired=True):
             "operationTemplateId":   operationTemplateId,
             "dataCollectionFieldId": dataCollectionFieldId,
             "isRequired":            1 if isRequired else 0,
-            "appUserId":             BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":             BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def removeField(junctionId):
+def removeField(junctionId, appUserId=None):
     """Soft-delete the junction row by its Id. Returns {Status, Message}."""
     junctionId = _u(junctionId)
     BlueRidge.Common.Util.log("junctionId=%s" % junctionId)
@@ -652,12 +652,12 @@ def removeField(junctionId):
         "parts/OperationTemplateField_Remove",
         {
             "id":        junctionId,
-            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def setFieldRequired(junctionId, isRequired):
+def setFieldRequired(junctionId, isRequired, appUserId=None):
     """Flip the IsRequired flag on a junction row. Returns {Status, Message}."""
     junctionId = _u(junctionId)
     isRequired = bool(_u(isRequired))
@@ -670,12 +670,12 @@ def setFieldRequired(junctionId, isRequired):
         {
             "id":         junctionId,
             "isRequired": 1 if isRequired else 0,
-            "appUserId":  BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":  BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )
 
 
-def saveFieldsAll(operationTemplateId, rows):
+def saveFieldsAll(operationTemplateId, rows, appUserId=None):
     """Bundled SaveAll for the Fields panel. `rows` keys: id (BIGINT|None),
     dataCollectionFieldId (BIGINT), isRequired (bool).
     Returns {Status, Message, NewId}."""
@@ -696,6 +696,6 @@ def saveFieldsAll(operationTemplateId, rows):
         {
             "operationTemplateId": operationTemplateId,
             "rowsJson":            BlueRidge.Common.Util.convertWrapperObjectToJson(cleaned),
-            "appUserId":           BlueRidge.Common.Util._currentAppUserId(),
+            "appUserId":           BlueRidge.Common.Util.requireAppUserId(appUserId),
         },
     )

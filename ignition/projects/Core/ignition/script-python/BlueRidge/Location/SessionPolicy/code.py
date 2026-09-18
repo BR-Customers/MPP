@@ -32,8 +32,7 @@ def updatePolicy(data, appUserId=None):
     -- pass self.session.custom.appUserId. Falls back to the shared resolver only when
     omitted."""
     d = BlueRidge.Common.Util.extractQualifiedValues(data) or {}
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     return BlueRidge.Common.Db.execMutation(
         "location/SessionPolicy_Update",
         {

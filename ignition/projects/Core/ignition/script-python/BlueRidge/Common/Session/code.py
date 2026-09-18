@@ -6,17 +6,12 @@
 # Version:          1.1
 #
 # Description:
-#   Session-derived attribution accessors. Today this module is a thin
-#   re-export of BlueRidge.Common.Util._currentAppUserId so existing call
-#   sites that imported BlueRidge.Common.Session keep working while new
-#   code calls Util directly.
-#
-#   Once initials-presence + AD elevation are wired in, the underlying
-#   Util._currentAppUserId resolves from session.custom.appUserId and
-#   this shim still returns the correct value -- no caller changes.
+#   Session-derived attribution + the time-boxed elevation / idle-timeout
+#   helpers. Every function takes the `session` object from a view script.
 #
 # Public surface:
-#   getCurrentUserId()  -> long (AppUser.Id for the active session)
+#   currentAppUserId(session) -> long|None  AppUser.Id every mutation from
+#                                           this session stamps as @AppUserId
 #
 # Change Log:
 #   2026-05-13 - 1.0 - Initial dev placeholder (returns hardcoded id)
@@ -37,22 +32,67 @@
 #                      symptom "the first protected action does nothing and the
 #                      second attempt works". Params are now detached first.
 #                      Also adds the DieMount replay entry.
+#   2026-09-18 - 2.0 - currentAppUserId(session) replaces getCurrentUserId().
+#                      The old shim delegated to Util._currentAppUserId, which
+#                      returned the DEV user for every call (it indexed the
+#                      LIST getSessionInfo() returns). Attribution now comes
+#                      from the session object the view already holds: the
+#                      PIN sign-in on the plant floor, the AD login in the
+#                      Configuration Tool.
 # =============================================================================
 
 
-def getCurrentUserId():
+def currentAppUserId(session):
     """
-    AppUser.Id attribution for the active session.
+    The AppUser.Id a mutation made from this session is attributed to. Views
+    pass it through as the entity function's appUserId:
 
-    Thin shim around BlueRidge.Common.Util._currentAppUserId. New code
-    should call Util directly; this remains so existing call sites keep
-    working.
+        BlueRidge.Parts.Item.update(draft,
+            appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))
 
-    Returns:
-        long: AppUser.Id of the current user. Dev fallback while
-              initials/AD wiring is pending.
+    Resolution, in order:
+      1. session.custom.appUserId -- set by the plant-floor PIN sign-in, and
+         replaced by the supervisor for the length of an elevation window
+         (beginElevatedWindow; by design).
+      2. The authenticated AD account (session.props.auth.user.userName) --
+         the Configuration Tool requires AD login. Resolved through
+         Location.AppUser_GetActiveByAdAccount on EVERY call, never cached,
+         so a re-login as someone else in the same session can never inherit
+         the previous person's id. AppUser.AdAccount must equal the account
+         name exactly as typed at login (the same match elevation uses).
+
+    Returns None when neither resolves, after an error toast saying why --
+    the entity function then refuses the write (Util.requireAppUserId + the
+    proc's required-parameter guard). Never guesses a user.
     """
-    return BlueRidge.Common.Util._currentAppUserId()
+    appUserId = None
+    try:
+        appUserId = BlueRidge.Common.Util.extractQualifiedValues(session.custom.appUserId)
+    except (Exception, java.lang.Exception):
+        appUserId = None
+    if appUserId is not None:
+        return appUserId
+
+    account = None
+    try:
+        if session.props.auth.authenticated:
+            account = session.props.auth.user.userName
+    except (Exception, java.lang.Exception):
+        account = None
+
+    if account:
+        row = BlueRidge.Location.AppUser.getActiveByAdAccount(account)
+        if row and row.get("Id") is not None:
+            return row.get("Id")
+        message = ("Signed in as '%s', which is not an active MES user. An "
+                   "administrator must add it on the Users screen (AD Account "
+                   "field) before changes can be saved." % account)
+    else:
+        message = "No one is signed in. Sign in and try again."
+
+    BlueRidge.Common.Util.log("unattributed: %s" % message, level="warn")
+    BlueRidge.Common.Notify.toast("Not saved", message, "error")
+    return None
 
 
 # =============================================================================

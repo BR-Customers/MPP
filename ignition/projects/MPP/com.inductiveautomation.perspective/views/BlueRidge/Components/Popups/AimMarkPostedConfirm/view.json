@@ -161,7 +161,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tnote = self.view.custom.note\n\tif not note or not note.strip():\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a justification note before confirming.\"}, \"AIM Mark Posted\")\n\t\treturn\n\tresult = BlueRidge.Lots.AimPool.markPosted(self.view.params.poolId, note)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Marked posted\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"confirm\", \"poolId\": self.view.params.poolId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                    "script": "\tnote = self.view.custom.note\n\tif not note or not note.strip():\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a justification note before confirming.\"}, \"AIM Mark Posted\")\n\t\treturn\n\tresult = BlueRidge.Lots.AimPool.markPosted(self.view.params.poolId, note, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Marked posted\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"confirm\", \"poolId\": self.view.params.poolId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)"
                   }
                 }
               }

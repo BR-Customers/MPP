@@ -60,7 +60,7 @@ def getOne(id):
         return None
 
 
-def add(meta):
+def add(meta, appUserId=None):
     """Create. meta = {code, description, operationCategoryId, downtimeReasonTypeId, isExcused}.
        Returns {Status, Message, NewId}."""
     BlueRidge.Common.Util.log("meta=%s" % meta)
@@ -71,12 +71,12 @@ def add(meta):
         "operationCategoryId":       m.get("operationCategoryId"),
         "downtimeReasonTypeId": m.get("downtimeReasonTypeId"),
         "isExcused":            bool(m.get("isExcused", False)),
-        "appUserId":            BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId":            BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/DowntimeReasonCode_Create", params)
 
 
-def update(meta):
+def update(meta, appUserId=None):
     """Update. meta = {id, description, operationCategoryId, downtimeReasonTypeId, isExcused}.
        Code is immutable post-create; proc rejects changes.
        Returns {Status, Message}."""
@@ -88,17 +88,17 @@ def update(meta):
         "operationCategoryId":       m.get("operationCategoryId"),
         "downtimeReasonTypeId": m.get("downtimeReasonTypeId"),
         "isExcused":            bool(m.get("isExcused", False)),
-        "appUserId":            BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId":            BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/DowntimeReasonCode_Update", params)
 
 
-def deprecate(id):
+def deprecate(id, appUserId=None):
     """Soft-delete by Id. Returns {Status, Message}."""
     BlueRidge.Common.Util.log("id=%s" % id)
     params = {
         "id":        _u(id),
-        "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        "appUserId": BlueRidge.Common.Util.requireAppUserId(appUserId),
     }
     return BlueRidge.Common.Db.execMutation("oee/DowntimeReasonCode_Deprecate", params)
 

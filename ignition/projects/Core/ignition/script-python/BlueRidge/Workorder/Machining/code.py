@@ -12,8 +12,7 @@ def recordPick(lotId, lineLocationId, appUserId=None, terminalLocationId=None):
        stops -- no new LOT, no consumption, no BOM rename, no close. The event
        satisfies the LOT's MachiningIn route step so the route-driven queue advances
        it to its next terminal. Returns {Status, Message, NewId (ProductionEventId)}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "recordPick lotId=%s lineLocationId=%s appUserId=%s terminalLocationId=%s"
         % (lotId, lineLocationId, appUserId, terminalLocationId))
@@ -37,8 +36,7 @@ def mint(sourceLotId, operationTemplateId, pieceCount, producedItemId=None,
        writes one Workorder.RejectEvent per line against sourceLotId and decrements the
        scanned casting by the scrap total (in addition to the FIFO consumption). Returns
        {Status, Message, NewId (the minted SubAssembly LotId), Available}."""
-    if appUserId is None:
-        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    appUserId = BlueRidge.Common.Util.requireAppUserId(appUserId)
     BlueRidge.Common.Util.log(
         "mint sourceLotId=%s operationTemplateId=%s pieceCount=%s producedItemId=%s appUserId=%s allowPartial=%s scrapLines=%s"
         % (sourceLotId, operationTemplateId, pieceCount, producedItemId, appUserId, allowPartial, scrapLines))
