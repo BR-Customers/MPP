@@ -1452,6 +1452,9 @@
                 "meta": {
                   "name": "DetailTopRow"
                 },
+                "position": {
+                  "shrink": 0
+                },
                 "propConfig": {
                   "position.display": {
                     "binding": {
