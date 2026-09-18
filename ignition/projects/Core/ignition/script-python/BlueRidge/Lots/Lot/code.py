@@ -706,9 +706,22 @@ def getLineInventoryInstances(locationId, terminalRole=None, lineWide=False, _re
 
 
 def getLineInventoryHeader(locationId, terminalRole=None, lineWide=False, _refreshToken=None):
-    """Scope sentence for the panel header. Always returns a string."""
+    """Scope sentence for the panel header. Always returns a string.
+
+       Display only -- the proc still decides membership. When the terminal's
+       SCOPED list comes back empty, that can mean the line truly has nothing,
+       or it can mean the terminal's default scope (e.g. Component at a
+       Machining terminal) just doesn't cover what's on hand. A second,
+       line-wide call disambiguates: if THAT has rows, say so and point at the
+       toggle instead of implying the line itself is empty."""
     rows = getLineInventorySummary(locationId, terminalRole, lineWide)
     if not rows:
+        role = _u(terminalRole)
+        scoped = (not lineWide) and role is not None and ("%s" % role).strip() != ""
+        if scoped:
+            wideRows = getLineInventorySummary(locationId, terminalRole, True)
+            if wideRows:
+                return "None for this station - tap Line-wide"
         return "Nothing at this line"
     return _SCOPE_TEXT.get(rows[0].get("ScopeCode"), _SCOPE_TEXT["All"])
 
