@@ -282,6 +282,8 @@ _EMPTY_AVAILABILITY = {
     "PlannedMinutes": 0, "DowntimeMinutes": 0, "UnexcusedDowntimeMinutes": 0,
     "RunMinutes": 0, "Availability": None, "DowntimeEventCount": 0,
     "IsOverridden": False, "ShiftOverrideId": None, "OverrideReason": "",
+    "PlannedDowntimeMinutes": 0, "UnplannedDowntimeMinutes": 0, "BaseMinutes": 0,
+    "IsRollup": False, "ParentLocationId": None,
     "PlannedHoursText": "", "AvailabilityPct": "",
 }
 
@@ -294,6 +296,7 @@ def _shapeAvailability(r):
     out["PlannedHoursText"] = _hoursLabel(planned)
     out["AvailabilityPct"] = "" if avail is None else "%.1f%%" % (float(avail) * 100.0)
     out["IsOverridden"] = bool(r.get("IsOverridden"))
+    out["IsRollup"] = bool(r.get("IsRollup"))
     out["OverrideReason"] = r.get("OverrideReason") or ""
     return out
 

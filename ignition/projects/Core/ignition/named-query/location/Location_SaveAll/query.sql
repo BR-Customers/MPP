@@ -7,4 +7,5 @@ EXEC Location.Location_SaveAll
     @Description              = :description,
     @SortOrder                = :sortOrder,
     @AppUserId                = :appUserId,
-    @AttributeValuesJson      = :attributeValuesJson
+    @AttributeValuesJson      = :attributeValuesJson,
+    @IsOeeEnabled             = :isOeeEnabled

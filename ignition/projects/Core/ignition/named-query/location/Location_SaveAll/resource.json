@@ -74,6 +74,11 @@
         "type": "Parameter",
         "identifier": "attributeValuesJson",
         "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "isOeeEnabled",
+        "sqlType": 6
       }
     ]
   }

@@ -118,7 +118,7 @@ def getOne(locationId):
     Result keys:
         id, code, name, description, sortOrder, parentLocationId,
         locationTypeDefinitionId, typeBadge, schemaName, parent,
-        icon, deprecatedAt.
+        icon, deprecatedAt, isOeeEnabled.
     """
     BlueRidge.Common.Util.log("locationId=%s" % locationId)
     if locationId is None or locationId == 0:
@@ -145,6 +145,7 @@ def getOne(locationId):
         "parent":                   None,  # filled by caller from tree if needed
         "icon":                     r.get("LocationTypeDefinitionIcon"),
         "deprecatedAt":             r.get("DeprecatedAt"),
+        "isOeeEnabled":             bool(r.get("IsOeeEnabled")),
     }
 
 
@@ -672,6 +673,7 @@ def emptyMeta(parentLocationId):
         "name":                     "",
         "description":              "",
         "sortOrder":                "",
+        "isOeeEnabled":             False,
     }
 
 
@@ -690,6 +692,7 @@ def metaFromLocation(location):
         "name":                     location.get("name") or "",
         "description":              location.get("description") or "",
         "sortOrder":                _sortOrderForEditor(location.get("sortOrder")),
+        "isOeeEnabled":             bool(location.get("isOeeEnabled")),
     }
 
 
@@ -716,6 +719,32 @@ def eligibleTypes(parentHierarchyLevel):
         if t.get("HierarchyLevel") is not None
         and t.get("HierarchyLevel") >= parentHierarchyLevel
     ]
+
+
+def canBeOeeEnabled(locationTypeDefinitionId):
+    """May a location of this type be marked OEE / downtime enabled?
+
+       Drives the enabled-state of the checkbox on Location Details. The rule
+       lives in SQL (Location.ufn_CanBeOeeEnabled, read through
+       Location.LocationTypeDefinition_GetOeeEligibility) so the screen and
+       Location_SaveAll cannot drift apart -- only lines and equipment cells
+       qualify; terminals, printers, scales, stores and hierarchy tiers do not.
+
+       Args:
+           locationTypeDefinitionId (long): the definition to test. None -> False.
+
+       Returns:
+           bool. Unknown definition -> False.
+    """
+    if locationTypeDefinitionId is None:
+        return False
+    row = BlueRidge.Common.Db.execOne(
+        "location/LocationTypeDefinition_GetOeeEligibility",
+        {"locationTypeDefinitionId": _u(locationTypeDefinitionId)},
+    )
+    if not row:
+        return False
+    return bool(row.get("CanBeOeeEnabled"))
 
 
 def eligibleDefinitions(locationTypeId):
@@ -945,6 +974,7 @@ def handleSaveAll(meta, attributes, userId=None,
             "sortOrder":                sortOrderParam,
             "appUserId":                userId,
             "attributeValuesJson":      attrsJson,
+            "isOeeEnabled":             bool(meta.get("isOeeEnabled")),
         },
     )
     BlueRidge.Common.Ui.notifyResult(
