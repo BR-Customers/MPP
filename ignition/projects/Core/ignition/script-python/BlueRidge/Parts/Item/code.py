@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-20
-# Version:          1.5
+# Version:          1.6
 #
 # Description:
 #   Read + mutation surface for the Item Master Configuration Tool
@@ -51,6 +51,12 @@
 #                      lowInventoryHorizon added to _ITEM_SHAPE_KEYS and
 #                      forwarded by update() (NULL-preserving, same rule as
 #                      crtEnabled).
+#   2026-09-17 - 1.6 - Final review fix: update() maps an emptied editor field
+#                      ("") to 0 (clear) for boxQuantity / lowInventoryHorizon
+#                      via new _blankToClear() -- previously "" forwarded as SQL
+#                      NULL, which the proc reads as "leave alone", so clearing
+#                      the field silently kept the old value. None (omitted key)
+#                      is unaffected.
 # =============================================================================
 
 import java.lang
@@ -385,6 +391,25 @@ def add(meta):
     )
 
 
+def _blankToClear(v):
+    """Transport-mapping helper for boxQuantity / lowInventoryHorizon ONLY.
+
+    The Item Master editor turns an emptied number field into "" (not None),
+    but Parts.Item_Update's NULL-preserving contract treats None as 'omitted --
+    leave alone' and 0 as 'clear'. Forwarding "" unchanged sends SQL NULL, which
+    the proc reads as 'leave alone' -- so emptying the field would report success
+    and the old value would come back on reload. Map a blank string (or one that
+    is empty after strip) to 0 so it hits the proc's clear path instead. None
+    (the key genuinely omitted from the payload) passes through unchanged and
+    still means 'leave alone'. This is transport mapping only -- not a business
+    rule -- so it does not touch how any other key is handled."""
+    if v is None:
+        return None
+    if isinstance(v, basestring) and v.strip() == "":
+        return 0
+    return v
+
+
 def update(meta):
     """Update an existing Item in place. PartNumber + ItemTypeId are
     immutable per the proc; do not pass them. meta keys (camelCase OR
@@ -404,6 +429,13 @@ def update(meta):
     untagging a CRT part (which would ship suspect material unmarked). Pass an
     explicit falsy crtEnabled to clear it -- which is what the Item Master
     Identity checkbox does on every save.
+
+    boxQuantity / lowInventoryHorizon share crtEnabled's NULL-preserving rule, but
+    the Item Master editor emits "" (not None) for an emptied number field. "" is
+    mapped to 0 (clear) here via _blankToClear so an operator clearing the field
+    actually clears it instead of the omitted-key "leave alone" path silently
+    keeping the old value. An omitted key (None) is unaffected -- still "leave
+    alone".
     """
     m = _u(meta) or {}
     BlueRidge.Common.Util.log("meta=%s" % m)
@@ -431,8 +463,8 @@ def update(meta):
             "maxParts":         _pick("maxParts",         "MaxParts"),
             "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
             "crtEnabled":       None if _crt is None else (1 if _crt else 0),
-            "boxQuantity":         _pick("boxQuantity",         "BoxQuantity"),
-            "lowInventoryHorizon": _pick("lowInventoryHorizon", "LowInventoryHorizon"),
+            "boxQuantity":         _blankToClear(_pick("boxQuantity",         "BoxQuantity")),
+            "lowInventoryHorizon": _blankToClear(_pick("lowInventoryHorizon", "LowInventoryHorizon")),
         },
     )
 
