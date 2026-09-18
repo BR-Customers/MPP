@@ -497,63 +497,94 @@ def getComponentsAtCell(locationId, includeDescendants=True, _refreshToken=None)
     )
 
 
+def _lineInventoryCard(r, pos, itemLabel):
+    """Shared row-to-card mapping for the line-inventory flex-repeater readers
+       (getLineInventoryCards / getInventoryPopupCards): one Trim InventoryRow
+       instance from one Lot_GetLineInventoryByPart row. itemLabel is the
+       resolved 'item' display string -- the two callers differ only in what
+       they pass here (PartNumber vs Description-or-PartNumber) and in whether
+       they exclude finished goods upstream. ArrivedAt is precomputed to a
+       display string (repeater-param date rule)."""
+    r = r or {}
+    arr = r.get("ArrivedAt")
+    arrival = ""
+    if arr is not None:
+        try:
+            arrival = system.date.format(arr, "MM/dd HH:mm")
+        except:
+            arrival = ("%s" % arr)[:16]
+    return {
+        "lotId":         r.get("LotId"),
+        "lotName":       r.get("LotName") or "",
+        "item":          itemLabel,
+        "pieceCount":    r.get("InventoryAvailable") or 0,
+        "arrival":       arrival,
+        "position":      pos,
+        "lotStatusCode": r.get("LotStatusCode") or "",
+        "isSelected":    False,
+        "selectable":    False,
+    }
+
+
 def getLineInventoryCards(locationId, _refreshToken=None):
-    """Flex-repeater instances for the line-inventory popup's on-hand list, rendered
-       with the Trim InventoryRow card (display-only, selectable=False). Fetches
-       getLineInventoryByPart (excludeFinishedGoods=True -- an on-hand finished-goods
-       LOT is pure noise in this display), which returns rows grouped by part then
-       FIFO by arrival, and maps each row to the card's params. Whenever ItemId
-       changes, a group-header instance is emitted before that part's LOT cards,
-       carrying the part Description (falling back to PartNumber) in 'item' and the
-       part's on-hand total (summed InventoryAvailable) in 'pieceCount', with an
-       empty 'lotName' and 'isHeader': True -- InventoryRow (shared with Trim, not
-       changed for this) ignores the extra key and renders it as a card showing the
-       description + total. ArrivedAt is precomputed to a display string
-       (repeater-param date rule). Scalar args only (fetch inside) per the
-       ImmutableList re-eval rule. Returns list[dict]."""
+    """Flex-repeater instances for Views/ShopFloor/ReceivingDock's 'On hand at
+       this station' list, rendered with the Trim InventoryRow card
+       (display-only, selectable=False). Fetches getLineInventoryByPart (no
+       excludeFinishedGoods -- Receiving Dock must keep seeing on-hand finished
+       goods) and maps each row to the card's params via _lineInventoryCard,
+       with 'item' = PartNumber (what matches the packing slip at receiving).
+       Emits no group-header rows.
+
+       RECEIVING DOCK DEPENDS ON THIS EXACT BEHAVIOUR (Jacques 2026-09-17) --
+       do not add the Inventory popup's description / exclude-finished-goods /
+       grouping treatment here; that lives in getInventoryPopupCards.
+
+       Scalar args only (fetch inside) per the ImmutableList re-eval rule.
+       Returns list[dict]."""
+    locationId = _u(locationId)
+    if locationId is None:
+        return []
+    rows = getLineInventoryByPart(locationId) or []
+    out = []
+    pos = 0
+    for r in rows:
+        pos += 1
+        out.append(_lineInventoryCard(r, pos, (r or {}).get("PartNumber") or ""))
+    return out
+
+
+def getInventoryPopupCards(locationId, _refreshToken=None):
+    """Flex-repeater instances for Components/PlantFloor/InventoryManager (the
+       shop-floor Inventory popup), rendered with the Trim InventoryRow card
+       (display-only, selectable=False). Sibling of getLineInventoryCards --
+       same instance shape via the shared _lineInventoryCard helper -- carrying
+       the improvements Jacques kept for the popup only (2026-09-17): fetches
+       getLineInventoryByPart(excludeFinishedGoods=True) (an on-hand finished-
+       goods LOT is pure noise in this display) and 'item' = the part
+       Description, falling back to PartNumber when the description is blank.
+       Emits no group-header rows -- grouped headers were tried and dropped for
+       now; they render through the shared card and look like broken LOTs
+       (blank name + a spurious Hold pill). Proper grouping is a future
+       Designer pass on the popup.
+
+       PENDING: InventoryManager's view binding still points at
+       getLineInventoryCards. Switching it to this function is a pending
+       Designer edit for Jacques; until then the popup keeps its pre-2026-09-17
+       behaviour (finished goods shown, part numbers).
+
+       Scalar args only (fetch inside) per the ImmutableList re-eval rule.
+       Always returns a list (never None). Returns list[dict]."""
     locationId = _u(locationId)
     if locationId is None:
         return []
     rows = getLineInventoryByPart(locationId, excludeFinishedGoods=True) or []
-    totals = {}
-    for r in rows:
-        r = r or {}
-        totals[r.get("ItemId")] = totals.get(r.get("ItemId"), 0) + (r.get("InventoryAvailable") or 0)
     out = []
     pos = 0
-    lastItemId = object()
     for r in rows:
         r = r or {}
-        itemId = r.get("ItemId")
-        desc = r.get("Description") or r.get("PartNumber") or ""
-        if itemId != lastItemId:
-            lastItemId = itemId
-            out.append({
-                "lotId": None, "lotName": "", "item": desc,
-                "pieceCount": totals.get(itemId, 0), "arrival": "",
-                "position": 0, "lotStatusCode": "", "isSelected": False,
-                "selectable": False, "isHeader": True,
-            })
         pos += 1
-        arr = r.get("ArrivedAt")
-        arrival = ""
-        if arr is not None:
-            try:
-                arrival = system.date.format(arr, "MM/dd HH:mm")
-            except:
-                arrival = ("%s" % arr)[:16]
-        out.append({
-            "lotId":         r.get("LotId"),
-            "lotName":       r.get("LotName") or "",
-            "item":          desc,
-            "pieceCount":    r.get("InventoryAvailable") or 0,
-            "arrival":       arrival,
-            "position":      pos,
-            "lotStatusCode": r.get("LotStatusCode") or "",
-            "isSelected":    False,
-            "selectable":    False,
-            "isHeader":      False,
-        })
+        desc = r.get("Description") or r.get("PartNumber") or ""
+        out.append(_lineInventoryCard(r, pos, desc))
     return out
 
 
