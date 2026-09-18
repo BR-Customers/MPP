@@ -78,7 +78,8 @@ properties), and the AIM timers (prod has them **enabled**; leave them).
 - MPP: view `BlueRidge/Components/PlantFloor/ComponentProjectionRow`
 - Optional leftovers: MPP view `BlueRidge/Components/PlantFloor/DieCastEntry/RejectPanel`, Core script `BlueRidge/temp` (empty).
 
-## 6. F5 every open terminal.
+## 6. Terminals
+A Designer save pushes the change to open Perspective sessions on its own. F5 only a terminal that looks stale.
 
 ## 7. Verify (~5 min)
 ```sql
@@ -111,5 +112,39 @@ Gateway log: search `called with no appUserId` -> none.
 3. Line Inventory dock errors on the Fallback Terminal before a location is chosen.
 4. AssemblyNonSerialized header overflows at 1200 px wide (fine at 1400).
 
-## Outcome
-_(fill in after the window)_
+## Outcome -- executed 2026-09-18 13:23 ET
+
+**SQL clean: `== COMMITTED`, sqlcmd exit 0 after 11.0 s; all 28 repeatables match the repo byte-for-byte; `R__Descriptions_ExtendedProperties` applied after commit. Ignition imported after two import slips (below); the 13:49 prod exports match git at `e3e0aa25` for every shipped resource.**
+
+| | |
+|---|---|
+| Executed at | 2026-09-18 13:23 ET, from `jacques/working` @ `e3e0aa25` |
+| Plan fingerprint | `f5e07bd04140` |
+| Backup | `MPP_MES_Prod_pre-release_0089_20260918_132322.bak` (COPY_ONLY, CHECKSUM, verified) in the instance default backup path on MESDBSRV |
+| Preview `[3]` | 5 pending: 0090, 0091, 0093, 0094, 0095 -- as expected |
+| Preview `[4]` | 448 identical, 17 changed, 11 new. Hunter's two out-of-band procs (`Lots.ShippingLabel_GetLastForTerminal`, `Oee.DowntimeEvent_RequiresReasonGate`) showed CHANGED, not NEW -- as predicted |
+| Warnings | `workorder.assembly_getcomponentprojection` (dropped by 0095); column drop `Parts.Item.LowInventoryHorizon` -- both expected |
+| Gates `[5]` | none fired |
+| Live activity | 12 open baskets, 1 running shift, last die cast entry 12:42 ET |
+| Prod rehearsal | 13:13 ET, `checks passed`, rolled back. **Lock window 9.3 s** (ProdSim 0.4 s) -- whole-transaction time from the laptop under live plant traffic; Execute 11.0 s. No plant errors reported. |
+| Report | `dist/deploy-reports/MPP_MES_Prod_Execute_20260918_132322/` |
+
+**What went differently from the plan:**
+- **Fingerprint typo on the first Execute** (13:17): `f55e07bd04140` for `f5e07bd04140`. The guard aborted before any backup or transaction. Paste the fingerprint; never retype it (same lesson as 2026-09-12 and 2026-09-17).
+- **A full-project export was opened for import** (it listed Reports, Session Props, Global Props, Session Event Scripts). Caught at the import dialog; cancelled.
+- **The MPP_Config archive was imported into Core.** Its 29 views landed in Core (harmless -- MPP_Config's own copies override -- but wrong). Removed by hand; Core again holds only NotifyHost, ConfirmDestructive, CrtNotice, Toast (verified in the 13:49 export). The correct archives then went into their own projects.
+- **`Popups/PausedLotList/PausedLotRow` cannot be imported.** A view nested inside another view's folder: the Designer refuses ("Unable to create folder path, found non-folder in the way at .../Popups/PausedLotList"). That is why prod never had it. It was force-added with `-IncludeResource`; it was unticked at import and the MPP archive rebuilt without it (`MPP_rel-20260918-v2_*`). Prod is unchanged for it (still missing, as before). Follow-up: move it to a standalone path.
+
+**Post-release verification (13:49 prod exports vs git `e3e0aa25`):** every shipped resource identical. Remaining differences, all expected: session-props client address (all three), `Hold_ListOpen` manifest formatting, AIM timers enabled on prod (intended), `MachiningIn` (Jacques's prod-only sizing tweak, not in this release), MPP_Config `global-props` (prod's own, not shipped), leftovers `DieCastEntry/RejectPanel` + Core `BlueRidge/temp`, `PausedLotRow` missing. **At 13:49 the two retired resources were still present** -- Core `workorder/Assembly_GetComponentProjection`, MPP `ComponentProjectionRow`; harmless (nothing references them), delete in the Designer.
+
+**Config Tool attribution:** the tool requires AD login; an AD user with no matching `AppUser.AdAccount` is refused on save ("Not saved", then a second "Action failed" toast; nothing written). Set every Config Tool user's AD Account to the exact login name on the Users screen. On Dev, `JGP` (Id 22) was set to `admin` through `Location.AppUser_Update`.
+
+**Release notes:** `notes/2026-09-18_release-notes-email.md`.
+
+**Follow-ups (next release):**
+1. Part-type recategorization: *MPP Cast* (code Component), *Components* (purchased; new code, the 33 current PassThrough items), *Pass Through* (the parts in `reference/MPP pass through parts.pdf`). Touches `Lot_GetLineInventorySummary`, `Item_ListForCutoverLocation`, `Item_Update` and ~4 Ignition spots (Item module, Item Master, Identity/BOMs, AttributeOptions).
+2. Move `PausedLotRow` out of `PausedLotList`'s folder so it can ship.
+3. Unmapped AD user: second "Action failed" toast (the view should stop after the attribution refusal).
+4. Line Inventory dock / Tolerances error on the Fallback Terminal before a location is chosen (`Lot_GetLineInventorySummary` / `ItemLocation_ListConsumptionForLine` return no result set when the location has no line).
+5. AssemblyNonSerialized header overflows at 1200 px (fine at 1400).
+6. Flag the three 6MA Cam Holder Line 1 conveyors OEE-enabled (line stays flagged -> roll-up); check `Machining Conveyor`'s location type.
