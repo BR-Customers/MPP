@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Die Cast &mdash; Release basket (redesign)</title>
+<style>
+:root{
+  --mpp-neutral-10:#0B1220; --mpp-neutral-20:#111A2E; --mpp-neutral-30:#172238;
+  --mpp-neutral-40:#1F2C44; --mpp-neutral-50:#2C3A55; --mpp-neutral-60:#425270;
+  --mpp-neutral-70:#697A98; --mpp-neutral-80:#9AA8BF; --mpp-neutral-90:#C9D2E0;
+  --mpp-neutral-100:#F0F3F8;
+  --mpp-accent-20:#093240; --mpp-accent-40:#126680; --mpp-accent-50:#1888A8;
+  --mpp-accent-60:#22A8CC; --mpp-accent-70:#4BC2E0; --mpp-accent-90:#B0E5F3;
+  --mpp-state-bad-bg:#3A1416; --mpp-state-bad-fg:#F87171; --mpp-state-bad-border:#5C1E22;
+  --mpp-state-warn-bg:#3A2E0A; --mpp-state-warn-fg:#FACC15; --mpp-state-warn-border:#5C4A0E;
+  --mpp-state-good-bg:#0C2B1E; --mpp-state-good-fg:#4ADE80; --mpp-state-good-border:#17482F;
+  --surface-canvas:var(--mpp-neutral-10);
+  --surface-overlay:var(--mpp-neutral-20);
+  --surface-card:var(--mpp-neutral-30);
+  --border-subtle:var(--mpp-neutral-50);
+  --border-default:var(--mpp-neutral-60);
+  --text-primary:var(--mpp-neutral-100);
+  --text-secondary:var(--mpp-neutral-90);
+  --text-tertiary:var(--mpp-neutral-70);
+  --font-sans:Inter,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'JetBrains Mono','Roboto Mono',Consolas,monospace;
+  /* post -15% plant-floor scale */
+  --fs-xs:14px; --fs-sm:15px; --fs-base:17px; --fs-md:19px;
+  --fs-lg:22px; --fs-xl:27px; --fs-2xl:34px; --fs-3xl:42px;
+}
+*{box-sizing:border-box}
+body{background:#05080f;color:var(--text-primary);font-family:var(--font-sans);
+     margin:0;padding:28px 20px 80px;font-size:var(--fs-base);line-height:1.45}
+.page{max-width:1180px;margin:0 auto}
+h1{font-size:var(--fs-xl);margin:0 0 4px;letter-spacing:-0.01em}
+.sub{color:var(--text-tertiary);font-size:var(--fs-sm);margin:0 0 26px}
+.sub code{font-family:var(--font-mono);background:var(--mpp-neutral-20);
+     padding:1px 5px;border-radius:3px;color:var(--mpp-accent-90);font-size:0.9em}
+.band{display:flex;align-items:baseline;gap:10px;margin:34px 0 12px}
+.band .n{font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--mpp-accent-70);
+     border:1px solid var(--mpp-accent-40);border-radius:3px;padding:1px 7px}
+.band .t{font-size:var(--fs-md);font-weight:600}
+.band .d{color:var(--text-tertiary);font-size:var(--fs-sm)}
+.rail{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+
+/* ---- the dialog ---- */
+.dlg{width:560px;background:var(--surface-overlay);border:1px solid var(--border-default);
+     border-radius:8px;box-shadow:0 24px 60px rgba(0,0,0,.55);overflow:hidden;flex:0 0 auto}
+.dlg .bar{height:44px;background:var(--mpp-neutral-30);border-bottom:1px solid var(--border-subtle);
+     display:flex;align-items:center;justify-content:flex-end;padding:0 12px;color:var(--text-tertiary)}
+.dlg .body{padding:20px 22px 18px}
+.hdr .h{font-size:var(--fs-lg);font-weight:650;letter-spacing:-0.01em}
+.hdr .m{font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--text-secondary);margin-top:3px}
+.chip{display:inline-block;margin-top:12px;padding:6px 11px;border-radius:5px;font-size:var(--fs-sm);
+     background:var(--mpp-accent-20);border:1px solid var(--mpp-accent-40);color:var(--mpp-accent-90)}
+
+.lab{font-size:var(--fs-xs);letter-spacing:.09em;text-transform:uppercase;
+     color:var(--text-tertiary);font-weight:650;margin:22px 0 7px}
+.lab.first{margin-top:20px}
+
+/* PRIMARY count field */
+.count{display:flex;align-items:stretch;gap:0;border:2px solid var(--mpp-accent-50);
+     border-radius:7px;overflow:hidden;background:var(--mpp-neutral-10)}
+.count input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:var(--text-primary);
+     font-family:var(--font-mono);font-size:var(--fs-2xl);font-weight:600;padding:10px 14px;
+     letter-spacing:-0.02em}
+.count .unit{display:flex;align-items:center;padding:0 16px;background:var(--mpp-neutral-20);
+     border-left:1px solid var(--border-subtle);color:var(--text-tertiary);font-size:var(--fs-md)}
+.help{font-size:var(--fs-sm);color:var(--text-secondary);margin-top:7px}
+.help b{color:var(--text-primary);font-weight:600}
+
+/* the quiet provenance strip */
+.prov{margin-top:16px;border:1px dashed var(--border-subtle);border-radius:7px;
+     background:rgba(11,18,32,.55)}
+.prov .top{display:flex;align-items:center;gap:10px;padding:11px 13px 0}
+.prov .top .cap{font-size:var(--fs-xs);letter-spacing:.09em;text-transform:uppercase;
+     color:var(--text-tertiary);font-weight:650;white-space:nowrap}
+.prov .top .line{flex:1;height:1px;background:var(--border-subtle)}
+.prov .in{display:flex;align-items:center;gap:10px;padding:10px 13px 4px;flex-wrap:wrap}
+.prov .in input{width:120px;background:var(--mpp-neutral-10);border:1px solid var(--border-default);
+     border-radius:5px;color:var(--text-primary);font-family:var(--font-mono);font-size:var(--fs-base);
+     padding:7px 10px;outline:none}
+.prov .in input::placeholder{color:var(--mpp-neutral-60)}
+.prov .in .txt{font-size:var(--fs-sm);color:var(--text-secondary)}
+.math{display:flex;align-items:center;gap:9px;padding:4px 13px 12px;flex-wrap:wrap;
+     font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--text-tertiary)}
+.math .v{color:var(--text-secondary)}
+.math .eq{color:var(--mpp-accent-70)}
+.math .res{color:var(--mpp-accent-90);font-weight:600}
+
+/* scrap */
+.scrapHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 8px}
+.scrapHead .lab{margin:0}
+.btn{border-radius:6px;padding:8px 14px;font-size:var(--fs-sm);font-family:inherit;cursor:pointer;
+     border:1px solid var(--border-default);background:var(--mpp-neutral-30);color:var(--text-secondary)}
+.btn:hover{border-color:var(--mpp-accent-50);color:var(--text-primary)}
+.srow{display:flex;gap:8px;align-items:center;margin-bottom:7px}
+.srow .sel{flex:1;background:var(--mpp-neutral-10);border:1px solid var(--border-default);
+     border-radius:5px;padding:8px 10px;font-size:var(--fs-sm);color:var(--text-secondary)}
+.srow .qty{width:86px;background:var(--mpp-neutral-10);border:1px solid var(--border-default);
+     border-radius:5px;padding:8px 10px;font-family:var(--font-mono);font-size:var(--fs-sm);
+     color:var(--text-primary);text-align:right}
+.srow .x{width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+     border:1px solid var(--border-subtle);border-radius:5px;color:var(--text-tertiary);cursor:pointer}
+.empty{font-size:var(--fs-sm);color:var(--mpp-neutral-60);font-style:italic;padding:2px 0 2px}
+
+/* advisory — ONE line, its own row, cannot collide */
+.adv{margin-top:18px;display:flex;gap:9px;align-items:flex-start;padding:10px 12px;border-radius:6px;
+     font-size:var(--fs-sm);line-height:1.4}
+.adv.warn{background:var(--mpp-state-warn-bg);border:1px solid var(--mpp-state-warn-border);
+     color:var(--mpp-state-warn-fg)}
+.adv.good{background:var(--mpp-state-good-bg);border:1px solid var(--mpp-state-good-border);
+     color:var(--mpp-state-good-fg)}
+.adv .ico{flex:0 0 auto;font-weight:700}
+.adv .tx{flex:1;min-width:0}
+
+.foot{display:flex;align-items:center;gap:10px;margin-top:20px;padding-top:16px;
+     border-top:1px solid var(--border-subtle)}
+.foot .grow{flex:1}
+.btn.ghost{background:transparent}
+.btn.primary{background:var(--mpp-accent-50);border-color:var(--mpp-accent-60);color:#04131a;
+     font-weight:650;font-size:var(--fs-base);padding:10px 20px}
+.btn.primary:hover{background:var(--mpp-accent-60)}
+
+.annot{width:330px;flex:0 0 auto;font-size:var(--fs-sm);color:var(--text-secondary)}
+.annot h3{font-size:var(--fs-sm);letter-spacing:.09em;text-transform:uppercase;
+     color:var(--mpp-accent-70);margin:0 0 10px;font-weight:650}
+.annot li{margin-bottom:11px;line-height:1.45}
+.annot b{color:var(--text-primary)}
+.was{margin-top:18px;padding:12px 13px;border-radius:6px;background:var(--mpp-state-bad-bg);
+     border:1px solid var(--mpp-state-bad-border)}
+.was h4{margin:0 0 7px;font-size:var(--fs-sm);color:var(--mpp-state-bad-fg);font-weight:650}
+.was p{margin:0 0 7px;color:#E7B4B4;line-height:1.4}
+.was p:last-child{margin:0}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Release basket &mdash; redesign</h1>
+  <p class="sub">Die Cast &middot; <code>Popups/DieCastRelease</code> &middot; the operator's count becomes the one number that matters (spec D3)</p>
+
+  <div class="band">
+    <span class="n">A</span>
+    <span class="t">Fresh basket, nothing recorded yet this shift</span>
+    <span class="d">&mdash; the state in the screenshot</span>
+  </div>
+
+  <div class="rail">
+    <div class="dlg">
+      <div class="bar">&times;</div>
+      <div class="body">
+        <div class="hdr">
+          <div class="h">Release basket</div>
+          <div class="m">Intake 1 Aa &middot; 111111112 &middot; 12231-6MA -0000</div>
+        </div>
+        <div class="chip">Nothing recorded for this die yet this shift &mdash; every cavity credits from 0.</div>
+
+        <div class="lab first">Pieces in this basket</div>
+        <div class="count">
+          <input value="0" inputmode="numeric">
+          <span class="unit">pc</span>
+        </div>
+        <div class="help">Type <b>what you counted</b>. This is what the basket closes at.</div>
+
+        <div class="prov">
+          <div class="top"><span class="cap">or let the press counter fill it in</span><span class="line"></span></div>
+          <div class="in">
+            <input placeholder="e.g. 1600" inputmode="numeric">
+            <span class="txt">press counter reading right now</span>
+          </div>
+          <div class="math">
+            <span class="v">0</span><span>on the basket</span>
+            <span class="eq">+</span>
+            <span class="v">0</span><span>from the counter</span>
+            <span class="eq">=</span>
+            <span class="res">0 pc</span>
+          </div>
+        </div>
+
+        <div class="scrapHead">
+          <div class="lab">Scrap on this basket</div>
+          <button class="btn">&#43;&nbsp; Add scrap reason</button>
+        </div>
+        <div class="empty">No scrap on this basket.</div>
+
+        <div class="adv warn">
+          <span class="ico">!</span>
+          <span class="tx">No count and no reading &mdash; releasing now closes the basket at <b>0 pc</b> and credits this cavity nothing further.</span>
+        </div>
+
+        <div class="foot">
+          <button class="btn ghost">Cancel</button>
+          <button class="btn ghost">Counter reset / wrong total?</button>
+          <span class="grow"></span>
+          <button class="btn primary">Release basket</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="annot">
+      <h3>What changed</h3>
+      <ul>
+        <li><b>The count is the input, not the exception.</b> &ldquo;Basket closes at&rdquo; was a read-out of press arithmetic; now it <i>is</i> the field, pre-filled. An operator who counts the basket types one number and is done.</li>
+        <li><b>&ldquo;(if different)&rdquo; is gone.</b> It framed counting as overruling the system. D3 says the reading <i>proposes</i> and the count <i>wins</i> &mdash; two independent facts, allowed to disagree.</li>
+        <li><b>The press counter still works and is one field.</b> A line that reads the counter types there and never touches the count. Nothing is taken away.</li>
+        <li><b>Three cells became one line of provenance.</b> The 0&nbsp;+&nbsp;0&nbsp;=&nbsp;0 strip read as three broken tiles on a fresh basket.</li>
+        <li><b>Two paragraphs became one advisory</b> in its own row with a fixed shrink, so it cannot ride over the buttons.</li>
+      </ul>
+      <div class="was">
+        <h4>The layout defect it fixes</h4>
+        <p>In the live dialog the yellow advisory overlapped the button row &mdash; a flex child at the default <code>shrink:1</code> squeezed under content pressure.</p>
+        <p>Same class as the <code>_CutoverScan</code> panel fixes: trailing children left at default shrink while every sibling above was pinned.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <span class="n">B</span>
+    <span class="t">Operator counted 1,240 &mdash; and it disagrees with the press</span>
+    <span class="d">&mdash; the count wins, and the screen says so without scolding</span>
+  </div>
+
+  <div class="rail">
+    <div class="dlg">
+      <div class="bar">&times;</div>
+      <div class="body">
+        <div class="hdr">
+          <div class="h">Release basket</div>
+          <div class="m">Intake 1 Aa &middot; 111111112 &middot; 12231-6MA -0000</div>
+        </div>
+
+        <div class="lab first">Pieces in this basket</div>
+        <div class="count">
+          <input value="1240" inputmode="numeric">
+          <span class="unit">pc</span>
+        </div>
+        <div class="help"><b>Your count.</b> The basket closes at this number.</div>
+
+        <div class="prov">
+          <div class="top"><span class="cap">or let the press counter fill it in</span><span class="line"></span></div>
+          <div class="in">
+            <input value="1600" inputmode="numeric">
+            <span class="txt">press counter reading right now</span>
+          </div>
+          <div class="math">
+            <span class="v">0</span><span>on the basket</span>
+            <span class="eq">+</span>
+            <span class="v">1,262</span><span>from the counter</span>
+            <span class="eq">=</span>
+            <span class="res">1,262 pc</span>
+          </div>
+        </div>
+
+        <div class="scrapHead">
+          <div class="lab">Scrap on this basket</div>
+          <button class="btn">&#43;&nbsp; Add scrap reason</button>
+        </div>
+        <div class="srow">
+          <span class="sel">111 &mdash; Flash</span>
+          <span class="qty">12</span>
+          <span class="x">&times;</span>
+        </div>
+
+        <div class="adv good">
+          <span class="ico">&#10003;</span>
+          <span class="tx">Closing at <b>1,240 pc</b> &mdash; your count, 22 under the press figure. The gap is recorded, not corrected.</span>
+        </div>
+
+        <div class="foot">
+          <button class="btn ghost">Cancel</button>
+          <button class="btn ghost">Counter reset / wrong total?</button>
+          <span class="grow"></span>
+          <button class="btn primary">Release basket</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="annot">
+      <h3>Why it does not argue</h3>
+      <ul>
+        <li>The disagreement is <b>stated, not challenged</b>. No confirm step, no &ldquo;are you sure&rdquo;. The operator is the only person who can see the basket.</li>
+        <li>It reads <b>&ldquo;22 under the press figure&rdquo;</b> rather than &ldquo;variance&rdquo; &mdash; the gap belongs to the shift reconciliation screen, not to a basket release.</li>
+        <li>Scrap sits below the count because it is a separate additive fact: at the press the bad casting never entered the basket, so it is not subtracted from it.</li>
+        <li><b>Die-wide is deliberately absent.</b> Release is one cavity's closing number; warm-up and quality-test shots belong to the shift entry (spec &sect;11.2).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body>
+</html>
