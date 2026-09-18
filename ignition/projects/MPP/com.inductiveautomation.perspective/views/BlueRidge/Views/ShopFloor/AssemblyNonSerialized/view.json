@@ -876,34 +876,6 @@
                               },
                               {
                                 "meta": {
-                                  "name": "VisionFrame"
-                                },
-                                "position": {
-                                  "basis": "220px",
-                                  "grow": 1
-                                },
-                                "propConfig": {
-                                  "props.url": {
-                                    "binding": {
-                                      "config": {
-                                        "expression": "{session.custom.terminal.visionAppUrl}"
-                                      },
-                                      "type": "expr"
-                                    }
-                                  }
-                                },
-                                "props": {
-                                  "style": {
-                                    "border": "0",
-                                    "borderRadius": "var(--mpp-radius-lg)",
-                                    "height": "100%",
-                                    "width": "100%"
-                                  }
-                                },
-                                "type": "ia.display.inline-frame"
-                              },
-                              {
-                                "meta": {
                                   "name": "CamStatus"
                                 },
                                 "props": {
@@ -920,6 +892,26 @@
                                   "text": "TrayPresent: FALSE - Awaiting next tray placement - TrayFullFlag: FALSE"
                                 },
                                 "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "IFrame"
+                                },
+                                "position": {
+                                  "basis": "200px",
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.src": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "{session.custom.terminal.visionAppUrl}"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "type": "ia.display.iframe"
                               }
                             ],
                             "meta": {
@@ -940,7 +932,6 @@
                               }
                             },
                             "props": {
-                              "alignItems": "center",
                               "direction": "column",
                               "justify": "center",
                               "style": {
