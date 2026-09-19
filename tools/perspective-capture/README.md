@@ -23,7 +23,7 @@ problem.
 
 ```bash
 "/c/Program Files/Google/Chrome/Application/chrome.exe" \
-  --remote-debugging-port=9222 --user-data-dir=/tmp/cap-profile \
+  --remote-debugging-port=9333 --user-data-dir=/tmp/cap-profile \
   --headless=new --window-size=1600,1000 \
   --disable-background-timer-throttling \
   --disable-backgrounding-occluded-windows \

@@ -8,19 +8,26 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const HOST = '127.0.0.1';
-const PORT = 9222;
+// NOT 9222. Ignition Designer's embedded browser listens on 9222; when that
+// port was the default, a harness run whose own Chrome failed to bind it
+// attached to the Designer's page and drove it. Override with CDP_PORT.
+const PORT = Number(process.env.CDP_PORT || 9333);
 
-async function httpJson(p) {
-  const res = await fetch(`http://${HOST}:${PORT}${p}`);
+async function httpJson(p, method = 'GET') {
+  const res = await fetch(`http://${HOST}:${PORT}${p}`, { method });
   return res.json();
 }
 
 export async function connect(url) {
-  // Reuse an existing about:blank-ish target if one is free, else make one.
-  const t = await httpJson(`/json/new?${encodeURIComponent(url)}`).catch(async () => {
-    const list = await httpJson('/json/list');
-    return list.find((x) => x.type === 'page');
-  });
+  // Always open a NEW target in the Chrome we launched (PUT: Chrome 111+
+  // refuses GET /json/new). Never fall back to "whatever page is open" --
+  // that is how a run once drove Ignition Designer's embedded browser.
+  const ver = await httpJson('/json/version');
+  if (!/HeadlessChrome/.test(ver['User-Agent'] || '')) {
+    throw new Error(`port ${PORT} is not a headless Chrome (${ver['User-Agent']}). Start the capture Chrome with --headless=new on this port.`);
+  }
+  const t = await httpJson(`/json/new?${encodeURIComponent(url)}`, 'PUT');
+  if (!t || !t.webSocketDebuggerUrl) throw new Error('could not open a new Chrome target');
   const ws = new WebSocket(t.webSocketDebuggerUrl);
   await new Promise((r, j) => { ws.onopen = r; ws.onerror = j; });
 
