@@ -109,3 +109,4 @@ dist/
 /sql/scratch/2026-09-11_reopen_prematurely_released_dc_lots.sql
 /sql/scratch/2026-09-16_legacy_*.sql
 /ignition/tags/instances/PlcDevices_tags.json
+/sql/scratch/_prod_config_*/

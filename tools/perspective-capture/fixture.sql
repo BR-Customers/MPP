@@ -15,14 +15,17 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 DECLARE @User BIGINT = (SELECT Id FROM Location.AppUser WHERE Pin = N'00002');
-DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-T01');
+-- DC1-T1 is the die cast terminal's code in prod (and in Dev after the prod
+-- config import); DC1-T01 was the older Dev seed's code.
+DECLARE @Term BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE Code IN (N'DC1-T1', N'DC1-T01') AND DeprecatedAt IS NULL ORDER BY Code);
 IF @Term IS NULL SELECT TOP 1 @Term = Id FROM Location.Location WHERE Name LIKE N'%Terminal%' ORDER BY Id;
 
 DECLARE @DieType   BIGINT = (SELECT Id FROM Tools.ToolType             WHERE Code = N'Die');
 DECLARE @ToolAct   BIGINT = (SELECT Id FROM Tools.ToolStatusCode       WHERE Code = N'Active');
 DECLARE @CavAct    BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
 DECLARE @Uom       BIGINT = (SELECT TOP 1 UomId FROM Parts.Item WHERE UomId IS NOT NULL ORDER BY Id);
-DECLARE @ItemType  BIGINT = (SELECT TOP 1 ItemTypeId FROM Parts.Item WHERE Id = 152);
+-- A casting's type, looked up by code: Item Ids differ between databases.
+DECLARE @ItemType  BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'Component');
 
 DECLARE @MA BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M04');
 DECLARE @MB BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M05');
@@ -59,23 +62,24 @@ DECLARE @TB BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'RB-B');
 DECLARE @TC BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'RB-C');
 
 -- ---------- cavities ----------
+-- Cavity codes are letters (migration 0076), unique per (Tool, Item, CavityCode).
 IF NOT EXISTS (SELECT 1 FROM Tools.ToolCavity WHERE ToolId = @TA)
-    INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, ItemId, CreatedByUserId)
-    VALUES (@TA, 1, @CavAct, N'Single Aa', @IA, @User);
+    INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+    VALUES (@TA, N'a', @CavAct, N'Single Aa', @IA, @User);
 
 IF NOT EXISTS (SELECT 1 FROM Tools.ToolCavity WHERE ToolId = @TB)
-    INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, ItemId, CreatedByUserId)
-    VALUES (@TB, 1, @CavAct, N'Intake 1 Aa',  @IB, @User),
-           (@TB, 2, @CavAct, N'Intake 2 Ab',  @IB, @User),
-           (@TB, 3, @CavAct, N'Exhaust 1 Ba', @IB, @User),
-           (@TB, 4, @CavAct, N'Exhaust 2 Bb', @IB, @User);
+    INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+    VALUES (@TB, N'a', @CavAct, N'Intake 1 Aa',  @IB, @User),
+           (@TB, N'b', @CavAct, N'Intake 2 Ab',  @IB, @User),
+           (@TB, N'c', @CavAct, N'Exhaust 1 Ba', @IB, @User),
+           (@TB, N'd', @CavAct, N'Exhaust 2 Bb', @IB, @User);
 
 IF NOT EXISTS (SELECT 1 FROM Tools.ToolCavity WHERE ToolId = @TC)
-    INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, Description, ItemId, CreatedByUserId)
-    VALUES (@TC, 1, @CavAct, N'Intake 1 Aa',  @IC, @User),
-           (@TC, 2, @CavAct, N'Intake 2 Ab',  @IC, @User),
-           (@TC, 3, @CavAct, N'Exhaust 1 Ba', @IC, @User),
-           (@TC, 4, @CavAct, N'Exhaust 2 Bb', @IC, @User);
+    INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+    VALUES (@TC, N'a', @CavAct, N'Intake 1 Aa',  @IC, @User),
+           (@TC, N'b', @CavAct, N'Intake 2 Ab',  @IC, @User),
+           (@TC, N'c', @CavAct, N'Exhaust 1 Ba', @IC, @User),
+           (@TC, N'd', @CavAct, N'Exhaust 2 Bb', @IC, @User);
 
 -- ---------- mount each die on its idle machine ----------
 IF NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment WHERE ToolId = @TA AND ReleasedAt IS NULL)
@@ -123,7 +127,7 @@ DECLARE @R TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @Cav BIGINT, @n INT;
 
 -- A: one basket on the single cavity
-SELECT @Cav = Id FROM Tools.ToolCavity WHERE ToolId = @TA AND CavityNumber = 1;
+SELECT @Cav = Id FROM Tools.ToolCavity WHERE ToolId = @TA AND CavityCode = N'a';
 IF NOT EXISTS (SELECT 1 FROM Lots.Lot l JOIN Lots.LotStatusCode s ON s.Id=l.LotStatusId AND s.Code='Open' WHERE l.ToolId=@TA)
     INSERT INTO @R EXEC Lots.DieCastLot_Open @ItemId=@IA, @CurrentLocationId=@MA, @ToolId=@TA,
         @ToolCavityId=@Cav, @LotName=N'91000001', @AppUserId=@User, @TerminalLocationId=@Term;
@@ -132,7 +136,7 @@ IF NOT EXISTS (SELECT 1 FROM Lots.Lot l JOIN Lots.LotStatusCode s ON s.Id=l.LotS
 SET @n = 1;
 WHILE @n <= 4
 BEGIN
-    SELECT @Cav = Id FROM Tools.ToolCavity WHERE ToolId = @TB AND CavityNumber = @n;
+    SELECT @Cav = Id FROM Tools.ToolCavity WHERE ToolId = @TB AND CavityCode = NCHAR(96 + @n);   -- 1..4 -> a..d
     IF NOT EXISTS (SELECT 1 FROM Lots.Lot l JOIN Lots.LotStatusCode s ON s.Id=l.LotStatusId AND s.Code='Open'
                    WHERE l.ToolCavityId=@Cav)
     BEGIN
@@ -147,7 +151,7 @@ END
 SET @n = 1;
 WHILE @n <= 4
 BEGIN
-    SELECT @Cav = Id FROM Tools.ToolCavity WHERE ToolId = @TC AND CavityNumber = @n;
+    SELECT @Cav = Id FROM Tools.ToolCavity WHERE ToolId = @TC AND CavityCode = NCHAR(96 + @n);   -- 1..4 -> a..d
     IF NOT EXISTS (SELECT 1 FROM Lots.Lot l JOIN Lots.LotStatusCode s ON s.Id=l.LotStatusId AND s.Code='Open'
                    WHERE l.ToolCavityId=@Cav)
     BEGIN
