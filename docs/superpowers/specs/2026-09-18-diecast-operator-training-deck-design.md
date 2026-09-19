@@ -129,10 +129,11 @@ inches. A control that cannot be found fails the capture loudly; nothing is plac
 
 ### 6.4 Things that may not be capturable on Dev
 
-- **Supervisor Access / Die Mount need a real AD sign-in.** The Dev gateway cannot perform AD
-  elevation (noted 2026-09-17). If it cannot be done on Dev, those slides show the sign-in
-  popup and the Die Mount popup as they open, with the credential step described in words and
-  the result described in the notes — and the slide says so to Jacques in the build report.
+- **Supervisor Access / Die Mount need an AD sign-in.** Dev has a working dev account. The
+  capture script never types credentials: for the team lead slides it runs Chrome as a
+  **visible window**, drives to the Supervisor Access popup, captures it empty, then **pauses**
+  and waits for Jacques to type the account and password himself. It resumes when the elevated
+  state appears on screen. Credentials are never written into a script, file or note.
 - **Downtime** depends on a PLC-driven event or the manual Downtime entry. Captured from the
   manual path; if the screen needs an open downtime event, one is created through its proc.
 
