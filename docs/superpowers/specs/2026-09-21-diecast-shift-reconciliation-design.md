@@ -13,6 +13,10 @@ identity), `2026-09-09-diecast-shot-reading-chain-design.md` (watermarks),
 **Earlier decision:** `notes/2026-09-17_shift-reconciliation-backfill-trim-followup.md` (approach A,
 supervisor-attributed, reusable for Trim).
 
+**Language (Jacques, 2026-09-21).** On this screen and in this spec: an **LTT** is the LOT Tracking
+Ticket number (the press sheet's *Tag #* column); a **LOT** is the record. "Tag" and "basket" are
+not used. The typed column is **Actual**, compared against **Recorded**.
+
 ---
 
 ## 1. Why
@@ -25,15 +29,21 @@ the paper shows it is not a one-off, and that "missing" is only one of three fai
 
 | Sheet column | Sheet | MES |
 |---|---|---|
-| 3rd (Tamara) | 991 shots, 953/tag = 11,436 good, 35 warm-up shots, 36 no-good (code 8, All) | All of it, exactly -- entered 09-17 09:35 by BH. **Filed under 1st shift.** |
-| 1st (Brittany) | 1,121 shots, 1,080/tag = 12,960 good, 38 warm-up, 36 no-good | **Nothing.** No credit, no scrap, no reading. Not keyed through cutover either. |
-| 2nd (KC/Tamara) | 732 shots, 711/tag = 8,532 good, 25 warm-up, 0 no-good | Quantity exact, right shift. Reading recorded 726 (sheet 732); warm-up 15 shots (sheet 25). |
+| 3rd (Tamara) | 991 shots, 953/LOT = 11,436 good, 35 warm-up shots, 36 no-good (code 8, All) | All of it, exactly -- entered 09-17 09:35 by BH. **Filed under 1st shift.** |
+| 1st (Brittany) | 1,121 shots, 1,080/LOT = 12,960 good, 38 warm-up, 36 no-good | **Nothing.** No credit, no scrap, no reading. Not keyed through cutover either. |
+| 2nd (KC/Tamara) | 732 shots, 711/LOT = 8,532 good, 25 warm-up, 0 no-good | Quantity exact, right shift. Reading recorded 726 (sheet 732); warm-up 15 shots (sheet 25). |
 
 The mis-filed entry is the pre-2026-09-18 shift-picker defect (the screen preselected the current
 shift). The 09-18 release stops new ones; it did not correct the rows already written.
 
-**Machine 202, die asset # `DM0144` (6FB Oil Pan D):** of the 14 tags on the sheet, **2 exist in the MES**.
-All 33 credits in the week came through basket release with a count and **no counter reading**; no
+**Machine 202, die asset # `DM0144` (6FB Oil Pan D):** the legible press sheet lists LTTs
+10628573-580; **four of them (10628574-577) do not exist in the MES**. The LTT sequence says more:
+**10628556 through 10628572 -- seventeen consecutive LTTs -- exist nowhere in the MES**, nor do
+10628582-585, and Machine 202's first record of the week is 06:19 on 09-17. That is consistent with
+the 09-16 night that triggered this never reaching the MES; which shift each LTT belongs to has to
+come from the paper. *(An earlier draft said "12 of 14 LTTs missing"; that mixed LTT numbers read
+from a second, illegible photo and is withdrawn.)*
+All 33 credits in the week came through LOT release with a count and **no counter reading**; no
 shift-end number was entered on Machine 202 all week. Releases from 22:31 on 09-17 to 06:54 on 09-18
 are filed under 09-17 **1st** shift -- a whole night. Everything after the 09-18 release is filed
 correctly.
@@ -44,7 +54,7 @@ So there are three failures, and the screen must fix all three, end to end:
 2. **Recorded production is filed against the wrong shift.**
 3. **Recorded numbers differ from the sheet** while the entry itself exists.
 
-**The 99 cutover-keyed baskets are unrelated.** Their cast dates run May through early September,
+**The 99 cutover-keyed LOTs are unrelated.** Their cast dates run May through early September,
 59 are on `DMO124` (not mounted), and they were keyed in three sittings on 09-15. That is genuine
 cutover stock-taking, not a workaround for missed shifts.
 
@@ -56,19 +66,20 @@ cutover stock-taking, not a workaround for missed shifts.
 |---|---|
 | D1 | The unit of work is **one shift x one press x one die** -- one column of the sheet. |
 | D2 | **Approach A.** Reuse the existing writers rather than write a parallel backfill path. Shared writes are extracted into internal worker procs (the `Oee.ShiftOverride_Restamp` pattern) that the live procs and the reconciliation both call (§5.1). |
-| D3 | **The production record is always written and must be right.** The basket count follows a three-state rule (§3.3). Once a basket is counted downstream, **trim's number goes forward** and the count is locked. **Firm lock -- no override on this screen.** The LOT Detail count panel remains the one place to change such a count. |
-| D4 | A basket created retroactively is **released to default storage**, exactly as the live release path does. |
+| D3 | **The production record is always written and must be right.** The LOT count follows a three-state rule (§3.3). Once a LOT is counted downstream, **trim's number goes forward** and the count is locked. **Firm lock -- no override on this screen.** The LOT Detail count panel remains the one place to change such a count. |
+| D4 | A LOT created retroactively is **released to default storage**, exactly as the live release path does. |
 | D5 | Die life: backfilled production **advances** it; re-filing and count corrections **do not**. |
-| D6 | Basket release with a count and no reading is **unchanged**. A shift left without its shift-end number is operator failure; it is **surfaced on the supervisor dashboard**, not built around. |
+| D6 | LOT release with a count and no reading is **unchanged**. A shift left without its shift-end number is operator failure; it is **surfaced on the supervisor dashboard**, not built around. |
 | D7 | Every reconciliation writes a **header row**; every row it produces references it. The header is the late-entry marker, the audit anchor, and what clears the dashboard signal. |
 | D8 | **Shop floor, one AD sign-in per session** (`Common.Session.beginElevatedWindow`). Any active AD-mapped user until AD roles land -- the shipping-label-reprint stance. |
-| D9 | **Layout A: sheet-shaped.** Totals block, reject block, then the tag list grouped by part, in the paper's order. |
+| D9 | **Layout A: sheet-shaped.** Totals block, reject block, then the LOT list grouped by part, in the paper's order. |
 | D10 | Reject rows gain **Approved by** -- the sheet's QAS column -- as `RejectEvent.ApprovedByUserId`, a FK to `Location.AppUser`, picked by initials or name. |
-| D11 | **One Save, one transaction, fixed order:** moves, then new baskets, then credits and scrap, then count corrections (§3.5). |
+| D11 | **One Save, one transaction, fixed order:** moves, then new LOTs, then credits and scrap, then count corrections (§3.5). |
 | D12 | Backfilled rows are stamped **at the end of their shift**; the header keeps the real time of entry. |
 | D13 | **Save closes every gap, in whichever direction** -- compensating rows for decreases (§3.6). *Decided while writing this spec; flagged for review.* |
 | D14 | **Every critical decision is named on screen and confirmed before it is written** (§7). Team leads succeed by default; a mistake needs two deliberate acts. |
 | D15 | A shift that changes after the team lead opens it refuses to save (stale guard) and reloads. |
+| D16 | **A shift with nothing recorded is a first-class case.** The team lead enters the press sheet's LTTs -- one at a time, by scan, or as a run of consecutive LTTs with one quantity each -- and every LTT is resolved as it is entered (§6.3). |
 
 ---
 
@@ -83,9 +94,9 @@ For the chosen shift x press x die the screen loads **everything on record** and
 |---|---|---|
 | Shift | Total shots = max counter reading in the shift (`DieCastContribution.ShotCounterReading`, anchor-aware via `ufn_DieShotWatermark`); warm-up shots = `999` rows / active cavities; test/no-good = reject rows | Total shots, Good shots, Warm-up shots |
 | Reject block | `RejectEvent` rows for the shift x press x die, by code and part | QAS (approved by), Reason, Part (or All), Amt |
-| Tag list | Per tag: `SUM(PieceDelta)` credited **in this shift** | Tag #, Cav, Qty |
+| LOT list | Per LOT: `SUM(PieceDelta)` credited **in this shift** | LTT, Cav, Qty |
 
-No-good pieces and Total good pieces are **computed** from the reject block and the tag list -- the
+No-good pieces and Total good pieces are **computed** from the reject block and the LOT list -- the
 same arithmetic the sheet does by hand -- so a mismatch between them and the typed totals is a typo
 and is shown as one before save (§7.4).
 
@@ -100,9 +111,9 @@ Re-filing changes which shift a reading belongs to, so it changes both shifts' w
 credits are facts and are **not recomputed**. A later backfill into either shift computes from the
 new watermark, and that is visible on screen as the proposed figure, never silent.
 
-### 3.3 The basket count -- three states
+### 3.3 The LOT count -- three states
 
-| Basket state | Count |
+| LOT state | Count |
 |---|---|
 | **Open** at the press | Credited normally, as the live path would have. |
 | **Released**, nothing downstream | Corrected, with the header's reason, through the count-correction worker (§5.1). |
@@ -119,7 +130,7 @@ number is what goes forward. Reconciling the count here is putting in the record
 If trim has already done their accounting, our entry needs to be accurate for shot count more than
 for the parts in that LOT.*
 
-`Lots.Lot_RectifyPieceCount` refuses `Open` LOTs; the three states line up with that -- open baskets
+`Lots.Lot_RectifyPieceCount` refuses `Open` LOTs; the three states line up with that -- open LOTs
 are credited, released ones corrected.
 
 ### 3.4 Die life
@@ -139,9 +150,9 @@ reasons is `Tools.Tool_CorrectShotCount`'s job (Config Tool), not this screen's.
 One transaction, in this order, because the watermark is per shift:
 
 1. **Moves** -- restamp the selected rows to their new shift.
-2. **New baskets** -- mint, then (at the end of the transaction) release to default storage.
+2. **New LOTs** -- mint, then (at the end of the transaction) release to default storage.
 3. **Credits and scrap** -- written against the shift, computed from the post-move watermark.
-4. **Count corrections** -- on released, not-counted-downstream baskets the team lead accepted.
+4. **Count corrections** -- on released, not-counted-downstream LOTs the team lead accepted.
 
 On Machine 11 this is the difference between 1st shift gaining 1,121 shots (move first) and 130
 (move last).
@@ -155,10 +166,10 @@ reconciliation id**:
 
 | Quantity | Decrease written as |
 |---|---|
-| Pieces credited to a tag | `DieCastContribution` with negative `PieceDelta`. `CK_DieCastContribution_DeltaNonNeg` becomes `PieceDelta >= 0 OR ReconciliationId IS NOT NULL` -- live paths still cannot write a negative. |
+| Pieces credited to a LOT | `DieCastContribution` with negative `PieceDelta`. `CK_DieCastContribution_DeltaNonNeg` becomes `PieceDelta >= 0 OR ReconciliationId IS NOT NULL` -- live paths still cannot write a negative. |
 | Scrap / warm-up | `RejectEvent` with negative `Quantity` and the reconciliation id. Every reject report SUMs, so it nets; the Transaction Detail shows the correction as its own row, which is honest. |
 | Counter reading | `DieCastCounterAnchor` at the sheet figure. The anchor already discards earlier readings in the shift (`ufn_DieShotWatermark`: MAX over the anchor and readings *after* it), so it is the existing way to lower a watermark. |
-| Basket count | The count-correction worker, subject to §3.3's lock. |
+| LOT count | The count-correction worker, subject to §3.3's lock. |
 
 Voiding rows instead was considered and rejected: every reader (watermarks, breakdown, six reject
 reports, LOT history) would have to learn to skip them.
@@ -243,9 +254,9 @@ wrapper -- validation, then the worker -- and the reconciliation calls the same 
 
 | Worker | Extracted from | Guards that stay in the live wrapper only |
 |---|---|---|
-| `Workorder.DieCastCredit_Write` | `DieCastShiftOutput_Record` (contribution + PieceCount + ShotCount) | reading behind the die watermark; pieces onto a closed basket |
+| `Workorder.DieCastCredit_Write` | `DieCastShiftOutput_Record` (contribution + PieceCount + ShotCount) | reading behind the die watermark; pieces onto a closed LOT |
 | `Workorder.DieCastScrap_Write` | `DieCastShiftOutput_Record` (cavity + die-wide fan-out) | -- |
-| `Lots.DieCastLot_Mint` | `DieCastLot_Open` | die mounted *now*; one open basket per cavity |
+| `Lots.DieCastLot_Mint` | `DieCastLot_Open` | die mounted *now*; one open LOT per cavity |
 | `Lots.DieCastLot_ReleaseMove` | `DieCastLot_Release` (Open -> Good, move to storage) | -- |
 | `Lots.Lot_ApplyPieceCountCorrection` | `Lot_RectifyPieceCount` | -- (the `Open` refusal stays in both) |
 | `Workorder.DieCastEntry_Restamp` | new; modelled on `Oee.ShiftOverride_Restamp` | -- |
@@ -264,9 +275,9 @@ replaces them with its own guards (§5.2), not with nothing.
 @ShiftId, @CellLocationId, @ToolId, @ReasonId, @Note,
 @SheetJson        -- {totalShots, goodShots, warmUpShots}
 @MovesJson        -- [{entityType, entityId, toShiftId}]
-@TagsJson         -- [{lotId|null, lotName, toolCavityId, quantity}]   (sheet qty per tag)
+@LotsJson         -- [{lotId|null, ltt, toolCavityId, quantity}]   (actual qty per LOT)
 @RejectsJson      -- [{defectCodeId, itemId|null (null = All), quantity, approvedByUserId}]
-@CountsJson       -- [{lotId}]  released baskets whose count the team lead accepted
+@CountsJson       -- [{lotId}]  released LOTs whose count the team lead accepted
 @LoadedStamp      -- stale guard: MAX row id / EventAt the screen loaded (§8)
 @AppUserId, @TerminalLocationId
 ```
@@ -275,13 +286,13 @@ Pre-transaction validation (every rejection is a status row, no open transaction
 AppUser exists; shift is **closed** (a reconciliation never targets the open shift -- the live
 screen owns it); the die was mounted on the press during the shift (`Tools.ToolAssignment`
 overlap); reason exists, note when required; every move targets a closed shift within +/-2 of the
-source and moves a row belonging to this shift x press x die; every tag either resolves to a LOT of
-**this die and cavity** or is a valid unused LTT (`Lots.ufn_IsValidExternalLtt`) -- a tag that
+source and moves a row belonging to this shift x press x die; every LTT either resolves to a LOT of
+**this die and cavity** or is a valid unused LTT (`Lots.ufn_IsValidExternalLtt`) -- an LTT that
 belongs elsewhere is refused *naming where it belongs*; every count correction is on a
 released, not-counted-downstream LOT; the stale stamp matches.
 
 Then one transaction: header row -> moves -> mint -> credits/scrap (increases and compensating
-decreases) -> anchor if the reading drops -> release new baskets -> count corrections -> audit. The
+decreases) -> anchor if the reading drops -> release new LOTs -> count corrections -> audit. The
 proc **computes the deltas itself** from recorded vs sheet; the JSON carries what the sheet says,
 never a delta. That keeps the arithmetic in SQL (no business logic in Python) and makes a re-run
 after any partial success a no-op for what already landed.
@@ -291,7 +302,7 @@ after any partial success a no-op for what already landed.
 | Proc | Returns |
 |---|---|
 | `Workorder.DieCastShiftReconciliation_ListShifts(@CellLocationId, @Days)` | Landing list: per shift x die mounted, entries, good recorded, max reading, status (`NoEntry` / `EntryRecorded` / `ReleasedNoShiftEnd` / `Reconciled`) |
-| `Workorder.DieCastShiftReconciliation_Load(@ShiftId, @CellLocationId, @ToolId)` | One row per recorded fact for the shift x press x die: entries (grouped, with row ids), tags with credited-in-shift, basket state + lock reason, reject rows, shift totals, die life, stale stamp. One result set, discriminated by a `RowKind` column. |
+| `Workorder.DieCastShiftReconciliation_Load(@ShiftId, @CellLocationId, @ToolId)` | One row per recorded fact for the shift x press x die: entries (grouped, with row ids), LOTs with credited-in-shift, LOT state + lock reason, reject rows, shift totals, die life, stale stamp. One result set, discriminated by a `RowKind` column. |
 | `Workorder.DieCastShift_ListUnreconciled(@Days)` | Dashboard: shift x press with production recorded but **no counter reading and no reconciliation header** |
 | `Workorder.DieCastReconciliationReason_List` | Code table |
 
@@ -333,15 +344,46 @@ reopen normally.
 - **Totals block** -- Recorded | Actual | Gap for Total shots, Good shots, Warm-up shots, No-good
   pieces, Total good pieces.
 - **Reject block** -- QAS (Approved by), Reason, Part (All or one), Amt, with recorded rows beside.
-- **Tag list** -- grouped by part in the sheet's order (part name, Macola #, sub-total): Tag #, Cav,
-  Actual qty, Recorded, Basket state, Count before -> after. A `+ tag` row adds a basket.
+- **LOT list** -- grouped by part in the sheet's order (part name, Macola #, sub-total): LTT, Cav,
+  Actual qty, Recorded, LOT state, Count before -> after. The entry bar adds LTTs (§6.3).
 
 **The typed column is labelled Actual, never Sheet** (Jacques, 2026-09-21). The paper is where the
 figures come from; what the screen compares is recorded against actual. Every operator-facing
 string follows: *"no actual figure"*, *"actual total good"*, *"checked against the actual count"*.
 - **Footer** -- Discard, Review & Save.
 
-### 6.3 Supervisor dashboard tile
+### 6.3 Adding LTTs -- including a shift with nothing recorded (D16)
+
+The Machine 202 evidence (§1) is the case this exists for: a whole shift of LOTs that are on paper
+and nowhere in the MES. The LOT list carries an entry bar, not a single `+` row:
+
+- **One LTT**, or **a run of LTTs** (first LTT, last LTT, quantity in each LOT). LTT tickets are
+  used in sequence off a pad, so a run is the fast path; the last LOT of a run is usually partial
+  and its quantity is changed in its own row. At most 40 in one run -- more is almost certainly a
+  mistyped number.
+- A keyboard-wedge scanner works: the cursor stays in the LTT field after each add.
+- On a multi-cavity die the entry carries the cavity (part + letter); on a single-cavity die it is
+  implied.
+- **Every LTT is resolved the moment it is added**, never at save:
+
+  | LTT | Result |
+  |---|---|
+  | Not in the MES, valid (`Lots.ufn_IsValidExternalLtt`, 8-9 digits) | **New LOT** -- minted against this press, die and cavity, credited, stamped to the shift, and released to Warehouse at save (D4). |
+  | Already a LOT on **this die** | Adds to that LOT; §3.3's three states apply to its count. |
+  | A LOT on **another press or die** | **Refused**, naming where it belongs (*"10628131 is Machine 11 · 6MA IN 2,3,4 EX 2,3,4 D (Asset # DMO125), cavity A"*). |
+  | Already in the list | Ignored, and said so. |
+
+- A new LOT's row can be removed before save; nothing is written until the confirmation.
+- The rest of the screen is unchanged: the Actual totals must add up, the LOT list must equal
+  Actual total good, and die life advances by the shift's Actual total shots (there is no recorded
+  reading to subtract).
+- The confirmation lists new LOTs by LTT with their quantities (§7.5).
+
+A shift with nothing recorded opens with an explicit empty state -- *"Nothing is recorded for this
+shift on Machine 202 -- no entries, no LOTs, no rejects. Everything below comes from the press
+sheet."* -- so an empty screen is never mistaken for a failed load.
+
+### 6.4 Supervisor dashboard tile
 
 **Shifts not reconciled** -- count, amber when non-zero, tap -> the landing list filtered to
 flagged shifts. The dashboard's own redesign stays the separate open TODO (PROJECT_STATUS).
@@ -372,7 +414,7 @@ The wrong-shift defect is the reason half this screen exists, so the shift is ne
 ### 7.3 Moving an entry
 
 Popup: the entry's facts; **From** and **To** as large shift names with each shift's good total
-before and after; the explicit statement *Shots, pieces, baskets and die life do not change -- only
+before and after; the explicit statement *Shots, pieces, LOTs and die life do not change -- only
 which shift is credited*; the row count that moves. Target limited to +/-2 closed shifts. Confirm
 button: **MOVE TO 09-16 3RD SHIFT**. Moves are staged on screen (the card shows *Moving to 09-16
 3rd*, undoable) and written only at Save.
@@ -382,10 +424,10 @@ button: **MOVE TO 09-16 3RD SHIFT**. Moves are staged on screen (the card shows 
 Save stays disabled, and says why, until:
 
 - the reason is set (and its note, if required);
-- **the tag list adds up to Total good pieces**, and Good shots x cavities - no-good = Total good --
-  *"Tag list totals 11,880; actual total good is 12,960. One of them has a typo."*;
-- every tag resolves (no unknown / foreign tags);
-- no per-tag quantity exceeds that cavity's shots for the shift -- a typo guard (10800 for 1080).
+- **the LOT list adds up to Total good pieces**, and Good shots x cavities - no-good = Total good --
+  *"LOT list totals 11,880; actual total good is 12,960. One of them has a typo."*;
+- every LTT resolves (no unknown or foreign LTTs);
+- no LOT quantity exceeds that cavity's shots for the shift -- a typo guard (10800 for 1080).
 
 These are the sheet's own arithmetic. They block because a failure is always a typing error, never
 a plant condition -- unlike variance on the live screen, which is allowed to mean "we do not know".
@@ -398,10 +440,10 @@ each in plain sentences with numbers:
 | Group | Example |
 |---|---|
 | Entries moved | *1 entry (24 rows) moves from 09-17 1st to 09-16 3rd.* |
-| Production added | *12,960 good pieces credited to 12 tags. 456 warm-up and 36 test pieces recorded.* |
+| Production added | *12,960 good pieces credited to 12 LOTs. 456 warm-up and 36 test pieces recorded.* |
 | Production reduced | *(amber)* *72 pieces removed from 10628131 (a correction).* |
-| New baskets | *2 baskets created and released to Warehouse: 10628574, 10628575.* |
-| Basket counts changed | *6 released baskets: 10628131 1,788 -> 2,868, ...* |
+| New LOTs | *2 LOTs created and released to Warehouse: 10628574, 10628575.* |
+| LOT counts changed | *6 released LOTs: 10628131 1,788 -> 2,868, ...* |
 | Counts left standing | *(grey)* *10628125 was counted at Trim OUT on 09-18 -- its count stands; its production is still recorded.* |
 | Die life | *Asset # DMO125 (6MA IN 2,3,4 EX 2,3,4 D): 15,699 -> 16,820 (+1,121 shots).* |
 
@@ -422,8 +464,8 @@ now reads *Reconciled -- JGP*. Discard with unsaved changes uses the existing `C
   press x die when loaded. Anything newer refuses the save: *"This shift changed since you opened
   it -- reloading."* (`Tool_CorrectShotCount`'s guard.)
 - **Die changed mid-shift.** Each die is its own landing row and its own reconciliation.
-- **Tag belongs elsewhere.** Refused with where it belongs (*"10628578 is 6FB / DM0144 cavity a"*).
-- **Cutover-keyed tag.** An existing basket like any other; §3.3 applies.
+- **LTT belongs elsewhere.** Refused with where it belongs (*"10628578 is 6FB / DM0144 cavity a"*).
+- **Cutover-keyed LTT.** An existing LOT like any other; §3.3 applies.
 - **Unmapped cavity.** Part NULL, allowed (0084 §4.1); reports bucket it *(unassigned part)*.
 - **Open shift.** Not offered. The live screen owns the current shift.
 - **Reconciling twice.** Allowed. The second compares against everything including the first, so
@@ -438,9 +480,9 @@ now reads *Reconciled -- JGP*. Discard with unsaved changes uses the existing `C
 - **Release with a count and no reading** does not move either watermark and does not advance die
   life (`DieCastLot_Release` lines 225-240: `MAX` ignores NULL; `ISNULL(@CounterReading,0) -
   watermark` is not positive). Jacques, 2026-09-21: *the shift is waiting on its shift-end number;
-  failing to enter it is operator failure, not something to build around* -- hence §6.3.
+  failing to enter it is operator failure, not something to build around* -- hence §6.4.
 - **Consequence to know about:** when that shift-end number is entered, the breakdown's proposal
-  for the open basket is `reading - cavity watermark`
+  for the open LOT is `reading - cavity watermark`
   (`DieCast_GetShiftOutputBreakdown` line 211), which ignores the reading-less releases, so it
   proposes the whole shift again. The good figure is editable and the variance shows the gap.
   Noted so it is known behaviour, not a surprise.
@@ -468,12 +510,12 @@ and again after -- the live procs must not change behaviour (§5.1).
 
 - each worker, called by its live wrapper, is behaviour-identical (existing fixtures, unchanged);
 - save order: a move and a backfill in one save credit the full shift, not the remainder;
-- the three basket states, including a locked basket whose production is still written;
+- the three LOT states, including a locked LOT whose production is still written;
 - **no override**: a count correction on a counted-downstream LOT is refused;
 - re-file leaves `ShotCount` and every `PieceCount` untouched;
 - decreases: negative contribution only with a reconciliation id (live path still refused by the
   CHECK); negative scrap nets on `Reject_GetPartMatrix`; an anchor lowers the reading;
-- tag collision named; unused LTT minted and released to default storage;
+- LTT collision named; a run of LTTs mints one LOT each; unused LTT minted and released to default storage;
 - stale stamp refuses; open shift refused; move outside +/-2 refused;
 - re-running an identical save writes nothing but a header;
 - `DieCastShift_ListUnreconciled` flags Machine-202-shaped data and clears on a header.
@@ -482,7 +524,7 @@ and again after -- the live procs must not change behaviour (§5.1).
 3rd, 09-17 1st and 09-17 2nd from the DCFM-2076 sheet. Re-run
 `sql/scratch/Run-DieCastOnRecord.ps1` against it. It must show: 09-16 3rd 11,436; 09-17 1st
 12,960; 09-17 2nd 8,532 with reading 732 and 300 warm-up pieces; `DMO125` die life +1,121 (+6 for
-the 2nd-shift reading); tags 10628131-134 at 2,868; and every Machine 202 shift flagged until
+the 2nd-shift reading); LOTs 10628131-134 at 2,868; and every Machine 202 shift flagged until
 reconciled.
 
 **Screens.** Live smoke on the Dev gateway with a real AD sign-in: each popup in §7, a blocked save
@@ -503,4 +545,8 @@ risky half; it ships with its regression evidence in the runbook.
 2. **§5.1 -- worker extraction** touches the live die cast procs. It follows from D2 + D11 + the
    INSERT-EXEC rule, but it is a larger change to live code than "extend the existing writers" may
    have sounded.
-3. **§7.4 -- the four blocking checks**, especially the per-tag shot ceiling.
+3. **§7.4 -- the four blocking checks**, especially the per-LOT shot ceiling.
+4. **Are LTTs used in sequence per press?** Machine 202's gap (10628556-572) suggests so. If they
+   are, the screen can list the unused LTTs between the last LOT recorded before the shift and the
+   first recorded after it -- a strong hint for what is missing. Not built into the design until
+   confirmed; a wrong assumption here would suggest LTTs that belong to another press.

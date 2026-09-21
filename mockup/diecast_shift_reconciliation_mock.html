@@ -175,6 +175,9 @@ table.t{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
 .note{font-size:var(--fs-xs);color:var(--n70)}
 .ok-big{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:6px;border:1px solid rgba(80,200,120,.45);background:var(--good-bg)}
 .ok-big .ic{font-size:var(--fs-2xl);color:var(--good-fg);font-weight:800;line-height:1}
+.addbar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.addmsg{margin-top:8px;font-size:var(--fs-sm)}
+.addmsg.ok{color:var(--good-fg)} .addmsg.warn{color:var(--warn-fg)} .addmsg.bad{color:var(--bad-fg)}
 .toast{position:absolute;right:16px;bottom:16px;z-index:6;background:var(--n30);border:1px solid var(--n50);border-radius:6px;padding:10px 14px;font-size:var(--fs-sm);color:var(--n90);max-width:420px}
 @media (prefers-reduced-motion:no-preference){.dlg{animation:pop .14s ease-out}@keyframes pop{from{transform:translateY(6px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
@@ -215,7 +218,7 @@ var SCEN = {
     shift:"09-17 1st", win:"07:00–15:00", dieLife:15699, illustrative:false,
     parts:M11_PARTS,
     entries:[{id:"e1", at:"09-17 09:35", by:"BH", during:"09-17 1st", reading:991, perCav:953, warm:35, test:36, rows:36, pieces:11436,
-              desc:"reading 991 · 953 on 12 baskets · warm-up 35 shots · 36 test (008, All)"}],
+              desc:"reading 991 · 953 on 12 LOTs · warm-up 35 shots · 36 test (008, All)"}],
     tags:[
       T("10628131",0,"A",1788,"rel","Warehouse","09-18 14:46",1080),
       T("10628132",0,"B",1788,"rel","Warehouse","09-18 14:46",1080),
@@ -242,7 +245,7 @@ var SCEN = {
     shift:"09-18 1st", win:"07:00–15:00", dieLife:15699, illustrative:true,
     parts:M11_PARTS,
     entries:[{id:"e2", at:"09-18 14:48", by:"BH", during:"09-18 1st", reading:1216, perCav:1197, warm:16, test:36, rows:36, pieces:14364,
-              desc:"reading 1,216 · 1,197 on 12 baskets · warm-up 16 shots · 36 test (008, All)"}],
+              desc:"reading 1,216 · 1,197 on 12 LOTs · warm-up 16 shots · 36 test (008, All)"}],
     tags:[
       T("10628143",0,"A",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
       T("10628144",0,"B",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
@@ -269,7 +272,7 @@ var SCEN = {
     moveOpts:[{s:"09-16 2nd",g:0},{s:"09-16 3rd",g:270},{s:"09-17 2nd",g:0},{s:"09-17 3rd",g:0}]
   }
 };
-/* Machine 202, 09-17 1st shift: 14 single-basket releases, no counter reading on any. */
+/* Machine 202, 09-17 1st shift: 14 single-LOT releases, no counter reading on any. */
 [["15:51","MG","10628586",66,"09-17 2nd"],["17:06","MG","10628587",66,"09-17 2nd"],["19:08","MG","10628588",66,"09-17 2nd"],
  ["20:18","MG","10628589",66,"09-17 2nd"],["21:46","MG","10628590",66,"09-17 2nd"],["22:31","EG","10628591",66,"09-17 2nd"],
  ["23:09","ND","10628592",33,"09-17 3rd"],["23:22","EG","10628542",33,"09-17 3rd"],["00:53","ND","10628593",66,"09-17 3rd"],
@@ -280,6 +283,26 @@ var SCEN = {
     desc:"released "+r[2]+" · "+r[3]+" pc · no counter reading"});
   var rec={}; rec[id]=r[3];
   SCEN.m202.tags.push(T(r[2],0,"a",r[3],"rel","Warehouse",day+" "+r[0],null,rec));
+});
+
+/* Machine 202, a shift with NOTHING recorded. LTTs 10628556-10628572 exist nowhere in the MES and
+   Machine 202's first record of the week is 06:19 on 09-17. Which shift each LTT belongs to comes from
+   the press sheet, so this shift, its quantities and its actuals are illustrative. */
+SCEN.m202n = {
+  key:"m202n", press:"Machine 202", die:"DM0144", dieName:"6FB Oil Pan D", cav:1,
+  shift:"09-16 2nd", win:"15:00–23:00", dieLife:3060, illustrative:true, noReading:true,
+  parts:[{name:"6FB OIL PAN", item:"11200-6FB-A0", macola:"646-090"}],
+  entries:[], tags:[],
+  sheet:{total:372, good:362, warm:10, rejects:[{qas:"AD", code:"008", part:"All", amt:2}]},
+  moveOpts:[]
+};
+/* Every LTT this mockup knows is already in the MES -- what the build's lookup would find. */
+var EXIST = {};
+[["m11","DMO125"],["red","DMO125"],["m202","DM0144"]].forEach(function(p){
+  SCEN[p[0]].tags.forEach(function(t){ EXIST[t.tag]={press:SCEN[p[0]].press, die:p[1], dieName:SCEN[p[0]].dieName, cav:t.cav, pc:t.pc, where:t.where, state:t.state, rel:t.rel}; });
+});
+[["10628573",66,"09-17 07:23"],["10628578",66,"09-17 06:22"],["10628579",66,"09-17 06:56"],["10628580",6,"09-17 07:23"],["10628581",66,"09-17 09:17"]].forEach(function(r){
+  EXIST[r[0]]={press:"Machine 202", die:"DM0144", dieName:"6FB Oil Pan D", cav:"a", pc:r[1], where:"Warehouse", state:"rel", rel:r[2]};
 });
 
 var LANDING = {
@@ -316,7 +339,7 @@ var LANDING = {
     ["09-17 2nd","DM0144",0,0,null,null,"none"],
     ["09-17 1st","DM0144",14,848,null,"m202","norx"],
     ["09-16 3rd","DM0144",5,270,null,null,"norx"],
-    ["09-16 2nd","DM0144",0,0,null,null,"none"],
+    ["09-16 2nd","DM0144",0,0,null,"m202n","none"],
     ["09-16 1st","DM0144",0,0,null,null,"none"]
   ]
 };
@@ -327,7 +350,7 @@ var QAS = ["","CW","EG","AD","RM","MG","ND"];
 /* ================= state ================= */
 var S;
 function fresh(){
-  return {view:"landing", press:"m11", scen:"m11", overlay:null, signedIn:true,
+  return {view:"landing", press:"m11", scen:"m11", overlay:null, signedIn:true, extra:{}, addMode:"range", addMsg:null, addF:"", addTo:"", addQty:"",
           moved:{}, pick:null, sel:{}, reason:"", note:"", tick:false, sheets:{}, saved:{}, toast:null};
 }
 function sheetOf(k){
@@ -340,6 +363,9 @@ function sheetOf(k){
   }
   return S.sheets[k];
 }
+
+function tagsOf(k){ return SCEN[k].tags.concat(S.extra[k]||[]); }
+function reasonName(){ return (REASONS.filter(function(x){return x[0]===S.reason;})[0]||["",""])[1]; }
 
 /* ================= helpers ================= */
 function fmt(n){ return (n==null||n==="")?"—":Number(n).toLocaleString("en-US"); }
@@ -359,7 +385,7 @@ function calc(k){
   var noGood=0; sh.rejects.forEach(function(r){ var a=num(r.amt); if(a>0) noGood+=a; });
   var typedAny = s.total!=null || s.good!=null || s.warm!=null;
   var totalGood = (s.good!=null && !isNaN(s.good)) ? s.good*sc.cav - noGood : null;
-  var tags=sc.tags.map(function(t){
+  var tags=tagsOf(k).map(function(t){
     var r=0; Object.keys(t.rec).forEach(function(id){ if(!S.moved[id]) r+=t.rec[id]; });
     var q=num(sh.qty[t.tag]);
     var gap = (q==null||isNaN(q)) ? (r>0?null:0) : q-r;
@@ -370,17 +396,17 @@ function calc(k){
   var needNote = S.reason==="Other" && !S.note.trim();
   checks.push({ok:!!S.reason && !needNote, txt: !S.reason ? "Choose why you are reconciling this shift." : needNote ? "“Other” needs a note saying what happened." : "Reason: "+REASONS.filter(function(x){return x[0]===S.reason;})[0][1]+"."});
   var orphans=tags.filter(function(x){ return x.rec>0 && (x.q==null||isNaN(x.q)); });
-  checks.push({ok:orphans.length===0, txt: orphans.length===0 ? "Every basket with production on record has an actual figure." :
-    orphans.length+" basket"+(orphans.length>1?"s have":" has")+" production on record for this shift but no actual figure: "+orphans.map(function(x){return x.t.tag;}).join(", ")+". Type the actual figure, or move the entry it came from."});
+  checks.push({ok:orphans.length===0, txt: orphans.length===0 ? "Every LOT with production on record has an actual figure." :
+    orphans.length+" LOT"+(orphans.length>1?"s have":" has")+" production on record for this shift but no actual figure: "+orphans.map(function(x){return x.t.tag;}).join(", ")+". Type the actual figure, or move the entry it came from."});
   if(typedAny){
     var addOk = s.total!=null && s.good!=null && s.warm!=null && s.total===s.good+s.warm;
     checks.push({ok:addOk, txt: addOk ? "Total shots = good shots + warm-up shots ("+fmt(s.total)+")." :
       "Total shots "+fmt(s.total)+" should equal good shots "+fmt(s.good)+" + warm-up "+fmt(s.warm)+" = "+fmt((s.good||0)+(s.warm||0))+". One of them has a typo."});
     var sumOk = totalGood!=null && tagSum===totalGood;
-    checks.push({ok:sumOk, txt: sumOk ? "Tag list adds up to total good pieces ("+fmt(totalGood)+")." :
-      "Tag list totals "+fmt(tagSum)+"; actual total good is "+fmt(totalGood)+" ("+fmt(s.good)+" good shots × "+sc.cav+" − "+fmt(noGood)+" no-good). One of them has a typo."});
+    checks.push({ok:sumOk, txt: sumOk ? "LOT list adds up to total good pieces ("+fmt(totalGood)+")." :
+      "LOT list totals "+fmt(tagSum)+"; actual total good is "+fmt(totalGood)+" ("+fmt(s.good)+" good shots × "+sc.cav+" − "+fmt(noGood)+" no-good). One of them has a typo."});
     var over=tags.filter(function(x){ return x.q!=null && s.good!=null && x.q>s.good; });
-    checks.push({ok:over.length===0, txt: over.length===0 ? "No basket holds more than the shift's good shots ("+fmt(s.good)+")." :
+    checks.push({ok:over.length===0, txt: over.length===0 ? "No LOT holds more than the shift's good shots ("+fmt(s.good)+")." :
       over.map(function(x){return x.t.tag+" says "+fmt(x.q);}).join("; ")+" — more than the "+fmt(s.good)+" good shots this shift made. Check the figure."});
     var bad=tags.filter(function(x){ return x.q!=null && isNaN(x.q); });
     if(bad.length) checks.push({ok:false, txt:"Not a number: "+bad.map(function(x){return x.t.tag;}).join(", ")+"."});
@@ -395,25 +421,77 @@ function changes(k){
   var byTarget={};
   sc.entries.forEach(function(e){ if(S.moved[e.id]){ var t=S.moved[e.id]; (byTarget[t]=byTarget[t]||{n:0,rows:0,pc:0}); byTarget[t].n++; byTarget[t].rows+=e.rows; byTarget[t].pc+=e.pieces; }});
   var moveLines=Object.keys(byTarget).map(function(t){ var b=byTarget[t]; return b.n+" entr"+(b.n>1?"ies":"y")+" ("+b.rows+" rows, "+fmt(b.pc)+" pieces) move from "+sc.shift+" to "+t+"."; });
-  if(moveLines.length) out.push({k:"move", h:"Entries moved", p:moveLines.join(" "), d:"Shots, pieces, baskets and die life do not change — only which shift is credited."});
+  if(moveLines.length) out.push({k:"move", h:"Entries moved", p:moveLines.join(" "), d:"Shots, pieces, LOTs and die life do not change — only which shift is credited."});
   var add=0, sub=0, addT=0, subT=[];
   c.tags.forEach(function(x){ if(x.gap>0){add+=x.gap; addT++;} if(x.gap<0){sub+=-x.gap; subT.push(x.t.tag+" −"+fmt(-x.gap));} });
   var warmGap = c.s.warm!=null ? (c.s.warm - c.rec.warm)*sc.cav : 0;
   var rejGap = c.typedAny ? c.noGood - c.rec.test : 0;
   var extra=[]; if(warmGap>0) extra.push(fmt(warmGap)+" warm-up pieces"); if(rejGap>0) extra.push(fmt(rejGap)+" test/no-good pieces");
-  if(add>0||extra.length) out.push({k:"add", h:"Production added", p:(add>0?fmt(add)+" good pieces credited to "+addT+" basket"+(addT>1?"s":"")+". ":"")+(extra.length?extra.join(" and ")+" recorded.":"")});
-  var redBits=[]; if(sub>0) redBits.push(fmt(sub)+" good pieces removed ("+subT.length+" baskets)"); if(warmGap<0) redBits.push(fmt(-warmGap)+" warm-up pieces removed"); if(rejGap<0) redBits.push(fmt(-rejGap)+" test/no-good pieces removed");
+  if(add>0||extra.length) out.push({k:"add", h:"Production added", p:(add>0?fmt(add)+" good pieces credited to "+addT+" LOT"+(addT>1?"s":"")+". ":"")+(extra.length?extra.join(" and ")+" recorded.":"")});
+  var redBits=[]; if(sub>0) redBits.push(fmt(sub)+" good pieces removed ("+subT.length+" LOTs)"); if(warmGap<0) redBits.push(fmt(-warmGap)+" warm-up pieces removed"); if(rejGap<0) redBits.push(fmt(-rejGap)+" test/no-good pieces removed");
   if(c.dieDelta<0) redBits.push("counter reading lowered "+fmt(c.rec.reading)+" → "+fmt(c.s.total)+" (anchor)");
   if(redBits.length) out.push({k:"red", h:"Production reduced", p:redBits.join("; ")+".", d:subT.join(" · ")});
+  var nw=c.tags.filter(function(x){ return x.t.state==="new" && x.q>0; });
+  if(nw.length){ var npc=0; nw.forEach(function(x){ npc+=x.q; });
+    out.push({k:"new", h:"New LOTs", p:nw.length+" LOT"+(nw.length>1?"s":"")+" created and released to Warehouse, "+fmt(npc)+" pieces.", d:nw.map(function(x){return x.t.tag+"  "+fmt(x.q);}).join("\n")}); }
   var chg=c.tags.filter(function(x){ return x.gap && x.t.state==="rel"; });
-  if(chg.length) out.push({k:chg.some(function(x){return x.gap<0;})?"redc":"cnt", h:"Basket counts changed", p:chg.length+" released basket"+(chg.length>1?"s":"")+" not yet counted downstream.",
+  if(chg.length) out.push({k:chg.some(function(x){return x.gap<0;})?"redc":"cnt", h:"LOT counts changed", p:chg.length+" released LOT"+(chg.length>1?"s":"")+" not yet counted downstream.",
     d:chg.map(function(x){return x.t.tag+"  "+fmt(x.t.pc)+" → "+fmt(x.t.pc+x.gap);}).join("\n")});
   var st=c.tags.filter(function(x){ return x.gap && x.t.state==="trim"; });
-  if(st.length) out.push({k:"stand", h:"Counts left standing", p:st.length+" basket"+(st.length>1?"s have":" has")+" already been counted at trim — "+(st.length>1?"their counts stand":"its count stands")+". Their production is still recorded in full.",
+  if(st.length) out.push({k:"stand", h:"Counts left standing", p:st.length+" LOT"+(st.length>1?"s have":" has")+" already been counted at trim — "+(st.length>1?"their counts stand":"its count stands")+". Their production is still recorded in full.",
     d:st.map(function(x){return x.t.tag+"  "+x.t.where;}).join("\n")});
   if(c.dieDelta) out.push({k:c.dieDelta<0?"red":"die", h:"Die life", p:"Asset # "+sc.die+" ("+sc.dieName+"): "+fmt(sc.dieLife)+" → "+fmt(sc.dieLife+c.dieDelta)+" ("+sgn(c.dieDelta)+" shots)."});
   else out.push({k:"die0", h:"Die life", p:"Asset # "+sc.die+" ("+sc.dieName+"): unchanged at "+fmt(sc.dieLife)+"."});
   return {c:c, groups:out, reduces:out.some(function(g){return g.k==="red"||g.k==="redc";}), nothing:out.length===1 && out[0].k==="die0"};
+}
+
+/* ================= adding LTTs ================= */
+function spanOf(list){ return list.length>1 ? list[0]+"–"+list[list.length-1].slice(-3) : list[0]; }
+function addTags(){
+  var k=S.scen, sc=SCEN[k], sh=sheetOf(k), range=S.addMode==="range";
+  var f=(S.addF||"").trim(), to=range?(S.addTo||"").trim():f;
+  var pi=0, cav="a", cs=$("add-cav");
+  if(cs){ var v=cs.value.split("|"); pi=+v[0]; cav=v[1]; }
+  var re=/^\d{8,9}$/;
+  if(!re.test(f) || !re.test(to)){ S.addMsg={k:"bad", t:"An LTT is 8 or 9 digits. Check the number on the ticket."}; return; }
+  var a0=+f, a1=+to;
+  if(a1<a0){ S.addMsg={k:"bad", t:"The last LTT comes before the first. Swap them."}; return; }
+  if(a1-a0>=40){ S.addMsg={k:"bad", t:"That is "+(a1-a0+1)+" LTTs. A run is at most 40 — check both numbers."}; return; }
+  var qty=num(S.addQty); if(qty==null || isNaN(qty) || qty<=0){ S.addMsg={k:"bad", t:"Enter the quantity"+(range?" in each LOT":" in the LOT")+"."}; return; }
+  var have={}; tagsOf(k).forEach(function(t){ have[t.tag]=1; });
+  var added=[], joined=[], dup=[], refused=[];
+  for(var n=a0; n<=a1; n++){
+    var tag=String(n), ex=EXIST[tag];
+    if(have[tag]){ dup.push(tag); continue; }
+    if(ex && ex.die!==sc.die){ refused.push(tag+" is "+ex.press+" · "+ex.dieName+" (Asset # "+ex.die+"), cavity "+ex.cav); continue; }
+    var row = ex ? T(tag,pi,ex.cav,ex.pc,ex.state,ex.where,ex.rel,null,{}) : T(tag,pi,cav,0,"new","Warehouse","",null,{});
+    (S.extra[k]=S.extra[k]||[]).push(row); sh.qty[tag]=String(qty);
+    (ex?joined:added).push(tag);
+  }
+  var bits=[];
+  if(added.length) bits.push(added.length+" new LOT"+(added.length>1?"s":"")+" ("+spanOf(added)+")");
+  if(joined.length) bits.push(joined.length+" LTT"+(joined.length>1?"s":"")+" already on this die — "+(joined.length>1?"adds to those LOTs":"adds to that LOT")+" ("+joined.join(", ")+")");
+  var t = bits.length ? "Added "+bits.join("; ")+"." : "";
+  if(dup.length) t+=" Already in the list: "+dup.join(", ")+".";
+  if(refused.length) t+=" Refused — "+refused.join("; ")+".";
+  S.addMsg={k: refused.length?"bad":(dup.length&&!bits.length?"warn":"ok"), t:t.trim()};
+  if(bits.length){ S.addF=""; S.addTo=""; }
+}
+function addBar(sc){
+  var range=S.addMode==="range";
+  var h='<div class="addbar"><div class="seg" role="group" aria-label="How to add LTTs"><button type="button" data-act="addmode" data-m="one" aria-pressed="'+(!range)+'">One LTT</button><button type="button" data-act="addmode" data-m="range" aria-pressed="'+range+'">A run of LTTs</button></div>';
+  h+='<label class="lbl" for="add-from">'+(range?"First LTT":"LTT")+'</label><input class="inp" id="add-from" inputmode="numeric" autocomplete="off" placeholder="scan or type" value="'+esc(S.addF||"")+'" style="width:calc(160px*var(--scale))">';
+  if(range) h+='<label class="lbl" for="add-to">Last LTT</label><input class="inp" id="add-to" inputmode="numeric" autocomplete="off" placeholder="scan or type" value="'+esc(S.addTo||"")+'" style="width:calc(160px*var(--scale))">';
+  if(sc.cav>1){
+    h+='<label class="lbl" for="add-cav">Cavity</label><select class="sel" id="add-cav">';
+    sc.parts.forEach(function(p,pi){ ["A","B"].forEach(function(l){ h+='<option value="'+pi+'|'+l+'">'+p.item+' · '+l+'</option>'; }); });
+    h+='</select>';
+  }
+  h+='<label class="lbl" for="add-qty">'+(range?"Qty in each LOT":"Qty")+'</label><input class="inp num" id="add-qty" inputmode="numeric" autocomplete="off" placeholder="—" value="'+esc(S.addQty||"")+'">';
+  h+='<button type="button" class="btn pri" data-act="addtags">Add</button></div>';
+  if(S.addMsg) h+='<div class="addmsg '+S.addMsg.k+'" role="status">'+esc(S.addMsg.t)+'</div>';
+  h+='<p class="note">Each LTT is checked as it is added. A new LTT becomes a new LOT, created and released to Warehouse at save, as the live release does. An LTT already on this die adds to that LOT. An LTT that belongs to another press or die is refused. The last LOT of a run is often partial — change its quantity in its row.</p>';
+  return h;
 }
 
 /* ================= rendering ================= */
@@ -425,8 +503,12 @@ var STEPS = [
   {k:"5", t:"Ready to save", go:function(){ S=fresh(); S.view="rec"; S.scen="m11"; S.reason="MissedEntry"; S.moved={e1:"09-16 3rd"}; }},
   {k:"6", t:"Confirm", go:function(){ S=fresh(); S.view="rec"; S.scen="m11"; S.reason="MissedEntry"; S.moved={e1:"09-16 3rd"}; S.overlay="confirm"; }},
   {k:"7", t:"Saved", go:function(){ S=fresh(); S.view="done"; S.scen="m11"; S.reason="MissedEntry"; S.moved={e1:"09-16 3rd"}; S.saved.m11=true; }},
-  {k:"8", t:"Machine 202: a night filed as 1st", go:function(){ S=fresh(); S.press="m202"; S.view="rec"; S.scen="m202"; S.reason="WrongShift"; }},
-  {k:"9", t:"A reduction (illustrative)", go:function(){ S=fresh(); S.view="rec"; S.scen="red"; S.reason="WrongNumbers"; S.overlay="confirm"; }}
+  {k:"8", t:"Machine 202: a shift never recorded", go:function(){ S=fresh(); S.press="m202"; S.view="rec"; S.scen="m202n"; S.reason="MissedEntry";
+      var sh=sheetOf("m202n"); S.extra.m202n=[];
+      ["10628556","10628557","10628558","10628559","10628560","10628561"].forEach(function(tag,i){ S.extra.m202n.push(T(tag,0,"a",0,"new","Warehouse","",null,{})); sh.qty[tag]= i<5?"66":"30"; });
+      S.addQty="66"; S.addMsg={k:"ok", t:"Added 6 new LOTs (10628556–561). The last one held 30 — changed in its row."}; }},
+  {k:"9", t:"Machine 202: a night filed as 1st", go:function(){ S=fresh(); S.press="m202"; S.view="rec"; S.scen="m202"; S.reason="WrongShift"; }},
+  {k:"10", t:"A reduction (illustrative)", go:function(){ S=fresh(); S.view="rec"; S.scen="red"; S.reason="WrongNumbers"; S.overlay="confirm"; }}
 ];
 var ANNOT = {
   "1":{q:"Who is answerable for what this screen writes?", d:[
@@ -440,18 +522,18 @@ var ANNOT = {
       "The open shift can't be reconciled — the live screen owns it."],
     src:"Try it: switch to Machine 202, or open 09-17 1st / 09-18 1st on Machine 11."},
   "3":{q:"Does the recorded entry belong to this shift at all?", d:[
-      "The 09:35 entry holds the 3rd shift's numbers (991 shots, 953 a basket) under 1st shift. The screen can't read the paper, but it can see the symptom: <b>4 of the entry's baskets have no actual figure for this shift</b>.",
+      "The 09:35 entry holds the 3rd shift's numbers (991 shots, 953 a LOT) under 1st shift. The screen can't read the paper, but it can see the symptom: <b>4 of the entry's LOTs have no actual figure for this shift</b>.",
       "Save is blocked with the reason in plain words, and the fix is named: type the figure, or move the entry.",
       "Every check here is the sheet's own arithmetic. A failure is always a typo, never a plant condition — so these block, unlike live variance."],
     src:"Save stays disabled and says why. Nothing is written until the confirmation."},
   "4":{q:"Where does this entry really belong?", d:[
       "Nothing is pre-selected: the team lead picks the target shift from the paper, not from a guess.",
       "Each option shows what that shift holds now, so moving onto a shift that already has an entry is visible.",
-      "The popup states what does NOT change: shots, pieces, baskets, die life.",
+      "The popup states what does NOT change: shots, pieces, LOTs, die life.",
       "The confirm button names the target: <b>MOVE TO 09-16 3RD SHIFT</b>. The move is staged and undoable until Save."]},
   "5":{q:"Is every number going in the one on the paper?", d:[
       "With the entry moved, Recorded drops to zero and the gap is the whole shift.",
-      "<b>Real finding:</b> 8 of the 12 baskets have already been through trim (Trim Storage, or on 6MA Cam Holder Line 1). Their counts stand. Production is still recorded in full — shot count over parts in the lot.",
+      "<b>Real finding:</b> 8 of the 12 LOTs have already been through trim (Trim Storage, or on 6MA Cam Holder Line 1). Their counts stand. Production is still recorded in full — shot count over parts in the lot.",
       "Only 10628131–134, still in the Warehouse, get their counts corrected: 1,788 → 2,868.",
       "Type a typo into any field to see the checks catch it."]},
   "6":{q:"Last look: exactly what will change?", d:[
@@ -461,11 +543,18 @@ var ANNOT = {
   "7":{q:"Did it land, and where do I go next?", d:[
       "The result repeats what was written and gives the reconciliation a number for the audit trail.",
       "Back on the list, 09-17 1st reads <b>Reconciled · JGP</b> and 09-16 3rd now holds the 3rd shift's 11,436 — the two rows the sheet said were wrong."]},
-  "8":{q:"Which of these releases belong to which shift?", d:[
-      "Machine 202 releases are entered at the press as each basket fills, so <b>entered during</b> is reliable — and it disagrees with <b>filed under</b> for all 14.",
+  "8":{q:"Which LTTs — and are they really unrecorded?", d:[
+      "Nothing about this shift exists in the MES, so everything comes from the press sheet: the LTTs, the quantity in each LOT, the shots and the rejects.",
+      "Add LTTs one at a time, or as a run of consecutive LTTs with one quantity each, then change the last, partial LOT in its row. A keyboard-wedge scanner works: the cursor stays in the LTT field.",
+      "Every LTT is checked as it is added: a new LTT becomes a new LOT; one already on this die adds to that LOT; one that belongs to another press or die is refused, naming where it belongs.",
+      "New LOTs are created and released to Warehouse at save, exactly as the live release does, and the confirmation lists them by LTT. Die life advances by the shift's actual shots.",
+      "<b>Real data:</b> LTTs 10628556–572, 17 consecutive tickets, exist nowhere in the MES, and Machine 202's first record of the week is 06:19 on 09-17. Which shift each belongs to comes from the paper — the shift and quantities here are illustrative."],
+    src:"Try it: add 10628131 (a Machine 11 LOT — refused), 10628573 (already on this die), or a run such as 10628562 to 10628565."},
+  "9":{q:"Which of these releases belong to which shift?", d:[
+      "Machine 202 releases are entered at the press as each LOT fills, so <b>entered during</b> is reliable — and it disagrees with <b>filed under</b> for all 14.",
       "Select by the shift they were entered in, move each group. Still no pre-selected target.",
       "No counter reading was ever entered, so moving these changes no die life. The shift-end number is the operator's miss; the dashboard flags it."]},
-  "9":{q:"Taking production away — am I sure?", d:[
+  "10":{q:"Taking production away — am I sure?", d:[
       "<b>Illustrative</b>: we have no sheet for 09-18 1st. Suppose it said 1,206 shots, not 1,216.",
       "A reduction is written as compensating rows; nothing is edited or deleted.",
       "Anything that reduces production, a count or die life is amber and needs its own tick before the Save button enables."]}
@@ -494,7 +583,7 @@ function renderLanding(){
   var rows=LANDING[S.press], press=S.press==="m11"?"Machine 11":"Machine 202";
   var flagged = LANDING.m202.filter(function(r){return r[6]==="norx";}).length;
   var h='<div class="body">';
-  h+='<div class="row"><button type="button" class="tile" data-act="press" data-press="m202"><span class="big">'+flagged+'</span><span><span class="t1">Shifts not reconciled · last 7 days</span><br><span class="t2">Machine 202 × '+flagged+' — baskets released, no shift-end number. (Supervisor dashboard tile)</span></span></button></div>';
+  h+='<div class="row"><button type="button" class="tile" data-act="press" data-press="m202"><span class="big">'+flagged+'</span><span><span class="t1">Shifts not reconciled · last 7 days</span><br><span class="t2">Machine 202 × '+flagged+' — LOTs released, no shift-end number. (Supervisor dashboard tile)</span></span></button></div>';
   h+='<div class="row"><span class="lbl">Press</span><div class="seg"><button type="button" data-act="press" data-press="m11" aria-pressed="'+(S.press==="m11")+'">Machine 11 · Asset # DMO125</button><button type="button" data-act="press" data-press="m202" aria-pressed="'+(S.press==="m202")+'">Machine 202 · Asset # DM0144</button></div><span class="note">then pick the shift you are reconciling — nothing is pre-selected</span></div>';
   h+='<div class="panel scroll"><table class="t"><thead><tr><th>Shift</th><th>Die asset #</th><th class="n">Entries</th><th class="n">Good recorded</th><th class="n">Shift-end reading</th><th>Status</th><th></th></tr></thead><tbody>';
   rows.forEach(function(r){
@@ -507,6 +596,7 @@ function renderLanding(){
       if(shift==="09-17 1st"){ chip='<span class="chip good">Reconciled · JGP 09-21</span>'; good=12960; reading=1121; entries=2; }
       if(shift==="09-16 3rd"){ chip='<span class="chip">Entry recorded (moved in)</span>'; good=11436; reading=991; entries=1; }
     }
+    if(sc && sc!=="m11" && S.saved[sc]){ chip='<span class="chip good">Reconciled · JGP 09-21</span>'; }
     var btn = st==="open" ? "" : '<button type="button" class="btn sm'+(sc?" pri":"")+'" data-act="open" data-scen="'+(sc||"")+'" data-shift="'+shift+'">Reconcile</button>';
     h+='<tr><td><b>'+shift+'</b></td><td class="mono">'+r[1]+'</td><td class="n">'+(entries||"—")+'</td><td class="n">'+(good?fmt(good):"—")+'</td><td class="n">'+(reading!=null?fmt(reading):(entries?'<span class="dim">none</span>':"—"))+'</td><td>'+chip+'</td><td>'+btn+'</td></tr>';
   });
@@ -523,15 +613,16 @@ function tagRows(c){
     h+='<tr class="grp"><td colspan="7">'+esc(p.name)+' · '+esc(p.item)+' · Macola '+esc(p.macola)+'<span class="sub" id="sub-'+pi+'">sub-total '+fmt(sub)+'</span></td></tr>';
     list.forEach(function(x){
       var t=x.t, orphan = x.rec>0 && (x.q==null||isNaN(x.q));
-      var state = t.state==="trim" ? '<span class="chip lock">🔒 Counted at trim · '+esc(t.where)+'</span>' :
+      var state = t.state==="new" ? '<span class="chip good">New LOT · created at save, released to Warehouse</span>' :
+                  t.state==="trim" ? '<span class="chip lock">🔒 Counted at trim · '+esc(t.where)+'</span>' :
                   '<span class="chip info">Released '+esc(t.rel)+' · '+esc(t.where)+'</span>';
-      h+='<tr class="'+(orphan?"flag":"")+'" id="row-'+t.tag+'"><td class="mono"><b>'+t.tag+'</b></td><td>'+t.cav+'</td>'+
+      h+='<tr class="'+(orphan?"flag":"")+'" id="row-'+t.tag+'"><td class="mono"><b>'+t.tag+'</b>'+(t.state==="new"?' <button type="button" class="btn sm ghost" data-act="rmtag" data-tag="'+t.tag+'" aria-label="Remove LTT '+t.tag+'">✕</button>':'')+'</td><td>'+t.cav+'</td>'+
          '<td class="n"><input class="inp num" id="q-'+t.tag+'" data-qty="'+t.tag+'" inputmode="numeric" aria-label="Actual quantity for '+t.tag+'" value="'+esc(c.sh.qty[t.tag]||"")+'" placeholder="—"></td>'+
          '<td class="n" id="rec-'+t.tag+'">'+(x.rec?fmt(x.rec):'<span class="dim">0</span>')+'</td>'+
          '<td class="n" id="gap-'+t.tag+'"></td><td>'+state+'</td><td class="n" id="cnt-'+t.tag+'"></td></tr>';
     });
   });
-  if(!h) h='<tr><td colspan="7" class="dim">No baskets on record for this shift. Add the actual tags below.</td></tr>';
+  if(!h) h='<tr><td colspan="7" class="dim">No LOTs on record for this shift. Add the LTTs from the press sheet below.</td></tr>';
   return h;
 }
 
@@ -547,16 +638,17 @@ function renderRec(){
   /* entries on record */
   h+='<div class="panel"><h2>On record for this shift</h2>';
   if(k==="m202"){
-    h+='<div class="entry" style="margin-bottom:10px"><div class="what"><b>No shift-end number was entered</b> — 14 baskets released, no counter reading on any of them. This is what the dashboard flags. Every release below is filed under <b>'+sc.shift+'</b>, but was entered during another shift.</div></div>';
+    h+='<div class="entry" style="margin-bottom:10px"><div class="what"><b>No shift-end number was entered</b> — 14 LOTs released, no counter reading on any of them. This is what the dashboard flags. Every release below is filed under <b>'+sc.shift+'</b>, but was entered during another shift.</div></div>';
     var n2=0,n3=0; sc.entries.forEach(function(e){ if(!S.moved[e.id]){ if(e.during==="09-17 2nd")n2++; if(e.during==="09-17 3rd")n3++; }});
     h+='<div class="row" style="margin-bottom:8px"><span class="lbl">Select</span><button type="button" class="btn sm" data-act="selDuring" data-d="09-17 2nd"'+(n2?"":" disabled")+'>Entered during 09-17 2nd ('+n2+')</button><button type="button" class="btn sm" data-act="selDuring" data-d="09-17 3rd"'+(n3?"":" disabled")+'>Entered during 09-17 3rd ('+n3+')</button><button type="button" class="btn sm pri" data-act="moveSel"'+(Object.keys(S.sel).length?"":" disabled")+'>Move selected ('+Object.keys(S.sel).length+')…</button></div>';
-    h+='<div class="scroll"><table class="t"><thead><tr><th></th><th>Entered</th><th>By</th><th>Basket</th><th class="n">Pieces</th><th>Entered during</th><th>Filed under</th></tr></thead><tbody>';
+    h+='<div class="scroll"><table class="t"><thead><tr><th></th><th>Entered</th><th>By</th><th>LTT</th><th class="n">Pieces</th><th>Entered during</th><th>Filed under</th></tr></thead><tbody>';
     sc.entries.forEach(function(e){
       var mv=S.moved[e.id];
       h+='<tr class="'+(S.sel[e.id]?"sel ":"")+(mv?"":"click")+'" '+(mv?"":'data-act="tog" data-id="'+e.id+'"')+'><td>'+(mv?"":'<input type="checkbox" tabindex="-1" '+(S.sel[e.id]?"checked":"")+' aria-label="select">')+'</td><td class="mono">'+e.at+'</td><td>'+e.by+'</td><td class="mono">'+e.lot+'</td><td class="n">'+e.pieces+'</td><td><span class="chip warn">'+e.during+'</span></td><td>'+(mv?'<span class="chip info">Moving to '+mv+'</span> <button type="button" class="btn sm ghost" data-act="undo" data-id="'+e.id+'">Undo</button>':'<span class="chip">'+sc.shift+'</span>')+'</td></tr>';
     });
     h+='</tbody></table></div>';
   } else {
+    if(!sc.entries.length) h+='<p class="dim" style="margin:0">Nothing is recorded for this shift on '+esc(sc.press)+' — no entries, no LOTs, no rejects. Everything below comes from the press sheet.</p>';
     sc.entries.forEach(function(e){
       var mv=S.moved[e.id];
       var notOnSheet=c.tags.filter(function(x){ return x.t.rec[e.id] && (x.q==null||isNaN(x.q)); }).length;
@@ -564,7 +656,7 @@ function renderRec(){
       h+='<div class="entry'+(mv?" moved":"")+'"><div class="what"><b>'+e.at+' · '+e.by+'</b> — '+esc(e.desc)+' · '+e.rows+' rows<br>'+
          '<span class="chip">Entered during '+e.during+'</span> <span class="chip'+(mv?" info":"")+'">'+(mv?"Moving to "+mv:"Filed under "+sc.shift)+'</span></div>'+
          (mv?'<button type="button" class="btn sm" data-act="undo" data-id="'+e.id+'">Undo move</button>':'<button type="button" class="btn" data-act="move1" data-id="'+e.id+'">Move to another shift…</button>')+
-         (!mv && notOnSheet ? '<div class="hint" id="hint-'+e.id+'">⚠ '+notOnSheet+' of this entry\'s '+total+' baskets have no actual figure for this shift. It may belong to another shift.</div>' : '<div class="hint" id="hint-'+e.id+'"></div>')+'</div>';
+         (!mv && notOnSheet ? '<div class="hint" id="hint-'+e.id+'">⚠ '+notOnSheet+' of this entry\'s '+total+' LOTs have no actual figure for this shift. It may belong to another shift.</div>' : '<div class="hint" id="hint-'+e.id+'"></div>')+'</div>';
     });
   }
   h+='</div>';
@@ -588,8 +680,8 @@ function renderRec(){
      '<p class="note">“All” spreads the amount across every cavity. Approved by is the QAS initials, recorded against each reject row.</p></div></div>';
 
   /* tags */
-  h+='<div class="panel scroll"><h2>Tags</h2><table class="t"><thead><tr><th>Tag #</th><th>Cav</th><th class="n">Actual qty</th><th class="n">Recorded</th><th class="n">Gap</th><th>Basket</th><th class="n">Count</th></tr></thead><tbody>'+tagRows(c)+
-     '<tr><td colspan="7"><button type="button" class="btn sm" data-act="addtag">+ Tag</button> <span class="note">new tags are created and released to default storage, as the live path does</span></td></tr>'+
+  h+='<div class="panel scroll"><h2>LOTs</h2><table class="t"><thead><tr><th>LTT</th><th>Cav</th><th class="n">Actual qty</th><th class="n">Recorded</th><th class="n">Gap</th><th>LOT status</th><th class="n">LOT count</th></tr></thead><tbody>'+tagRows(c)+
+     '<tr><td colspan="7">'+addBar(sc)+'</td></tr>'+
      '<tr class="grp"><td colspan="2">GRAND TOTAL</td><td class="n" id="tagsum"></td><td class="n" id="recsum"></td><td colspan="3"></td></tr></tbody></table></div>';
 
   /* footer */
@@ -618,7 +710,7 @@ function derived(){
     var t=x.t; recsum+=x.rec;
     set("rec-"+t.tag, x.rec?fmt(x.rec):'<span class="dim">0</span>');
     set("gap-"+t.tag, x.gap==null?'<span class="neg">?</span>':'<span class="'+cls(x.gap)+'">'+sgn(x.gap)+'</span>');
-    var cnt = !x.gap ? '<span class="dim">'+fmt(t.pc)+'</span>' :
+    var cnt = t.state==="new" ? (x.q>0 ? '<span class="pos">new → '+fmt(x.q)+'</span>' : '<span class="dim">new</span>') : !x.gap ? '<span class="dim">'+fmt(t.pc)+'</span>' :
               t.state==="trim" ? '<span class="dim">'+fmt(t.pc)+' · stands</span>' :
               fmt(t.pc)+' → <span class="'+cls(x.gap)+'">'+fmt(t.pc+x.gap)+'</span>';
     set("cnt-"+t.tag, cnt);
@@ -632,7 +724,7 @@ function derived(){
   sc.entries.forEach(function(e){
     var hint=$("hint-"+e.id); if(!hint || S.moved[e.id]) return;
     var n=c.tags.filter(function(x){ return x.t.rec[e.id] && (x.q==null||isNaN(x.q)); }).length, tot=c.tags.filter(function(x){return x.t.rec[e.id];}).length;
-    hint.innerHTML = n ? "⚠ "+n+" of this entry's "+tot+" baskets have no actual figure for this shift. It may belong to another shift." : "";
+    hint.innerHTML = n ? "⚠ "+n+" of this entry's "+tot+" LOTs have no actual figure for this shift. It may belong to another shift." : "";
   });
   set("checks", c.checks.map(function(x){ return '<div class="c '+(x.ok?"yes":"no")+'"><span class="i">'+(x.ok?"✓":"✕")+'</span><span>'+x.txt+'</span></div>'; }).join(""));
   var b=$("savebtn"); if(b){ b.disabled=!c.ok; b.textContent = c.ok ? "Review & save · "+sc.shift.toUpperCase()+" SHIFT" : (c.checks.filter(function(x){return !x.ok;}).length+" to fix before saving"); }
@@ -641,9 +733,9 @@ function derived(){
 
 function renderDone(){
   var ch=changes(S.scen), sc=ch.c.sc;
-  var h='<div class="body"><div class="ok-big"><span class="ic">✓</span><div><div style="font-size:var(--fs-lg);font-weight:800">'+sc.shift.toUpperCase()+' SHIFT RECONCILED</div><div class="note" style="color:var(--n90)">Reconciliation #1 · '+esc(sc.press)+' · Asset # '+sc.die+' · saved 09-21 13:40 by Jacques Potgieter (JGP) · reason: Shift not entered</div></div></div>';
+  var h='<div class="body"><div class="ok-big"><span class="ic">✓</span><div><div style="font-size:var(--fs-lg);font-weight:800">'+sc.shift.toUpperCase()+' SHIFT RECONCILED</div><div class="note" style="color:var(--n90)">Reconciliation #1 · '+esc(sc.press)+' · Asset # '+sc.die+' · saved 09-21 13:40 by Jacques Potgieter (JGP) · reason: '+esc(reasonName())+'</div></div></div>';
   h+='<div class="grp-list">'+ch.groups.map(groupHtml).join("")+'</div>';
-  h+='<div class="row"><button type="button" class="btn pri big" data-act="back">Back to shifts</button><span class="note">09-17 1st and 09-16 3rd on Machine 11 now match the actual counts.</span></div></div>';
+  h+='<div class="row"><button type="button" class="btn pri big" data-act="back">Back to shifts</button><span class="note">'+(S.scen==="m11"?"09-17 1st and 09-16 3rd on Machine 11 now match the actual counts.":"Back on the list, this shift now reads Reconciled.")+'</span></div></div>';
   return h;
 }
 
@@ -655,7 +747,7 @@ function groupHtml(g){
 function overlay(){
   if(S.overlay==="signin"){
     return '<div class="ov"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dh1"><div class="dh" id="dh1">Sign in to reconcile a shift</div><div class="db">'+
-      '<p style="margin:0">Reconciling changes production records, basket counts and die life for a past shift. <b style="color:var(--n100)">Everything you save here is recorded under your name.</b></p>'+
+      '<p style="margin:0">Reconciling changes production records, LOT counts and die life for a past shift. <b style="color:var(--n100)">Everything you save here is recorded under your name.</b></p>'+
       '<div class="field"><label class="lbl" for="ad-u">AD account</label><input class="inp" id="ad-u" value="jpotgieter" autocomplete="off"></div>'+
       '<div class="field"><label class="lbl" for="ad-p">Password</label><input class="inp" id="ad-p" type="password" value="••••••••••"></div>'+
       '<p class="note">One sign-in covers this session. It renews while you work and ends when you leave the screen.</p></div>'+
@@ -676,7 +768,7 @@ function overlay(){
       '<div class="fromto"><div class="box"><div class="lbl">From</div><div class="bigshift">'+sc.shift+'</div><div class="note">'+fmt(pc)+' good → '+fmt(0)+' from '+(es.length>1?"these":"this")+'</div></div><div class="arrow">→</div>'+
       '<div class="box"><div class="lbl">To</div><div class="bigshift" style="color:'+(tgt?"var(--banner-fg)":"var(--n60)")+'">'+(tgt||"Pick below")+'</div><div class="note">'+(tgt?"gains "+fmt(pc)+" good":"the shift it really belongs to")+'</div></div></div>'+
       '<div><div class="lbl" style="margin-bottom:6px">Which shift is it really? (closed shifts within two of '+sc.shift+')</div><div class="opts">'+opts+'</div></div>'+
-      '<div class="same">Shots, pieces, baskets and die life do not change. Only which shift is credited.</div></div>'+
+      '<div class="same">Shots, pieces, LOTs and die life do not change. Only which shift is credited.</div></div>'+
       '<div class="df"><button type="button" class="btn ghost" data-act="close">Cancel</button><button type="button" class="btn pri big" data-act="domove"'+(tgt?"":" disabled")+'>'+(tgt?"MOVE TO "+tgt.toUpperCase()+" SHIFT":"Pick a shift first")+'</button></div></div></div>';
   }
   if(S.overlay==="confirm"){
@@ -699,6 +791,7 @@ function render(stepKey){
   var body = S.view==="landing" ? renderLanding() : S.view==="done" ? renderDone() : renderRec();
   $("term").innerHTML = head()+body+overlay()+(S.toast?'<div class="toast" role="status">'+esc(S.toast)+'</div>':'');
   derived();
+  if(S.focusAdd){ var fa=$("add-from"); if(fa) fa.focus(); S.focusAdd=false; }
 }
 
 /* ================= events ================= */
@@ -711,9 +804,9 @@ document.addEventListener("click", function(ev){
   else if(act==="cancelSign"){ S.toast="Reconciliation needs an AD sign-in."; }
   else if(act==="press"){ S.press=a.getAttribute("data-press"); S.view="landing"; S.step="2"; }
   else if(act==="open"){ var k=a.getAttribute("data-scen");
-    if(!k){ S.toast="Mockup: "+a.getAttribute("data-shift")+" isn't built out. Try 09-17 1st or 09-18 1st on Machine 11, or 09-17 1st on Machine 202."; }
-    else { S.scen=k; S.view="rec"; S.overlay=null; S.pick=null; S.sel={}; S.tick=false; S.step = k==="m11"?(S.moved.e1?"5":"3"):k==="m202"?"8":"9";
-      if(k==="red" && !S.reason) S.reason="WrongNumbers"; if(k==="m202" && !S.reason) S.reason="WrongShift"; } }
+    if(!k){ S.toast="Mockup: "+a.getAttribute("data-shift")+" isn't built out. Try 09-17 1st or 09-18 1st on Machine 11, or 09-16 2nd or 09-17 1st on Machine 202."; }
+    else { S.scen=k; S.view="rec"; S.overlay=null; S.pick=null; S.sel={}; S.tick=false; S.step = k==="m11"?(S.moved.e1?"5":"3"):k==="m202n"?"8":k==="m202"?"9":"10";
+      if(k==="red" && !S.reason) S.reason="WrongNumbers"; if(k==="m202" && !S.reason) S.reason="WrongShift"; if(k==="m202n" && !S.reason) S.reason="MissedEntry"; } }
   else if(act==="back"){ S.view="landing"; S.overlay=null; S.step="2"; }
   else if(act==="move1"){ S.moveIds=[a.getAttribute("data-id")]; S.pick=null; S.overlay="move"; S.step="4"; }
   else if(act==="moveSel"){ S.moveIds=Object.keys(S.sel); S.pick=null; S.overlay="move"; }
@@ -727,7 +820,9 @@ document.addEventListener("click", function(ev){
   else if(act==="save"){ S.saved[S.scen]=true; S.overlay=null; S.view="done"; if(S.scen==="m11") S.step="7"; }
   else if(act==="addrej"){ sheetOf(S.scen).rejects.push({qas:"",code:"104",part:"All",amt:""}); }
   else if(act==="rmrej"){ sheetOf(S.scen).rejects.splice(+a.getAttribute("data-i"),1); }
-  else if(act==="addtag"){ S.toast="In the build: type the tag number; an existing tag resolves to its basket, an unused LTT becomes a new basket released to storage."; }
+  else if(act==="addmode"){ S.addMode=a.getAttribute("data-m"); S.addMsg=null; }
+  else if(act==="addtags"){ addTags(); S.focusAdd=true; }
+  else if(act==="rmtag"){ var tg=a.getAttribute("data-tag"); S.extra[S.scen]=(S.extra[S.scen]||[]).filter(function(t){ return t.tag!==tg; }); delete sheetOf(S.scen).qty[tg]; S.addMsg=null; }
   render();
 });
 document.addEventListener("input", function(ev){
@@ -737,6 +832,9 @@ document.addEventListener("input", function(ev){
   else if(el.hasAttribute("data-sheet")) sh[el.getAttribute("data-sheet")]=el.value;
   else if(el.hasAttribute("data-rej")) sh.rejects[+el.getAttribute("data-rej")][el.getAttribute("data-f")]=el.value;
   else if(el.id==="note") S.note=el.value;
+  else if(el.id==="add-from"){ S.addF=el.value; return; }
+  else if(el.id==="add-to"){ S.addTo=el.value; return; }
+  else if(el.id==="add-qty"){ S.addQty=el.value; return; }
   else return;
   derived();
 });
@@ -745,6 +843,12 @@ document.addEventListener("change", function(ev){
   if(el.id==="reason"){ S.reason=el.value; render(); }
   else if(el.id==="tick"){ S.tick=el.checked; var b=$("confirmbtn"); if(b) b.disabled=!S.tick; }
   else if(el.hasAttribute("data-rej") && el.tagName==="SELECT"){ sheetOf(S.scen).rejects[+el.getAttribute("data-rej")][el.getAttribute("data-f")]=el.value; derived(); }
+});
+
+document.addEventListener("keydown", function(ev){
+  var el=ev.target;
+  if(ev.key!=="Enter" || ["add-from","add-to","add-qty"].indexOf(el.id)<0) return;
+  ev.preventDefault(); addTags(); S.focusAdd=true; render();
 });
 
 S=fresh(); STEPS[2].go(); S.step="3"; render();
