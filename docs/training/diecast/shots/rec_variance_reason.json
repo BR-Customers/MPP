@@ -1,0 +1,31 @@
+{
+  "image": "rec_variance_reason.png",
+  "width": 1600,
+  "height": 1000,
+  "targets": {
+    "varianceChip": {
+      "x": 1205,
+      "y": 566,
+      "w": 102,
+      "h": 44
+    },
+    "reasonRow": {
+      "x": 55,
+      "y": 718,
+      "w": 1490,
+      "h": 34
+    },
+    "reasonDd": {
+      "x": 226,
+      "y": 718,
+      "w": 1319,
+      "h": 34
+    },
+    "submit": {
+      "x": 1301,
+      "y": 894,
+      "w": 254,
+      "h": 56
+    }
+  }
+}

@@ -14,8 +14,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { connect, setViewport } from '../perspective-capture/cdp.mjs';
-import { URL, pickCell, sleep, text } from '../perspective-capture/lib.mjs';
-import { capture, press, fillBox, signInAs, measure, dumpControls } from './lib/measure.mjs';
+import { URL, pickCell, sleep, text, waitFor } from '../perspective-capture/lib.mjs';
+import { capture, press, fillBox, signInAs, measure, dumpControls, chooseFromDropdown } from './lib/measure.mjs';
 import * as db from './lib/dc_db.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -46,6 +46,8 @@ async function toMachine(cdp) {
   await pickCell(cdp, CELL);
   await press(cdp, { text: 'Lot Management', tag: 'div' }, 2500);
 }
+
+const waitForText = (cdp, needle) => waitFor(cdp, needle, 25000, needle);
 
 async function refresh(cdp) { await press(cdp, btn('Refresh'), 3000); }
 
@@ -208,17 +210,102 @@ async function reconcile() {
     });
 
     // Shift, counter reading, Compute (slide 12).
-    await press(cdp, { selector: 'div.ia_dropdown', nth: 0 }, 1200);
-    await dump(cdp, 'rec_shift_open');
-    await key(cdp, 'Escape', 'Escape', 27);
-    await sleep(600);
+    await chooseFromDropdown(cdp, { near: 'REPORTING SHIFT' }, 'First Shift');
+    await fillBox(cdp, { placeholder: '0' }, '600');
     await capture(cdp, OUT, 'rec_compute', {
       shift: { text: 'REPORTING SHIFT', tag: 'div', up: 1, maxChars: 120 },
-      counter: { text: 'PRESS COUNTER', tag: 'div', exact: false, up: 1, maxChars: 120 },
+      counter: { text: 'PRESS COUNTER READING NOW', tag: 'div', up: 1, maxChars: 120 },
       compute: btn('Compute'),
       fixCounter: btn('Fix counter'),
     });
-    await dump(cdp, 'rec_before_compute');
+    await press(cdp, btn('Compute'), 4500);
+
+    // Warm-up and quality test shots (slide 13).
+    await fillBox(cdp, { within: 'Warm-up shots', withinUp: 2, tag: 'input' }, '5');
+    await fillBox(cdp, { within: 'Quality test shots', withinUp: 2, tag: 'input' }, '2');
+    await sleep(1200);
+    await capture(cdp, OUT, 'rec_diewide', {
+      warmup: { within: 'Warm-up shots', withinUp: 2, tag: 'input' },
+      qtest: { within: 'Quality test shots', withinUp: 2, tag: 'input' },
+      addDw: btn('Add die-wide scrap'),
+      block: { text: 'DIE-WIDE', tag: 'div', up: 1, maxChars: 500 },
+    });
+
+    // The per-cavity table (slide 14).
+    // In a cavity row GOOD is an input and CAVITY SCRAP is a BUTTON showing the
+    // number; pressing it opens the scrap editor under the row. Targets are
+    // anchored on the cavity's own name and walked up to the ROW -- scoping by
+    // the "PER CAVITY" heading reaches a box that also holds the die-wide
+    // inputs, and typing then lands in the wrong field.
+    const inRow = (desc, extra) => ({ within: desc, withinRow: true, ...extra });
+    const ROW = 'In 2-Da';
+
+    await capture(cdp, OUT, 'rec_table', {
+      shots: { text: 'SHOTS', tag: 'div' },
+      good: { text: 'GOOD', tag: 'div', nth: 0 },
+      cavityScrap: { text: 'CAVITY SCRAP', tag: 'div' },
+      variance: { text: 'VARIANCE', tag: 'div' },
+      goodBox: inRow(ROW, { tag: 'input', nth: 0 }),
+      scrapBtn: inRow(ROW, { tag: 'button', nth: 0 }),
+      totals: { text: 'UNACCOUNTED', tag: 'div', up: 3, maxChars: 300 },
+      submit: btn('SUBMIT SHIFT ENTRY'),
+    });
+
+    // Scrap on one cavity (slide 14).
+    await press(cdp, inRow(ROW, { tag: 'button', nth: 0 }), 2500);
+    await chooseFromDropdown(cdp, { text: 'Scrap reason' }, '001');
+    await fillBox(cdp, { placeholder: 'qty' }, '10');
+    await sleep(1500);
+    await capture(cdp, OUT, 'rec_scrap', {
+      scrapBtn: inRow(ROW, { tag: 'button', nth: 0 }),
+      reason: { selector: 'div.ia_dropdown', nth: -1 },
+      qty: { placeholder: 'qty' },
+      addReason: btn('Add scrap reason'),
+    });
+
+    // Good typed by hand, LAST: it follows the counter until a person edits it,
+    // and editing scrap afterwards recalculates it again. Fewer good than the
+    // counter expects makes the variance amber (slide 15).
+    await fillBox(cdp, inRow(ROW, { tag: 'input', nth: 0 }), '550');
+    // The amber state arrives with the recompute, not with the keystroke.
+    await waitForText(cdp, 'Needs a reason');
+    await capture(cdp, OUT, 'rec_variance', {
+      goodBox: inRow(ROW, { tag: 'input', nth: 0 }),
+      varianceChip: inRow(ROW, { text: '33', tag: 'button' }),
+      needsReason: { text: 'Needs a reason: In 2-Da', tag: 'div' },
+      totals: { text: 'UNACCOUNTED', tag: 'div', up: 3, maxChars: 300 },
+      submit: btn('SUBMIT SHIFT ENTRY'),
+    });
+
+    // The reason picker behind the amber number.
+    await press(cdp, inRow(ROW, { text: '33', tag: 'button' }), 2500);
+    await capture(cdp, OUT, 'rec_variance_reason', {
+      varianceChip: inRow(ROW, { text: '33', tag: 'button' }),
+      reasonRow: { text: 'VARIANCE 33', tag: 'div', up: 1, maxChars: 200 },
+      reasonDd: { selector: 'div.ia_dropdown', nth: -1 },
+      submit: btn('SUBMIT SHIFT ENTRY'),
+    });
+
+    // Fix counter (slide 16).
+    await press(cdp, btn('Fix counter'), 2500);
+    await capture(cdp, OUT, 'fix_counter', {
+      reads: { placeholder: 'e.g. 12' },
+      why: { text: 'WHY IT MOVED', tag: 'div', up: 1, maxChars: 120 },
+      note: { placeholder: 'What happened, in your words' },
+      record: btn('Record this reading'),
+      cancel: btn('Cancel'),
+    });
+    await press(cdp, btn('Cancel'), 2000);
+
+    // Downtime (slide 17).
+    await press(cdp, btn('Downtime'), 3500);
+    await capture(cdp, OUT, 'downtime', {
+      dtButton: btn('Downtime'),
+      scope: { text: 'Current shift', tag: 'div', up: 1, maxChars: 60 },
+      list: { text: 'No downtime events for this scope / shift.', tag: 'div' },
+      start: btn('Start Downtime'),
+      past: btn('Add Past Event'),
+    });
   } finally { await closeSession(cdp); }
 }
 

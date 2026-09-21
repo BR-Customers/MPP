@@ -6,7 +6,32 @@ import { evalJs } from '../../perspective-capture/cdp.mjs';
 
 const FINDER = `(spec) => {
   const vis = (e) => { const r = e.getBoundingClientRect(); return r.width > 2 && r.height > 2; };
-  let els = [...document.querySelectorAll(spec.selector || spec.tag || '*')].filter(vis);
+  // spec.within: search only inside the box that holds this label. Several
+  // controls on a screen are identical apart from the label above them (the
+  // die-wide shot boxes, the per-cavity numbers), and the other tab's controls
+  // stay mounted in the DOM, so an index across the page is meaningless.
+  let root = document;
+  if (spec.within) {
+    const label = [...document.querySelectorAll('div,span')]
+        .find((e) => (e.innerText || '').trim() === spec.within && vis(e))
+      || [...document.querySelectorAll('input')].find((e) => e.value === spec.within && vis(e));
+    if (!label) return null;
+    root = label;
+    if (spec.withinRow) {
+      // Walk up to the ROW: full-width but short. Counting parents instead
+      // silently escapes the row and hits the die-wide boxes above it.
+      for (let i = 0; i < 12 && root.parentElement; i++) {
+        const r = root.getBoundingClientRect();
+        if (r.width > 900 && r.height < 140) break;
+        root = root.parentElement;
+      }
+      const r = root.getBoundingClientRect();
+      if (!(r.width > 900 && r.height < 140)) return null;
+    } else {
+      for (let i = 0; i < (spec.withinUp || 3) && root.parentElement; i++) root = root.parentElement;
+    }
+  }
+  let els = [...root.querySelectorAll(spec.selector || spec.tag || '*')].filter(vis);
   if (spec.placeholder) els = els.filter((e) => e.placeholder === spec.placeholder);
   if (spec.text) {
     const want = spec.text.toLowerCase();
@@ -123,5 +148,60 @@ export async function fillBox(cdp, spec, value) {
   await cdp.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Backspace', code: 'Backspace', windowsVirtualKeyCode: 8 });
   await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Backspace', code: 'Backspace', windowsVirtualKeyCode: 8 });
   await typeText(cdp, String(value));
-  await new Promise((r) => setTimeout(r, 700));
+  // Tab commits it. Perspective writes the binding on blur, and a click on some
+  // other element does not always blur a numeric field -- without this the
+  // screen keeps the old value and nothing downstream recalculates.
+  await cdp.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+  await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+  await new Promise((r) => setTimeout(r, 900));
+}
+
+/** Open a Perspective dropdown and choose an option by its text.
+ *  Two gotchas: the field opens on a real mouse click (el.click() on the root
+ *  does nothing), and the options render in a portal outside the field, with
+ *  class iaDropdownCommon_option. `where` is {near: '<label text>'} -- indexes
+ *  are useless here because the OTHER tab's row dropdowns stay mounted in the
+ *  DOM, so "the second dropdown" was a per-cavity part picker. */
+export async function chooseFromDropdown(cdp, where, optionText) {
+  const { click } = await import('../../perspective-capture/cdp.mjs');
+  const dd = await evalJs(cdp, `(() => {
+    // {text}: the dropdown's own text (its placeholder or current value).
+    if (${JSON.stringify(!!where.text)}) {
+      const own = [...document.querySelectorAll('div.ia_dropdown')]
+        .find(e => (e.innerText || '').trim().startsWith(${JSON.stringify(where.text || '')})
+          && e.getBoundingClientRect().width > 80);
+      if (!own) return null;
+      const r = own.getBoundingClientRect();
+      return { x: r.x, y: r.y, w: r.width, h: r.height };
+    }
+    const label = [...document.querySelectorAll('div,span')]
+      .find(e => (e.innerText || '').trim() === ${JSON.stringify(where.near)}
+        && e.getBoundingClientRect().width > 2);
+    if (!label) return null;
+    let box = label;
+    for (let i = 0; i < 6 && box.parentElement; i++) {
+      box = box.parentElement;
+      const dd = box.querySelector('div.ia_dropdown');
+      if (dd) { const r = dd.getBoundingClientRect();
+        if (r.width > 80) return { x: r.x, y: r.y, w: r.width, h: r.height }; }
+    }
+    return null; })()`);
+  if (!dd) throw new Error(`no dropdown for ${JSON.stringify(where)}`);
+  await click(cdp, dd.x + dd.w / 2, dd.y + dd.h / 2);
+  await new Promise((r) => setTimeout(r, 1200));
+  // The option list ignores a synthetic el.click(); it wants real mouse events,
+  // so measure the option and click its centre through the Input domain.
+  const hit = await evalJs(cdp, `(() => {
+    const want = ${JSON.stringify(optionText)};
+    const o = [...document.querySelectorAll('.iaDropdownCommon_option')]
+      .find(e => (e.innerText || '').trim().startsWith(want));
+    if (!o) return { options: [...document.querySelectorAll('.iaDropdownCommon_option')].map(e => (e.innerText||'').trim()) };
+    const r = o.getBoundingClientRect();
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+  if (!hit || hit.options) throw new Error(`option "${optionText}" not in dropdown ${which}: ${JSON.stringify(hit && hit.options)}`);
+  await click(cdp, hit.x, hit.y);
+  await new Promise((r) => setTimeout(r, 2000));
+  const chosen = await evalJs(cdp, `document.elementFromPoint(${dd.x + dd.w / 2}, ${dd.y + dd.h / 2})
+    .closest('div.ia_dropdown').innerText.trim()`);
+  if (!String(chosen).startsWith(optionText)) throw new Error(`the ${JSON.stringify(where)} dropdown still reads "${chosen}"`);
 }
