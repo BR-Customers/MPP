@@ -1,0 +1,25 @@
+{
+  "image": "release_bottom.png",
+  "width": 1600,
+  "height": 1000,
+  "targets": {
+    "releaseBtn": {
+      "x": 954,
+      "y": 720,
+      "w": 196,
+      "h": 56
+    },
+    "cancel": {
+      "x": 440,
+      "y": 720,
+      "w": 119,
+      "h": 56
+    },
+    "fixCounter": {
+      "x": 569,
+      "y": 731,
+      "w": 276,
+      "h": 34
+    }
+  }
+}

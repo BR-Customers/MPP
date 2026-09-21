@@ -15,7 +15,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { connect, setViewport } from '../perspective-capture/cdp.mjs';
 import { URL, pickCell, sleep, text } from '../perspective-capture/lib.mjs';
-import { capture, press, fillBox, signInAs, measure } from './lib/measure.mjs';
+import { capture, press, fillBox, signInAs, measure, dumpControls } from './lib/measure.mjs';
 import * as db from './lib/dc_db.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -86,15 +86,14 @@ async function operatorSteps(cdp) {
     clear: btn('Clear'),
   });
 
-  // --- Pick your machine (slide 6): the Active Cell list open ---
-  await press(cdp, { selector: 'div.ia_dropdown', nth: 0 }, 1200);
+  // --- Pick your machine (slide 6) ---
+  // The open dropdown list is rendered outside the field and is not worth
+  // measuring; the slide points at the field and at the die name the screen
+  // shows once a machine is picked.
   await capture(cdp, OUT, 'cell_pick', {
     cell: { selector: 'div.ia_dropdown', nth: 0 },
-    option: { text: CELL, tag: 'div', nth: 1 },
-    die: { text: 'Tool DMO125', tag: 'div', exact: false },
+    die: { text: 'Tool DMO125', tag: 'div', exact: false, up: 1, maxChars: 120 },
   });
-  await key(cdp, 'Escape', 'Escape', 27);
-  await sleep(800);
 
   // --- Open a basket (slide 7): ticket scanned into one row, button ready ---
   await fillBox(cdp, { placeholder: 'Scan LTT', nth: 0 }, '70000101');
@@ -175,5 +174,54 @@ async function operatorSteps(cdp) {
   await signInAs(cdp, db.PIN, 'ST');
 }
 
+/** Save the controls of a state I have not scripted yet, so the next run can
+ *  name its targets. Written to TEMP, never into the committed shots folder. */
+async function dump(cdp, name) {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const dir = path.join(os.tmpdir(), 'training-deck-dumps');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${name}.json`), JSON.stringify(await dumpControls(cdp), null, 1));
+  fs.writeFileSync(path.join(dir, `${name}.txt`), await text(cdp));
+  const r = await cdp.send('Page.captureScreenshot', { format: 'png' });
+  fs.writeFileSync(path.join(dir, `${name}.png`), Buffer.from(r.data, 'base64'));
+  console.log(`dumped ${name} -> ${dir}`);
+}
+
+async function reconcile() {
+  db.clearDie();
+  // Four baskets running, so the per-cavity table has something in it.
+  ['In 2-Da', 'In 2-Db', 'In 3 Da', 'In 3 Db'].forEach((desc, i) =>
+    console.log(db.openBasket({ desc, ltt: `7000020${i + 1}` })));
+  const cdp = await session();
+  try {
+    await signInAs(cdp, db.PIN, 'ST');
+    await pickCell(cdp, CELL);
+    await press(cdp, { text: 'Reconcile Shift', tag: 'div' }, 3000);
+
+    await capture(cdp, OUT, 'rec_overview', {
+      entry: { text: 'THIS ENTRY', tag: 'div', up: 1, maxChars: 400 },
+      diewide: { text: 'DIE-WIDE', tag: 'div', up: 1, maxChars: 500 },
+      percavity: { text: 'PER CAVITY', tag: 'div', up: 1, maxChars: 120 },
+      totals: { text: 'UNACCOUNTED', tag: 'div', up: 3, maxChars: 300 },
+      submit: btn('SUBMIT SHIFT ENTRY'),
+    });
+
+    // Shift, counter reading, Compute (slide 12).
+    await press(cdp, { selector: 'div.ia_dropdown', nth: 0 }, 1200);
+    await dump(cdp, 'rec_shift_open');
+    await key(cdp, 'Escape', 'Escape', 27);
+    await sleep(600);
+    await capture(cdp, OUT, 'rec_compute', {
+      shift: { text: 'REPORTING SHIFT', tag: 'div', up: 1, maxChars: 120 },
+      counter: { text: 'PRESS COUNTER', tag: 'div', exact: false, up: 1, maxChars: 120 },
+      compute: btn('Compute'),
+      fixCounter: btn('Fix counter'),
+    });
+    await dump(cdp, 'rec_before_compute');
+  } finally { await closeSession(cdp); }
+}
+
 if (want('operator')) await operator();
+if (want('reconcile')) await reconcile();
 process.exit(0);

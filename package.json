@@ -7,11 +7,14 @@
   "devDependencies": {
     "markdown-it": "^14.1.0",
     "markdown-it-attrs": "^4.3.1",
-    "minisearch": "^7.1.0"
+    "minisearch": "^7.1.0",
+    "pptxgenjs": "^4.0.1"
   },
   "scripts": {
     "build:portal": "node tools/build_docs_portal.js",
     "test:portal": "node --test tools/build_docs_portal.test.js",
-    "serve:portal": "npx http-server docs_portal -o"
+    "serve:portal": "npx http-server docs_portal -o",
+    "build:training": "node tools/training-deck/build_diecast_deck.js",
+    "test:training": "node --test tools/training-deck/test/*.test.js"
   }
 }

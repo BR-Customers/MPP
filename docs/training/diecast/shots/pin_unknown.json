@@ -1,0 +1,19 @@
+{
+  "image": "pin_unknown.png",
+  "width": 1600,
+  "height": 1000,
+  "targets": {
+    "retype": {
+      "x": 904,
+      "y": 595,
+      "w": 98,
+      "h": 23
+    },
+    "register": {
+      "x": 699,
+      "y": 595,
+      "w": 153,
+      "h": 23
+    }
+  }
+}
