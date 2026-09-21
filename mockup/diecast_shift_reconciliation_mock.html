@@ -1,0 +1,752 @@
+<title>Die Cast Shift Reconciliation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+/* MPP plant-floor tokens (Core stylesheet), same as mockup/diecast_reconcile_mock.html.
+   Deliberately single-theme: this page IS the terminal, which is dark. */
+:root {
+  color-scheme: dark;
+  --scale: 0.85;
+  --n10:#0B1220; --n20:#111A2E; --n30:#172238; --n40:#1F2C44; --n50:#2C3A55; --n60:#425270;
+  --n70:#697A98; --n80:#9AA8BF; --n90:#C9D2E0; --n100:#F0F3F8;
+  --a20:#093240; --a40:#126680; --a50:#1888A8; --a60:#22A8CC; --a70:#4BC2E0; --a90:#B0E5F3;
+  --bad-bg:#3A1416; --bad-fg:#F87171; --bad-bd:#5C1E22;
+  --warn-bg:rgba(244,179,67,0.12); --warn-fg:#F4B343; --warn-bd:rgba(244,179,67,0.55);
+  --banner-bg:#3A2E0A; --banner-fg:#FACC15;
+  --good-fg:#50C878; --good-bg:rgba(80,200,120,0.10);
+  --ground:#05080f;
+  --sans:'Inter','Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mono:'JetBrains Mono','Roboto Mono',Consolas,monospace;
+  --fs-xs:calc(16px*var(--scale)); --fs-sm:calc(17px*var(--scale)); --fs-base:calc(20px*var(--scale));
+  --fs-md:calc(22px*var(--scale)); --fs-lg:calc(26px*var(--scale)); --fs-xl:calc(32px*var(--scale));
+  --fs-2xl:calc(40px*var(--scale));
+  --touch:calc(40px*var(--scale));
+}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--ground);color:var(--n100);font-family:var(--sans);margin:0;padding-block:0 64px}
+.wrap{max-width:1720px;margin:0 auto;padding-inline:20px;padding-block:26px 0}
+button,input,select{font:inherit}
+:focus-visible{outline:2px solid var(--a70);outline-offset:2px}
+
+/* ---------- page shell (outside the terminal) ---------- */
+.pagehead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:6px}
+.pagehead h1{font-size:26px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.pagehead .sub{font-size:14px;color:var(--n70)}
+.rev{font-size:13.5px;line-height:1.6;color:var(--n80);border-left:2px solid var(--a50);padding:2px 0 2px 14px;margin:0 0 18px;max-width:92ch}
+.rev b{color:var(--n100);font-weight:600}
+.rev code{font-family:var(--mono);font-size:.88em;background:var(--n20);padding:1px 5px;border-radius:3px;color:var(--a90)}
+.steps{display:flex;flex-wrap:wrap;gap:6px;background:var(--n20);border:1px solid var(--n40);border-radius:8px;padding:8px;margin-bottom:18px}
+.steps button{display:flex;align-items:baseline;gap:8px;padding:8px 12px;border-radius:5px;border:1px solid transparent;background:transparent;color:var(--n80);cursor:pointer;font-size:13px;font-weight:500}
+.steps button .k{font-family:var(--mono);font-size:11px;color:var(--n60)}
+.steps button:hover{background:rgba(255,255,255,.04);color:var(--n100)}
+.steps button[aria-current="step"]{background:var(--a50);color:#fff}
+.steps button[aria-current="step"] .k{color:var(--a90)}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:start}
+@media (max-width:1150px){.stage{grid-template-columns:minmax(0,1fr)}}
+.annot{background:var(--n20);border:1px solid var(--n40);border-radius:8px;padding:16px 18px;font-size:13.5px;line-height:1.6;color:var(--n80);position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.annot h3{margin:0 0 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--warn-fg)}
+.annot .q{font-size:16px;line-height:1.45;color:var(--n100);font-weight:600;margin:0 0 12px;text-wrap:balance}
+.annot h4{margin:14px 0 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--n70)}
+.annot ul{margin:0;padding-left:18px}
+.annot li{margin:3px 0}
+.annot .src{margin-top:14px;padding-top:10px;border-top:1px solid var(--n40);font-size:12px;color:var(--n70)}
+.annot code{font-family:var(--mono);font-size:.9em;color:var(--a90)}
+
+/* ---------- the terminal ---------- */
+.term{position:relative;background:var(--n10);border:1px solid var(--n40);border-radius:10px;overflow:hidden;font-size:var(--fs-base);line-height:1.45;min-height:640px}
+.apphead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:calc(10px*var(--scale)) 16px;background:var(--n20);border-bottom:1px solid var(--n50)}
+.apphead .crumb{font-size:var(--fs-sm);color:var(--n80)}
+.apphead .crumb b{color:var(--n100);font-weight:600}
+.apphead .sp{flex:1}
+.who{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);padding:4px 10px;border-radius:999px;border:1px solid var(--a40);background:var(--a20);color:var(--a90)}
+.who.off{border-color:var(--n50);background:transparent;color:var(--n70)}
+.body{padding:16px;display:flex;flex-direction:column;gap:14px}
+
+.banner{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;padding:10px 16px;border-radius:6px;background:var(--banner-bg);border:1px solid rgba(250,204,21,.35)}
+.banner .shift{font-size:var(--fs-2xl);font-weight:800;letter-spacing:.01em;color:var(--banner-fg);line-height:1.1;text-transform:uppercase}
+.banner .meta{font-size:var(--fs-sm);color:var(--n90);display:flex;flex-wrap:wrap;gap:4px 18px}
+.banner .meta b{color:var(--n100);font-weight:600}
+.banner .life{margin-left:auto;text-align:right;font-family:var(--mono);font-size:var(--fs-sm);color:var(--n90)}
+.banner .life .v{font-size:var(--fs-md);color:var(--n100);font-weight:700}
+
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.lbl{font-size:var(--fs-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--n70);font-weight:600}
+.panel{background:var(--n20);border:1px solid var(--n40);border-radius:6px;padding:12px 14px}
+.panel h2{margin:0 0 8px;font-size:var(--fs-sm);letter-spacing:.08em;text-transform:uppercase;color:var(--n80);font-weight:700}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px}
+@media (max-width:900px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.scroll{overflow-x:auto}
+
+table.t{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+.t th{font-size:var(--fs-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--n70);text-align:left;padding:6px 8px;border-bottom:1px solid var(--n50);white-space:nowrap}
+.t td{padding:5px 8px;border-bottom:1px solid var(--n40);white-space:nowrap;vertical-align:middle}
+.t .n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.t tr.grp td{background:var(--n30);color:var(--n90);font-weight:600;font-size:var(--fs-xs);letter-spacing:.03em}
+.t tr.grp .sub{float:right;font-family:var(--mono);color:var(--n80);font-weight:500}
+.t tr.flag td{background:var(--warn-bg)}
+.t tr.sel td{background:rgba(24,136,168,.16)}
+.t tr.click{cursor:pointer}
+.t tr.click:hover td{background:rgba(255,255,255,.03)}
+.dim{color:var(--n70)}
+.pos{color:var(--warn-fg);font-weight:600}
+.neg{color:var(--bad-fg);font-weight:700}
+.zero{color:var(--good-fg)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:var(--fs-xs);border:1px solid var(--n50);color:var(--n90);white-space:nowrap}
+.chip.info{border-color:var(--a40);background:var(--a20);color:var(--a90)}
+.chip.warn{border-color:var(--warn-bd);background:var(--warn-bg);color:var(--warn-fg)}
+.chip.good{border-color:rgba(80,200,120,.45);background:var(--good-bg);color:var(--good-fg)}
+.chip.lock{border-color:var(--n50);background:var(--n30);color:var(--n80)}
+.chip.bad{border-color:var(--bad-bd);background:var(--bad-bg);color:var(--bad-fg)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:var(--touch);padding:0 16px;border-radius:5px;border:1px solid var(--n60);background:var(--n30);color:var(--n100);cursor:pointer;font-size:var(--fs-sm);font-weight:600}
+.btn:hover{background:var(--n40)}
+.btn.pri{background:var(--a50);border-color:var(--a50);color:#fff}
+.btn.pri:hover{background:var(--a60)}
+.btn.big{min-height:calc(54px*var(--scale));font-size:var(--fs-md);padding:0 22px;letter-spacing:.02em}
+.btn[disabled]{opacity:.42;cursor:not-allowed}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:calc(32px*var(--scale));font-size:var(--fs-xs);padding:0 10px}
+.inp,.sel{background:var(--n10);border:1px solid var(--n60);border-radius:4px;color:var(--n100);padding:3px 8px;min-height:calc(34px*var(--scale));font-size:var(--fs-sm)}
+.inp.num{width:calc(96px*var(--scale));text-align:right;font-family:var(--mono)}
+.inp:focus,.sel:focus{border-color:var(--a60)}
+.inp.err{border-color:var(--bad-fg);background:var(--bad-bg)}
+.inp.ok{border-color:rgba(80,200,120,.6)}
+.sel.need{border-color:var(--warn-fg)}
+
+.entry{border:1px solid var(--warn-bd);background:var(--warn-bg);border-radius:6px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.entry.moved{border-color:var(--a40);background:rgba(24,136,168,.10)}
+.entry .what{font-size:var(--fs-sm);color:var(--n90);flex:1;min-width:280px}
+.entry .what b{color:var(--n100)}
+.entry .hint{flex-basis:100%;font-size:var(--fs-xs);color:var(--warn-fg)}
+
+.checks{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm)}
+.checks .c{display:flex;gap:8px;align-items:baseline}
+.checks .c .i{font-family:var(--mono);font-weight:700;width:1.1em;flex:none}
+.checks .c.no{color:var(--bad-fg)}
+.checks .c.yes{color:var(--n70)}
+.checks .c.yes .i{color:var(--good-fg)}
+.footer{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;padding-top:4px;border-top:1px solid var(--n40)}
+
+.tile{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:6px;border:1px solid var(--warn-bd);background:var(--warn-bg);cursor:pointer;color:var(--n100);text-align:left}
+.tile .big{font-size:var(--fs-2xl);font-weight:800;color:var(--warn-fg);line-height:1}
+.tile .t1{font-size:var(--fs-sm);font-weight:700}
+.tile .t2{font-size:var(--fs-xs);color:var(--n80)}
+.seg{display:flex;gap:4px;background:var(--n10);padding:4px;border-radius:6px;border:1px solid var(--n40)}
+.seg button{padding:6px 14px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--n80);cursor:pointer;font-size:var(--fs-sm);font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--a50);color:#fff}
+
+/* ---------- popups ---------- */
+.ov{position:absolute;inset:0;background:rgba(3,6,12,.72);display:flex;align-items:flex-start;justify-content:center;padding:36px 16px;z-index:5;overflow-y:auto}
+.dlg{background:var(--n20);border:1px solid var(--n50);border-radius:10px;width:min(760px,100%);box-shadow:0 18px 60px rgba(0,0,0,.55);overflow:hidden}
+.dlg.wide{width:min(980px,100%)}
+.dlg .dh{padding:12px 18px;background:var(--n30);border-bottom:1px solid var(--n50);font-size:var(--fs-sm);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--n80)}
+.dlg .db{padding:16px 18px;display:flex;flex-direction:column;gap:14px;font-size:var(--fs-sm);color:var(--n90)}
+.dlg .df{padding:12px 18px;border-top:1px solid var(--n50);display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;background:var(--n10)}
+.bigshift{font-size:var(--fs-2xl);font-weight:800;color:var(--banner-fg);text-transform:uppercase;line-height:1.1}
+.fromto{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+@media (max-width:640px){.fromto{grid-template-columns:1fr}}
+.fromto .box{border:1px solid var(--n50);border-radius:6px;padding:10px 12px;background:var(--n10)}
+.fromto .box .bigshift{font-size:var(--fs-xl)}
+.fromto .arrow{font-size:var(--fs-xl);color:var(--n70);text-align:center}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.opt{border:1px solid var(--n50);border-radius:6px;padding:10px 12px;background:var(--n10);cursor:pointer;text-align:left;color:var(--n90)}
+.opt:hover{border-color:var(--a60)}
+.opt[aria-pressed="true"]{border-color:var(--a60);background:rgba(24,136,168,.16);box-shadow:inset 0 0 0 1px var(--a60)}
+.opt .s{font-weight:800;color:var(--n100);font-size:var(--fs-md);text-transform:uppercase}
+.opt .g{font-family:var(--mono);font-size:var(--fs-xs);color:var(--n80)}
+.opt[disabled]{opacity:.4;cursor:not-allowed}
+.same{padding:8px 12px;border-radius:6px;background:var(--a20);border:1px solid var(--a40);color:var(--a90)}
+.grp-list{display:flex;flex-direction:column;gap:10px}
+.cg{border:1px solid var(--n50);border-radius:6px;padding:10px 12px;background:var(--n10)}
+.cg h5{margin:0 0 4px;font-size:var(--fs-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--n70)}
+.cg p{margin:0;color:var(--n100)}
+.cg .det{margin-top:4px;font-size:var(--fs-xs);color:var(--n80);font-family:var(--mono);line-height:1.6}
+.cg.red{border-color:var(--warn-bd);background:var(--warn-bg)}
+.cg.red h5{color:var(--warn-fg)}
+.cg.stand{opacity:.85}
+.tick{display:flex;gap:10px;align-items:flex-start;margin-top:8px;padding-top:8px;border-top:1px dashed var(--warn-bd);color:var(--n100);cursor:pointer}
+.tick input{width:22px;height:22px;accent-color:var(--warn-fg);flex:none;margin-top:1px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field .inp{min-height:var(--touch);font-size:var(--fs-base)}
+.note{font-size:var(--fs-xs);color:var(--n70)}
+.ok-big{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:6px;border:1px solid rgba(80,200,120,.45);background:var(--good-bg)}
+.ok-big .ic{font-size:var(--fs-2xl);color:var(--good-fg);font-weight:800;line-height:1}
+.toast{position:absolute;right:16px;bottom:16px;z-index:6;background:var(--n30);border:1px solid var(--n50);border-radius:6px;padding:10px 14px;font-size:var(--fs-sm);color:var(--n90);max-width:420px}
+@media (prefers-reduced-motion:no-preference){.dlg{animation:pop .14s ease-out}@keyframes pop{from{transform:translateY(6px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+
+<div class="wrap">
+  <div class="pagehead">
+    <h1>Die Cast Shift Reconciliation</h1>
+    <span class="sub">Clickable mockup · prod data, 2026-09-21 · spec <code style="font-family:var(--mono)">2026-09-21-diecast-shift-reconciliation-design.md</code></span>
+  </div>
+  <p class="rev">A team lead reconciles one <b>shift × press × die</b> against the DCFM-2076 press sheet: add what's missing, move entries filed against the wrong shift, close gaps in numbers. Every figure below is prod's except where marked <b>illustrative</b>. The screen is live: type into the sheet fields, move entries, and the checks, gaps, counts and confirmation all recompute. The rail on the right names the <b>critical decision</b> at each step and how the screen protects the team lead from getting it wrong.</p>
+
+  <nav class="steps" id="steps" aria-label="Walkthrough steps"></nav>
+
+  <div class="stage">
+    <div class="term" id="term" aria-live="polite"></div>
+    <aside class="annot" id="annot"></aside>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= data (prod, 2026-09-21 12:57 export) ================= */
+var M11_PARTS = [
+  {name:"6MA CH IN 2", item:"12232-6MA", macola:"653-090"},
+  {name:"6MA CH IN 3", item:"12233-6MA", macola:"654-090"},
+  {name:"6MA CH IN 4", item:"12234-6MA", macola:"655-090"},
+  {name:"6MA CH EX 2", item:"12242-6MA", macola:"658-090"},
+  {name:"6MA CH EX 3", item:"12243-6MA", macola:"659-090"},
+  {name:"6MA CH EX 4", item:"12244-6MA", macola:"660-090"}
+];
+function T(tag,p,cav,pc,state,where,rel,sheet,rec){ return {tag:tag,p:p,cav:cav,pc:pc,state:state,where:where,rel:rel,sheet:sheet,rec:rec||{}}; }
+
+var SCEN = {
+  m11: {
+    key:"m11", press:"Machine 11", die:"DMO125", dieName:"6MA CH IN/EX 2,3,4", cav:12,
+    shift:"09-17 1st", win:"07:00–15:00", dieLife:15699, illustrative:false,
+    parts:M11_PARTS,
+    entries:[{id:"e1", at:"09-17 09:35", by:"BH", during:"09-17 1st", reading:991, perCav:953, warm:35, test:36, rows:36, pieces:11436,
+              desc:"reading 991 · 953 on 12 baskets · warm-up 35 shots · 36 test (008, All)"}],
+    tags:[
+      T("10628131",0,"A",1788,"rel","Warehouse","09-18 14:46",1080),
+      T("10628132",0,"B",1788,"rel","Warehouse","09-18 14:46",1080),
+      T("10628130",0,"a",1968,"trim","Trim Storage","09-17 09:36",null,{e1:953}),
+      T("10628129",0,"b",1968,"trim","Trim Storage","09-17 09:36",null,{e1:953}),
+      T("10628133",1,"A",1788,"rel","Warehouse","09-18 14:46",1080),
+      T("10628134",1,"B",1788,"rel","Warehouse","09-18 14:46",1080),
+      T("10628128",1,"a",1968,"trim","Trim Storage","09-17 09:36",null,{e1:953}),
+      T("10628127",1,"b",1968,"trim","Trim Storage","09-17 09:36",null,{e1:953}),
+      T("10628126",2,"A",4926,"trim","Trim Storage","09-18 08:25",1080,{e1:953}),
+      T("10628125",2,"B",4926,"trim","6MA Cam Holder Line 1","09-18 08:25",1080,{e1:953}),
+      T("10628124",3,"A",4926,"trim","Trim Storage","09-18 08:22",1080,{e1:953}),
+      T("10628123",3,"B",4926,"trim","6MA Cam Holder Line 1","09-18 08:22",1080,{e1:953}),
+      T("10628122",4,"A",4926,"trim","6MA Cam Holder Line 1","09-18 08:22",1080,{e1:953}),
+      T("10628121",4,"B",4926,"trim","Trim Storage","09-18 08:22",1080,{e1:953}),
+      T("10628120",5,"A",4926,"trim","6MA Cam Holder Line 1","09-18 08:22",1080,{e1:953}),
+      T("10628119",5,"B",4926,"trim","Trim Storage","09-18 08:22",1080,{e1:953})
+    ],
+    sheet:{total:1121, good:1083, warm:38, rejects:[{qas:"CW", code:"008", part:"All", amt:36}]},
+    moveOpts:[{s:"09-16 2nd",g:0},{s:"09-16 3rd",g:0},{s:"09-17 2nd",g:8532},{s:"09-17 3rd",g:12924}]
+  },
+  red: {
+    key:"red", press:"Machine 11", die:"DMO125", dieName:"6MA CH IN/EX 2,3,4", cav:12,
+    shift:"09-18 1st", win:"07:00–15:00", dieLife:15699, illustrative:true,
+    parts:M11_PARTS,
+    entries:[{id:"e2", at:"09-18 14:48", by:"BH", during:"09-18 1st", reading:1216, perCav:1197, warm:16, test:36, rows:36, pieces:14364,
+              desc:"reading 1,216 · 1,197 on 12 baskets · warm-up 16 shots · 36 test (008, All)"}],
+    tags:[
+      T("10628143",0,"A",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628144",0,"B",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628145",1,"A",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628146",1,"B",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628135",2,"A",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628136",2,"B",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628137",3,"A",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628138",3,"B",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628139",4,"A",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628140",4,"B",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628141",5,"A",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197}),
+      T("10628142",5,"B",4947,"rel","Warehouse","09-21 08:34",1187,{e2:1197})
+    ],
+    sheet:{total:1206, good:1190, warm:16, rejects:[{qas:"EG", code:"008", part:"All", amt:36}]},
+    moveOpts:[{s:"09-17 2nd",g:8532},{s:"09-17 3rd",g:12924},{s:"09-18 2nd",g:6540},{s:"09-18 3rd",g:11532}]
+  },
+  m202: {
+    key:"m202", press:"Machine 202", die:"DM0144", dieName:"6FB Oil Pan D", cav:1,
+    shift:"09-17 1st", win:"07:00–15:00", dieLife:3060, illustrative:false, noReading:true,
+    parts:[{name:"6FB OIL PAN", item:"11200-6FB-A0", macola:"646-090"}],
+    entries:[], tags:[],
+    sheet:{total:null, good:null, warm:null, rejects:[]},
+    moveOpts:[{s:"09-16 2nd",g:0},{s:"09-16 3rd",g:270},{s:"09-17 2nd",g:0},{s:"09-17 3rd",g:0}]
+  }
+};
+/* Machine 202, 09-17 1st shift: 14 single-basket releases, no counter reading on any. */
+[["15:51","MG","10628586",66,"09-17 2nd"],["17:06","MG","10628587",66,"09-17 2nd"],["19:08","MG","10628588",66,"09-17 2nd"],
+ ["20:18","MG","10628589",66,"09-17 2nd"],["21:46","MG","10628590",66,"09-17 2nd"],["22:31","EG","10628591",66,"09-17 2nd"],
+ ["23:09","ND","10628592",33,"09-17 3rd"],["23:22","EG","10628542",33,"09-17 3rd"],["00:53","ND","10628593",66,"09-17 3rd"],
+ ["01:59","ND","10628594",66,"09-17 3rd"],["03:03","ND","10628595",66,"09-17 3rd"],["04:29","ND","10628596",66,"09-17 3rd"],
+ ["05:35","ND","10628597",66,"09-17 3rd"],["06:54","ND","10628598",56,"09-17 3rd"]].forEach(function(r,i){
+  var id="r"+i, day=(r[0]<"07:00")?"09-18":"09-17";
+  SCEN.m202.entries.push({id:id, at:day+" "+r[0], by:r[1], during:r[4], reading:null, perCav:r[3], warm:0, test:0, rows:1, pieces:r[3], lot:r[2],
+    desc:"released "+r[2]+" · "+r[3]+" pc · no counter reading"});
+  var rec={}; rec[id]=r[3];
+  SCEN.m202.tags.push(T(r[2],0,"a",r[3],"rel","Warehouse",day+" "+r[0],null,rec));
+});
+
+var LANDING = {
+  m11:[
+    ["09-21 1st","DMO125",1,12,0,null,"open"],
+    ["09-20 Wknd 3rd","DMO125",1,13080,1117,null,"rec"],
+    ["09-20 Wknd 2nd","DMO125",0,0,null,null,"none"],
+    ["09-20 Wknd 1st","DMO125",0,0,null,null,"none"],
+    ["09-19 Wknd 3rd","DMO125",0,0,null,null,"none"],
+    ["09-19 Wknd 2nd","DMO125",0,0,null,null,"none"],
+    ["09-19 Wknd 1st","DMO125",1,13848,1154,null,"rec"],
+    ["09-18 3rd","DMO125",1,11532,994,null,"rec"],
+    ["09-18 2nd","DMO125",1,6540,568,null,"rec"],
+    ["09-18 1st","DMO125",1,14364,1216,"red","rec"],
+    ["09-17 3rd","DMO125",1,12924,1103,null,"rec"],
+    ["09-17 2nd","DMO125",1,8532,726,null,"rec"],
+    ["09-17 1st","DMO125",1,11436,991,"m11","rec"],
+    ["09-16 3rd","DMO125",0,0,null,null,"none"],
+    ["09-16 2nd","DMO125",0,0,null,null,"none"],
+    ["09-16 1st","DMO125",1,12180,1096,null,"rec"]
+  ],
+  m202:[
+    ["09-21 1st","DM0144",4,264,null,null,"open"],
+    ["09-20 Wknd 3rd","DM0144",4,220,null,null,"norx"],
+    ["09-20 Wknd 2nd","DM0144",0,0,null,null,"none"],
+    ["09-20 Wknd 1st","DM0144",0,0,null,null,"none"],
+    ["09-19 Wknd 3rd","DM0144",0,0,null,null,"none"],
+    ["09-19 Wknd 2nd","DM0144",0,0,null,null,"none"],
+    ["09-19 Wknd 1st","DM0144",0,0,null,null,"none"],
+    ["09-18 3rd","DM0144",0,0,null,null,"none"],
+    ["09-18 2nd","DM0144",6,346,null,null,"norx"],
+    ["09-18 1st","DM0144",0,0,null,null,"none"],
+    ["09-17 3rd","DM0144",0,0,null,null,"none"],
+    ["09-17 2nd","DM0144",0,0,null,null,"none"],
+    ["09-17 1st","DM0144",14,848,null,"m202","norx"],
+    ["09-16 3rd","DM0144",5,270,null,null,"norx"],
+    ["09-16 2nd","DM0144",0,0,null,null,"none"],
+    ["09-16 1st","DM0144",0,0,null,null,"none"]
+  ]
+};
+var REASONS = [["","Choose why you are reconciling…"],["MissedEntry","Shift not entered"],["WrongShift","Entered against the wrong shift"],["WrongNumbers","Entered numbers did not match the sheet"],["Other","Other (note required)"]];
+var CODES = [["008","008 Test Part"],["104","104 Bent Part (Air Gap)"],["011","011 Flow Lines"],["005","005 Bent Part"]];
+var QAS = ["","CW","EG","AD","RM","MG","ND"];
+
+/* ================= state ================= */
+var S;
+function fresh(){
+  return {view:"landing", press:"m11", scen:"m11", overlay:null, signedIn:true,
+          moved:{}, pick:null, sel:{}, reason:"", note:"", tick:false, sheets:{}, saved:{}, toast:null};
+}
+function sheetOf(k){
+  if(!S.sheets[k]){
+    var sc=SCEN[k], q={};
+    sc.tags.forEach(function(t){ q[t.tag]= t.sheet==null ? "" : String(t.sheet); });
+    S.sheets[k]={total:sc.sheet.total==null?"":String(sc.sheet.total), good:sc.sheet.good==null?"":String(sc.sheet.good),
+                 warm:sc.sheet.warm==null?"":String(sc.sheet.warm),
+                 rejects:sc.sheet.rejects.map(function(r){return {qas:r.qas,code:r.code,part:r.part,amt:String(r.amt)};}), qty:q};
+  }
+  return S.sheets[k];
+}
+
+/* ================= helpers ================= */
+function fmt(n){ return (n==null||n==="")?"—":Number(n).toLocaleString("en-US"); }
+function sgn(n){ return n>0?"+"+fmt(n):n<0?"−"+fmt(-n):"0"; }
+function cls(n){ return n>0?"pos":n<0?"neg":"zero"; }
+function num(v){ if(v===""||v==null) return null; var x=Number(String(v).replace(/,/g,"")); return isFinite(x)?x:NaN; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+function $(id){ return document.getElementById(id); }
+
+/* ================= the arithmetic (SQL's job in the build; here to make the mockup honest) ================= */
+function calc(k){
+  var sc=SCEN[k], sh=sheetOf(k), live=sc.entries.filter(function(e){return !S.moved[e.id];});
+  var rec={reading:null, warm:0, test:0, good:0};
+  live.forEach(function(e){ if(e.reading!=null) rec.reading=Math.max(rec.reading||0,e.reading); rec.warm+=e.warm; rec.test+=e.test; rec.good+=e.pieces; });
+  rec.goodShots = rec.reading==null?null:rec.reading-rec.warm;
+  var s={total:num(sh.total), good:num(sh.good), warm:num(sh.warm)};
+  var noGood=0; sh.rejects.forEach(function(r){ var a=num(r.amt); if(a>0) noGood+=a; });
+  var typedAny = s.total!=null || s.good!=null || s.warm!=null;
+  var totalGood = (s.good!=null && !isNaN(s.good)) ? s.good*sc.cav - noGood : null;
+  var tags=sc.tags.map(function(t){
+    var r=0; Object.keys(t.rec).forEach(function(id){ if(!S.moved[id]) r+=t.rec[id]; });
+    var q=num(sh.qty[t.tag]);
+    var gap = (q==null||isNaN(q)) ? (r>0?null:0) : q-r;
+    return {t:t, rec:r, q:q, gap:gap, show:(r>0 || t.sheet!=null || (q!=null&&!isNaN(q)))};
+  });
+  var tagSum=0; tags.forEach(function(x){ if(x.q!=null&&!isNaN(x.q)) tagSum+=x.q; });
+  var checks=[];
+  var needNote = S.reason==="Other" && !S.note.trim();
+  checks.push({ok:!!S.reason && !needNote, txt: !S.reason ? "Choose why you are reconciling this shift." : needNote ? "“Other” needs a note saying what happened." : "Reason: "+REASONS.filter(function(x){return x[0]===S.reason;})[0][1]+"."});
+  var orphans=tags.filter(function(x){ return x.rec>0 && (x.q==null||isNaN(x.q)); });
+  checks.push({ok:orphans.length===0, txt: orphans.length===0 ? "Every basket with production on record has a sheet figure." :
+    orphans.length+" basket"+(orphans.length>1?"s have":" has")+" production on record for this shift but nothing typed from the sheet: "+orphans.map(function(x){return x.t.tag;}).join(", ")+". Type the sheet's figure, or move the entry it came from."});
+  if(typedAny){
+    var addOk = s.total!=null && s.good!=null && s.warm!=null && s.total===s.good+s.warm;
+    checks.push({ok:addOk, txt: addOk ? "Total shots = good shots + warm-up shots ("+fmt(s.total)+")." :
+      "Total shots "+fmt(s.total)+" should equal good shots "+fmt(s.good)+" + warm-up "+fmt(s.warm)+" = "+fmt((s.good||0)+(s.warm||0))+". One of them has a typo."});
+    var sumOk = totalGood!=null && tagSum===totalGood;
+    checks.push({ok:sumOk, txt: sumOk ? "Tag list adds up to total good pieces ("+fmt(totalGood)+")." :
+      "Tag list totals "+fmt(tagSum)+"; the sheet's total good is "+fmt(totalGood)+" ("+fmt(s.good)+" good shots × "+sc.cav+" − "+fmt(noGood)+" no-good). One of them has a typo."});
+    var over=tags.filter(function(x){ return x.q!=null && s.good!=null && x.q>s.good; });
+    checks.push({ok:over.length===0, txt: over.length===0 ? "No basket holds more than the shift's good shots ("+fmt(s.good)+")." :
+      over.map(function(x){return x.t.tag+" says "+fmt(x.q);}).join("; ")+" — more than the "+fmt(s.good)+" good shots this shift made. Check the figure."});
+    var bad=tags.filter(function(x){ return x.q!=null && isNaN(x.q); });
+    if(bad.length) checks.push({ok:false, txt:"Not a number: "+bad.map(function(x){return x.t.tag;}).join(", ")+"."});
+  }
+  var dieDelta = (s.total!=null && !isNaN(s.total)) ? s.total-(rec.reading||0) : 0;
+  return {sc:sc, sh:sh, rec:rec, s:s, noGood:noGood, totalGood:totalGood, tags:tags, tagSum:tagSum, checks:checks,
+          ok:checks.every(function(c){return c.ok;}), dieDelta:dieDelta, typedAny:typedAny};
+}
+
+function changes(k){
+  var c=calc(k), sc=c.sc, out=[];
+  var byTarget={};
+  sc.entries.forEach(function(e){ if(S.moved[e.id]){ var t=S.moved[e.id]; (byTarget[t]=byTarget[t]||{n:0,rows:0,pc:0}); byTarget[t].n++; byTarget[t].rows+=e.rows; byTarget[t].pc+=e.pieces; }});
+  var moveLines=Object.keys(byTarget).map(function(t){ var b=byTarget[t]; return b.n+" entr"+(b.n>1?"ies":"y")+" ("+b.rows+" rows, "+fmt(b.pc)+" pieces) move from "+sc.shift+" to "+t+"."; });
+  if(moveLines.length) out.push({k:"move", h:"Entries moved", p:moveLines.join(" "), d:"Shots, pieces, baskets and die life do not change — only which shift is credited."});
+  var add=0, sub=0, addT=0, subT=[];
+  c.tags.forEach(function(x){ if(x.gap>0){add+=x.gap; addT++;} if(x.gap<0){sub+=-x.gap; subT.push(x.t.tag+" −"+fmt(-x.gap));} });
+  var warmGap = c.s.warm!=null ? (c.s.warm - c.rec.warm)*sc.cav : 0;
+  var rejGap = c.typedAny ? c.noGood - c.rec.test : 0;
+  var extra=[]; if(warmGap>0) extra.push(fmt(warmGap)+" warm-up pieces"); if(rejGap>0) extra.push(fmt(rejGap)+" test/no-good pieces");
+  if(add>0||extra.length) out.push({k:"add", h:"Production added", p:(add>0?fmt(add)+" good pieces credited to "+addT+" basket"+(addT>1?"s":"")+". ":"")+(extra.length?extra.join(" and ")+" recorded.":"")});
+  var redBits=[]; if(sub>0) redBits.push(fmt(sub)+" good pieces removed ("+subT.length+" baskets)"); if(warmGap<0) redBits.push(fmt(-warmGap)+" warm-up pieces removed"); if(rejGap<0) redBits.push(fmt(-rejGap)+" test/no-good pieces removed");
+  if(c.dieDelta<0) redBits.push("counter reading lowered "+fmt(c.rec.reading)+" → "+fmt(c.s.total)+" (anchor)");
+  if(redBits.length) out.push({k:"red", h:"Production reduced", p:redBits.join("; ")+".", d:subT.join(" · ")});
+  var chg=c.tags.filter(function(x){ return x.gap && x.t.state==="rel"; });
+  if(chg.length) out.push({k:chg.some(function(x){return x.gap<0;})?"redc":"cnt", h:"Basket counts changed", p:chg.length+" released basket"+(chg.length>1?"s":"")+" not yet counted downstream.",
+    d:chg.map(function(x){return x.t.tag+"  "+fmt(x.t.pc)+" → "+fmt(x.t.pc+x.gap);}).join("\n")});
+  var st=c.tags.filter(function(x){ return x.gap && x.t.state==="trim"; });
+  if(st.length) out.push({k:"stand", h:"Counts left standing", p:st.length+" basket"+(st.length>1?"s have":" has")+" already been counted at trim — "+(st.length>1?"their counts stand":"its count stands")+". Their production is still recorded in full.",
+    d:st.map(function(x){return x.t.tag+"  "+x.t.where;}).join("\n")});
+  if(c.dieDelta) out.push({k:c.dieDelta<0?"red":"die", h:"Die life", p:sc.die+": "+fmt(sc.dieLife)+" → "+fmt(sc.dieLife+c.dieDelta)+" ("+sgn(c.dieDelta)+" shots)."});
+  else out.push({k:"die0", h:"Die life", p:sc.die+": unchanged at "+fmt(sc.dieLife)+"."});
+  return {c:c, groups:out, reduces:out.some(function(g){return g.k==="red"||g.k==="redc";}), nothing:out.length===1 && out[0].k==="die0"};
+}
+
+/* ================= rendering ================= */
+var STEPS = [
+  {k:"1", t:"Sign in", go:function(){ S=fresh(); S.signedIn=false; S.overlay="signin"; }},
+  {k:"2", t:"Pick the shift", go:function(){ S=fresh(); }},
+  {k:"3", t:"Blocked: entry misfiled", go:function(){ S=fresh(); S.view="rec"; S.scen="m11"; }},
+  {k:"4", t:"Move the entry", go:function(){ S=fresh(); S.view="rec"; S.scen="m11"; S.reason="MissedEntry"; S.overlay="move"; S.moveIds=["e1"]; }},
+  {k:"5", t:"Ready to save", go:function(){ S=fresh(); S.view="rec"; S.scen="m11"; S.reason="MissedEntry"; S.moved={e1:"09-16 3rd"}; }},
+  {k:"6", t:"Confirm", go:function(){ S=fresh(); S.view="rec"; S.scen="m11"; S.reason="MissedEntry"; S.moved={e1:"09-16 3rd"}; S.overlay="confirm"; }},
+  {k:"7", t:"Saved", go:function(){ S=fresh(); S.view="done"; S.scen="m11"; S.reason="MissedEntry"; S.moved={e1:"09-16 3rd"}; S.saved.m11=true; }},
+  {k:"8", t:"Machine 202: a night filed as 1st", go:function(){ S=fresh(); S.press="m202"; S.view="rec"; S.scen="m202"; S.reason="WrongShift"; }},
+  {k:"9", t:"A reduction (illustrative)", go:function(){ S=fresh(); S.view="rec"; S.scen="red"; S.reason="WrongNumbers"; S.overlay="confirm"; }}
+];
+var ANNOT = {
+  "1":{q:"Who is answerable for what this screen writes?", d:[
+      "One AD sign-in opens the session (<code>beginElevatedWindow</code>). Every row written is attributed to that person — not to whoever was signed in at the terminal.",
+      "The pill in the top bar says who you are for the whole session, so nobody reconciles under somebody else's name by accident.",
+      "The window renews while you work, so a long sheet doesn't expire half-way."]},
+  "2":{q:"Which shift is this sheet column? — the decision that caused half of this.", d:[
+      "No row is pre-selected. The wrong-shift entries this screen repairs came from a screen that pre-selected the current shift.",
+      "“No entry” stays neutral: the MES can't tell a missed entry from a press that didn't run. Amber only means something positive was found — Machine 202's releases with no shift-end number.",
+      "The dashboard tile is the same query: shifts with production but no shift-end number and no reconciliation.",
+      "The open shift can't be reconciled — the live screen owns it."],
+    src:"Try it: switch to Machine 202, or open 09-17 1st / 09-18 1st on Machine 11."},
+  "3":{q:"Does the recorded entry belong to this shift at all?", d:[
+      "The 09:35 entry holds the 3rd shift's numbers (991 shots, 953 a basket) under 1st shift. The screen can't read the paper, but it can see the symptom: <b>4 of the entry's baskets aren't on this shift's sheet</b>.",
+      "Save is blocked with the reason in plain words, and the fix is named: type the figure, or move the entry.",
+      "Every check here is the sheet's own arithmetic. A failure is always a typo, never a plant condition — so these block, unlike live variance."],
+    src:"Save stays disabled and says why. Nothing is written until the confirmation."},
+  "4":{q:"Where does this entry really belong?", d:[
+      "Nothing is pre-selected: the team lead picks the target shift from the paper, not from a guess.",
+      "Each option shows what that shift holds now, so moving onto a shift that already has an entry is visible.",
+      "The popup states what does NOT change: shots, pieces, baskets, die life.",
+      "The confirm button names the target: <b>MOVE TO 09-16 3RD SHIFT</b>. The move is staged and undoable until Save."]},
+  "5":{q:"Is every number going in the one on the paper?", d:[
+      "With the entry moved, Recorded drops to zero and the gap is the whole shift.",
+      "<b>Real finding:</b> 8 of the 12 baskets have already been through trim (Trim Storage, or on 6MA Cam Holder Line 1). Their counts stand. Production is still recorded in full — shot count over parts in the lot.",
+      "Only 10628131–134, still in the Warehouse, get their counts corrected: 1,788 → 2,868.",
+      "Type a typo into any field to see the checks catch it."]},
+  "6":{q:"Last look: exactly what will change?", d:[
+      "The shift is repeated in large type at the top, and the button names it: <b>SAVE 09-17 1ST SHIFT</b>.",
+      "Only groups with content appear, in plain sentences with numbers — including what will <i>not</i> change and why (counts left standing).",
+      "Additions need no extra tick: they are the normal case, and friction on the normal case trains people to click through."]},
+  "7":{q:"Did it land, and where do I go next?", d:[
+      "The result repeats what was written and gives the reconciliation a number for the audit trail.",
+      "Back on the list, 09-17 1st reads <b>Reconciled · JGP</b> and 09-16 3rd now holds the 3rd shift's 11,436 — the two rows the sheet said were wrong."]},
+  "8":{q:"Which of these releases belong to which shift?", d:[
+      "Machine 202 releases are entered at the press as each basket fills, so <b>entered during</b> is reliable — and it disagrees with <b>filed under</b> for all 14.",
+      "Select by the shift they were entered in, move each group. Still no pre-selected target.",
+      "No counter reading was ever entered, so moving these changes no die life. The shift-end number is the operator's miss; the dashboard flags it."]},
+  "9":{q:"Taking production away — am I sure?", d:[
+      "<b>Illustrative</b>: we have no sheet for 09-18 1st. Suppose it said 1,206 shots, not 1,216.",
+      "A reduction is written as compensating rows; nothing is edited or deleted.",
+      "Anything that reduces production, a count or die life is amber and needs its own tick before the Save button enables."]}
+};
+
+function renderSteps(active){
+  $("steps").innerHTML = STEPS.map(function(s){
+    return '<button type="button" data-step="'+s.k+'"'+(s.k===active?' aria-current="step"':'')+'><span class="k">'+s.k+'</span>'+esc(s.t)+'</button>';
+  }).join("");
+}
+function renderAnnot(k){
+  var a=ANNOT[k]; if(!a){ $("annot").innerHTML=""; return; }
+  $("annot").innerHTML = '<h3>Critical decision</h3><p class="q">'+a.q+'</p><h4>How the screen protects it</h4><ul>'+
+    a.d.map(function(x){return "<li>"+x+"</li>";}).join("")+'</ul>'+(a.src?'<div class="src">'+a.src+'</div>':'');
+}
+
+function head(){
+  var sc=SCEN[S.scen];
+  var crumb = S.view==="landing" ? "<b>Die Cast</b> · Shift Reconciliation" :
+    "<b>Die Cast</b> · Shift Reconciliation · "+esc(sc.press)+" · "+esc(sc.shift);
+  var who = S.signedIn ? '<span class="who">● Jacques Potgieter (JGP) · AD · recorded under your name</span>' : '<span class="who off">Not signed in</span>';
+  return '<div class="apphead"><span class="crumb">'+crumb+'</span><span class="sp"></span>'+who+'</div>';
+}
+
+function renderLanding(){
+  var rows=LANDING[S.press], press=S.press==="m11"?"Machine 11":"Machine 202";
+  var flagged = LANDING.m202.filter(function(r){return r[6]==="norx";}).length;
+  var h='<div class="body">';
+  h+='<div class="row"><button type="button" class="tile" data-act="press" data-press="m202"><span class="big">'+flagged+'</span><span><span class="t1">Shifts not reconciled · last 7 days</span><br><span class="t2">Machine 202 × '+flagged+' — baskets released, no shift-end number. (Supervisor dashboard tile)</span></span></button></div>';
+  h+='<div class="row"><span class="lbl">Press</span><div class="seg"><button type="button" data-act="press" data-press="m11" aria-pressed="'+(S.press==="m11")+'">Machine 11 · DMO125</button><button type="button" data-act="press" data-press="m202" aria-pressed="'+(S.press==="m202")+'">Machine 202 · DM0144</button></div><span class="note">then pick the shift the sheet column is for — nothing is pre-selected</span></div>';
+  h+='<div class="panel scroll"><table class="t"><thead><tr><th>Shift</th><th>Die</th><th class="n">Entries</th><th class="n">Good recorded</th><th class="n">Shift-end reading</th><th>Status</th><th></th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var shift=r[0], st=r[6], sc=r[5], saved = (sc && S.saved[sc]);
+    var chip = st==="open" ? '<span class="chip info">Open — live screen owns it</span>' :
+               st==="norx" ? '<span class="chip warn">Released, no shift-end number</span>' :
+               st==="rec"  ? '<span class="chip">Entry recorded</span>' : '<span class="chip lock">No entry</span>';
+    var good=r[3], entries=r[2], reading=r[4];
+    if(S.saved.m11 && S.press==="m11"){
+      if(shift==="09-17 1st"){ chip='<span class="chip good">Reconciled · JGP 09-21</span>'; good=12960; reading=1121; entries=2; }
+      if(shift==="09-16 3rd"){ chip='<span class="chip">Entry recorded (moved in)</span>'; good=11436; reading=991; entries=1; }
+    }
+    var btn = st==="open" ? "" : '<button type="button" class="btn sm'+(sc?" pri":"")+'" data-act="open" data-scen="'+(sc||"")+'" data-shift="'+shift+'">Reconcile</button>';
+    h+='<tr><td><b>'+shift+'</b></td><td class="mono">'+r[1]+'</td><td class="n">'+(entries||"—")+'</td><td class="n">'+(good?fmt(good):"—")+'</td><td class="n">'+(reading!=null?fmt(reading):(entries?'<span class="dim">none</span>':"—"))+'</td><td>'+chip+'</td><td>'+btn+'</td></tr>';
+  });
+  h+='</tbody></table></div><p class="note">'+press+' · shifts in the last 7 days, newest first, one row per die mounted during the shift.</p></div>';
+  return h;
+}
+
+function tagRows(c){
+  var sc=c.sc, h="";
+  sc.parts.forEach(function(p,pi){
+    var list=c.tags.filter(function(x){return x.t.p===pi && x.show;});
+    if(!list.length) return;
+    var sub=0; list.forEach(function(x){ if(x.q>0) sub+=x.q; });
+    h+='<tr class="grp"><td colspan="7">'+esc(p.name)+' · '+esc(p.item)+' · Macola '+esc(p.macola)+'<span class="sub" id="sub-'+pi+'">sub-total '+fmt(sub)+'</span></td></tr>';
+    list.forEach(function(x){
+      var t=x.t, orphan = x.rec>0 && (x.q==null||isNaN(x.q));
+      var state = t.state==="trim" ? '<span class="chip lock">🔒 Counted at trim · '+esc(t.where)+'</span>' :
+                  '<span class="chip info">Released '+esc(t.rel)+' · '+esc(t.where)+'</span>';
+      h+='<tr class="'+(orphan?"flag":"")+'" id="row-'+t.tag+'"><td class="mono"><b>'+t.tag+'</b></td><td>'+t.cav+'</td>'+
+         '<td class="n"><input class="inp num" id="q-'+t.tag+'" data-qty="'+t.tag+'" inputmode="numeric" aria-label="Sheet quantity for '+t.tag+'" value="'+esc(c.sh.qty[t.tag]||"")+'" placeholder="—"></td>'+
+         '<td class="n" id="rec-'+t.tag+'">'+(x.rec?fmt(x.rec):'<span class="dim">0</span>')+'</td>'+
+         '<td class="n" id="gap-'+t.tag+'"></td><td>'+state+'</td><td class="n" id="cnt-'+t.tag+'"></td></tr>';
+    });
+  });
+  if(!h) h='<tr><td colspan="7" class="dim">No baskets on record for this shift. Add the sheet\'s tags below.</td></tr>';
+  return h;
+}
+
+function renderRec(){
+  var k=S.scen, c=calc(k), sc=c.sc, sh=c.sh;
+  var h='<div class="body">';
+  h+='<div class="banner"><div><div class="shift">'+esc(sc.shift)+' shift</div><div class="meta"><span>'+esc(sc.win)+'</span><span><b>'+esc(sc.press)+'</b></span><span>Die <b>'+esc(sc.die)+'</b> · '+esc(sc.dieName)+'</span><span>'+sc.cav+' cavit'+(sc.cav>1?"ies":"y")+'</span>'+(sc.illustrative?'<span class="chip warn">sheet figures illustrative</span>':'')+'</div></div>'+
+     '<div class="life">Die life<br><span class="v" id="life">'+fmt(sc.dieLife)+'</span></div></div>';
+  h+='<div class="row"><label class="lbl" for="reason">Reason</label><select class="sel'+(S.reason?"":" need")+'" id="reason">'+REASONS.map(function(r){return '<option value="'+r[0]+'"'+(r[0]===S.reason?" selected":"")+'>'+r[1]+'</option>';}).join("")+'</select>'+
+     (S.reason==="Other"?'<input class="inp" id="note" placeholder="What happened?" value="'+esc(S.note)+'" style="min-width:280px">':'')+
+     '<button type="button" class="btn ghost sm" data-act="back">← All shifts</button></div>';
+
+  /* entries on record */
+  h+='<div class="panel"><h2>On record for this shift</h2>';
+  if(k==="m202"){
+    h+='<div class="entry" style="margin-bottom:10px"><div class="what"><b>No shift-end number was entered</b> — 14 baskets released, no counter reading on any of them. This is what the dashboard flags. Every release below is filed under <b>'+sc.shift+'</b>, but was entered during another shift.</div></div>';
+    var n2=0,n3=0; sc.entries.forEach(function(e){ if(!S.moved[e.id]){ if(e.during==="09-17 2nd")n2++; if(e.during==="09-17 3rd")n3++; }});
+    h+='<div class="row" style="margin-bottom:8px"><span class="lbl">Select</span><button type="button" class="btn sm" data-act="selDuring" data-d="09-17 2nd"'+(n2?"":" disabled")+'>Entered during 09-17 2nd ('+n2+')</button><button type="button" class="btn sm" data-act="selDuring" data-d="09-17 3rd"'+(n3?"":" disabled")+'>Entered during 09-17 3rd ('+n3+')</button><button type="button" class="btn sm pri" data-act="moveSel"'+(Object.keys(S.sel).length?"":" disabled")+'>Move selected ('+Object.keys(S.sel).length+')…</button></div>';
+    h+='<div class="scroll"><table class="t"><thead><tr><th></th><th>Entered</th><th>By</th><th>Basket</th><th class="n">Pieces</th><th>Entered during</th><th>Filed under</th></tr></thead><tbody>';
+    sc.entries.forEach(function(e){
+      var mv=S.moved[e.id];
+      h+='<tr class="'+(S.sel[e.id]?"sel ":"")+(mv?"":"click")+'" '+(mv?"":'data-act="tog" data-id="'+e.id+'"')+'><td>'+(mv?"":'<input type="checkbox" tabindex="-1" '+(S.sel[e.id]?"checked":"")+' aria-label="select">')+'</td><td class="mono">'+e.at+'</td><td>'+e.by+'</td><td class="mono">'+e.lot+'</td><td class="n">'+e.pieces+'</td><td><span class="chip warn">'+e.during+'</span></td><td>'+(mv?'<span class="chip info">Moving to '+mv+'</span> <button type="button" class="btn sm ghost" data-act="undo" data-id="'+e.id+'">Undo</button>':'<span class="chip">'+sc.shift+'</span>')+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  } else {
+    sc.entries.forEach(function(e){
+      var mv=S.moved[e.id];
+      var notOnSheet=c.tags.filter(function(x){ return x.t.rec[e.id] && (x.q==null||isNaN(x.q)); }).length;
+      var total=c.tags.filter(function(x){ return x.t.rec[e.id]; }).length;
+      h+='<div class="entry'+(mv?" moved":"")+'"><div class="what"><b>'+e.at+' · '+e.by+'</b> — '+esc(e.desc)+' · '+e.rows+' rows<br>'+
+         '<span class="chip">Entered during '+e.during+'</span> <span class="chip'+(mv?" info":"")+'">'+(mv?"Moving to "+mv:"Filed under "+sc.shift)+'</span></div>'+
+         (mv?'<button type="button" class="btn sm" data-act="undo" data-id="'+e.id+'">Undo move</button>':'<button type="button" class="btn" data-act="move1" data-id="'+e.id+'">Move to another shift…</button>')+
+         (!mv && notOnSheet ? '<div class="hint" id="hint-'+e.id+'">⚠ '+notOnSheet+' of this entry\'s '+total+' baskets are not on your sheet for this shift. It may belong to another shift.</div>' : '<div class="hint" id="hint-'+e.id+'"></div>')+'</div>';
+    });
+  }
+  h+='</div>';
+
+  /* totals + rejects */
+  h+='<div class="grid2"><div class="panel scroll"><h2>Shift totals — from the sheet</h2><table class="t"><thead><tr><th></th><th class="n">Recorded</th><th class="n">Sheet</th><th class="n">Gap</th></tr></thead><tbody>'+
+     '<tr><td>Total shots</td><td class="n" id="r-total"></td><td class="n"><input class="inp num" id="s-total" data-sheet="total" inputmode="numeric" value="'+esc(sh.total)+'" placeholder="—"></td><td class="n" id="g-total"></td></tr>'+
+     '<tr><td>Good shots</td><td class="n" id="r-good"></td><td class="n"><input class="inp num" id="s-good" data-sheet="good" inputmode="numeric" value="'+esc(sh.good)+'" placeholder="—"></td><td class="n" id="g-good"></td></tr>'+
+     '<tr><td>Warm-up shots</td><td class="n" id="r-warm"></td><td class="n"><input class="inp num" id="s-warm" data-sheet="warm" inputmode="numeric" value="'+esc(sh.warm)+'" placeholder="—"></td><td class="n" id="g-warm"></td></tr>'+
+     '<tr><td>No-good pieces</td><td class="n" id="r-ng"></td><td class="n" id="s-ng"></td><td class="n" id="g-ng"></td></tr>'+
+     '<tr><td><b>Total good pieces</b></td><td class="n" id="r-tg"></td><td class="n"><b id="s-tg"></b></td><td class="n" id="g-tg"></td></tr>'+
+     '</tbody></table><p class="note">No-good and Total good are worked out from the reject block and good shots × '+sc.cav+' — the sheet\'s own arithmetic.</p></div>';
+  h+='<div class="panel scroll"><h2>Rejects</h2><table class="t"><thead><tr><th>Approved by (QAS)</th><th>Reason</th><th>Part</th><th class="n">Amt</th><th></th></tr></thead><tbody>';
+  sh.rejects.forEach(function(r,i){
+    h+='<tr><td><select class="sel" data-rej="'+i+'" data-f="qas" aria-label="Approved by">'+QAS.map(function(q){return '<option'+(q===r.qas?" selected":"")+' value="'+q+'">'+(q||"Pick…")+'</option>';}).join("")+'</select></td>'+
+       '<td><select class="sel" data-rej="'+i+'" data-f="code" aria-label="Reason">'+CODES.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===r.code?" selected":"")+'>'+x[1]+'</option>';}).join("")+'</select></td>'+
+       '<td><select class="sel" data-rej="'+i+'" data-f="part" aria-label="Part"><option'+(r.part==="All"?" selected":"")+'>All</option>'+sc.parts.map(function(p){return '<option'+(r.part===p.item?" selected":"")+'>'+p.item+'</option>';}).join("")+'</select></td>'+
+       '<td class="n"><input class="inp num" data-rej="'+i+'" data-f="amt" inputmode="numeric" value="'+esc(r.amt)+'" aria-label="Amount"></td><td><button type="button" class="btn sm ghost" data-act="rmrej" data-i="'+i+'" aria-label="Remove">✕</button></td></tr>';
+  });
+  h+='</tbody></table><div class="row" style="margin-top:8px"><button type="button" class="btn sm" data-act="addrej">+ Reject line</button><span class="note" id="rej-rec"></span></div>'+
+     '<p class="note">“All” spreads the amount across every cavity, as the sheet means it. Approved by is the QAS initials on the sheet, recorded against each reject row.</p></div></div>';
+
+  /* tags */
+  h+='<div class="panel scroll"><h2>Tags — in the sheet\'s order</h2><table class="t"><thead><tr><th>Tag #</th><th>Cav</th><th class="n">Sheet qty</th><th class="n">Recorded</th><th class="n">Gap</th><th>Basket</th><th class="n">Count</th></tr></thead><tbody>'+tagRows(c)+
+     '<tr><td colspan="7"><button type="button" class="btn sm" data-act="addtag">+ Tag from the sheet</button> <span class="note">new tags are created and released to default storage, as the live path does</span></td></tr>'+
+     '<tr class="grp"><td colspan="2">GRAND TOTAL</td><td class="n" id="tagsum"></td><td class="n" id="recsum"></td><td colspan="3"></td></tr></tbody></table></div>';
+
+  /* footer */
+  h+='<div class="footer"><div class="checks" id="checks"></div><div class="row"><button type="button" class="btn ghost" data-act="back">Discard</button><button type="button" class="btn pri big" id="savebtn" data-act="review">Review &amp; save</button></div></div>';
+  h+='</div>';
+  return h;
+}
+
+function derived(){
+  if(S.view!=="rec") return;
+  var c=calc(S.scen), sc=c.sc;
+  function set(id,v){ var e=$(id); if(e) e.innerHTML=v; }
+  function gap(id,a,b){ if(b==null||isNaN(b)){ set(id,'<span class="dim">—</span>'); return; } var d=b-(a||0); set(id,'<span class="'+cls(d)+'">'+sgn(d)+'</span>'); }
+  var r=c.rec;
+  set("r-total", r.reading==null?'<span class="dim">none</span>':fmt(r.reading));
+  set("r-good", r.goodShots==null?'<span class="dim">—</span>':fmt(r.goodShots));
+  set("r-warm", fmt(r.warm));
+  set("r-ng", fmt(r.test));
+  set("r-tg", fmt(r.good));
+  gap("g-total", r.reading, c.s.total); gap("g-good", r.goodShots, c.s.good); gap("g-warm", r.warm, c.s.warm);
+  set("s-ng", c.typedAny?fmt(c.noGood):'<span class="dim">—</span>'); gap("g-ng", r.test, c.typedAny?c.noGood:null);
+  set("s-tg", c.totalGood==null?'<span class="dim">—</span>':fmt(c.totalGood)); gap("g-tg", r.good, c.totalGood);
+  set("life", c.dieDelta ? fmt(sc.dieLife)+' → <span class="'+(c.dieDelta<0?"neg":"pos")+'">'+fmt(sc.dieLife+c.dieDelta)+'</span>' : fmt(sc.dieLife));
+  var recsum=0;
+  c.tags.forEach(function(x){
+    var t=x.t; recsum+=x.rec;
+    set("rec-"+t.tag, x.rec?fmt(x.rec):'<span class="dim">0</span>');
+    set("gap-"+t.tag, x.gap==null?'<span class="neg">?</span>':'<span class="'+cls(x.gap)+'">'+sgn(x.gap)+'</span>');
+    var cnt = !x.gap ? '<span class="dim">'+fmt(t.pc)+'</span>' :
+              t.state==="trim" ? '<span class="dim">'+fmt(t.pc)+' · stands</span>' :
+              fmt(t.pc)+' → <span class="'+cls(x.gap)+'">'+fmt(t.pc+x.gap)+'</span>';
+    set("cnt-"+t.tag, cnt);
+    var row=$("row-"+t.tag); if(row) row.className = (x.rec>0 && (x.q==null||isNaN(x.q))) ? "flag" : "";
+    var inp=$("q-"+t.tag); if(inp){ inp.classList.toggle("err", x.q!=null && (isNaN(x.q) || (c.s.good!=null && x.q>c.s.good))); }
+  });
+  sc.parts.forEach(function(p,pi){ var sub=0; c.tags.forEach(function(x){ if(x.t.p===pi && x.q>0) sub+=x.q; }); set("sub-"+pi,"sub-total "+fmt(sub)); });
+  set("tagsum", '<span class="'+(c.totalGood!=null && c.tagSum!==c.totalGood?"neg":"")+'">'+fmt(c.tagSum)+'</span>');
+  set("recsum", fmt(recsum));
+  set("rej-rec", "Recorded this shift: "+fmt(r.test)+" test/no-good, "+fmt(r.warm*sc.cav)+" warm-up pieces.");
+  sc.entries.forEach(function(e){
+    var hint=$("hint-"+e.id); if(!hint || S.moved[e.id]) return;
+    var n=c.tags.filter(function(x){ return x.t.rec[e.id] && (x.q==null||isNaN(x.q)); }).length, tot=c.tags.filter(function(x){return x.t.rec[e.id];}).length;
+    hint.innerHTML = n ? "⚠ "+n+" of this entry's "+tot+" baskets are not on your sheet for this shift. It may belong to another shift." : "";
+  });
+  set("checks", c.checks.map(function(x){ return '<div class="c '+(x.ok?"yes":"no")+'"><span class="i">'+(x.ok?"✓":"✕")+'</span><span>'+x.txt+'</span></div>'; }).join(""));
+  var b=$("savebtn"); if(b){ b.disabled=!c.ok; b.textContent = c.ok ? "Review & save · "+sc.shift.toUpperCase()+" SHIFT" : (c.checks.filter(function(x){return !x.ok;}).length+" to fix before saving"); }
+  var rs=$("reason"); if(rs) rs.className="sel"+(S.reason?"":" need");
+}
+
+function renderDone(){
+  var ch=changes(S.scen), sc=ch.c.sc;
+  var h='<div class="body"><div class="ok-big"><span class="ic">✓</span><div><div style="font-size:var(--fs-lg);font-weight:800">'+sc.shift.toUpperCase()+' SHIFT RECONCILED</div><div class="note" style="color:var(--n90)">Reconciliation #1 · '+esc(sc.press)+' · '+sc.die+' · saved 09-21 13:40 by Jacques Potgieter (JGP) · reason: Shift not entered</div></div></div>';
+  h+='<div class="grp-list">'+ch.groups.map(groupHtml).join("")+'</div>';
+  h+='<div class="row"><button type="button" class="btn pri big" data-act="back">Back to shifts</button><span class="note">09-17 1st and 09-16 3rd on Machine 11 now read as the sheet says.</span></div></div>';
+  return h;
+}
+
+function groupHtml(g){
+  var klass = (g.k==="red"||g.k==="redc") ? "cg red" : g.k==="stand" ? "cg stand" : "cg";
+  return '<div class="'+klass+'"><h5>'+esc(g.h)+'</h5><p>'+esc(g.p)+'</p>'+(g.d?'<div class="det">'+esc(g.d).replace(/\n/g,"<br>")+'</div>':'')+'</div>';
+}
+
+function overlay(){
+  if(S.overlay==="signin"){
+    return '<div class="ov"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dh1"><div class="dh" id="dh1">Sign in to reconcile a shift</div><div class="db">'+
+      '<p style="margin:0">Reconciling changes production records, basket counts and die life for a past shift. <b style="color:var(--n100)">Everything you save here is recorded under your name.</b></p>'+
+      '<div class="field"><label class="lbl" for="ad-u">AD account</label><input class="inp" id="ad-u" value="jpotgieter" autocomplete="off"></div>'+
+      '<div class="field"><label class="lbl" for="ad-p">Password</label><input class="inp" id="ad-p" type="password" value="••••••••••"></div>'+
+      '<p class="note">One sign-in covers this session. It renews while you work and ends when you leave the screen.</p></div>'+
+      '<div class="df"><button type="button" class="btn ghost" data-act="cancelSign">Cancel</button><button type="button" class="btn pri big" data-act="signin">Sign in</button></div></div></div>';
+  }
+  if(S.overlay==="move"){
+    var sc=SCEN[S.scen], ids=S.moveIds||[], es=sc.entries.filter(function(e){return ids.indexOf(e.id)>=0;});
+    var pc=0, rows=0; es.forEach(function(e){pc+=e.pieces; rows+=e.rows;});
+    var during = es.length && es.every(function(e){return e.during===es[0].during;}) ? es[0].during : null;
+    var tgt=S.pick;
+    var opts=sc.moveOpts.map(function(o){
+      var hint = (S.scen==="m202" && during===o.s) ? '<div class="g" style="color:var(--warn-fg)">matches “entered during”</div>' : "";
+      return '<button type="button" class="opt" data-act="pick" data-s="'+o.s+'" aria-pressed="'+(tgt===o.s)+'"><div class="s">'+o.s+'</div><div class="g">holds '+fmt(o.g)+' good now'+(tgt===o.s?' → '+fmt(o.g+pc):'')+'</div>'+hint+'</button>';
+    }).join("");
+    var desc = es.length===1 ? esc(es[0].at+" · "+es[0].by+" — "+es[0].desc) : es.length+" entries ("+es.map(function(e){return e.lot;}).join(", ")+")";
+    return '<div class="ov"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dh2"><div class="dh" id="dh2">Move '+(es.length>1?es.length+" entries":"this entry")+' to another shift</div><div class="db">'+
+      '<p style="margin:0">'+desc+'. <b style="color:var(--n100)">Everything in '+(es.length>1?"these entries":"this entry")+' moves together: '+rows+' rows, '+fmt(pc)+' good pieces.</b></p>'+
+      '<div class="fromto"><div class="box"><div class="lbl">From</div><div class="bigshift">'+sc.shift+'</div><div class="note">'+fmt(pc)+' good → '+fmt(0)+' from '+(es.length>1?"these":"this")+'</div></div><div class="arrow">→</div>'+
+      '<div class="box"><div class="lbl">To</div><div class="bigshift" style="color:'+(tgt?"var(--banner-fg)":"var(--n60)")+'">'+(tgt||"Pick below")+'</div><div class="note">'+(tgt?"gains "+fmt(pc)+" good":"the shift the sheet column says")+'</div></div></div>'+
+      '<div><div class="lbl" style="margin-bottom:6px">Which shift is it really? (closed shifts within two of '+sc.shift+')</div><div class="opts">'+opts+'</div></div>'+
+      '<div class="same">Shots, pieces, baskets and die life do not change. Only which shift is credited.</div></div>'+
+      '<div class="df"><button type="button" class="btn ghost" data-act="close">Cancel</button><button type="button" class="btn pri big" data-act="domove"'+(tgt?"":" disabled")+'>'+(tgt?"MOVE TO "+tgt.toUpperCase()+" SHIFT":"Pick a shift first")+'</button></div></div></div>';
+  }
+  if(S.overlay==="confirm"){
+    var ch=changes(S.scen), sc2=ch.c.sc, needTick=ch.reduces, ticked=false;
+    return '<div class="ov"><div class="dlg wide" role="dialog" aria-modal="true" aria-labelledby="dh3"><div class="dh" id="dh3">Check before saving</div><div class="db">'+
+      '<div><div class="lbl">You are reconciling</div><div class="bigshift">'+sc2.shift+' shift · '+esc(sc2.press)+'</div><div class="note">Die '+sc2.die+' · reason: '+esc((REASONS.filter(function(x){return x[0]===S.reason;})[0]||["",""])[1])+' · recorded under Jacques Potgieter (JGP)</div></div>'+
+      '<div class="grp-list">'+ch.groups.map(function(g){
+        var html=groupHtml(g);
+        if((g.k==="red"||g.k==="redc") && needTick && !ticked && (ticked=true)) html=html.replace(/<\/div>$/, '<label class="tick"><input type="checkbox" id="tick" '+(S.tick?"checked":"")+'> <span>I have checked this reduction against the sheet. It removes production that is on record.</span></label></div>');
+        return html; }).join("")+'</div>'+
+      (ch.nothing?'<p class="neg" style="margin:0">Nothing would change — the record already matches the sheet.</p>':'')+
+      '</div><div class="df"><button type="button" class="btn ghost" data-act="close">Back to the sheet</button><button type="button" class="btn pri big" id="confirmbtn" data-act="save"'+((needTick&&!S.tick)||ch.nothing?" disabled":"")+'>SAVE '+sc2.shift.toUpperCase()+' SHIFT</button></div></div></div>';
+  }
+  return "";
+}
+
+function render(stepKey){
+  if(stepKey) S.step=stepKey;
+  renderSteps(S.step); renderAnnot(S.step);
+  var body = S.view==="landing" ? renderLanding() : S.view==="done" ? renderDone() : renderRec();
+  $("term").innerHTML = head()+body+overlay()+(S.toast?'<div class="toast" role="status">'+esc(S.toast)+'</div>':'');
+  derived();
+}
+
+/* ================= events ================= */
+document.addEventListener("click", function(ev){
+  var st=ev.target.closest("[data-step]");
+  if(st){ var s=STEPS.filter(function(x){return x.k===st.getAttribute("data-step");})[0]; s.go(); S.step=s.k; render(); return; }
+  var a=ev.target.closest("[data-act]"); if(!a || !$("term").contains(a)) return;
+  var act=a.getAttribute("data-act"); S.toast=null;
+  if(act==="signin"){ S.signedIn=true; S.overlay=null; S.step="2"; }
+  else if(act==="cancelSign"){ S.toast="Reconciliation needs an AD sign-in."; }
+  else if(act==="press"){ S.press=a.getAttribute("data-press"); S.view="landing"; S.step="2"; }
+  else if(act==="open"){ var k=a.getAttribute("data-scen");
+    if(!k){ S.toast="Mockup: "+a.getAttribute("data-shift")+" isn't built out. Try 09-17 1st or 09-18 1st on Machine 11, or 09-17 1st on Machine 202."; }
+    else { S.scen=k; S.view="rec"; S.overlay=null; S.pick=null; S.sel={}; S.tick=false; S.step = k==="m11"?(S.moved.e1?"5":"3"):k==="m202"?"8":"9";
+      if(k==="red" && !S.reason) S.reason="WrongNumbers"; if(k==="m202" && !S.reason) S.reason="WrongShift"; } }
+  else if(act==="back"){ S.view="landing"; S.overlay=null; S.step="2"; }
+  else if(act==="move1"){ S.moveIds=[a.getAttribute("data-id")]; S.pick=null; S.overlay="move"; S.step="4"; }
+  else if(act==="moveSel"){ S.moveIds=Object.keys(S.sel); S.pick=null; S.overlay="move"; }
+  else if(act==="pick"){ S.pick=a.getAttribute("data-s"); }
+  else if(act==="domove"){ (S.moveIds||[]).forEach(function(id){ S.moved[id]=S.pick; delete S.sel[id]; }); S.overlay=null; S.pick=null; if(S.scen==="m11") S.step="5"; }
+  else if(act==="undo"){ delete S.moved[a.getAttribute("data-id")]; if(S.scen==="m11") S.step="3"; }
+  else if(act==="tog"){ var id=a.getAttribute("data-id"); if(S.sel[id]) delete S.sel[id]; else S.sel[id]=true; }
+  else if(act==="selDuring"){ var d=a.getAttribute("data-d"); S.sel={}; SCEN.m202.entries.forEach(function(e){ if(!S.moved[e.id] && e.during===d) S.sel[e.id]=true; }); }
+  else if(act==="review"){ if(calc(S.scen).ok){ S.overlay="confirm"; S.tick=false; if(S.scen==="m11") S.step="6"; } }
+  else if(act==="close"){ S.overlay=null; if(S.scen==="m11") S.step = S.moved.e1?"5":"3"; }
+  else if(act==="save"){ S.saved[S.scen]=true; S.overlay=null; S.view="done"; if(S.scen==="m11") S.step="7"; }
+  else if(act==="addrej"){ sheetOf(S.scen).rejects.push({qas:"",code:"104",part:"All",amt:""}); }
+  else if(act==="rmrej"){ sheetOf(S.scen).rejects.splice(+a.getAttribute("data-i"),1); }
+  else if(act==="addtag"){ S.toast="In the build: type the tag number; an existing tag resolves to its basket, an unused LTT becomes a new basket released to storage."; }
+  render();
+});
+document.addEventListener("input", function(ev){
+  var el=ev.target; if(!$("term").contains(el)) return;
+  var sh=S.view==="rec"?sheetOf(S.scen):null;
+  if(el.hasAttribute("data-qty")) sh.qty[el.getAttribute("data-qty")]=el.value;
+  else if(el.hasAttribute("data-sheet")) sh[el.getAttribute("data-sheet")]=el.value;
+  else if(el.hasAttribute("data-rej")) sh.rejects[+el.getAttribute("data-rej")][el.getAttribute("data-f")]=el.value;
+  else if(el.id==="note") S.note=el.value;
+  else return;
+  derived();
+});
+document.addEventListener("change", function(ev){
+  var el=ev.target; if(!$("term").contains(el)) return;
+  if(el.id==="reason"){ S.reason=el.value; render(); }
+  else if(el.id==="tick"){ S.tick=el.checked; var b=$("confirmbtn"); if(b) b.disabled=!S.tick; }
+  else if(el.hasAttribute("data-rej") && el.tagName==="SELECT"){ sheetOf(S.scen).rejects[+el.getAttribute("data-rej")][el.getAttribute("data-f")]=el.value; derived(); }
+});
+
+S=fresh(); STEPS[2].go(); S.step="3"; render();
+})();
+</script>
