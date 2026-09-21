@@ -211,7 +211,7 @@ function T(tag,p,cav,pc,state,where,rel,sheet,rec){ return {tag:tag,p:p,cav:cav,
 
 var SCEN = {
   m11: {
-    key:"m11", press:"Machine 11", die:"DMO125", dieName:"6MA CH IN/EX 2,3,4", cav:12,
+    key:"m11", press:"Machine 11", die:"DMO125", dieName:"6MA IN 2,3,4 EX 2,3,4 D", cav:12,
     shift:"09-17 1st", win:"07:00–15:00", dieLife:15699, illustrative:false,
     parts:M11_PARTS,
     entries:[{id:"e1", at:"09-17 09:35", by:"BH", during:"09-17 1st", reading:991, perCav:953, warm:35, test:36, rows:36, pieces:11436,
@@ -238,7 +238,7 @@ var SCEN = {
     moveOpts:[{s:"09-16 2nd",g:0},{s:"09-16 3rd",g:0},{s:"09-17 2nd",g:8532},{s:"09-17 3rd",g:12924}]
   },
   red: {
-    key:"red", press:"Machine 11", die:"DMO125", dieName:"6MA CH IN/EX 2,3,4", cav:12,
+    key:"red", press:"Machine 11", die:"DMO125", dieName:"6MA IN 2,3,4 EX 2,3,4 D", cav:12,
     shift:"09-18 1st", win:"07:00–15:00", dieLife:15699, illustrative:true,
     parts:M11_PARTS,
     entries:[{id:"e2", at:"09-18 14:48", by:"BH", during:"09-18 1st", reading:1216, perCav:1197, warm:16, test:36, rows:36, pieces:14364,
@@ -411,8 +411,8 @@ function changes(k){
   var st=c.tags.filter(function(x){ return x.gap && x.t.state==="trim"; });
   if(st.length) out.push({k:"stand", h:"Counts left standing", p:st.length+" basket"+(st.length>1?"s have":" has")+" already been counted at trim — "+(st.length>1?"their counts stand":"its count stands")+". Their production is still recorded in full.",
     d:st.map(function(x){return x.t.tag+"  "+x.t.where;}).join("\n")});
-  if(c.dieDelta) out.push({k:c.dieDelta<0?"red":"die", h:"Die life", p:sc.die+": "+fmt(sc.dieLife)+" → "+fmt(sc.dieLife+c.dieDelta)+" ("+sgn(c.dieDelta)+" shots)."});
-  else out.push({k:"die0", h:"Die life", p:sc.die+": unchanged at "+fmt(sc.dieLife)+"."});
+  if(c.dieDelta) out.push({k:c.dieDelta<0?"red":"die", h:"Die life", p:"Asset # "+sc.die+" ("+sc.dieName+"): "+fmt(sc.dieLife)+" → "+fmt(sc.dieLife+c.dieDelta)+" ("+sgn(c.dieDelta)+" shots)."});
+  else out.push({k:"die0", h:"Die life", p:"Asset # "+sc.die+" ("+sc.dieName+"): unchanged at "+fmt(sc.dieLife)+"."});
   return {c:c, groups:out, reduces:out.some(function(g){return g.k==="red"||g.k==="redc";}), nothing:out.length===1 && out[0].k==="die0"};
 }
 
@@ -495,8 +495,8 @@ function renderLanding(){
   var flagged = LANDING.m202.filter(function(r){return r[6]==="norx";}).length;
   var h='<div class="body">';
   h+='<div class="row"><button type="button" class="tile" data-act="press" data-press="m202"><span class="big">'+flagged+'</span><span><span class="t1">Shifts not reconciled · last 7 days</span><br><span class="t2">Machine 202 × '+flagged+' — baskets released, no shift-end number. (Supervisor dashboard tile)</span></span></button></div>';
-  h+='<div class="row"><span class="lbl">Press</span><div class="seg"><button type="button" data-act="press" data-press="m11" aria-pressed="'+(S.press==="m11")+'">Machine 11 · DMO125</button><button type="button" data-act="press" data-press="m202" aria-pressed="'+(S.press==="m202")+'">Machine 202 · DM0144</button></div><span class="note">then pick the shift the sheet column is for — nothing is pre-selected</span></div>';
-  h+='<div class="panel scroll"><table class="t"><thead><tr><th>Shift</th><th>Die</th><th class="n">Entries</th><th class="n">Good recorded</th><th class="n">Shift-end reading</th><th>Status</th><th></th></tr></thead><tbody>';
+  h+='<div class="row"><span class="lbl">Press</span><div class="seg"><button type="button" data-act="press" data-press="m11" aria-pressed="'+(S.press==="m11")+'">Machine 11 · Asset # DMO125</button><button type="button" data-act="press" data-press="m202" aria-pressed="'+(S.press==="m202")+'">Machine 202 · Asset # DM0144</button></div><span class="note">then pick the shift the sheet column is for — nothing is pre-selected</span></div>';
+  h+='<div class="panel scroll"><table class="t"><thead><tr><th>Shift</th><th>Die asset #</th><th class="n">Entries</th><th class="n">Good recorded</th><th class="n">Shift-end reading</th><th>Status</th><th></th></tr></thead><tbody>';
   rows.forEach(function(r){
     var shift=r[0], st=r[6], sc=r[5], saved = (sc && S.saved[sc]);
     var chip = st==="open" ? '<span class="chip info">Open — live screen owns it</span>' :
@@ -538,7 +538,7 @@ function tagRows(c){
 function renderRec(){
   var k=S.scen, c=calc(k), sc=c.sc, sh=c.sh;
   var h='<div class="body">';
-  h+='<div class="banner"><div><div class="shift">'+esc(sc.shift)+' shift</div><div class="meta"><span>'+esc(sc.win)+'</span><span><b>'+esc(sc.press)+'</b></span><span>Die <b>'+esc(sc.die)+'</b> · '+esc(sc.dieName)+'</span><span>'+sc.cav+' cavit'+(sc.cav>1?"ies":"y")+'</span>'+(sc.illustrative?'<span class="chip warn">sheet figures illustrative</span>':'')+'</div></div>'+
+  h+='<div class="banner"><div><div class="shift">'+esc(sc.shift)+' shift</div><div class="meta"><span>'+esc(sc.win)+'</span><span><b>'+esc(sc.press)+'</b></span><span>Die <b>'+esc(sc.dieName)+'</b> · Asset # <b class="mono">'+esc(sc.die)+'</b></span><span>'+sc.cav+' cavit'+(sc.cav>1?"ies":"y")+'</span>'+(sc.illustrative?'<span class="chip warn">sheet figures illustrative</span>':'')+'</div></div>'+
      '<div class="life">Die life<br><span class="v" id="life">'+fmt(sc.dieLife)+'</span></div></div>';
   h+='<div class="row"><label class="lbl" for="reason">Reason</label><select class="sel'+(S.reason?"":" need")+'" id="reason">'+REASONS.map(function(r){return '<option value="'+r[0]+'"'+(r[0]===S.reason?" selected":"")+'>'+r[1]+'</option>';}).join("")+'</select>'+
      (S.reason==="Other"?'<input class="inp" id="note" placeholder="What happened?" value="'+esc(S.note)+'" style="min-width:280px">':'')+
@@ -641,7 +641,7 @@ function derived(){
 
 function renderDone(){
   var ch=changes(S.scen), sc=ch.c.sc;
-  var h='<div class="body"><div class="ok-big"><span class="ic">✓</span><div><div style="font-size:var(--fs-lg);font-weight:800">'+sc.shift.toUpperCase()+' SHIFT RECONCILED</div><div class="note" style="color:var(--n90)">Reconciliation #1 · '+esc(sc.press)+' · '+sc.die+' · saved 09-21 13:40 by Jacques Potgieter (JGP) · reason: Shift not entered</div></div></div>';
+  var h='<div class="body"><div class="ok-big"><span class="ic">✓</span><div><div style="font-size:var(--fs-lg);font-weight:800">'+sc.shift.toUpperCase()+' SHIFT RECONCILED</div><div class="note" style="color:var(--n90)">Reconciliation #1 · '+esc(sc.press)+' · Asset # '+sc.die+' · saved 09-21 13:40 by Jacques Potgieter (JGP) · reason: Shift not entered</div></div></div>';
   h+='<div class="grp-list">'+ch.groups.map(groupHtml).join("")+'</div>';
   h+='<div class="row"><button type="button" class="btn pri big" data-act="back">Back to shifts</button><span class="note">09-17 1st and 09-16 3rd on Machine 11 now read as the sheet says.</span></div></div>';
   return h;
@@ -682,7 +682,7 @@ function overlay(){
   if(S.overlay==="confirm"){
     var ch=changes(S.scen), sc2=ch.c.sc, needTick=ch.reduces, ticked=false;
     return '<div class="ov"><div class="dlg wide" role="dialog" aria-modal="true" aria-labelledby="dh3"><div class="dh" id="dh3">Check before saving</div><div class="db">'+
-      '<div><div class="lbl">You are reconciling</div><div class="bigshift">'+sc2.shift+' shift · '+esc(sc2.press)+'</div><div class="note">Die '+sc2.die+' · reason: '+esc((REASONS.filter(function(x){return x[0]===S.reason;})[0]||["",""])[1])+' · recorded under Jacques Potgieter (JGP)</div></div>'+
+      '<div><div class="lbl">You are reconciling</div><div class="bigshift">'+sc2.shift+' shift · '+esc(sc2.press)+'</div><div class="note">Die '+esc(sc2.dieName)+' · Asset # '+sc2.die+' · reason: '+esc((REASONS.filter(function(x){return x[0]===S.reason;})[0]||["",""])[1])+' · recorded under Jacques Potgieter (JGP)</div></div>'+
       '<div class="grp-list">'+ch.groups.map(function(g){
         var html=groupHtml(g);
         if((g.k==="red"||g.k==="redc") && needTick && !ticked && (ticked=true)) html=html.replace(/<\/div>$/, '<label class="tick"><input type="checkbox" id="tick" '+(S.tick?"checked":"")+'> <span>I have checked this reduction against the sheet. It removes production that is on record.</span></label></div>');

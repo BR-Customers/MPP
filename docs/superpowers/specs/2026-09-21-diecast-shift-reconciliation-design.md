@@ -21,7 +21,7 @@ Building 2 die cast could not enter LOTs on the night of 2026-09-16. The paperwo
 the MES had no way to take a past shift. That was the trigger. A week of prod records held against
 the paper shows it is not a one-off, and that "missing" is only one of three failures.
 
-**Machine 11, die `DMO125`, sheet dated 2026-09-17:**
+**Machine 11, die asset # `DMO125`, sheet dated 2026-09-17:**
 
 | Sheet column | Sheet | MES |
 |---|---|---|
@@ -32,7 +32,7 @@ the paper shows it is not a one-off, and that "missing" is only one of three fai
 The mis-filed entry is the pre-2026-09-18 shift-picker defect (the screen preselected the current
 shift). The 09-18 release stops new ones; it did not correct the rows already written.
 
-**Machine 202, die `DM0144` (6FB oil pan):** of the 14 tags on the sheet, **2 exist in the MES**.
+**Machine 202, die asset # `DM0144` (6FB Oil Pan D):** of the 14 tags on the sheet, **2 exist in the MES**.
 All 33 credits in the week came through basket release with a count and **no counter reading**; no
 shift-end number was entered on Machine 202 all week. Releases from 22:31 on 09-17 to 06:54 on 09-18
 are filed under 09-17 **1st** shift -- a whole night. Everything after the 09-18 release is filed
@@ -305,10 +305,16 @@ Route `/shop-floor/die-cast/reconcile`, view `BlueRidge/Views/ShopFloor/DieCastR
 Reached from the supervisor dashboard tile and the die cast supervisor page. Opening it requires the
 AD sign-in (§7.1).
 
+**A die is identified by its Asset Number** -- `Tools.Tool.Code`, which MPP calls the asset number
+and which the Tools screen has labelled *Asset Number* since the 2026-09-10 punch list (no second
+field exists). Everywhere this screen names a die it shows the die's **name first and its asset
+number second** (*6MA IN 2,3,4 EX 2,3,4 D · Asset # DMO125*), the same order the Tools list uses.
+The word "code" never reaches the operator.
+
 ### 6.1 Landing
 
 Press dropdown, then the last 7 days of shifts for that press -- one row per shift x die mounted.
-Columns: Shift, Die, Entries, Good recorded, Reading, Status. **Status is neutral where the MES
+Columns: Shift, Die asset #, Entries, Good recorded, Reading, Status. **Status is neutral where the MES
 cannot know better** ("No entry" -- the press may not have run) and **amber only for a positive
 finding** ("Released, no shift-end number"). Reconciled shifts read *Reconciled -- JGP 09-21* and
 reopen normally.
@@ -316,7 +322,8 @@ reopen normally.
 ### 6.2 The reconciliation (layout A)
 
 - **Shift banner** -- the shift in the same large, warning-coloured form as `DieCastShiftConfirm`
-  (*09-17 1ST SHIFT -- 07:00-15:00*), with press, die, and die life before -> after. Always visible.
+  (*09-17 1ST SHIFT -- 07:00-15:00*), with press, die name and asset number, and die life before ->
+  after. Always visible.
 - **Reason** dropdown (+ note when required).
 - **Entries on record** -- one card per grouped entry: time, who, reading, credits, scrap. Each
   card states **entered during** vs **filed under**; where they differ it carries an amber chip.
@@ -392,7 +399,7 @@ each in plain sentences with numbers:
 | New baskets | *2 baskets created and released to Warehouse: 10628574, 10628575.* |
 | Basket counts changed | *6 released baskets: 10628131 1,788 -> 2,868, ...* |
 | Counts left standing | *(grey)* *10628125 was counted at Trim OUT on 09-18 -- its count stands; its production is still recorded.* |
-| Die life | *DMO125: 15,699 -> 16,820 (+1,121 shots).* |
+| Die life | *Asset # DMO125 (6MA IN 2,3,4 EX 2,3,4 D): 15,699 -> 16,820 (+1,121 shots).* |
 
 Anything that **reduces** production, die life, or a count is amber and needs its own tick box
 (*I have checked this reduction against the sheet*) before the confirm button enables. Additions do
