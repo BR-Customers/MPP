@@ -79,7 +79,7 @@ cutover stock-taking, not a workaround for missed shifts.
 For the chosen shift x press x die the screen loads **everything on record** and lays it beside
 **what the team lead types from the sheet**, field for field:
 
-| Level | Recorded (from) | Sheet (typed) |
+| Level | Recorded (from) | Actual (typed from the press sheet) |
 |---|---|---|
 | Shift | Total shots = max counter reading in the shift (`DieCastContribution.ShotCounterReading`, anchor-aware via `ufn_DieShotWatermark`); warm-up shots = `999` rows / active cavities; test/no-good = reject rows | Total shots, Good shots, Warm-up shots |
 | Reject block | `RejectEvent` rows for the shift x press x die, by code and part | QAS (approved by), Reason, Part (or All), Amt |
@@ -330,11 +330,15 @@ reopen normally.
   That catches Machine 202's night filed as 1st; it does *not* catch Machine 11's 09:35 entry
   (entered during 1st, belonging to 3rd), which is why the card also shows its reading and totals
   for the team lead to match against the paper.
-- **Totals block** -- Recorded | Sheet | Gap for Total shots, Good shots, Warm-up shots, No-good
+- **Totals block** -- Recorded | Actual | Gap for Total shots, Good shots, Warm-up shots, No-good
   pieces, Total good pieces.
 - **Reject block** -- QAS (Approved by), Reason, Part (All or one), Amt, with recorded rows beside.
 - **Tag list** -- grouped by part in the sheet's order (part name, Macola #, sub-total): Tag #, Cav,
-  Sheet qty, Recorded, Basket state, Count before -> after. A `+ tag` row adds a basket.
+  Actual qty, Recorded, Basket state, Count before -> after. A `+ tag` row adds a basket.
+
+**The typed column is labelled Actual, never Sheet** (Jacques, 2026-09-21). The paper is where the
+figures come from; what the screen compares is recorded against actual. Every operator-facing
+string follows: *"no actual figure"*, *"actual total good"*, *"checked against the actual count"*.
 - **Footer** -- Discard, Review & Save.
 
 ### 6.3 Supervisor dashboard tile
@@ -379,7 +383,7 @@ Save stays disabled, and says why, until:
 
 - the reason is set (and its note, if required);
 - **the tag list adds up to Total good pieces**, and Good shots x cavities - no-good = Total good --
-  *"Tag list totals 11,880; Total good says 12,960. One of them has a typo."*;
+  *"Tag list totals 11,880; actual total good is 12,960. One of them has a typo."*;
 - every tag resolves (no unknown / foreign tags);
 - no per-tag quantity exceeds that cavity's shots for the shift -- a typo guard (10800 for 1080).
 
@@ -402,7 +406,7 @@ each in plain sentences with numbers:
 | Die life | *Asset # DMO125 (6MA IN 2,3,4 EX 2,3,4 D): 15,699 -> 16,820 (+1,121 shots).* |
 
 Anything that **reduces** production, die life, or a count is amber and needs its own tick box
-(*I have checked this reduction against the sheet*) before the confirm button enables. Additions do
+(*I have checked this reduction against the actual count*) before the confirm button enables. Additions do
 not -- they are the normal case, and friction on the normal case trains people to click through.
 
 ### 7.6 After Save

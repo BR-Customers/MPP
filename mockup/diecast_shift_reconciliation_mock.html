@@ -184,7 +184,7 @@ table.t{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
     <h1>Die Cast Shift Reconciliation</h1>
     <span class="sub">Clickable mockup · prod data, 2026-09-21 · spec <code style="font-family:var(--mono)">2026-09-21-diecast-shift-reconciliation-design.md</code></span>
   </div>
-  <p class="rev">A team lead reconciles one <b>shift × press × die</b> against the DCFM-2076 press sheet: add what's missing, move entries filed against the wrong shift, close gaps in numbers. Every figure below is prod's except where marked <b>illustrative</b>. The screen is live: type into the sheet fields, move entries, and the checks, gaps, counts and confirmation all recompute. The rail on the right names the <b>critical decision</b> at each step and how the screen protects the team lead from getting it wrong.</p>
+  <p class="rev">A team lead reconciles one <b>shift × press × die</b> against the DCFM-2076 press sheet: add what's missing, move entries filed against the wrong shift, close gaps in numbers. Every figure below is prod's except where marked <b>illustrative</b>. The screen is live: type into the Actual fields, move entries, and the checks, gaps, counts and confirmation all recompute. The rail on the right names the <b>critical decision</b> at each step and how the screen protects the team lead from getting it wrong.</p>
 
   <nav class="steps" id="steps" aria-label="Walkthrough steps"></nav>
 
@@ -320,7 +320,7 @@ var LANDING = {
     ["09-16 1st","DM0144",0,0,null,null,"none"]
   ]
 };
-var REASONS = [["","Choose why you are reconciling…"],["MissedEntry","Shift not entered"],["WrongShift","Entered against the wrong shift"],["WrongNumbers","Entered numbers did not match the sheet"],["Other","Other (note required)"]];
+var REASONS = [["","Choose why you are reconciling…"],["MissedEntry","Shift not entered"],["WrongShift","Entered against the wrong shift"],["WrongNumbers","Recorded numbers did not match actual"],["Other","Other (note required)"]];
 var CODES = [["008","008 Test Part"],["104","104 Bent Part (Air Gap)"],["011","011 Flow Lines"],["005","005 Bent Part"]];
 var QAS = ["","CW","EG","AD","RM","MG","ND"];
 
@@ -370,15 +370,15 @@ function calc(k){
   var needNote = S.reason==="Other" && !S.note.trim();
   checks.push({ok:!!S.reason && !needNote, txt: !S.reason ? "Choose why you are reconciling this shift." : needNote ? "“Other” needs a note saying what happened." : "Reason: "+REASONS.filter(function(x){return x[0]===S.reason;})[0][1]+"."});
   var orphans=tags.filter(function(x){ return x.rec>0 && (x.q==null||isNaN(x.q)); });
-  checks.push({ok:orphans.length===0, txt: orphans.length===0 ? "Every basket with production on record has a sheet figure." :
-    orphans.length+" basket"+(orphans.length>1?"s have":" has")+" production on record for this shift but nothing typed from the sheet: "+orphans.map(function(x){return x.t.tag;}).join(", ")+". Type the sheet's figure, or move the entry it came from."});
+  checks.push({ok:orphans.length===0, txt: orphans.length===0 ? "Every basket with production on record has an actual figure." :
+    orphans.length+" basket"+(orphans.length>1?"s have":" has")+" production on record for this shift but no actual figure: "+orphans.map(function(x){return x.t.tag;}).join(", ")+". Type the actual figure, or move the entry it came from."});
   if(typedAny){
     var addOk = s.total!=null && s.good!=null && s.warm!=null && s.total===s.good+s.warm;
     checks.push({ok:addOk, txt: addOk ? "Total shots = good shots + warm-up shots ("+fmt(s.total)+")." :
       "Total shots "+fmt(s.total)+" should equal good shots "+fmt(s.good)+" + warm-up "+fmt(s.warm)+" = "+fmt((s.good||0)+(s.warm||0))+". One of them has a typo."});
     var sumOk = totalGood!=null && tagSum===totalGood;
     checks.push({ok:sumOk, txt: sumOk ? "Tag list adds up to total good pieces ("+fmt(totalGood)+")." :
-      "Tag list totals "+fmt(tagSum)+"; the sheet's total good is "+fmt(totalGood)+" ("+fmt(s.good)+" good shots × "+sc.cav+" − "+fmt(noGood)+" no-good). One of them has a typo."});
+      "Tag list totals "+fmt(tagSum)+"; actual total good is "+fmt(totalGood)+" ("+fmt(s.good)+" good shots × "+sc.cav+" − "+fmt(noGood)+" no-good). One of them has a typo."});
     var over=tags.filter(function(x){ return x.q!=null && s.good!=null && x.q>s.good; });
     checks.push({ok:over.length===0, txt: over.length===0 ? "No basket holds more than the shift's good shots ("+fmt(s.good)+")." :
       over.map(function(x){return x.t.tag+" says "+fmt(x.q);}).join("; ")+" — more than the "+fmt(s.good)+" good shots this shift made. Check the figure."});
@@ -440,7 +440,7 @@ var ANNOT = {
       "The open shift can't be reconciled — the live screen owns it."],
     src:"Try it: switch to Machine 202, or open 09-17 1st / 09-18 1st on Machine 11."},
   "3":{q:"Does the recorded entry belong to this shift at all?", d:[
-      "The 09:35 entry holds the 3rd shift's numbers (991 shots, 953 a basket) under 1st shift. The screen can't read the paper, but it can see the symptom: <b>4 of the entry's baskets aren't on this shift's sheet</b>.",
+      "The 09:35 entry holds the 3rd shift's numbers (991 shots, 953 a basket) under 1st shift. The screen can't read the paper, but it can see the symptom: <b>4 of the entry's baskets have no actual figure for this shift</b>.",
       "Save is blocked with the reason in plain words, and the fix is named: type the figure, or move the entry.",
       "Every check here is the sheet's own arithmetic. A failure is always a typo, never a plant condition — so these block, unlike live variance."],
     src:"Save stays disabled and says why. Nothing is written until the confirmation."},
@@ -495,7 +495,7 @@ function renderLanding(){
   var flagged = LANDING.m202.filter(function(r){return r[6]==="norx";}).length;
   var h='<div class="body">';
   h+='<div class="row"><button type="button" class="tile" data-act="press" data-press="m202"><span class="big">'+flagged+'</span><span><span class="t1">Shifts not reconciled · last 7 days</span><br><span class="t2">Machine 202 × '+flagged+' — baskets released, no shift-end number. (Supervisor dashboard tile)</span></span></button></div>';
-  h+='<div class="row"><span class="lbl">Press</span><div class="seg"><button type="button" data-act="press" data-press="m11" aria-pressed="'+(S.press==="m11")+'">Machine 11 · Asset # DMO125</button><button type="button" data-act="press" data-press="m202" aria-pressed="'+(S.press==="m202")+'">Machine 202 · Asset # DM0144</button></div><span class="note">then pick the shift the sheet column is for — nothing is pre-selected</span></div>';
+  h+='<div class="row"><span class="lbl">Press</span><div class="seg"><button type="button" data-act="press" data-press="m11" aria-pressed="'+(S.press==="m11")+'">Machine 11 · Asset # DMO125</button><button type="button" data-act="press" data-press="m202" aria-pressed="'+(S.press==="m202")+'">Machine 202 · Asset # DM0144</button></div><span class="note">then pick the shift you are reconciling — nothing is pre-selected</span></div>';
   h+='<div class="panel scroll"><table class="t"><thead><tr><th>Shift</th><th>Die asset #</th><th class="n">Entries</th><th class="n">Good recorded</th><th class="n">Shift-end reading</th><th>Status</th><th></th></tr></thead><tbody>';
   rows.forEach(function(r){
     var shift=r[0], st=r[6], sc=r[5], saved = (sc && S.saved[sc]);
@@ -526,19 +526,19 @@ function tagRows(c){
       var state = t.state==="trim" ? '<span class="chip lock">🔒 Counted at trim · '+esc(t.where)+'</span>' :
                   '<span class="chip info">Released '+esc(t.rel)+' · '+esc(t.where)+'</span>';
       h+='<tr class="'+(orphan?"flag":"")+'" id="row-'+t.tag+'"><td class="mono"><b>'+t.tag+'</b></td><td>'+t.cav+'</td>'+
-         '<td class="n"><input class="inp num" id="q-'+t.tag+'" data-qty="'+t.tag+'" inputmode="numeric" aria-label="Sheet quantity for '+t.tag+'" value="'+esc(c.sh.qty[t.tag]||"")+'" placeholder="—"></td>'+
+         '<td class="n"><input class="inp num" id="q-'+t.tag+'" data-qty="'+t.tag+'" inputmode="numeric" aria-label="Actual quantity for '+t.tag+'" value="'+esc(c.sh.qty[t.tag]||"")+'" placeholder="—"></td>'+
          '<td class="n" id="rec-'+t.tag+'">'+(x.rec?fmt(x.rec):'<span class="dim">0</span>')+'</td>'+
          '<td class="n" id="gap-'+t.tag+'"></td><td>'+state+'</td><td class="n" id="cnt-'+t.tag+'"></td></tr>';
     });
   });
-  if(!h) h='<tr><td colspan="7" class="dim">No baskets on record for this shift. Add the sheet\'s tags below.</td></tr>';
+  if(!h) h='<tr><td colspan="7" class="dim">No baskets on record for this shift. Add the actual tags below.</td></tr>';
   return h;
 }
 
 function renderRec(){
   var k=S.scen, c=calc(k), sc=c.sc, sh=c.sh;
   var h='<div class="body">';
-  h+='<div class="banner"><div><div class="shift">'+esc(sc.shift)+' shift</div><div class="meta"><span>'+esc(sc.win)+'</span><span><b>'+esc(sc.press)+'</b></span><span>Die <b>'+esc(sc.dieName)+'</b> · Asset # <b class="mono">'+esc(sc.die)+'</b></span><span>'+sc.cav+' cavit'+(sc.cav>1?"ies":"y")+'</span>'+(sc.illustrative?'<span class="chip warn">sheet figures illustrative</span>':'')+'</div></div>'+
+  h+='<div class="banner"><div><div class="shift">'+esc(sc.shift)+' shift</div><div class="meta"><span>'+esc(sc.win)+'</span><span><b>'+esc(sc.press)+'</b></span><span>Die <b>'+esc(sc.dieName)+'</b> · Asset # <b class="mono">'+esc(sc.die)+'</b></span><span>'+sc.cav+' cavit'+(sc.cav>1?"ies":"y")+'</span>'+(sc.illustrative?'<span class="chip warn">actual figures illustrative</span>':'')+'</div></div>'+
      '<div class="life">Die life<br><span class="v" id="life">'+fmt(sc.dieLife)+'</span></div></div>';
   h+='<div class="row"><label class="lbl" for="reason">Reason</label><select class="sel'+(S.reason?"":" need")+'" id="reason">'+REASONS.map(function(r){return '<option value="'+r[0]+'"'+(r[0]===S.reason?" selected":"")+'>'+r[1]+'</option>';}).join("")+'</select>'+
      (S.reason==="Other"?'<input class="inp" id="note" placeholder="What happened?" value="'+esc(S.note)+'" style="min-width:280px">':'')+
@@ -564,19 +564,19 @@ function renderRec(){
       h+='<div class="entry'+(mv?" moved":"")+'"><div class="what"><b>'+e.at+' · '+e.by+'</b> — '+esc(e.desc)+' · '+e.rows+' rows<br>'+
          '<span class="chip">Entered during '+e.during+'</span> <span class="chip'+(mv?" info":"")+'">'+(mv?"Moving to "+mv:"Filed under "+sc.shift)+'</span></div>'+
          (mv?'<button type="button" class="btn sm" data-act="undo" data-id="'+e.id+'">Undo move</button>':'<button type="button" class="btn" data-act="move1" data-id="'+e.id+'">Move to another shift…</button>')+
-         (!mv && notOnSheet ? '<div class="hint" id="hint-'+e.id+'">⚠ '+notOnSheet+' of this entry\'s '+total+' baskets are not on your sheet for this shift. It may belong to another shift.</div>' : '<div class="hint" id="hint-'+e.id+'"></div>')+'</div>';
+         (!mv && notOnSheet ? '<div class="hint" id="hint-'+e.id+'">⚠ '+notOnSheet+' of this entry\'s '+total+' baskets have no actual figure for this shift. It may belong to another shift.</div>' : '<div class="hint" id="hint-'+e.id+'"></div>')+'</div>';
     });
   }
   h+='</div>';
 
   /* totals + rejects */
-  h+='<div class="grid2"><div class="panel scroll"><h2>Shift totals — from the sheet</h2><table class="t"><thead><tr><th></th><th class="n">Recorded</th><th class="n">Sheet</th><th class="n">Gap</th></tr></thead><tbody>'+
+  h+='<div class="grid2"><div class="panel scroll"><h2>Shift totals</h2><table class="t"><thead><tr><th></th><th class="n">Recorded</th><th class="n">Actual</th><th class="n">Gap</th></tr></thead><tbody>'+
      '<tr><td>Total shots</td><td class="n" id="r-total"></td><td class="n"><input class="inp num" id="s-total" data-sheet="total" inputmode="numeric" value="'+esc(sh.total)+'" placeholder="—"></td><td class="n" id="g-total"></td></tr>'+
      '<tr><td>Good shots</td><td class="n" id="r-good"></td><td class="n"><input class="inp num" id="s-good" data-sheet="good" inputmode="numeric" value="'+esc(sh.good)+'" placeholder="—"></td><td class="n" id="g-good"></td></tr>'+
      '<tr><td>Warm-up shots</td><td class="n" id="r-warm"></td><td class="n"><input class="inp num" id="s-warm" data-sheet="warm" inputmode="numeric" value="'+esc(sh.warm)+'" placeholder="—"></td><td class="n" id="g-warm"></td></tr>'+
      '<tr><td>No-good pieces</td><td class="n" id="r-ng"></td><td class="n" id="s-ng"></td><td class="n" id="g-ng"></td></tr>'+
      '<tr><td><b>Total good pieces</b></td><td class="n" id="r-tg"></td><td class="n"><b id="s-tg"></b></td><td class="n" id="g-tg"></td></tr>'+
-     '</tbody></table><p class="note">No-good and Total good are worked out from the reject block and good shots × '+sc.cav+' — the sheet\'s own arithmetic.</p></div>';
+     '</tbody></table><p class="note">No-good and Total good are worked out from the reject block and good shots × '+sc.cav+'.</p></div>';
   h+='<div class="panel scroll"><h2>Rejects</h2><table class="t"><thead><tr><th>Approved by (QAS)</th><th>Reason</th><th>Part</th><th class="n">Amt</th><th></th></tr></thead><tbody>';
   sh.rejects.forEach(function(r,i){
     h+='<tr><td><select class="sel" data-rej="'+i+'" data-f="qas" aria-label="Approved by">'+QAS.map(function(q){return '<option'+(q===r.qas?" selected":"")+' value="'+q+'">'+(q||"Pick…")+'</option>';}).join("")+'</select></td>'+
@@ -585,11 +585,11 @@ function renderRec(){
        '<td class="n"><input class="inp num" data-rej="'+i+'" data-f="amt" inputmode="numeric" value="'+esc(r.amt)+'" aria-label="Amount"></td><td><button type="button" class="btn sm ghost" data-act="rmrej" data-i="'+i+'" aria-label="Remove">✕</button></td></tr>';
   });
   h+='</tbody></table><div class="row" style="margin-top:8px"><button type="button" class="btn sm" data-act="addrej">+ Reject line</button><span class="note" id="rej-rec"></span></div>'+
-     '<p class="note">“All” spreads the amount across every cavity, as the sheet means it. Approved by is the QAS initials on the sheet, recorded against each reject row.</p></div></div>';
+     '<p class="note">“All” spreads the amount across every cavity. Approved by is the QAS initials, recorded against each reject row.</p></div></div>';
 
   /* tags */
-  h+='<div class="panel scroll"><h2>Tags — in the sheet\'s order</h2><table class="t"><thead><tr><th>Tag #</th><th>Cav</th><th class="n">Sheet qty</th><th class="n">Recorded</th><th class="n">Gap</th><th>Basket</th><th class="n">Count</th></tr></thead><tbody>'+tagRows(c)+
-     '<tr><td colspan="7"><button type="button" class="btn sm" data-act="addtag">+ Tag from the sheet</button> <span class="note">new tags are created and released to default storage, as the live path does</span></td></tr>'+
+  h+='<div class="panel scroll"><h2>Tags</h2><table class="t"><thead><tr><th>Tag #</th><th>Cav</th><th class="n">Actual qty</th><th class="n">Recorded</th><th class="n">Gap</th><th>Basket</th><th class="n">Count</th></tr></thead><tbody>'+tagRows(c)+
+     '<tr><td colspan="7"><button type="button" class="btn sm" data-act="addtag">+ Tag</button> <span class="note">new tags are created and released to default storage, as the live path does</span></td></tr>'+
      '<tr class="grp"><td colspan="2">GRAND TOTAL</td><td class="n" id="tagsum"></td><td class="n" id="recsum"></td><td colspan="3"></td></tr></tbody></table></div>';
 
   /* footer */
@@ -632,7 +632,7 @@ function derived(){
   sc.entries.forEach(function(e){
     var hint=$("hint-"+e.id); if(!hint || S.moved[e.id]) return;
     var n=c.tags.filter(function(x){ return x.t.rec[e.id] && (x.q==null||isNaN(x.q)); }).length, tot=c.tags.filter(function(x){return x.t.rec[e.id];}).length;
-    hint.innerHTML = n ? "⚠ "+n+" of this entry's "+tot+" baskets are not on your sheet for this shift. It may belong to another shift." : "";
+    hint.innerHTML = n ? "⚠ "+n+" of this entry's "+tot+" baskets have no actual figure for this shift. It may belong to another shift." : "";
   });
   set("checks", c.checks.map(function(x){ return '<div class="c '+(x.ok?"yes":"no")+'"><span class="i">'+(x.ok?"✓":"✕")+'</span><span>'+x.txt+'</span></div>'; }).join(""));
   var b=$("savebtn"); if(b){ b.disabled=!c.ok; b.textContent = c.ok ? "Review & save · "+sc.shift.toUpperCase()+" SHIFT" : (c.checks.filter(function(x){return !x.ok;}).length+" to fix before saving"); }
@@ -643,7 +643,7 @@ function renderDone(){
   var ch=changes(S.scen), sc=ch.c.sc;
   var h='<div class="body"><div class="ok-big"><span class="ic">✓</span><div><div style="font-size:var(--fs-lg);font-weight:800">'+sc.shift.toUpperCase()+' SHIFT RECONCILED</div><div class="note" style="color:var(--n90)">Reconciliation #1 · '+esc(sc.press)+' · Asset # '+sc.die+' · saved 09-21 13:40 by Jacques Potgieter (JGP) · reason: Shift not entered</div></div></div>';
   h+='<div class="grp-list">'+ch.groups.map(groupHtml).join("")+'</div>';
-  h+='<div class="row"><button type="button" class="btn pri big" data-act="back">Back to shifts</button><span class="note">09-17 1st and 09-16 3rd on Machine 11 now read as the sheet says.</span></div></div>';
+  h+='<div class="row"><button type="button" class="btn pri big" data-act="back">Back to shifts</button><span class="note">09-17 1st and 09-16 3rd on Machine 11 now match the actual counts.</span></div></div>';
   return h;
 }
 
@@ -674,7 +674,7 @@ function overlay(){
     return '<div class="ov"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dh2"><div class="dh" id="dh2">Move '+(es.length>1?es.length+" entries":"this entry")+' to another shift</div><div class="db">'+
       '<p style="margin:0">'+desc+'. <b style="color:var(--n100)">Everything in '+(es.length>1?"these entries":"this entry")+' moves together: '+rows+' rows, '+fmt(pc)+' good pieces.</b></p>'+
       '<div class="fromto"><div class="box"><div class="lbl">From</div><div class="bigshift">'+sc.shift+'</div><div class="note">'+fmt(pc)+' good → '+fmt(0)+' from '+(es.length>1?"these":"this")+'</div></div><div class="arrow">→</div>'+
-      '<div class="box"><div class="lbl">To</div><div class="bigshift" style="color:'+(tgt?"var(--banner-fg)":"var(--n60)")+'">'+(tgt||"Pick below")+'</div><div class="note">'+(tgt?"gains "+fmt(pc)+" good":"the shift the sheet column says")+'</div></div></div>'+
+      '<div class="box"><div class="lbl">To</div><div class="bigshift" style="color:'+(tgt?"var(--banner-fg)":"var(--n60)")+'">'+(tgt||"Pick below")+'</div><div class="note">'+(tgt?"gains "+fmt(pc)+" good":"the shift it really belongs to")+'</div></div></div>'+
       '<div><div class="lbl" style="margin-bottom:6px">Which shift is it really? (closed shifts within two of '+sc.shift+')</div><div class="opts">'+opts+'</div></div>'+
       '<div class="same">Shots, pieces, baskets and die life do not change. Only which shift is credited.</div></div>'+
       '<div class="df"><button type="button" class="btn ghost" data-act="close">Cancel</button><button type="button" class="btn pri big" data-act="domove"'+(tgt?"":" disabled")+'>'+(tgt?"MOVE TO "+tgt.toUpperCase()+" SHIFT":"Pick a shift first")+'</button></div></div></div>';
@@ -685,10 +685,10 @@ function overlay(){
       '<div><div class="lbl">You are reconciling</div><div class="bigshift">'+sc2.shift+' shift · '+esc(sc2.press)+'</div><div class="note">Die '+esc(sc2.dieName)+' · Asset # '+sc2.die+' · reason: '+esc((REASONS.filter(function(x){return x[0]===S.reason;})[0]||["",""])[1])+' · recorded under Jacques Potgieter (JGP)</div></div>'+
       '<div class="grp-list">'+ch.groups.map(function(g){
         var html=groupHtml(g);
-        if((g.k==="red"||g.k==="redc") && needTick && !ticked && (ticked=true)) html=html.replace(/<\/div>$/, '<label class="tick"><input type="checkbox" id="tick" '+(S.tick?"checked":"")+'> <span>I have checked this reduction against the sheet. It removes production that is on record.</span></label></div>');
+        if((g.k==="red"||g.k==="redc") && needTick && !ticked && (ticked=true)) html=html.replace(/<\/div>$/, '<label class="tick"><input type="checkbox" id="tick" '+(S.tick?"checked":"")+'> <span>I have checked this reduction against the actual count. It removes production that is on record.</span></label></div>');
         return html; }).join("")+'</div>'+
-      (ch.nothing?'<p class="neg" style="margin:0">Nothing would change — the record already matches the sheet.</p>':'')+
-      '</div><div class="df"><button type="button" class="btn ghost" data-act="close">Back to the sheet</button><button type="button" class="btn pri big" id="confirmbtn" data-act="save"'+((needTick&&!S.tick)||ch.nothing?" disabled":"")+'>SAVE '+sc2.shift.toUpperCase()+' SHIFT</button></div></div></div>';
+      (ch.nothing?'<p class="neg" style="margin:0">Nothing would change — the record already matches actual.</p>':'')+
+      '</div><div class="df"><button type="button" class="btn ghost" data-act="close">Back to editing</button><button type="button" class="btn pri big" id="confirmbtn" data-act="save"'+((needTick&&!S.tick)||ch.nothing?" disabled":"")+'>SAVE '+sc2.shift.toUpperCase()+' SHIFT</button></div></div></div>';
   }
   return "";
 }
