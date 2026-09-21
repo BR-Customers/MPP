@@ -18,15 +18,26 @@ async function httpJson(p, method = 'GET') {
   return res.json();
 }
 
-export async function connect(url) {
+export async function connect(url, { allowVisible = false, reuseExisting = false } = {}) {
   // Always open a NEW target in the Chrome we launched (PUT: Chrome 111+
   // refuses GET /json/new). Never fall back to "whatever page is open" --
   // that is how a run once drove Ignition Designer's embedded browser.
   const ver = await httpJson('/json/version');
-  if (!/HeadlessChrome/.test(ver['User-Agent'] || '')) {
+  if (PORT === 9222) throw new Error('port 9222 is Ignition Designer\'s embedded browser -- never drive it.');
+  if (!allowVisible && !/HeadlessChrome/.test(ver['User-Agent'] || '')) {
     throw new Error(`port ${PORT} is not a headless Chrome (${ver['User-Agent']}). Start the capture Chrome with --headless=new on this port.`);
   }
-  const t = await httpJson(`/json/new?${encodeURIComponent(url)}`, 'PUT');
+  // reuseExisting: attach to a page already open on this app's origin -- used
+  // for a visible window a person has signed in to (the harness never types
+  // credentials). Only ever an explicit opt-in, and only with allowVisible.
+  let t = null;
+  if (reuseExisting && allowVisible) {
+    const origin = new URL(url).origin;
+    t = (await httpJson('/json/list')).find((x) => x.type === 'page' && x.url.startsWith(origin));
+    if (!t) throw new Error(`no open page on ${origin} to reuse`);
+  } else {
+    t = await httpJson(`/json/new?${encodeURIComponent(url)}`, 'PUT');
+  }
   if (!t || !t.webSocketDebuggerUrl) throw new Error('could not open a new Chrome target');
   const ws = new WebSocket(t.webSocketDebuggerUrl);
   await new Promise((r, j) => { ws.onopen = r; ws.onerror = j; });

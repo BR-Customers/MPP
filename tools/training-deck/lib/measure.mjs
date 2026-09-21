@@ -164,7 +164,7 @@ export async function fillBox(cdp, spec, value) {
  *  DOM, so "the second dropdown" was a per-cavity part picker. */
 export async function chooseFromDropdown(cdp, where, optionText) {
   const { click } = await import('../../perspective-capture/cdp.mjs');
-  const dd = await evalJs(cdp, `(() => {
+  const LOCATE = `(() => {
     // {text}: the dropdown's own text (its placeholder or current value).
     if (${JSON.stringify(!!where.text)}) {
       const own = [...document.querySelectorAll('div.ia_dropdown')]
@@ -172,7 +172,7 @@ export async function chooseFromDropdown(cdp, where, optionText) {
           && e.getBoundingClientRect().width > 80);
       if (!own) return null;
       const r = own.getBoundingClientRect();
-      return { x: r.x, y: r.y, w: r.width, h: r.height };
+      return { x: r.x, y: r.y, w: r.width, h: r.height, text: own.innerText.trim() };
     }
     const label = [...document.querySelectorAll('div,span')]
       .find(e => (e.innerText || '').trim() === ${JSON.stringify(where.near)}
@@ -183,9 +183,10 @@ export async function chooseFromDropdown(cdp, where, optionText) {
       box = box.parentElement;
       const dd = box.querySelector('div.ia_dropdown');
       if (dd) { const r = dd.getBoundingClientRect();
-        if (r.width > 80) return { x: r.x, y: r.y, w: r.width, h: r.height }; }
+        if (r.width > 80) return { x: r.x, y: r.y, w: r.width, h: r.height, text: dd.innerText.trim() }; }
     }
-    return null; })()`);
+    return null; })()`;
+  const dd = await evalJs(cdp, LOCATE);
   if (!dd) throw new Error(`no dropdown for ${JSON.stringify(where)}`);
   await click(cdp, dd.x + dd.w / 2, dd.y + dd.h / 2);
   await new Promise((r) => setTimeout(r, 1200));
@@ -198,10 +199,12 @@ export async function chooseFromDropdown(cdp, where, optionText) {
     if (!o) return { options: [...document.querySelectorAll('.iaDropdownCommon_option')].map(e => (e.innerText||'').trim()) };
     const r = o.getBoundingClientRect();
     return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
-  if (!hit || hit.options) throw new Error(`option "${optionText}" not in dropdown ${which}: ${JSON.stringify(hit && hit.options)}`);
+  if (!hit || hit.options) throw new Error(`option "${optionText}" not in the ${JSON.stringify(where)} dropdown: ${JSON.stringify(hit && hit.options)}`);
   await click(cdp, hit.x, hit.y);
   await new Promise((r) => setTimeout(r, 2000));
-  const chosen = await evalJs(cdp, `document.elementFromPoint(${dd.x + dd.w / 2}, ${dd.y + dd.h / 2})
-    .closest('div.ia_dropdown').innerText.trim()`);
+  // Read the value back by finding the dropdown the same way again -- after a
+  // pick the layout can reflow and move it, so its old position means nothing.
+  const again = await evalJs(cdp, LOCATE);
+  const chosen = again ? again.text : '(dropdown gone)';
   if (!String(chosen).startsWith(optionText)) throw new Error(`the ${JSON.stringify(where)} dropdown still reads "${chosen}"`);
 }

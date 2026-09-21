@@ -1,0 +1,77 @@
+[
+  {
+    "file": "02_plant_hierarchy.png",
+    "section": "Configuration: Plant model",
+    "title": "Plant hierarchy"
+  },
+  {
+    "file": "03_item_routes.png",
+    "section": "Configuration: Parts",
+    "title": "Item Master - routing"
+  },
+  {
+    "file": "04_item_bom.png",
+    "section": "Configuration: Parts",
+    "title": "Item Master - bill of materials"
+  },
+  {
+    "file": "05_operation_templates.png",
+    "section": "Configuration: Parts",
+    "title": "Operation templates"
+  },
+  {
+    "file": "06_tools.png",
+    "section": "Configuration: Dies",
+    "title": "Dies and cavities"
+  },
+  {
+    "file": "07_defect_codes.png",
+    "section": "Configuration: Quality and downtime",
+    "title": "Defect codes"
+  },
+  {
+    "file": "08_downtime_codes.png",
+    "section": "Configuration: Quality and downtime",
+    "title": "Downtime codes"
+  },
+  {
+    "file": "09_shifts.png",
+    "section": "Configuration: Shifts",
+    "title": "Shift schedules"
+  },
+  {
+    "file": "20_diecast_baskets.png",
+    "section": "Plant floor: Die cast",
+    "title": "Die cast baskets, cavity by cavity"
+  },
+  {
+    "file": "21_diecast_release.png",
+    "section": "Plant floor: Die cast",
+    "title": "Releasing a full basket"
+  },
+  {
+    "file": "22_diecast_reconcile.png",
+    "section": "Plant floor: Die cast",
+    "title": "End-of-shift reconciliation"
+  },
+  {
+    "file": "30_downtime.png",
+    "section": "Plant floor: Downtime",
+    "title": "Downtime manager"
+  },
+  {
+    "file": "40_lot_search.png",
+    "section": "Plant floor: Traceability",
+    "title": "LOT search"
+  },
+  {
+    "file": "41_lot_detail.png",
+    "section": "Plant floor: Traceability",
+    "title": "LOT detail and history"
+  },
+  {
+    "file": "51_diecast_production.png",
+    "section": "Plant floor: Reporting",
+    "title": "Die cast production, this shift against the last"
+  }
+]
