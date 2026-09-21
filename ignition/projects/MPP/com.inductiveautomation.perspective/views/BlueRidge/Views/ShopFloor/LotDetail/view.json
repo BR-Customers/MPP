@@ -55,6 +55,7 @@
       "ToolCavityId": null,
       "ToolCavityCode": null,
       "ToolCode": null,
+      "ToolName": null,
       "ToolId": null,
       "TotalInProcess": 0,
       "UpdatedAt": null,
@@ -667,7 +668,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "path": "view.custom.lot.ToolCode"
+                        "path": "view.custom.lot.ToolName"
                       },
                       "type": "property"
                     }
@@ -675,9 +676,8 @@
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-kpi-value-mono",
+                    "classes": "pf-kpi-value",
                     "color": "var(--mpp-text-primary)",
-                    "fontFamily": "monospace",
                     "fontSize": "18px",
                     "fontWeight": "600"
                   }

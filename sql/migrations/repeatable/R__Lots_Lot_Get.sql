@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Get.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-10
--- Version:     1.1
+-- Modified:    2026-09-21
+-- Version:     1.2
 -- Description: Returns a single LOT row by @LotId or @LotName (Id wins if
 --              both supplied). Returns the materialized B5 quantities
 --              (TotalInProcess / InventoryAvailable) directly from Lots.Lot.
@@ -15,6 +15,10 @@
 --       becomes tc.CavityCode AS ToolCavityCode. Renaming only the column
 --       would leave every consumer of the alias rendering a blank cell with
 --       no error at all.
+--   1.2 (2026-09-21) + t.Name AS ToolName, right after ToolCode. The plant
+--       floor shows the die by NAME; the code is known only to the die
+--       manager and appears on no shop-floor screen. ToolCode stays for
+--       non-display callers. Positional INSERT-EXEC tests widen with it.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.Lot_Get
@@ -58,6 +62,7 @@ BEGIN
         sc.Name            AS LotStatusName,
         loc.Name           AS CurrentLocationName,
         t.Code             AS ToolCode,
+        t.Name             AS ToolName,
         tc.CavityCode      AS ToolCavityCode,
         bom.VersionNumber  AS BomVersionNumber
     FROM Lots.Lot l

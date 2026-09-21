@@ -202,7 +202,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "{session.custom.cell.name} + \"  ·  SHARED TERMINAL  ·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} \u003d \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
+                        "expression": "{session.custom.cell.name} + \"  ·  SHARED TERMINAL  ·  \" + if(isNull({view.custom.activeTool.ToolName}) || {view.custom.activeTool.ToolName} \u003d \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolName})"
                       },
                       "type": "expr"
                     }
@@ -332,7 +332,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} \u003d \"\", \"No die\", {view.custom.activeTool.ToolCode})"
+                    "expression": "if(isNull({view.custom.activeTool.ToolName}) || {view.custom.activeTool.ToolName} \u003d \"\", \"No die\", {view.custom.activeTool.ToolName})"
                   },
                   "type": "expr"
                 }
@@ -341,7 +341,10 @@
             "props": {
               "style": {
                 "classes": "pf-pill",
-                "fontFamily": "var(--mpp-font-mono)"
+                "maxWidth": "360px",
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
               }
             },
             "type": "ia.display.label"
@@ -516,7 +519,7 @@
                           "props.text": {
                             "binding": {
                               "config": {
-                                "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} \u003d \"\", \"No die mounted\", {view.custom.activeTool.ToolCode})"
+                                "expression": "if(isNull({view.custom.activeTool.ToolName}) || {view.custom.activeTool.ToolName} \u003d \"\", \"No die mounted\", {view.custom.activeTool.ToolName})"
                               },
                               "type": "expr"
                             }
@@ -524,7 +527,7 @@
                         },
                         "props": {
                           "style": {
-                            "classes": "pf-field-input-mono"
+                            "classes": "pf-field-input"
                           }
                         },
                         "type": "ia.display.label"
@@ -2671,7 +2674,7 @@
         {
           "name": "openCounterAnchor",
           "params": [],
-          "script": "\t# The way out when the recorded total is wrong -- the counter was reset,\n\t# or a bad number was entered earlier and is now refusing every honest\n\t# reading for the rest of the shift.\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tif tool.get(\"ToolId\") is None or self.view.custom.selectedShiftId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No die/shift\", \"Mount a die and select a shift first.\", \"warning\")\n\t\treturn\n\tsystem.perspective.openPopup(\"mpp-diecast-counter-anchor\",\n\t\t\"BlueRidge/Components/Popups/DieCastCounterAnchor\",\n\t\tparams\u003d{\"toolId\": tool.get(\"ToolId\"), \"shiftId\": self.view.custom.selectedShiftId,\n\t\t\t\"cellLocationId\": cell.get(\"locationId\"),\n\t\t\t\"dieName\": tool.get(\"ToolCode\") or \"\",\n\t\t\t\"popupId\": \"mpp-diecast-counter-anchor\",\n\t\t\t\"replyMessage\": \"dieCastAnchorResult\"},\n\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)"
+          "script": "\t# The way out when the recorded total is wrong -- the counter was reset,\n\t# or a bad number was entered earlier and is now refusing every honest\n\t# reading for the rest of the shift.\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tif tool.get(\"ToolId\") is None or self.view.custom.selectedShiftId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No die/shift\", \"Mount a die and select a shift first.\", \"warning\")\n\t\treturn\n\tsystem.perspective.openPopup(\"mpp-diecast-counter-anchor\",\n\t\t\"BlueRidge/Components/Popups/DieCastCounterAnchor\",\n\t\tparams\u003d{\"toolId\": tool.get(\"ToolId\"), \"shiftId\": self.view.custom.selectedShiftId,\n\t\t\t\"cellLocationId\": cell.get(\"locationId\"),\n\t\t\t\"dieName\": tool.get(\"ToolName\") or \"\",\n\t\t\t\"popupId\": \"mpp-diecast-counter-anchor\",\n\t\t\t\"replyMessage\": \"dieCastAnchorResult\"},\n\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)"
         },
         {
           "name": "requestSubmitShiftOutput",

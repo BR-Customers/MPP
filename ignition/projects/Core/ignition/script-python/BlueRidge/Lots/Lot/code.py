@@ -595,7 +595,7 @@ _EMPTY_LOT = {
     "TotalInProcess": 0, "LotStatusCode": "", "LotStatusName": "",
     "LotOriginTypeCode": "", "CurrentLocationId": None,
     "CurrentLocationName": "", "CrtActive": None, "ToolId": None,
-    "ToolCode": "", "ToolCavityCode": "",
+    "ToolCode": "", "ToolName": "", "ToolCavityCode": "",
 }
 
 
@@ -1370,11 +1370,14 @@ def getPartOptions(_refreshToken=None):
 
 
 def getDieOptions(_refreshToken=None):
-    """[{label: Tool Code, value: ToolId}] for the Die filter. Built off the
-       Tool list read; deprecated tools are dropped."""
+    """[{label: Tool Name, value: ToolId}] for the Die filter, sorted by name.
+       Built off the Tool list read; deprecated tools are dropped. Labelled by
+       NAME: the tool code is known only to the die manager and appears on no
+       plant-floor screen."""
     rows = BlueRidge.Parts.Tool.getAllForList("", "All") or []
-    return [{"label": r.get("code"), "value": r.get("id")}
+    opts = [{"label": r.get("name") or "", "value": r.get("id")}
             for r in rows if not r.get("deprecated") and r.get("id") is not None]
+    return sorted(opts, key=lambda o: o["label"].lower())
 
 
 def getCavityOptions(toolId=None, _refreshToken=None):

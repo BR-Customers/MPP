@@ -1287,10 +1287,9 @@ def getEligibleToolPicker(cellLocationId, _refreshToken=None):
     options = []
     eligible = 0
     for r in rows:
-        code = r.get("Code") or ""
-        name = r.get("Name") or ""
-        label = ("%s - %s" % (code, name)) if code and name else (code or name)
-        options.append({"label": label, "value": r.get("Id")})
+        # Plant floor: label by NAME only. The tool code is known only to the
+        # die manager and appears on no shop-floor screen.
+        options.append({"label": r.get("Name") or "", "value": r.get("Id")})
         if r.get("IsEligible"):
             eligible += 1
 

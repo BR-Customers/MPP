@@ -2057,7 +2057,7 @@
                   "boolean": "checkbox",
                   "dateFormat": "MM/DD/YYYY",
                   "editable": false,
-                  "field": "ToolCode",
+                  "field": "ToolName",
                   "filter": {
                     "boolean": {
                       "condition": ""

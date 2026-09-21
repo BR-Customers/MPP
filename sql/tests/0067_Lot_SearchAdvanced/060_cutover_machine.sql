@@ -51,7 +51,7 @@ CREATE TABLE #LS (
     CurrentLocationId BIGINT, CreatedAt DATETIME2(3), ItemPartNumber NVARCHAR(100),
     LotStatusCode NVARCHAR(50), LotOriginTypeCode NVARCHAR(50),
     CurrentLocationName NVARCHAR(200), LastOperationName NVARCHAR(100),
-    ToolCode NVARCHAR(50), CavityCode NVARCHAR(4), OriginMachineName NVARCHAR(200),
+    ToolCode NVARCHAR(50), ToolName NVARCHAR(100), CavityCode NVARCHAR(4), OriginMachineName NVARCHAR(200),
     TotalCount INT
 );
 

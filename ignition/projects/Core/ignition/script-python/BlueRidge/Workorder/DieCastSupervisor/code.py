@@ -128,7 +128,7 @@ def mapPressInstances(rows):
         r = r or {}
         out.append({
             "cell":   (r.get("CellCode") or "(unassigned die)"),
-            "die":    (r.get("ToolCode") or ""),
+            "die":    (r.get("ToolName") or ""),    # name, never the code
             "part":   (r.get("PartNumber") or ""),
             "descr":  (r.get("ItemDescription") or ""),
             "good":   "{:,}".format(int(r.get("GoodPieces") or 0)),

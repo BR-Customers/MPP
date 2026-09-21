@@ -25,7 +25,7 @@ CREATE TABLE #LS (
     CurrentLocationId BIGINT, CreatedAt DATETIME2(3), ItemPartNumber NVARCHAR(100),
     LotStatusCode NVARCHAR(50), LotOriginTypeCode NVARCHAR(50),
     CurrentLocationName NVARCHAR(200), LastOperationName NVARCHAR(100),
-    ToolCode NVARCHAR(50), CavityCode NVARCHAR(4), OriginMachineName NVARCHAR(200),
+    ToolCode NVARCHAR(50), ToolName NVARCHAR(100), CavityCode NVARCHAR(4), OriginMachineName NVARCHAR(200),
     TotalCount INT
 );
 GO
@@ -86,8 +86,8 @@ EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] NULL-Tool LOT yields NULL Too
 
 -- 3. The tooled LOT resolves its Die code and cavity code.
 SELECT @n = COUNT(*) FROM #LS
-WHERE LotName = N'TEST-TOOLED-01' AND ToolCode = N'TEST-ADV-DIE' AND CavityCode = N'a';
-EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] tooled LOT resolves ToolCode and CavityCode',
+WHERE LotName = N'TEST-TOOLED-01' AND ToolCode = N'TEST-ADV-DIE' AND ToolName = N'Search Advanced Test Die' AND CavityCode = N'a';
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] tooled LOT resolves ToolCode, ToolName and CavityCode',
     @Expected = N'1', @Actual = @n;
 DELETE FROM #LS;
 

@@ -1,8 +1,8 @@
 -- =============================================
 -- Repeatable:  R__Lots_Lot_SearchAdvanced.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-14
--- Version:     1.1
+-- Modified:    2026-09-21
+-- Version:     1.2
 -- Description: FDS-12-004 LOT Search. Filtered browse: free text, item, Eastern
 --              created-day range, die, cavity, location (always incl.
 --              descendants), origin machine, shift, status, origin type.
@@ -40,6 +40,10 @@
 --              The legacy Lot.DieNumber column is used NOWHERE here --
 --              superseded by ToolId / ToolCavityId. (Lot.CavityNumber, the D2
 --              free-text manual-cavity note, was dropped outright by 0076.)
+--
+--              v1.2 (2026-09-21): + t.Name AS ToolName after ToolCode. The
+--              LOT Search grid shows the die by NAME -- the code is known
+--              only to the die manager and is on no shop-floor screen.
 -- =============================================
 CREATE OR ALTER PROCEDURE Lots.Lot_SearchAdvanced
     @Query             NVARCHAR(100) = NULL,
@@ -89,6 +93,7 @@ BEGIN
         loc.Name             AS CurrentLocationName,
         lastop.OperationName AS LastOperationName,
         t.Code               AS ToolCode,
+        t.Name               AS ToolName,
         tc.CavityCode        AS CavityCode,
         COALESCE(press.MachineName, pal.Name) AS OriginMachineName,
         COUNT(*) OVER()      AS TotalCount

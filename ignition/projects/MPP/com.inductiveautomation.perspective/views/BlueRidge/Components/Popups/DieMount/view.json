@@ -108,7 +108,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.context.ToolCode} + if({view.custom.context.ToolName} \u003d \"\", \"\", \" - \" + {view.custom.context.ToolName})"
+                    "expression": "{view.custom.context.ToolName}"
                   },
                   "type": "expr"
                 }

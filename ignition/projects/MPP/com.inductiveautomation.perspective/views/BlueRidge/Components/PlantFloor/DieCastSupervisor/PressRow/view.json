@@ -34,11 +34,11 @@
       },
       {
         "meta": { "name": "Die" },
-        "position": { "basis": "100px", "shrink": 0 },
+        "position": { "basis": "160px", "shrink": 0 },
         "propConfig": {
           "props.text": { "binding": { "config": { "path": "view.params.die" }, "type": "property" } }
         },
-        "props": { "style": { "color": "var(--mpp-text-secondary)" } },
+        "props": { "style": { "color": "var(--mpp-text-secondary)", "overflow": "hidden", "textOverflow": "ellipsis", "whiteSpace": "nowrap" } },
         "type": "ia.display.label"
       },
       {

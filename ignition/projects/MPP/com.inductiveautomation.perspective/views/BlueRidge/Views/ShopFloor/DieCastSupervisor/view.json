@@ -354,7 +354,7 @@
               {
                 "children": [
                   { "meta": { "name": "A" }, "position": { "basis": "110px", "shrink": 0 }, "props": { "text": "PRESS" }, "type": "ia.display.label" },
-                  { "meta": { "name": "B" }, "position": { "basis": "100px", "shrink": 0 }, "props": { "text": "DIE" }, "type": "ia.display.label" },
+                  { "meta": { "name": "B" }, "position": { "basis": "160px", "shrink": 0 }, "props": { "text": "DIE" }, "type": "ia.display.label" },
                   { "meta": { "name": "C" }, "position": { "basis": "0", "grow": 1 }, "props": { "text": "PART" }, "type": "ia.display.label" },
                   { "meta": { "name": "D" }, "position": { "basis": "100px", "shrink": 0 }, "props": { "style": { "textAlign": "right" }, "text": "GOOD PC" }, "type": "ia.display.label" },
                   { "meta": { "name": "E" }, "position": { "basis": "95px", "shrink": 0 }, "props": { "style": { "textAlign": "right" }, "text": "LAST ENTRY" }, "type": "ia.display.label" }
@@ -446,7 +446,7 @@
               {
                 "children": [
                   { "meta": { "name": "A" }, "position": { "basis": "110px", "shrink": 0 }, "props": { "text": "PRESS" }, "type": "ia.display.label" },
-                  { "meta": { "name": "B" }, "position": { "basis": "100px", "shrink": 0 }, "props": { "text": "DIE" }, "type": "ia.display.label" },
+                  { "meta": { "name": "B" }, "position": { "basis": "160px", "shrink": 0 }, "props": { "text": "DIE" }, "type": "ia.display.label" },
                   { "meta": { "name": "C" }, "position": { "basis": "0", "grow": 1 }, "props": { "text": "PART" }, "type": "ia.display.label" },
                   { "meta": { "name": "D" }, "position": { "basis": "100px", "shrink": 0 }, "props": { "style": { "textAlign": "right" }, "text": "GOOD PC" }, "type": "ia.display.label" },
                   { "meta": { "name": "E" }, "position": { "basis": "95px", "shrink": 0 }, "props": { "style": { "textAlign": "right" }, "text": "LAST ENTRY" }, "type": "ia.display.label" }
