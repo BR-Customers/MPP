@@ -153,7 +153,9 @@ async function operatorSteps(cdp) {
   await capture(cdp, OUT, 'void_dialog', {
     rowVoid: btn('Void', { nth: 0 }),
     message: { text: 'This cannot be undone', tag: 'div', exact: false },
-    voidBtn: btn('Void', { nth: -1 }),   // the dialog's own Void is the lowest one on screen
+    // The dialog's own Void, found inside the dialog: "lowest Void on screen"
+    // picked a row's Void button below the dialog.
+    voidBtn: { within: 'Void empty basket', withinUp: 4, text: 'Void', tag: 'button' },
   });
   await press(cdp, btn('Cancel'), 1500);
 
@@ -161,7 +163,9 @@ async function operatorSteps(cdp) {
   await press(cdp, { text: 'Operator: Sam Taylor', tag: 'div' }, 2000);
   await capture(cdp, OUT, 'pin_pad', {
     chip: { text: 'Operator: Sam Taylor', tag: 'div' },
-    display: { text: 'Enter your PIN', tag: 'div', up: 2, maxChars: 60 },
+    display: { union: ['pinHeading', 'badge'] },   // the dashes sit between these two
+    pinHeading: { text: 'Enter your PIN', tag: 'div' },
+    badge: { placeholder: 'Scan badge or type PIN' },
     keypad: { union: ['k1', 'kBack'] },
     k1: btn('1'),
     kBack: btn('Back'),

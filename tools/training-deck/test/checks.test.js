@@ -40,3 +40,11 @@ test('overview zones need targets and unique letters', () => {
             { letter: 'A', target: 'ltt', color: 'C0392B', label: 'Box' }] };
   assert.ok(checkSlide(o, shot).some((x) => /letter A/.test(x)));
 });
+
+test('legend labels without full stops are scored as separate short sentences', () => {
+  const o = { id: 'o', kind: 'overview', title: 'The screen', shot: 'a', notes: 'Look at it.',
+    zones: ['Top bar with the shift and who is signed in', 'Your machine', 'The two tabs',
+      'The die in this machine', 'One row for each cavity', 'Open many baskets at once']
+      .map((label, i) => ({ letter: 'ABCDEF'[i], target: 'row', color: '2E86DE', label })) };
+  assert.deepStrictEqual(checkSlide(o, shot), []);
+});

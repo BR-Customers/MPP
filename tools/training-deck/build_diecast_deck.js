@@ -6,6 +6,7 @@ const pptxgen = require('pptxgenjs');
 const content = require('./diecast_content');
 const { checkSlide } = require('./lib/checks');
 const { placeImage, toSlide } = require('./lib/geometry');
+const { cropFor, shiftRect, writeCrop } = require('./lib/crop');
 
 const ROOT = path.resolve(__dirname, '../..');
 const SHOTS = path.join(ROOT, 'docs/training/diecast/shots');
@@ -45,9 +46,21 @@ function outline(slide, r, color) {
   slide.addShape('rect', { ...r, fill: { type: 'none' }, line: { color, width: 1.5 } });
 }
 
+// A step slide shows only the part of the screen around its markers, so the
+// controls being taught are big enough to read on a projector or a printout.
+function croppedShot(s, full) {
+  const crop = cropFor(s.markers.map((m) => full.targets[m.target]), full.width, full.height, IMG_BOX.w / IMG_BOX.h);
+  const file = writeCrop(path.join(SHOTS, full.image), crop, s.id);
+  const targets = {};
+  for (const m of s.markers) targets[m.target] = shiftRect(full.targets[m.target], crop);
+  return { file, width: crop.w, height: crop.h, targets };
+}
+
 function stepsSlide(pres, s) {
   const slide = pres.addSlide(); header(slide, s);
-  const shot = loadShot(s.shot); const placed = screenshot(slide, shot);
+  const shot = croppedShot(s, loadShot(s.shot));
+  const placed = placeImage(shot.width, shot.height, IMG_BOX);
+  slide.addImage({ path: shot.file, ...placed, altText: 'Screenshot of the die cast terminal' });
   s.markers.forEach((m) => {
     const r = toSlide(shot.targets[m.target], placed, shot.width, shot.height, 4);
     outline(slide, r, AMBER);
@@ -69,8 +82,14 @@ function overviewSlide(pres, s) {
   s.zones.forEach((z) => {
     const r = toSlide(shot.targets[z.target], placed, shot.width, shot.height, 3);
     outline(slide, r, z.color);
-    slide.addShape('roundRect', { x: r.x, y: Math.max(placed.y, r.y - 0.27), w: 0.26, h: 0.26, rectRadius: 0.04, fill: { color: z.color }, line: { color: z.color } });
-    slide.addText(z.letter, { x: r.x, y: Math.max(placed.y, r.y - 0.27), w: 0.26, h: 0.26, fontFace: 'Arial', fontSize: 11, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0, isTextBox: true });
+    // Tag just right of the zone when there is room (keeps neighbouring zones'
+    // tags apart), otherwise inside its top-left corner.
+    const T = 0.26;
+    const outside = r.x + r.w + 0.05 + T <= placed.x + placed.w;
+    const tx = outside ? r.x + r.w + 0.05 : r.x + 0.04;
+    const ty = outside ? r.y + Math.max(0, (r.h - T) / 2) : r.y + 0.04;
+    slide.addShape('roundRect', { x: tx, y: ty, w: T, h: T, rectRadius: 0.04, fill: { color: z.color }, line: { color: 'FFFFFF', width: 0.75 } });
+    slide.addText(z.letter, { x: tx, y: ty, w: T, h: T, fontFace: 'Arial', fontSize: 11, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0, isTextBox: true });
   });
   let y = PANEL.y;
   s.zones.forEach((z) => {
@@ -99,6 +118,21 @@ function conceptSlide(pres, s) {
   slide.addNotes(s.notes);
 }
 
+// Team lead screens not captured yet: what the job is for, plus a clear
+// "pictures coming" box so nobody mistakes it for a finished slide.
+function placeholderSlide(pres, s) {
+  const slide = pres.addSlide(); header(slide, s);
+  s.bullets.forEach((b, i) => {
+    const y = 1.55 + i * 1.05;
+    disc(slide, i + 1, 0.8, y + 0.08, 0.42);
+    slide.addText(runs(b, 22), { x: 1.5, y, w: 11.2, h: 0.7, valign: 'middle', margin: 0, isTextBox: true });
+  });
+  slide.addShape('roundRect', { x: 0.45, y: 5.75, w: 12.4, h: 0.95, rectRadius: 0.08, fill: { color: TINT }, line: { color: 'C9D2DE', width: 1, dashType: 'dash' } });
+  slide.addText('Screen pictures and step-by-step for this job come in the next version of this deck.',
+    { x: 0.75, y: 5.75, w: 11.8, h: 0.95, fontFace: FONT, fontSize: 16, italic: true, color: MUTED, valign: 'middle', margin: 0, isTextBox: true });
+  slide.addNotes(s.notes);
+}
+
 function glossarySlide(pres, s) {
   const slide = pres.addSlide(); header(slide, s);
   s.terms.forEach((t, i) => {
@@ -119,12 +153,12 @@ function summarySlide(pres, s) {
     slide.addText(c.heading, { x: x + 0.25, y: 1.5, w: w - 0.5, h: 0.5, fontFace: FONT, fontSize: 20, bold: true, color: NAVY, margin: 0, isTextBox: true });
     // One paragraph per item: bullet on the item's first run, breakLine on its last.
     const items = c.items.flatMap((it, j) => {
-      const rs = runs(it, 15);
+      const rs = runs(it, 18);
       rs[0].options.bullet = true;
       if (j < c.items.length - 1) rs[rs.length - 1].options.breakLine = true;
       return rs;
     });
-    slide.addText(items, { x: x + 0.25, y: 2.1, w: w - 0.5, h: 4.8, valign: 'top', paraSpaceAfter: 8, margin: 0, isTextBox: true });
+    slide.addText(items, { x: x + 0.25, y: 2.1, w: w - 0.5, h: 4.8, valign: 'top', paraSpaceAfter: 10, margin: 0, isTextBox: true });
   });
   slide.addNotes(s.notes);
 }
@@ -150,6 +184,7 @@ function main() {
       case 'overview': return overviewSlide(pres, s);
       case 'steps': return stepsSlide(pres, s);
       case 'summary': return summarySlide(pres, s);
+      case 'placeholder': return placeholderSlide(pres, s);
       default: throw new Error(`unknown kind ${s.kind}`);
     }
   });

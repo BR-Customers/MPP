@@ -4,9 +4,16 @@ const { insideImage } = require('./geometry');
 
 const SLIDE_MAX = 8.0, NOTES_MAX = 9.0;
 
+// Every title, step, label and list item is its own unit to a reader, so each
+// is ended as a sentence before scoring. Joined bare, a legend of six short
+// labels reads to the formula as one 40-word sentence and scores grade 12.
+const asSentence = (t) => (/[.!?]$/.test(t.trim()) ? t.trim() : `${t.trim()}.`);
+
 function slideText(s) {
   return [s.title, ...(s.steps || []), s.tip, ...(s.zones || []).map((z) => z.label),
-    ...(s.bullets || []), ...(s.terms || []).map((t) => t.meaning)].filter(Boolean).join(' ');
+    ...(s.bullets || []), ...(s.terms || []).map((t) => t.meaning),
+    ...(s.columns || []).flatMap((c) => [c.heading, ...c.items])]
+    .filter(Boolean).map(asSentence).join(' ');
 }
 
 function checkTarget(p, shot, name, what) {
