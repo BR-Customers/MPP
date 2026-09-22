@@ -313,6 +313,111 @@ async function reconcile() {
   } finally { await closeSession(cdp); }
 }
 
+async function teamleadPopups() {
+  const cdp = await session();
+  try {
+    await signInAs(cdp, db.PIN, 'ST');
+    await pickCell(cdp, CELL);
+    await press(cdp, { text: 'Lot Management', tag: 'div' }, 2500);
+    await press(cdp, btn('Supervisor Access'), 3000);
+    await dump(cdp, 'tl_supervisor_access');
+    await capture(cdp, OUT, 'sup_access', { supBtn: btn('Supervisor Access') });
+    await key(cdp, 'Escape', 'Escape', 27); await sleep(1200);
+    await session_reset(cdp);
+    await press(cdp, btn('Die Mount'), 3000);
+    await dump(cdp, 'tl_die_mount');
+    await capture(cdp, OUT, 'die_mount_closed', { dieMount: btn('Die Mount') });
+    await session_reset(cdp);
+    await press(cdp, btn('Reset Terminal'), 3000);
+    await dump(cdp, 'tl_reset_terminal');
+    await capture(cdp, OUT, 'reset_terminal', { resetBtn: btn('Reset Terminal') });
+  } finally { await closeSession(cdp); }
+}
+
+/** Close whatever popup is up by reloading the page -- popups here have
+ *  different close buttons, and a reload is the one move that always works. */
+async function session_reset(cdp) {
+  await cdp.send('Page.reload');
+  await sleep(9000);
+  await signInAs(cdp, db.PIN, 'ST');
+}
+
+async function dashboard() {
+  // Give today's shift some registered production first (Dev only): one
+  // Reconcile Shift entry on Machine 11 for the current shift.
+  const s1 = await session();
+  try {
+    await signInAs(s1, db.PIN, 'ST');
+    await pickCell(s1, CELL);
+    await press(s1, { text: 'Reconcile Shift', tag: 'div' }, 3000);
+    await chooseFromDropdown(s1, { near: 'REPORTING SHIFT' }, 'First Shift');
+    await fillBox(s1, { placeholder: '0' }, '700');
+    await press(s1, btn('Compute'), 4500);
+    await press(s1, btn('SUBMIT SHIFT ENTRY'), 3000);
+    await press(s1, btn('CONFIRM & SUBMIT'), 4000);
+  } catch (e) { console.log('  (dashboard seed skipped) ' + e.message); }
+  finally { await closeSession(s1); }
+  const { connect: c } = await import('../perspective-capture/cdp.mjs');
+  const cdp = await c('http://localhost:8088/data/perspective/client/MPP/shop-floor/die-cast/supervisor');
+  try {
+    await setViewport(cdp, 1600, 1000);
+    await sleep(9000);
+    await capture(cdp, OUT, 'dash_overview', {
+      area: { text: 'AREA', tag: 'div', up: 1, maxChars: 60 },
+      tiles: { union: ['tCur', 'tChange'] },
+      tCur: { text: 'CURRENT SHIFT', tag: 'div', exact: false, up: 1, maxChars: 120 },
+      tChange: { text: 'CHANGE', tag: 'div', up: 1, maxChars: 80 },
+      current: { text: 'Current shift', tag: 'div', exact: false, up: 2, maxChars: 3000 },
+      previous: { text: 'Previous shift', tag: 'div', exact: false, up: 2, maxChars: 3000 },
+    });
+  } finally { await closeSession(cdp); }
+}
+
+/** Team lead screens that need a supervisor AD sign-in. Runs in a VISIBLE
+ *  Chrome on CDP port 9334; when the Authorize box is up, a PERSON types the
+ *  account and password. This script never types credentials -- it waits for
+ *  the box to go away, then captures what opened behind it. */
+async function teamleadVisible() {
+  process.env.CDP_PORT = '9334';
+  const { connect: c } = await import('../perspective-capture/cdp.mjs?visible');
+  const cdp = await c(URL, { allowVisible: true, reuseExisting: true });
+  await setViewport(cdp, 1600, 1000);
+  await cdp.send('Page.navigate', { url: URL });
+  await sleep(9000);
+  await signInAs(cdp, db.PIN, 'ST');
+  // This window's session may not resolve to the DC1-T1 terminal, and then the
+  // machine list shows every cell with different labels -- match by code.
+  try { await pickCell(cdp, CELL); }
+  catch { await chooseFromDropdown(cdp, { text: 'Scan or pick a cell' }, 'DC1-M11'); }
+  await press(cdp, { text: 'Lot Management', tag: 'div' }, 2500);
+
+  await press(cdp, btn('Supervisor Access'), 3000);
+  await capture(cdp, OUT, 'sup_access', {
+    supBtn: btn('Supervisor Access'),
+    user: { placeholder: 'domain\\username' },
+    pass: { placeholder: 'Password' },
+    auth: btn('Authenticate'),
+  });
+  await press(cdp, btn('Cancel'), 2000);
+
+  await press(cdp, btn('Die Mount'), 3000);
+  console.log('>>> In the visible Chrome window: type the supervisor account and password, then press Authenticate.');
+  console.log('>>> Waiting up to 5 minutes...');
+  const t0 = Date.now();
+  while (Date.now() - t0 < 300000) {
+    const up = await evalJs(cdp, `[...document.querySelectorAll('input')].some(i => i.placeholder === 'Password' && i.getBoundingClientRect().width > 2)`);
+    if (!up) break;
+    await sleep(1000);
+  }
+  await sleep(3500);
+  await dump(cdp, 'tl_die_mount_open');
+  await capture(cdp, OUT, 'die_mount', {});
+  console.log('captured die mount -- you can close the window now');
+}
+
 if (want('operator')) await operator();
+if (only === 'tlvisible') await teamleadVisible();
+if (only === 'tlpopups') await teamleadPopups();
+if (only === 'dashboard') await dashboard();
 if (want('reconcile')) await reconcile();
 process.exit(0);

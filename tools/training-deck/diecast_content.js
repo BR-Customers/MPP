@@ -308,37 +308,48 @@ module.exports = {
     // Team lead screens: placeholders until the supervisor sign-in capture is
     // done with Jacques at the keyboard. They say only what is verified.
     {
-      id: 'sup-access', kind: 'placeholder', kicker: 'Team lead', title: 'Supervisor Access',
-      bullets: [
-        'Some jobs need a team lead to sign in with their own account.',
-        'The sign-in lasts five minutes.',
-        'While it lasts, everything done here is saved under your name.',
+      id: 'sup-access', kind: 'steps', kicker: 'Team lead', title: 'Supervisor Access', shot: 'sup_access',
+      steps: [
+        'Tap **Supervisor Access**.',
+        'Type your own AD user name.',
+        'Type your password.',
+        'Tap **Authenticate**.',
       ],
-      notes: 'Your sign-in covers the protected job you are doing. After five minutes it ends by itself.',
+      markers: [{ n: 1, target: 'supBtn' }, { n: 2, target: 'user' }, { n: 3, target: 'pass' }, { n: 4, target: 'auth' }],
+      tip: 'The sign-in lasts five minutes. Everything done then is saved under your name.',
+      notes: 'Some jobs need a team lead. Use your own account, never someone else\'s. After five minutes it ends by itself.',
     },
     {
-      id: 'die-mount', kind: 'placeholder', kicker: 'Team lead', title: 'Die Mount',
-      bullets: [
-        'Use it when a die is changed on a press.',
-        'The screen must always show the die that is really in the press.',
+      id: 'die-mount', kind: 'steps', kicker: 'Team lead', title: 'Die Mount', shot: 'die_mount_closed',
+      steps: [
+        'Die changed on the press? Tap **Die Mount**.',
+        'Sign in with your own AD user name and password.',
+        'Tap **Authenticate**. Then pick the die that is in the press.',
       ],
-      notes: 'If the screen shows the wrong die, every basket is saved against the wrong die.',
+      markers: [{ n: 1, target: 'dieMount' }, { n: 2, target: 'user' }, { n: 3, target: 'auth' }],
+      tip: 'The screen must always show the die that is really in the press.',
+      notes: 'If the screen shows the wrong die, every basket is saved against the wrong die. Check the die name after you finish.',
     },
     {
-      id: 'reset-terminal', kind: 'placeholder', kicker: 'Team lead', title: 'Reset Terminal',
-      bullets: [
-        'Use it when the screen is stuck or shows the wrong place.',
+      id: 'reset-terminal', kind: 'steps', kicker: 'Team lead', title: 'Reset Terminal', shot: 'reset_terminal',
+      steps: [
+        'Tap **Reset Terminal**.',
+        'The person on the screen is signed out. The next person types their PIN.',
       ],
-      notes: 'The steps, and when not to use it, are added with the screen pictures.',
+      markers: [{ n: 1, target: 'resetBtn' }, { n: 2, target: 'keypad' }],
+      tip: 'It signs out whoever is on the screen, right away. It does not ask first.',
+      notes: 'Use it when the screen is stuck, or the wrong person is signed in. Make sure nothing is half done before you tap it.',
     },
     {
-      id: 'dashboard', kind: 'placeholder', kicker: 'Team lead', title: 'The Die Cast Production screen',
-      bullets: [
-        'Shows good parts for this shift and the last shift.',
-        'Pick one area, or leave it on all of die cast.',
-        'One row for each press, with its die and part.',
+      id: 'dashboard', kind: 'overview', kicker: 'Team lead', title: 'The Die Cast Production screen', shot: 'dash_overview',
+      zones: [
+        { letter: 'A', target: 'area', color: ZONE.blue, label: 'Pick one area, or all of die cast' },
+        { letter: 'B', target: 'tiles', color: ZONE.orange, label: 'This shift, the last shift, and the change' },
+        { letter: 'C', target: 'current', color: ZONE.purple, label: 'Each press and part this shift' },
+        { letter: 'D', target: 'previous', color: ZONE.teal, label: 'Each press and part last shift' },
       ],
-      notes: 'This screen only reads numbers. It never changes anything. Good parts come from the shift entries operators send.',
+      notes: 'This screen only reads numbers. It never changes anything. Good parts come from the shift entries operators send, '
+        + 'so a press with no entry shows nothing.',
     },
     {
       id: 'checklist', kind: 'summary', kicker: 'Team lead', title: 'Every shift',

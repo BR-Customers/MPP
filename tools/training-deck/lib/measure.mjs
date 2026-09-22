@@ -115,7 +115,7 @@ export async function signInAs(cdp, pin, initials) {
   while (Date.now() - t0 < 10000) {
     const t = await text(cdp);
     if (t.includes('Enter your PIN')) break;
-    if (t.includes('Operator: ' + initials)) return 'already';
+    if (t.includes('Operator: ' + initials) || t.includes('Operator: Sam Taylor')) return 'already';
     const chip = await evalJs(cdp, `(() => {
       const el = [...document.querySelectorAll('div,span')].find(e => {
         const r = e.getBoundingClientRect();
@@ -133,7 +133,10 @@ export async function signInAs(cdp, pin, initials) {
     await sleep(280);
   }
   await sleep(3500);
-  if (!(await text(cdp)).includes('Operator: ' + initials)) throw new Error('signed in, but not as ' + initials);
+  const after = await text(cdp);
+  // The top bar shows initials, the sub-header the name; a session whose
+  // terminal has not resolved yet shows only the name.
+  if (!after.includes('Operator: ' + initials) && !after.includes('Operator: Sam Taylor')) throw new Error('signed in, but not as ' + initials);
   return 'signed-in';
 }
 

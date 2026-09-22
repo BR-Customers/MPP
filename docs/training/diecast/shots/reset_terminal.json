@@ -1,0 +1,19 @@
+{
+  "image": "reset_terminal.png",
+  "width": 1600,
+  "height": 1000,
+  "targets": {
+    "resetBtn": {
+      "x": 1419,
+      "y": 27,
+      "w": 165,
+      "h": 34
+    },
+    "keypad": {
+      "x": 610,
+      "y": 458,
+      "w": 380,
+      "h": 414
+    }
+  }
+}
