@@ -3947,6 +3947,23 @@ BEGIN
                          @level1type = N'TABLE',  @level1name = N'ProductionEvent',
                          @level2type = N'COLUMN', @level2name = N'Remarks';
     END
+
+    IF COL_LENGTH(N'[Workorder].[ProductionEvent]', N'ShiftId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[ProductionEvent]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ProductionEvent]'), N'ShiftId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The shift this checkpoint is credited to. Stamped by Workorder.TrimPartial_Record (the shift the operator picked) and Workorder.TrimOut_Record v1.5 (Oee.ufn_ShiftIdForInstant at the trim shop). NULL on rows written before migration 0096 and on every other writer. Trim credit per shift = ShotCount minus the previous trim checkpoint on the same LOT.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ProductionEvent',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The shift this checkpoint is credited to. Stamped by Workorder.TrimPartial_Record (the shift the operator picked) and Workorder.TrimOut_Record v1.5 (Oee.ufn_ShiftIdForInstant at the trim shop). NULL on rows written before migration 0096 and on every other writer. Trim credit per shift = ShotCount minus the previous trim checkpoint on the same LOT.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'ProductionEvent',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+    END
 END
 GO
 
