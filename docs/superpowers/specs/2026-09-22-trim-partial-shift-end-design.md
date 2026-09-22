@@ -32,7 +32,7 @@ LOT does not straddle a shift. That is an artifact of current production, so the
 | D4 | **Trim OUT is unchanged** for the operator: it still enters the LOT's full count. The difference between checkpoints is the credit. |
 | D5 | **Reuse the `TrimIn` operation template** for the partial checkpoint. No new template. |
 | D6 | **Forced shift selection.** The partial popup has a shift picker with **nothing preselected**; Save is disabled until a shift is chosen. (The die cast shift-picker defect came from preselecting the current shift.) |
-| D7 | Credit is **both** per shift / press and per operator; both come from the same row. |
+| D7 | Credit is **both** per shift / trim shop and per operator; both come from the same row. Trim is tracked at the **shop** (`TRIM1` / `TRIM2`); the presses were retired 2026-07-30, so there is no per-press location to credit. |
 
 ## 3. The model
 
@@ -50,7 +50,8 @@ One `Workorder.ProductionEvent`:
 | `AppUserId`, `TerminalLocationId` | as usual |
 
 Plus one `Workorder.RejectEvent` per scrap line (stamped `ItemId` + `CellLocationId` +
-`TerminalLocationId`, as Trim OUT v1.4), decrementing `Lot.PieceCount` once by the total.
+`TerminalLocationId`, as Trim OUT v1.4, **and `ShiftId`** -- the existing 0084 column, so trim scrap
+files under a shift too), decrementing `Lot.PieceCount` once by the total.
 
 The LOT does **not** move.
 
@@ -64,11 +65,12 @@ TrimmedThisEvent = ShotCount - ISNULL(LAG(ShotCount) OVER (PARTITION BY LotId OR
 ```
 
 The baseline is 0 -- earlier die cast rows on the LOT are **not** in the partition. Each event's
-credit belongs to its `ShiftId`, its `AppUserId`, and the press the LOT was at (derived from
-`LotMovement` at `EventAt`, per the data model's no-`LocationId` rule). Scrap credit is the event's
-`RejectEvent` rows.
+credit belongs to its `ShiftId`, its `AppUserId`, and the trim shop the LOT was at (derived from
+`LotMovement` at `EventAt`, per the data model's no-`LocationId` rule). Scrap credit is the
+`RejectEvent` rows by their stamped `ShiftId` / `AppUserId` (Trim OUT's scrap rows carry
+`ProductionEventId` NULL by design, so the rollup never joins scrap through the checkpoint).
 
-Worked example -- 953-piece LOT, press Shotblast 26:
+Worked example -- 953-piece LOT at Trim Shop 2:
 
 | Event | Shift | Op | ShotCount | Scrap | Credit |
 |---|---|---|---|---|---|
@@ -85,8 +87,8 @@ A LOT can take more than one partial (a LOT spanning three shifts); each is a ch
   metadata-only, which matters because `ProductionEvent` is born partitioned on `EventAt`.
 - **Partial:** the operator's picked shift (D6). The picker lists the recent shifts
   (`BlueRidge.Oee.Shift.getRecentOptions`, the die cast picker's source) with no default.
-- **Trim OUT:** stamped automatically from `Oee.ufn_ShiftIdForInstant` for the LOT's press at
-  `SYSUTCDATETIME()` -- no UI change. *(For review: Trim OUT could also force the picker; left
+- **Trim OUT:** stamped automatically (checkpoint and its scrap rows) from
+  `Oee.ufn_ShiftIdForInstant` for the trim shop at `SYSUTCDATETIME()` -- no UI change. *(For review: Trim OUT could also force the picker; left
   automatic because it is not a shift-end action.)*
 - Rows written before this migration keep `ShiftId` NULL. No backfill.
 
@@ -120,7 +122,8 @@ before `BEGIN TRANSACTION`, status row on every exit, `CATCH` the only `ROLLBACK
 6. `ShiftId` does not exist.
 7. `ShotCount < 0`, or `ShotCount + ScrapTotal > Lot.PieceCount`.
 8. `ShotCount` is below the LOT's last trim checkpoint (the §3.2 partition).
-9. `ShotCount = 0` and no scrap -- nothing to record.
+9. Nothing to record: `ShotCount` equals the last trim checkpoint (0 when there is none) and there
+   is no scrap.
 
 Writes: the `ProductionEvent` (§3.1), the `RejectEvent` rows, the `PieceCount` decrement
 (inlined mirror of the Trim OUT decrement), audit `TrimCheckpointRecorded` to `Audit.OperationLog`
@@ -145,9 +148,10 @@ Detail report) is **out of scope** here; §3.2 is its contract.
 
 ## 6. Screens
 
-- **New popup** `Popups/TrimPartial` (new view -- file-authored): LOT, part, press; *Last partial:
-  700 -- 2nd shift, JP* when one exists; **Trimmed so far** on the Numpad; the existing scrap-tile
-  component; the **shift picker (nothing selected)**; Save disabled until count and shift are set.
+- **New popup** `Popups/TrimPartial` (new view -- file-authored): LOT, part, trim shop; *Last partial:
+  700 -- 2nd shift, JP* when one exists; **Trimmed so far** on the Numpad; scrap taken from the
+  Trim OUT form's current scrap lines for the same LOT (read-only in the popup, so scrap entry is
+  not duplicated); the **shift picker (nothing selected)**; Save disabled until count and shift are set.
   A Save confirmation reads the filing back: *"Record 700 trimmed on 10628573 under 2nd shift,
   09-21?"*
 - **TrimBody** (existing view -- Designer edit): a *Record partial trim -- shift end* button in the
