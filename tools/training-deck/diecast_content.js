@@ -53,11 +53,11 @@ module.exports = {
     {
       id: 'lot-overview', kind: 'overview', kicker: 'Screen tour', title: 'The Lot Management screen', shot: 'lot_overview',
       zones: [
-        { letter: 'A', target: 'header', color: ZONE.blue, label: 'Top bar: shift, who is signed in, **Downtime**' },
+        { letter: 'A', target: 'header', pos: 2, color: ZONE.blue, label: 'Top bar: shift, who is signed in, **Downtime**' },
         { letter: 'B', target: 'cell', color: ZONE.orange, label: 'Your machine' },
         { letter: 'C', target: 'tabs', color: ZONE.purple, label: 'The two tabs' },
-        { letter: 'D', target: 'die', color: ZONE.teal, label: 'The die in this machine' },
-        { letter: 'E', target: 'rows', color: ZONE.red, label: 'One row for each cavity' },
+        { letter: 'D', target: 'die', pos: 5, color: ZONE.teal, label: 'The die in this machine' },
+        { letter: 'E', target: 'rows', pos: 6, color: ZONE.red, label: 'One row for each cavity' },
         { letter: 'F', target: 'footer', color: ZONE.gold, label: 'Open many baskets at once' },
       ],
       notes: 'This is the screen you use most. Each row is one cavity of the die. Rows are grouped by the part they make. '
@@ -89,9 +89,9 @@ module.exports = {
       id: 'cell', kind: 'steps', kicker: 'Start of shift', title: 'Pick your machine and check the die', shot: 'cell_pick',
       steps: [
         'Tap the machine box. Pick your machine.',
-        'Check the die name. It must match the die in the press.',
+        'Check the die name here. It must match the die in the press.',
       ],
-      markers: [{ n: 1, target: 'cell' }, { n: 2, target: 'die' }],
+      markers: [{ n: 1, target: 'cell' }, { n: 2, target: 'dieName' }],
       tip: 'Wrong die on the screen? Stop and call your team lead.',
       notes: 'One terminal can run more than one machine. The screen remembers the last machine used, so always check it. '
         + 'If the die is wrong, every basket goes against the wrong die.',
@@ -104,6 +104,7 @@ module.exports = {
         'Tap **Open 1 basket(s)**.',
       ],
       markers: [{ n: 1, target: 'row' }, { n: 2, target: 'scan' }, { n: 3, target: 'openBtn' }],
+      arrows: [{ target: 'noBasket', from: 'above' }],
       tip: 'Scanning alone does not open it. You must tap the button.',
       notes: 'After the tap, the row shows the ticket number, and a green line says Basket opened. '
         + 'Scanned the wrong ticket? Tap Clear to empty the boxes and start again.',
@@ -121,42 +122,45 @@ module.exports = {
       id: 'release', kind: 'steps', kicker: 'Baskets', title: 'Release a full basket', shot: 'release_top',
       steps: [
         'Tap **Release** on the full basket.',
-        'Type the number on the press counter.',
+        'Type the pieces you put in. Or type the press counter number below it.',
         'Check the three boxes. They add up for you.',
         'Scrap in this basket? Tap **Add scrap reason**.',
+        'Tap **Release basket**.',
       ],
-      markers: [{ n: 1, target: 'rowRelease' }, { n: 2, target: 'counter' }, { n: 3, target: 'boxes' }, { n: 4, target: 'scrap' }],
-      notes: 'The counter number fills in the piece count by itself. You never subtract anything. The screen does it. '
+      markers: [{ n: 1, target: 'rowRelease' }, { n: 2, target: 'pieces' }, { n: 3, target: 'boxes' },
+        { n: 4, target: 'scrap' }, { n: 5, target: 'releaseBtn' }],
+      notes: 'Type the count going in, or type the press counter number and the count fills in by itself. '
+        + 'You never subtract anything. The screen does it. '
         + 'Did you swap the basket earlier? Use the number you wrote down then, not the number now. '
-        + 'If your line counts pieces, type the count in the top box instead.',
+        + 'Cannot see Release basket? Scroll down inside the box.',
     },
     {
-      id: 'release-2', kind: 'steps', kicker: 'Baskets', title: 'Release a full basket (continued)', shot: 'release_bottom',
+      id: 'release-2', kind: 'steps', kicker: 'Baskets', title: 'The press counter number is wrong', shot: 'release_bottom',
       steps: [
-        'Scroll down in the box. Tap **Release basket**.',
-        'Counter was reset? Tap **Counter reset / wrong total?** here.',
+        'Press shot counter wrong? Reset it here with **Counter reset / wrong total?**',
       ],
-      markers: [{ n: 1, target: 'releaseBtn' }, { n: 2, target: 'fixCounter' }],
-      notes: 'The buttons are at the bottom of the box, so scroll down to reach them. '
-        + 'If you type no number, the screen warns you. The basket then closes at the count it already has.',
+      markers: [{ n: 1, target: 'fixCounter' }],
+      notes: 'Use this only when the press counter number is wrong. For example, the counter was set back to zero, '
+        + 'or a wrong number was typed before. Type what the counter really shows. Then finish the release.',
     },
     {
       id: 'void', kind: 'steps', kicker: 'Baskets', title: 'Void an empty basket', shot: 'void_dialog',
       steps: [
-        'Tap **Void** on the basket.',
+        'Find the LOT you want to remove on the **Lot Management** screen.',
+        'Tap **Void** on that row.',
         'Check the ticket number. Tap **Void** to confirm.',
       ],
-      markers: [{ n: 1, target: 'rowVoid' }, { n: 2, target: 'voidBtn' }],
+      markers: [{ n: 1, target: 'row' }, { n: 2, target: 'rowVoid' }, { n: 3, target: 'voidBtn' }],
       tip: 'Only for a basket with nothing in it. It cannot be undone.',
       notes: 'Use this when a ticket was opened by mistake and no parts went in. The ticket is scrapped and the cavity is free again.',
     },
     {
       id: 'rec-overview', kind: 'overview', kicker: 'Screen tour', title: 'The Reconcile Shift screen', shot: 'rec_overview',
       zones: [
-        { letter: 'A', target: 'entry', color: ZONE.blue, label: 'Your shift and the press counter' },
-        { letter: 'B', target: 'diewide', color: ZONE.orange, label: 'Shots lost on the whole die' },
-        { letter: 'C', target: 'percavity', color: ZONE.purple, label: 'Each cavity, after **Compute**' },
-        { letter: 'D', target: 'totals', color: ZONE.teal, label: 'The totals, and the button to send' },
+        { letter: 'A', target: 'entry', pos: 1, color: ZONE.blue, label: 'Your shift and the press counter' },
+        { letter: 'B', target: 'diewide', pos: 1, color: ZONE.orange, label: 'Shots lost on the whole die' },
+        { letter: 'C', target: 'percavity', pos: 1, color: ZONE.purple, label: 'Each cavity, after **Compute**' },
+        { letter: 'D', target: 'totals', pos: 1, color: ZONE.teal, label: 'The totals, and the button to send' },
       ],
       notes: 'Do this at the end of your shift, before you hand over. It settles the numbers for your die.',
     },

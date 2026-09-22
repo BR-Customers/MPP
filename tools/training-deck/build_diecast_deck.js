@@ -10,7 +10,8 @@ const { cropFor, shiftRect, writeCrop } = require('./lib/crop');
 
 const ROOT = path.resolve(__dirname, '../..');
 const SHOTS = path.join(ROOT, 'docs/training/diecast/shots');
-const OUT = path.join(ROOT, 'docs/training/diecast/MPP_DieCast_Training.pptx');
+// TRAINING_OUT: write elsewhere, e.g. while the deck is open in PowerPoint (it locks the file).
+const OUT = process.env.TRAINING_OUT || path.join(ROOT, 'docs/training/diecast/MPP_DieCast_Training.pptx');
 const NAVY = '12263F', AMBER = 'FFB400', INK = '1B1B1B', MUTED = '5A6472', TINT = 'EEF2F7', FONT = 'Calibri';
 const IMG_BOX = { x: 0.45, y: 1.25, w: 8.5, h: 5.8 };
 const PANEL = { x: 9.25, y: 1.25, w: 3.65 };
@@ -49,10 +50,11 @@ function outline(slide, r, color) {
 // A step slide shows only the part of the screen around its markers, so the
 // controls being taught are big enough to read on a projector or a printout.
 function croppedShot(s, full) {
-  const crop = cropFor(s.markers.map((m) => full.targets[m.target]), full.width, full.height, IMG_BOX.w / IMG_BOX.h);
+  const names = [...s.markers.map((m) => m.target), ...(s.arrows || []).map((a) => a.target)];
+  const crop = cropFor(names.map((n) => full.targets[n]), full.width, full.height, IMG_BOX.w / IMG_BOX.h);
   const file = writeCrop(path.join(SHOTS, full.image), crop, s.id);
   const targets = {};
-  for (const m of s.markers) targets[m.target] = shiftRect(full.targets[m.target], crop);
+  for (const n of names) targets[n] = shiftRect(full.targets[n], crop);
   return { file, width: crop.w, height: crop.h, targets };
 }
 
@@ -65,6 +67,24 @@ function stepsSlide(pres, s) {
     const r = toSlide(shot.targets[m.target], placed, shot.width, shot.height, 4);
     outline(slide, r, AMBER);
     disc(slide, m.n, Math.max(placed.x, r.x - 0.16), Math.max(placed.y, r.y - 0.16));
+  });
+  // Arrows point at text that a box alone would not make obvious. Default
+  // comes up from below-left; `from: 'above'` comes down from above-right,
+  // for text whose row below is busy. They stop just short of the target.
+  (s.arrows || []).forEach((a) => {
+    const r = toSlide(shot.targets[a.target], placed, shot.width, shot.height, 2);
+    const len = 0.55, h = len * 0.8;
+    let geo;
+    if (a.from === 'above') {
+      // tip at the target's top edge, a third of the way in; line runs up-right
+      const tipX = r.x + Math.min(0.35, r.w / 3), tipY = r.y - 0.03;
+      geo = { x: tipX, y: tipY - h, w: len, h, flipH: true };
+    } else {
+      const tipX = r.x + Math.min(0.35, r.w / 3), tipY = r.y + r.h + 0.03;
+      geo = { x: tipX - len, y: tipY, w: len, h, flipV: true };
+    }
+    slide.addShape('line', { ...geo, line: { color: '000000', width: 4.5, transparency: 40 } });
+    slide.addShape('line', { ...geo, line: { color: AMBER, width: 2.5, endArrowType: 'triangle' } });
   });
   let y = PANEL.y;
   s.steps.forEach((t, i) => {
@@ -79,17 +99,44 @@ function stepsSlide(pres, s) {
 function overviewSlide(pres, s) {
   const slide = pres.addSlide(); header(slide, s);
   const shot = loadShot(s.shot); const placed = screenshot(slide, shot);
+  const zoneRects = [];
   s.zones.forEach((z) => {
     const r = toSlide(shot.targets[z.target], placed, shot.width, shot.height, 3);
     outline(slide, r, z.color);
-    // Tag just right of the zone when there is room (keeps neighbouring zones'
-    // tags apart), otherwise inside its top-left corner.
-    const T = 0.26;
-    const outside = r.x + r.w + 0.05 + T <= placed.x + placed.w;
-    const tx = outside ? r.x + r.w + 0.05 : r.x + 0.04;
-    const ty = outside ? r.y + Math.max(0, (r.h - T) / 2) : r.y + 0.04;
-    slide.addShape('roundRect', { x: tx, y: ty, w: T, h: T, rectRadius: 0.04, fill: { color: z.color }, line: { color: 'FFFFFF', width: 0.75 } });
-    slide.addText(z.letter, { x: tx, y: ty, w: T, h: T, fontFace: 'Arial', fontSize: 11, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0, isTextBox: true });
+    zoneRects.push(r);
+  });
+  // Letter tags, placed in the preferred order below, moving to the next
+  // position only when a spot is off the usable area, or would sit on another
+  // tag or another zone's box. A zone may pin a position with `pos`.
+  //   1 above, left-justified     2 middle, left of the box
+  //   3 below, left-justified     4 middle, right of the box
+  //   5 above, right-justified    6 below, right-justified
+  const T = 0.26, G = 0.05;
+  const at = (r, n) => ({
+    1: { x: r.x, y: r.y - T - G },
+    2: { x: r.x - T - G, y: r.y + r.h / 2 - T / 2 },
+    3: { x: r.x, y: r.y + r.h + G },
+    4: { x: r.x + r.w + G, y: r.y + r.h / 2 - T / 2 },
+    5: { x: r.x + r.w - T, y: r.y - T - G },
+    6: { x: r.x + r.w - T, y: r.y + r.h + G },
+  })[n];
+  const hit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  const placedTags = [];
+  s.zones.forEach((z, i) => {
+    const r = zoneRects[i];
+    const usable = (t) => t.x >= 0.05 && t.y >= 1.2 && t.x + T <= PANEL.x - 0.1 && t.y + T <= 7.45
+      && !placedTags.some((o) => hit(t, o))
+      && !zoneRects.some((o, j) => j !== i && hit(t, o));
+    const order = z.pos ? [z.pos] : [1, 2, 3, 4, 5, 6];
+    let spot = null;
+    for (const n of order) {
+      const c = at(r, n); const t = { x: c.x, y: c.y, w: T, h: T };
+      if (z.pos || usable(t)) { spot = t; break; }
+    }
+    if (!spot) { const c = at(r, 1); spot = { x: c.x, y: c.y, w: T, h: T }; }   // nothing fits: fall back to 1
+    placedTags.push(spot);
+    slide.addShape('roundRect', { x: spot.x, y: spot.y, w: T, h: T, rectRadius: 0.04, fill: { color: z.color }, line: { color: 'FFFFFF', width: 0.75 } });
+    slide.addText(z.letter, { x: spot.x, y: spot.y, w: T, h: T, fontFace: 'Arial', fontSize: 11, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0, isTextBox: true });
   });
   let y = PANEL.y;
   s.zones.forEach((z) => {

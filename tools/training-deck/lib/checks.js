@@ -37,6 +37,7 @@ function checkSlide(s, shot) {
       checkTarget(p, shot, m.target, `marker ${m.n}`);
     });
     s.steps.forEach((_, i) => { if (!ns.has(i + 1)) p.push(`step ${i + 1} has no marker`); });
+    (s.arrows || []).forEach((a) => checkTarget(p, shot, a.target, 'arrow'));
   }
   if (s.kind === 'overview') {
     if (!shot) { p.push(`no shot "${s.shot}"`); return p; }
