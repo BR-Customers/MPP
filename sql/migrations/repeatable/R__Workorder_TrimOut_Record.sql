@@ -1,8 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_TrimOut_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-15
--- Version:     1.4
+-- Modified:    2026-09-22
+-- Version:     1.5
+-- Change:      v1.5 (2026-09-22, trim partial checkpoint) - (1) the monotonic guard
+--              compares against the LOT's last TRIM checkpoint (TrimIn/TrimOut
+--              templates) instead of its last event of any operation, so a partial
+--              is never diffed against another operation's counter; (2) when a trim
+--              checkpoint exists, @ShotCount is required -- a NULL would leave the
+--              partial shift's credit undefined; (3) the checkpoint and its scrap
+--              rows stamp ShiftId from Oee.ufn_ShiftIdForInstant at the trim shop
+--              (0096). Spec 2026-09-22-trim-partial-shift-end-design.md sec 5.2.
+--              Guarded by 0096/040_TrimOut_after_partial.
 -- Change:      v1.4 (2026-09-15, reject identity) - the Trim OUT scrap rows now
 --              STAMP ItemId + CellLocationId + TerminalLocationId. 0084 made a
 --              reject row carry its own identity rather than be resolved through
@@ -318,10 +327,29 @@ BEGIN
 
         -- ---- 7. D1 cumulative-monotonic guard (mirror of ProductionEvent_Record) ----
         DECLARE @PrevShot INT;
+
+        -- v1.5: scoped to TRIM checkpoints (a partial is cumulative within trim only).
         SELECT TOP 1 @PrevShot = pe.ShotCount
         FROM Workorder.ProductionEvent pe
-        WHERE pe.LotId = @ParentLotId
+        INNER JOIN Parts.OperationTemplate ot ON ot.Id = pe.OperationTemplateId
+        INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
+        WHERE pe.LotId = @ParentLotId AND pe.ShotCount IS NOT NULL
+          AND oty.Code IN (N'TrimIn', N'TrimOut')
         ORDER BY pe.EventAt DESC, pe.Id DESC;
+
+        -- v1.5: after a partial the count is required.
+        IF @PrevShot IS NOT NULL AND @ShotCount IS NULL
+        BEGIN
+            SET @Message = N'A partial trim count of ' + CAST(@PrevShot AS NVARCHAR(20))
+                         + N' is recorded on this LOT; Trim OUT needs the LOT''s full trimmed count.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
+                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
 
         IF @PrevShot IS NOT NULL AND @ShotCount IS NOT NULL AND @ShotCount < @PrevShot
         BEGIN
@@ -341,18 +369,22 @@ BEGIN
         DECLARE @LotName NVARCHAR(50)  = (SELECT LotName FROM Lots.Lot WHERE Id = @ParentLotId);
         DECLARE @ToName  NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @TrimStoreId);
 
+        -- v1.5: the shift this OUT is credited to (not a shift-end action, so resolved, not picked).
+        DECLARE @ShiftId BIGINT = (SELECT TOP 1 r.ShiftId
+                                   FROM Oee.ufn_ShiftIdForInstant(@SourceLocationId, SYSUTCDATETIME()) r);
+
         BEGIN TRANSACTION;
 
         -- (a) INLINED closing checkpoint (mirror of Workorder.ProductionEvent_Record).
         INSERT INTO Workorder.ProductionEvent (
             LotId, OperationTemplateId, WorkOrderOperationId, EventAt,
             ShotCount, ScrapCount, ScrapSourceId,
-            WeightValue, WeightUomId, AppUserId, TerminalLocationId, Remarks
+            WeightValue, WeightUomId, AppUserId, TerminalLocationId, Remarks, ShiftId
         )
         VALUES (
             @ParentLotId, @OperationTemplateId, NULL, SYSUTCDATETIME(),
             @ShotCount, @ScrapTotal, NULL,
-            NULL, NULL, @AppUserId, @TerminalLocationId, NULL
+            NULL, NULL, @AppUserId, @TerminalLocationId, NULL, @ShiftId
         );
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
@@ -369,13 +401,13 @@ BEGIN
         -- so an unstamped row does not lose a little detail -- it groups under
         -- '(unassigned part)', and EVERY trim reject in the plant collapses
         -- into that one bucket on the scrap matrix PDF.
-        -- ToolId / ToolCavityId / ShiftId stay NULL deliberately: trim runs on
+        -- ToolId / ToolCavityId stay NULL deliberately (v1.5 stamps ShiftId): trim runs on
         -- no die and this proc carries no shift context. Inventing a lookup to
         -- fill them would attribute trim scrap to the casting die.
         IF EXISTS (SELECT 1 FROM @Scrap)
             INSERT INTO Workorder.RejectEvent
-                (ProductionEventId, LotId, ItemId, CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
-            SELECT NULL, @ParentLotId, @ItemId, @SourceLocationId, s.DefectCodeId, s.Quantity, NULL, N'Trim OUT scrap', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
+                (ProductionEventId, LotId, ItemId, CellLocationId, ShiftId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
+            SELECT NULL, @ParentLotId, @ItemId, @SourceLocationId, @ShiftId, s.DefectCodeId, s.Quantity, NULL, N'Trim OUT scrap', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
             FROM @Scrap s;
 
         -- (b) INLINED whole-LOT move (mirror of Lots.Lot_MoveTo). No split, no children.
