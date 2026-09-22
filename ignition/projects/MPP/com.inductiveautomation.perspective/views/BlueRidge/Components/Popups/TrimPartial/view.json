@@ -1,0 +1,188 @@
+{
+  "custom": {
+    "qty": "",
+    "shiftId": null,
+    "shiftOptions": [],
+    "lastLabel": "",
+    "confirming": false,
+    "confirmText": "",
+    "busyUntil": 0
+  },
+  "params": {
+    "lotId": null,
+    "lotName": "",
+    "pieceCount": null,
+    "scrapLines": [],
+    "scrapTotal": 0
+  },
+  "propConfig": {
+    "params.lotId": {"paramDirection": "input"},
+    "params.lotName": {"paramDirection": "input"},
+    "params.pieceCount": {"paramDirection": "input"},
+    "params.scrapLines": {"paramDirection": "input"},
+    "params.scrapTotal": {"paramDirection": "input"},
+    "custom.shiftOptions": {"binding": {"type": "expr", "config": {"expression": "runScript(\"BlueRidge.Oee.Shift.getRecentOptions\", 0)"}}},
+    "custom.lastLabel": {"binding": {"type": "expr", "config": {"expression": "runScript(\"BlueRidge.Workorder.TrimPartial.latestCheckpointLabel\", 0, {view.params.lotId})"}}}
+  },
+  "props": {
+    "defaultSize": {"height": 820, "width": 460}
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "direction": "column",
+      "style": {"gap": "10px", "padding": "16px", "classes": "pf-inv-panel"}
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "review",
+          "params": [],
+          "script": "\traw = (\"%s\" % (self.view.custom.qty or \"\")).strip()\n\tif not raw.isdigit():\n\t\tBlueRidge.Common.Notify.toast(\"Count required\", \"Enter how many pieces of this LOT are trimmed so far.\", \"warning\")\n\t\treturn\n\tif self.view.custom.shiftId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Shift required\", \"Choose the shift this work belongs to.\", \"warning\")\n\t\treturn\n\tlabel = BlueRidge.Oee.Shift.labelFor(self.view.custom.shiftId)\n\tscrap = BlueRidge.Common.Util.toIntOrNone(self.view.params.scrapTotal) or 0\n\ttail = (\" and %d scrap\" % scrap) if scrap else \"\"\n\tself.view.custom.confirmText = \"Record %s trimmed%s on %s under %s?\" % (int(raw), tail, self.view.params.lotName, label)\n\tself.view.custom.confirming = True"
+        },
+        {
+          "name": "submit",
+          "params": [],
+          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tlotId = self.view.params.lotId\n\ttemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForLot(lotId, \"TrimIn\")\n\tif templateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"This LOT's route has no active Trim IN step.\", \"error\")\n\t\treturn\n\tscrapLines = []\n\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(self.view.params.scrapLines) or []):\n\t\tr = r or {}\n\t\tq = BlueRidge.Common.Util.toIntOrNone(r.get(\"quantity\"))\n\t\tif r.get(\"defectCodeId\") is not None and q:\n\t\t\tscrapLines.append({\"defectCodeId\": r.get(\"defectCodeId\"), \"quantity\": q})\n\tterm = self.session.custom.terminal\n\tdata = {\n\t\t\"lotId\": lotId,\n\t\t\"operationTemplateId\": templateId,\n\t\t\"shotCount\": int((\"%s\" % self.view.custom.qty).strip()),\n\t\t\"scrapLines\": scrapLines,\n\t\t\"shiftId\": self.view.custom.shiftId,\n\t\t\"sourceLocationId\": term.zoneLocationId if term else None,\n\t}\n\tres = BlueRidge.Workorder.TrimPartial.record(data, BlueRidge.Common.Session.currentAppUserId(self.session), (term.terminalLocationId if term else None))\n\tBlueRidge.Common.Ui.notifyResult(res, \"Partial trim recorded\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"trimPartialRecorded\", payload={\"lotId\": lotId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(\"mpp-trim-partial\")\n\telse:\n\t\tself.view.custom.confirming = False"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "trimPartialKeyPressed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\ta = payload.get(\"action\") if payload else None\n\tq = self.view.custom.qty or \"\"\n\tself.view.custom.confirming = False\n\tif a == \"key\":\n\t\tif len(q) < 6:\n\t\t\tself.view.custom.qty = q + (\"%s\" % payload.get(\"key\"))\n\telif a == \"backspace\":\n\t\tself.view.custom.qty = q[:-1]\n\telif a == \"clear\":\n\t\tself.view.custom.qty = \"\"\n\telif a == \"enter\":\n\t\tself.review()"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Title"},
+        "position": {"shrink": 0},
+        "props": {"text": "Partial trim - shift end", "style": {"classes": "pf-inv-title"}}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "LotLine"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-sub"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "\"LOT \" + {view.params.lotName} + \" - \" + toStr({view.params.pieceCount}) + \" pcs on the LOT\""}}}
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "LastLine"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-sub"}},
+        "propConfig": {
+          "position.display": {"binding": {"type": "expr", "config": {"expression": "len({view.custom.lastLabel}) > 0"}}},
+          "props.text": {"binding": {"type": "property", "config": {"path": "view.custom.lastLabel"}}}
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "QtyCaption"},
+        "position": {"shrink": 0},
+        "props": {"text": "Total trimmed so far on this LOT", "style": {"classes": "pf-inv-sub"}}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "QtyDisplay"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-qty", "fontSize": "34px", "padding": "6px 12px"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "if(len({view.custom.qty}) = 0, \"0\", {view.custom.qty})"}}}
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "ScrapLine"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-sub"}},
+        "propConfig": {
+          "position.display": {"binding": {"type": "expr", "config": {"expression": "toInt({view.params.scrapTotal}) > 0"}}},
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "\"Scrap from the Trim OUT form: \" + toStr({view.params.scrapTotal})"}}}
+        }
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {"name": "Numpad"},
+        "position": {"basis": "424px", "shrink": 0},
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/Numpad",
+          "params": {"messageName": "trimPartialKeyPressed"}
+        }
+      },
+      {
+        "type": "ia.input.dropdown",
+        "meta": {"name": "ShiftPicker"},
+        "position": {"shrink": 0},
+        "props": {
+          "placeholder": {"text": "Choose the shift this work belongs to"},
+          "style": {"minHeight": "44px"}
+        },
+        "propConfig": {
+          "props.options": {"binding": {"type": "property", "config": {"path": "view.custom.shiftOptions"}}},
+          "props.value": {"binding": {"type": "property", "config": {"path": "view.custom.shiftId", "bidirectional": true}}}
+        },
+        "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+          "config": {"script": "\tself.view.custom.confirming = False"}}}}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "ConfirmText"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-sub", "fontWeight": "bold"}},
+        "propConfig": {
+          "position.display": {"binding": {"type": "property", "config": {"path": "view.custom.confirming"}}},
+          "props.text": {"binding": {"type": "property", "config": {"path": "view.custom.confirmText"}}}
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "Buttons"},
+        "position": {"shrink": 0},
+        "props": {"style": {"gap": "10px"}},
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "Cancel"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"text": "Cancel", "style": {"classes": "pf-btn pf-btn-secondary", "minHeight": "44px"}},
+            "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+              "config": {"script": "\tsystem.perspective.closePopup(\"mpp-trim-partial\")"}}}}
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "Review"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"text": "Next", "style": {"classes": "pf-btn pf-btn-primary", "minHeight": "44px"}},
+            "propConfig": {
+              "position.display": {"binding": {"type": "expr", "config": {"expression": "!{view.custom.confirming}"}}},
+              "props.enabled": {"binding": {"type": "expr", "config": {"expression": "len({view.custom.qty}) > 0 && !isNull({view.custom.shiftId})"}}}
+            },
+            "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+              "config": {"script": "\tself.view.rootContainer.review()"}}}}
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "Confirm"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"text": "Record", "style": {"classes": "pf-btn pf-btn-primary", "minHeight": "44px"}},
+            "propConfig": {
+              "position.display": {"binding": {"type": "property", "config": {"path": "view.custom.confirming"}}},
+              "props.enabled": {"binding": {"type": "expr", "config": {"expression": "toMillis(now(500)) > {view.custom.busyUntil}"}}}
+            },
+            "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+              "config": {"script": "\tself.view.rootContainer.submit()"}}}}
+          }
+        ]
+      }
+    ]
+  }
+}
