@@ -285,9 +285,9 @@ var SCEN = {
   SCEN.m202.tags.push(T(r[2],0,"a",r[3],"rel","Warehouse",day+" "+r[0],null,rec));
 });
 
-/* Machine 202, a shift with NOTHING recorded. LTTs 10628556-10628572 exist nowhere in the MES and
-   Machine 202's first record of the week is 06:19 on 09-17. Which shift each LTT belongs to comes from
-   the press sheet, so this shift, its quantities and its actuals are illustrative. */
+/* Machine 202, a shift with NOTHING recorded. The legible press sheet's LTTs 10628574-577 exist
+   nowhere in the MES; the LTTs, quantities and actuals used here are illustrative. LTTs come off a
+   shared stack across the die building, so their numbers imply nothing about press or shift. */
 SCEN.m202n = {
   key:"m202n", press:"Machine 202", die:"DM0144", dieName:"6FB Oil Pan D", cav:1,
   shift:"09-16 2nd", win:"15:00–23:00", dieLife:3060, illustrative:true, noReading:true,
@@ -350,7 +350,7 @@ var QAS = ["","CW","EG","AD","RM","MG","ND"];
 /* ================= state ================= */
 var S;
 function fresh(){
-  return {view:"landing", press:"m11", scen:"m11", overlay:null, signedIn:true, extra:{}, addMode:"range", addMsg:null, addF:"", addTo:"", addQty:"",
+  return {view:"landing", press:"m11", scen:"m11", overlay:null, signedIn:true, extra:{}, addMode:"one", addMsg:null, addF:"", addTo:"", addQty:"",
           moved:{}, pick:null, sel:{}, reason:"", note:"", tick:false, sheets:{}, saved:{}, toast:null};
 }
 function sheetOf(k){
@@ -448,7 +448,7 @@ function changes(k){
 /* ================= adding LTTs ================= */
 function spanOf(list){ return list.length>1 ? list[0]+"–"+list[list.length-1].slice(-3) : list[0]; }
 function addTags(){
-  var k=S.scen, sc=SCEN[k], sh=sheetOf(k), range=S.addMode==="range";
+  var k=S.scen, sc=SCEN[k], sh=sheetOf(k), range=false;
   var f=(S.addF||"").trim(), to=range?(S.addTo||"").trim():f;
   var pi=0, cav="a", cs=$("add-cav");
   if(cs){ var v=cs.value.split("|"); pi=+v[0]; cav=v[1]; }
@@ -456,7 +456,6 @@ function addTags(){
   if(!re.test(f) || !re.test(to)){ S.addMsg={k:"bad", t:"An LTT is 8 or 9 digits. Check the number on the ticket."}; return; }
   var a0=+f, a1=+to;
   if(a1<a0){ S.addMsg={k:"bad", t:"The last LTT comes before the first. Swap them."}; return; }
-  if(a1-a0>=40){ S.addMsg={k:"bad", t:"That is "+(a1-a0+1)+" LTTs. A run is at most 40 — check both numbers."}; return; }
   var qty=num(S.addQty); if(qty==null || isNaN(qty) || qty<=0){ S.addMsg={k:"bad", t:"Enter the quantity"+(range?" in each LOT":" in the LOT")+"."}; return; }
   var have={}; tagsOf(k).forEach(function(t){ have[t.tag]=1; });
   var added=[], joined=[], dup=[], refused=[];
@@ -478,8 +477,8 @@ function addTags(){
   if(bits.length){ S.addF=""; S.addTo=""; }
 }
 function addBar(sc){
-  var range=S.addMode==="range";
-  var h='<div class="addbar"><div class="seg" role="group" aria-label="How to add LTTs"><button type="button" data-act="addmode" data-m="one" aria-pressed="'+(!range)+'">One LTT</button><button type="button" data-act="addmode" data-m="range" aria-pressed="'+range+'">A run of LTTs</button></div>';
+  var range=false;
+  var h='<div class="addbar">';
   h+='<label class="lbl" for="add-from">'+(range?"First LTT":"LTT")+'</label><input class="inp" id="add-from" inputmode="numeric" autocomplete="off" placeholder="scan or type" value="'+esc(S.addF||"")+'" style="width:calc(160px*var(--scale))">';
   if(range) h+='<label class="lbl" for="add-to">Last LTT</label><input class="inp" id="add-to" inputmode="numeric" autocomplete="off" placeholder="scan or type" value="'+esc(S.addTo||"")+'" style="width:calc(160px*var(--scale))">';
   if(sc.cav>1){
@@ -490,7 +489,7 @@ function addBar(sc){
   h+='<label class="lbl" for="add-qty">'+(range?"Qty in each LOT":"Qty")+'</label><input class="inp num" id="add-qty" inputmode="numeric" autocomplete="off" placeholder="—" value="'+esc(S.addQty||"")+'">';
   h+='<button type="button" class="btn pri" data-act="addtags">Add</button></div>';
   if(S.addMsg) h+='<div class="addmsg '+S.addMsg.k+'" role="status">'+esc(S.addMsg.t)+'</div>';
-  h+='<p class="note">Each LTT is checked as it is added. A new LTT becomes a new LOT, created and released to Warehouse at save, as the live release does. An LTT already on this die adds to that LOT. An LTT that belongs to another press or die is refused. The last LOT of a run is often partial — change its quantity in its row.</p>';
+  h+='<p class="note">Each LTT is checked as it is added. A new LTT becomes a new LOT, created and released to Warehouse at save, as the live release does. An LTT already on this die adds to that LOT. An LTT that belongs to another press or die is refused. Scan or type the LTT on each LOT, one at a time.</p>';
   return h;
 }
 
@@ -506,7 +505,7 @@ var STEPS = [
   {k:"8", t:"Machine 202: a shift never recorded", go:function(){ S=fresh(); S.press="m202"; S.view="rec"; S.scen="m202n"; S.reason="MissedEntry";
       var sh=sheetOf("m202n"); S.extra.m202n=[];
       ["10628556","10628557","10628558","10628559","10628560","10628561"].forEach(function(tag,i){ S.extra.m202n.push(T(tag,0,"a",0,"new","Warehouse","",null,{})); sh.qty[tag]= i<5?"66":"30"; });
-      S.addQty="66"; S.addMsg={k:"ok", t:"Added 6 new LOTs (10628556–561). The last one held 30 — changed in its row."}; }},
+      S.addQty="66"; S.addMsg={k:"ok", t:"Added 10628561 — a new LOT. Six LOTs entered so far, one LTT at a time."}; }},
   {k:"9", t:"Machine 202: a night filed as 1st", go:function(){ S=fresh(); S.press="m202"; S.view="rec"; S.scen="m202"; S.reason="WrongShift"; }},
   {k:"10", t:"A reduction (illustrative)", go:function(){ S=fresh(); S.view="rec"; S.scen="red"; S.reason="WrongNumbers"; S.overlay="confirm"; }}
 ];
@@ -545,11 +544,12 @@ var ANNOT = {
       "Back on the list, 09-17 1st reads <b>Reconciled · JGP</b> and 09-16 3rd now holds the 3rd shift's 11,436 — the two rows the sheet said were wrong."]},
   "8":{q:"Which LTTs — and are they really unrecorded?", d:[
       "Nothing about this shift exists in the MES, so everything comes from the press sheet: the LTTs, the quantity in each LOT, the shots and the rejects.",
-      "Add LTTs one at a time, or as a run of consecutive LTTs with one quantity each, then change the last, partial LOT in its row. A keyboard-wedge scanner works: the cursor stays in the LTT field.",
+      "Scan or type the LTT on each LOT, one at a time — the team lead has the LOTs in front of them, so every LTT entered is one that physically exists. A keyboard-wedge scanner works: the cursor stays in the LTT field.",
+      "No run entry: LTTs come off a shared stack across the die building, so consecutive numbers say nothing, and a range would invent LOTs for tickets on no LOT.",
       "Every LTT is checked as it is added: a new LTT becomes a new LOT; one already on this die adds to that LOT; one that belongs to another press or die is refused, naming where it belongs.",
       "New LOTs are created and released to Warehouse at save, exactly as the live release does, and the confirmation lists them by LTT. Die life advances by the shift's actual shots.",
-      "<b>Real data:</b> LTTs 10628556–572, 17 consecutive tickets, exist nowhere in the MES, and Machine 202's first record of the week is 06:19 on 09-17. Which shift each belongs to comes from the paper — the shift and quantities here are illustrative."],
-    src:"Try it: add 10628131 (a Machine 11 LOT — refused), 10628573 (already on this die), or a run such as 10628562 to 10628565."},
+      "<b>Real data:</b> LTTs 10628574–577 on the legible Machine 202 press sheet are LOTs that exist nowhere in the MES. The shift, LTTs and quantities in this step are illustrative."],
+    src:"Try it: add 10628131 (a Machine 11 LOT — refused), 10628573 (already on this die), or a new one such as 10628562."},
   "9":{q:"Which of these releases belong to which shift?", d:[
       "Machine 202 releases are entered at the press as each LOT fills, so <b>entered during</b> is reliable — and it disagrees with <b>filed under</b> for all 14.",
       "Select by the shift they were entered in, move each group. Still no pre-selected target.",
@@ -820,7 +820,6 @@ document.addEventListener("click", function(ev){
   else if(act==="save"){ S.saved[S.scen]=true; S.overlay=null; S.view="done"; if(S.scen==="m11") S.step="7"; }
   else if(act==="addrej"){ sheetOf(S.scen).rejects.push({qas:"",code:"104",part:"All",amt:""}); }
   else if(act==="rmrej"){ sheetOf(S.scen).rejects.splice(+a.getAttribute("data-i"),1); }
-  else if(act==="addmode"){ S.addMode=a.getAttribute("data-m"); S.addMsg=null; }
   else if(act==="addtags"){ addTags(); S.focusAdd=true; }
   else if(act==="rmtag"){ var tg=a.getAttribute("data-tag"); S.extra[S.scen]=(S.extra[S.scen]||[]).filter(function(t){ return t.tag!==tg; }); delete sheetOf(S.scen).qty[tg]; S.addMsg=null; }
   render();

@@ -1,7 +1,7 @@
 # Die Cast Shift Reconciliation -- Design Spec
 
 **Date:** 2026-09-21
-**Status:** Design, awaiting Jacques's review
+**Status:** Design -- review items settled with Jacques 2026-09-22 (§13)
 **Migration:** next free number at build time (`0096` when written -- re-check; the part-type
 recategorization release may claim it first)
 **Mockup:** `mockup/diecast_shift_reconciliation_mock.html`
@@ -37,12 +37,11 @@ The mis-filed entry is the pre-2026-09-18 shift-picker defect (the screen presel
 shift). The 09-18 release stops new ones; it did not correct the rows already written.
 
 **Machine 202, die asset # `DM0144` (6FB Oil Pan D):** the legible press sheet lists LTTs
-10628573-580; **four of them (10628574-577) do not exist in the MES**. The LTT sequence says more:
-**10628556 through 10628572 -- seventeen consecutive LTTs -- exist nowhere in the MES**, nor do
-10628582-585, and Machine 202's first record of the week is 06:19 on 09-17. That is consistent with
-the 09-16 night that triggered this never reaching the MES; which shift each LTT belongs to has to
-come from the paper. *(An earlier draft said "12 of 14 LTTs missing"; that mixed LTT numbers read
-from a second, illegible photo and is withdrawn.)*
+10628573-580; **four of them (10628574-577) do not exist in the MES** -- LOTs on paper and on
+physical baskets, nowhere in the system. *(Two claims from earlier drafts are withdrawn: "12 of 14
+LTTs missing" mixed numbers read from a second, illegible photo; and the absence of LTTs
+10628556-572 says nothing, because LTTs come off a shared stack across the die building, not in
+sequence per press -- see §6.3.)*
 All 33 credits in the week came through LOT release with a count and **no counter reading**; no
 shift-end number was entered on Machine 202 all week. Releases from 22:31 on 09-17 to 06:54 on 09-18
 are filed under 09-17 **1st** shift -- a whole night. Everything after the 09-18 release is filed
@@ -76,10 +75,10 @@ cutover stock-taking, not a workaround for missed shifts.
 | D10 | Reject rows gain **Approved by** -- the sheet's QAS column -- as `RejectEvent.ApprovedByUserId`, a FK to `Location.AppUser`, picked by initials or name. |
 | D11 | **One Save, one transaction, fixed order:** moves, then new LOTs, then credits and scrap, then count corrections (§3.5). |
 | D12 | Backfilled rows are stamped **at the end of their shift**; the header keeps the real time of entry. |
-| D13 | **Save closes every gap, in whichever direction** -- compensating rows for decreases (§3.6). *Decided while writing this spec; flagged for review.* |
+| D13 | **Save closes every gap, in whichever direction** -- compensating rows for decreases (§3.6). Confirmed by Jacques 2026-09-22. |
 | D14 | **Every critical decision is named on screen and confirmed before it is written** (§7). Team leads succeed by default; a mistake needs two deliberate acts. |
 | D15 | A shift that changes after the team lead opens it refuses to save (stale guard) and reloads. |
-| D16 | **A shift with nothing recorded is a first-class case.** The team lead enters the press sheet's LTTs -- one at a time, by scan, or as a run of consecutive LTTs with one quantity each -- and every LTT is resolved as it is entered (§6.3). |
+| D16 | **A shift with nothing recorded is a first-class case.** The team lead scans or types the LTT off each physical LOT, with its cavity and quantity, and every LTT is resolved as it is entered (§6.3). |
 
 ---
 
@@ -157,7 +156,7 @@ One transaction, in this order, because the watermark is per shift:
 On Machine 11 this is the difference between 1st shift gaining 1,121 shots (move first) and 130
 (move last).
 
-### 3.6 Decreases -- compensating rows (D13, for review)
+### 3.6 Decreases -- compensating rows (D13)
 
 The evidence so far needed only increases. But a reconciliation must be correctable -- a typo of
 10800 for 1080 cannot become permanent -- and "end to end" means the gap closes whichever way it
@@ -251,6 +250,8 @@ The reconciliation must be one transaction (D11), and a status-row proc cannot `
 (CLAUDE.md, INSERT-EXEC rule). The resolution is the one `Oee.ShiftOverride_Restamp` already uses:
 **internal workers that emit no result set and own no transaction**. Each live proc becomes a thin
 wrapper -- validation, then the worker -- and the reconciliation calls the same workers.
+
+**Six workers** (confirmed by Jacques 2026-09-22): five lifted out of four live procs, one new.
 
 | Worker | Extracted from | Guards that stay in the live wrapper only |
 |---|---|---|
@@ -357,11 +358,13 @@ string follows: *"no actual figure"*, *"actual total good"*, *"checked against t
 The Machine 202 evidence (§1) is the case this exists for: a whole shift of LOTs that are on paper
 and nowhere in the MES. The LOT list carries an entry bar, not a single `+` row:
 
-- **One LTT**, or **a run of LTTs** (first LTT, last LTT, quantity in each LOT). LTT tickets are
-  used in sequence off a pad, so a run is the fast path; the last LOT of a run is usually partial
-  and its quantity is changed in its own row. At most 40 in one run -- more is almost certainly a
-  mistyped number.
-- A keyboard-wedge scanner works: the cursor stays in the LTT field after each add.
+- **One LTT at a time, scanned or typed off the LOT itself.** The team lead reconciling a missing
+  shift has the LOTs in front of them -- the paper LTT is on each one -- so every LTT entered is one
+  that physically exists. A keyboard-wedge scanner works: the cursor stays in the LTT field after
+  each add.
+- **No run entry and no sequence hint.** LTTs are pulled from a shared stack across the die
+  building (Jacques, 2026-09-22), so consecutive numbers say nothing about which press, die or shift
+  used them. Entering a range would invent LOTs for tickets that are on no LOT.
 - On a multi-cavity die the entry carries the cavity (part + letter); on a single-cavity die it is
   implied.
 - **Every LTT is resolved the moment it is added**, never at save:
@@ -515,7 +518,7 @@ and again after -- the live procs must not change behaviour (§5.1).
 - re-file leaves `ShotCount` and every `PieceCount` untouched;
 - decreases: negative contribution only with a reconciliation id (live path still refused by the
   CHECK); negative scrap nets on `Reject_GetPartMatrix`; an anchor lowers the reading;
-- LTT collision named; a run of LTTs mints one LOT each; unused LTT minted and released to default storage;
+- LTT collision named; unused LTT minted and released to default storage;
 - stale stamp refuses; open shift refused; move outside +/-2 refused;
 - re-running an identical save writes nothing but a header;
 - `DieCastShift_ListUnreconciled` flags Machine-202-shaped data and clears on a header.
@@ -537,16 +540,17 @@ Touches prod data and the live die cast write path, so the full release contract
 scoped Core + MPP exports built from git, and a published runbook. The worker extraction is the
 risky half; it ships with its regression evidence in the runbook.
 
-## 13. For review
+## 13. Review items -- settled 2026-09-22
 
-1. **D13 -- decreases as compensating rows**, including relaxing
-   `CK_DieCastContribution_DeltaNonNeg` for reconciliation rows only. Decided while writing; not
-   discussed.
-2. **§5.1 -- worker extraction** touches the live die cast procs. It follows from D2 + D11 + the
-   INSERT-EXEC rule, but it is a larger change to live code than "extend the existing writers" may
-   have sounded.
-3. **§7.4 -- the four blocking checks**, especially the per-LOT shot ceiling.
-4. **Are LTTs used in sequence per press?** Machine 202's gap (10628556-572) suggests so. If they
-   are, the screen can list the unused LTTs between the last LOT recorded before the shift and the
-   first recorded after it -- a strong hint for what is missing. Not built into the design until
-   confirmed; a wrong assumption here would suggest LTTs that belong to another press.
+1. **D13 -- decreases as compensating rows.** Kept. The original entry stays exactly as the operator
+   made it, the correction sits beside it with who and why, and every existing total nets without a
+   read changing. `CK_DieCastContribution_DeltaNonNeg` is relaxed for reconciliation rows only; the
+   live screens still cannot write a negative. Voiding was rejected (every reader would have to skip
+   void rows); editing in place was rejected (the original disappears).
+2. **§5.1 -- six workers.** Confirmed: five extracted from `DieCastShiftOutput_Record` (two),
+   `DieCastLot_Open`, `DieCastLot_Release` and `Lot_RectifyPieceCount`, plus the new
+   `DieCastEntry_Restamp`. The live procs keep their checks and call the workers; the Save has its
+   own checks and calls the same workers, in one transaction.
+3. **§7.4 -- the four blocking checks.** Agreed as written.
+4. **LTT sequence.** No. LTTs come off a shared stack across the die building, so there is no
+   sequence hint and no run entry; the team lead scans or types the LTT on each physical LOT (§6.3).
