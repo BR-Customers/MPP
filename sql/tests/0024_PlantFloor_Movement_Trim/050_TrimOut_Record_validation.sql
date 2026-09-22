@@ -83,13 +83,14 @@ GO
 DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');   -- the trim SHOP: where a trim LOT actually sits
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
-DECLARE @DcOt BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'DieCastShot');
+-- v1.5: the D1 guard is trim-scoped, so the prior checkpoint must be a trim one (TrimIn).
+DECLARE @TrimInOt BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimIn');
 DECLARE @L3 BIGINT;
 CREATE TABLE #C3 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C3 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Src, @PieceCount = 20, @AppUserId = 1;
 SELECT @L3 = NewId FROM #C3; DROP TABLE #C3;
 CREATE TABLE #P (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-INSERT INTO #P EXEC Workorder.ProductionEvent_Record @LotId = @L3, @OperationTemplateId = @DcOt, @ShotCount = 10, @AppUserId = 1;
+INSERT INTO #P EXEC Workorder.ProductionEvent_Record @LotId = @L3, @OperationTemplateId = @TrimInOt, @ShotCount = 10, @AppUserId = 1;
 DROP TABLE #P;
 DECLARE @S3 BIT;
 CREATE TABLE #T3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
