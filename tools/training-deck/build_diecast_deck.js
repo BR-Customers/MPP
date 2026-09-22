@@ -236,7 +236,26 @@ function main() {
     }
   });
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
-  return pres.writeFile({ fileName: OUT }).then(() => console.log(`wrote ${OUT}`));
+  // Never overwrite hand edits. The deck is built from diecast_content.js, so
+  // anything typed into the .pptx in PowerPoint is lost on the next build --
+  // which happened once (2026-09-22). The hash of every deck we write is kept
+  // beside it; if the deck on disk no longer matches, someone edited it, and
+  // the new build goes to a side file instead. --force overwrites anyway.
+  const crypto = require('node:crypto');
+  const HASH = OUT + '.lastbuild';
+  const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+  let target = OUT;
+  if (!process.argv.includes('--force') && fs.existsSync(OUT) && fs.existsSync(HASH)
+      && sha(OUT) !== fs.readFileSync(HASH, 'utf8').trim()) {
+    target = OUT.replace(/\.pptx$/, '.new.pptx');
+    console.error(`  ${path.basename(OUT)} has been edited since the last build -- NOT overwriting it.`);
+    console.error('  Move the edits into tools/training-deck/diecast_content.js, then rebuild with --force.');
+    console.error(`  This build goes to ${path.basename(target)}.`);
+  }
+  return pres.writeFile({ fileName: target }).then(() => {
+    if (target === OUT) fs.writeFileSync(HASH, sha(OUT));
+    console.log(`wrote ${target}`);
+  });
 }
 
 main();
