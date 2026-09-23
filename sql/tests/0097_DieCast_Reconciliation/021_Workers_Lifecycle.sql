@@ -40,5 +40,38 @@ SET @v = (SELECT TOP 1 Description FROM Lots.LotEventLog WHERE (LotId = @New OR 
 EXEC test.Assert_Contains @TestName = N'[Mint] audit carries the caller''s note', @HaystackStr = @v, @NeedleStr = N'(shift reconciliation #9)';
 GO
 
+-- ---- Lot_ApplyPieceCountCorrection ----
+-- The Mint section above left 99700102 at zero. Credit it the way the live
+-- press path would, so the correction below has a real count to move off.
+EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700102', @ShiftKey = N'S1', @Pieces = 50,
+    @AtUtc = '2020-01-06T13:00:00';
+GO
+
+DECLARE @New BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700102');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason NVARCHAR(500) = N'Shift reconciliation #9: Shift not entered';
+DECLARE @v NVARCHAR(400), @Want NVARCHAR(400);
+
+EXEC Lots.Lot_ApplyPieceCountCorrection @LotId = @New, @NewPieceCount = 60, @Reason = @Reason,
+    @ExpectedPieceCount = 50, @AppUserId = @Usr;
+SET @v = (SELECT CONCAT(PieceCount, N'|', InventoryAvailable) FROM Lots.Lot WHERE Id = @New);
+EXEC test.Assert_IsEqual @TestName = N'[Correct] count and availability move by the same delta', @Expected = N'60|60', @Actual = @v;
+SET @v = (SELECT TOP 1 CONCAT(OldValue, N'|', NewValue, N'|', Reason) FROM Lots.LotAttributeChange
+          WHERE LotId = @New AND AttributeName = N'PieceCount' ORDER BY Id DESC);
+SET @Want = N'50|60|Shift reconciliation #9: Shift not entered';
+EXEC test.Assert_IsEqual @TestName = N'[Correct] the change row carries old, new and the reason', @Expected = @Want, @Actual = @v;
+
+DECLARE @Err NVARCHAR(4000) = N'(no error)';
+BEGIN TRY
+    EXEC Lots.Lot_ApplyPieceCountCorrection @LotId = @New, @NewPieceCount = 70, @Reason = @Reason,
+        @ExpectedPieceCount = 50, @AppUserId = @Usr;
+END TRY
+BEGIN CATCH
+    SET @Err = ERROR_MESSAGE();
+END CATCH
+EXEC test.Assert_Contains @TestName = N'[Correct] a stale expected count is refused',
+    @HaystackStr = @Err, @NeedleStr = N'changed while the correction was being entered';
+GO
+
 EXEC test.EndTestFile;
 GO

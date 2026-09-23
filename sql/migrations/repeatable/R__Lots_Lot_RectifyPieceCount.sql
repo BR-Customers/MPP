@@ -2,7 +2,12 @@
 -- Repeatable:  R__Lots_Lot_RectifyPieceCount.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-19
--- Version:     1.0
+-- Version:     1.1
+-- Change:      v1.1 (2026-09-22) -- the mutation moved into
+--              Lots.Lot_ApplyPieceCountCorrection (spec 2026-09-21 sec 5.1) so
+--              a die cast shift reconciliation corrects a count the same way,
+--              with the same LotAttributeChange trail. Every validation --
+--              status, MaxLotSize, the no-op, availability -- stays here.
 -- Description: Backlog 5.3. Operator-driven correction of a LOT's piece count
 --              from the LOT Detail screen, with a MANDATORY reason.
 --
@@ -224,77 +229,24 @@ BEGIN
         IF @NewInvAvail > @NewPieceCount SET @NewInvAvail = @NewPieceCount;
 
         -- ===== Mutation (atomic) =====
+        -- The write itself lives in Lots.Lot_ApplyPieceCountCorrection, a
+        -- worker with no result set, no transaction and no TRY/CATCH, so this proc
+        -- and Workorder.DieCastShiftReconciliation_Save correct a count the same
+        -- way. It takes the Lot row under UPDLOCK/HOLDLOCK and re-checks the count
+        -- under that lock: @OldPieceCount above was read UNLOCKED, before BEGIN
+        -- TRANSACTION, so it is passed in as @ExpectedPieceCount. A mismatch (or
+        -- availability going negative) RAISERRORs into this proc's CATCH.
+        -- @OldValue / @NewValue stay here -- the success message below builds from
+        -- them.
         DECLARE @OldValue NVARCHAR(500) = CAST(@OldPieceCount AS NVARCHAR(500));
         DECLARE @NewValue NVARCHAR(500) = CAST(@NewPieceCount AS NVARCHAR(500));
 
-        DECLARE @ActivityRaw NVARCHAR(MAX) =
-            @LotName + N' ' + Audit.ufn_MidDot() + N' Rectify ' + Audit.ufn_MidDot()
-            + N' PieceCount ' + @OldValue + NCHAR(8594) + @NewValue
-            + N' (' + @Reason + N')';
-        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
-
         BEGIN TRANSACTION;
-
-        INSERT INTO Lots.LotAttributeChange
-            (LotId, AttributeName, OldValue, NewValue, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
-        VALUES
-            (@LotId, N'PieceCount', @OldValue, @NewValue, @Reason, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
-
-        SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
-
-        -- Take the Lot row under UPDLOCK/HOLDLOCK while the materialized B5 quantities
-        -- are mutated (mirrors Lot_Split / RejectEvent_Record). The concurrency guard
-        -- below re-checks under the lock: the availability arithmetic above read
-        -- InventoryAvailable UNLOCKED, before BEGIN TRANSACTION.
-        DECLARE @LockedInvAvail INT, @LockedPieceCount INT;
-        SELECT @LockedInvAvail = l.InventoryAvailable, @LockedPieceCount = l.PieceCount
-        FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK) WHERE l.Id = @LotId;
-
-        IF @LockedPieceCount <> @OldPieceCount
-            RAISERROR(N'The LOT piece count changed while the correction was being entered. Reload and retry.', 16, 1);
-
-        SET @NewInvAvail = @LockedInvAvail + @Delta;
-        IF @NewInvAvail < 0
-            RAISERROR(N'The corrected piece count is below the pieces already consumed (concurrent update). Reload and retry.', 16, 1);
-        IF @NewInvAvail > @NewPieceCount SET @NewInvAvail = @NewPieceCount;
-
-        UPDATE Lots.Lot
-        SET PieceCount         = @NewPieceCount,
-            InventoryAvailable = @NewInvAvail,
-            UpdatedAt          = SYSUTCDATETIME(),
-            UpdatedByUserId    = @AppUserId
-        WHERE Id = @LotId;
-
-        DECLARE @OldJson NVARCHAR(MAX) = (
-            SELECT N'PieceCount' AS Attribute, @OldPieceCount AS Value,
-                   @OldInvAvail AS InventoryAvailable
-            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-
-        DECLARE @NewJson NVARCHAR(MAX) = (
-            SELECT N'PieceCount' AS Attribute, @NewPieceCount AS Value,
-                   @NewInvAvail AS InventoryAvailable, @Reason AS Reason,
-                   JSON_QUERY((SELECT l.Id, l.LotName AS Code, l.LotName AS Name
-                               FROM Lots.Lot l WHERE l.Id = @LotId
-                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Lot,
-                   JSON_QUERY((SELECT loc.Id, loc.Code, loc.Name
-                               FROM Location.Location loc
-                               INNER JOIN Lots.Lot l2 ON l2.CurrentLocationId = loc.Id
-                               WHERE l2.Id = @LotId
-                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Location
-            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-
-        EXEC Audit.Audit_LogOperation
-            @AppUserId          = @AppUserId,
-            @TerminalLocationId = @TerminalLocationId,
-            @LocationId         = NULL,
-            @LogEntityTypeCode  = N'Lot',
-            @EntityId           = @LotId,
-            @LogEventTypeCode   = N'LotUpdated',
-            @LogSeverityCode    = N'Info',
-            @Description        = @Activity,
-            @OldValue           = @OldJson,
-            @NewValue           = @NewJson;
-
+        EXEC Lots.Lot_ApplyPieceCountCorrection @LotId = @LotId, @NewPieceCount = @NewPieceCount,
+            @Reason = @Reason, @ExpectedPieceCount = @OldPieceCount,
+            @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
+        SET @NewId = (SELECT TOP 1 Id FROM Lots.LotAttributeChange
+                      WHERE LotId = @LotId AND AttributeName = N'PieceCount' ORDER BY Id DESC);
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
