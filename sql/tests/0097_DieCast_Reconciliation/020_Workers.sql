@@ -61,12 +61,20 @@ DECLARE @Lines NVARCHAR(MAX) =
     + N'{"toolCavityId":' + CAST(@CavB AS NVARCHAR(20)) + N',"scrapLines":[{"defectCodeId":' + CAST(@Code AS NVARCHAR(20))
     + N',"quantity":4,"approvedByUserId":' + CAST(@Usr AS NVARCHAR(20)) + N'}]}]';
 DECLARE @DieWide NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@Code AS NVARCHAR(20)) + N',"quantity":2}]';
+DECLARE @PieceCountBefore INT = (SELECT PieceCount FROM Lots.Lot WHERE Id = @Lot);
 EXEC Workorder.DieCastScrap_Write @ToolId = @Tool, @ShiftId = @S1, @CellLocationId = @Cell,
     @LinesJson = @Lines, @DieWideJson = @DieWide, @AppUserId = @Usr;
 
 SET @v = (SELECT CONCAT(ItemId, N'|', ToolCavityId, N'|', Remarks) FROM Workorder.RejectEvent WHERE LotId = @Lot AND Quantity = 3);
 SET @Want = CONCAT(test.ufn_RC(N'ItemA'), N'|', test.ufn_RC(N'CavA'), N'|Die-cast per-cavity scrap');
 EXEC test.Assert_IsEqual @TestName = N'[Scrap] a LOT line takes part and cavity from the LOT', @Expected = @Want, @Actual = @v;
+
+-- die cast scrap is ADDITIVE (0042 ScrapIsAdditive / spec 3.6): the bad
+-- casting never entered the basket, so a LOT-line scrap must NOT decrement
+-- PieceCount and must NOT close the LOT that scrap came off.
+SET @v = (SELECT CONCAT(l.PieceCount, N'|', sc.Code) FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @Lot);
+SET @Want = CONCAT(@PieceCountBefore, N'|Open');
+EXEC test.Assert_IsEqual @TestName = N'[Scrap] a LOT-line scrap is additive: PieceCount unchanged and the LOT stays Open', @Expected = @Want, @Actual = @v;
 
 SET @v = (SELECT CONCAT(ISNULL(CAST(LotId AS NVARCHAR(20)), N'null'), N'|', ItemId, N'|', ApprovedByUserId, N'|', Remarks)
           FROM Workorder.RejectEvent WHERE ToolCavityId = @CavB AND Quantity = 4);
@@ -88,9 +96,10 @@ EXEC test.Assert_IsEqual @TestName = N'[Scrap] @NoLotRemarks overrides the no-LO
 GO
 
 -- ---- DieCastLot_ReleaseMove ----
--- Seeds its own basket rather than reusing the one Task 6's DieCastLot_Mint
--- section creates: that section lives in 021_Workers_Lifecycle.sql, a separate
--- file, so this one must stand on its own.
+-- Seeds its own basket rather than reusing the one 021_Workers_Lifecycle.sql's
+-- DieCastLot_Mint section creates -- that section lives in a separate file, so
+-- this one must stand on its own. The mint+release-move combination itself is
+-- covered by the [Mint+ReleaseMove] section below.
 EXEC test.DieCastRecon_SeedLot @Ltt = N'99700107', @CavKey = N'CavB';
 GO
 
@@ -112,6 +121,38 @@ SET @v = CAST((SELECT COUNT(*) FROM Lots.LotStatusHistory h
                JOIN Lots.LotStatusCode o ON o.Id = h.OldStatusId JOIN Lots.LotStatusCode n ON n.Id = h.NewStatusId
                WHERE h.LotId = @New AND o.Code = N'Open' AND n.Code = N'Good') AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[ReleaseMove] status history Open -> Good', @Expected = N'1', @Actual = @v;
+GO
+
+-- ---- DieCastLot_Mint then DieCastLot_ReleaseMove ----
+-- DieCastLot_ReleaseMove's own header claims "a LOT created by a shift
+-- reconciliation leaves the press exactly as a live release does" -- this is
+-- the mint-then-release path that claim describes. 99700107 above went
+-- through ReleaseMove having been Open->Good via LotStatusHistory only, so by
+-- this point CavB is free again; mint a fresh basket on it the same way
+-- DieCastShiftReconciliation_Save would, credit it, release-move it, and
+-- compare its end state against the fixture-seeded case directly above.
+DECLARE @Cav BIGINT = test.ufn_RC(N'CavB'), @ItemB BIGINT = test.ufn_RC(N'ItemB');
+DECLARE @Tool BIGINT = test.ufn_RC(N'Tool'), @Cell BIGINT = test.ufn_RC(N'Cell');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr'), @Whse BIGINT = test.ufn_RC(N'Whse'), @S1 BIGINT = test.ufn_RC(N'S1');
+DECLARE @v NVARCHAR(400), @Want NVARCHAR(400);
+
+EXEC Lots.DieCastLot_Mint @LotName = N'99700108', @ItemId = @ItemB, @ToolId = @Tool,
+    @ToolCavityId = @Cav, @CurrentLocationId = @Cell, @AppUserId = @Usr;
+DECLARE @Minted BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700108');
+
+EXEC Workorder.DieCastCredit_Write @LotId = @Minted, @ShiftId = @S1, @PieceDelta = 20, @CellLocationId = @Cell, @AppUserId = @Usr;
+EXEC Lots.DieCastLot_ReleaseMove @LotId = @Minted, @StorageLocationId = @Whse, @AppUserId = @Usr;
+
+SET @v = (SELECT CONCAT(sc.Code, N'|', l.CurrentLocationId, N'|', l.PieceCount)
+          FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @Minted);
+SET @Want = CONCAT(N'Good|', @Whse, N'|20');
+EXEC test.Assert_IsEqual @TestName = N'[Mint+ReleaseMove] a minted LOT leaves the press the same way a fixture-seeded one does: Good, at storage, count untouched', @Expected = @Want, @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM Lots.LotMovement WHERE LotId = @Minted AND FromLocationId = @Cell AND ToLocationId = @Whse) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Mint+ReleaseMove] movement press -> storage', @Expected = N'1', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM Lots.LotStatusHistory h
+               JOIN Lots.LotStatusCode o ON o.Id = h.OldStatusId JOIN Lots.LotStatusCode n ON n.Id = h.NewStatusId
+               WHERE h.LotId = @Minted AND o.Code = N'Open' AND n.Code = N'Good') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Mint+ReleaseMove] status history Open -> Good', @Expected = N'1', @Actual = @v;
 GO
 
 EXEC test.EndTestFile;

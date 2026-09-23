@@ -176,10 +176,14 @@ BEGIN
             WHERE a.ToolId = l.ToolId AND a.ReleasedAt IS NULL
             ORDER BY a.AssignedAt DESC, a.Id DESC;
 
-        -- v2.2: @RelItemId joins the pair because the closing scrap rows STAMP
-        -- their own identity (0084) rather than reaching it through the LOT.
-        DECLARE @RelToolId BIGINT, @RelToolCavityId BIGINT, @RelItemId BIGINT;
-        SELECT @RelToolId = ToolId, @RelToolCavityId = ToolCavityId, @RelItemId = ItemId
+        -- @RelToolId / @RelToolCavityId resolved once here for the watermark
+        -- lookups below and the worker calls further down. (v2.3: this block
+        -- used to also resolve @RelItemId so the closing scrap insert could
+        -- stamp it -- that insert now lives in Workorder.DieCastScrap_Write,
+        -- which resolves ItemId itself via its own join to Lots.Lot, so
+        -- @RelItemId became dead here and was removed.)
+        DECLARE @RelToolId BIGINT, @RelToolCavityId BIGINT;
+        SELECT @RelToolId = ToolId, @RelToolCavityId = ToolCavityId
         FROM Lots.Lot WHERE Id = @LotId;
 
         IF @CounterReading IS NOT NULL AND @CounterReading < 0

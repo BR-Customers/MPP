@@ -9,7 +9,20 @@
 --              unchanged; this proc keeps every validation, the watermark
 --              guard and the die shot-count update.
 --              The per-LOT, per-cavity and die-wide scrap inserts are now
---              Workorder.DieCastScrap_Write, called once after the credits.
+--              Workorder.DieCastScrap_Write, called once after the credits --
+--              an ORDERING change, not just an extraction. Pre-3.1, each
+--              line's scrap wrote inside the same cursor iteration as its
+--              credit (credit, then that line's scrap, then the next line's
+--              credit, and so on). v3.1 runs every line's credit first, then
+--              calls the scrap worker once, batched, after the cursor closes.
+--              This is behaviour-preserving because nothing a scrap insert
+--              reads depends on write order: Workorder.DieCastCredit_Write
+--              touches only Lot.PieceCount / Lot.InventoryAvailable /
+--              Lot.UpdatedAt / Lot.UpdatedByUserId, and no scrap row (per-LOT,
+--              per-cavity or die-wide) reads any of those four columns --
+--              scrap is additive and record-only (0042 ScrapIsAdditive),
+--              stamping its identity from the LOT/cavity/die, never from a
+--              piece count. Confirmed safe in code review 2026-09-22.
 -- Change:      v3.0 -- die-cast quantity + scrap model, spec sec 5.3. Each
 --              @LinesJson line may now carry a bare CAVITY (toolCavityId with
 --              a NULL lotId): scrap on such a line writes a RejectEvent with
