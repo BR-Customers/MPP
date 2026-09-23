@@ -21,7 +21,7 @@ WITH o AS (
     SELECT s.Id, s.ActualEnd, ROW_NUMBER() OVER (ORDER BY s.ActualStart, s.Id) AS rn
     FROM Oee.Shift s
 )
-SELECT o.Id AS ShiftId, o.rn - me.rn AS Offset
+SELECT o.Id AS ShiftId, CAST(o.rn - me.rn AS INT) AS Offset
 FROM o
 CROSS JOIN (SELECT rn FROM o WHERE Id = @ShiftId) me
 WHERE o.rn BETWEEN me.rn - @Radius AND me.rn + @Radius

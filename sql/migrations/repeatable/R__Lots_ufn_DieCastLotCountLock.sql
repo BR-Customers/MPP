@@ -29,7 +29,7 @@ RETURN
 SELECT CAST(CASE WHEN x.Reason IS NULL THEN 0 ELSE 1 END AS BIT) AS IsLocked,
        x.Reason AS LockReason
 FROM (
-    SELECT COALESCE(
+    SELECT CAST(COALESCE(
         (SELECT TOP 1 N'Counted at ' + oty.Name + N' '
                 + CONVERT(NVARCHAR(16), CAST(pe.EventAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(0)), 120)
          FROM Workorder.ProductionEvent pe
@@ -53,6 +53,6 @@ FROM (
          WHERE l.Id = @LotId AND (sc.Code = N'Closed' OR sc.BlocksProduction = 1)),
         (SELECT TOP 1 N'Consumed into another LOT'
          FROM Lots.LotGenealogy g WHERE g.ParentLotId = @LotId)
-    ) AS Reason
+    ) AS NVARCHAR(200)) AS Reason
 ) x;
 GO
