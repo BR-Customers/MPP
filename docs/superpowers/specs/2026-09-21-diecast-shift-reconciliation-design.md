@@ -554,3 +554,25 @@ risky half; it ships with its regression evidence in the runbook.
 3. **§7.4 -- the four blocking checks.** Agreed as written.
 4. **LTT sequence.** No. LTTs come off a shared stack across the die building, so there is no
    sequence hint and no run entry; the team lead scans or types the LTT on each physical LOT (§6.3).
+
+---
+
+## 14. Amendments from the implementation plan (2026-09-22)
+
+Found while writing `docs/superpowers/plans/2026-09-22-diecast-shift-reconciliation-sql.md`
+against the code. Where these disagree with earlier sections, these win.
+
+| # | Amendment | Why |
+|---|---|---|
+| A1 | Backfilled rows are stamped **one second before** the shift's `ActualEnd` (UTC), not at it. | Shift windows are `[start, end)`: a row stamped exactly at the end resolves to the *next* shift. |
+| A2 | `Oee.ShiftOverride_Restamp` **skips** contribution rows that carry a `ReconciliationId` or appear in `Workorder.DieCastReconciliationMove`. | The restamp re-derives the shift from `EventAt`. A moved entry keeps its real `EventAt` (09-17 09:35), so the next override on that press would silently move it back. The team lead's decision wins over the time-based resolver. |
+| A3 | The shift's counter reading is set by **an anchor written at save** (`DieCastCounterAnchor`, new reason `ShiftReconciliation`, `EventAt` = the save time), up or down. Reconciliation credit rows carry **no** reading. | The latest anchor floors both watermarks and discards earlier readings -- one mechanism for increases and decreases. The new reason is hidden from the operators' *Fix counter* list. |
+| A4 | Moves cover **contribution and reject rows** only. | Anchors are counter resets; filed against the wrong shift is not a case the evidence showed. |
+| A5 | **No `@CountsJson`.** Every released, not-locked LOT with a gap has its count corrected; the confirmation lists them. | The state decides, not the team lead -- one fewer decision on the critical path. |
+| A6 | The single `_Load` proc is replaced by `_GetHeader`, `_ListEntries`, `_ListLots`, `_ListRejects`, `_ListMoveTargets`, plus `Lots.DieCastLot_ResolveLtt`. | One result set per proc (FDS-11-011). |
+| A7 | Reject and warm-up gaps are computed **per active cavity**. A reject line's amount must divide evenly across the cavities it covers ("All" = every active cavity; a part = that part's cavities), else it is refused with a plain message. | The recorded rows are per cavity; so is the comparison. |
+| A8 | Header columns are `ActualTotalShots`, `ActualGoodShots`, `ActualWarmUpShots` (were `Sheet*`). | "Actual, never Sheet" (2026-09-21). |
+| A9 | A new LOT's part is **not** required to have a published Die Cast route. | A configuration gap must not stop production that happened from being recorded -- the `0084` D4 principle. |
+| A10 | The count lock also covers LOTs whose status blocks production (Hold, Scrap). | `Lot_RectifyPieceCount` refuses them too. |
+| A11 | LOT or reject lines require the three actual totals; a save with only moves does not. | The blocking checks (§7.4) cannot run without them. |
+| A12 | The six workers are named `Workorder.DieCastCredit_Write`, `Workorder.DieCastScrap_Write`, `Lots.DieCastLot_Mint`, `Lots.DieCastLot_ReleaseMove`, `Lots.Lot_ApplyPieceCountCorrection`, `Workorder.DieCastEntry_Restamp`. | Final names. |
