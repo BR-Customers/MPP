@@ -916,6 +916,35 @@
                               }
                             },
                             "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "LastPartialLabel"
+                            },
+                            "propConfig": {
+                              "position.display": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "len({this.props.text}) \u003e 0"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "runScript(\"BlueRidge.Workorder.TrimPartial.latestCheckpointLabel\", 0, {view.custom.activeLotId}, {view.custom.refreshToken})"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-inv-sub"
+                              }
+                            },
+                            "type": "ia.display.label"
                           }
                         ],
                         "meta": {
@@ -1185,6 +1214,41 @@
                                   "component": {
                                     "onActionPerformed": {
                                       "config": {
+                                        "script": "\tself.view.rootContainer.openTrimPartial()"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
+                                "meta": {
+                                  "name": "BtnTrimPartial"
+                                },
+                                "propConfig": {
+                                  "props.enabled": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "!isNull({view.custom.activeLotId}) \u0026\u0026 toStr({view.custom.activeLotId}) !\u003d \"\""
+                                      },
+                                      "type": "expr"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary pf-btn-large",
+                                    "minHeight": "44px",
+                                    "minWidth": "160px"
+                                  },
+                                  "text": "Record partial trim - shift end"
+                                },
+                                "type": "ia.input.button"
+                              },
+                              {
+                                "events": {
+                                  "component": {
+                                    "onActionPerformed": {
+                                      "config": {
                                         "script": "\tself.view.rootContainer.submitTrimOut()"
                                       },
                                       "scope": "G",
@@ -1433,10 +1497,22 @@
           "name": "startup",
           "params": [],
           "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)\n"
+        },
+        {
+          "name": "openTrimPartial",
+          "params": [],
+          "script": "\tlotId \u003d self.view.custom.activeLotId\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Select the LOT on the press first.\", \"warning\")\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\t\"mpp-trim-partial\",\n\t\t\"BlueRidge/Components/Popups/TrimPartial\",\n\t\tparams\u003d{\n\t\t\t\"lotId\": lotId,\n\t\t\t\"lotName\": self.view.custom.activeLotName,\n\t\t\t\"pieceCount\": self.view.custom.lotPieceCount,\n\t\t\t\"scrapLines\": BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.scrapLines) or [],\n\t\t\t\"scrapTotal\": self.view.custom.scrapTotal or 0,\n\t\t},\n\t\tmodal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
         }
       ],
       "extensionFunctions": null,
       "messageHandlers": [
+        {
+          "messageType": "trimPartialRecorded",
+          "pageScope": true,
+          "script": "\tself.view.custom.activeLotId \u003d None\n\tself.view.custom.activeLotName \u003d None\n\tself.view.custom.outScan \u003d \"\"\n\tself.view.custom.shotCount \u003d None\n\tself.view.custom.lotPieceCount \u003d None\n\tself.view.custom.scrapLines \u003d []\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\tself.refreshScrapUi()",
+          "sessionScope": false,
+          "viewScope": false
+        },
         {
           "messageType": "trimLotSelected",
           "pageScope": true,
