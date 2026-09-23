@@ -4202,6 +4202,40 @@ BEGIN
                          @level1type = N'TABLE',  @level1name = N'RejectEvent',
                          @level2type = N'COLUMN', @level2name = N'AppUserId';
     END
+
+    IF COL_LENGTH(N'[Workorder].[RejectEvent]', N'ApprovedByUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[RejectEvent]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[RejectEvent]'), N'ApprovedByUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The press sheet''s QAS column: who signed off the reject. Recorded by the shift reconciliation (migration 0097); the live Reconcile Shift screen can adopt it later.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'RejectEvent',
+                         @level2type = N'COLUMN', @level2name = N'ApprovedByUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The press sheet''s QAS column: who signed off the reject. Recorded by the shift reconciliation (migration 0097); the live Reconcile Shift screen can adopt it later.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'RejectEvent',
+                         @level2type = N'COLUMN', @level2name = N'ApprovedByUserId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[RejectEvent]', N'ReconciliationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[RejectEvent]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[RejectEvent]'), N'ReconciliationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Set when a shift reconciliation wrote this row, including a compensating row with a negative Quantity that cancels scrap recorded in error.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'RejectEvent',
+                         @level2type = N'COLUMN', @level2name = N'ReconciliationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Set when a shift reconciliation wrote this row, including a compensating row with a negative Quantity that cancels scrap recorded in error.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'RejectEvent',
+                         @level2type = N'COLUMN', @level2name = N'ReconciliationId';
+    END
 END
 GO
 
@@ -4337,6 +4371,23 @@ BEGIN
                          @level0type = N'SCHEMA', @level0name = N'Workorder',
                          @level1type = N'TABLE',  @level1name = N'DieCastContribution',
                          @level2type = N'COLUMN', @level2name = N'ShotCounterReading';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastContribution]', N'ReconciliationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastContribution]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastContribution]'), N'ReconciliationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Set when a shift reconciliation wrote this row (migration 0097). It is also what makes a negative PieceDelta legal: CK_DieCastContribution_DeltaNonNeg is PieceDelta >= 0 OR ReconciliationId IS NOT NULL, so a compensating row can take production back off a shift while no live screen can. Rows carrying it are excluded from Oee.ShiftOverride_Restamp.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastContribution',
+                         @level2type = N'COLUMN', @level2name = N'ReconciliationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Set when a shift reconciliation wrote this row (migration 0097). It is also what makes a negative PieceDelta legal: CK_DieCastContribution_DeltaNonNeg is PieceDelta >= 0 OR ReconciliationId IS NOT NULL, so a compensating row can take production back off a shift while no live screen can. Rows carrying it are excluded from Oee.ShiftOverride_Restamp.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastContribution',
+                         @level2type = N'COLUMN', @level2name = N'ReconciliationId';
     END
 END
 GO
@@ -4490,6 +4541,499 @@ BEGIN
                          @level0type = N'SCHEMA', @level0name = N'Workorder',
                          @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
                          @level2type = N'COLUMN', @level2name = N'EventAt';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastCounterAnchor]', N'ReconciliationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastCounterAnchor]'), N'ReconciliationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Set when the anchor was written by a shift reconciliation declaring the shift''s actual total shots (migration 0097), rather than by an operator at the press. The reason code is ShiftReconciliation, which the Fix counter dialog does not offer.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'ReconciliationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Set when the anchor was written by a shift reconciliation declaring the shift''s actual total shots (migration 0097), rather than by an operator at the press. The reason code is ShiftReconciliation, which the Fix counter dialog does not offer.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastCounterAnchor',
+                         @level2type = N'COLUMN', @level2name = N'ReconciliationId';
+    END
+END
+GO
+
+-- Workorder.DieCastReconciliationReason
+IF OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0097 (2026-09-22) - die cast shift reconciliation (spec docs/superpowers/specs/2026-09-21-diecast-shift-reconciliation-design.md). Why a team lead is reconciling a past shift. Shaped like DieCastVarianceReason: a code, a name, and a RequiresNote flag the screen enforces at the field.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0097 (2026-09-22) - die cast shift reconciliation (spec docs/superpowers/specs/2026-09-21-diecast-shift-reconciliation-design.md). Why a team lead is reconciling a past shift. Shaped like DieCastVarianceReason: a code, a name, and a RequiresNote flag the screen enforces at the field.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason';
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationReason]', N'Id') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]'), N'Id', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Surrogate key.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Surrogate key.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationReason]', N'Code') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]'), N'Code', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'MissedEntry, WrongShift, WrongNumbers, Other.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'MissedEntry, WrongShift, WrongNumbers, Other.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'Code';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationReason]', N'Name') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]'), N'Name', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'What the team lead reads in the dropdown.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'Name';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'What the team lead reads in the dropdown.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'Name';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationReason]', N'RequiresNote') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]'), N'RequiresNote', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'1 for Other: the reason alone does not say what happened.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'RequiresNote';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'1 for Other: the reason alone does not say what happened.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'RequiresNote';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationReason]', N'SortOrder') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationReason]'), N'SortOrder', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Dropdown order.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'SortOrder';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Dropdown order.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationReason',
+                         @level2type = N'COLUMN', @level2name = N'SortOrder';
+    END
+END
+GO
+
+-- Workorder.DieCastShiftReconciliation
+IF OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0097 (2026-09-22). One row per save of the shift reconciliation screen: the team lead settling one past (Shift, Press, Die) against its press sheet. It is three things at once - the late-entry marker every row it wrote points back to, the audit anchor for "what did this reconciliation change", and what clears the dashboard''s not-reconciled signal for that shift.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0097 (2026-09-22). One row per save of the shift reconciliation screen: the team lead settling one past (Shift, Press, Die) against its press sheet. It is three things at once - the late-entry marker every row it wrote points back to, the audit anchor for "what did this reconciliation change", and what clears the dashboard''s not-reconciled signal for that shift.',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation';
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'Id') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'Id', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Surrogate key. Quoted in every row it wrote (ReconciliationId) and in the reasons on its LotAttributeChange rows.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Surrogate key. Quoted in every row it wrote (ReconciliationId) and in the reasons on its LotAttributeChange rows.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'ShiftId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'ShiftId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The shift being reconciled. Always closed - the live screen owns the open one.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The shift being reconciled. Always closed - the live screen owns the open one.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ShiftId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'CellLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'CellLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The press.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'CellLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The press.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'CellLocationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'ToolId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'ToolId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The die, by asset number.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ToolId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The die, by asset number.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ToolId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'ReasonId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'ReasonId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Why.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ReasonId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Why.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ReasonId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'Note') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'Note', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Required when the reason says so.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'Note';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Required when the reason says so.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'Note';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'ActualTotalShots') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'ActualTotalShots', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The press sheet''s total shots, as typed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ActualTotalShots';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The press sheet''s total shots, as typed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ActualTotalShots';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'ActualGoodShots') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'ActualGoodShots', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Good shots, as typed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ActualGoodShots';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Good shots, as typed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ActualGoodShots';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'ActualWarmUpShots') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'ActualWarmUpShots', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Warm-up shots, as typed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ActualWarmUpShots';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Warm-up shots, as typed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'ActualWarmUpShots';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'DieShotCountBefore') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'DieShotCountBefore', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Tools.Tool.ShotCount before the save.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'DieShotCountBefore';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Tools.Tool.ShotCount before the save.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'DieShotCountBefore';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'DieShotCountAfter') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'DieShotCountAfter', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'And after - the shift''s shots, added or removed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'DieShotCountAfter';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'And after - the shift''s shots, added or removed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'DieShotCountAfter';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'AppUserId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'AppUserId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The team lead, from the AD sign-in that opened the screen.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'AppUserId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The team lead, from the AD sign-in that opened the screen.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'AppUserId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'TerminalLocationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'TerminalLocationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Where it was done.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Where it was done.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'TerminalLocationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastShiftReconciliation]', N'CreatedAt') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastShiftReconciliation]'), N'CreatedAt', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The real time of entry (UTC). The rows it writes are stamped one second inside the shift instead - that is the point of keeping both.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'CreatedAt';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The real time of entry (UTC). The rows it writes are stamped one second inside the shift instead - that is the point of keeping both.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastShiftReconciliation',
+                         @level2type = N'COLUMN', @level2name = N'CreatedAt';
+    END
+END
+GO
+
+-- Workorder.DieCastReconciliationMove
+IF OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.extended_properties
+               WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]')
+                 AND minor_id = 0
+                 AND name = N'MS_Description')
+        EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0097 (2026-09-22). The durable record of a row re-filed against another shift. The ShiftId itself is re-stamped in place - the same thing Oee.ShiftOverride_Restamp does - so this table is how the system remembers where the row came from, and how ShiftOverride_Restamp knows to leave it alone afterwards (a time-based resolver would otherwise drag a re-filed row back the next time an override is applied to that press).',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove';
+    ELSE
+        EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0097 (2026-09-22). The durable record of a row re-filed against another shift. The ShiftId itself is re-stamped in place - the same thing Oee.ShiftOverride_Restamp does - so this table is how the system remembers where the row came from, and how ShiftOverride_Restamp knows to leave it alone afterwards (a time-based resolver would otherwise drag a re-filed row back the next time an override is applied to that press).',
+                     @level0type = N'SCHEMA', @level0name = N'Workorder',
+                     @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove';
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationMove]', N'Id') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]'), N'Id', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Surrogate key.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Surrogate key.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'Id';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationMove]', N'ReconciliationId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]'), N'ReconciliationId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The save that moved it.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'ReconciliationId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The save that moved it.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'ReconciliationId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationMove]', N'LogEntityTypeId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]'), N'LogEntityTypeId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Which table: DieCastContribution or RejectEvent.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'LogEntityTypeId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Which table: DieCastContribution or RejectEvent.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'LogEntityTypeId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationMove]', N'EntityId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]'), N'EntityId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The row''s id in that table.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'EntityId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The row''s id in that table.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'EntityId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationMove]', N'FromShiftId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]'), N'FromShiftId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Where it was filed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'FromShiftId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Where it was filed.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'FromShiftId';
+    END
+
+    IF COL_LENGTH(N'[Workorder].[DieCastReconciliationMove]', N'ToShiftId') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[DieCastReconciliationMove]'), N'ToShiftId', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Where it belongs.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'ToShiftId';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Where it belongs.',
+                         @level0type = N'SCHEMA', @level0name = N'Workorder',
+                         @level1type = N'TABLE',  @level1name = N'DieCastReconciliationMove',
+                         @level2type = N'COLUMN', @level2name = N'ToShiftId';
     END
 END
 GO
@@ -6708,4 +7252,4 @@ BEGIN
 END
 GO
 
--- 69 table descriptions, 316 column descriptions
+-- 72 table descriptions, 346 column descriptions

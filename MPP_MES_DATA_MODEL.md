@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 3.1 | 2026-09-22 | Blue Ridge Automation | **Die cast shift reconciliation** (migration `0097`, spec `docs/superpowers/specs/2026-09-21-diecast-shift-reconciliation-design.md`). A team lead settles one past `(Shift, Press, Die)` against its press sheet: production that was never entered, entries filed against the wrong shift, and numbers that disagree — in either direction. New `Workorder.DieCastShiftReconciliation` (header), `DieCastReconciliationMove` (what was re-filed) and `DieCastReconciliationReason`; `ReconciliationId` on `DieCastContribution`, `RejectEvent` and `DieCastCounterAnchor`; `RejectEvent.ApprovedByUserId` (the sheet's QAS). `CK_DieCastContribution_DeltaNonNeg` relaxed so a **reconciliation row, and only a reconciliation row**, may carry a negative delta — corrections are compensating rows, never edits to recorded history. |
 | 3.0 | 2026-09-22 | Blue Ridge Automation | **Trim partial checkpoint (migration `0096`).** `Workorder.ProductionEvent.ShiftId` added. A blast operator can record the total trimmed so far on the LOT at shift end (`Workorder.TrimPartial_Record`, route `TrimIn` template, LOT does not move); Trim OUT is unchanged for the operator and now stamps the shift. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. |
 | 2.9 | 2026-09-18 | Blue Ridge Automation | **`Parts.ItemLocation.MaxQuantity` description corrected** -- it was still described as a per-scan-in hint (v1.8/OI-18 wording). As of the Line Inventory sidebar (rev 2, migration `0091`+), it is the consumption-point lineside cap `Lots.Lot_Create` enforces against a Received LOT, AND the colour scale for the Line Inventory panel (orange at or below 30% of Max, red at or below 10%), editable from the shop floor through the Tolerances popup (`Parts.ItemLocation_SetMaxQuantity`). No schema change -- documentation catching up to the rev-2 build. |
 | 2.8 | 2026-09-17 | Blue Ridge Automation | Parts.Item.LowInventoryHorizon retired (migration 0094); Line Inventory colours by ItemLocation.MaxQuantity. |
@@ -1125,6 +1126,8 @@ Detailed reject/scrap records.
 | Remarks | NVARCHAR(500) | NULL | |
 | AppUserId | BIGINT | FK → AppUser.Id, NOT NULL | Operator who recorded the reject |
 | RecordedAt | DATETIME2(3) | NOT NULL | |
+| ApprovedByUserId | BIGINT | NULL, FK → Location.AppUser | The press sheet's QAS column: who signed off the reject. Recorded by the shift reconciliation (migration `0097`); the live Reconcile Shift screen can adopt it later. |
+| ReconciliationId | BIGINT | NULL, FK → Workorder.DieCastShiftReconciliation | Set when a shift reconciliation wrote this row, including a compensating row with a negative `Quantity` that cancels scrap recorded in error. |
 
 ### DieCastContribution
 
@@ -1141,6 +1144,7 @@ Detailed reject/scrap records.
 | EventAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | |
 | CellLocationId | BIGINT | FK → Location.Location.Id (Cell), NULL | The PRESS. Added migration `0061`. Load-bearing for the shot-reading chain: both watermarks are scoped by it, so a die moved to another press is a different counter space and a changeover to another die on the same press has different `ToolCavity` rows — both reset the chain with no special-casing. |
 | ShotCounterReading | INT | NULL, CHECK (NULL OR >= 0) | **Added migration `0073` (2026-09-09) — shot-reading chain.** The press-counter reading at which this ledger row was taken. The press counter resets each shift, so the number the operator types is a READING, not an increment; a basket's credit is `(reading − the cavity's watermark)`. Both watermarks derive from this one column — `Workorder.ufn_CavityShotWatermark` scoped `(ToolCavityId, ShiftId, CellLocationId)` for the per-basket credit, `Workorder.ufn_DieShotWatermark` scoped `(ToolId, ShiftId, CellLocationId)` for the `Tools.Tool.ShotCount` increment. NULL means "recorded before migration `0073`"; 0073 backfilled every such row as a running sum of `PieceDelta` per (cavity, shift, press). |
+| ReconciliationId | BIGINT | NULL, FK → Workorder.DieCastShiftReconciliation | Set when a shift reconciliation wrote this row (migration `0097`). It is also what makes a **negative** `PieceDelta` legal: `CK_DieCastContribution_DeltaNonNeg` is `PieceDelta >= 0 OR ReconciliationId IS NOT NULL`, so a compensating row can take production back off a shift while no live screen can. Rows carrying it are excluded from `Oee.ShiftOverride_Restamp`. |
 
 **Indexes:** `IX_DieCastContribution_Lot (LotId)`; `IX_DieCastContribution_Shift (ShiftId, LotId)` (per-shift-per-cavity reads for the tally + breakdown procs); `IX_DieCastContribution_Shift_Cell_Reading (ShiftId, CellLocationId) INCLUDE (LotId, ShotCounterReading)` (migration `0073` — the watermark access path).
 
@@ -1182,10 +1186,61 @@ With no anchor the expression collapses to the pre-`0074` `MAX(...)`, so nothing
 | AppUserId | BIGINT | FK → Location.AppUser.Id, NOT NULL | Who declared it. Any signed-in operator — no AD elevation: they are the only person who can see the press counter, and gating on a supervisor strands a night shift at a wall. |
 | TerminalLocationId | BIGINT | FK → Location.Location.Id (Terminal), NULL | |
 | EventAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | Both watermark functions compare contribution `EventAt` against this. |
+| ReconciliationId | BIGINT | NULL, FK → Workorder.DieCastShiftReconciliation | Set when the anchor was written by a shift reconciliation declaring the shift's actual total shots (migration `0097`), rather than by an operator at the press. The reason code is `ShiftReconciliation`, which the Fix counter dialog does not offer. |
 
 **Indexes:** `IX_DieCastCounterAnchor_Scope (ToolId, ShiftId, CellLocationId, EventAt DESC, Id DESC) INCLUDE (DeclaredReading)` — the whole access path for both watermark functions.
 
 **Audit:** `Audit.LogEventType` `DieCastCounterAnchored`, against the existing `Tool` entity type (31) — an anchor is a statement about a die on a press, not about any one LOT. Logged at `Warning` severity with the old and new watermark in `OldValue` / `NewValue`.
+
+---
+
+### DieCastReconciliationReason
+
+**Added migration `0097` (2026-09-22) — die cast shift reconciliation** (spec `docs/superpowers/specs/2026-09-21-diecast-shift-reconciliation-design.md`). Why a team lead is reconciling a past shift. Shaped like `DieCastVarianceReason`: a code, a name, and a `RequiresNote` flag the screen enforces at the field.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK, IDENTITY | Surrogate key. |
+| Code | NVARCHAR(50) | NOT NULL, UNIQUE | `MissedEntry`, `WrongShift`, `WrongNumbers`, `Other`. |
+| Name | NVARCHAR(100) | NOT NULL | What the team lead reads in the dropdown. |
+| RequiresNote | BIT | NOT NULL, default 0 | 1 for `Other`: the reason alone does not say what happened. |
+| SortOrder | INT | NOT NULL, default 0 | Dropdown order. |
+
+### DieCastShiftReconciliation
+
+**Added migration `0097` (2026-09-22).** One row per save of the shift reconciliation screen: the team lead settling one past `(Shift, Press, Die)` against its press sheet. It is three things at once — the **late-entry marker** every row it wrote points back to, the **audit anchor** for "what did this reconciliation change", and what **clears the dashboard's not-reconciled signal** for that shift.
+
+The actual figures are stored as typed, alongside the die's lifetime shot count either side, so the decision is legible years later without recomputing anything.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK, IDENTITY | Surrogate key. Quoted in every row it wrote (`ReconciliationId`) and in the reasons on its `LotAttributeChange` rows. |
+| ShiftId | BIGINT | NOT NULL, FK → Oee.Shift | The shift being reconciled. Always closed — the live screen owns the open one. |
+| CellLocationId | BIGINT | NOT NULL, FK → Location.Location | The press. |
+| ToolId | BIGINT | NOT NULL, FK → Tools.Tool | The die, by asset number. |
+| ReasonId | BIGINT | NOT NULL, FK → Workorder.DieCastReconciliationReason | Why. |
+| Note | NVARCHAR(500) | NULL | Required when the reason says so. |
+| ActualTotalShots | INT | NULL | The press sheet's total shots, as typed. |
+| ActualGoodShots | INT | NULL | Good shots, as typed. |
+| ActualWarmUpShots | INT | NULL | Warm-up shots, as typed. |
+| DieShotCountBefore | INT | NOT NULL | `Tools.Tool.ShotCount` before the save. |
+| DieShotCountAfter | INT | NOT NULL | And after — the shift's shots, added or removed. |
+| AppUserId | BIGINT | NOT NULL, FK → Location.AppUser | The team lead, from the AD sign-in that opened the screen. |
+| TerminalLocationId | BIGINT | NULL, FK → Location.Location | Where it was done. |
+| CreatedAt | DATETIME2(3) | NOT NULL, default SYSUTCDATETIME() | The real time of entry (UTC). The rows it writes are stamped one second inside the shift instead — that is the point of keeping both. |
+
+### DieCastReconciliationMove
+
+**Added migration `0097` (2026-09-22).** The durable record of a row re-filed against another shift. The `ShiftId` itself is re-stamped in place — the same thing `Oee.ShiftOverride_Restamp` does — so this table is how the system remembers where the row came from, and how `ShiftOverride_Restamp` knows to leave it alone afterwards (a time-based resolver would otherwise drag a re-filed row back the next time an override is applied to that press).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK, IDENTITY | Surrogate key. |
+| ReconciliationId | BIGINT | NOT NULL, FK → Workorder.DieCastShiftReconciliation | The save that moved it. |
+| LogEntityTypeId | BIGINT | NOT NULL, FK → Audit.LogEntityType | Which table: `DieCastContribution` or `RejectEvent`. |
+| EntityId | BIGINT | NOT NULL | The row's id in that table. |
+| FromShiftId | BIGINT | NOT NULL, FK → Oee.Shift | Where it was filed. |
+| ToShiftId | BIGINT | NOT NULL, FK → Oee.Shift | Where it belongs. |
 
 ---
 
