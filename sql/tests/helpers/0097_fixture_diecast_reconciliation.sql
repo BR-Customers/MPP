@@ -28,6 +28,13 @@ BEGIN
 END;
 GO
 
+-- NAMING CONVENTION, load-bearing: Cleanup only removes LOTs matching
+--   ToolId = RC-DIE  OR  LotName LIKE N'99700%'
+-- A LOT seeded by DieCastRecon_SeedLot always carries the tool, so it is covered.
+-- A LOT a test creates ANY OTHER WAY -- in particular one minted through a live
+-- procedure such as Lots.DieCastLot_Mint, which does not take RC-DIE -- is only
+-- covered if it is NAMED with the 99700 prefix. Miss that and the row survives
+-- teardown and pollutes every suite that runs after it.
 CREATE OR ALTER PROCEDURE test.DieCastRecon_Cleanup
 AS
 BEGIN
