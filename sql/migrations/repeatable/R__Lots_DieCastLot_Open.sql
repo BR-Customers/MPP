@@ -2,7 +2,12 @@
 -- Repeatable:  R__Lots_DieCastLot_Open.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-08-20
--- Version:     1.1
+-- Version:     1.2
+-- Change:      v1.2 (2026-09-22) -- the mint moved into Lots.DieCastLot_Mint
+--              (spec 2026-09-21 sec 5.1) so the reconciliation creates LOTs
+--              the same way. Every validation stays here, including the two a
+--              past shift cannot satisfy: the die must be mounted NOW, and the
+--              cavity must have no open basket.
 -- Description: Die-Cast Per-Cavity Lifecycle (plan docs/superpowers/plans/
 --              2026-07-28-diecast-per-cavity-lifecycle.md), Task 2 / Phase 1.
 --              Mints ONE accumulator LOT per (Tool, ToolCavity) in status
@@ -50,6 +55,10 @@
 --                      mint; the CRT design named Lot_Create for "die cast, incl.
 --                      bulk open", which is stale -- Lot_Create is the receiving
 --                      path -- so a CrtEnabled casting was minting clean baskets.
+--   2026-09-22 - 1.2 - Mint extracted into Lots.DieCastLot_Mint (worker: no
+--                      result set, no transaction, no TRY/CATCH) so this proc
+--                      and Workorder.DieCastShiftReconciliation_Save create
+--                      die cast LOTs one way. Validations unchanged.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.DieCastLot_Open
     @ItemId BIGINT, @CurrentLocationId BIGINT, @ToolId BIGINT, @ToolCavityId BIGINT,
@@ -62,9 +71,6 @@ BEGIN
     DECLARE @Params NVARCHAR(MAX) = (SELECT @ItemId AS ItemId, @CurrentLocationId AS CurrentLocationId,
         @ToolId AS ToolId, @ToolCavityId AS ToolCavityId, @LotName AS LotName, @AppUserId AS AppUserId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-    DECLARE @OpenStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Open');
-    DECLARE @ManufacturedOriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
-    DECLARE @MaxLotSize INT, @CellCode NVARCHAR(50);
 
     BEGIN TRY
         -- ---- validations (all pre-transaction) ----
@@ -102,43 +108,17 @@ BEGIN
                    WHERE l.ToolId = @ToolId AND l.ToolCavityId = @ToolCavityId AND sc.Code = N'Open')
         BEGIN SET @Message = N'An open basket already exists for this cavity; release it before opening another.'; GOTO Fail; END
 
-        SET @MaxLotSize = (SELECT MaxLotSize FROM Parts.Item WHERE Id = @ItemId);
-        SET @CellCode   = (SELECT Code FROM Location.Location WHERE Id = @CurrentLocationId);
-
-        -- D1/D2: CRT at mint. This is the die-cast ORIGIN mint -- the press terminal
-        -- drives THIS proc (DieCastBody -> openDieCast / submitBulkOpen -> named query
-        -- lots/DieCastLot_Open), not Lots.Lot_Create, which is the receiving path. A
-        -- casting part flagged Parts.Item.CrtEnabled is the feature's headline case, so
-        -- the resolver has to run here or the tag never starts at the press. Resolved
-        -- in ONE place (Lots.ufn_CrtForMint): the part flag OR the minting terminal's
-        -- CrtEnabled attribute. A basket open consumes no LOTs, so the propagation arm
-        -- is passed NULL. Mint-time only (D3) -- nothing re-derives this later.
-        DECLARE @CrtActive BIT =
-            (SELECT CrtActive FROM Lots.ufn_CrtForMint(@ItemId, @TerminalLocationId, NULL));
-
         -- ===== mutation =====
+        -- The mint itself lives in Lots.DieCastLot_Mint (v1.2) so this proc and
+        -- the shift reconciliation create die cast LOTs the same way. CRT at mint
+        -- (D1/D2) is resolved inside the worker -- this IS the die-cast ORIGIN
+        -- mint, not Lots.Lot_Create, which is the receiving path.
         BEGIN TRANSACTION;
-        INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
-            ToolId, ToolCavityId, CurrentLocationId, TotalInProcess, InventoryAvailable,
-            CreatedByUserId, CreatedAtTerminalId, CreatedAt, CrtActive)
-        VALUES (@LotName, @ItemId, @ManufacturedOriginId, @OpenStatusId, 0, @MaxLotSize,
-            @ToolId, @ToolCavityId, @CurrentLocationId, 0, 0, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @CrtActive);
-        SET @NewId = SCOPE_IDENTITY();
-        INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
-        VALUES (@NewId, NULL, @OpenStatusId, N'Die-cast basket opened.', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
-        INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth) VALUES (@NewId, @NewId, 0);
-        INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
-        VALUES (@NewId, NULL, @CurrentLocationId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
-
-        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@LotName + N' ' + Audit.ufn_MidDot()
-            + N' Die Cast ' + Audit.ufn_MidDot() + N' Basket opened at ' + ISNULL(@CellCode, N'?'));
-        DECLARE @NewValue NVARCHAR(MAX) = (SELECT l.Id, l.LotName,
-            JSON_QUERY((SELECT i.Id, i.PartNumber AS Code, i.Description AS Name FROM Parts.Item i WHERE i.Id = l.ItemId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Item,
-            JSON_QUERY((SELECT tc.Id, tc.CavityCode AS Code, tc.CavityCode AS Name FROM Tools.ToolCavity tc WHERE tc.Id = l.ToolCavityId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Cavity
-            FROM Lots.Lot l WHERE l.Id = @NewId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-        EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=@CurrentLocationId,
-            @LogEntityTypeCode=N'Lot', @EntityId=@NewId, @LogEventTypeCode=N'DieCastLotOpened',
-            @LogSeverityCode=N'Info', @Description=@Activity, @OldValue=NULL, @NewValue=@NewValue;
+        EXEC Lots.DieCastLot_Mint @LotName = @LotName, @ItemId = @ItemId, @ToolId = @ToolId,
+            @ToolCavityId = @ToolCavityId, @CurrentLocationId = @CurrentLocationId,
+            @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
+        -- SCOPE_IDENTITY() is not visible across the EXEC; LotName is unique.
+        SET @NewId = (SELECT Id FROM Lots.Lot WHERE LotName = @LotName);
         COMMIT TRANSACTION;
 
         SET @Status = 1; SET @Message = N'Basket opened (' + @LotName + N').';
