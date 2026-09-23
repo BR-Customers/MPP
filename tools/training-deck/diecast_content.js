@@ -327,7 +327,19 @@ module.exports = {
         'Tap **Authenticate**. Then pick the die that is in the press.',
       ],
       markers: [{ n: 1, target: 'dieMount' }, { n: 2, target: 'user' }, { n: 3, target: 'auth' }],
-      tip: 'The screen must always show the die that is really in the press.',
+      tip: 'The screen must always show the die that is really in the press.\n\nMounting a die Is critical, it sets up cavity selection for lot submission, and helps track die life and shot count.',
+      notes: 'If the screen shows the wrong die, every basket is saved against the wrong die. Check the die name after you finish.',
+    },
+    {
+      id: 'releasing-the-current-mount', kind: 'image', kicker: 'Team lead', title: 'Releasing the Current Mount',
+      image: 'manual_releasing-the-current-mount.png',
+      caption: 'First release the currently mounted Die',
+      notes: 'If the screen shows the wrong die, every basket is saved against the wrong die. Check the die name after you finish.',
+    },
+    {
+      id: 'mounting-a-new-die', kind: 'image', kicker: 'Team lead', title: 'Mounting a new Die',
+      image: 'manual_mounting-a-new-die.png',
+      caption: 'Select the Die',
       notes: 'If the screen shows the wrong die, every basket is saved against the wrong die. Check the die name after you finish.',
     },
     {

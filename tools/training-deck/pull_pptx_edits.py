@@ -118,7 +118,7 @@ def compare(c, d):
     else:
         fields = []                          # glossary, summary, title, divider: notes only
     if c.get('title') and norm(c['title']) != norm(d['title']):
-        diffs.append(('title', c['title'], d['title']))
+        diffs.append(('title', c['title'], plain_title(d['title'])))
     if c.get('subtitle') and d.get('subtitle') and norm(c['subtitle']) != norm(d['subtitle']):
         diffs.append(('subtitle', c['subtitle'], d['subtitle']))
     for (name, idx, old), new in zip(fields, body):
@@ -173,6 +173,12 @@ def slide_blocks(src):
     return blocks, order, src[:head_end], src[i:]
 
 
+def plain_title(t):
+    """Titles are rendered bold by the generator, so a title typed bold in
+    PowerPoint comes back as '**Mounting a new Die**'. Strip the marks."""
+    return re.sub(r'\*\*', '', t or '').strip()
+
+
 def slugify(t):
     return re.sub(r'[^a-z0-9]+', '-', (t or 'slide').lower()).strip('-')[:40] or 'slide'
 
@@ -183,7 +189,8 @@ def import_new(d):
     if not d['pictures']:
         print(f"  ! added slide {d['title']!r} has no picture -- add it to the content file by hand")
         return None, None
-    slug = slugify(d['title'])
+    title = plain_title(d['title'])
+    slug = slugify(title)
     pic = d['pictures'][0]
     ext = pic.image.ext or 'png'
     name = f'manual_{slug}.{ext}'
@@ -192,7 +199,7 @@ def import_new(d):
     caption = body[0] if body else ''
     lines = [
         '    {',
-        f"      id: {js_string(slug)}, kind: 'image', kicker: 'Team lead', title: {js_string(d['title'])},",
+        f"      id: {js_string(slug)}, kind: 'image', kicker: 'Team lead', title: {js_string(title)},",
         f'      image: {js_string(name)},',
     ]
     if caption:
@@ -200,7 +207,7 @@ def import_new(d):
     lines.append(f"      notes: {js_string(d['notes'] or 'Added in PowerPoint, imported by pull_pptx_edits.py.')},")
     lines.append('    },')
     block = '\n'.join(lines) + '\n'
-    print(f"  imported added slide {d['title']!r} -> {name} (id {slug})")
+    print(f'  imported added slide {title!r} -> {name} (id {slug})')
     return slug, block
 
 

@@ -7,7 +7,7 @@ const { checkSlide } = require('../lib/checks');
 const content = require('../diecast_content');
 const SHOTS = path.resolve(__dirname, '../../../docs/training/diecast/shots');
 
-const KINDS = ['title', 'concept', 'glossary', 'overview', 'steps', 'summary', 'divider', 'placeholder'];
+const KINDS = ['title', 'concept', 'glossary', 'overview', 'steps', 'summary', 'divider', 'placeholder', 'image'];
 
 test('two parts: operator slides, one divider, then team lead slides', () => {
   const kinds = content.slides.map((s) => s.kind);
