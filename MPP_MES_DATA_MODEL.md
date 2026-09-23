@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 3.0 | 2026-09-22 | Blue Ridge Automation | **Trim partial checkpoint (migration `0096`).** `Workorder.ProductionEvent.ShiftId` added. A blast operator can record the total trimmed so far on the LOT at shift end (`Workorder.TrimPartial_Record`, route `TrimIn` template, LOT does not move); Trim OUT is unchanged for the operator and now stamps the shift. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. |
 | 2.9 | 2026-09-18 | Blue Ridge Automation | **`Parts.ItemLocation.MaxQuantity` description corrected** -- it was still described as a per-scan-in hint (v1.8/OI-18 wording). As of the Line Inventory sidebar (rev 2, migration `0091`+), it is the consumption-point lineside cap `Lots.Lot_Create` enforces against a Received LOT, AND the colour scale for the Line Inventory panel (orange at or below 30% of Max, red at or below 10%), editable from the shop floor through the Tolerances popup (`Parts.ItemLocation_SetMaxQuantity`). No schema change -- documentation catching up to the rev-2 build. |
 | 2.8 | 2026-09-17 | Blue Ridge Automation | Parts.Item.LowInventoryHorizon retired (migration 0094); Line Inventory colours by ItemLocation.MaxQuantity. |
 | 2.7 | 2026-09-17 | Blue Ridge Automation | Parts.Item.BoxQuantity + LowInventoryHorizon (migration 0091) for the M&A Line Inventory sidebar. |
@@ -1049,6 +1050,7 @@ Individual operation execution — the actual step that happened.
 | AppUserId | BIGINT | FK → Location.AppUser.Id, NOT NULL | Who captured this event (initials-based per Phase C). |
 | TerminalLocationId | BIGINT | FK → Location.Location.Id (Terminal), NULL | Terminal where the checkpoint was registered. |
 | Remarks | NVARCHAR(500) | NULL | Free-text note attached to the checkpoint. |
+| ShiftId | BIGINT | FK → Oee.Shift.Id, NULL | **Added migration `0096` (2026-09-22) -- trim partial checkpoint.** The shift this checkpoint is credited to: the operator's picked shift on `Workorder.TrimPartial_Record` (never defaulted), `Oee.ufn_ShiftIdForInstant` at the trim shop on `Workorder.TrimOut_Record` v1.5. NULL on older rows and other writers. Trim credit per shift = `ShotCount` minus the previous **trim** checkpoint (TrimIn/TrimOut templates) on the LOT. |
 
 **Required index:** `(LotId, EventAt DESC)` — "previous event for this LOT" must be a single-row seek.
 
