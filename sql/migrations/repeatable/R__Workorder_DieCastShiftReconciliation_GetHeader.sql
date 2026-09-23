@@ -1,0 +1,76 @@
+-- ============================================================
+-- Repeatable:  R__Workorder_DieCastShiftReconciliation_GetHeader.sql
+-- Author:      Blue Ridge Automation
+-- Created:     2026-09-22
+-- Version:     1.0
+-- Description: What the reconciliation screen puts in its banner and its
+--              Recorded column (spec 2026-09-21 sec 6.2, amendment A6).
+--              ONE result set, no OUTPUT params; an empty result set means the
+--              shift, press or die does not exist.
+--
+--              Oee.Shift times are Eastern already (OI-38) and are returned
+--              raw. Everything else here is a count, not a time.
+--
+--              RecordedTotalShots is the die watermark -- anchor-aware, so a
+--              previous reconciliation's declared total is what shows.
+--              RecordedWarmUpShots divides the 999 pieces by the ACTIVE cavity
+--              count, which is how they were fanned out in the first place.
+-- ============================================================
+CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_GetHeader
+    @ShiftId        BIGINT,
+    @CellLocationId BIGINT,
+    @ToolId         BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @WarmCodeId BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'999');
+    DECLARE @Cavities INT = (SELECT COUNT(*) FROM Tools.ToolCavity tc
+                             INNER JOIN Tools.ToolCavityStatusCode cs ON cs.Id = tc.StatusCodeId
+                             WHERE tc.ToolId = @ToolId AND tc.DeprecatedAt IS NULL AND cs.Code = N'Active');
+
+    SELECT
+        s.Id                                                              AS ShiftId,
+        CONVERT(NVARCHAR(5), s.ActualStart, 110) + N' ' + ss.Name         AS ShiftLabel,
+        s.ActualStart                                                     AS StartEt,
+        s.ActualEnd                                                       AS EndEt,
+        CAST(CASE WHEN s.ActualEnd IS NULL THEN 1 ELSE 0 END AS BIT)      AS IsOpen,
+        loc.Id                                                            AS CellLocationId,
+        loc.Code                                                          AS PressCode,
+        loc.Name                                                          AS PressName,
+        t.Id                                                              AS ToolId,
+        t.Code                                                            AS AssetNumber,
+        t.Name                                                            AS DieName,
+        @Cavities                                                         AS ActiveCavities,
+        t.ShotCount                                                       AS DieShotCount,
+        Workorder.ufn_DieShotWatermark(t.Id, s.Id, loc.Id)                AS RecordedTotalShots,
+        CASE WHEN @Cavities > 0 THEN ISNULL(sc.WarmUpPieces, 0) / @Cavities ELSE 0 END AS RecordedWarmUpShots,
+        ISNULL(sc.NoGoodPieces, 0)                                        AS RecordedNoGood,
+        ISNULL(cr.Good, 0)                                                AS RecordedGood,
+        CAST(CASE WHEN cr.Readings > 0 OR an.Anchors > 0 THEN 1 ELSE 0 END AS BIT) AS HasShiftEndNumber,
+        Workorder.ufn_DieCastShiftStamp(s.Id, loc.Id, t.Id)               AS Stamp,
+        lr.LastReconciledAtEt,
+        lr.LastReconciledBy
+    FROM Oee.Shift s
+    INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId
+    INNER JOIN Location.Location loc ON loc.Id = @CellLocationId
+    INNER JOIN Tools.Tool t ON t.Id = @ToolId
+    OUTER APPLY (SELECT ISNULL(SUM(c.PieceDelta), 0) AS Good, COUNT(c.ShotCounterReading) AS Readings
+                 FROM Workorder.DieCastContribution c INNER JOIN Lots.Lot l ON l.Id = c.LotId
+                 WHERE c.ShiftId = s.Id AND c.CellLocationId = loc.Id AND l.ToolId = t.Id) cr
+    OUTER APPLY (SELECT ISNULL(SUM(CASE WHEN r.DefectCodeId = @WarmCodeId THEN r.Quantity ELSE 0 END), 0) AS WarmUpPieces,
+                        ISNULL(SUM(CASE WHEN r.DefectCodeId = @WarmCodeId THEN 0 ELSE r.Quantity END), 0) AS NoGoodPieces
+                 FROM Workorder.RejectEvent r
+                 WHERE r.ShiftId = s.Id AND r.CellLocationId = loc.Id AND r.ToolId = t.Id) sc
+    OUTER APPLY (SELECT COUNT(*) AS Anchors FROM Workorder.DieCastCounterAnchor a
+                 WHERE a.ShiftId = s.Id AND a.ToolId = t.Id AND a.CellLocationId = loc.Id) an
+    OUTER APPLY (SELECT TOP 1
+                        CAST(h.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS LastReconciledAtEt,
+                        u.Initials AS LastReconciledBy
+                 FROM Workorder.DieCastShiftReconciliation h
+                 INNER JOIN Location.AppUser u ON u.Id = h.AppUserId
+                 WHERE h.ShiftId = s.Id AND h.CellLocationId = loc.Id AND h.ToolId = t.Id
+                 ORDER BY h.CreatedAt DESC, h.Id DESC) lr
+    WHERE s.Id = @ShiftId;
+END;
+GO
