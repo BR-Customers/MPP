@@ -7,6 +7,8 @@
 --              (spec 2026-09-21 sec 5.1): the final-delta contribution is now
 --              Workorder.DieCastCredit_Write. Behaviour unchanged.
 --              The closing scrap insert is now Workorder.DieCastScrap_Write.
+--              The status change, move and release audit are now
+--              Lots.DieCastLot_ReleaseMove.
 -- Change:      v2.2 -- the CLOSING SCRAP rows now stamp their own identity
 --              (ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId,
 --              TerminalLocationId), finishing what v2.1 started. v2.1 taught
@@ -129,8 +131,6 @@ BEGIN
     DECLARE @Params NVARCHAR(MAX) = (SELECT @LotId AS LotId, @StorageLocationId AS StorageLocationId,
         @FinalPieceDelta AS FinalPieceDelta, @ShiftId AS ShiftId, @AppUserId AS AppUserId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-    DECLARE @OpenStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Open');
-    DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
     DECLARE @ResolvedStorageLocationId BIGINT;
 
     BEGIN TRY
@@ -216,7 +216,6 @@ BEGIN
         IF @ProjectedPieceCount <= 0
         BEGIN SET @Message = N'Cannot release an empty basket; void it instead.'; GOTO Fail; END
 
-        DECLARE @FromLocationId BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @LotId);
         DECLARE @LotName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = @LotId);
 
         -- ===== mutation =====
@@ -269,22 +268,8 @@ BEGIN
                 @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
         END
 
-        INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
-        VALUES (@LotId, @OpenStatusId, @GoodStatusId, N'Die-cast basket released to storage.', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
-
-        UPDATE Lots.Lot
-        SET LotStatusId = @GoodStatusId, CurrentLocationId = @ResolvedStorageLocationId,
-            UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
-        WHERE Id = @LotId;
-
-        INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
-        VALUES (@LotId, @FromLocationId, @ResolvedStorageLocationId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
-
-        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@LotName + N' ' + Audit.ufn_MidDot()
-            + N' Die Cast ' + Audit.ufn_MidDot() + N' Released to storage');
-        EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=@ResolvedStorageLocationId,
-            @LogEntityTypeCode=N'Lot', @EntityId=@LotId, @LogEventTypeCode=N'DieCastLotReleased',
-            @LogSeverityCode=N'Info', @Description=@Activity, @OldValue=NULL, @NewValue=NULL;
+        EXEC Lots.DieCastLot_ReleaseMove @LotId = @LotId, @StorageLocationId = @ResolvedStorageLocationId,
+            @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
         COMMIT TRANSACTION;
 

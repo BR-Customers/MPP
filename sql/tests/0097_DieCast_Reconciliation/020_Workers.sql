@@ -87,5 +87,32 @@ SET @v = (SELECT Remarks FROM Workorder.RejectEvent WHERE ToolCavityId = @CavB A
 EXEC test.Assert_IsEqual @TestName = N'[Scrap] @NoLotRemarks overrides the no-LOT text', @Expected = N'Die-cast shift reconciliation', @Actual = @v;
 GO
 
+-- ---- DieCastLot_ReleaseMove ----
+-- Seeds its own basket rather than reusing the one Task 6's DieCastLot_Mint
+-- section creates: that section lives in 021_Workers_Lifecycle.sql, a separate
+-- file, so this one must stand on its own.
+EXEC test.DieCastRecon_SeedLot @Ltt = N'99700107', @CavKey = N'CavB';
+GO
+
+DECLARE @New BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700107');
+DECLARE @Cell BIGINT = test.ufn_RC(N'Cell'), @Usr BIGINT = test.ufn_RC(N'Usr'), @Whse BIGINT = test.ufn_RC(N'Whse');
+DECLARE @S1 BIGINT = test.ufn_RC(N'S1');
+DECLARE @v NVARCHAR(400), @Want NVARCHAR(400);
+
+EXEC Workorder.DieCastCredit_Write @LotId = @New, @ShiftId = @S1, @PieceDelta = 50, @CellLocationId = @Cell, @AppUserId = @Usr;
+EXEC Lots.DieCastLot_ReleaseMove @LotId = @New, @StorageLocationId = @Whse, @AppUserId = @Usr;
+
+SET @v = (SELECT CONCAT(sc.Code, N'|', l.CurrentLocationId, N'|', l.PieceCount)
+          FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @New);
+SET @Want = CONCAT(N'Good|', @Whse, N'|50');
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseMove] Good, at storage, count untouched', @Expected = @Want, @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM Lots.LotMovement WHERE LotId = @New AND FromLocationId = @Cell AND ToLocationId = @Whse) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseMove] movement press -> storage', @Expected = N'1', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM Lots.LotStatusHistory h
+               JOIN Lots.LotStatusCode o ON o.Id = h.OldStatusId JOIN Lots.LotStatusCode n ON n.Id = h.NewStatusId
+               WHERE h.LotId = @New AND o.Code = N'Open' AND n.Code = N'Good') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[ReleaseMove] status history Open -> Good', @Expected = N'1', @Actual = @v;
+GO
+
 EXEC test.EndTestFile;
 GO
