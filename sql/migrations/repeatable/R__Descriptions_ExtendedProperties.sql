@@ -3954,12 +3954,12 @@ BEGIN
                    WHERE major_id = OBJECT_ID(N'[Workorder].[ProductionEvent]')
                      AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Workorder].[ProductionEvent]'), N'ShiftId', 'ColumnId')
                      AND name = N'MS_Description')
-            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'The shift this checkpoint is credited to. Stamped by Workorder.TrimPartial_Record (the shift the operator picked) and Workorder.TrimOut_Record v1.5 (Oee.ufn_ShiftIdForInstant at the trim shop). NULL on rows written before migration 0096 and on every other writer. Trim credit per shift = ShotCount minus the previous trim checkpoint on the same LOT.',
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added migration 0096 (2026-09-22) -- trim partial checkpoint. The shift this checkpoint is credited to: the operator''s picked shift on Workorder.TrimPartial_Record (never defaulted), Oee.ufn_ShiftIdForInstant at the trim shop on Workorder.TrimOut_Record v1.5. NULL on older rows and other writers. Trim credit per shift = ShotCount minus the previous trim checkpoint (TrimIn/TrimOut templates) on the LOT.',
                          @level0type = N'SCHEMA', @level0name = N'Workorder',
                          @level1type = N'TABLE',  @level1name = N'ProductionEvent',
                          @level2type = N'COLUMN', @level2name = N'ShiftId';
         ELSE
-            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'The shift this checkpoint is credited to. Stamped by Workorder.TrimPartial_Record (the shift the operator picked) and Workorder.TrimOut_Record v1.5 (Oee.ufn_ShiftIdForInstant at the trim shop). NULL on rows written before migration 0096 and on every other writer. Trim credit per shift = ShotCount minus the previous trim checkpoint on the same LOT.',
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added migration 0096 (2026-09-22) -- trim partial checkpoint. The shift this checkpoint is credited to: the operator''s picked shift on Workorder.TrimPartial_Record (never defaulted), Oee.ufn_ShiftIdForInstant at the trim shop on Workorder.TrimOut_Record v1.5. NULL on older rows and other writers. Trim credit per shift = ShotCount minus the previous trim checkpoint (TrimIn/TrimOut templates) on the LOT.',
                          @level0type = N'SCHEMA', @level0name = N'Workorder',
                          @level1type = N'TABLE',  @level1name = N'ProductionEvent',
                          @level2type = N'COLUMN', @level2name = N'ShiftId';
