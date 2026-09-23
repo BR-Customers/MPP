@@ -2,7 +2,10 @@
 -- Repeatable:  R__Lots_DieCastLot_Release.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-09-15
--- Version:     2.2
+-- Version:     2.3
+-- Change:      v2.3 (2026-09-22) -- the writes moved into shared workers
+--              (spec 2026-09-21 sec 5.1): the final-delta contribution is now
+--              Workorder.DieCastCredit_Write. Behaviour unchanged.
 -- Change:      v2.2 -- the CLOSING SCRAP rows now stamp their own identity
 --              (ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId,
 --              TerminalLocationId), finishing what v2.1 started. v2.1 taught
@@ -224,13 +227,12 @@ BEGIN
         -- watermark stale and over-credit the next basket on this cavity.
         IF @CounterReading IS NOT NULL OR (@FinalPieceDelta IS NOT NULL AND @FinalPieceDelta > 0)
         BEGIN
-            INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId, ShotCounterReading, ToolCavityId)
-            VALUES (@LotId, @ShiftId, ISNULL(@FinalPieceDelta, 0), @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId, @CounterReading, @RelToolCavityId);
-            IF ISNULL(@FinalPieceDelta, 0) > 0
-            UPDATE Lots.Lot WITH (UPDLOCK, HOLDLOCK)
-            SET PieceCount = PieceCount + @FinalPieceDelta, InventoryAvailable = InventoryAvailable + @FinalPieceDelta,
-                UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
-            WHERE Id = @LotId;
+            DECLARE @CreditDelta INT = ISNULL(@FinalPieceDelta, 0);
+            DECLARE @FinalSuffix NVARCHAR(100) = N' (final)';
+            EXEC Workorder.DieCastCredit_Write @LotId = @LotId, @ShiftId = @ShiftId, @PieceDelta = @CreditDelta,
+                @CounterReading = @CounterReading, @CellLocationId = @ResolvedCellLocationId, @ApplyToLot = 1,
+                @AuditLocationId = NULL, @AuditSuffix = @FinalSuffix,
+                @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
             -- die life advances with the reading (see header)
             DECLARE @RelShotDelta INT = ISNULL(@CounterReading, 0) - @RelDieWatermark;
@@ -239,11 +241,6 @@ BEGIN
                 SET ShotCount = ShotCount + @RelShotDelta,
                     UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
                 WHERE Id = @RelToolId;
-            DECLARE @ContribAct NVARCHAR(500) = Audit.ufn_TruncateActivity(@LotName + N' ' + Audit.ufn_MidDot()
-                + N' Die Cast ' + Audit.ufn_MidDot() + N' Added ' + CAST(@FinalPieceDelta AS NVARCHAR(10)) + N' pc (final)');
-            EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=NULL,
-                @LogEntityTypeCode=N'Lot', @EntityId=@LotId, @LogEventTypeCode=N'DieCastPieceContributed',
-                @LogSeverityCode=N'Info', @Description=@ContribAct, @OldValue=NULL, @NewValue=NULL;
         END
 
         -- additive final scrap (inline, mirrors DieCastShiftOutput_Record's additive-reject block:

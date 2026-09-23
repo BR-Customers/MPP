@@ -2,7 +2,12 @@
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-09-14
--- Version:     3.0
+-- Version:     3.1
+-- Change:      v3.1 (2026-09-22) -- the writes moved into shared workers
+--              (spec 2026-09-21 sec 5.1): the contribution + LOT count +
+--              audit block is now Workorder.DieCastCredit_Write. Behaviour
+--              unchanged; this proc keeps every validation, the watermark
+--              guard and the die shot-count update.
 -- Change:      v3.0 -- die-cast quantity + scrap model, spec sec 5.3. Each
 --              @LinesJson line may now carry a bare CAVITY (toolCavityId with
 --              a NULL lotId): scrap on such a line writes a RejectEvent with
@@ -297,21 +302,10 @@ BEGIN
             -- DieCastContribution row at all, by construction: this whole
             -- block is skipped for it.
             IF @Delta > 0
-            BEGIN
-                INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, TerminalLocationId, EventAt, CellLocationId, ShotCounterReading, ToolCavityId, VarianceReasonId, VarianceNote)
-                VALUES (@LotId, @ShiftId, @Delta, @AppUserId, @TerminalLocationId, SYSUTCDATETIME(), @ResolvedCellLocationId, @CounterReading,
-                        (SELECT ToolCavityId FROM Lots.Lot WHERE Id = @LotId), @VReasonId, @VNote);
-                UPDATE Lots.Lot WITH (UPDLOCK, HOLDLOCK)
-                SET PieceCount = PieceCount + @Delta, InventoryAvailable = InventoryAvailable + @Delta,
-                    UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
-                WHERE Id = @LotId;
-                DECLARE @LotName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id=@LotId);
-                DECLARE @Act NVARCHAR(500) = Audit.ufn_TruncateActivity(@LotName + N' ' + Audit.ufn_MidDot()
-                    + N' Die Cast ' + Audit.ufn_MidDot() + N' Added ' + CAST(@Delta AS NVARCHAR(10)) + N' pc');
-                EXEC Audit.Audit_LogOperation @AppUserId=@AppUserId, @TerminalLocationId=@TerminalLocationId, @LocationId=@CellLocationId,
-                    @LogEntityTypeCode=N'Lot', @EntityId=@LotId, @LogEventTypeCode=N'DieCastPieceContributed',
-                    @LogSeverityCode=N'Info', @Description=@Act, @OldValue=NULL, @NewValue=NULL;
-            END
+                EXEC Workorder.DieCastCredit_Write @LotId = @LotId, @ShiftId = @ShiftId, @PieceDelta = @Delta,
+                    @CounterReading = @CounterReading, @CellLocationId = @ResolvedCellLocationId, @ApplyToLot = 1,
+                    @VarianceReasonId = @VReasonId, @VarianceNote = @VNote, @AuditLocationId = @CellLocationId,
+                    @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
             -- inlined ADDITIVE scrap rows (mirror RejectEvent_Record @Additive=1: record only, no decrement, no close)
             IF @Scrap IS NOT NULL AND ISJSON(@Scrap) = 1
             BEGIN
