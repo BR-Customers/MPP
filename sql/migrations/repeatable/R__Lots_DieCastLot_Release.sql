@@ -6,6 +6,7 @@
 -- Change:      v2.3 (2026-09-22) -- the writes moved into shared workers
 --              (spec 2026-09-21 sec 5.1): the final-delta contribution is now
 --              Workorder.DieCastCredit_Write. Behaviour unchanged.
+--              The closing scrap insert is now Workorder.DieCastScrap_Write.
 -- Change:      v2.2 -- the CLOSING SCRAP rows now stamp their own identity
 --              (ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId,
 --              TerminalLocationId), finishing what v2.1 started. v2.1 taught
@@ -259,10 +260,14 @@ BEGIN
         --     from re.ItemId, so it also showed as an unmapped part.
         -- Every value was already resolved above for the contribution row.
         IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) = 1
-            INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
-            SELECT NULL, @LotId, @RelItemId, @RelToolId, @RelToolCavityId, @ShiftId, @ResolvedCellLocationId,
-                   s.defectCodeId, s.quantity, NULL, N'Die-cast final release scrap', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
-            FROM OPENJSON(@ScrapLinesJson) WITH (defectCodeId BIGINT '$.defectCodeId', quantity INT '$.quantity') s;
+        BEGIN
+            DECLARE @ReleaseScrap NVARCHAR(MAX) =
+                N'[{"lotId":' + CAST(@LotId AS NVARCHAR(20)) + N',"scrapLines":' + @ScrapLinesJson + N'}]';
+            DECLARE @ReleaseRemarks NVARCHAR(200) = N'Die-cast final release scrap';
+            EXEC Workorder.DieCastScrap_Write @ToolId = @RelToolId, @ShiftId = @ShiftId,
+                @CellLocationId = @ResolvedCellLocationId, @LinesJson = @ReleaseScrap, @Remarks = @ReleaseRemarks,
+                @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
+        END
 
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
         VALUES (@LotId, @OpenStatusId, @GoodStatusId, N'Die-cast basket released to storage.', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());

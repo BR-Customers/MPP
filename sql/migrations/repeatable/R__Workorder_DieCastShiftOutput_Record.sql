@@ -8,6 +8,8 @@
 --              audit block is now Workorder.DieCastCredit_Write. Behaviour
 --              unchanged; this proc keeps every validation, the watermark
 --              guard and the die shot-count update.
+--              The per-LOT, per-cavity and die-wide scrap inserts are now
+--              Workorder.DieCastScrap_Write, called once after the credits.
 -- Change:      v3.0 -- die-cast quantity + scrap model, spec sec 5.3. Each
 --              @LinesJson line may now carry a bare CAVITY (toolCavityId with
 --              a NULL lotId): scrap on such a line writes a RejectEvent with
@@ -289,78 +291,27 @@ BEGIN
         END
 
         BEGIN TRANSACTION;
-        DECLARE @LotId BIGINT, @CavId BIGINT, @Delta INT, @Scrap NVARCHAR(MAX), @VReasonId BIGINT, @VNote NVARCHAR(500);
+        DECLARE @LotId BIGINT, @Delta INT, @VReasonId BIGINT, @VNote NVARCHAR(500);
         DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
-            SELECT LotId, ToolCavityId, PieceDelta, ScrapLines, VarianceReasonId, VarianceNote FROM @Lines;
-        OPEN cur; FETCH NEXT FROM cur INTO @LotId, @CavId, @Delta, @Scrap, @VReasonId, @VNote;
+            SELECT LotId, PieceDelta, VarianceReasonId, VarianceNote FROM @Lines;
+        OPEN cur; FETCH NEXT FROM cur INTO @LotId, @Delta, @VReasonId, @VNote;
         WHILE @@FETCH_STATUS = 0
         BEGIN
-            -- v3.0: pieces on a basketless line were rejected pre-transaction
-            -- above, so @Delta > 0 here is only ever reached with @LotId NOT
-            -- NULL -- a contribution row is written ONLY when there is a
-            -- basket (spec 3.6/4.7). A basketless line writes no
-            -- DieCastContribution row at all, by construction: this whole
-            -- block is skipped for it.
+            -- pieces on a basketless line were rejected pre-transaction, so a
+            -- credit is only ever written for a line with a LOT (spec 3.6)
             IF @Delta > 0
                 EXEC Workorder.DieCastCredit_Write @LotId = @LotId, @ShiftId = @ShiftId, @PieceDelta = @Delta,
                     @CounterReading = @CounterReading, @CellLocationId = @ResolvedCellLocationId, @ApplyToLot = 1,
                     @VarianceReasonId = @VReasonId, @VarianceNote = @VNote, @AuditLocationId = @CellLocationId,
                     @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
-            -- inlined ADDITIVE scrap rows (mirror RejectEvent_Record @Additive=1: record only, no decrement, no close)
-            IF @Scrap IS NOT NULL AND ISJSON(@Scrap) = 1
-            BEGIN
-                IF @LotId IS NOT NULL
-                    -- v3.0: a WITH-basket scrap row stamps identity too. The reject
-                    -- reports resolve the part from RejectEvent.ItemId now (spec 4.2,
-                    -- 5.5) rather than joining through the LOT, so a row written
-                    -- without it buckets as '(unassigned part)' -- silently, and on
-                    -- the ordinary everyday path, not just the lot-free one. ItemId
-                    -- comes from the LOT (authoritative for what is in the basket);
-                    -- the cavity, die, shift and press ride along so this row answers
-                    -- the same questions the basketless one does.
-                    INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
-                    SELECT NULL, @LotId, l.ItemId, @ToolId, l.ToolCavityId, @ShiftId, @ResolvedCellLocationId,
-                           s.defectCodeId, s.quantity, NULL, N'Die-cast per-cavity scrap', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
-                    FROM OPENJSON(@Scrap) WITH (defectCodeId BIGINT N'$.defectCodeId', quantity INT N'$.quantity') s
-                    CROSS JOIN Lots.Lot l
-                    WHERE l.Id = @LotId;
-                ELSE
-                    -- v3.0 (spec 3.6/5.3): a basketless line's scrap is a fact
-                    -- about the CAVITY -- LotId NULL, plus ToolCavityId,
-                    -- ShiftId, CellLocationId and the cavity's ItemId. Pieces
-                    -- on this line were already rejected pre-transaction --
-                    -- there is no basket to credit, but the pieces are still
-                    -- rejected (scrapped) against the cavity.
-                    INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
-                    SELECT NULL, NULL, tc.ItemId, @ToolId, @CavId, @ShiftId, @ResolvedCellLocationId, s.defectCodeId, s.quantity, NULL, N'Die-cast per-cavity scrap (no basket)', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
-                    FROM OPENJSON(@Scrap) WITH (defectCodeId BIGINT N'$.defectCodeId', quantity INT N'$.quantity') s
-                    CROSS JOIN Tools.ToolCavity tc
-                    WHERE tc.Id = @CavId;
-            END
-            FETCH NEXT FROM cur INTO @LotId, @CavId, @Delta, @Scrap, @VReasonId, @VNote;
+            FETCH NEXT FROM cur INTO @LotId, @Delta, @VReasonId, @VNote;
         END
         CLOSE cur; DEALLOCATE cur;
 
-        -- v3.0 (D8): die-wide fan out across ACTIVE CAVITIES, not open LOTs.
-        -- The old form (CROSS JOIN Lots.Lot ... WHERE sc.Code = 'Open')
-        -- reached only cavities that happened to hold a basket and silently
-        -- skipped the rest. It now reaches every Active, non-deprecated
-        -- cavity on this tool, stamping each row's cavity and part, and
-        -- attaching the LOT only where one is currently open.
-        IF @ShotLossJson IS NOT NULL AND ISJSON(@ShotLossJson) = 1
-            INSERT INTO Workorder.RejectEvent
-                (ProductionEventId, LotId, ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId,
-                 DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
-            SELECT NULL, ol.LotId, tc.ItemId, @ToolId, tc.Id, @ShiftId, @ResolvedCellLocationId,
-                   sl.defectCodeId, sl.quantity, NULL, N'Die-cast die-wide scrap',
-                   @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
-            FROM OPENJSON(@ShotLossJson) WITH (defectCodeId BIGINT N'$.defectCodeId', quantity INT N'$.quantity') sl
-            CROSS JOIN Tools.ToolCavity tc
-            INNER JOIN Tools.ToolCavityStatusCode csc ON csc.Id = tc.StatusCodeId
-            OUTER APPLY (SELECT TOP 1 l.Id AS LotId FROM Lots.Lot l
-                         INNER JOIN Lots.LotStatusCode lsc ON lsc.Id = l.LotStatusId
-                         WHERE l.ToolCavityId = tc.Id AND lsc.Code = N'Open') ol
-            WHERE tc.ToolId = @ToolId AND tc.DeprecatedAt IS NULL AND csc.Code = N'Active';
+        -- per-LOT, per-cavity and die-wide scrap, additive (record only)
+        EXEC Workorder.DieCastScrap_Write @ToolId = @ToolId, @ShiftId = @ShiftId, @CellLocationId = @ResolvedCellLocationId,
+            @LinesJson = @LinesJson, @DieWideJson = @ShotLossJson,
+            @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
         -- FAT #26/#27: materialized die shot counter. The operator's gross shot
         -- count for this die/shift is the authoritative cycle count; bump it in
