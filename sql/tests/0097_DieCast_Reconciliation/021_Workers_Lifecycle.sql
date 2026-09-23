@@ -73,5 +73,64 @@ EXEC test.Assert_Contains @TestName = N'[Correct] a stale expected count is refu
     @HaystackStr = @Err, @NeedleStr = N'changed while the correction was being entered';
 GO
 
+-- ---- DieCastEntry_Restamp ----
+-- What a reconciliation Save would have in front of it: an open basket on cavity
+-- a with a shift-1 credit, a shift-1 scrap row against the same basket, and the
+-- header the moves are filed under.
+EXEC test.DieCastRecon_SeedLot @Ltt = N'99700101', @CavKey = N'CavA';
+EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700101', @ShiftKey = N'S1', @Pieces = 40,
+    @AtUtc = '2020-01-06T12:30:00';
+GO
+
+DECLARE @SeedLot BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700101');
+DECLARE @SeedS1  BIGINT = test.ufn_RC(N'S1');
+DECLARE @SeedUsr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @SeedCell BIGINT = test.ufn_RC(N'Cell');
+
+INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, ToolId, ToolCavityId, ShiftId,
+                                   CellLocationId, DefectCodeId, Quantity, ChargeToArea, Remarks,
+                                   AppUserId, TerminalLocationId, RecordedAt)
+SELECT NULL, @SeedLot, l.ItemId, l.ToolId, l.ToolCavityId, @SeedS1, @SeedCell,
+       (SELECT TOP 1 Id FROM Quality.DefectCode ORDER BY Id), 3, NULL, N'fixture',
+       @SeedUsr, NULL, '2020-01-06T12:30:00'
+FROM Lots.Lot l WHERE l.Id = @SeedLot;
+
+INSERT INTO Workorder.DieCastShiftReconciliation
+    (ShiftId, CellLocationId, ToolId, ReasonId, Note, DieShotCountBefore, DieShotCountAfter, AppUserId)
+VALUES (@SeedS1, @SeedCell, test.ufn_RC(N'Tool'),
+        (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'WrongShift'),
+        N'021 worker test', 0, 0, @SeedUsr);
+GO
+
+DECLARE @H BIGINT = (SELECT Id FROM Workorder.DieCastShiftReconciliation WHERE Note = N'021 worker test');
+DECLARE @Lot BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700101');
+DECLARE @S1 BIGINT = test.ufn_RC(N'S1'), @S2 BIGINT = test.ufn_RC(N'S2'), @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @C BIGINT = (SELECT Id FROM Workorder.DieCastContribution WHERE LotId = @Lot AND PieceDelta = 40);
+DECLARE @R BIGINT = (SELECT Id FROM Workorder.RejectEvent WHERE LotId = @Lot AND Quantity = 3);
+DECLARE @v NVARCHAR(400), @Want NVARCHAR(400);
+
+DECLARE @Moves NVARCHAR(MAX) =
+      N'[{"entityType":"Contribution","entityId":' + CAST(@C AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S2 AS NVARCHAR(20)) + N'},'
+    + N'{"entityType":"Reject","entityId":' + CAST(@R AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S2 AS NVARCHAR(20)) + N'}]';
+EXEC Workorder.DieCastEntry_Restamp @ReconciliationId = @H, @MovesJson = @Moves, @AppUserId = @Usr;
+
+SET @v = CAST((SELECT ShiftId FROM Workorder.DieCastContribution WHERE Id = @C) AS NVARCHAR(400));
+SET @Want = CAST(@S2 AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] the contribution now belongs to the target shift', @Expected = @Want, @Actual = @v;
+SET @v = CAST((SELECT ShiftId FROM Workorder.RejectEvent WHERE Id = @R) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] so does the reject row', @Expected = @Want, @Actual = @v;
+
+SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove m
+               WHERE m.ReconciliationId = @H AND m.FromShiftId = @S1 AND m.ToShiftId = @S2) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] both moves are recorded with where they came from', @Expected = N'2', @Actual = @v;
+
+SET @v = (SELECT TOP 1 ol.Description FROM Audit.OperationLog ol
+          JOIN Audit.LogEntityType et ON et.Id = ol.LogEntityTypeId
+          JOIN Audit.LogEventType  ev ON ev.Id = ol.LogEventTypeId
+          WHERE ol.EntityId = @H AND et.Code = N'DieCastShiftReconciliation' AND ev.Code = N'DieCastEntryMoved'
+          ORDER BY ol.Id DESC);
+EXEC test.Assert_Contains @TestName = N'[Restamp] one audit row naming what moved', @HaystackStr = @v, @NeedleStr = N'Moved 2 rows';
+GO
+
 EXEC test.EndTestFile;
 GO

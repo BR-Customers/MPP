@@ -2,7 +2,7 @@
 -- Procedure:   Oee.ShiftOverride_Restamp
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-19
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   THE RESTAMP. Re-attributes already-recorded rows whose correct shift changed
@@ -104,6 +104,15 @@
 --
 -- Change Log:
 --   2026-08-19 - 1.0 - Initial version (shift-override attribution, sec 4.3).
+--   2026-09-22 - 1.1 - Die cast shift reconciliation (spec 2026-09-21,
+--                      amendment A2): a contribution row a reconciliation
+--                      WROTE (ReconciliationId) or MOVED
+--                      (Workorder.DieCastReconciliationMove) is excluded. This
+--                      proc re-derives a row's shift from EventAt, and a
+--                      backfilled or re-filed row's EventAt is deliberately
+--                      not when the work happened -- re-deriving it would undo
+--                      the team lead's reading of the press sheet the next
+--                      time an override is applied to that press.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.ShiftOverride_Restamp
     @ShiftOverrideId BIGINT,
@@ -163,7 +172,15 @@ BEGIN
       AND dc.EventAt >= @ScopeStartUtc
       AND dc.EventAt <  @ScopeEndUtc
       AND r.ShiftId IS NOT NULL
-      AND (dc.ShiftId IS NULL OR dc.ShiftId <> r.ShiftId);
+      AND (dc.ShiftId IS NULL OR dc.ShiftId <> r.ShiftId)
+      -- 0097 amendment A2: a row a reconciliation WROTE or MOVED is the team
+      -- lead's decision, not the resolver's. Its EventAt is deliberately not
+      -- when the work happened -- a night-shift entry keyed at 09:35 the next
+      -- morning keeps its 09:35 stamp -- so re-deriving would silently undo it.
+      AND dc.ReconciliationId IS NULL
+      AND NOT EXISTS (SELECT 1 FROM Workorder.DieCastReconciliationMove mv
+                      INNER JOIN Audit.LogEntityType et ON et.Id = mv.LogEntityTypeId
+                      WHERE et.Code = N'DieCastContribution' AND mv.EntityId = dc.Id);
 
     UPDATE de
     SET    de.ShiftId = m.NewShiftId

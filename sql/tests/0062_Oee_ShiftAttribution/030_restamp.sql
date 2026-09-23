@@ -44,6 +44,10 @@ DELETE FROM Oee.ShiftOverride WHERE BusinessDate BETWEEN '2026-10-16' AND '2026-
 DELETE FROM Oee.DowntimeEvent WHERE Remarks LIKE N'TEST_AT_%';
 DELETE FROM Workorder.DieCastContribution
 WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'TEST_AT_%');
+DELETE m FROM Workorder.DieCastReconciliationMove m
+  INNER JOIN Workorder.DieCastShiftReconciliation h ON h.Id = m.ReconciliationId WHERE h.Note = N'TEST_AT';
+DELETE FROM Workorder.DieCastShiftReconciliation WHERE Note = N'TEST_AT';
+DELETE FROM Tools.Tool WHERE Code = N'TEST_AT_DIE';
 DELETE FROM Lots.Lot WHERE LotName LIKE N'TEST_AT_%';
 
 IF NOT EXISTS (SELECT 1 FROM Oee.Shift sh INNER JOIN Oee.ShiftSchedule ss ON ss.Id = sh.ShiftScheduleId
@@ -95,6 +99,31 @@ VALUES (@EqA, NULL, @SecondShift, @At15, @At1530, @SrcId, N'TEST_AT_pressA'),
 INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId)
 VALUES (@LotId, @SecondShift, 5, 1, @At15, @EqA),   -- press stamped -> restampable
        (@LotId, @SecondShift, 3, 1, @At15, NULL);   -- press unknown  -> excluded, never guessed
+
+-- 0097 / amendment A2: rows a shift reconciliation WROTE or MOVED are the team
+-- lead's decision and must survive an override restamp untouched. Both rows below
+-- sit at 15:00 on press A -- exactly the rows the override would otherwise drag to
+-- First -- so they only stay on Second if the exclusion is doing its job.
+DECLARE @FirstShift BIGINT = (SELECT sh.Id FROM Oee.Shift sh
+                              INNER JOIN Oee.ShiftSchedule ss ON ss.Id = sh.ShiftScheduleId
+                              WHERE ss.Name = N'TEST_AT_First' AND CAST(sh.ActualStart AS DATE) = '2026-10-19');
+INSERT INTO Tools.Tool (Code, Name, ToolTypeId, StatusCodeId, CreatedByUserId)
+VALUES (N'TEST_AT_DIE', N'TEST_AT die',
+        (SELECT TOP 1 Id FROM Tools.ToolType ORDER BY Id),
+        (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active'), 1);
+INSERT INTO Workorder.DieCastShiftReconciliation
+    (ShiftId, CellLocationId, ToolId, ReasonId, Note, DieShotCountBefore, DieShotCountAfter, AppUserId)
+VALUES (@SecondShift, @EqA, (SELECT Id FROM Tools.Tool WHERE Code = N'TEST_AT_DIE'),
+        (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'WrongShift'), N'TEST_AT', 0, 0, 1);
+DECLARE @RcH BIGINT = SCOPE_IDENTITY();
+
+INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId, ReconciliationId)
+VALUES (@LotId, @SecondShift, 7, 1, @At15, @EqA, @RcH);          -- written by a reconciliation
+INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId)
+VALUES (@LotId, @SecondShift, 9, 1, @At15, @EqA);                 -- moved by a reconciliation
+DECLARE @RcMoved BIGINT = SCOPE_IDENTITY();
+INSERT INTO Workorder.DieCastReconciliationMove (ReconciliationId, LogEntityTypeId, EntityId, FromShiftId, ToShiftId)
+VALUES (@RcH, (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DieCastContribution'), @RcMoved, @FirstShift, @SecondShift);
 GO
 
 -- =============================================
@@ -144,6 +173,25 @@ EXEC test.Assert_IsEqual @TestName = N'[RS.create] the die-cast contribution mov
      @Expected = N'TEST_AT_First', @Actual = @nameC;
 EXEC test.Assert_IsEqual @TestName = N'[RS.create] a contribution with NO press stays put -- never guessed',
      @Expected = N'TEST_AT_Second', @Actual = @nameN;
+
+-- 0097 / amendment A2. The reconciliation re-derives nothing from EventAt: a
+-- night-shift entry keyed at 09:35 the next morning keeps its 09:35 stamp, so this
+-- proc would drag it back the next time an override touched the press and silently
+-- undo the team lead's reading of the press sheet.
+DECLARE @nameRcW NVARCHAR(100) = (
+    SELECT ss.Name FROM Workorder.DieCastContribution dc
+    INNER JOIN Oee.Shift sh ON sh.Id = dc.ShiftId
+    INNER JOIN Oee.ShiftSchedule ss ON ss.Id = sh.ShiftScheduleId
+    WHERE dc.PieceDelta = 7 AND dc.CellLocationId = @EqA1);
+DECLARE @nameRcM NVARCHAR(100) = (
+    SELECT ss.Name FROM Workorder.DieCastContribution dc
+    INNER JOIN Oee.Shift sh ON sh.Id = dc.ShiftId
+    INNER JOIN Oee.ShiftSchedule ss ON ss.Id = sh.ShiftScheduleId
+    WHERE dc.PieceDelta = 9 AND dc.CellLocationId = @EqA1);
+EXEC test.Assert_IsEqual @TestName = N'[RS.create] a row a reconciliation WROTE is not re-derived',
+     @Expected = N'TEST_AT_Second', @Actual = @nameRcW;
+EXEC test.Assert_IsEqual @TestName = N'[RS.create] a row a reconciliation MOVED is not re-derived',
+     @Expected = N'TEST_AT_Second', @Actual = @nameRcM;
 GO
 
 -- =============================================
@@ -338,6 +386,10 @@ GO
 DELETE FROM Oee.DowntimeEvent WHERE Remarks LIKE N'TEST_AT_%';
 DELETE FROM Workorder.DieCastContribution
 WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'TEST_AT_%');
+DELETE m FROM Workorder.DieCastReconciliationMove m
+  INNER JOIN Workorder.DieCastShiftReconciliation h ON h.Id = m.ReconciliationId WHERE h.Note = N'TEST_AT';
+DELETE FROM Workorder.DieCastShiftReconciliation WHERE Note = N'TEST_AT';
+DELETE FROM Tools.Tool WHERE Code = N'TEST_AT_DIE';
 DELETE FROM Lots.Lot WHERE LotName LIKE N'TEST_AT_%';
 DELETE FROM Oee.ShiftOverride WHERE BusinessDate BETWEEN '2026-10-16' AND '2026-10-23';
 GO
