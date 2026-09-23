@@ -11,7 +11,7 @@ const asSentence = (t) => (/[.!?]$/.test(t.trim()) ? t.trim() : `${t.trim()}.`);
 
 function slideText(s) {
   return [s.title, ...(s.steps || []), s.tip, ...(s.zones || []).map((z) => z.label),
-    ...(s.bullets || []), ...(s.terms || []).map((t) => t.meaning),
+    ...(s.bullets || []), s.caption, ...(s.terms || []).map((t) => t.meaning),
     ...(s.columns || []).flatMap((c) => [c.heading, ...c.items])]
     .filter(Boolean).map(asSentence).join(' ');
 }

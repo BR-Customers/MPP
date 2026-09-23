@@ -180,6 +180,23 @@ function placeholderSlide(pres, s) {
   slide.addNotes(s.notes);
 }
 
+// A slide whose picture came from outside the capture set -- typically one a
+// person added in PowerPoint and pull_pptx_edits.py imported. Shown whole, with
+// an optional caption, so a rebuild keeps it instead of dropping it.
+function imageSlide(pres, s) {
+  const slide = pres.addSlide(); header(slide, s);
+  const img = path.join(SHOTS, s.image);
+  const buf = fs.readFileSync(img);             // dimensions come from the PNG header
+  const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20);
+  const box = s.caption ? { x: 0.45, y: 1.25, w: 8.5, h: 5.8 } : { x: 0.45, y: 1.25, w: 12.4, h: 5.9 };
+  const placed = placeImage(w, h, box);
+  slide.addImage({ path: img, ...placed, altText: s.title });
+  if (s.caption) {
+    slide.addText(runs(s.caption, 17), { x: PANEL.x, y: PANEL.y, w: PANEL.w, h: 4.5, valign: 'top', margin: 0, isTextBox: true });
+  }
+  slide.addNotes(s.notes);
+}
+
 function glossarySlide(pres, s) {
   const slide = pres.addSlide(); header(slide, s);
   s.terms.forEach((t, i) => {
@@ -232,6 +249,7 @@ function main() {
       case 'steps': return stepsSlide(pres, s);
       case 'summary': return summarySlide(pres, s);
       case 'placeholder': return placeholderSlide(pres, s);
+      case 'image': return imageSlide(pres, s);
       default: throw new Error(`unknown kind ${s.kind}`);
     }
   });

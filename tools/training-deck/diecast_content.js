@@ -53,12 +53,12 @@ module.exports = {
     {
       id: 'lot-overview', kind: 'overview', kicker: 'Screen tour', title: 'The Lot Management screen', shot: 'lot_overview',
       zones: [
-        { letter: 'A', target: 'header', pos: 2, color: ZONE.blue, label: 'Top bar: shift, who is signed in, **Downtime**' },
+        { letter: 'A', target: 'header', pos: 2, color: ZONE.blue, label: 'Top bar: Date Time, current shift, who is signed in, **Downtime**' },
         { letter: 'B', target: 'cell', color: ZONE.orange, label: 'Your machine' },
         { letter: 'C', target: 'tabs', color: ZONE.purple, label: 'The two tabs' },
         { letter: 'D', target: 'die', pos: 5, color: ZONE.teal, label: 'The die in this machine' },
         { letter: 'E', target: 'rows', pos: 6, color: ZONE.red, label: 'One row for each cavity' },
-        { letter: 'F', target: 'footer', color: ZONE.gold, label: 'Open many baskets at once' },
+        { letter: 'F', target: 'footer', color: ZONE.gold, label: 'Lot Management Open Cavity' },
       ],
       notes: 'This is the screen you use most. Each row is one cavity of the die. Rows are grouped by the part they make. '
         + 'Orange words mean the cavity has no basket yet.',
@@ -66,12 +66,12 @@ module.exports = {
     {
       id: 'pin', kind: 'steps', kicker: 'Start of shift', title: 'Sign in with your PIN', shot: 'pin_pad',
       steps: [
-        'No number pad? Tap your name here.',
+        'When you first arrive at your terminal. Tap "Operator" to sign in.',
         'Type your five-digit PIN.',
         'Check the number shows here.',
       ],
       markers: [{ n: 1, target: 'chip' }, { n: 2, target: 'keypad' }, { n: 3, target: 'display' }],
-      tip: 'Does your PIN start with 0? Type the 0. It counts.',
+      tip: 'Full time employees pin start with a 0.\n\nExample 0 X X X X',
       notes: 'The PIN tells the screen who is working. It is not a password. '
         + 'Everything you do is saved under your name until someone else signs in.',
     },
@@ -100,7 +100,7 @@ module.exports = {
       id: 'open', kind: 'steps', kicker: 'Baskets', title: 'Open a basket', shot: 'open_scan',
       steps: [
         'Find the cavity that says **no basket**.',
-        'Tap **Scan LTT**. Scan the ticket on the basket.',
+        'Tap the input field **Scan LTT**. Scan the ticket on the basket. Tap anywhere else on the screen for the update to take',
         'Tap **Open 1 basket(s)**.',
       ],
       markers: [{ n: 1, target: 'row' }, { n: 2, target: 'scan' }, { n: 3, target: 'openBtn' }],
@@ -144,6 +144,19 @@ module.exports = {
         + 'or a wrong number was typed before. Type what the counter really shows. Then finish the release.',
     },
     {
+      id: 'fix-counter', kind: 'steps', kicker: 'When it looks wrong', title: 'The counter was reset', shot: 'fix_counter',
+      steps: [
+        'Tap **Fix counter**. Type what the counter shows now.',
+        'Pick why it moved.',
+        'Add a short note if you can.',
+        'Tap **Record this reading**.',
+      ],
+      markers: [{ n: 1, target: 'reads' }, { n: 2, target: 'why' }, { n: 3, target: 'note' }, { n: 4, target: 'record' }],
+      tip: 'Counter was set to zero? Type 0.',
+      notes: 'Use this when the counter was zeroed, or a wrong number went in earlier. '
+        + 'Pieces already in the baskets do not change.',
+    },
+    {
       id: 'void', kind: 'steps', kicker: 'Baskets', title: 'Void an empty basket', shot: 'void_dialog',
       steps: [
         'Find the LOT you want to remove on the **Lot Management** screen.',
@@ -151,7 +164,7 @@ module.exports = {
         'Check the ticket number. Tap **Void** to confirm.',
       ],
       markers: [{ n: 1, target: 'row' }, { n: 2, target: 'rowVoid' }, { n: 3, target: 'voidBtn' }],
-      tip: 'Only for a basket with nothing in it. It cannot be undone.',
+      tip: 'Only for a basket with nothing in it. It cannot be undone. It prevents that lot number from being used in the system for anything else.',
       notes: 'Use this when a ticket was opened by mistake and no parts went in. The ticket is scrapped and the cavity is free again.',
     },
     {
@@ -226,22 +239,9 @@ module.exports = {
         'Tap **Submit shift entry**.',
       ],
       markers: [{ n: 1, target: 'varianceChip' }, { n: 2, target: 'reasonDd' }, { n: 3, target: 'submit' }],
-      tip: 'Unknown is an honest answer. Do not guess a defect.',
+      tip: 'Unknown is an honest answer. Do not guess a defect.\n\nThis highlights a real difference between what\'s reported by the die, and your shots in the basket. This is important, even if you are unable to account for each part difference.',
       notes: 'Some reasons ask for a note. A short note, like found the cavity empty at 2:40, helps a lot later. '
         + 'Once you send it, the entry cannot be changed at the terminal. If you made a mistake, call your team lead.',
-    },
-    {
-      id: 'fix-counter', kind: 'steps', kicker: 'When it looks wrong', title: 'The counter was reset', shot: 'fix_counter',
-      steps: [
-        'Tap **Fix counter**. Type what the counter shows now.',
-        'Pick why it moved.',
-        'Add a short note if you can.',
-        'Tap **Record this reading**.',
-      ],
-      markers: [{ n: 1, target: 'reads' }, { n: 2, target: 'why' }, { n: 3, target: 'note' }, { n: 4, target: 'record' }],
-      tip: 'Counter was set to zero? Type 0.',
-      notes: 'Use this when the counter was zeroed, or a wrong number went in earlier. '
-        + 'Pieces already in the baskets do not change.',
     },
     {
       id: 'downtime', kind: 'steps', kicker: 'When it looks wrong', title: 'When the machine stops', shot: 'downtime',
