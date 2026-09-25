@@ -70,5 +70,62 @@ BEGIN
 END
 GO
 
+-- Migration 0098: the same rule on the scrap side. A negative RejectEvent.Quantity
+-- is legal ONLY on a reconciliation row -- DieCastScrap_Write writes the quantity
+-- as given, so this CHECK is what catches a sign error in the scrap-gap arithmetic.
+DECLARE @Def    BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode ORDER BY Id);
+DECLARE @Usr    BIGINT = test.ufn_RC(N'Usr');
+DECLARE @RcTool BIGINT, @RcCell BIGINT, @RcSh BIGINT;
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'MissedEntry');
+DECLARE @RejErr NVARCHAR(4000) = N'(no error)';
+DECLARE @AccErr NVARCHAR(4000) = N'(no error)';
+DECLARE @Landed NVARCHAR(50)   = N'0';
+
+-- (a) refused without a reconciliation
+BEGIN TRY
+    BEGIN TRAN;
+    INSERT INTO Workorder.RejectEvent (LotId, DefectCodeId, Quantity, AppUserId, RecordedAt)
+    VALUES (NULL, @Def, -1, @Usr, SYSUTCDATETIME());
+    ROLLBACK;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK;
+    SET @RejErr = ERROR_MESSAGE();
+END CATCH
+EXEC test.Assert_Contains @TestName = N'[0098] negative reject quantity without a reconciliation is refused',
+    @HaystackStr = @RejErr, @NeedleStr = N'CK_RejectEvent_QuantityNonNeg';
+
+-- (b) accepted WITH one (the compensating row a reconciliation writes).
+-- The fixture die/shifts are built INSIDE the transaction and rolled back with
+-- it, so this file still leaves no fixture rows behind for the later files.
+BEGIN TRY
+    BEGIN TRAN;
+    EXEC test.DieCastRecon_Setup;
+    SET @RcTool = test.ufn_RC(N'Tool');
+    SET @RcCell = test.ufn_RC(N'Cell');
+    SET @RcSh   = test.ufn_RC(N'S1');
+
+    INSERT INTO Workorder.DieCastShiftReconciliation
+        (ShiftId, CellLocationId, ToolId, ReasonId, DieShotCountBefore, DieShotCountAfter, AppUserId)
+    VALUES (@RcSh, @RcCell, @RcTool, @Reason, 0, 0, @Usr);
+    DECLARE @RcId BIGINT = SCOPE_IDENTITY();
+
+    INSERT INTO Workorder.RejectEvent (LotId, DefectCodeId, Quantity, AppUserId, RecordedAt, ReconciliationId)
+    VALUES (NULL, @Def, -1, @Usr, SYSUTCDATETIME(), @RcId);
+
+    SET @Landed = CAST((SELECT COUNT(*) FROM Workorder.RejectEvent
+                        WHERE ReconciliationId = @RcId AND Quantity = -1) AS NVARCHAR(50));
+    ROLLBACK;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK;
+    SET @AccErr = ERROR_MESSAGE();
+END CATCH
+EXEC test.Assert_IsEqual @TestName = N'[0098] negative reject quantity WITH a reconciliation is accepted',
+    @Expected = N'1', @Actual = @Landed;
+EXEC test.Assert_IsEqual @TestName = N'[0098] the accepted insert raised no error',
+    @Expected = N'(no error)', @Actual = @AccErr;
+GO
+
 EXEC test.EndTestFile;
 GO
