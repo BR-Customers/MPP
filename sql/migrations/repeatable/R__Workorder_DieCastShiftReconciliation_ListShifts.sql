@@ -2,11 +2,22 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_ListShifts.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.0
+-- Version:     1.1
 -- Description: The reconciliation landing list: the last @Days of shifts on
---              one press, one row per die that was mounted during the shift or
---              produced in it (spec 2026-09-21 sec 6.1). Newest first; nothing
---              is pre-selected on screen.
+--              one press, one row per die that was mounted during the shift,
+--              produced in it, or was scrapped from in it (spec 2026-09-21
+--              sec 6.1). Newest first; nothing is pre-selected on screen.
+--
+--              A die reaches this list three ways, and the third is not
+--              optional: since migration 0084 a cavity-attributed scrap row
+--              carries its OWN stamped ToolId / ItemId / CellLocationId
+--              precisely because RejectEvent.LotId is nullable -- a cavity
+--              with no basket can be scrapped. Reaching the die through
+--              Lots.Lot would inner-join on that NULL and drop the row
+--              silently, so a shift whose only record is basketless scrap
+--              would be invisible here unless the die assignment happened to
+--              have been recorded. The RejectEvent arm below uses the stamped
+--              ToolId and never touches Lots.Lot.
 --
 --              StatusCode, and what each one MEANS:
 --                Open               the live screen owns it -- not reconcilable
@@ -15,9 +26,13 @@
 --                                   no anchor: the amber case, and the same
 --                                   rule the dashboard tile counts
 --                EntryRecorded      a shift-end number is on record
---                NoEntry            nothing recorded -- NEUTRAL. The MES cannot
---                                   tell a missed entry from a press that did
---                                   not run, and colouring that amber would
+--                NoEntry            nothing recorded and no shift shot total
+--                                   entered -- NEUTRAL, and the same idle
+--                                   signal DieCastShift_ListUnreconciled
+--                                   reports with IsAlerting = 0. A die is
+--                                   often left assigned until the next one is
+--                                   mounted, so this fires over weekends, prep
+--                                   and between runs; colouring it amber would
 --                                   train people to ignore amber.
 --
 --              @AtMoment is a UTC "now" override for tests.
@@ -55,6 +70,11 @@ BEGIN
         FROM Workorder.DieCastContribution c
         INNER JOIN Lots.Lot l ON l.Id = c.LotId
         WHERE c.CellLocationId = @CellLocationId AND c.ShiftId IN (SELECT Id FROM sh) AND l.ToolId IS NOT NULL
+        UNION
+        -- Cavity-attributed scrap: stamped ToolId (0084), NOT reached via Lots.Lot.
+        SELECT r.ShiftId, r.ToolId
+        FROM Workorder.RejectEvent r
+        WHERE r.CellLocationId = @CellLocationId AND r.ShiftId IN (SELECT Id FROM sh) AND r.ToolId IS NOT NULL
     )
     SELECT sh.Id AS ShiftId,
            CONVERT(NVARCHAR(5), sh.ActualStart, 110) + N' ' + sh.Name AS ShiftLabel,
