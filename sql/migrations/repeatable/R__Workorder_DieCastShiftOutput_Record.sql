@@ -1,8 +1,23 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_DieCastShiftOutput_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-14
--- Version:     3.1
+-- Modified:    2026-09-25
+-- Version:     3.2
+-- Change:      v3.2 (2026-09-25) -- pre-transaction validation of a scrap
+--              line's approvedByUserId. The check exists because v3.1 made
+--              the column WRITABLE from operator JSON: the inline scrap
+--              INSERTs it replaced had 14-column lists that did not include
+--              ApprovedByUserId at all, so an approvedByUserId key in
+--              scrapLines was silently discarded; Workorder.DieCastScrap_Write
+--              reads s.approvedByUserId and writes it. A bad id therefore
+--              reached Workorder.RejectEvent's FK inside the transaction and
+--              surfaced as a generic 'Unexpected error' toast. It now rejects
+--              cleanly alongside the defectCodeId check it is modelled on,
+--              BEFORE BEGIN TRANSACTION (Msg-3915 rule). Optional stays
+--              optional: only a SUPPLIED id that does not resolve to an
+--              active (DeprecatedAt IS NULL) Location.AppUser is refused; a
+--              line that omits the key or passes null behaves exactly as
+--              before. No other validation, and no worker, was touched.
 -- Change:      v3.1 (2026-09-22) -- the writes moved into shared workers
 --              (spec 2026-09-21 sec 5.1): the contribution + LOT count +
 --              audit block is now Workorder.DieCastCredit_Write. Behaviour
@@ -268,6 +283,31 @@ BEGIN
             WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Id = sl.defectCodeId AND dc.DeprecatedAt IS NULL)
         ))
         BEGIN SET @Message=N'One or more scrap/shot-loss defect codes are invalid or deprecated.'; GOTO Fail; END
+
+        -- v3.2: an APPROVER named on a scrap line must be a real, active user.
+        -- This column only became writable from the operator's JSON in v3.1:
+        -- the old inline scrap INSERTs listed 14 columns and ApprovedByUserId
+        -- was not among them, so an approvedByUserId key was silently
+        -- discarded. Workorder.DieCastScrap_Write reads s.approvedByUserId and
+        -- writes it, so from v3.1 a bad id reaches RejectEvent's FK
+        -- mid-transaction and the operator sees a generic 'Unexpected error'
+        -- instead of something they can act on. Same shape and placement as
+        -- the defectCodeId check above; 'active' is DeprecatedAt IS NULL, the
+        -- definition Location.AppUser_GetActiveByPin / _GetActiveByInitials
+        -- and Location.AppUser_Update all use. OPTIONAL by design: a scrap
+        -- line that omits the key, or passes null, is untouched -- only a
+        -- SUPPLIED id that does not resolve is refused. The die-wide
+        -- (@ShotLossJson) path needs no equivalent check -- the worker writes
+        -- NULL there and never reads an approver from that JSON.
+        IF EXISTS (
+            SELECT 1 FROM @Lines ln
+            CROSS APPLY OPENJSON(ln.ScrapLines) WITH (approvedByUserId BIGINT N'$.approvedByUserId') s
+            WHERE ln.ScrapLines IS NOT NULL AND ISJSON(ln.ScrapLines) = 1
+              AND s.approvedByUserId IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM Location.AppUser u
+                              WHERE u.Id = s.approvedByUserId AND u.DeprecatedAt IS NULL)
+        )
+        BEGIN SET @Message=N'A scrap line''s approver is not an active user; pick the approver again.'; GOTO Fail; END
 
         -- v1.4 (shift-override attribution, OI-2 / spec sec 5): the PRESS this
         -- output was produced on is stamped onto every DieCastContribution row.

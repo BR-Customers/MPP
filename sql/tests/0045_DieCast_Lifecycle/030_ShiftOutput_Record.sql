@@ -58,6 +58,9 @@ DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId W
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-DCB-TOOL');
 DELETE FROM Tools.Tool WHERE Code = N'TEST-DCB-TOOL';
 DELETE FROM Quality.DefectCode WHERE Code = N'TEST-DCB-DEP';
+-- scrap-approver fixture users (proc v3.2 approvedByUserId coverage). Deleted
+-- after the RejectEvent rows above, which carry the FK to them.
+DELETE FROM Location.AppUser WHERE Initials IN (N'ZDCA', N'ZDCD');
 GO
 
 -- ---- fixture: resolve (Cell, ItemId) via ancestor-cascade eligibility + a
@@ -242,6 +245,82 @@ EXEC test.Assert_IsEqual @TestName=N'[DefectCode] deprecated scrap defectCodeId 
 DELETE FROM Quality.DefectCode WHERE Id = @DepDefectCode;
 
 -- ---------------------------------------------------------------
+-- Approver validation (proc v3.2). scrapLines[].approvedByUserId only became
+-- WRITABLE when the scrap inserts moved into Workorder.DieCastScrap_Write
+-- (v3.1) -- the inline 14-column INSERTs it replaced never listed
+-- ApprovedByUserId, so the key was silently discarded. A supplied id that is
+-- not an ACTIVE Location.AppUser (DeprecatedAt IS NULL) must now reject
+-- PRE-TRANSACTION with a clean Status=0, rather than hitting RejectEvent's FK
+-- mid-transaction and surfacing as 'Unexpected error'. Optional stays
+-- optional: an omitted key still records. Same fixture lot -- the passing
+-- cases write additive scrap only (pieceDelta 0), the failing ones write
+-- nothing at all.
+-- ---------------------------------------------------------------
+INSERT INTO Location.AppUser (DisplayName, Initials, Pin, CreatedAt)
+VALUES (N'0045/030 scrap approver', N'ZDCA', N'93801', SYSUTCDATETIME());
+DECLARE @Approver BIGINT = SCOPE_IDENTITY();
+
+DECLARE @ApprLines NVARCHAR(MAX) = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20))
+    + N',"pieceDelta":0,"scrapLines":[{"defectCodeId":' + CAST(@DefectCode AS NVARCHAR(20))
+    + N',"quantity":7,"approvedByUserId":' + CAST(@Approver AS NVARCHAR(20)) + N'}]}]';
+DECLARE @WAppr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @WAppr EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@ApprLines,
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @apprStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @WAppr);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] a valid approvedByUserId still records, Status 1', @Expected=N'1', @Actual=@apprStatus;
+
+DECLARE @apprExpected NVARCHAR(20) = CAST(@Approver AS NVARCHAR(20));
+DECLARE @apprLanded NVARCHAR(20) = (SELECT ISNULL(CAST(ApprovedByUserId AS NVARCHAR(20)), N'NULL')
+    FROM Workorder.RejectEvent WHERE LotId = @Lot AND Quantity = 7);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] the approver landed on the RejectEvent row', @Expected=@apprExpected, @Actual=@apprLanded;
+
+-- omitted key: unchanged behaviour, and the column stays NULL
+DECLARE @NoApprLines NVARCHAR(MAX) = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20))
+    + N',"pieceDelta":0,"scrapLines":[{"defectCodeId":' + CAST(@DefectCode AS NVARCHAR(20))
+    + N',"quantity":8}]}]';
+DECLARE @WNoAppr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @WNoAppr EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@NoApprLines,
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @noApprStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @WNoAppr);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] a scrap line with no approver still records, Status 1', @Expected=N'1', @Actual=@noApprStatus;
+DECLARE @noApprLanded NVARCHAR(20) = (SELECT ISNULL(CAST(ApprovedByUserId AS NVARCHAR(20)), N'NULL')
+    FROM Workorder.RejectEvent WHERE LotId = @Lot AND Quantity = 8);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] an omitted approver leaves ApprovedByUserId NULL', @Expected=N'NULL', @Actual=@noApprLanded;
+
+-- nonexistent approver: refused BEFORE the transaction, with the new message
+DECLARE @BadApprLines NVARCHAR(MAX) = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20))
+    + N',"pieceDelta":0,"scrapLines":[{"defectCodeId":' + CAST(@DefectCode AS NVARCHAR(20))
+    + N',"quantity":9,"approvedByUserId":999999999}]}]';
+DECLARE @WBadAppr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @WBadAppr EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@BadApprLines,
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @badApprStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @WBadAppr);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] a nonexistent approvedByUserId is rejected, Status 0', @Expected=N'0', @Actual=@badApprStatus;
+DECLARE @badApprMsg NVARCHAR(500) = (SELECT Message FROM @WBadAppr);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] rejection carries the actionable message, not an unexpected-error',
+    @Expected=N'A scrap line''s approver is not an active user; pick the approver again.', @Actual=@badApprMsg;
+-- pre-transaction: nothing was written for that line
+DECLARE @badApprRows NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10))
+    FROM Workorder.RejectEvent WHERE LotId = @Lot AND Quantity = 9);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] the refused line wrote no RejectEvent row', @Expected=N'0', @Actual=@badApprRows;
+
+-- a DEPRECATED approver is refused too -- 'active' is DeprecatedAt IS NULL,
+-- the same definition Location.AppUser_GetActiveByPin uses (parity with the
+-- deprecated defect-code case above).
+INSERT INTO Location.AppUser (DisplayName, Initials, Pin, CreatedAt, DeprecatedAt)
+VALUES (N'0045/030 deprecated scrap approver', N'ZDCD', N'93802', SYSUTCDATETIME(), SYSUTCDATETIME());
+DECLARE @DepApprover BIGINT = SCOPE_IDENTITY();
+
+DECLARE @DepApprLines NVARCHAR(MAX) = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20))
+    + N',"pieceDelta":0,"scrapLines":[{"defectCodeId":' + CAST(@DefectCode AS NVARCHAR(20))
+    + N',"quantity":11,"approvedByUserId":' + CAST(@DepApprover AS NVARCHAR(20)) + N'}]}]';
+DECLARE @WDepAppr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @WDepAppr EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@DepApprLines,
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @depApprStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @WDepAppr);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] a deprecated approvedByUserId is rejected, Status 0', @Expected=N'0', @Actual=@depApprStatus;
+
+-- ---------------------------------------------------------------
 -- Multi-lot-per-cavity breakdown coverage: the read proc must report BOTH lots
 -- that occupied one cavity during the shift window -- the one released
 -- mid-shift and the one open now -- with the right ProposedGood on each.
@@ -389,6 +468,8 @@ DELETE FROM Lots.Lot WHERE Id IN (@Lot, @LotA, @LotB);
 DELETE FROM Tools.ToolCavity WHERE ToolId = @Tool;
 DELETE FROM Tools.ToolAssignment WHERE ToolId = @Tool;
 DELETE FROM Tools.Tool WHERE Id = @Tool;
+-- after the RejectEvent delete above, which holds the ApprovedByUserId FK
+DELETE FROM Location.AppUser WHERE Id IN (@Approver, @DepApprover);
 IF @ShiftCreatedByTest = 1
     DELETE FROM Oee.Shift WHERE Id = @Shift;
 GO
