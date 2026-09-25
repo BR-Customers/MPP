@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.1
+-- Version:     1.2
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -24,6 +24,19 @@
 --              corrected; a LOT trim has counted keeps its count and still
 --              gets its production recorded. Lots.ufn_DieCastLotCountLock
 --              decides which, from what is stored.
+--
+--              THE LOCK OUTRANKS THE STATUS (1.2, code review 2026-09-24).
+--              ApplyToLot used to read status 'Open' alone, but the count lock
+--              turns on four independent conditions and one of them is not
+--              status-derived: a LOT that appears as a genealogy parent is
+--              locked whatever its status. An Open LOT already consumed into
+--              another was therefore locked AND had its count rewritten -- the
+--              one shape the rule forbids. ApplyToLot is now
+--              "new, OR Open and the count lock says not locked", so the lock
+--              is the single authority over every count. The production record
+--              is unaffected: loop (c) credits EVERY planned row with a
+--              non-zero gap and only passes @ApplyToLot = 0, which is
+--              DieCastCredit_Write's "record it, leave the count".
 --
 --              The reading is declared by an ANCHOR written here (A3), which
 --              floors both watermarks and works for a decrease as well as an
@@ -89,6 +102,11 @@
 --                      departure from the plan's SQL). See header "THE MOVES ARE
 --                      VERIFIED, NOT ASSUMED" and R__Workorder_DieCastEntry_
 --                      Restamp.sql 1.1.
+--   2026-09-24 - 1.2 - ApplyToLot now defers to the count lock, not to status
+--                      'Open' alone (code review). See header "THE LOCK
+--                      OUTRANKS THE STATUS". Also dropped a dead disjunct from
+--                      the no-active-cavities gate: a reject line with no
+--                      actual figure is already refused above it.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -310,7 +328,9 @@ BEGIN
         IF @HasActual = 0 AND (EXISTS (SELECT 1 FROM @Lots) OR EXISTS (SELECT 1 FROM @Rej))
         BEGIN SET @Message = N'Enter the actual total shots, good shots and warm-up shots.'; GOTO Fail; END
 
-        IF @Cavities = 0 AND (@HasActual = 1 OR EXISTS (SELECT 1 FROM @Rej))
+        -- @HasActual = 1 covers every input that needs a cavity: a reject line
+        -- without an actual figure was already refused by the gate above.
+        IF @Cavities = 0 AND @HasActual = 1
         BEGIN SET @Message = N'This die has no active cavities, so there is nothing to reconcile against.'; GOTO Fail; END
 
         DECLARE @WarmCodeId BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'999');
@@ -424,7 +444,9 @@ BEGIN
                CASE WHEN lt.LotId IS NULL THEN 1 ELSE 0 END,
                lt.Qty - ISNULL(r.Recorded, 0),
                ISNULL(lk.IsLocked, 0), ISNULL(l.PieceCount, 0), ISNULL(l.InventoryAvailable, 0),
-               CASE WHEN lt.LotId IS NULL OR sc.Code = N'Open' THEN 1 ELSE 0 END,
+               -- the count lock is the authority, not the status: an Open LOT
+               -- consumed into another is locked too (see header, 1.2).
+               CASE WHEN lt.LotId IS NULL OR (sc.Code = N'Open' AND ISNULL(lk.IsLocked, 0) = 0) THEN 1 ELSE 0 END,
                CASE WHEN sc.Code = N'Good' AND ISNULL(lk.IsLocked, 0) = 0 THEN 1 ELSE 0 END
         FROM @Lots lt
         LEFT JOIN Lots.Lot l ON l.Id = lt.LotId

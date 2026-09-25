@@ -4,7 +4,12 @@
 --   A  an entry filed against the wrong shift, and the shift's own production
 --      missing (Machine 11, 09-17);
 --   B  a shift with NOTHING recorded, entered from its LTTs (Machine 202);
---   C  a reduction -- recorded is higher than actual.
+--   C  a reduction -- recorded is higher than actual;
+--   D  a second pass over C's shift that exercises what C could not: the
+--      DOWNWARD scrap direction (C's warm-up actual equalled its record, so
+--      both scrap inserts emitted nothing), and an OPEN LOT the count lock has
+--      locked because it was consumed into another -- the one place status and
+--      lock disagree, where the count must stand and the production must not.
 -- Shift end S4 = 15:00 ET = 20:00 UTC, so backfilled rows land at 19:59:59 (A1).
 -- =============================================
 SET NOCOUNT ON;
@@ -195,8 +200,23 @@ SET @v = (SELECT CONCAT(SUM(PieceDelta), N'|', COUNT(*)) FROM Workorder.DieCastC
 EXEC test.Assert_IsEqual @TestName = N'[C] written as compensating rows, not by editing history', @Expected = N'-40|2', @Actual = @v;
 SET @v = (SELECT CONCAT(PieceCount, N'|', InventoryAvailable) FROM Lots.Lot WHERE Id = @L1);
 EXEC test.Assert_IsEqual @TestName = N'[C] the open LOT comes down to actual', @Expected = N'570|570', @Actual = @v;
-SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastContribution c WHERE c.ReconciliationId = @RecC AND c.PieceDelta < 0) AS NVARCHAR(400));
-EXEC test.Assert_IsEqual @TestName = N'[C] the CHECK allows a negative only because it is a reconciliation', @Expected = N'2', @Actual = @v;
+-- The reconciliation id is the ONLY reason those two negatives were legal:
+-- the identical row without one has to be refused by the CHECK. Attempted for
+-- real -- counting the rows above proves nothing about the constraint.
+DECLARE @CkErr NVARCHAR(4000) = N'(no error)';
+BEGIN TRY
+    BEGIN TRAN;
+    INSERT INTO Workorder.DieCastContribution
+        (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId)
+    VALUES (@L1, @S1, -20, @Usr, '2020-01-06T16:00:03', @Cell);
+    ROLLBACK;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK;
+    SET @CkErr = ERROR_MESSAGE();
+END CATCH
+EXEC test.Assert_Contains @TestName = N'[C] the same negative without a reconciliation is refused by the CHECK',
+    @HaystackStr = @CkErr, @NeedleStr = N'CK_DieCastContribution_DeltaNonNeg';
 SET @v = CAST(Workorder.ufn_DieShotWatermark(@Tool, @S1, @Cell) AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[C] the anchor lowers the shift''s reading 600 -> 580', @Expected = N'580', @Actual = @v;
 SET @v = CAST((SELECT ShotCount FROM Tools.Tool WHERE Id = @Tool) AS NVARCHAR(400));
@@ -205,6 +225,82 @@ SET @v = (SELECT TOP 1 ol.Description FROM Audit.OperationLog ol
           JOIN Audit.LogEventType ev ON ev.Id = ol.LogEventTypeId
           WHERE ol.EntityId = @RecC AND ev.Code = N'DieCastShiftReconciled' ORDER BY ol.Id DESC);
 EXEC test.Assert_Contains @TestName = N'[C] the audit row names what came off', @HaystackStr = @v, @NeedleStr = N'-40 good';
+GO
+
+-- ====== D: scrap that comes DOWN, and an Open LOT the lock has locked ======
+-- Second pass over S1. After C: both LOTs hold 570 and S1 records 570 each,
+-- 10 warm-up per cavity, reading 580.
+--
+-- Two things C could not reach:
+--  * a NEGATIVE reject row. C's warm-up actual was 10 against a record of 10,
+--    so both scrap inserts produced zero rows. Nothing anywhere tested the
+--    downward direction, and RejectEvent.Quantity has no CHECK to catch a sign
+--    error the way DieCastContribution.PieceDelta does. Here the actual
+--    warm-up is 5 against a record of 10, and an 008 row of 7 is on record
+--    that the sheet does not show at all.
+--  * an OPEN LOT that is locked. Lots.ufn_DieCastLotCountLock locks a LOT that
+--    appears as a genealogy PARENT whatever its status, so 99700622 -- open,
+--    consumed into 99700623 -- is open AND locked. Its count must stand and
+--    its production must still be recorded in full.
+DECLARE @S1 BIGINT = test.ufn_RC(N'S1'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'WrongNumbers');
+DECLARE @Code008 BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'008');
+DECLARE @Code999 BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'999');
+DECLARE @v NVARCHAR(400);
+
+DECLARE @L1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700621');
+DECLARE @L2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700622');
+
+-- 99700622 is consumed into 99700623: open, but the count lock says locked
+EXEC test.DieCastRecon_SeedLot @Ltt = N'99700623', @CavKey = N'CavB';
+DECLARE @L3 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700623');
+INSERT INTO Lots.LotGenealogy (ParentLotId, ChildLotId, RelationshipTypeId, PieceCount, EventUserId, EventAt)
+VALUES (@L2, @L3, (SELECT Id FROM Lots.GenealogyRelationshipType WHERE Code = N'Consumption'),
+        570, @Usr, '2020-01-08T12:00:00');
+SET @v = CAST((SELECT lk.IsLocked FROM Lots.ufn_DieCastLotCountLock(@L2) lk) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[D] an Open LOT consumed into another is locked all the same', @Expected = N'1', @Actual = @v;
+
+-- an 008 row on record for CavA that the press sheet does not show
+EXEC test.DieCastRecon_SeedReject @ShiftKey = N'S1', @CavKey = N'CavA', @DefectCode = N'008', @Qty = 7, @AtUtc = '2020-01-06T16:00:04';
+
+DECLARE @Stamp NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S1, @Cell, @Tool);
+-- 580 shots, 575 good, 5 warm-up, no rejects => total good 575 x 2 = 1,150
+DECLARE @Actual NVARCHAR(MAX) = N'{"totalShots":580,"goodShots":575,"warmUpShots":5}';
+DECLARE @Lots NVARCHAR(MAX) = N'[{"lotId":' + CAST(@L1 AS NVARCHAR(20)) + N',"quantity":575},'
+                            + N'{"lotId":' + CAST(@L2 AS NVARCHAR(20)) + N',"quantity":575}]';
+
+CREATE TABLE #D (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #D EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S1, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @Actual, @LotsJson = @Lots, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+DECLARE @RecD BIGINT = (SELECT NewId FROM #D);
+SET @v = CAST((SELECT Status FROM #D) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[D] the second pass saves', @Expected = N'1', @Actual = @v;
+DROP TABLE #D;
+
+-- the count rule where status and lock disagree
+SET @v = (SELECT CONCAT(PieceCount, N'|', InventoryAvailable) FROM Lots.Lot WHERE Id = @L2);
+EXEC test.Assert_IsEqual @TestName = N'[D] the Open LOT already consumed keeps its count', @Expected = N'570|570', @Actual = @v;
+SET @v = (SELECT CONCAT(SUM(PieceDelta), N'|', COUNT(*)) FROM Workorder.DieCastContribution
+          WHERE ReconciliationId = @RecD AND LotId = @L2);
+EXEC test.Assert_IsEqual @TestName = N'[D] ...and its production is still recorded in full', @Expected = N'5|1', @Actual = @v;
+SET @v = (SELECT CONCAT(PieceCount, N'|', InventoryAvailable) FROM Lots.Lot WHERE Id = @L1);
+EXEC test.Assert_IsEqual @TestName = N'[D] the Open LOT nothing has consumed does move', @Expected = N'575|575', @Actual = @v;
+
+-- the downward scrap direction, both inserts
+SET @v = (SELECT CONCAT(SUM(Quantity), N'|', COUNT(*)) FROM Workorder.RejectEvent
+          WHERE ReconciliationId = @RecD AND DefectCodeId = @Code999);
+EXEC test.Assert_IsEqual @TestName = N'[D] warm-up 10 -> 5 backs out -5 on each of two cavities', @Expected = N'-10|2', @Actual = @v;
+SET @v = (SELECT CONCAT(SUM(Quantity), N'|', COUNT(*)) FROM Workorder.RejectEvent
+          WHERE ReconciliationId = @RecD AND DefectCodeId = @Code008);
+EXEC test.Assert_IsEqual @TestName = N'[D] an 008 row the sheet does not show comes off in full', @Expected = N'-7|1', @Actual = @v;
+SET @v = CAST((SELECT SUM(Quantity) FROM Workorder.RejectEvent
+               WHERE ShiftId = @S1 AND ToolId = @Tool AND DefectCodeId = @Code999) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[D] so the shift now reads the actual 5 warm-up per cavity', @Expected = N'10', @Actual = @v;
+SET @v = CAST((SELECT ISNULL(SUM(Quantity), 0) FROM Workorder.RejectEvent
+               WHERE ShiftId = @S1 AND ToolId = @Tool AND DefectCodeId = @Code008) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[D] ...and no 008 scrap at all', @Expected = N'0', @Actual = @v;
 GO
 
 EXEC test.DieCastRecon_Cleanup;
