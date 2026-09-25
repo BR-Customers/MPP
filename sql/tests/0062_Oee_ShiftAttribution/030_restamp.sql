@@ -124,6 +124,20 @@ VALUES (@LotId, @SecondShift, 9, 1, @At15, @EqA);                 -- moved by a 
 DECLARE @RcMoved BIGINT = SCOPE_IDENTITY();
 INSERT INTO Workorder.DieCastReconciliationMove (ReconciliationId, LogEntityTypeId, EntityId, FromShiftId, ToShiftId)
 VALUES (@RcH, (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DieCastContribution'), @RcMoved, @FirstShift, @SecondShift);
+
+-- The Audit.LogEntityType join inside that exclusion's NOT EXISTS is LOAD-BEARING,
+-- and nothing above proved it: Workorder.DieCastContribution.Id and
+-- Workorder.RejectEvent.Id are INDEPENDENT BIGINT IDENTITY sequences, so an id
+-- that exists in both tables is the normal case, not an edge case. A move filed
+-- against a REJECT row must not exclude the CONTRIBUTION that happens to carry
+-- the same id. So: a Reject-typed move whose EntityId IS the PieceDelta = 5
+-- contribution's id. That contribution must still be restamped to First below.
+-- (Delete the `et` join from Oee.ShiftOverride_Restamp and this row makes the
+-- PieceDelta = 5 assertions in Test 1 fail -- verified 2026-09-24.)
+DECLARE @C5 BIGINT = (SELECT Id FROM Workorder.DieCastContribution
+                      WHERE LotId = @LotId AND PieceDelta = 5 AND CellLocationId = @EqA);
+INSERT INTO Workorder.DieCastReconciliationMove (ReconciliationId, LogEntityTypeId, EntityId, FromShiftId, ToShiftId)
+VALUES (@RcH, (SELECT Id FROM Audit.LogEntityType WHERE Code = N'RejectEvent'), @C5, @FirstShift, @SecondShift);
 GO
 
 -- =============================================
@@ -192,6 +206,15 @@ EXEC test.Assert_IsEqual @TestName = N'[RS.create] a row a reconciliation WROTE 
      @Expected = N'TEST_AT_Second', @Actual = @nameRcW;
 EXEC test.Assert_IsEqual @TestName = N'[RS.create] a row a reconciliation MOVED is not re-derived',
      @Expected = N'TEST_AT_Second', @Actual = @nameRcM;
+
+-- ...and the other side of that exclusion: it is keyed on the ENTITY TYPE, not on
+-- the bare id. A Reject-typed move carrying the PieceDelta = 5 contribution's id
+-- (the fixture above) must not exclude that contribution -- the two tables have
+-- independent IDENTITY sequences, so colliding ids are the norm. @nameC is that
+-- row; asserting it again here is what makes the `et` join in the exclusion's
+-- NOT EXISTS discriminating instead of decorative.
+EXEC test.Assert_IsEqual @TestName = N'[RS.create] a REJECT-typed move with a colliding id does NOT exclude the contribution',
+     @Expected = N'TEST_AT_First', @Actual = @nameC;
 GO
 
 -- =============================================

@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.0
+-- Version:     1.1
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -36,6 +36,18 @@
 --              answer a mistyped reject line with a totals message the team
 --              lead cannot act on -- it would name a sum, not the line that
 --              is wrong.
+--
+--              THE MOVES ARE VERIFIED, NOT ASSUMED (1.1, code review
+--              2026-09-24, approved departure from the plan's SQL).
+--              Workorder.DieCastEntry_Restamp is a worker and so emits no result
+--              set: a @MovesJson payload that resolved to zero rows inside it
+--              used to be indistinguishable from an empty one, and this proc
+--              reported success either way. After the EXEC we now confirm that
+--              EVERY element we sent is on its target shift and RAISERROR into
+--              our own CATCH if any is not -- so the whole reconciliation rolls
+--              back rather than silently losing a team lead's decision. "On its
+--              target shift", not "moved": a row already there is the intended
+--              idempotent skip (sec 3.5) and still passes.
 --
 --              FDS-11-011 + Msg-3915: no OUTPUT params, ONE result set, all
 --              rejecting validations BEFORE BEGIN TRANSACTION, CATCH the only
@@ -73,6 +85,10 @@
 --
 -- Change Log:
 --   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 5.2).
+--   2026-09-24 - 1.1 - Verify the restamp payload landed (code review; approved
+--                      departure from the plan's SQL). See header "THE MOVES ARE
+--                      VERIFIED, NOT ASSUMED" and R__Workorder_DieCastEntry_
+--                      Restamp.sql 1.1.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -462,6 +478,32 @@ BEGIN
                                                       ToShiftId AS toShiftId FROM @Moves FOR JSON PATH);
             EXEC Workorder.DieCastEntry_Restamp @ReconciliationId = @NewId, @MovesJson = @MovesOut,
                 @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
+
+            -- VERIFY THE PAYLOAD LANDED (code review 2026-09-24, approved
+            -- departure from the plan's SQL). The worker emits no result set, so
+            -- a five-element payload that resolved to zero rows in there is
+            -- indistinguishable from an empty one -- this Save would report
+            -- success and the team lead's decision would vanish with nobody
+            -- watching, which is the exact failure the feature exists to
+            -- prevent. So check every element we sent ourselves.
+            --
+            -- "Landed" deliberately means the row is ON its target shift, not
+            -- that it moved: a row already there is the intended idempotent
+            -- skip and must keep passing. What this catches is a row the worker
+            -- dropped -- and, in particular, a payload naming one row twice with
+            -- two different targets, where the worker's dedup can only honour
+            -- one of them.
+            DECLARE @NotLanded INT = (
+                SELECT COUNT(*) FROM @Moves m
+                WHERE NOT EXISTS (SELECT 1 FROM Workorder.DieCastContribution c
+                                  WHERE m.EntityType = N'Contribution'
+                                    AND c.Id = m.EntityId AND c.ShiftId = m.ToShiftId)
+                  AND NOT EXISTS (SELECT 1 FROM Workorder.RejectEvent r
+                                  WHERE m.EntityType = N'Reject'
+                                    AND r.Id = m.EntityId AND r.ShiftId = m.ToShiftId));
+            IF @NotLanded > 0
+                RAISERROR(N'%d of the entries being moved did not end up on the shift they were sent to. Nothing was saved.',
+                          16, 1, @NotLanded);
         END
 
         -- (b) new LOTs, minted at the press with the shift's business date

@@ -132,5 +132,90 @@ SET @v = (SELECT TOP 1 ol.Description FROM Audit.OperationLog ol
 EXEC test.Assert_Contains @TestName = N'[Restamp] one audit row naming what moved', @HaystackStr = @v, @NeedleStr = N'Moved 2 rows';
 GO
 
+-- ---- DieCastEntry_Restamp: what it REFUSES, and what it deduplicates ----
+-- Worker 1.1 (code review 2026-09-24). 1.0 returned SILENTLY on malformed JSON,
+-- an unknown row, an unknown entityType and a NULL current shift -- and since a
+-- worker emits no result set, a payload that resolved to nothing looked exactly
+-- like an empty one. A fresh S1 credit to move around, so the counts below are
+-- not entangled with the two moves asserted above.
+EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700101', @ShiftKey = N'S1', @Pieces = 11,
+    @AtUtc = '2020-01-06T12:45:00';
+GO
+
+DECLARE @H BIGINT = (SELECT Id FROM Workorder.DieCastShiftReconciliation WHERE Note = N'021 worker test');
+DECLARE @Lot BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700101');
+DECLARE @S1 BIGINT = test.ufn_RC(N'S1'), @S2 BIGINT = test.ufn_RC(N'S2'), @S3 BIGINT = test.ufn_RC(N'S3');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @CT BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DieCastContribution');
+DECLARE @D BIGINT = (SELECT Id FROM Workorder.DieCastContribution WHERE LotId = @Lot AND PieceDelta = 11);
+DECLARE @Before INT = (SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove WHERE ReconciliationId = @H);
+DECLARE @v NVARCHAR(400), @Want NVARCHAR(400), @Err NVARCHAR(4000), @Json NVARCHAR(MAX);
+
+-- (1) malformed JSON: an ERROR, because it is a bug in the caller. The worker
+-- still has no TRY/CATCH -- this propagates out of it, which is the point.
+SET @Err = N'(no error)';
+BEGIN TRY
+    SET @Json = N'[{"entityType":"Contribution","entityId":';   -- truncated, not JSON
+    EXEC Workorder.DieCastEntry_Restamp @ReconciliationId = @H, @MovesJson = @Json, @AppUserId = @Usr;
+END TRY
+BEGIN CATCH
+    SET @Err = ERROR_MESSAGE();
+END CATCH
+EXEC test.Assert_Contains @TestName = N'[Restamp] a malformed payload is refused, not silently ignored',
+    @HaystackStr = @Err, @NeedleStr = N'not valid JSON';
+SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove WHERE ReconciliationId = @H) AS NVARCHAR(400));
+SET @Want = CAST(@Before AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] ...and it moved nothing on the way out', @Expected = @Want, @Actual = @v;
+
+-- (2) an unrecognised entityType maps to NO entity type at all. 1.0's
+-- CASE ... ELSE @RejectTypeId typed it as a Reject; loosening the IS NOT NULL
+-- filter would then have filed a move row under the wrong type and broken the
+-- Oee.ShiftOverride_Restamp exclusion, which keys on exactly that type code.
+SET @Json = N'[{"entityType":"Bogus","entityId":' + CAST(@D AS NVARCHAR(20))
+          + N',"toShiftId":' + CAST(@S2 AS NVARCHAR(20)) + N'}]';
+EXEC Workorder.DieCastEntry_Restamp @ReconciliationId = @H, @MovesJson = @Json, @AppUserId = @Usr;
+SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove WHERE ReconciliationId = @H) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] an unknown entityType records no move', @Expected = @Want, @Actual = @v;
+SET @v = CAST((SELECT ShiftId FROM Workorder.DieCastContribution WHERE Id = @D) AS NVARCHAR(400));
+SET @Want = CAST(@S1 AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] ...and the row it named is left where it was', @Expected = @Want, @Actual = @v;
+
+-- (3) an entity id that does not exist: still nothing, and still no move row.
+SET @Want = CAST(@Before AS NVARCHAR(400));
+SET @Json = N'[{"entityType":"Contribution","entityId":-999,"toShiftId":' + CAST(@S2 AS NVARCHAR(20)) + N'}]';
+EXEC Workorder.DieCastEntry_Restamp @ReconciliationId = @H, @MovesJson = @Json, @AppUserId = @Usr;
+SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove WHERE ReconciliationId = @H) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] a row that does not exist records no move', @Expected = @Want, @Actual = @v;
+
+-- (4) the SAME row named twice with two different targets. 1.0 gave a
+-- non-deterministic UPDATE and TWO move rows, one of which durably recorded a
+-- move that never happened. Now it moves once, and the move row agrees with the
+-- data.
+SET @Json = N'[{"entityType":"Contribution","entityId":' + CAST(@D AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S2 AS NVARCHAR(20)) + N'},'
+          + N'{"entityType":"Contribution","entityId":' + CAST(@D AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S3 AS NVARCHAR(20)) + N'}]';
+EXEC Workorder.DieCastEntry_Restamp @ReconciliationId = @H, @MovesJson = @Json, @AppUserId = @Usr;
+SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove
+               WHERE ReconciliationId = @H AND LogEntityTypeId = @CT AND EntityId = @D) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] a row named twice is moved ONCE -- no phantom move row',
+    @Expected = N'1', @Actual = @v;
+SET @v = CAST((SELECT ShiftId FROM Workorder.DieCastContribution WHERE Id = @D) AS NVARCHAR(400));
+SET @Want = CAST((SELECT TOP 1 ToShiftId FROM Workorder.DieCastReconciliationMove
+                  WHERE ReconciliationId = @H AND LogEntityTypeId = @CT AND EntityId = @D) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] ...and the one move recorded is where the row actually went',
+    @Expected = @Want, @Actual = @v;
+
+-- (5) an element already ON its target shift is still skipped -- that is the
+-- feature's idempotency and change 1.1 must not have broken it.
+DECLARE @Now BIGINT = (SELECT ShiftId FROM Workorder.DieCastContribution WHERE Id = @D);
+DECLARE @Before5 INT = (SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove WHERE ReconciliationId = @H);
+SET @Json = N'[{"entityType":"Contribution","entityId":' + CAST(@D AS NVARCHAR(20))
+          + N',"toShiftId":' + CAST(@Now AS NVARCHAR(20)) + N'}]';
+EXEC Workorder.DieCastEntry_Restamp @ReconciliationId = @H, @MovesJson = @Json, @AppUserId = @Usr;
+SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove WHERE ReconciliationId = @H) AS NVARCHAR(400));
+SET @Want = CAST(@Before5 AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] a row already on its target shift is still skipped',
+    @Expected = @Want, @Actual = @v;
+GO
+
 EXEC test.EndTestFile;
 GO

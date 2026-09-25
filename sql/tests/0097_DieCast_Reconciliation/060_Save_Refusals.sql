@@ -146,6 +146,38 @@ INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
 SET @m = (SELECT Message FROM #Res);
 EXEC test.Assert_Contains @TestName = N'[Refuse] a move further than two shifts away', @HaystackStr = @m, @NeedleStr = N'within two shifts';
 
+-- A move the worker cannot land: the SAME contribution named twice with two
+-- different targets. The worker deduplicates on (entity type, entity id), so it
+-- can honour only one of them -- and a worker emits no result set, so before
+-- Save 1.1 this reported SUCCESS on a decision it had half-applied. Now the Save
+-- verifies every element it sent and fails the transaction. Plain EXEC, not
+-- INSERT-EXEC: this path ends in the CATCH, and a ROLLBACK inside an INSERT-EXEC
+-- raises Msg 3915 instead of the message under test.
+DECLARE @S3 BIGINT = test.ufn_RC(N'S3'), @S5 BIGINT = test.ufn_RC(N'S5');
+DECLARE @DupMoves NVARCHAR(MAX) =
+      N'[{"entityType":"Contribution","entityId":' + CAST(@C AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S3 AS NVARCHAR(20)) + N'},'
+    + N'{"entityType":"Contribution","entityId":' + CAST(@C AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S5 AS NVARCHAR(20)) + N'}]';
+DECLARE @DupErr NVARCHAR(4000) = N'(no error)';
+BEGIN TRY
+    EXEC Workorder.DieCastShiftReconciliation_Save
+        @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+        @MovesJson = @DupMoves, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+END TRY
+BEGIN CATCH
+    SET @DupErr = ERROR_MESSAGE();
+END CATCH
+EXEC test.Assert_Contains @TestName = N'[Refuse] a move the worker could not land fails the whole save',
+    @HaystackStr = @DupErr, @NeedleStr = N'did not end up on the shift they were sent to';
+DECLARE @DupShift NVARCHAR(50) = CAST((SELECT ShiftId FROM Workorder.DieCastContribution WHERE Id = @C) AS NVARCHAR(50));
+DECLARE @WantShift NVARCHAR(50) = CAST(@S4 AS NVARCHAR(50));
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...and the half-applied move was rolled back',
+    @Expected = @WantShift, @Actual = @DupShift;
+DECLARE @DupMoveRows NVARCHAR(50) = CAST((SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove m
+    INNER JOIN Workorder.DieCastShiftReconciliation h ON h.Id = m.ReconciliationId
+    WHERE h.ToolId = @Tool) AS NVARCHAR(50));
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...leaving no move on record',
+    @Expected = N'0', @Actual = @DupMoveRows;
+
 -- nothing to do
 DELETE FROM #Res;
 SET @Lots = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20)) + N',"quantity":100}]';
