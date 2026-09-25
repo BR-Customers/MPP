@@ -72,15 +72,87 @@ SET @v = (SELECT CONCAT(Recorded, N'|', PieceCount, N'|', StatusCode, N'|', IsLo
 EXEC test.Assert_IsEqual @TestName = N'[Lots] recorded in THIS shift, plus the LOT''s own count and lock', @Expected = N'953|953|Good|0', @Actual = @v;
 DROP TABLE #L;
 
+-- ---- ListLots: a LOT with NO press is not this press's (1.1) ----
+-- Two LOTs opened DURING S4 on this die, neither credited, so each reaches the
+-- list only through the opened-during-the-shift branch: 99700303 stamped with the
+-- press, 99700304 stamped with nothing. v1.0 wrote
+-- ISNULL(ProducedAtLocationId, @CellLocationId) = @CellLocationId, which made the
+-- unstamped one belong to WHICHEVER press was being viewed -- so another machine's
+-- basket could be reconciled here. ProducedAtLocationId is never NULL on a cast
+-- part; a NULL is a data defect and a read must not paper over it.
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable,
+                      CurrentLocationId, ProducedAtLocationId, ToolId, ToolCavityId, CreatedAt, CreatedByUserId)
+SELECT x.Ltt, tc.ItemId, (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured'),
+       (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Open'), 0, 0, @Cell, x.Produced, tc.ToolId, tc.Id,
+       '2020-01-07T13:40:00', test.ufn_RC(N'Usr')
+FROM Tools.ToolCavity tc
+CROSS JOIN (SELECT N'99700303' AS Ltt, @Cell AS Produced UNION ALL SELECT N'99700304', NULL) x
+WHERE tc.Id = test.ufn_RC(N'CavA');
+
+CREATE TABLE #L2 (LotId BIGINT, Ltt NVARCHAR(50), ItemId BIGINT, PartNumber NVARCHAR(50), PartDescription NVARCHAR(200),
+                  ToolCavityId BIGINT, CavityCode NVARCHAR(10), Recorded INT, PieceCount INT, InventoryAvailable INT,
+                  StatusCode NVARCHAR(20), StatusName NVARCHAR(100), NowAt NVARCHAR(200), ReleasedAtEt DATETIME2(3),
+                  IsLocked BIT, LockReason NVARCHAR(200));
+INSERT INTO #L2 EXEC Workorder.DieCastShiftReconciliation_ListLots @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool;
+-- The control: the branch still admits an uncredited LOT opened on this press.
+SET @v = CAST((SELECT COUNT(*) FROM #L2 WHERE Ltt = N'99700303') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Lots] a LOT opened on THIS press during the shift is listed',
+    @Expected = N'1', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM #L2 WHERE Ltt = N'99700304') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Lots] a LOT with NO press is NOT claimed by this one',
+    @Expected = N'0', @Actual = @v;
+DROP TABLE #L2;
+
 -- ---- ListRejects ----
 CREATE TABLE #R (DefectCodeId BIGINT, DefectCode NVARCHAR(20), Defect NVARCHAR(200), IsNonRejectScrap BIT,
-                 ItemId BIGINT, PartNumber NVARCHAR(50), Quantity INT, Cavities INT, ApprovedBy NVARCHAR(20));
+                 ItemId BIGINT, PartNumber NVARCHAR(50), Quantity INT, Cavities INT,
+                 ApprovedByUserId BIGINT, ApprovedBy NVARCHAR(20));
 INSERT INTO #R EXEC Workorder.DieCastShiftReconciliation_ListRejects @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool;
 SET @v = CAST((SELECT COUNT(*) FROM #R WHERE DefectCode = N'999') AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[Rejects] warm-up is not a reject line', @Expected = N'0', @Actual = @v;
 SET @v = CAST((SELECT SUM(Quantity) FROM #R WHERE DefectCode = N'008') AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[Rejects] the test parts, per part', @Expected = N'6', @Actual = @v;
 DROP TABLE #R;
+
+-- ---- ListRejects: two approvers on ONE defect code (1.1) ----
+-- v1.0 grouped by (DefectCodeId, ItemId) and surfaced MAX(u.Initials): one line's
+-- approver was credited with BOTH quantities and the other approver disappeared
+-- from an accountability record. The grain now includes the approver, so each
+-- owns exactly what they signed for. Same cavity, same part, same defect code --
+-- the ONLY thing that differs between these two rows is who approved them.
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr'), @Usr2 BIGINT = test.ufn_RC(N'Usr2');
+DECLARE @CavA BIGINT = test.ufn_RC(N'CavA');
+DECLARE @DC BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE Code NOT IN (N'999', N'008') ORDER BY Id);
+INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId,
+                                   DefectCodeId, Quantity, ChargeToArea, Remarks, ApprovedByUserId,
+                                   AppUserId, TerminalLocationId, RecordedAt)
+SELECT NULL, NULL, tc.ItemId, tc.ToolId, tc.Id, @S4, @Cell, @DC, q.Qty, NULL, N'fixture',
+       q.Approver, @Usr, NULL, '2020-01-07T13:35:05'
+FROM Tools.ToolCavity tc
+CROSS JOIN (SELECT 5 AS Qty, @Usr AS Approver UNION ALL SELECT 7, @Usr2) q
+WHERE tc.Id = @CavA;
+
+CREATE TABLE #R2 (DefectCodeId BIGINT, DefectCode NVARCHAR(20), Defect NVARCHAR(200), IsNonRejectScrap BIT,
+                  ItemId BIGINT, PartNumber NVARCHAR(50), Quantity INT, Cavities INT,
+                  ApprovedByUserId BIGINT, ApprovedBy NVARCHAR(20));
+INSERT INTO #R2 EXEC Workorder.DieCastShiftReconciliation_ListRejects @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool;
+SET @v = CAST((SELECT COUNT(*) FROM #R2 WHERE DefectCodeId = @DC) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Rejects] two approvers on one defect code are TWO rows',
+    @Expected = N'2', @Actual = @v;
+SET @v = CAST((SELECT Quantity FROM #R2 WHERE DefectCodeId = @DC AND ApprovedByUserId = @Usr) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Rejects] ...the first approver owns only what they approved',
+    @Expected = N'5', @Actual = @v;
+SET @v = CAST((SELECT Quantity FROM #R2 WHERE DefectCodeId = @DC AND ApprovedByUserId = @Usr2) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Rejects] ...and the second is not swallowed by the first',
+    @Expected = N'7', @Actual = @v;
+-- Each row names ITS OWN approver -- not whichever initials sorted highest.
+SET @v = (SELECT r.ApprovedBy FROM #R2 r WHERE r.DefectCodeId = @DC AND r.ApprovedByUserId = @Usr2);
+SET @Want = (SELECT Initials FROM Location.AppUser WHERE Id = @Usr2);
+EXEC test.Assert_IsEqual @TestName = N'[Rejects] ...each row names its own approver', @Expected = @Want, @Actual = @v;
+-- The unapproved 008 lines are still their own rows and were not folded in.
+SET @v = CAST((SELECT SUM(Quantity) FROM #R2 WHERE DefectCode = N'008' AND ApprovedByUserId IS NULL) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Rejects] an unapproved line stays unapproved', @Expected = N'6', @Actual = @v;
+DROP TABLE #R2;
 
 -- ---- ListMoveTargets ----
 -- The fixture stops at S5, so S4 has no shift two AHEAD of it. One more

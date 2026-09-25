@@ -2,7 +2,7 @@
 -- Repeatable:  R__Lots_DieCastLot_Mint.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.0
+-- Version:     1.1
 -- Description: INTERNAL WORKER -- creates ONE die cast accumulator LOT in
 --              status 'Open' at PieceCount 0, with its status-history row,
 --              genealogy self-row, first-placement movement and
@@ -35,6 +35,12 @@
 --
 -- Change Log:
 --   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 5.1).
+--   2026-09-25 - 1.1 - @AuditNote's separator is owned HERE: one space before a
+--                      non-empty note, nothing before an empty one. v1.0
+--                      concatenated the note straight on, so every caller had to
+--                      remember its own leading space and a caller that forgot ran
+--                      the note into the cell code. The note is trimmed first, so
+--                      a v1.0-style caller still renders one space, not two.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Lots.DieCastLot_Mint
     @LotName              NVARCHAR(50),
@@ -44,6 +50,13 @@ CREATE OR ALTER PROCEDURE Lots.DieCastLot_Mint
     @CurrentLocationId    BIGINT,
     @ProducedAtLocationId BIGINT        = NULL,
     @CastDate             DATE          = NULL,
+    -- @AuditNote: a trailing note appended to the audit Description -- e.g.
+    -- N'(shift reconciliation #9)'. THIS PROCEDURE OWNS THE SEPARATOR: exactly one
+    -- space between the base activity text and a non-empty note, and nothing at all
+    -- when the note is NULL, empty or whitespace. Callers pass the BARE note. The
+    -- note is trimmed first, so a caller that passes a leading space out of habit
+    -- (the v1.0 contract, which made every caller supply its own) still gets one
+    -- space, never two -- the separator cannot be got wrong from outside.
     @AuditNote            NVARCHAR(100) = NULL,
     @AppUserId            BIGINT,
     @TerminalLocationId   BIGINT        = NULL
@@ -71,8 +84,13 @@ BEGIN
     INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
     VALUES (@NewId, NULL, @CurrentLocationId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
 
+    -- The separator is OWNED HERE (v1.1): one space before a non-empty note,
+    -- nothing at all otherwise. Callers pass the bare note, never a leading space.
+    DECLARE @Note NVARCHAR(101) = LTRIM(RTRIM(ISNULL(@AuditNote, N'')));
+    IF @Note <> N'' SET @Note = N' ' + @Note;
+
     DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@LotName + N' ' + Audit.ufn_MidDot()
-        + N' Die Cast ' + Audit.ufn_MidDot() + N' Basket opened at ' + ISNULL(@CellCode, N'?') + ISNULL(@AuditNote, N''));
+        + N' Die Cast ' + Audit.ufn_MidDot() + N' Basket opened at ' + ISNULL(@CellCode, N'?') + @Note);
     DECLARE @NewValue NVARCHAR(MAX) = (SELECT l.Id, l.LotName,
         JSON_QUERY((SELECT i.Id, i.PartNumber AS Code, i.Description AS Name FROM Parts.Item i WHERE i.Id = l.ItemId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Item,
         JSON_QUERY((SELECT tc.Id, tc.CavityCode AS Code, tc.CavityCode AS Name FROM Tools.ToolCavity tc WHERE tc.Id = l.ToolCavityId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Cavity

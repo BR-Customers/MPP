@@ -1,13 +1,20 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_RectifyPieceCount.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-08-19
--- Version:     1.1
+-- Modified:    2026-09-25
+-- Version:     1.2
 -- Change:      v1.1 (2026-09-22) -- the mutation moved into
 --              Lots.Lot_ApplyPieceCountCorrection (spec 2026-09-21 sec 5.1) so
 --              a die cast shift reconciliation corrects a count the same way,
 --              with the same LotAttributeChange trail. Every validation --
 --              status, MaxLotSize, the no-op, availability -- stays here.
+--              v1.2 (2026-09-25, code review) -- deleted the dead upper clamp on
+--              @NewInvAvail (the worker recomputes availability under the row
+--              lock; nothing here read the clamped value). The negative-
+--              availability REJECTING GUARD above it is live and stays. Also
+--              documented why @NewId is read back by max Id rather than
+--              SCOPE_IDENTITY(), and the single-writer + row-lock invariant that
+--              makes that read-back correct. No other behaviour change.
 -- Description: Backlog 5.3. Operator-driven correction of a LOT's piece count
 --              from the LOT Detail screen, with a MANDATORY reason.
 --
@@ -206,10 +213,15 @@ BEGIN
             RETURN;
         END
 
-        -- Availability moves by the SAME delta as the count, clamped to
-        -- [0, @NewPieceCount]. A downward correction that would drive availability
-        -- below zero means more pieces have already been consumed than the corrected
-        -- count admits -- reject rather than silently floor, so the operator sees it.
+        -- Availability moves by the SAME delta as the count. A downward correction
+        -- that would drive availability below zero means more pieces have already
+        -- been consumed than the corrected count admits -- reject rather than
+        -- silently floor, so the operator sees it. This is a REJECTING GUARD and it
+        -- runs here, before BEGIN TRANSACTION, like every other one (Msg 3915).
+        -- @NewInvAvail is used for THIS TEST ONLY. The value written is computed
+        -- again inside Lots.Lot_ApplyPieceCountCorrection under the row lock, which
+        -- is the only place it can be computed safely; v1.1 left an upper clamp here
+        -- as well, which nothing downstream read.
         SET @Delta       = @NewPieceCount - @OldPieceCount;
         SET @NewInvAvail = @OldInvAvail + @Delta;
         IF @NewInvAvail < 0
@@ -226,7 +238,6 @@ BEGIN
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
-        IF @NewInvAvail > @NewPieceCount SET @NewInvAvail = @NewPieceCount;
 
         -- ===== Mutation (atomic) =====
         -- The write itself lives in Lots.Lot_ApplyPieceCountCorrection, a
@@ -245,6 +256,20 @@ BEGIN
         EXEC Lots.Lot_ApplyPieceCountCorrection @LotId = @LotId, @NewPieceCount = @NewPieceCount,
             @Reason = @Reason, @ExpectedPieceCount = @OldPieceCount,
             @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
+        -- @NewId is READ BACK by max Id, not taken from SCOPE_IDENTITY(), and that
+        -- is forced, not sloppy: the INSERT happens inside
+        -- Lots.Lot_ApplyPieceCountCorrection, and SCOPE_IDENTITY() is scoped to the
+        -- calling MODULE -- across an EXEC it returns NULL. @@IDENTITY would cross
+        -- the scope but reports the last identity from ANY scope, so a trigger on
+        -- Lots.LotAttributeChange (or on Lots.Lot) would hand back the wrong row.
+        --
+        -- INVARIANT that makes this read-back correct: EVERY writer of a
+        -- 'PieceCount' Lots.LotAttributeChange row goes through
+        -- Lots.Lot_ApplyPieceCountCorrection, which takes the Lots.Lot row under
+        -- (UPDLOCK, HOLDLOCK) BEFORE inserting. Two concurrent corrections of the
+        -- same LOT therefore serialize, and the newest row inside this transaction
+        -- is this transaction's. ADD A SECOND WRITER THAT DOES NOT TAKE THAT LOCK
+        -- AND THIS RETURNS ANOTHER SESSION'S Id.
         SET @NewId = (SELECT TOP 1 Id FROM Lots.LotAttributeChange
                       WHERE LotId = @LotId AND AttributeName = N'PieceCount' ORDER BY Id DESC);
         COMMIT TRANSACTION;

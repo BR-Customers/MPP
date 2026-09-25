@@ -2,7 +2,11 @@
 -- Repeatable:  R__Lots_DieCastLot_ResolveLtt.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.0
+-- Version:     1.1
+-- Change Log:
+--   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 6.3).
+--   2026-09-25 - 1.1 - Comment only: named the one-press-per-LOT invariant that
+--                      makes the 'another press' TOP 1 unambiguous. No SQL change.
 -- Description: What happens if this LTT is added to this die's reconciliation
 --              (spec 2026-09-21 sec 6.3). Called as the team lead scans or
 --              types each LTT off the physical LOT, so the answer arrives at
@@ -58,6 +62,12 @@ BEGIN
     LEFT JOIN Tools.ToolCavity tc ON tc.Id = l.ToolCavityId
     LEFT JOIN Tools.Tool ot ON ot.Id = l.ToolId
     LEFT JOIN Location.Location cl ON cl.Id = l.CurrentLocationId
+    -- TOP 1 over Pri alone, with no tie-breaker, and that is DELIBERATE: a LOT is
+    -- never made from more than one press at die cast (a basket sits under one
+    -- machine for its whole life), so source 2 can contribute at most one distinct
+    -- press and sources 1 and 3 are single-valued by construction. There is only
+    -- ever one candidate name -- the ORDER BY picks which SOURCE answers, not which
+    -- of several presses. Do not "fix" this with a secondary ORDER BY.
     OUTER APPLY (SELECT TOP 1 x.Name FROM (
                      SELECT loc.Name, 1 AS Pri FROM Location.Location loc WHERE loc.Id = l.ProducedAtLocationId
                      UNION ALL

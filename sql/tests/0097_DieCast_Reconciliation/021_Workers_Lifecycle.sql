@@ -16,7 +16,10 @@ GO
 DECLARE @Cell BIGINT = test.ufn_RC(N'Cell'), @Usr BIGINT = test.ufn_RC(N'Usr');
 DECLARE @Tool BIGINT = test.ufn_RC(N'Tool'), @CavB BIGINT = test.ufn_RC(N'CavB'), @ItemB BIGINT = test.ufn_RC(N'ItemB');
 DECLARE @Cast DATE = '2020-01-06';
-DECLARE @Note NVARCHAR(100) = N' (shift reconciliation #9)';
+-- The BARE note: no leading space. Mint 1.1 owns the separator (code review
+-- 2026-09-24) -- 1.0 concatenated the note straight on, so every caller had to
+-- remember its own space and a caller that forgot ran the note into the cell code.
+DECLARE @Note NVARCHAR(100) = N'(shift reconciliation #9)';
 DECLARE @v NVARCHAR(400), @Want NVARCHAR(400);
 
 EXEC Lots.DieCastLot_Mint @LotName = N'99700102', @ItemId = @ItemB, @ToolId = @Tool, @ToolCavityId = @CavB,
@@ -37,7 +40,26 @@ SET @v = CAST((SELECT COUNT(*) FROM Lots.LotStatusHistory h JOIN Lots.LotStatusC
                WHERE h.LotId = @New AND h.OldStatusId IS NULL AND n.Code = N'Open') AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[Mint] status history opens the LOT', @Expected = N'1', @Actual = @v;
 SET @v = (SELECT TOP 1 Description FROM Lots.LotEventLog WHERE (LotId = @New OR EntityId = @New) ORDER BY Id DESC);
-EXEC test.Assert_Contains @TestName = N'[Mint] audit carries the caller''s note', @HaystackStr = @v, @NeedleStr = N'(shift reconciliation #9)';
+-- The needle carries the LEADING SPACE: the proc, not the caller, puts it there.
+-- @Note above has none, so this fails if Mint ever stops owning the separator.
+EXEC test.Assert_Contains @TestName = N'[Mint] audit carries the caller''s note, separated by the proc',
+    @HaystackStr = @v, @NeedleStr = N' (shift reconciliation #9)';
+-- ...and exactly one space: no caller-plus-proc double.
+SET @v = CAST(CHARINDEX(N'  (shift reconciliation #9)', @v) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Mint] ...exactly one space, never two', @Expected = N'0', @Actual = @v;
+
+-- A v1.0-style caller, still passing its own leading space. The note is trimmed
+-- before the separator is added, so the separator cannot be got wrong from
+-- outside: this renders one space too, not two.
+EXEC Lots.DieCastLot_Mint @LotName = N'99700103', @ItemId = @ItemB, @ToolId = @Tool, @ToolCavityId = @CavB,
+    @CurrentLocationId = @Cell, @ProducedAtLocationId = @Cell, @CastDate = @Cast,
+    @AuditNote = N' (shift reconciliation #9)', @AppUserId = @Usr;
+DECLARE @New2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700103');
+SET @v = (SELECT TOP 1 Description FROM Lots.LotEventLog WHERE (LotId = @New2 OR EntityId = @New2) ORDER BY Id DESC);
+EXEC test.Assert_Contains @TestName = N'[Mint] a caller''s own leading space is absorbed, not doubled',
+    @HaystackStr = @v, @NeedleStr = N' (shift reconciliation #9)';
+SET @v = CAST(CHARINDEX(N'  (shift reconciliation #9)', @v) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Mint] ...still exactly one space', @Expected = N'0', @Actual = @v;
 GO
 
 -- ---- Lot_ApplyPieceCountCorrection ----
