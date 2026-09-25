@@ -59,7 +59,11 @@
 --               nonexistent storage reject), '404040404' (Test 4, negative
 --               FinalPieceDelta reject), '404040405' (Test 5, nonexistent
 --               @ScrapLinesJson defectCodeId reject -- pre-transaction
---               defect-code validation robustness fix) -- distinct 9-digit
+--               defect-code validation robustness fix), '404040406' (Test 6,
+--               a valid ACTIVE scrapLines[].approvedByUserId releases and
+--               lands), '404040407' (Test 7, an OMITTED approver still
+--               releases), '404040408' (Test 8, a DEPRECATED approver refused
+--               pre-transaction -- proc v2.4) -- distinct 9-digit
 --               externals (Lots.ufn_IsValidExternalLtt) from 020's 2000002xx
 --               / 030's 3030303xx.
 -- =============================================
@@ -67,16 +71,18 @@ SET NOCOUNT ON; SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0045_DieCast_Lifecycle/040_Release_and_queue.sql';
 GO
 -- ---- cleanup (idempotent, FK-safe, reverse order) ----
-DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405'));
-DELETE FROM Workorder.DieCastContribution WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405'));
-DELETE cl FROM Lots.LotGenealogyClosure cl INNER JOIN Lots.Lot l ON l.Id IN (cl.AncestorLotId, cl.DescendantLotId) WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405');
-DELETE m  FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405');
-DELETE h  FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405');
-DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405');
-DELETE FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405');
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405', N'404040406', N'404040407', N'404040408'));
+DELETE FROM Workorder.DieCastContribution WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405', N'404040406', N'404040407', N'404040408'));
+DELETE cl FROM Lots.LotGenealogyClosure cl INNER JOIN Lots.Lot l ON l.Id IN (cl.AncestorLotId, cl.DescendantLotId) WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405', N'404040406', N'404040407', N'404040408');
+DELETE m  FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405', N'404040406', N'404040407', N'404040408');
+DELETE h  FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405', N'404040406', N'404040407', N'404040408');
+DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405', N'404040406', N'404040407', N'404040408');
+DELETE FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403', N'404040404', N'404040405', N'404040406', N'404040407', N'404040408');
 DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code = N'TEST-DCR-TOOL';
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-DCR-TOOL');
 DELETE FROM Tools.Tool WHERE Code = N'TEST-DCR-TOOL';
+-- the Tests 6-8 approvers, after every RejectEvent that could reference them
+DELETE FROM Location.AppUser WHERE Initials IN (N'ZRCA', N'ZRCD');
 GO
 
 -- ---- fixture: resolve (Cell, ItemId) via ancestor-cascade eligibility + a
@@ -270,14 +276,126 @@ EXEC test.Assert_IsEqual @TestName=N'[Release] rejection message is graceful (no
 DECLARE @pc5 NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Lot5);
 EXEC test.Assert_IsEqual @TestName=N'[Release] Test 5: PieceCount unchanged (rejected pre-transaction)', @Expected=N'0', @Actual=@pc5;
 
+-- =============================================
+-- Tests 6-8: scrapLines[].approvedByUserId (proc v2.4).
+--
+-- This proc wraps caller-supplied @ScrapLinesJson VERBATIM into
+-- Workorder.DieCastScrap_Write's @LinesJson, and that worker reads
+-- s.approvedByUserId and writes it to Workorder.RejectEvent.ApprovedByUserId.
+-- Before v2.4 the ONLY scrap validation here was the defect-code check
+-- (Test 5), so an approver id travelled straight to that FK inside the
+-- transaction and came back as a generic 'Unexpected error'. It now rejects
+-- pre-transaction with the same rule and the same words as
+-- Workorder.DieCastShiftOutput_Record 3.2 -- 'active' is DeprecatedAt IS NULL.
+--
+-- Cavity budget: @Cavity1..@Cavity4 are all occupied by Tests 2/3/4/5's still-
+-- Open rejected baskets, so Tests 6, 7 and 8 get THREE fresh cavities, one
+-- each. They could have shared one -- 6 and 7 release, which frees it -- but
+-- then a regression in 6 or 7 leaves its basket Open and the next test's
+-- DieCastLot_Open hits the one-open-per-(Tool,Cavity) guard, so a single
+-- broken assertion reports as three. One cavity each keeps each failure
+-- attributable to the thing it tests. (Found by sabotaging the optionality
+-- guard: Test 7's refusal took Test 8 down with it.)
+-- =============================================
+DECLARE @CavActive6 BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, N'e', @CavActive6, SYSUTCDATETIME(), 1);
+DECLARE @Cavity5 BIGINT = SCOPE_IDENTITY();
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, N'f', @CavActive6, SYSUTCDATETIME(), 1);
+DECLARE @Cavity6 BIGINT = SCOPE_IDENTITY();
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, N'g', @CavActive6, SYSUTCDATETIME(), 1);
+DECLARE @Cavity7 BIGINT = SCOPE_IDENTITY();
+
+DECLARE @DefectCode6 BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+
+INSERT INTO Location.AppUser (DisplayName, Initials, Pin, CreatedAt)
+VALUES (N'0045/040 release scrap approver', N'ZRCA', N'93811', SYSUTCDATETIME());
+DECLARE @RelApprover BIGINT = SCOPE_IDENTITY();
+INSERT INTO Location.AppUser (DisplayName, Initials, Pin, CreatedAt, DeprecatedAt)
+VALUES (N'0045/040 deprecated release approver', N'ZRCD', N'93812', SYSUTCDATETIME(), SYSUTCDATETIME());
+DECLARE @RelDepApprover BIGINT = SCOPE_IDENTITY();
+
+-- ---- Test 6: a valid ACTIVE approver still releases, and the value lands ----
+DECLARE @O6 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @O6 EXEC Lots.DieCastLot_Open @ItemId=@Item, @CurrentLocationId=@Cell, @ToolId=@Tool,
+    @ToolCavityId=@Cavity5, @LotName=N'404040406', @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @Lot6 BIGINT = (SELECT NewId FROM @O6);
+IF @Lot6 IS NULL
+    RAISERROR(N'0045/040 Test 6 fixture: DieCastLot_Open failed to mint the basket -- BLOCKED.', 16, 1);
+
+DECLARE @ScrapLines6 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@DefectCode6 AS NVARCHAR(20))
+    + N',"quantity":21,"approvedByUserId":' + CAST(@RelApprover AS NVARCHAR(20)) + N'}]';
+DECLARE @Rel6 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @Rel6 EXEC Lots.DieCastLot_Release @LotId=@Lot6, @StorageLocationId=NULL, @FinalPieceDelta=10,
+    @ScrapLinesJson=@ScrapLines6, @ShiftId=@Shift, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @rs6 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @Rel6);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] a valid approvedByUserId still releases, Status 1', @Expected=N'1', @Actual=@rs6;
+
+DECLARE @relApprExpected NVARCHAR(20) = CAST(@RelApprover AS NVARCHAR(20));
+DECLARE @relApprLanded NVARCHAR(20) = (SELECT ISNULL(CAST(ApprovedByUserId AS NVARCHAR(20)), N'NULL')
+    FROM Workorder.RejectEvent WHERE LotId = @Lot6 AND Quantity = 21);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] the approver landed on the released LOT''s RejectEvent row',
+    @Expected=@relApprExpected, @Actual=@relApprLanded;
+
+-- ---- Test 7: an OMITTED approver still releases, and the column stays NULL ----
+DECLARE @O7 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @O7 EXEC Lots.DieCastLot_Open @ItemId=@Item, @CurrentLocationId=@Cell, @ToolId=@Tool,
+    @ToolCavityId=@Cavity6, @LotName=N'404040407', @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @Lot7 BIGINT = (SELECT NewId FROM @O7);
+IF @Lot7 IS NULL
+    RAISERROR(N'0045/040 Test 7 fixture: DieCastLot_Open failed to mint the basket -- BLOCKED.', 16, 1);
+
+DECLARE @ScrapLines7 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@DefectCode6 AS NVARCHAR(20)) + N',"quantity":22}]';
+DECLARE @Rel7 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @Rel7 EXEC Lots.DieCastLot_Release @LotId=@Lot7, @StorageLocationId=NULL, @FinalPieceDelta=10,
+    @ScrapLinesJson=@ScrapLines7, @ShiftId=@Shift, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @rs7 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @Rel7);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] a scrap line with no approver still releases, Status 1', @Expected=N'1', @Actual=@rs7;
+-- counted, not just read: a bare "is it NULL" would also pass if the row were
+-- never written at all, which is the very failure an over-eager approver check
+-- would cause. '1|0' is one row, none of them approved.
+DECLARE @relNoApprLanded NVARCHAR(20) = (SELECT CONCAT(COUNT(*), N'|', COUNT(ApprovedByUserId))
+    FROM Workorder.RejectEvent WHERE LotId = @Lot7 AND Quantity = 22);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] an omitted approver leaves ApprovedByUserId NULL', @Expected=N'1|0', @Actual=@relNoApprLanded;
+
+-- ---- Test 8: a DEPRECATED approver is refused, pre-transaction ----
+DECLARE @O8 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @O8 EXEC Lots.DieCastLot_Open @ItemId=@Item, @CurrentLocationId=@Cell, @ToolId=@Tool,
+    @ToolCavityId=@Cavity7, @LotName=N'404040408', @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @Lot8 BIGINT = (SELECT NewId FROM @O8);
+IF @Lot8 IS NULL
+    RAISERROR(N'0045/040 Test 8 fixture: DieCastLot_Open failed to mint the basket -- BLOCKED.', 16, 1);
+
+DECLARE @ScrapLines8 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@DefectCode6 AS NVARCHAR(20))
+    + N',"quantity":23,"approvedByUserId":' + CAST(@RelDepApprover AS NVARCHAR(20)) + N'}]';
+DECLARE @Rel8 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @Rel8 EXEC Lots.DieCastLot_Release @LotId=@Lot8, @StorageLocationId=NULL, @FinalPieceDelta=10,
+    @ScrapLinesJson=@ScrapLines8, @ShiftId=@Shift, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @rs8 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @Rel8);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] a deprecated approvedByUserId is rejected, Status 0', @Expected=N'0', @Actual=@rs8;
+DECLARE @rs8Msg NVARCHAR(500) = (SELECT Message FROM @Rel8);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] rejection carries the actionable message, not an unexpected-error',
+    @Expected=N'A scrap line''s approver is not an active user; pick the approver again.', @Actual=@rs8Msg;
+-- pre-transaction: no scrap row, and the basket is untouched (still Open, count 0)
+DECLARE @rs8Rows NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent WHERE LotId = @Lot8);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] the refused release wrote no RejectEvent row', @Expected=N'0', @Actual=@rs8Rows;
+DECLARE @rs8State NVARCHAR(30) = (SELECT CONCAT(sc.Code, N'|', l.PieceCount) FROM Lots.Lot l
+    INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @Lot8);
+EXEC test.Assert_IsEqual @TestName=N'[Approver] ...and the basket is untouched (rejected pre-transaction)',
+    @Expected=N'Open|0', @Actual=@rs8State;
+
 -- ---- cleanup (FK-safe, reverse order) ----
-DELETE FROM Workorder.RejectEvent WHERE LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5);
-DELETE FROM Workorder.DieCastContribution WHERE LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5) OR (@ShiftCreatedByTest = 1 AND ShiftId = @Shift);
-DELETE cl FROM Lots.LotGenealogyClosure cl WHERE cl.AncestorLotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5) OR cl.DescendantLotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5);
-DELETE m  FROM Lots.LotMovement m WHERE m.LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5);
-DELETE h  FROM Lots.LotStatusHistory h WHERE h.LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5);
-DELETE le FROM Lots.LotEventLog le WHERE le.LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5);
-DELETE FROM Lots.Lot WHERE Id IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5);
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5, @Lot6, @Lot7, @Lot8);
+DELETE FROM Workorder.DieCastContribution WHERE LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5, @Lot6, @Lot7, @Lot8) OR (@ShiftCreatedByTest = 1 AND ShiftId = @Shift);
+DELETE cl FROM Lots.LotGenealogyClosure cl WHERE cl.AncestorLotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5, @Lot6, @Lot7, @Lot8) OR cl.DescendantLotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5, @Lot6, @Lot7, @Lot8);
+DELETE m  FROM Lots.LotMovement m WHERE m.LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5, @Lot6, @Lot7, @Lot8);
+DELETE h  FROM Lots.LotStatusHistory h WHERE h.LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5, @Lot6, @Lot7, @Lot8);
+DELETE le FROM Lots.LotEventLog le WHERE le.LotId IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5, @Lot6, @Lot7, @Lot8);
+DELETE FROM Lots.Lot WHERE Id IN (@Lot, @Lot2, @Lot3, @Lot4, @Lot5, @Lot6, @Lot7, @Lot8);
+-- the two approvers, only once every RejectEvent that referenced them is gone
+DELETE FROM Location.AppUser WHERE Id IN (@RelApprover, @RelDepApprover);
 DELETE FROM Tools.ToolCavity WHERE ToolId = @Tool;
 DELETE FROM Tools.ToolAssignment WHERE ToolId = @Tool;
 DELETE FROM Tools.Tool WHERE Id = @Tool;

@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.2
+-- Version:     1.4
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -107,6 +107,18 @@
 --                      OUTRANKS THE STATUS". Also dropped a dead disjunct from
 --                      the no-active-cavities gate: a reject line with no
 --                      actual figure is already refused above it.
+--   2026-09-25 - 1.3 - Lots.DieCastLot_Mint 1.1 owns its audit-note separator,
+--                      so the mint call now passes the bare note (@NoteText).
+--                      ReleaseMove and DieCastCredit_Write keep @Suffix.
+--   2026-09-25 - 1.4 - A reject line's approvedByUserId must now be an ACTIVE
+--                      Location.AppUser, not merely one on file. The check was
+--                      already here and already pre-transaction; it asked
+--                      existence only, so this proc accepted a deprecated
+--                      approver that Workorder.DieCastShiftOutput_Record 3.2
+--                      refuses -- three procs feed the same column through
+--                      Workorder.DieCastScrap_Write and they disagreed on what
+--                      a valid approver is. Amended in place (no second check),
+--                      with path 1's message verbatim. Optional stays optional.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -339,9 +351,22 @@ BEGIN
         IF EXISTS (SELECT 1 FROM @Rej r WHERE r.Qty IS NULL OR r.Qty < 0
                    OR NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Id = r.DefectCodeId AND dc.DeprecatedAt IS NULL))
         BEGIN SET @Message = N'A reject line has an unknown reason or a missing amount.'; GOTO Fail; END
+        -- 1.4: the approver must be ACTIVE, not merely on file. This check used
+        -- to ask existence only, so a deprecated user was accepted here and
+        -- refused by Workorder.DieCastShiftOutput_Record 3.2 -- one column,
+        -- Workorder.RejectEvent.ApprovedByUserId, written through the same
+        -- worker (Workorder.DieCastScrap_Write) under two different rules.
+        -- 'Active' is DeprecatedAt IS NULL, the definition
+        -- Location.AppUser_GetActiveByPin / _GetActiveByInitials use, and the
+        -- message is now word-for-word the one that path already returns so an
+        -- approver the team lead cannot use reads the same wherever they hit
+        -- it. Still OPTIONAL and still pre-transaction (Msg-3915 rule): a
+        -- reject line that omits approvedByUserId, or passes null, is
+        -- untouched -- only a SUPPLIED id is tested.
         IF EXISTS (SELECT 1 FROM @Rej r WHERE r.ApprovedByUserId IS NOT NULL
-                   AND NOT EXISTS (SELECT 1 FROM Location.AppUser u WHERE u.Id = r.ApprovedByUserId))
-        BEGIN SET @Message = N'Approved by: that user was not found.'; GOTO Fail; END
+                   AND NOT EXISTS (SELECT 1 FROM Location.AppUser u
+                                   WHERE u.Id = r.ApprovedByUserId AND u.DeprecatedAt IS NULL))
+        BEGIN SET @Message = N'A scrap line''s approver is not an active user; pick the approver again.'; GOTO Fail; END
 
         DECLARE @RejSpan TABLE (DefectCodeId BIGINT, ItemId BIGINT NULL, Qty INT, ApprovedByUserId BIGINT NULL, Span INT);
         INSERT INTO @RejSpan (DefectCodeId, ItemId, Qty, ApprovedByUserId, Span)
@@ -491,7 +516,11 @@ BEGIN
                 @Total, @Good, @Warm, @ShotBefore, @ShotBefore, @AppUserId, @TerminalLocationId);
         SET @NewId = SCOPE_IDENTITY();
 
-        DECLARE @Suffix NVARCHAR(100) = N' (shift reconciliation #' + CAST(@NewId AS NVARCHAR(20)) + N')';
+        -- Two forms of the same note. Lots.DieCastLot_Mint v1.1 owns its own
+        -- separator, so it takes the BARE note; Lots.DieCastLot_ReleaseMove and
+        -- Workorder.DieCastCredit_Write still expect the caller's leading space.
+        DECLARE @NoteText NVARCHAR(100) = N'(shift reconciliation #' + CAST(@NewId AS NVARCHAR(20)) + N')';
+        DECLARE @Suffix   NVARCHAR(100) = N' ' + @NoteText;
 
         -- (a) moves first: every "recorded" figure above was computed without them
         IF EXISTS (SELECT 1 FROM @Moves)
@@ -539,7 +568,7 @@ BEGIN
             IF @@ROWCOUNT = 0 BREAK;
             EXEC Lots.DieCastLot_Mint @LotName = @PLtt, @ItemId = @PItem, @ToolId = @ToolId, @ToolCavityId = @PCav,
                 @CurrentLocationId = @CellLocationId, @ProducedAtLocationId = @CellLocationId, @CastDate = @CastDate,
-                @AuditNote = @Suffix, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
+                @AuditNote = @NoteText, @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
             UPDATE @Plan SET LotId = (SELECT Id FROM Lots.Lot WHERE LotName = @PLtt) WHERE Seq = @Seq;
         END
 

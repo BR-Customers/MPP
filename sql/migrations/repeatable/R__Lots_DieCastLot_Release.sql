@@ -1,8 +1,22 @@
 -- ============================================================
 -- Repeatable:  R__Lots_DieCastLot_Release.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-15
--- Version:     2.3
+-- Modified:    2026-09-25
+-- Version:     2.4
+-- Change:      v2.4 (2026-09-25) -- pre-transaction validation of a scrap
+--              line's approvedByUserId, closing the last of three write paths
+--              that disagreed about it. This proc wraps caller-supplied
+--              @ScrapLinesJson verbatim into Workorder.DieCastScrap_Write's
+--              @LinesJson, and that worker reads s.approvedByUserId and writes
+--              it to Workorder.RejectEvent.ApprovedByUserId -- so the only
+--              scrap validation here (the defect-code check) let a bad
+--              approver reach the FK mid-transaction, where it surfaced as a
+--              generic 'Unexpected error'. Modelled on
+--              Workorder.DieCastShiftOutput_Record 3.2: same rule (active =
+--              DeprecatedAt IS NULL), same message, same placement beside the
+--              defect-code check, BEFORE BEGIN TRANSACTION (Msg-3915 rule).
+--              Optional stays optional: only a SUPPLIED id that does not
+--              resolve to an active Location.AppUser is refused.
 -- Change:      v2.3 (2026-09-22) -- the writes moved into shared workers
 --              (spec 2026-09-21 sec 5.1): the final-delta contribution is now
 --              Workorder.DieCastCredit_Write. Behaviour unchanged.
@@ -89,7 +103,9 @@
 --                'Open' -> resolve @StorageLocationId (well-known 'WHSE' when
 --                NULL, hard reject if still unresolved; reject if a supplied
 --                @StorageLocationId does not exist) -> @ScrapLinesJson well-
---                formed JSON when supplied -> @FinalPieceDelta must not be
+--                formed JSON when supplied -> every scrap defectCodeId active
+--                -> every SUPPLIED scrap approvedByUserId an active AppUser
+--                (v2.4) -> @FinalPieceDelta must not be
 --                negative (mirrors DieCastShiftOutput_Record's own guard +
 --                DieCastContribution's CHECK (PieceDelta >= 0); the mutation
 --                below only applies the delta when > 0, so a negative value
@@ -164,6 +180,37 @@ BEGIN
             WHERE NOT EXISTS (SELECT 1 FROM Quality.DefectCode dc WHERE dc.Id = s.defectCodeId AND dc.DeprecatedAt IS NULL)
         )
         BEGIN SET @Message = N'One or more scrap defect codes are invalid or deprecated.'; GOTO Fail; END
+
+        -- v2.4: an APPROVER named on a scrap line must be a real, ACTIVE user.
+        -- This proc wraps @ScrapLinesJson VERBATIM into Workorder.DieCastScrap_
+        -- Write's @LinesJson (see the mutation below), and that worker reads
+        -- s.approvedByUserId and writes it to Workorder.RejectEvent.
+        -- ApprovedByUserId -- so until now a bad id travelled straight into
+        -- that column with nothing in between. The two halves failed
+        -- differently, and BOTH badly: a NONEXISTENT id hit the FK inside the
+        -- transaction and came back as a generic 'Unexpected error' the
+        -- operator can do nothing with, while a DEPRECATED one was accepted
+        -- outright -- the FK has no opinion on DeprecatedAt -- and the basket
+        -- released carrying an approval from someone who is no longer an
+        -- approver. (Both confirmed by deleting this block and re-running
+        -- sql/tests/0045_DieCast_Lifecycle/040_Release_and_queue.sql Test 8.)
+        -- Same shape, placement and
+        -- style as the defectCodeId check immediately above, and the same rule
+        -- and wording as Workorder.DieCastShiftOutput_Record 3.2: 'active' is
+        -- DeprecatedAt IS NULL, the definition Location.AppUser_GetActiveByPin
+        -- / _GetActiveByInitials use. OPTIONAL by design -- a scrap line that
+        -- omits the key, or passes null, behaves exactly as before; only a
+        -- SUPPLIED id that does not resolve is refused. Pre-transaction like
+        -- every other validation here (Msg-3915 rule: this proc returns a
+        -- status row and is captured via INSERT-EXEC, so a ROLLBACK outside
+        -- the CATCH would lose the message).
+        IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) = 1 AND EXISTS (
+            SELECT 1 FROM OPENJSON(@ScrapLinesJson) WITH (approvedByUserId BIGINT N'$.approvedByUserId') s
+            WHERE s.approvedByUserId IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM Location.AppUser u
+                              WHERE u.Id = s.approvedByUserId AND u.DeprecatedAt IS NULL)
+        )
+        BEGIN SET @Message = N'A scrap line''s approver is not an active user; pick the approver again.'; GOTO Fail; END
 
         -- v2.0: resolve the PRESS first -- both watermarks are scoped by it,
         -- and the derived delta below depends on them. (Moved up from after the

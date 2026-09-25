@@ -164,6 +164,14 @@ SET @v = CAST(Workorder.ufn_DieShotWatermark(@Tool, @S5, @Cell) AS NVARCHAR(400)
 EXEC test.Assert_IsEqual @TestName = N'[B] the shift now has its reading', @Expected = N'110', @Actual = @v;
 SET @v = CAST((SELECT ShotCount FROM Tools.Tool WHERE Id = @Tool) AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[B] die life advanced again', @Expected = N'11231', @Actual = @v;
+-- approvedByUserId is OPTIONAL (proc 1.4): B's reject line carries none, so its
+-- two rows record with ApprovedByUserId NULL. [A] above is the other half --
+-- an ACTIVE approver is stamped. Between them: supplied and checked, omitted
+-- and untouched.
+SET @v = (SELECT CONCAT(COUNT(*), N'|', COUNT(ApprovedByUserId)) FROM Workorder.RejectEvent
+          WHERE ReconciliationId = @RecB AND DefectCodeId = @Code008);
+EXEC test.Assert_IsEqual @TestName = N'[B] a reject line with no approver records, ApprovedByUserId left NULL',
+    @Expected = N'2|0', @Actual = @v;
 GO
 
 -- ============ C: a reduction ============

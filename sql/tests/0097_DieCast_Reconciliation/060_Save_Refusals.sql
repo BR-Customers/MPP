@@ -135,6 +135,41 @@ INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
 SET @m = (SELECT Message FROM #Res);
 EXEC test.Assert_Contains @TestName = N'[Refuse] warm-up belongs in warm-up shots', @HaystackStr = @m, @NeedleStr = N'entered as warm-up shots';
 
+-- A reject line approved by a DEPRECATED user (proc 1.4). This check was here
+-- from 1.0 but asked existence only, so a deprecated approver was accepted
+-- here and refused by Workorder.DieCastShiftOutput_Record 3.2 -- one column,
+-- Workorder.RejectEvent.ApprovedByUserId, two rules. The pair below is the
+-- point: the SAME payload with an ACTIVE approver must get past this gate and
+-- fail on something else, so the assertion is about being ACTIVE and not
+-- merely about naming an approver at all. Quantity 11 against 2 cavities is
+-- the next refusal along.
+DELETE FROM #Res;
+INSERT INTO Location.AppUser (DisplayName, Initials, Pin, CreatedAt, DeprecatedAt)
+VALUES (N'0097/060 deprecated approver', N'ZRSD', N'93821', SYSUTCDATETIME(), SYSUTCDATETIME());
+DECLARE @DepAppr BIGINT = SCOPE_IDENTITY();
+SET @Lots = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20)) + N',"quantity":189}]';
+SET @Rej = N'[{"defectCodeId":' + CAST(@Code008 AS NVARCHAR(20)) + N',"quantity":11,"approvedByUserId":'
+         + CAST(@DepAppr AS NVARCHAR(20)) + N'}]';
+INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @Actual, @LotsJson = @Lots, @RejectsJson = @Rej, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+SET @m = (SELECT Message FROM #Res);
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] a reject line approved by a deprecated user',
+    @Expected = N'A scrap line''s approver is not an active user; pick the approver again.', @Actual = @m;
+
+-- the same payload, an ACTIVE approver: past the gate, onto the next refusal
+DELETE FROM #Res;
+SET @Rej = N'[{"defectCodeId":' + CAST(@Code008 AS NVARCHAR(20)) + N',"quantity":11,"approvedByUserId":'
+         + CAST(@Usr AS NVARCHAR(20)) + N'}]';
+INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @Actual, @LotsJson = @Lots, @RejectsJson = @Rej, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+SET @m = (SELECT Message FROM #Res);
+EXEC test.Assert_Contains @TestName = N'[Refuse] ...but an ACTIVE approver on the same line is not refused for it',
+    @HaystackStr = @m, @NeedleStr = N'does not divide evenly';
+
+DELETE FROM Location.AppUser WHERE Id = @DepAppr;
+
 -- a move to a shift more than two away
 DELETE FROM #Res;
 DECLARE @C BIGINT = (SELECT Id FROM Workorder.DieCastContribution WHERE LotId = @Lot AND PieceDelta = 100);
