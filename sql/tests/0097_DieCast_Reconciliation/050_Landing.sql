@@ -24,8 +24,8 @@ DECLARE @v NVARCHAR(400);
 
 CREATE TABLE #S (ShiftId BIGINT, ShiftLabel NVARCHAR(120), StartEt DATETIME2(3), EndEt DATETIME2(3),
                  ToolId BIGINT, AssetNumber NVARCHAR(50), DieName NVARCHAR(200), ContributionRows INT,
-                 GoodRecorded INT, ShiftEndReading INT, StatusCode NVARCHAR(30),
-                 ReconciledBy NVARCHAR(20), ReconciledAtEt DATETIME2(3));
+                 GoodRecorded INT, RecordedTotalShots INT, StatusCode NVARCHAR(30),
+                 LastReconciledBy NVARCHAR(20), LastReconciledAtEt DATETIME2(3));
 INSERT INTO #S EXEC Workorder.DieCastShiftReconciliation_ListShifts @CellLocationId = @Cell, @Days = 7, @AtMoment = @At;
 
 SET @v = (SELECT StatusCode FROM #S WHERE ShiftId = test.ufn_RC(N'S1'));
@@ -34,7 +34,7 @@ SET @v = (SELECT StatusCode FROM #S WHERE ShiftId = test.ufn_RC(N'S2'));
 EXEC test.Assert_IsEqual @TestName = N'[Landing] released with no shift-end number is the amber case', @Expected = N'ReleasedNoShiftEnd', @Actual = @v;
 SET @v = (SELECT StatusCode FROM #S WHERE ShiftId = test.ufn_RC(N'S3'));
 EXEC test.Assert_IsEqual @TestName = N'[Landing] a quiet shift is neutral, not amber', @Expected = N'NoEntry', @Actual = @v;
-SET @v = (SELECT CONCAT(AssetNumber, N'|', GoodRecorded, N'|', ShiftEndReading) FROM #S WHERE ShiftId = test.ufn_RC(N'S1'));
+SET @v = (SELECT CONCAT(AssetNumber, N'|', GoodRecorded, N'|', RecordedTotalShots) FROM #S WHERE ShiftId = test.ufn_RC(N'S1'));
 EXEC test.Assert_IsEqual @TestName = N'[Landing] die asset number, good recorded and the reading', @Expected = N'RC-DIE|100|110', @Actual = @v;
 DROP TABLE #S;
 
@@ -66,10 +66,10 @@ DROP TABLE #U2;
 
 CREATE TABLE #S2 (ShiftId BIGINT, ShiftLabel NVARCHAR(120), StartEt DATETIME2(3), EndEt DATETIME2(3),
                   ToolId BIGINT, AssetNumber NVARCHAR(50), DieName NVARCHAR(200), ContributionRows INT,
-                  GoodRecorded INT, ShiftEndReading INT, StatusCode NVARCHAR(30),
-                  ReconciledBy NVARCHAR(20), ReconciledAtEt DATETIME2(3));
+                  GoodRecorded INT, RecordedTotalShots INT, StatusCode NVARCHAR(30),
+                  LastReconciledBy NVARCHAR(20), LastReconciledAtEt DATETIME2(3));
 INSERT INTO #S2 EXEC Workorder.DieCastShiftReconciliation_ListShifts @CellLocationId = @Cell, @Days = 7, @AtMoment = @At;
-SET @v = (SELECT CONCAT(StatusCode, N'|', ISNULL(ReconciledBy, N'?')) FROM #S2 WHERE ShiftId = test.ufn_RC(N'S2'));
+SET @v = (SELECT CONCAT(StatusCode, N'|', ISNULL(LastReconciledBy, N'?')) FROM #S2 WHERE ShiftId = test.ufn_RC(N'S2'));
 DECLARE @Want NVARCHAR(400) = CONCAT(N'Reconciled|', (SELECT Initials FROM Location.AppUser WHERE Id = test.ufn_RC(N'Usr')));
 EXEC test.Assert_IsEqual @TestName = N'[Landing] ...and the row says who reconciled it', @Expected = @Want, @Actual = @v;
 DROP TABLE #S2;

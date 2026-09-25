@@ -61,14 +61,14 @@ BEGIN
            sh.ActualStart AS StartEt, sh.ActualEnd AS EndEt,
            t.Id AS ToolId, t.Code AS AssetNumber, t.Name AS DieName,
            ISNULL(a.Rows, 0) AS ContributionRows, ISNULL(a.Good, 0) AS GoodRecorded,
-           Workorder.ufn_DieShotWatermark(t.Id, sh.Id, @CellLocationId) AS ShiftEndReading,
+           Workorder.ufn_DieShotWatermark(t.Id, sh.Id, @CellLocationId) AS RecordedTotalShots,
            CASE WHEN sh.ActualEnd IS NULL                                THEN N'Open'
                 WHEN lr.CreatedAt IS NOT NULL                            THEN N'Reconciled'
                 WHEN ISNULL(a.Rows, 0) = 0                               THEN N'NoEntry'
                 WHEN ISNULL(a.Readings, 0) = 0 AND ISNULL(an.Anchors, 0) = 0 THEN N'ReleasedNoShiftEnd'
                 ELSE N'EntryRecorded' END AS StatusCode,
-           lr.Initials AS ReconciledBy,
-           CAST(lr.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS ReconciledAtEt
+           lr.Initials AS LastReconciledBy,
+           CAST(lr.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS LastReconciledAtEt
     FROM dies d
     INNER JOIN sh ON sh.Id = d.ShiftId
     INNER JOIN Tools.Tool t ON t.Id = d.ToolId
