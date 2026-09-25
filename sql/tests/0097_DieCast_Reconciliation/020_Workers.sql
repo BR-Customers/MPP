@@ -88,10 +88,15 @@ SET @Want = CAST(@Lot AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[Scrap] die-wide attaches the cavity''s open LOT', @Expected = @Want, @Actual = @v;
 
 DECLARE @Rem NVARCHAR(200) = N'Die-cast shift reconciliation';
-DECLARE @OneLine NVARCHAR(MAX) = N'[{"toolCavityId":' + CAST(@CavB AS NVARCHAR(20)) + N',"scrapLines":[{"defectCodeId":' + CAST(@Code AS NVARCHAR(20)) + N',"quantity":-1}]}]';
+-- Quantity 5 is just a row selector, distinct from the 3/4/2 already written
+-- to this cavity+tool above by earlier lines in this section -- it is not
+-- what this assertion is about (that's why the pre-0098 version used an
+-- arbitrary -1; a positive value proves the same @NoLotRemarks-override
+-- behaviour without tripping the new Quantity >= 0 constraint).
+DECLARE @OneLine NVARCHAR(MAX) = N'[{"toolCavityId":' + CAST(@CavB AS NVARCHAR(20)) + N',"scrapLines":[{"defectCodeId":' + CAST(@Code AS NVARCHAR(20)) + N',"quantity":5}]}]';
 EXEC Workorder.DieCastScrap_Write @ToolId = @Tool, @ShiftId = @S1, @CellLocationId = @Cell,
     @LinesJson = @OneLine, @Remarks = @Rem, @NoLotRemarks = @Rem, @AppUserId = @Usr;
-SET @v = (SELECT Remarks FROM Workorder.RejectEvent WHERE ToolCavityId = @CavB AND Quantity = -1);
+SET @v = (SELECT Remarks FROM Workorder.RejectEvent WHERE ToolCavityId = @CavB AND Quantity = 5);
 EXEC test.Assert_IsEqual @TestName = N'[Scrap] @NoLotRemarks overrides the no-LOT text', @Expected = N'Die-cast shift reconciliation', @Actual = @v;
 GO
 
