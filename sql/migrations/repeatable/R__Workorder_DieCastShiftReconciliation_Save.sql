@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.8
+-- Version:     1.9
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -148,6 +148,51 @@
 --              this rather than build a status-history table speculatively. Do
 --              not add one without that decision being revisited.
 --
+--              THE PREVIEW IS THIS PROC, STOPPED ONE STATEMENT SHORT (1.9).
+--              @PreviewOnly = 1 runs sections 1-12 exactly as a save does --
+--              every refusal, every figure -- builds the plan as one JSON
+--              object, returns it, and RETURNs before BEGIN TRANSACTION. It
+--              opens no transaction, writes nothing and logs no failure.
+--
+--              It is a MODE and not a second procedure on purpose. The
+--              confirmation panel's whole value is that what it promises is what
+--              happens, and a second body of SQL would be free to drift from
+--              this one just as quietly as a Python reimplementation would --
+--              which is the option the project's "no business logic in Python"
+--              rule already closes. An inline TVF pair was considered and
+--              rejected: it would deduplicate the ARITHMETIC (sections 10-11),
+--              which is the small half, while leaving the ~300 lines of ordered,
+--              prose-carrying refusals to be written twice -- and a panel that
+--              shows a plan the save will reject is worse than no panel.
+--              Sections 1-12 are already pure computation, because every
+--              rejecting validation must run before BEGIN TRANSACTION (the
+--              Msg-3915 rule), so the seam was already here. NOTHING WAS MOVED
+--              TO MAKE THE PREVIEW WORK: not one validation and not one line of
+--              arithmetic changed place. If a future change needs something
+--              hoisted for the preview's sake, that is the signal to stop.
+--
+--              AND IT STAYS TRUE OVER TIME. A preview only binds if its picture
+--              is still the picture at save. The stale guard (sec 4) is what
+--              makes that so: the real save refuses a stamp that has changed, so
+--              between a preview and its save either nothing moved and the plan
+--              is identical, or the save refuses outright. There is no third
+--              outcome in which the save quietly applies something else.
+--
+--              PlanJson is on EVERY exit path -- NULL on a refusal, the plan that
+--              WOULD be applied on a preview, the plan that WAS applied on a save
+--              -- so the result set has one shape whichever mode ran. It is
+--              transport, not logic: the screen renders the numbers in it and
+--              recomputes nothing. hasReduction is the spec sec 7.5 amber tick
+--              box, decided HERE so it is a fact rather than a guess, and it
+--              covers a reduction in PRODUCTION, DIE LIFE or a COUNT and nothing
+--              else -- a negative scrap delta is scrap being BACKED OUT, which
+--              raises good production rather than reducing it.
+--
+--              A PREVIEW LOGS NO FAILURE. The Fail: label's Audit.Audit_LogFailure
+--              is gated on @PreviewOnly = 0. A team lead previewing a half-typed
+--              sheet is typing, not failing, and would otherwise fill the failure
+--              log with it. A refused SAVE still logs, unchanged.
+--
 --              FDS-11-011 + Msg-3915: no OUTPUT params, ONE result set, all
 --              rejecting validations BEFORE BEGIN TRANSACTION, CATCH the only
 --              ROLLBACK site, RAISERROR not THROW. Every write goes through a
@@ -174,9 +219,14 @@
 --                                       screen read it (sec 8).
 --   @AppUserId          BIGINT        - the team lead (caller supplies it).
 --   @TerminalLocationId BIGINT        - where it was entered.
+--   @PreviewOnly        BIT           - 1 = run every check, build the plan, and
+--                                       stop before BEGIN TRANSACTION. Default 0.
+--                                       LAST parameter, so no existing named call
+--                                       site changes.
 --
 -- Result set (exactly one row, every exit path):
---   Status BIT, Message NVARCHAR(500), NewId BIGINT (the reconciliation id).
+--   Status BIT, Message NVARCHAR(500), NewId BIGINT (the reconciliation id),
+--   PlanJson NVARCHAR(MAX) (NULL on a refusal; the plan on a preview or a save).
 --
 -- Error Handling:
 --   Three-tier. Validation -> clean Status = 0 row with a FailureLog entry.
@@ -251,6 +301,17 @@
 --                      header under "A CAVITY DEPRECATED AFTER THE SHIFT STILL
 --                      COUNTS FOR IT". This is a decision, not an oversight:
 --                      the absence of the bound is deliberate.
+--   2026-09-28 - 1.9 - @PreviewOnly BIT = 0, and a fourth result column PlanJson
+--                      on every exit path. The confirmation panel previews
+--                      through THIS proc rather than through a second
+--                      computation in SQL or in Python. See the header section
+--                      "THE PREVIEW IS THIS PROC, STOPPED ONE STATEMENT SHORT".
+--                      No validation and no arithmetic moved: the only
+--                      structural change outside the new section 13 is that
+--                      @PlannedDelta is DECLAREd above section 12's IF instead
+--                      of inside it, so the plan can state a die-life delta of
+--                      zero when no reading is declared. Its assignment, its
+--                      refusal and their order are untouched.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -264,13 +325,16 @@ CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @RejectsJson        NVARCHAR(MAX)  = NULL,
     @LoadedStamp        NVARCHAR(100),
     @AppUserId          BIGINT,
-    @TerminalLocationId BIGINT         = NULL
+    @TerminalLocationId BIGINT         = NULL,
+    -- 1.9: run every check and build the plan, then stop before BEGIN TRANSACTION.
+    @PreviewOnly        BIT            = 0
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
     DECLARE @Status BIT = 0, @Message NVARCHAR(500) = N'Unknown error', @NewId BIGINT = NULL;
+    DECLARE @PlanJson NVARCHAR(MAX) = NULL;
     DECLARE @ProcName NVARCHAR(200) = N'Workorder.DieCastShiftReconciliation_Save';
     DECLARE @Params NVARCHAR(MAX) = (
         SELECT @ShiftId AS ShiftId, @CellLocationId AS CellLocationId, @ToolId AS ToolId,
@@ -721,9 +785,14 @@ BEGIN
 
         -- Same condition step (e) uses: no reading declared, or one that matches
         -- what is already on record, moves die life by nothing at all.
+        -- 1.9: DECLAREd above the IF rather than inside it, so section 13 can
+        -- state a die-life delta of ZERO when no reading is declared instead of
+        -- a NULL that would swallow the whole dieLife object. The assignment,
+        -- the refusal and their order are exactly as 1.6 left them.
+        DECLARE @PlannedDelta INT = 0;
         IF @Total IS NOT NULL AND @Total <> @DieWmAfterMoves
         BEGIN
-            DECLARE @PlannedDelta INT = @Total - @DieWmAfterMoves;
+            SET @PlannedDelta = @Total - @DieWmAfterMoves;
             IF @ShotBefore + @PlannedDelta < 0
             BEGIN
                 SET @Message = N'That would take this die''s lifetime shot count below zero ('
@@ -732,6 +801,85 @@ BEGIN
                              + N'Check the actual total shots.';
                 GOTO Fail;
             END
+        END
+
+        -- ---- 13. the plan, as one object (1.9) ----
+        -- Built HERE because this is the one line at which every figure is known
+        -- and none of it has happened yet. The preview returns it and stops; the
+        -- save returns the same object and goes on to apply it. There is no
+        -- second computation to drift.
+        DECLARE @PlanAdded   INT = ISNULL((SELECT SUM(Gap) FROM @Plan WHERE Gap > 0), 0);
+        DECLARE @PlanRemoved INT = ISNULL((SELECT -SUM(Gap) FROM @Plan WHERE Gap < 0), 0);
+        DECLARE @PlanNew     INT = (SELECT COUNT(*) FROM @Plan WHERE IsNew = 1);
+        DECLARE @PlanCorr    INT = (SELECT COUNT(*) FROM @Plan WHERE CorrectCount = 1 AND Gap <> 0);
+        DECLARE @PlanStand   INT = (SELECT COUNT(*) FROM @Plan WHERE IsLocked = 1 AND Gap <> 0);
+        DECLARE @PlanMoves   INT = (SELECT COUNT(*) FROM @Moves);
+        -- spec sec 7.5: amber covers a reduction in PRODUCTION, DIE LIFE or a
+        -- COUNT. A negative scrap delta is scrap being backed OUT -- it raises
+        -- good production -- so it is deliberately not here.
+        DECLARE @HasReduction BIT = CASE WHEN EXISTS (SELECT 1 FROM @Plan WHERE Gap < 0)
+                                           OR @PlannedDelta < 0 THEN 1 ELSE 0 END;
+
+        SET @PlanJson = (
+            SELECT @ShiftLabel AS shiftLabel, @PressCode AS pressCode, @DieName AS dieName,
+                   @Asset AS assetNumber, @Cavities AS activeCavities, @HasReduction AS hasReduction,
+                   JSON_QUERY((SELECT @ShotBefore AS [before], @PlannedDelta AS delta,
+                                      @ShotBefore + @PlannedDelta AS [after]
+                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS dieLife,
+                   JSON_QUERY((SELECT @PlanAdded AS piecesAdded, @PlanRemoved AS piecesRemoved,
+                                      @PlanNew AS newLots, @PlanCorr AS countsCorrected,
+                                      @PlanStand AS countsStanding, @PlanMoves AS rowsMoved
+                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS totals,
+                   -- ISNULL INSIDE the JSON_QUERY: FOR JSON over zero rows returns
+                   -- NULL, the outer FOR JSON PATH then omits the key entirely, and
+                   -- a Perspective binding that reads $.moves gets nothing at all
+                   -- on exactly the ordinary path. Always a list, never a missing key.
+                   JSON_QUERY(ISNULL((SELECT m.EntityType AS entityType, m.EntityId AS entityId,
+                                             m.ToShiftId AS toShiftId,
+                                             CONVERT(NVARCHAR(5), ts.ActualStart, 110) + N' ' + tss.Name AS toShiftLabel
+                                      FROM @Moves m
+                                      INNER JOIN Oee.Shift ts ON ts.Id = m.ToShiftId
+                                      INNER JOIN Oee.ShiftSchedule tss ON tss.Id = ts.ShiftScheduleId
+                                      ORDER BY m.EntityType, m.EntityId
+                                      FOR JSON PATH), N'[]')) AS moves,
+                   JSON_QUERY(ISNULL((SELECT p.Ltt AS ltt, i.PartNumber AS partNumber,
+                                             tc.CavityCode AS cavityCode, p.IsNew AS isNew,
+                                             p.Gap AS gap, p.IsLocked AS isLocked,
+                                             p.CorrectCount AS countChanges,
+                                             p.PieceCount AS pieceCountBefore,
+                                             CASE WHEN p.CorrectCount = 1 THEN p.PieceCount + p.Gap
+                                                  ELSE p.PieceCount END AS pieceCountAfter,
+                                             lk.LockReason AS lockReason
+                                      FROM @Plan p
+                                      LEFT JOIN Parts.Item i ON i.Id = p.ItemId
+                                      LEFT JOIN Tools.ToolCavity tc ON tc.Id = p.ToolCavityId
+                                      OUTER APPLY Lots.ufn_DieCastLotCountLock(p.LotId) lk
+                                      ORDER BY i.PartNumber, tc.CavityCode, p.Ltt
+                                      FOR JSON PATH), N'[]')) AS lots,
+                   JSON_QUERY(ISNULL((SELECT tc.CavityCode AS cavityCode, i.PartNumber AS partNumber,
+                                             dc.Code AS defectCode, dc.Description AS defect,
+                                             sp.Qty AS delta,
+                                             CAST(CASE WHEN sp.DefectCodeId = @WarmCodeId THEN 1 ELSE 0 END AS BIT) AS isWarmUp
+                                      FROM @Scrap sp
+                                      INNER JOIN Tools.ToolCavity tc ON tc.Id = sp.ToolCavityId
+                                      INNER JOIN Quality.DefectCode dc ON dc.Id = sp.DefectCodeId
+                                      LEFT JOIN Parts.Item i ON i.Id = tc.ItemId
+                                      ORDER BY i.PartNumber, tc.CavityCode, dc.Code
+                                      FOR JSON PATH), N'[]')) AS scrap
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
+        -- ---- 13a. the preview stops here (1.9) ----
+        -- Nothing above this line has written anything: sections 1-12 read, parse
+        -- and refuse, and they must, because every rejecting validation runs
+        -- before BEGIN TRANSACTION. So a preview is a save that returns one
+        -- statement early -- not a second implementation of one.
+        IF @PreviewOnly = 1
+        BEGIN
+            SET @Status = 1;
+            SET @Message = N'Nothing is saved yet. Check the changes, then save.';
+            SET @NewId = NULL;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @PlanJson AS PlanJson;
+            RETURN;
         END
 
         -- ===================== mutation =====================
@@ -930,20 +1078,21 @@ BEGIN
 
         SET @Status = 1;
         SET @Message = @ShiftLabel + N' reconciled.';
-        SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+        SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @PlanJson AS PlanJson;
         RETURN;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
         DECLARE @ErrMsg NVARCHAR(4000) = ERROR_MESSAGE(), @ErrSev INT = ERROR_SEVERITY(), @ErrState INT = ERROR_STATE();
-        SET @Status = 0; SET @NewId = NULL;
+        -- 1.9: a rolled-back plan describes nothing, so it is not reported.
+        SET @Status = 0; SET @NewId = NULL; SET @PlanJson = NULL;
         SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
         BEGIN TRY
             EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'DieCastShiftReconciliation',
                 @EntityId = NULL, @LogEventTypeCode = N'DieCastShiftReconciled', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
         END TRY BEGIN CATCH END CATCH
-        SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+        SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @PlanJson AS PlanJson;
         RAISERROR(@ErrMsg, @ErrSev, @ErrState);
         RETURN;
     END CATCH
@@ -951,10 +1100,13 @@ Fail:
     -- Audit.FailureLog.AppUserId is NOT NULL/FK: the required-parameter branch
     -- above can reach here with @AppUserId itself NULL -- guard the audit call
     -- so that case returns cleanly instead of throwing.
-    IF @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
+    -- 1.9: a PREVIEW never logs. A team lead previewing a half-typed sheet is
+    -- typing, not failing; logging it would bury the real failures. A refused
+    -- SAVE logs exactly as it always has.
+    IF @PreviewOnly = 0 AND @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
         EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'DieCastShiftReconciliation',
             @EntityId = NULL, @LogEventTypeCode = N'DieCastShiftReconciled', @FailureReason = @Message,
             @ProcedureName = @ProcName, @AttemptedParameters = @Params;
-    SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+    SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @PlanJson AS PlanJson;
 END;
 GO

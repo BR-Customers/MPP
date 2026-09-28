@@ -13,7 +13,7 @@ EXEC test.DieCastRecon_SeedLot @Ltt = N'99700501', @CavKey = N'CavA', @StatusCod
 EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700501', @ShiftKey = N'S4', @Pieces = 100, @Reading = 110, @AtUtc = '2020-01-07T13:00:00';
 GO
 
-CREATE TABLE #Res (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #Res (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 GO
 
 DECLARE @S4 BIGINT = test.ufn_RC(N'S4'), @S1 BIGINT = test.ufn_RC(N'S1');

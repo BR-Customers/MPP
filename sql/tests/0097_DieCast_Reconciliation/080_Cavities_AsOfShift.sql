@@ -112,7 +112,7 @@ DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason W
 DECLARE @Code008 BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'008');
 DECLARE @m NVARCHAR(500);
 
-CREATE TABLE #R (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #R (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 DECLARE @Stamp3 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S3, @Cell, @Tool);
 DECLARE @Rej3 NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@Code008 AS NVARCHAR(20)) + N',"quantity":3}]';
 INSERT INTO #R EXEC Workorder.DieCastShiftReconciliation_Save
@@ -160,7 +160,7 @@ EXEC test.Assert_IsEqual @TestName = N'[Cav] the screen shows scrap on the depre
 DELETE FROM #LR;
 
 DECLARE @Stamp4 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S4, @Cell, @Tool);
-CREATE TABLE #S (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #S (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 INSERT INTO #S EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @ActualJson = N'{"totalShots":0,"goodShots":0,"warmUpShots":0}',
@@ -202,7 +202,7 @@ DECLARE @Code999 BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'999'
 DECLARE @v NVARCHAR(400);
 
 DECLARE @Stamp5 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S5, @Cell, @Tool);
-CREATE TABLE #W (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #W (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 INSERT INTO #W EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S5, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @ActualJson = N'{"totalShots":3,"goodShots":0,"warmUpShots":3}',
@@ -240,7 +240,7 @@ DECLARE @CavD BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @Tool AND
 DECLARE @CavF BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @Tool AND CavityCode = N'f');
 DECLARE @Stamp2 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S2, @Cell, @Tool);
 
-CREATE TABLE #N (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #N (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 -- Cavity f was deprecated three weeks BEFORE this shift, so it genuinely was not
 -- on the die: it is the one case sec 7 still refuses, and the only assertion
 -- that keeps the DeprecatedAt half of the predicate under test.
@@ -353,7 +353,7 @@ DECLARE @OfferedC BIGINT = (SELECT ToolCavityId FROM #CV WHERE CavityCode = N'c'
 DECLARE @S2 BIGINT = test.ufn_RC(N'S2');
 DECLARE @Stamp2 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S2, @Cell, @Tool);
 DECLARE @LotsOffered NVARCHAR(MAX) = N'[{"ltt":"99700903","toolCavityId":' + CAST(@OfferedC AS NVARCHAR(20)) + N',"quantity":10}]';
-CREATE TABLE #O (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #O (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 INSERT INTO #O EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S2, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @LotsJson = @LotsOffered, @LoadedStamp = @Stamp2, @AppUserId = @Usr;

@@ -69,7 +69,7 @@ DECLARE @Lots NVARCHAR(MAX) = N'[{"lotId":' + CAST(@L3 AS NVARCHAR(20)) + N',"qu
                             + N'{"lotId":' + CAST(@L4 AS NVARCHAR(20)) + N',"quantity":1080}]';
 DECLARE @Rej NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@Code008 AS NVARCHAR(20)) + N',"quantity":6,"approvedByUserId":' + CAST(@Usr AS NVARCHAR(20)) + N'}]';
 
-CREATE TABLE #A (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #A (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 INSERT INTO #A EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @ActualJson = @Actual, @MovesJson = @Moves, @LotsJson = @Lots, @RejectsJson = @Rej,
@@ -135,7 +135,7 @@ EXEC test.Assert_IsEqual @TestName = N'[A] the header records die life either si
 
 -- re-running the same reconciliation writes nothing
 DECLARE @Stamp2 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S4, @Cell, @Tool);
-CREATE TABLE #A2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #A2 (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 INSERT INTO #A2 EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @ActualJson = @Actual, @LotsJson = @Lots, @RejectsJson = @Rej, @LoadedStamp = @Stamp2, @AppUserId = @Usr;
@@ -160,7 +160,7 @@ DECLARE @Lots NVARCHAR(MAX) =
     + N'{"ltt":"99700613","toolCavityId":' + CAST(@CavB AS NVARCHAR(20)) + N',"quantity":99}]';
 DECLARE @Rej NVARCHAR(MAX) = N'[{"defectCodeId":' + CAST(@Code008 AS NVARCHAR(20)) + N',"quantity":2}]';
 
-CREATE TABLE #B (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #B (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 INSERT INTO #B EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S5, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @ActualJson = @Actual, @LotsJson = @Lots, @RejectsJson = @Rej, @LoadedStamp = @Stamp, @AppUserId = @Usr;
@@ -211,7 +211,7 @@ DECLARE @Actual NVARCHAR(MAX) = N'{"totalShots":580,"goodShots":570,"warmUpShots
 DECLARE @Lots NVARCHAR(MAX) = N'[{"lotId":' + CAST(@L1 AS NVARCHAR(20)) + N',"quantity":570},'
                             + N'{"lotId":' + CAST(@L2 AS NVARCHAR(20)) + N',"quantity":570}]';
 
-CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 INSERT INTO #C EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S1, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @ActualJson = @Actual, @LotsJson = @Lots, @LoadedStamp = @Stamp, @AppUserId = @Usr;
@@ -294,7 +294,7 @@ DECLARE @Actual NVARCHAR(MAX) = N'{"totalShots":580,"goodShots":575,"warmUpShots
 DECLARE @Lots NVARCHAR(MAX) = N'[{"lotId":' + CAST(@L1 AS NVARCHAR(20)) + N',"quantity":575},'
                             + N'{"lotId":' + CAST(@L2 AS NVARCHAR(20)) + N',"quantity":575}]';
 
-CREATE TABLE #D (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #D (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 INSERT INTO #D EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S1, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @ActualJson = @Actual, @LotsJson = @Lots, @LoadedStamp = @Stamp, @AppUserId = @Usr;
@@ -374,7 +374,7 @@ DECLARE @Actual NVARCHAR(MAX) = N'{"totalShots":200,"goodShots":200,"warmUpShots
 DECLARE @Lots NVARCHAR(MAX) = N'[{"lotId":' + CAST(@E1 AS NVARCHAR(20)) + N',"quantity":200},'
                             + N'{"lotId":' + CAST(@E2 AS NVARCHAR(20)) + N',"quantity":200}]';
 
-CREATE TABLE #E (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+CREATE TABLE #E (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
 INSERT INTO #E EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @ActualJson = @Actual, @MovesJson = @Moves, @LotsJson = @Lots,
