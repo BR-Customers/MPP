@@ -4198,6 +4198,953 @@ git commit -m "docs(status): die cast shift reconciliation SQL layer built, not 
 
 ---
 
+### Task 17: The die's cavity-and-part list, resolved as of the shift
+
+> **Sequencing: this lands AFTER Task 15's verification**, not before it. Task 15 is the gate that
+> proves the arithmetic against the 2026-09-17 Machine 11 press sheet, and it runs against a clean
+> tree. Nothing in this task is touched until that verification has reported.
+
+Writing Plan 2's scope (`docs/superpowers/plans/2026-09-28-diecast-reconciliation-screen-plan2-scope.md`
+§9 question 1) found a read the screen needs and this plan did not build. The reconciliation sheet
+has two controls with nothing to bind to:
+
+- the **LTT entry bar's Cavity picker** -- a team lead typing in a basket the shift made has to name
+  the cavity that cast it;
+- the **reject block's Part dropdown** -- "All", or one part.
+
+Neither can come from what exists. `..._GetHeader` returns the active-cavity **count**
+(`ActiveCavities`), not the set. `..._ListLots` lists LOTs, so it is **empty in exactly the case the
+entry bar exists for**: a shift where nothing was recorded at all -- the Machine 202 shape this
+whole feature is aimed at. A shift with no LOTs would offer no cavities and no parts, and the team
+lead could enter nothing.
+
+**The constraint that decides the whole task.** Commit `d65ac22c` (`Workorder.DieCastShiftReconciliation_Save`
+1.7, `..._GetHeader` 1.1) moved the cavity set from *as of now* to *as of the shift*, by a half-open
+interval overlap on `Tools.ToolCavity.CreatedAt` / `DeprecatedAt`. **This read SHALL use that same
+window, character for character:**
+
+```sql
+    cs.Code = N'Active'
+AND tc.CreatedAt < @EndUtc
+AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)
+```
+
+A third source resolved as of *now* would offer a cavity the save then refuses (`Choose a cavity
+that was on this die during <shift>`), or hide one the save would have accepted -- the precise
+disagreement 1.7 and 1.1 were written to close, and the one `sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql`
+already pins for the other two. Three resolvers now share one predicate; if it ever moves, all three
+move in the same commit.
+
+**What this read is NOT.** `..._ListLots`, `..._ListRejects`, `..._ListEntries`, `..._ListMoveTargets`
+and `..._ListShifts` deliberately carry **no** cavity predicate, and `d65ac22c` documented why in
+`R__Workorder_DieCastShiftReconciliation_ListLots.sql` 1.2: a basket cast on a since-deprecated
+cavity is still a basket, and it must appear on the list the team lead reconciles from. **Do not add
+a cavity predicate to any of them.** This proc answers *what may be CHOSEN*; those answer *what is
+SHOWN*, and they are not the same question.
+
+> **A live risk this read inherits, and must not try to design around.**
+> `Tools.ToolCavity.CreatedAt` is a **configuration** timestamp -- when the cavity row was entered
+> into the MES -- not a manufacturing one. A die whose cavities were configured *after* a shift had
+> already physically run resolves to **zero** cavities for that shift, and the save refuses it with
+> `This die had no active cavities during <shift>`. That is the Save's behaviour as of `d65ac22c`
+> and this read inherits it exactly, which is the point: both refuse the same shift rather than
+> disagreeing about it.
+>
+> **Task 15 is currently measuring whether prod's real `CreatedAt` values pre-date 2026-09-17.** If
+> they do not, the Save's predicate is wrong for the target shifts -- and **the Save's predicate and
+> this read change together, in one commit, with `..._GetHeader` alongside them.** Do not "fix" this
+> read on its own. Its whole value is that it agrees with the save.
+
+**Files:**
+- Create: `sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_ListCavities.sql`
+- Modify (test): `sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql` -- append section 6
+
+**Interfaces:**
+- Produces: `Workorder.DieCastShiftReconciliation_ListCavities @ShiftId BIGINT, @ToolId BIGINT` ->
+  one row per cavity that was on the die during the shift:
+  `ToolCavityId, CavityCode, ItemId, PartNumber, PartDescription, CanMintLot, DeprecatedAtEt, IsOffDieNow`,
+  ordered **part, then cavity letter**.
+- **Two parameters, not three. `@CellLocationId` is deliberately absent:** the cavity set depends on
+  the die and the shift window and on nothing else -- the Save's `@ActiveCav` does not reference the
+  press either. Adding a press parameter that the query ignores would tell the next reader it
+  matters.
+- One result set, no `OUTPUT` parameters (FDS-11-011). **Empty means the die had no active cavities
+  in that window** -- the same condition the save refuses with `This die had no active cavities
+  during <shift>`, so the screen shows that sentence rather than an empty picker with no
+  explanation. An unknown shift is also empty (not-found).
+- The Part dropdown is a `DISTINCT` over `ItemId` / `PartNumber` **on the screen**. That is
+  rendering, not a domain decision, and it is the reason there is one proc rather than two.
+
+- [ ] **Step 1: Write the failing test**
+
+Append to `sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql`, **before** the closing
+`EXEC test.DieCastRecon_Cleanup;`. That file already builds the only fixture this needs: cavities
+`{a, b, c, e}` were on the die during the January 2020 shifts and `{a, b, d}` are on it today, so
+every assertion below flips if the window is reverted.
+
+```sql
+-- ============ 6: the cavity-and-part list the screen picks from ============
+-- Workorder.DieCastShiftReconciliation_ListCavities exists because the screen's
+-- Cavity picker and Part dropdown had no backing read: _GetHeader returns a
+-- COUNT and _ListLots is empty for a shift where nothing was recorded, which is
+-- the case the LTT entry bar exists for. It resolves the same set the save does
+-- -- so a cavity it offers is a cavity the save accepts, and one it hides is one
+-- the save would have refused.
+DECLARE @S4 BIGINT = test.ufn_RC(N'S4'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'MissedEntry');
+DECLARE @v NVARCHAR(400), @m NVARCHAR(500);
+
+CREATE TABLE #CV (ToolCavityId BIGINT, CavityCode NVARCHAR(4), ItemId BIGINT, PartNumber NVARCHAR(50),
+                  PartDescription NVARCHAR(200), CanMintLot BIT, DeprecatedAtEt DATETIME2(3), IsOffDieNow BIT);
+INSERT INTO #CV EXEC Workorder.DieCastShiftReconciliation_ListCavities @ShiftId = @S4, @ToolId = @Tool;
+
+SET @v = (SELECT STRING_AGG(CavityCode, N',') WITHIN GROUP (ORDER BY CavityCode) FROM #CV);
+EXEC test.Assert_IsEqual @TestName = N'[Cav] the list is the set that was on the die THEN',
+    @Expected = N'a,b,c,e', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE CavityCode = N'd') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and a cavity fitted AFTER the shift is not in it',
+    @Expected = N'0', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE IsOffDieNow = 1) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and says which of them have since come off the die',
+    @Expected = N'2', @Actual = @v;
+
+-- the list and the header must not be able to disagree about how many
+CREATE TABLE #H6 (ShiftId BIGINT, ShiftLabel NVARCHAR(120), StartEt DATETIME2(3), EndEt DATETIME2(3), IsOpen BIT,
+                  CellLocationId BIGINT, PressCode NVARCHAR(50), PressName NVARCHAR(200), ToolId BIGINT,
+                  AssetNumber NVARCHAR(50), DieName NVARCHAR(200), ActiveCavities INT, DieShotCount INT,
+                  RecordedTotalShots INT, RecordedWarmUpShots INT, RecordedNoGood INT, RecordedGood INT,
+                  HasShiftEndNumber BIT, Stamp NVARCHAR(100), LastReconciledAtEt DATETIME2(3), LastReconciledBy NVARCHAR(20));
+INSERT INTO #H6 EXEC Workorder.DieCastShiftReconciliation_GetHeader
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool;
+SET @v = CAST((SELECT COUNT(*) FROM #CV) AS NVARCHAR(400));
+DECLARE @WantCav NVARCHAR(400) = CAST((SELECT ActiveCavities FROM #H6) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] the list and the header count the same set',
+    @Expected = @WantCav, @Actual = @v;
+DROP TABLE #H6;
+
+-- every cavity carries the part it was making -- this is the Part dropdown's source
+SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE PartNumber IS NULL) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] every cavity on the list names its part',
+    @Expected = N'0', @Actual = @v;
+SET @v = CAST((SELECT COUNT(DISTINCT ItemId) FROM #CV) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] the Part dropdown has both parts this die makes',
+    @Expected = N'2', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE CanMintLot = 0) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ...so every one of them can take a new LOT',
+    @Expected = N'0', @Actual = @v;
+
+-- ordered part, then letter: a letter is unique per (Tool, Item, CavityCode),
+-- never per tool, so the letter alone is ambiguous on a family die.
+SET @v = (SELECT STRING_AGG(CONCAT(PartNumber, N'/', CavityCode), N' ') FROM
+          (SELECT TOP 100 PartNumber, CavityCode FROM #CV ORDER BY PartNumber, CavityCode) o);
+DECLARE @WantOrder NVARCHAR(400) = (SELECT STRING_AGG(CONCAT(PartNumber, N'/', CavityCode), N' ') FROM #CV);
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ordered by part, then cavity letter',
+    @Expected = @WantOrder, @Actual = @v;
+
+-- THE POINT OF THE READ: what it offers, the save accepts. Cavity c is on the
+-- list and is deprecated today; feeding it back in must get PAST the cavity gate
+-- and be refused by the NEXT gate instead.
+DECLARE @OfferedC BIGINT = (SELECT ToolCavityId FROM #CV WHERE CavityCode = N'c');
+DECLARE @S2 BIGINT = test.ufn_RC(N'S2');
+DECLARE @Stamp2 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S2, @Cell, @Tool);
+DECLARE @LotsOffered NVARCHAR(MAX) = N'[{"ltt":"99700903","toolCavityId":' + CAST(@OfferedC AS NVARCHAR(20)) + N',"quantity":10}]';
+CREATE TABLE #O (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #O EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S2, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @LotsJson = @LotsOffered, @LoadedStamp = @Stamp2, @AppUserId = @Usr;
+SET @m = (SELECT Message FROM #O);
+DECLARE @CavRefused NVARCHAR(50) = CASE WHEN @m LIKE N'%Choose a cavity that was on this die%' THEN N'yes' ELSE N'no' END;
+EXEC test.Assert_IsEqual @TestName = N'[Cav] a cavity the list OFFERS is a cavity the save ACCEPTS',
+    @Expected = N'no', @Actual = @CavRefused;
+DROP TABLE #O;
+DROP TABLE #CV;
+
+-- an unknown shift is empty, not an invented row
+CREATE TABLE #CX (ToolCavityId BIGINT, CavityCode NVARCHAR(4), ItemId BIGINT, PartNumber NVARCHAR(50),
+                  PartDescription NVARCHAR(200), CanMintLot BIT, DeprecatedAtEt DATETIME2(3), IsOffDieNow BIT);
+INSERT INTO #CX EXEC Workorder.DieCastShiftReconciliation_ListCavities @ShiftId = -1, @ToolId = @Tool;
+SET @v = CAST((SELECT COUNT(*) FROM #CX) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] an unknown shift returns no rows', @Expected = N'0', @Actual = @v;
+DROP TABLE #CX;
+GO
+```
+
+- [ ] **Step 2: Run to see it fail.**
+`.\sql\tests\Run-Tests.ps1 -DatabaseName MPP_MES_Test_Recon -Filter "0097_DieCast_Reconciliation"`
+-- the new `[Cav]` assertions in section 6 fail because the proc does not exist. Everything in
+sections 1-5 still passes.
+
+- [ ] **Step 3: Write the proc**
+
+Create `sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_ListCavities.sql`:
+
+```sql
+-- ============================================================
+-- Repeatable:  R__Workorder_DieCastShiftReconciliation_ListCavities.sql
+-- Author:      Blue Ridge Automation
+-- Created:     2026-09-29
+-- Version:     1.0
+-- Description: The cavities that were on this die DURING the shift, one row
+--              each, with the part each was making. Two controls on the
+--              reconciliation screen have nothing else to read from:
+--
+--                * the LTT entry bar's Cavity picker -- a team lead typing in a
+--                  basket the shift made has to name the cavity that cast it;
+--                * the reject block's Part dropdown -- "All", or one part.
+--
+--              Neither can come from Workorder.DieCastShiftReconciliation_
+--              ListLots, which lists LOTs and is EMPTY in precisely the case the
+--              entry bar exists for: a shift where nothing was recorded. And
+--              neither can come from _GetHeader, which returns the cavity COUNT,
+--              not the set.
+--
+--              THE WINDOW IS THE SAVE'S WINDOW, CHARACTER FOR CHARACTER:
+--                  cs.Code = N'Active'
+--                  AND tc.CreatedAt < @EndUtc
+--                  AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)
+--              the predicate Workorder.DieCastShiftReconciliation_Save 1.7 sec 8
+--              builds @ActiveCav from, and Workorder.DieCastShiftReconciliation_
+--              GetHeader 1.1 counts. A third source resolved as of NOW would
+--              offer a cavity the save then refuses ("Choose a cavity that was on
+--              this die during ...") or hide one it would have accepted -- the
+--              exact disagreement 1.7 and 1.1 were written to close. Three
+--              resolvers now share one predicate. If it moves, all three move in
+--              the same commit.
+--
+--              NOT A CAVITY FILTER FOR ANYTHING ELSE. _ListLots, _ListRejects,
+--              _ListEntries, _ListMoveTargets and _ListShifts deliberately carry
+--              NO cavity predicate and must keep none (see _ListLots 1.2): a
+--              basket cast on a since-deprecated cavity is still a basket and
+--              still belongs on the list the team lead reconciles from. This proc
+--              answers "what may be CHOSEN"; those answer "what is SHOWN".
+--
+--              ORDER: part, then cavity letter. A cavity letter is unique per
+--              (Tool, Item, CavityCode), not per tool -- a family die repeats its
+--              letters once per part -- so the letter alone is ambiguous and the
+--              part has to lead. Same order _ListLots uses.
+--
+--              TWO PARAMETERS, NOT THREE. The press is deliberately not one: the
+--              cavity set depends on the die and the shift window and on nothing
+--              else, exactly as @ActiveCav does. A parameter the query ignores
+--              would tell the next reader it matters.
+--
+--              ONE result set, no OUTPUT params (FDS-11-011). EMPTY means this die
+--              had no active cavities in the window -- the same condition the save
+--              refuses with "This die had no active cavities during <shift>", so
+--              the screen shows that sentence rather than an empty picker with no
+--              explanation. An unknown shift is empty too.
+--
+--              An OPEN shift has no ActualEnd and takes "now" as its end, the
+--              substitution _GetHeader, _ListLots and _ListShifts all make.
+--
+--              KNOWN LIMITATIONS, INHERITED ON PURPOSE. Both are documented at
+--              length in R__Workorder_DieCastShiftReconciliation_Save.sql and
+--              neither is solved here:
+--                * cs.Code = 'Active' is evaluated as of NOW, because
+--                  Tools.ToolCavityStatusCode has no history -- nothing records
+--                  when a cavity became Closed or Scrapped;
+--                * CreatedAt is when the cavity ROW was CONFIGURED, not when the
+--                  physical cavity started running, so a die whose cavities were
+--                  entered into the MES after a shift had already run resolves to
+--                  zero cavities for it.
+--              Do not fix either one here alone. The value of this read is that it
+--              agrees with the save; a unilateral fix would end that.
+--
+-- Parameters (input):
+--   @ShiftId BIGINT - the shift whose cavity set is wanted.
+--   @ToolId  BIGINT - the die.
+--
+-- Result set (one row per cavity, ordered part then letter):
+--   ToolCavityId, CavityCode, ItemId, PartNumber, PartDescription,
+--   CanMintLot BIT, DeprecatedAtEt, IsOffDieNow BIT
+-- ============================================================
+CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_ListCavities
+    @ShiftId BIGINT,
+    @ToolId  BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Oee.Shift is Eastern wall clock (OI-38); Tools.ToolCavity's stamps are UTC.
+    DECLARE @StartEt DATETIME2(3), @EndEt DATETIME2(3);
+    SELECT @StartEt = s.ActualStart, @EndEt = s.ActualEnd FROM Oee.Shift s WHERE s.Id = @ShiftId;
+    DECLARE @StartUtc DATETIME2(3) = CAST(@StartEt AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
+    DECLARE @EndUtc   DATETIME2(3) = CASE WHEN @EndEt IS NULL THEN SYSUTCDATETIME()
+                                          ELSE CAST(@EndEt AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)) END;
+
+    SELECT
+        tc.Id                                                            AS ToolCavityId,
+        tc.CavityCode,
+        tc.ItemId,
+        i.PartNumber,
+        i.Description                                                    AS PartDescription,
+        -- Workorder.DieCastShiftReconciliation_Save refuses a NEW LOT on a cavity
+        -- with no part configured ("That cavity has no part configured..."), so the
+        -- picker can grey it rather than let the team lead find out at save.
+        CAST(CASE WHEN tc.ItemId IS NULL THEN 0 ELSE 1 END AS BIT)       AS CanMintLot,
+        CAST(tc.DeprecatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS DeprecatedAtEt,
+        CAST(CASE WHEN tc.DeprecatedAt IS NULL THEN 0 ELSE 1 END AS BIT) AS IsOffDieNow
+    FROM Tools.ToolCavity tc
+    INNER JOIN Tools.ToolCavityStatusCode cs ON cs.Id = tc.StatusCodeId
+    LEFT JOIN Parts.Item i ON i.Id = tc.ItemId
+    WHERE tc.ToolId = @ToolId
+      AND cs.Code = N'Active'
+      AND tc.CreatedAt < @EndUtc
+      AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)
+    ORDER BY i.PartNumber, tc.CavityCode;
+END;
+GO
+```
+
+- [ ] **Step 4: Run the test.** Same command. Expected: every `[Cav]` assertion in sections 1-6
+passes, and nothing else in `0097_*` changed.
+
+- [ ] **Step 5: Byte-scan the new file for non-ASCII**
+
+```bash
+python -c "d=open('sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_ListCavities.sql','rb').read(); bad=[(i,b) for i,b in enumerate(d) if b>127]; print('non-ascii:', bad[:10], len(bad))"
+```
+Expected: `non-ascii: [] 0`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_ListCavities.sql sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql
+git commit -m "feat(sql): the die's cavity and part list, resolved as of the shift"
+```
+
+---
+
+### Task 18: The confirmation panel's preview -- the same computation, stopped one statement short
+
+> **Sequencing: this lands AFTER Task 15's verification**, for the same reason as Task 17 -- it
+> changes `Workorder.DieCastShiftReconciliation_Save`, which is the proc Task 15 verifies.
+
+Before a team lead commits, the screen must show them what will change: entries moved, production
+added, production reduced, new LOTs, LOT counts changed, counts left standing and why, die life
+before -> after, and whether anything here is a **reduction** (spec §7.5's amber tick box). Plan 2's
+scope raised this as an open question (§9 question 3) with two candidates: recompute the Save's
+arithmetic in Python on the screen, or preview it in SQL.
+
+**The decision is SQL, for two reasons, and both belong in the record.**
+
+1. **This project forbids business logic in Python entity scripts and bindings.** Which LOTs get a
+   count correction, which stand and why, what die life becomes -- these are domain rules, and
+   domain rules live in SQL (`feedback_no_business_logic_in_python`, Plan 2 scope §2.9).
+2. **Duplicating the Save's arithmetic in a second language is exactly how the two drift apart.** A
+   confirmation that promises something the save does not do is worse than no confirmation: it is a
+   team lead signing off on a picture that is not what happens. Plan 2 scope §10 names this as the
+   screen's second-biggest risk, and the 2026-09-28 cavity-set change (`d65ac22c`) is the same
+   failure already caught once.
+
+**The design decision, and the justification.** Reason 2 does not stop at Python. Writing a second
+*procedure* that recomputes the plan would move the drift risk, not remove it -- two T-SQL bodies
+drift as readily as one T-SQL and one Jython, just more quietly. Three shapes were considered:
+
+| Option | Why not |
+|---|---|
+| **A separate `_Preview` proc that recomputes the plan.** | The thing we are trying to prevent, in a second file. |
+| **Extract the plan into inline TVFs (`ufn_DieCastReconciliationPlan`, `ufn_...ScrapPlan`) that both procs select from.** | Matches the `ufn_` convention and genuinely deduplicates the *arithmetic* -- but the arithmetic is the small half. The preview must also reproduce every **refusal**, because a confirmation panel that shows a plan the save will reject is useless; and the refusals are ~300 ordered lines of `GOTO Fail` with specific prose, which no TVF can carry. This option removes duplication from the arithmetic and creates it in the validations. It is a net loss, and it is an invasive rewrite of a 923-line proc that has just been through code review. |
+| **A `@PreviewOnly` mode on the Save itself.** | **Chosen.** |
+
+**`Workorder.DieCastShiftReconciliation_Save` gains `@PreviewOnly BIT = 0`.** Not one line of
+arithmetic and not one refusal moves. A single `IF @PreviewOnly = 1 ... RETURN` is inserted at the
+one point where the whole plan is known and nothing has happened yet: **after section 12, immediately
+before `BEGIN TRANSACTION`**. Everything above that line is already pure computation -- sections 1-12
+read, parse and validate, and the proc's own standing rule is that *every* rejecting validation runs
+before `BEGIN TRANSACTION` (FDS-11-011 / Msg-3915). That rule, written for a different reason, is
+what makes this possible: the Save already has a clean seam at exactly the right place.
+
+So the preview and the save **cannot** disagree, because there is one computation, not two. The
+preview *is* the save, stopped one statement short.
+
+**And it stays true over time, not just over code.** A preview is only binding if the picture it
+showed is still the picture at save time. The stale-guard (`Workorder.ufn_DieCastShiftStamp`, §8)
+already does that job: the screen loads a stamp, the preview is checked against it, and the real save
+refuses a stamp that has changed. So between a preview and its save either nothing moved -- and the
+plan is identical -- or the save refuses outright. There is no third outcome in which the save
+quietly applies something else.
+
+**No second procedure is created, and that is deliberate.** The separation the screen needs -- a
+control that previews and physically cannot save -- belongs in the **named query**, not in a second
+body of SQL: Plan 2 binds `workorder/DieCastShiftReconciliation_Preview` to this proc with
+`@PreviewOnly` fixed at `1`, and `workorder/DieCastShiftReconciliation_Save` with it fixed at `0`.
+Two named queries, one procedure, one computation.
+
+**Two consequences that must be built, not assumed.**
+
+- **A preview must not write a `Audit.FailureLog` row.** The `Fail:` label logs one on every
+  refusal. A team lead previewing a half-typed sheet would flood the failure log with their own
+  typing. The `Fail:` audit call is therefore gated on `@PreviewOnly = 0`. A refused *save* still
+  logs, exactly as now.
+- **The result set gains a fourth column, `PlanJson`, on every exit path.** One shape, always --
+  `Status, Message, NewId, PlanJson` -- so a named query and an `INSERT ... EXEC` see the same
+  columns whichever mode ran. On a refusal it is `NULL`; on a preview it is the plan that *would* be
+  applied; on a save it is the plan that *was* applied, built from the same variable at the same
+  line. This is a breaking change to seven `CREATE TABLE #x (Status BIT, Message NVARCHAR(500),
+  NewId BIGINT)` declarations in the existing tests, all listed below.
+
+`PlanJson` is **transport, not logic**: the screen renders the numbers in it and recomputes nothing
+from it. In particular `hasReduction` -- the amber tick box -- is a fact computed in SQL, which is
+what Plan 2 scope §9.3 asked for ("A preview proc would also make the tick box a fact rather than a
+guess"). It covers a reduction in **production, die life or a count**, per spec §7.5, and nothing
+else: a negative *scrap* delta is scrap being backed out, which raises good production rather than
+reducing it, so it is deliberately not amber.
+
+**Files:**
+- Modify: `sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_Save.sql` -- v1.8
+- Modify: `sql/tests/0097_DieCast_Reconciliation/060_Save_Refusals.sql` -- `#Res` gains `PlanJson`
+- Modify: `sql/tests/0097_DieCast_Reconciliation/070_Save_Writes.sql` -- `#A`, `#A2`, `#B`, `#C`, `#D`, `#E` each gain `PlanJson`
+- Modify: `sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql` -- `#R`, `#S`, `#W`, `#N`, `#O` each gain `PlanJson`
+- Create: `sql/tests/0097_DieCast_Reconciliation/090_Preview.sql`
+
+**Interfaces:**
+- Changes: `Workorder.DieCastShiftReconciliation_Save` gains a **last** parameter
+  `@PreviewOnly BIT = 0` (last, so no existing named-parameter call site changes) and a **fourth**
+  result column `PlanJson NVARCHAR(MAX)`, present on every exit path.
+- `@PreviewOnly = 1`: runs sections 1-12 unchanged -- every refusal, every figure -- then returns
+  `Status = 1`, `Message = 'Nothing is saved yet. Check the changes, then save.'`, `NewId = NULL`,
+  `PlanJson = <the plan>`. It opens no transaction, writes nothing, and logs no failure.
+- `PlanJson` shape (keys always present; `moves` / `lots` / `scrap` are `[]` when empty, never
+  absent):
+
+```json
+{
+  "shiftLabel": "01-07 RC-FIXTURE-SCHED", "pressCode": "...", "dieName": "...",
+  "assetNumber": "...", "activeCavities": 4, "hasReduction": true,
+  "dieLife":  {"before": 10000, "delta": 1121, "after": 11121},
+  "totals":   {"piecesAdded": 0, "piecesRemoved": 0, "newLots": 0,
+               "countsCorrected": 0, "countsStanding": 0, "rowsMoved": 0},
+  "moves":    [{"entityType": "Contribution", "entityId": 1, "toShiftId": 2, "toShiftLabel": "..."}],
+  "lots":     [{"ltt": "...", "partNumber": "...", "cavityCode": "a", "isNew": false,
+                "gap": 0, "isLocked": false, "countChanges": false,
+                "pieceCountBefore": 0, "pieceCountAfter": 0, "lockReason": null}],
+  "scrap":    [{"cavityCode": "a", "partNumber": "...", "defectCode": "008",
+                "defect": "...", "delta": -9, "isWarmUp": false}]
+}
+```
+
+- [ ] **Step 1: Write the failing test**
+
+Create `sql/tests/0097_DieCast_Reconciliation/090_Preview.sql`:
+
+```sql
+-- =============================================
+-- File: 0097_DieCast_Reconciliation/090_Preview.sql
+-- The confirmation panel's preview. The team lead sees what will change before
+-- they commit, and the only way that promise can be kept is for the preview and
+-- the save to BE the same computation: Workorder.DieCastShiftReconciliation_Save
+-- with @PreviewOnly = 1 runs sections 1-12 and returns immediately before
+-- BEGIN TRANSACTION.
+--
+-- The load-bearing assertion in this file is [Preview] the plan the preview
+-- showed is the plan the save applied -- the two PlanJson values compared
+-- character for character. If a future change reintroduces a second computation
+-- anywhere, that one assertion fails.
+-- =============================================
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+EXEC test.BeginTestFile @FileName = N'0097_DieCast_Reconciliation/090_Preview.sql';
+GO
+EXEC test.DieCastRecon_Setup;
+EXEC test.DieCastRecon_SeedLot @Ltt = N'99700701', @CavKey = N'CavA', @StatusCode = N'Good';
+EXEC test.DieCastRecon_SeedLot @Ltt = N'99700702', @CavKey = N'CavB', @StatusCode = N'Good';
+EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700701', @ShiftKey = N'S4', @Pieces = 100, @Reading = 100, @AtUtc = '2020-01-07T13:00:00';
+EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700702', @ShiftKey = N'S4', @Pieces = 100, @Reading = 100, @AtUtc = '2020-01-07T13:00:01';
+GO
+
+-- ============ 1: a preview writes nothing at all ============
+DECLARE @S4 BIGINT = test.ufn_RC(N'S4'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'MissedEntry');
+DECLARE @v NVARCHAR(400), @m NVARCHAR(500);
+
+DECLARE @Before NVARCHAR(400) = (
+    SELECT CONCAT((SELECT COUNT(*) FROM Workorder.DieCastShiftReconciliation WHERE ToolId = @Tool), N'|',
+                  (SELECT COUNT(*) FROM Workorder.DieCastContribution c JOIN Lots.Lot l ON l.Id = c.LotId WHERE l.ToolId = @Tool), N'|',
+                  (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE ToolId = @Tool), N'|',
+                  (SELECT COUNT(*) FROM Workorder.DieCastCounterAnchor WHERE ToolId = @Tool), N'|',
+                  (SELECT COUNT(*) FROM Lots.Lot WHERE ToolId = @Tool), N'|',
+                  (SELECT ShotCount FROM Tools.Tool WHERE Id = @Tool)));
+
+-- 120 good shots x 2 cavities = 240 good, 20 warm-up, so 140 per LOT: an
+-- ADDITION on both LOTs, plus a reading that raises die life.
+DECLARE @Stamp NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S4, @Cell, @Tool);
+DECLARE @Lots NVARCHAR(MAX) = N'[{"ltt":"99700701","quantity":120},{"ltt":"99700702","quantity":120}]';
+DECLARE @Actual NVARCHAR(MAX) = N'{"totalShots":140,"goodShots":120,"warmUpShots":20}';
+
+CREATE TABLE #P (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
+INSERT INTO #P EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @Actual, @LotsJson = @Lots, @LoadedStamp = @Stamp, @AppUserId = @Usr,
+    @PreviewOnly = 1;
+
+DECLARE @After NVARCHAR(400) = (
+    SELECT CONCAT((SELECT COUNT(*) FROM Workorder.DieCastShiftReconciliation WHERE ToolId = @Tool), N'|',
+                  (SELECT COUNT(*) FROM Workorder.DieCastContribution c JOIN Lots.Lot l ON l.Id = c.LotId WHERE l.ToolId = @Tool), N'|',
+                  (SELECT COUNT(*) FROM Workorder.RejectEvent WHERE ToolId = @Tool), N'|',
+                  (SELECT COUNT(*) FROM Workorder.DieCastCounterAnchor WHERE ToolId = @Tool), N'|',
+                  (SELECT COUNT(*) FROM Lots.Lot WHERE ToolId = @Tool), N'|',
+                  (SELECT ShotCount FROM Tools.Tool WHERE Id = @Tool)));
+EXEC test.Assert_IsEqual @TestName = N'[Preview] a preview writes nothing', @Expected = @Before, @Actual = @After;
+SET @v = CAST((SELECT Status FROM #P) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...and reports that it would save', @Expected = N'1', @Actual = @v;
+SET @v = CAST(ISNULL((SELECT CAST(NewId AS NVARCHAR(20)) FROM #P), N'(null)') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...with no reconciliation id, because none was created',
+    @Expected = N'(null)', @Actual = @v;
+SET @m = (SELECT Message FROM #P);
+EXEC test.Assert_Contains @TestName = N'[Preview] ...and says so in plain words',
+    @HaystackStr = @m, @NeedleStr = N'Nothing is saved yet';
+
+-- ============ 2: the plan the preview showed is the plan the save applied ============
+-- THE assertion. One computation, so one answer.
+DECLARE @PreviewPlan NVARCHAR(MAX) = (SELECT PlanJson FROM #P);
+CREATE TABLE #Sv (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
+INSERT INTO #Sv EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @Actual, @LotsJson = @Lots, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+DECLARE @SavePlan NVARCHAR(MAX) = (SELECT PlanJson FROM #Sv);
+DECLARE @RecId BIGINT = (SELECT NewId FROM #Sv);
+SET @v = CAST((SELECT Status FROM #Sv) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Preview] the same payload saves', @Expected = N'1', @Actual = @v;
+DECLARE @Same NVARCHAR(50) = CASE WHEN @PreviewPlan = @SavePlan THEN N'identical' ELSE N'DIFFERENT' END;
+EXEC test.Assert_IsEqual @TestName = N'[Preview] the plan the preview showed is the plan the save applied',
+    @Expected = N'identical', @Actual = @Same;
+
+-- and the plan was not a description of nothing
+SET @v = JSON_VALUE(@PreviewPlan, N'$.totals.piecesAdded');
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...20 pieces added to each of two LOTs', @Expected = N'40', @Actual = @v;
+SET @v = JSON_VALUE(@PreviewPlan, N'$.hasReduction');
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...and nothing here is a reduction', @Expected = N'false', @Actual = @v;
+
+-- the predicted die life is the die life the save landed on
+SET @v = JSON_VALUE(@PreviewPlan, N'$.dieLife.after');
+DECLARE @WantShot NVARCHAR(400) = CAST((SELECT ShotCount FROM Tools.Tool WHERE Id = @Tool) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Preview] die life before -> after is a prediction the save kept',
+    @Expected = @WantShot, @Actual = @v;
+DROP TABLE #Sv;
+DROP TABLE #P;
+GO
+
+-- ============ 3: a preview refuses exactly what the save refuses ============
+-- Word for word, because it is the same GOTO Fail.
+DECLARE @S2 BIGINT = test.ufn_RC(N'S2'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'MissedEntry');
+DECLARE @v NVARCHAR(400);
+DECLARE @Stamp2 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S2, @Cell, @Tool);
+-- total <> good + warm-up: a typo the team lead must see before they commit
+DECLARE @BadActual NVARCHAR(MAX) = N'{"totalShots":100,"goodShots":80,"warmUpShots":15}';
+
+CREATE TABLE #PF (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
+INSERT INTO #PF EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S2, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @BadActual, @LoadedStamp = @Stamp2, @AppUserId = @Usr, @PreviewOnly = 1;
+DECLARE @PreviewMsg NVARCHAR(500) = (SELECT Message FROM #PF);
+DECLARE @PreviewStatus NVARCHAR(10) = CAST((SELECT Status FROM #PF) AS NVARCHAR(10));
+
+CREATE TABLE #SF (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
+INSERT INTO #SF EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S2, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @BadActual, @LoadedStamp = @Stamp2, @AppUserId = @Usr;
+DECLARE @SaveMsg NVARCHAR(500) = (SELECT Message FROM #SF);
+
+EXEC test.Assert_IsEqual @TestName = N'[Preview] a preview refuses what the save refuses, word for word',
+    @Expected = @SaveMsg, @Actual = @PreviewMsg;
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...as a refusal, not as a plan',
+    @Expected = N'0', @Actual = @PreviewStatus;
+SET @v = ISNULL((SELECT PlanJson FROM #PF), N'(null)');
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...with no plan attached to it', @Expected = N'(null)', @Actual = @v;
+DROP TABLE #PF;
+DROP TABLE #SF;
+GO
+
+-- ============ 4: a refused preview leaves no FailureLog row ============
+-- A team lead previews a half-typed sheet repeatedly; their typing is not a
+-- system failure and must not fill Audit.FailureLog. A refused SAVE still logs.
+DECLARE @S2 BIGINT = test.ufn_RC(N'S2'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'MissedEntry');
+DECLARE @v NVARCHAR(400);
+DECLARE @Proc NVARCHAR(200) = N'Workorder.DieCastShiftReconciliation_Save';
+DECLARE @LogBefore INT = (SELECT COUNT(*) FROM Audit.FailureLog WHERE ProcedureName = @Proc);
+DECLARE @Stamp2 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S2, @Cell, @Tool);
+
+CREATE TABLE #PL (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
+INSERT INTO #PL EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S2, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = N'{"totalShots":100,"goodShots":80,"warmUpShots":15}',
+    @LoadedStamp = @Stamp2, @AppUserId = @Usr, @PreviewOnly = 1;
+SET @v = CAST((SELECT COUNT(*) FROM Audit.FailureLog WHERE ProcedureName = @Proc) - @LogBefore AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Preview] a refused preview logs no failure', @Expected = N'0', @Actual = @v;
+DELETE FROM #PL;
+
+INSERT INTO #PL EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S2, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = N'{"totalShots":100,"goodShots":80,"warmUpShots":15}',
+    @LoadedStamp = @Stamp2, @AppUserId = @Usr;
+SET @v = CAST((SELECT COUNT(*) FROM Audit.FailureLog WHERE ProcedureName = @Proc) - @LogBefore AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...but a refused SAVE still does', @Expected = N'1', @Actual = @v;
+DROP TABLE #PL;
+GO
+
+-- ============ 5: the amber tick box is a fact, not a guess ============
+-- Spec sec 7.5: amber covers a reduction in PRODUCTION, DIE LIFE or a COUNT.
+-- Backing scrap OUT is none of those -- it raises good production -- so it is
+-- deliberately not amber, and the screen must not decide that for itself.
+DECLARE @S5 BIGINT = test.ufn_RC(N'S5'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'MissedEntry');
+DECLARE @Code008 BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'008');
+DECLARE @v NVARCHAR(400);
+
+-- 12 pieces of 008 on record for S5 against cavity a, basketless (the 0084 shape)
+DECLARE @CavA BIGINT = test.ufn_RC(N'CavA');
+INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId,
+                                   DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
+SELECT NULL, NULL, tc.ItemId, @Tool, tc.Id, @S5, @Cell, @Code008, 12, NULL, N'fixture', @Usr, NULL, '2020-01-07T20:00:00'
+FROM Tools.ToolCavity tc WHERE tc.Id = @CavA;
+
+DECLARE @Stamp5 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S5, @Cell, @Tool);
+CREATE TABLE #PS (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
+INSERT INTO #PS EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S5, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = N'{"totalShots":0,"goodShots":0,"warmUpShots":0}',
+    @LoadedStamp = @Stamp5, @AppUserId = @Usr, @PreviewOnly = 1;
+DECLARE @ScrapPlan NVARCHAR(MAX) = (SELECT PlanJson FROM #PS);
+SET @v = JSON_VALUE(@ScrapPlan, N'$.hasReduction');
+EXEC test.Assert_IsEqual @TestName = N'[Preview] backing scrap out is not a reduction',
+    @Expected = N'false', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM OPENJSON(@ScrapPlan, N'$.scrap')) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...and the scrap line is on the plan for the team lead to see',
+    @Expected = N'1', @Actual = @v;
+SET @v = (SELECT TOP 1 CAST(JSON_VALUE(value, N'$.delta') AS NVARCHAR(400)) FROM OPENJSON(@ScrapPlan, N'$.scrap'));
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...as a negative delta against its cavity',
+    @Expected = N'-12', @Actual = @v;
+-- the empty groups are [] and not missing keys: a binding that reads $.moves
+-- must get a list, on every plan, or the screen errors on the empty path.
+SET @v = ISNULL(JSON_QUERY(@ScrapPlan, N'$.moves'), N'(missing)');
+EXEC test.Assert_IsEqual @TestName = N'[Preview] an empty group is [], never a missing key',
+    @Expected = N'[]', @Actual = @v;
+DROP TABLE #PS;
+GO
+
+-- ============ 6: a reduction IS flagged ============
+-- 99700701 carries 120 from section 2. Declaring 100 takes it DOWN, which is
+-- production reduced and must arm the tick box.
+DECLARE @S4 BIGINT = test.ufn_RC(N'S4'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'WrongNumbers');
+DECLARE @v NVARCHAR(400);
+DECLARE @Stamp4 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S4, @Cell, @Tool);
+DECLARE @Down NVARCHAR(MAX) = N'[{"ltt":"99700701","quantity":100},{"ltt":"99700702","quantity":120}]';
+
+CREATE TABLE #PD (Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX));
+INSERT INTO #PD EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = N'{"totalShots":130,"goodShots":110,"warmUpShots":20}',
+    @LotsJson = @Down, @LoadedStamp = @Stamp4, @AppUserId = @Usr, @PreviewOnly = 1;
+DECLARE @DownPlan NVARCHAR(MAX) = (SELECT PlanJson FROM #PD);
+SET @v = JSON_VALUE(@DownPlan, N'$.hasReduction');
+EXEC test.Assert_IsEqual @TestName = N'[Preview] taking a LOT down is a reduction, and the plan says so',
+    @Expected = N'true', @Actual = @v;
+SET @v = JSON_VALUE(@DownPlan, N'$.totals.piecesRemoved');
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...naming how many pieces come off', @Expected = N'20', @Actual = @v;
+SET @v = (SELECT TOP 1 CAST(JSON_VALUE(value, N'$.pieceCountAfter') AS NVARCHAR(400))
+          FROM OPENJSON(@DownPlan, N'$.lots') WHERE JSON_VALUE(value, N'$.ltt') = N'99700701');
+EXEC test.Assert_IsEqual @TestName = N'[Preview] ...and what each LOT''s count becomes', @Expected = N'120', @Actual = @v;
+DROP TABLE #PD;
+GO
+
+EXEC test.DieCastRecon_Cleanup;
+GO
+EXEC test.EndTestFile;
+GO
+```
+
+> The `pieceCountAfter` figure in section 6 depends on what section 2's save left on `99700701`.
+> Compute it from the fixture when you write the file rather than trusting the number quoted here --
+> and if it differs, the number in this plan is what is wrong, not the proc.
+
+- [ ] **Step 2: Widen the existing `INSERT ... EXEC` temp tables**
+
+Every test that captures the Save must match its new four-column shape, or `sqlcmd` errors and
+`Run-Tests.ps1` exits 1 with zero reported failures. Twelve declarations, in three files:
+
+```bash
+python - <<'PY'
+import io, re
+files = ["sql/tests/0097_DieCast_Reconciliation/060_Save_Refusals.sql",
+         "sql/tests/0097_DieCast_Reconciliation/070_Save_Writes.sql",
+         "sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql"]
+old = "(Status BIT, Message NVARCHAR(500), NewId BIGINT)"
+new = "(Status BIT, Message NVARCHAR(500), NewId BIGINT, PlanJson NVARCHAR(MAX))"
+for f in files:
+    s = io.open(f, encoding="utf-8", newline="").read()
+    n = s.count(old)
+    io.open(f, "w", encoding="utf-8", newline="").write(s.replace(old, new))
+    print(f, n)
+PY
+```
+Expected: `060` 1, `070` 6, `080` 5. Confirm nothing else in those files matched that literal.
+
+- [ ] **Step 3: Run to see it fail.**
+`.\sql\tests\Run-Tests.ps1 -DatabaseName MPP_MES_Test_Recon -Filter "0097_DieCast_Reconciliation"`
+-- `090_Preview.sql` fails at the first `@PreviewOnly` call (`Procedure ... has no parameter named
+'@PreviewOnly'`), and `060` / `070` / `080` now fail on the column-count mismatch. Both are the
+expected red.
+
+- [ ] **Step 4: Change the Save to v1.8**
+
+Seven edits to `sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_Save.sql`. Nothing
+else moves -- **no validation and no arithmetic is relocated, reordered or rewritten.** That is the
+whole design.
+
+**(a) Header.** Bump to `Version: 1.8`, add the parameter and result-set lines, and add this
+Description section after "THE CAVITIES ARE RESOLVED AS OF THE SHIFT":
+
+```
+--              THE PREVIEW IS THIS PROC, STOPPED ONE STATEMENT SHORT (1.8).
+--              @PreviewOnly = 1 runs sections 1-12 exactly as a save does --
+--              every refusal, every figure -- builds the plan as one JSON
+--              object, returns it, and RETURNs before BEGIN TRANSACTION. It
+--              opens no transaction, writes nothing and logs no failure.
+--
+--              It is a MODE and not a second procedure on purpose. The
+--              confirmation panel's whole value is that what it promises is what
+--              happens, and a second body of SQL would be free to drift from
+--              this one just as quietly as a Python reimplementation would --
+--              which is the option the project's "no business logic in Python"
+--              rule already closes. An inline TVF pair was considered and
+--              rejected: it would deduplicate the ARITHMETIC (sections 10-11),
+--              which is the small half, while leaving the ~300 lines of ordered,
+--              prose-carrying refusals to be written twice -- and a panel that
+--              shows a plan the save will reject is worse than no panel.
+--              Sections 1-12 are already pure computation, because every
+--              rejecting validation must run before BEGIN TRANSACTION (the
+--              Msg-3915 rule), so the seam was already here.
+--
+--              AND IT STAYS TRUE OVER TIME. A preview only binds if its picture
+--              is still the picture at save. The stale guard (sec 4) is what
+--              makes that so: the real save refuses a stamp that has changed, so
+--              between a preview and its save either nothing moved and the plan
+--              is identical, or the save refuses outright. There is no third
+--              outcome in which the save quietly applies something else.
+--
+--              PlanJson is on EVERY exit path -- NULL on a refusal, the plan that
+--              WOULD be applied on a preview, the plan that WAS applied on a save
+--              -- so the result set has one shape whichever mode ran. It is
+--              transport, not logic: the screen renders the numbers in it and
+--              recomputes nothing. hasReduction is the spec sec 7.5 amber tick
+--              box, decided HERE so it is a fact rather than a guess, and it
+--              covers a reduction in PRODUCTION, DIE LIFE or a COUNT and nothing
+--              else -- a negative scrap delta is scrap being BACKED OUT, which
+--              raises good production rather than reducing it.
+--
+--              A PREVIEW LOGS NO FAILURE. The Fail: label's Audit.Audit_LogFailure
+--              is gated on @PreviewOnly = 0. A team lead previewing a half-typed
+--              sheet is typing, not failing, and would otherwise fill the failure
+--              log with it. A refused SAVE still logs, unchanged.
+```
+
+and this change-log row:
+
+```
+--   2026-09-29 - 1.8 - @PreviewOnly BIT = 0, and a fourth result column PlanJson
+--                      on every exit path. The confirmation panel previews
+--                      through THIS proc rather than through a second
+--                      computation in SQL or in Python. See the header section
+--                      "THE PREVIEW IS THIS PROC, STOPPED ONE STATEMENT SHORT".
+```
+
+**(b) Signature** -- `@PreviewOnly` goes **last**, so no existing call site changes:
+
+```sql
+    @AppUserId          BIGINT,
+    @TerminalLocationId BIGINT         = NULL,
+    -- 1.8: run every check and build the plan, then stop before BEGIN TRANSACTION.
+    @PreviewOnly        BIT            = 0
+```
+
+**(c) Declare `@PlanJson`** beside `@Status`:
+
+```sql
+    DECLARE @Status BIT = 0, @Message NVARCHAR(500) = N'Unknown error', @NewId BIGINT = NULL;
+    DECLARE @PlanJson NVARCHAR(MAX) = NULL;
+```
+
+**(d) Hoist `@PlannedDelta`.** Section 12 declares it inside its `IF`, so its value is unavailable to
+the plan when no reading is declared. Replace
+
+```sql
+            DECLARE @PlannedDelta INT = @Total - @DieWmAfterMoves;
+```
+with a declaration above the `IF` and an assignment inside it:
+
+```sql
+        DECLARE @PlannedDelta INT = 0;
+        IF @Total IS NOT NULL AND @Total <> @DieWmAfterMoves
+        BEGIN
+            SET @PlannedDelta = @Total - @DieWmAfterMoves;
+```
+(the `IF`'s body and its refusal are otherwise untouched.)
+
+**(e) Section 13: build the plan and, in preview mode, return it.** Insert immediately after
+section 12's `END`, immediately before `-- ===================== mutation =====================`:
+
+```sql
+        -- ---- 13. the plan, as one object (1.8) ----
+        -- Built HERE because this is the one line at which every figure is known
+        -- and none of it has happened yet. The preview returns it and stops; the
+        -- save returns the same object and goes on to apply it. There is no
+        -- second computation to drift.
+        DECLARE @PlanAdded   INT = ISNULL((SELECT SUM(Gap) FROM @Plan WHERE Gap > 0), 0);
+        DECLARE @PlanRemoved INT = ISNULL((SELECT -SUM(Gap) FROM @Plan WHERE Gap < 0), 0);
+        DECLARE @PlanNew     INT = (SELECT COUNT(*) FROM @Plan WHERE IsNew = 1);
+        DECLARE @PlanCorr    INT = (SELECT COUNT(*) FROM @Plan WHERE CorrectCount = 1 AND Gap <> 0);
+        DECLARE @PlanStand   INT = (SELECT COUNT(*) FROM @Plan WHERE IsLocked = 1 AND Gap <> 0);
+        DECLARE @PlanMoves   INT = (SELECT COUNT(*) FROM @Moves);
+        -- spec sec 7.5: amber covers a reduction in PRODUCTION, DIE LIFE or a
+        -- COUNT. A negative scrap delta is scrap being backed OUT -- it raises
+        -- good production -- so it is deliberately not here.
+        DECLARE @HasReduction BIT = CASE WHEN EXISTS (SELECT 1 FROM @Plan WHERE Gap < 0)
+                                           OR @PlannedDelta < 0 THEN 1 ELSE 0 END;
+
+        SET @PlanJson = (
+            SELECT @ShiftLabel AS shiftLabel, @PressCode AS pressCode, @DieName AS dieName,
+                   @Asset AS assetNumber, @Cavities AS activeCavities, @HasReduction AS hasReduction,
+                   JSON_QUERY((SELECT @ShotBefore AS [before], @PlannedDelta AS delta,
+                                      @ShotBefore + @PlannedDelta AS [after]
+                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS dieLife,
+                   JSON_QUERY((SELECT @PlanAdded AS piecesAdded, @PlanRemoved AS piecesRemoved,
+                                      @PlanNew AS newLots, @PlanCorr AS countsCorrected,
+                                      @PlanStand AS countsStanding, @PlanMoves AS rowsMoved
+                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS totals,
+                   -- ISNULL INSIDE the JSON_QUERY: FOR JSON over zero rows returns
+                   -- NULL, the outer FOR JSON PATH then omits the key entirely, and
+                   -- a Perspective binding that reads $.moves gets nothing at all
+                   -- on exactly the ordinary path. Always a list, never a missing key.
+                   JSON_QUERY(ISNULL((SELECT m.EntityType AS entityType, m.EntityId AS entityId,
+                                             m.ToShiftId AS toShiftId,
+                                             CONVERT(NVARCHAR(5), ts.ActualStart, 110) + N' ' + tss.Name AS toShiftLabel
+                                      FROM @Moves m
+                                      INNER JOIN Oee.Shift ts ON ts.Id = m.ToShiftId
+                                      INNER JOIN Oee.ShiftSchedule tss ON tss.Id = ts.ShiftScheduleId
+                                      ORDER BY m.EntityType, m.EntityId
+                                      FOR JSON PATH), N'[]')) AS moves,
+                   JSON_QUERY(ISNULL((SELECT p.Ltt AS ltt, i.PartNumber AS partNumber,
+                                             tc.CavityCode AS cavityCode, p.IsNew AS isNew,
+                                             p.Gap AS gap, p.IsLocked AS isLocked,
+                                             p.CorrectCount AS countChanges,
+                                             p.PieceCount AS pieceCountBefore,
+                                             CASE WHEN p.CorrectCount = 1 THEN p.PieceCount + p.Gap
+                                                  ELSE p.PieceCount END AS pieceCountAfter,
+                                             lk.LockReason AS lockReason
+                                      FROM @Plan p
+                                      LEFT JOIN Parts.Item i ON i.Id = p.ItemId
+                                      LEFT JOIN Tools.ToolCavity tc ON tc.Id = p.ToolCavityId
+                                      OUTER APPLY Lots.ufn_DieCastLotCountLock(p.LotId) lk
+                                      ORDER BY i.PartNumber, tc.CavityCode, p.Ltt
+                                      FOR JSON PATH), N'[]')) AS lots,
+                   JSON_QUERY(ISNULL((SELECT tc.CavityCode AS cavityCode, i.PartNumber AS partNumber,
+                                             dc.Code AS defectCode, dc.Description AS defect,
+                                             sp.Qty AS delta,
+                                             CAST(CASE WHEN sp.DefectCodeId = @WarmCodeId THEN 1 ELSE 0 END AS BIT) AS isWarmUp
+                                      FROM @Scrap sp
+                                      INNER JOIN Tools.ToolCavity tc ON tc.Id = sp.ToolCavityId
+                                      INNER JOIN Quality.DefectCode dc ON dc.Id = sp.DefectCodeId
+                                      LEFT JOIN Parts.Item i ON i.Id = tc.ItemId
+                                      ORDER BY i.PartNumber, tc.CavityCode, dc.Code
+                                      FOR JSON PATH), N'[]')) AS scrap
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
+        -- ---- 13a. the preview stops here (1.8) ----
+        -- Nothing above this line has written anything: sections 1-12 read, parse
+        -- and refuse, and they must, because every rejecting validation runs
+        -- before BEGIN TRANSACTION. So a preview is a save that returns one
+        -- statement early -- not a second implementation of one.
+        IF @PreviewOnly = 1
+        BEGIN
+            SET @Status = 1;
+            SET @Message = N'Nothing is saved yet. Check the changes, then save.';
+            SET @NewId = NULL;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @PlanJson AS PlanJson;
+            RETURN;
+        END
+```
+
+**(f) The fourth column on the three existing exit paths.** Each `SELECT @Status AS Status, @Message
+AS Message, @NewId AS NewId;` becomes
+
+```sql
+        SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @PlanJson AS PlanJson;
+```
+
+-- the success path after `COMMIT TRANSACTION`, the `CATCH` path (which also gains
+`SET @PlanJson = NULL;` beside its `SET @NewId = NULL;`, because a rolled-back plan describes
+nothing), and the `Fail:` path (where `@PlanJson` is still `NULL`, since section 13 is never
+reached by a refusal).
+
+**(g) `Fail:` does not log a preview.** The label's guard becomes:
+
+```sql
+Fail:
+    -- Audit.FailureLog.AppUserId is NOT NULL/FK: the required-parameter branch
+    -- above can reach here with @AppUserId itself NULL -- guard the audit call
+    -- so that case returns cleanly instead of throwing.
+    -- 1.8: a PREVIEW never logs. A team lead previewing a half-typed sheet is
+    -- typing, not failing; logging it would bury the real failures. A refused
+    -- SAVE logs exactly as it always has.
+    IF @PreviewOnly = 0 AND @AppUserId IS NOT NULL AND EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
+```
+
+- [ ] **Step 5: Run the test.** Same command. Expected: every `[Preview]` assertion passes, and
+`060` / `070` / `080` are back to green with no assertion changed -- only their temp-table shapes.
+
+- [ ] **Step 6: Full 0097 suite plus the procs that call the Save**
+
+```powershell
+.\sql\tests\Run-Tests.ps1 -DatabaseName MPP_MES_Test_Recon -Filter ""
+```
+Expected: Task 15's pass count plus the Task 17 and Task 18 assertions, no new failures. Exit code 1
+with zero reported failures means a file's `sqlcmd` errored -- read the output; the likeliest cause
+here is a temp table Step 2 missed.
+
+- [ ] **Step 7: Byte-scan the changed files for non-ASCII**
+
+```bash
+python -c "
+import io
+for f in ['sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_Save.sql','sql/tests/0097_DieCast_Reconciliation/090_Preview.sql']:
+    d=open(f,'rb').read(); print(f, len([b for b in d if b>127]))
+"
+```
+Expected: `0` for both.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_Save.sql sql/tests/0097_DieCast_Reconciliation/090_Preview.sql sql/tests/0097_DieCast_Reconciliation/060_Save_Refusals.sql sql/tests/0097_DieCast_Reconciliation/070_Save_Writes.sql sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql
+git commit -m "feat(sql): the confirmation panel previews through the Save itself, not a second computation"
+```
+
+**What Plan 2 inherits from this, and what it must not do.**
+
+- Two named queries, one procedure: `workorder/DieCastShiftReconciliation_Preview` with
+  `@PreviewOnly` fixed at `1`, `workorder/DieCastShiftReconciliation_Save` with it fixed at `0`.
+  Both are status-row procs and both take named-query `type: Query`.
+- The confirmation panel renders `PlanJson` and **computes nothing from it**. The tick box reads
+  `hasReduction`; the groups read `totals`, `moves`, `lots` and `scrap`; "counts left standing"
+  reads the `lots` rows with `isLocked: true`, and each one's `lockReason` is the sentence to show.
+- Plan 2 scope §9 question 3 is answered by this task. **Question 4 is not** -- whether the screen's
+  own pre-save blocking checks (computed from `ActiveCavities`) are a sanctioned exception to "no
+  business logic in Python" is still open, and now has an obvious alternative: a preview call is
+  cheap, writes nothing, and returns the refusal verbatim, so the blocking checks could simply *be*
+  a preview. Decide it once, in Plan 2, and write it down.
+
+---
+
 ## What Plan 2 covers (not this plan)
 
 The Ignition half, against the procs this plan builds:
