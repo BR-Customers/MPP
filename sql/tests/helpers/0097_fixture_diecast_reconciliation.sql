@@ -99,10 +99,18 @@ BEGIN
             (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active'), @Usr, 10000);
     DECLARE @Tool BIGINT = SCOPE_IDENTITY();
 
+    -- CreatedAt is EXPLICIT and before the fixture's January 2020 shifts.
+    -- Workorder.DieCastShiftReconciliation_Save 1.7 and _GetHeader 1.1 resolve
+    -- the cavity set AS OF THE SHIFT (tc.CreatedAt < shift end AND
+    -- tc.DeprecatedAt is null or after shift start), so a cavity defaulted to
+    -- SYSUTCDATETIME() would be created years AFTER the shift it is supposed to
+    -- have run in -- physically impossible, and it would resolve to zero
+    -- cavities for every test in this suite. The die is configured before it
+    -- runs; the fixture has to say so.
     DECLARE @Active BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-    INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
-    VALUES (@Tool, N'a', @Active, N'RC cavity a', @ItemA, @Usr),
-           (@Tool, N'b', @Active, N'RC cavity b', @ItemB, @Usr);
+    INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
+    VALUES (@Tool, N'a', @Active, N'RC cavity a', @ItemA, '2019-12-01T00:00:00', @Usr),
+           (@Tool, N'b', @Active, N'RC cavity b', @ItemB, '2019-12-01T00:00:00', @Usr);
 
     INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, ReleasedAt, AssignedByUserId, ReleasedByUserId)
     VALUES (@Tool, @Cell, '2020-01-01T00:00:00', '2020-02-01T00:00:00', @Usr, @Usr);

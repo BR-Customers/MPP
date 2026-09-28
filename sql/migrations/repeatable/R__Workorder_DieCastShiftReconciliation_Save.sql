@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.6
+-- Version:     1.7
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -85,6 +85,50 @@
 --              Same division of labour as Lots.Lot_ApplyPieceCountCorrection:
 --              the worker raises, the caller owns the user-facing validation.
 --
+--              THE CAVITIES ARE RESOLVED AS OF THE SHIFT (1.7). The shift being
+--              reconciled is in the PAST, so the cavity set is worked out from
+--              the same half-open overlap the die's own mount test uses two
+--              sections above, and the same shape the landing list's `dies` CTE
+--              uses (R__..._ListShifts.sql):
+--                  tc.CreatedAt < @EndUtc
+--                  AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)
+--              Until 1.7 it was `tc.DeprecatedAt IS NULL` -- as of NOW -- so a
+--              cavity that ran during the shift and has since been deprecated
+--              was invisible to the comparison. Its recorded scrap could never
+--              be backed out: the gap query in sec 10 filters `rec` down to the
+--              cavity set, so with the cavity missing there was no gap, the save
+--              answered "Nothing to save: the record already matches actual",
+--              and Workorder.DieCastShiftReconciliation_ListRejects (which has
+--              never filtered by cavity at all) went on showing the scrap. A
+--              team lead saw a discrepancy they had no way to clear.
+--              @Cavities is also the multiplier in sec 9's total-good
+--              arithmetic and the A7 span a reject line divides across, so the
+--              same predicate had to go into
+--              Workorder.DieCastShiftReconciliation_GetHeader -- the screen
+--              computes what it expects from ActiveCavities -- and into the
+--              new-LOT cavity check in sec 7.
+--
+--              KNOWN LIMITATION, DELIBERATELY NOT SOLVED. `cs.Code = 'Active'`
+--              is still evaluated as of NOW, because Tools.ToolCavityStatusCode
+--              has no history: nothing records WHEN a cavity became Closed or
+--              Scrapped. A cavity that was running during the shift but is
+--              Blocked today therefore still cannot be resolved historically,
+--              and its scrap still cannot be backed out. The owner's decision
+--              (2026-09-28) is to fix the date window now and record this rather
+--              than build a status-history table speculatively. Do not add one
+--              without that decision being revisited.
+--
+--              A SECOND CONSEQUENCE, worth knowing before reading a support
+--              ticket: the window is `CreatedAt`, which is when the cavity ROW
+--              was configured, not when the physical cavity started running. A
+--              die whose cavities were entered into the Config Tool AFTER a
+--              shift had already run cannot have that shift reconciled -- it
+--              resolves to zero cavities and refuses with "This die had no
+--              active cavities during <shift>". That is the honest answer for a
+--              die with no configuration at the time, and it is the same shape
+--              as the mount test, which also refuses a shift with no
+--              Tools.ToolAssignment covering it.
+--
 --              FDS-11-011 + Msg-3915: no OUTPUT params, ONE result set, all
 --              rejecting validations BEFORE BEGIN TRANSACTION, CATCH the only
 --              ROLLBACK site, RAISERROR not THROW. Every write goes through a
@@ -164,6 +208,15 @@
 --                      returns @ShiftId, so nothing is moved ONTO this shift).
 --                      (c) Both in-transaction RAISERRORs are reworded as
 --                      internal invariants.
+--   2026-09-28 - 1.7 - The cavity set is resolved AS OF THE SHIFT, by
+--                      CreatedAt/DeprecatedAt overlap, in sec 8 (@ActiveCav, and
+--                      so @Cavities, the total-good multiplier and the A7 span)
+--                      and in sec 7 (the cavity a new LOT may name). See header
+--                      "THE CAVITIES ARE RESOLVED AS OF THE SHIFT", including
+--                      the status-history limitation that is deliberately left
+--                      open. Workorder.DieCastShiftReconciliation_GetHeader 1.1
+--                      carries the identical predicate so the screen and the
+--                      save cannot disagree about how many cavities there were.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -354,12 +407,17 @@ BEGIN
         UPDATE lt SET lt.ToolCavityId = l.ToolCavityId
         FROM @Lots lt INNER JOIN Lots.Lot l ON l.Id = lt.LotId;
 
+        -- AS OF THE SHIFT, not as of now (1.7) -- see the header. A basket cast
+        -- on a cavity that has since been deprecated is still a basket this
+        -- shift made, so the cavity it names must be one that EXISTED during the
+        -- shift, on the same half-open overlap the die's own mount test uses.
         SET @Bad = NULL;
         SELECT @Bad = STRING_AGG(lt.Ltt, N', ')
         FROM @Lots lt LEFT JOIN Tools.ToolCavity tc ON tc.Id = lt.ToolCavityId
-        WHERE lt.LotId IS NULL AND (tc.Id IS NULL OR tc.ToolId <> @ToolId OR tc.DeprecatedAt IS NOT NULL);
+        WHERE lt.LotId IS NULL AND (tc.Id IS NULL OR tc.ToolId <> @ToolId
+              OR NOT (tc.CreatedAt < @EndUtc AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)));
         IF @Bad IS NOT NULL
-        BEGIN SET @Message = N'Choose a cavity on this die for: ' + @Bad + N'.'; GOTO Fail; END
+        BEGIN SET @Message = N'Choose a cavity that was on this die during ' + @ShiftLabel + N' for: ' + @Bad + N'.'; GOTO Fail; END
 
         SET @Bad = NULL;
         SELECT @Bad = STRING_AGG(lt.Ltt, N', ')
@@ -396,13 +454,17 @@ BEGIN
             GOTO Fail;
         END
 
-        -- ---- 8. the reject lines, per active cavity (A7) ----
+        -- ---- 8. the reject lines, per cavity that was running THEN (A7) ----
         -- Before the totals arithmetic: their sum IS an input to it (see header).
+        -- The date window is the shift's, not today's -- see the header section
+        -- "THE CAVITIES ARE RESOLVED AS OF THE SHIFT" for why, and for the one
+        -- part of this that the date window cannot fix.
         DECLARE @ActiveCav TABLE (ToolCavityId BIGINT PRIMARY KEY, ItemId BIGINT NULL);
         INSERT INTO @ActiveCav (ToolCavityId, ItemId)
         SELECT tc.Id, tc.ItemId FROM Tools.ToolCavity tc
         INNER JOIN Tools.ToolCavityStatusCode cs ON cs.Id = tc.StatusCodeId
-        WHERE tc.ToolId = @ToolId AND tc.DeprecatedAt IS NULL AND cs.Code = N'Active';
+        WHERE tc.ToolId = @ToolId AND cs.Code = N'Active'
+          AND tc.CreatedAt < @EndUtc AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc);
         DECLARE @Cavities INT = (SELECT COUNT(*) FROM @ActiveCav);
 
         IF @HasActual = 0 AND (EXISTS (SELECT 1 FROM @Lots) OR EXISTS (SELECT 1 FROM @Rej))
@@ -411,7 +473,7 @@ BEGIN
         -- @HasActual = 1 covers every input that needs a cavity: a reject line
         -- without an actual figure was already refused by the gate above.
         IF @Cavities = 0 AND @HasActual = 1
-        BEGIN SET @Message = N'This die has no active cavities, so there is nothing to reconcile against.'; GOTO Fail; END
+        BEGIN SET @Message = N'This die had no active cavities during ' + @ShiftLabel + N', so there is nothing to reconcile against.'; GOTO Fail; END
 
         DECLARE @WarmCodeId BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'999');
         IF EXISTS (SELECT 1 FROM @Rej WHERE DefectCodeId = @WarmCodeId)
@@ -442,7 +504,7 @@ BEGIN
                (SELECT COUNT(*) FROM @ActiveCav ac WHERE r.ItemId IS NULL OR ac.ItemId = r.ItemId)
         FROM @Rej r;
         IF EXISTS (SELECT 1 FROM @RejSpan WHERE Span = 0)
-        BEGIN SET @Message = N'A reject line names a part that no active cavity on this die makes.'; GOTO Fail; END
+        BEGIN SET @Message = N'A reject line names a part that no cavity on this die was making during ' + @ShiftLabel + N'.'; GOTO Fail; END
         IF EXISTS (SELECT 1 FROM @RejSpan WHERE Qty % Span <> 0)
         BEGIN
             SELECT TOP 1 @Message = CAST(Qty AS NVARCHAR(10)) + N' does not divide evenly across '

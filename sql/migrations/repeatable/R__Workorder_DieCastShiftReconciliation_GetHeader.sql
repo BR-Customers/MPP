@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_GetHeader.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.0
+-- Version:     1.1
 -- Description: What the reconciliation screen puts in its banner and its
 --              Recorded column (spec 2026-09-21 sec 6.2, amendment A6).
 --              ONE result set, no OUTPUT params; an empty result set means the
@@ -13,8 +13,29 @@
 --
 --              RecordedTotalShots is the die watermark -- anchor-aware, so a
 --              previous reconciliation's declared total is what shows.
---              RecordedWarmUpShots divides the 999 pieces by the ACTIVE cavity
---              count, which is how they were fanned out in the first place.
+--              RecordedWarmUpShots divides the 999 pieces by the cavity count,
+--              which is how they were fanned out in the first place.
+--
+--              ActiveCavities IS RESOLVED AS OF THE SHIFT (1.1), by the same
+--              half-open overlap Workorder.DieCastShiftReconciliation_Save uses
+--              for the die's mount and, since Save 1.7, for its own cavity set.
+--              The two MUST agree: the screen computes the total good it expects
+--              as (good shots x ActiveCavities - no-good), and the save then
+--              recomputes it from its own cavity set and refuses any mismatch.
+--              Resolving one as of the shift and the other as of now would make
+--              a correctly entered press sheet unsaveable the moment a cavity
+--              was deprecated. The full rationale, and the status-history
+--              limitation this does NOT fix, are in the Save's header under
+--              "THE CAVITIES ARE RESOLVED AS OF THE SHIFT".
+--
+--              An OPEN shift has no ActualEnd; it takes "now" as its end, the
+--              same substitution R__..._ListLots.sql and _ListShifts.sql make.
+--
+-- Change Log:
+--   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 6.2).
+--   2026-09-28 - 1.1 - ActiveCavities counts the cavities that were on the die
+--                      DURING the shift, not the ones on it today. Mirrors
+--                      Workorder.DieCastShiftReconciliation_Save 1.7.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_GetHeader
     @ShiftId        BIGINT,
@@ -25,9 +46,21 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @WarmCodeId BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'999');
+
+    -- Oee.Shift is Eastern wall clock (OI-38); Tools.ToolCavity's stamps are UTC.
+    DECLARE @StartEt DATETIME2(3), @EndEt DATETIME2(3);
+    SELECT @StartEt = s.ActualStart, @EndEt = s.ActualEnd FROM Oee.Shift s WHERE s.Id = @ShiftId;
+    DECLARE @StartUtc DATETIME2(3) = CAST(@StartEt AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
+    DECLARE @EndUtc   DATETIME2(3) = CASE WHEN @EndEt IS NULL THEN SYSUTCDATETIME()
+                                          ELSE CAST(@EndEt AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)) END;
+
+    -- AS OF THE SHIFT (1.1) -- the identical predicate
+    -- Workorder.DieCastShiftReconciliation_Save 1.7 sec 8 uses. See the header.
     DECLARE @Cavities INT = (SELECT COUNT(*) FROM Tools.ToolCavity tc
                              INNER JOIN Tools.ToolCavityStatusCode cs ON cs.Id = tc.StatusCodeId
-                             WHERE tc.ToolId = @ToolId AND tc.DeprecatedAt IS NULL AND cs.Code = N'Active');
+                             WHERE tc.ToolId = @ToolId AND cs.Code = N'Active'
+                               AND tc.CreatedAt < @EndUtc
+                               AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc));
 
     SELECT
         s.Id                                                              AS ShiftId,

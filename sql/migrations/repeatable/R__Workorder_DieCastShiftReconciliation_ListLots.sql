@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_ListLots.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.1
+-- Version:     1.2
 -- Change Log:
 --   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 6.2).
 --   2026-09-25 - 1.1 - Dropped the ISNULL(ProducedAtLocationId, @CellLocationId)
@@ -10,6 +10,8 @@
 --                      with no press appear under EVERY press. ProducedAtLocationId
 --                      is never NULL on a cast part, so the fallback only ever
 --                      masked bad data. See the comment at the predicate.
+--   2026-09-28 - 1.2 - Documentation only, no query change: records why there is
+--                      no cavity predicate, alongside Save 1.7.
 -- Description: Every LOT the reconciliation screen lists for this shift x
 --              press x die: the ones credited in the shift, plus any opened on
 --              this die during it (an Open LOT at zero still belongs on the
@@ -18,6 +20,16 @@
 --              Lots.ufn_DieCastLotCountLock -- spec sec 3.3's three states are
 --              Open (credit), released-and-clean (correct), locked (stands).
 --              Ordered part, then cavity, then LTT -- the press sheet's order.
+--
+--              NO CAVITY FILTER HERE, AND THAT IS DELIBERATE (noted 1.2).
+--              Tools.ToolCavity is LEFT-joined for the cavity code only; a LOT
+--              is selected by its own production and its own die, never by
+--              whether the cavity that cast it is still on the die today. A
+--              basket made on a since-deprecated cavity is still a basket, and
+--              it must appear on the list the team lead reconciles from. Do not
+--              add a DeprecatedAt or status predicate to that join --
+--              Workorder.DieCastShiftReconciliation_Save 1.7 resolves ITS cavity
+--              set as of the shift so the two agree.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_ListLots
     @ShiftId        BIGINT,
