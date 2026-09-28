@@ -4218,22 +4218,31 @@ entry bar exists for**: a shift where nothing was recorded at all -- the Machine
 whole feature is aimed at. A shift with no LOTs would offer no cavities and no parts, and the team
 lead could enter nothing.
 
-**The constraint that decides the whole task.** Commit `d65ac22c` (`Workorder.DieCastShiftReconciliation_Save`
-1.7, `..._GetHeader` 1.1) moved the cavity set from *as of now* to *as of the shift*, by a half-open
-interval overlap on `Tools.ToolCavity.CreatedAt` / `DeprecatedAt`. **This read SHALL use that same
-window, character for character:**
+**The constraint that decides the whole task.** `Workorder.DieCastShiftReconciliation_Save` 1.8 and
+`..._GetHeader` 1.2 resolve the cavity set by the **`DeprecatedAt` half alone**. **This read SHALL
+use that same window, character for character:**
 
 ```sql
     cs.Code = N'Active'
-AND tc.CreatedAt < @EndUtc
 AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)
 ```
 
-A third source resolved as of *now* would offer a cavity the save then refuses (`Choose a cavity
+**There is no `tc.CreatedAt` lower bound, and its absence is the decision.** Commit `d65ac22c`
+(Save 1.7 / GetHeader 1.1) shipped one, making the window a symmetric interval overlap. It lived one
+day. Measurement against the 2026-09-18 production snapshot found **88 of prod's 149 cavities,
+across 17 dies, configured on 2026-09-17 itself** -- `DMO 130`, `DMO-101`, `DMO-108`, `DMO-113`,
+`DMO-114` at 12-13 cavities each, plus `DMO-107`, `DMO-131` and ten singles -- so the bound resolved
+every one of those dies to **zero** cavities for the **2026-09-16 3rd shift**, the Building 2 night
+shift this whole feature exists to reconcile, and refused it outright. Machine 11's `DMO125` was
+configured a month earlier and would have passed the acceptance replay: the bound "worked" there by
+luck of configuration order. `CreatedAt` is a **configuration** timestamp and says nothing about
+whether a cavity was on the die. See spec amendment **A16**, which is the authority.
+
+A third source resolved differently would offer a cavity the save then refuses (`Choose a cavity
 that was on this die during <shift>`), or hide one the save would have accepted -- the precise
-disagreement 1.7 and 1.1 were written to close, and the one `sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql`
-already pins for the other two. Three resolvers now share one predicate; if it ever moves, all three
-move in the same commit.
+disagreement 1.7/1.1 were written to close and 1.8/1.2 corrected, and the one
+`sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql` already pins for the other two.
+Three resolvers share one predicate; if it ever moves, all three move in the same commit.
 
 **What this read is NOT.** `..._ListLots`, `..._ListRejects`, `..._ListEntries`, `..._ListMoveTargets`
 and `..._ListShifts` deliberately carry **no** cavity predicate, and `d65ac22c` documented why in
@@ -4242,18 +4251,20 @@ cavity is still a basket, and it must appear on the list the team lead reconcile
 a cavity predicate to any of them.** This proc answers *what may be CHOSEN*; those answer *what is
 SHOWN*, and they are not the same question.
 
-> **A live risk this read inherits, and must not try to design around.**
+> **The risk this callout used to describe has been measured and closed -- do not reopen it.**
 > `Tools.ToolCavity.CreatedAt` is a **configuration** timestamp -- when the cavity row was entered
-> into the MES -- not a manufacturing one. A die whose cavities were configured *after* a shift had
-> already physically run resolves to **zero** cavities for that shift, and the save refuses it with
-> `This die had no active cavities during <shift>`. That is the Save's behaviour as of `d65ac22c`
-> and this read inherits it exactly, which is the point: both refuse the same shift rather than
-> disagreeing about it.
+> into the MES -- not a manufacturing one, so a die whose cavities were configured *after* a shift
+> had already physically run would resolve to **zero** cavities for it. Task 15's measurement found
+> exactly that in prod, at scale (88 of 149 cavities, 17 dies), so the `CreatedAt` bound was removed
+> from all three resolvers (Save 1.8, GetHeader 1.2) and this read never had it.
 >
-> **Task 15 is currently measuring whether prod's real `CreatedAt` values pre-date 2026-09-17.** If
-> they do not, the Save's predicate is wrong for the target shifts -- and **the Save's predicate and
-> this read change together, in one commit, with `..._GetHeader` alongside them.** Do not "fix" this
-> read on its own. Its whole value is that it agrees with the save.
+> The remaining, **unfixed** limitation is a different one: `cs.Code = 'Active'` is evaluated as of
+> **now**, because `Tools.ToolCavityStatusCode` has no history. A cavity that ran during the shift
+> but is `Blocked` today cannot be resolved historically. Inherit that, do not solve it here, and do
+> not add a status-history table without revisiting the owner's 2026-09-28 decision.
+>
+> **If the window ever changes again it changes in ONE commit across all three resolvers.** Do not
+> "fix" this read on its own. Its whole value is that it agrees with the save.
 
 **Files:**
 - Create: `sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_ListCavities.sql`
@@ -4278,9 +4289,10 @@ SHOWN*, and they are not the same question.
 - [ ] **Step 1: Write the failing test**
 
 Append to `sql/tests/0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql`, **before** the closing
-`EXEC test.DieCastRecon_Cleanup;`. That file already builds the only fixture this needs: cavities
-`{a, b, c, e}` were on the die during the January 2020 shifts and `{a, b, d}` are on it today, so
-every assertion below flips if the window is reverted.
+`EXEC test.DieCastRecon_Cleanup;`. That file already builds the only fixture this needs: `{a, b, c,
+d, e}` are in the shift's set and `f` (deprecated before the shift) is not, while `{a, b, d}` are
+the ones with no `DeprecatedAt` at all -- so every assertion below flips if the window is reverted
+in either direction.
 
 ```sql
 -- ============ 6: the cavity-and-part list the screen picks from ============
@@ -4300,10 +4312,12 @@ CREATE TABLE #CV (ToolCavityId BIGINT, CavityCode NVARCHAR(4), ItemId BIGINT, Pa
 INSERT INTO #CV EXEC Workorder.DieCastShiftReconciliation_ListCavities @ShiftId = @S4, @ToolId = @Tool;
 
 SET @v = (SELECT STRING_AGG(CavityCode, N',') WITHIN GROUP (ORDER BY CavityCode) FROM #CV);
-EXEC test.Assert_IsEqual @TestName = N'[Cav] the list is the set that was on the die THEN',
-    @Expected = N'a,b,c,e', @Actual = @v;
-SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE CavityCode = N'd') AS NVARCHAR(400));
-EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and a cavity fitted AFTER the shift is not in it',
+EXEC test.Assert_IsEqual @TestName = N'[Cav] the list is every cavity not already off the die',
+    @Expected = N'a,b,c,d,e', @Actual = @v;
+-- f came off the die BEFORE the shift and is the only exclusion. d was
+-- CONFIGURED after the shift and is included deliberately -- see spec A16.
+SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE CavityCode = N'f') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and a cavity deprecated BEFORE the shift is not in it',
     @Expected = N'0', @Actual = @v;
 SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE IsOffDieNow = 1) AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and says which of them have since come off the die',
@@ -4401,16 +4415,18 @@ Create `sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_ListCa
 --
 --              THE WINDOW IS THE SAVE'S WINDOW, CHARACTER FOR CHARACTER:
 --                  cs.Code = N'Active'
---                  AND tc.CreatedAt < @EndUtc
 --                  AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)
---              the predicate Workorder.DieCastShiftReconciliation_Save 1.7 sec 8
+--              the predicate Workorder.DieCastShiftReconciliation_Save 1.8 sec 8
 --              builds @ActiveCav from, and Workorder.DieCastShiftReconciliation_
---              GetHeader 1.1 counts. A third source resolved as of NOW would
+--              GetHeader 1.2 counts. THERE IS NO CreatedAt LOWER BOUND and its
+--              absence is deliberate (spec A16): 88 of prod's 149 cavities
+--              across 17 dies were configured the day AFTER the shift they ran
+--              in, so a CreatedAt bound refused those dies outright.
+--              A third source resolved differently would
 --              offer a cavity the save then refuses ("Choose a cavity that was on
 --              this die during ...") or hide one it would have accepted -- the
---              exact disagreement 1.7 and 1.1 were written to close. Three
---              resolvers now share one predicate. If it moves, all three move in
---              the same commit.
+--              exact disagreement 1.8 and 1.2 settled. Three resolvers share one
+--              predicate. If it moves, all three move in the same commit.
 --
 --              NOT A CAVITY FILTER FOR ANYTHING ELSE. _ListLots, _ListRejects,
 --              _ListEntries, _ListMoveTargets and _ListShifts deliberately carry
@@ -4438,18 +4454,13 @@ Create `sql/migrations/repeatable/R__Workorder_DieCastShiftReconciliation_ListCa
 --              An OPEN shift has no ActualEnd and takes "now" as its end, the
 --              substitution _GetHeader, _ListLots and _ListShifts all make.
 --
---              KNOWN LIMITATIONS, INHERITED ON PURPOSE. Both are documented at
---              length in R__Workorder_DieCastShiftReconciliation_Save.sql and
---              neither is solved here:
---                * cs.Code = 'Active' is evaluated as of NOW, because
---                  Tools.ToolCavityStatusCode has no history -- nothing records
---                  when a cavity became Closed or Scrapped;
---                * CreatedAt is when the cavity ROW was CONFIGURED, not when the
---                  physical cavity started running, so a die whose cavities were
---                  entered into the MES after a shift had already run resolves to
---                  zero cavities for it.
---              Do not fix either one here alone. The value of this read is that it
---              agrees with the save; a unilateral fix would end that.
+--              KNOWN LIMITATION, INHERITED ON PURPOSE. Documented at length in
+--              R__Workorder_DieCastShiftReconciliation_Save.sql and not solved
+--              here: cs.Code = 'Active' is evaluated as of NOW, because
+--              Tools.ToolCavityStatusCode has no history -- nothing records when
+--              a cavity became Closed or Scrapped. Do not fix it here alone. The
+--              value of this read is that it agrees with the save; a unilateral
+--              fix would end that.
 --
 -- Parameters (input):
 --   @ShiftId BIGINT - the shift whose cavity set is wanted.
@@ -4490,7 +4501,6 @@ BEGIN
     LEFT JOIN Parts.Item i ON i.Id = tc.ItemId
     WHERE tc.ToolId = @ToolId
       AND cs.Code = N'Active'
-      AND tc.CreatedAt < @EndUtc
       AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)
     ORDER BY i.PartNumber, tc.CavityCode;
 END;
