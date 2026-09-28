@@ -1,31 +1,54 @@
 -- =============================================
 -- File: 0097_DieCast_Reconciliation/080_Cavities_AsOfShift.sql
--- The shift being reconciled is in the PAST, so the cavities it ran on are the
--- ones that existed THEN, not the ones on the die today (Save 1.7, GetHeader
--- 1.1). Before that, both resolved with `tc.DeprecatedAt IS NULL` -- as of now
--- -- and the consequence was the complaint this file pins: a cavity that ran
--- during the shift and has since been deprecated was invisible to the
--- comparison, its recorded scrap could never be backed out, the save answered
--- "Nothing to save: the record already matches actual", and ListRejects (which
--- has no cavity filter at all, and should not) went on showing the scrap. The
--- team lead saw a discrepancy they had no way to clear.
+-- Which cavities a past shift is reconciled against. Two WRONG answers have
+-- been shipped for this, and this file pins the set against BOTH of them.
 --
--- The die is given four extra cavities so that the two sets differ in MEMBERSHIP
--- and in SIZE -- a count that happened to match would prove nothing:
+-- WRONG ANSWER 1 -- "as of now" (`tc.DeprecatedAt IS NULL`, before Save 1.7).
+-- A cavity that ran during the shift and has since been deprecated was
+-- invisible to the comparison, so its recorded scrap could never be backed out:
+-- the save answered "Nothing to save: the record already matches actual" while
+-- ListRejects (which has no cavity filter at all, and should not) went on
+-- showing the scrap. The team lead saw a discrepancy they had no way to clear.
 --
---   code  created      deprecated   as of the shift   as of now (the old rule)
---   ----  -----------  -----------  ----------------  -----------------------
---   a     2019-12-01   --           IN                IN      (fixture)
---   b     2019-12-01   --           IN                IN      (fixture)
---   c     2019-12-01   2020-06-01   IN                out
---   e     2019-12-01   2020-06-01   IN                out
---   d     2020-06-01   --           out               IN
+-- WRONG ANSWER 2 -- "an interval overlap", adding `tc.CreatedAt < @EndUtc`
+-- (Save 1.7, lived one day). CreatedAt is a CONFIGURATION timestamp -- when a
+-- person typed the cavity into the MES -- and says nothing about whether the
+-- cavity was on the die. The 2026-09-18 production snapshot settled it: 88 of
+-- 149 cavities across 17 dies were configured on 2026-09-17, the day AFTER the
+-- 2026-09-16 night shift this whole feature exists to reconcile, so that bound
+-- resolved 17 dies to zero cavities and refused the founding shift outright.
+-- Machine 11's DMO125 was configured a month earlier and would have passed the
+-- acceptance replay -- the bound "worked" by luck of configuration order.
 --
---   as of the shift : {a, b, c, e}  = 4
---   as of now       : {a, b, d}     = 3
+-- THE ANSWER (Save 1.8, GetHeader 1.2): the DeprecatedAt half ALONE.
+--   cs.Code = N'Active' AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > start)
+-- Deprecation is a real manufacturing fact about a real date, so comparing it
+-- to the shift is sound. Creation is not, so nothing compares it. The worst
+-- case is a picker offering a cavity for a shift that predates it, which a team
+-- lead simply does not choose -- strictly better than refusing 17 dies.
 --
--- Every assertion below turns on that difference, so each one flips if the
--- predicate is reverted. Fixture shifts are 06-07 January 2020.
+-- The die is given four extra cavities so that ALL THREE answers differ in
+-- MEMBERSHIP and in SIZE -- a count that happened to match would prove nothing:
+--
+--   code  created      deprecated    CORRECT   as-of-now   interval-overlap
+--   ----  -----------  ------------  --------  ----------  ----------------
+--   a     (default)    --            IN        IN          out  (fixture)
+--   b     (default)    --            IN        IN          out  (fixture)
+--   c     2019-12-01   2020-06-01    IN        out         IN
+--   e     2019-12-01   2020-06-01    IN        out         IN
+--   d     2020-06-01   --            IN        IN          out
+--   f     2019-12-01   2019-12-15    out       out         out
+--
+--   CORRECT          : {a, b, c, d, e} = 5
+--   as of now        : {a, b, d}       = 3
+--   interval overlap : {c, e}          = 2
+--
+-- a and b take the DEFAULT CreatedAt (today), which is the prod shape: a cavity
+-- configured years after the shift it ran in. f is deprecated BEFORE the shift
+-- and must stay out -- it is what keeps the load-bearing DeprecatedAt half, and
+-- the "Choose a cavity that was on this die during" refusal, under test.
+-- Every assertion below turns on those differences. Fixture shifts are
+-- 06-07 January 2020.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -38,13 +61,21 @@ DECLARE @Tool BIGINT = test.ufn_RC(N'Tool'), @Usr BIGINT = test.ufn_RC(N'Usr');
 DECLARE @ItemA BIGINT = test.ufn_RC(N'ItemA'), @ItemB BIGINT = test.ufn_RC(N'ItemB');
 DECLARE @Active BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
 
--- c and e: on the die during the shift, deprecated five months later.
+-- c and e: on the die during the shift, deprecated five months later. These are
+-- the cavities the DeprecatedAt half exists for -- it must keep them IN.
 INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedAt, DeprecatedAt, CreatedByUserId)
 VALUES (@Tool, N'c', @Active, N'RC cavity c -- deprecated AFTER the shift', @ItemA, '2019-12-01T00:00:00', '2020-06-01T00:00:00', @Usr),
        (@Tool, N'e', @Active, N'RC cavity e -- deprecated AFTER the shift', @ItemA, '2019-12-01T00:00:00', '2020-06-01T00:00:00', @Usr);
--- d: added to the die five months AFTER the shift, and still active today.
+-- d: CONFIGURED five months AFTER the shift, and still active today. It is IN,
+-- deliberately -- see WRONG ANSWER 2 above. This row is the one an interval
+-- overlap would exclude, and prod is full of them.
 INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
-VALUES (@Tool, N'd', @Active, N'RC cavity d -- created AFTER the shift', @ItemB, '2020-06-01T00:00:00', @Usr);
+VALUES (@Tool, N'd', @Active, N'RC cavity d -- configured AFTER the shift', @ItemB, '2020-06-01T00:00:00', @Usr);
+-- f: came off the die three weeks BEFORE the shift. It is OUT, and it is the
+-- only thing keeping the DeprecatedAt half honest: delete the half and f joins
+-- the set, so every membership assertion below moves.
+INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedAt, DeprecatedAt, CreatedByUserId)
+VALUES (@Tool, N'f', @Active, N'RC cavity f -- deprecated BEFORE the shift', @ItemA, '2019-12-01T00:00:00', '2019-12-15T00:00:00', @Usr);
 GO
 
 -- ============ 1: the read and the save agree on the same cavity set ============
@@ -64,17 +95,17 @@ CREATE TABLE #H (ShiftId BIGINT, ShiftLabel NVARCHAR(120), StartEt DATETIME2(3),
 INSERT INTO #H EXEC Workorder.DieCastShiftReconciliation_GetHeader
     @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool;
 SET @v = CAST((SELECT ActiveCavities FROM #H) AS NVARCHAR(400));
-EXEC test.Assert_IsEqual @TestName = N'[Cav] the header counts the 4 cavities that were on the die THEN, not the 3 on it now',
-    @Expected = N'4', @Actual = @v;
+EXEC test.Assert_IsEqual @TestName = N'[Cav] the header counts 5 -- every cavity not already off the die, whenever it was configured',
+    @Expected = N'5', @Actual = @v;
 DROP TABLE #H;
 GO
 
 -- ============ 2: A7 divides across the cavities that were running THEN ============
 -- A reject line with no part named spans every cavity in the set, and its amount
--- must divide evenly across it. 3 divided the OLD set of 3 and would have fallen
--- through to the totals message; against the 4 that were actually running it
--- does not divide, and the message names the number the save used. This is the
--- A7 span moving, asserted on the span itself.
+-- must divide evenly across it. The message names the number the save actually
+-- used, so this asserts the A7 span itself. 3 divides the as-of-now set of 3
+-- evenly and would fall through to a different message entirely; against the
+-- interval-overlap set of 2 the message would say 2. Only the correct set says 5.
 DECLARE @S3 BIGINT = test.ufn_RC(N'S3'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
 DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
 DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'MissedEntry');
@@ -89,8 +120,8 @@ INSERT INTO #R EXEC Workorder.DieCastShiftReconciliation_Save
     @ActualJson = N'{"totalShots":0,"goodShots":0,"warmUpShots":0}', @RejectsJson = @Rej3,
     @LoadedStamp = @Stamp3, @AppUserId = @Usr;
 SET @m = (SELECT Message FROM #R);
-EXEC test.Assert_Contains @TestName = N'[Cav] an A7 reject line divides across the cavities that were running THEN',
-    @HaystackStr = @m, @NeedleStr = N'does not divide evenly across 4 cavities';
+EXEC test.Assert_Contains @TestName = N'[Cav] an A7 reject line divides across the cavities that had not come off the die',
+    @HaystackStr = @m, @NeedleStr = N'does not divide evenly across 5 cavities';
 DROP TABLE #R;
 GO
 
@@ -186,33 +217,57 @@ SET @v = (SELECT STRING_AGG(tc.CavityCode, N',') WITHIN GROUP (ORDER BY tc.Cavit
           FROM Workorder.RejectEvent re
           INNER JOIN Tools.ToolCavity tc ON tc.Id = re.ToolCavityId
           WHERE re.ReconciliationId = @RecW AND re.DefectCodeId = @Code999);
-EXEC test.Assert_IsEqual @TestName = N'[Cav] warm-up fans out to exactly the cavities that were on the die THEN',
-    @Expected = N'a,b,c,e', @Actual = @v;
+-- a,b,c,d,e -- and NOT f, which had already come off the die. d is present on
+-- purpose: it was configured after the shift, and configuration date is not a
+-- fact about the die (see WRONG ANSWER 2 at the top of this file).
+EXEC test.Assert_IsEqual @TestName = N'[Cav] warm-up fans out to every cavity not already off the die -- f excluded, d included',
+    @Expected = N'a,b,c,d,e', @Actual = @v;
 GO
 
 -- ============ 5: the cavity a NEW LOT may be entered against ============
 -- Same rule on the other side of the proc (sec 7). A team lead typing in a
 -- basket the shift made has to be able to name the cavity that cast it, even if
 -- that cavity has since come off the die -- and must NOT be able to name one
--- that was not fitted yet. Neither case writes anything: each is refused by the
--- NEXT gate along, and WHICH message comes back is the whole assertion.
+-- that had ALREADY come off before the shift started. Nothing here writes: each
+-- case is refused by one gate or the next, and WHICH message comes back is the
+-- whole assertion.
 DECLARE @S2 BIGINT = test.ufn_RC(N'S2'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
 DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
 DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'MissedEntry');
 DECLARE @m NVARCHAR(500);
 DECLARE @CavC BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @Tool AND CavityCode = N'c');
 DECLARE @CavD BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @Tool AND CavityCode = N'd');
+DECLARE @CavF BIGINT = (SELECT Id FROM Tools.ToolCavity WHERE ToolId = @Tool AND CavityCode = N'f');
 DECLARE @Stamp2 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S2, @Cell, @Tool);
 
 CREATE TABLE #N (Status BIT, Message NVARCHAR(500), NewId BIGINT);
--- cavity d was fitted five months after this shift: it cannot have cast anything in it
+-- Cavity f was deprecated three weeks BEFORE this shift, so it genuinely was not
+-- on the die: it is the one case sec 7 still refuses, and the only assertion
+-- that keeps the DeprecatedAt half of the predicate under test.
+DECLARE @LotsF NVARCHAR(MAX) = N'[{"ltt":"99700900","toolCavityId":' + CAST(@CavF AS NVARCHAR(20)) + N',"quantity":10}]';
+INSERT INTO #N EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S2, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @LotsJson = @LotsF, @LoadedStamp = @Stamp2, @AppUserId = @Usr;
+SET @m = (SELECT Message FROM #N);
+EXEC test.Assert_Contains @TestName = N'[Cav] a new LOT cannot name a cavity deprecated BEFORE the shift',
+    @HaystackStr = @m, @NeedleStr = N'Choose a cavity that was on this die during';
+
+-- Cavity d was CONFIGURED five months after this shift, and it is accepted --
+-- deliberately. This assertion was the opposite way round for one day (Save 1.7)
+-- and production killed it: 88 of prod's 149 cavities across 17 dies were
+-- configured on 2026-09-17, the day after the shift the screen exists to
+-- reconcile, so refusing on configuration date refused 17 dies outright.
+-- CreatedAt records who typed what and when, never what was bolted to the die.
+-- Getting PAST the cavity gate is the assertion; the missing-actual-figure gate
+-- then refuses it, which is why nothing is written.
+DELETE FROM #N;
 DECLARE @LotsD NVARCHAR(MAX) = N'[{"ltt":"99700901","toolCavityId":' + CAST(@CavD AS NVARCHAR(20)) + N',"quantity":10}]';
 INSERT INTO #N EXEC Workorder.DieCastShiftReconciliation_Save
     @ShiftId = @S2, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
     @LotsJson = @LotsD, @LoadedStamp = @Stamp2, @AppUserId = @Usr;
 SET @m = (SELECT Message FROM #N);
-EXEC test.Assert_Contains @TestName = N'[Cav] a new LOT cannot name a cavity fitted AFTER the shift',
-    @HaystackStr = @m, @NeedleStr = N'Choose a cavity that was on this die during';
+EXEC test.Assert_Contains @TestName = N'[Cav] but a cavity CONFIGURED after the shift is one it CAN name (prod: 88 of 149 are)',
+    @HaystackStr = @m, @NeedleStr = N'Enter the actual total shots';
 
 -- cavity c was on the die then, and is deprecated now: it must get PAST that
 -- gate and be refused by the missing-actual-figure gate instead.
@@ -226,8 +281,8 @@ EXEC test.Assert_Contains @TestName = N'[Cav] ...but one deprecated AFTER the sh
     @HaystackStr = @m, @NeedleStr = N'Enter the actual total shots';
 DROP TABLE #N;
 
-DECLARE @v NVARCHAR(400) = CAST((SELECT COUNT(*) FROM Lots.Lot WHERE LotName IN (N'99700901', N'99700902')) AS NVARCHAR(400));
-EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and neither refusal minted a LOT', @Expected = N'0', @Actual = @v;
+DECLARE @v NVARCHAR(400) = CAST((SELECT COUNT(*) FROM Lots.Lot WHERE LotName IN (N'99700900', N'99700901', N'99700902')) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and none of the three refusals minted a LOT', @Expected = N'0', @Actual = @v;
 GO
 
 EXEC test.DieCastRecon_Cleanup;

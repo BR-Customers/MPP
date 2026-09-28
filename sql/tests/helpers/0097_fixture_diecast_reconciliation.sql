@@ -99,18 +99,23 @@ BEGIN
             (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active'), @Usr, 10000);
     DECLARE @Tool BIGINT = SCOPE_IDENTITY();
 
-    -- CreatedAt is EXPLICIT and before the fixture's January 2020 shifts.
-    -- Workorder.DieCastShiftReconciliation_Save 1.7 and _GetHeader 1.1 resolve
-    -- the cavity set AS OF THE SHIFT (tc.CreatedAt < shift end AND
-    -- tc.DeprecatedAt is null or after shift start), so a cavity defaulted to
-    -- SYSUTCDATETIME() would be created years AFTER the shift it is supposed to
-    -- have run in -- physically impossible, and it would resolve to zero
-    -- cavities for every test in this suite. The die is configured before it
-    -- runs; the fixture has to say so.
+    -- CreatedAt IS DELIBERATELY LEFT TO DEFAULT (SYSUTCDATETIME()), which puts
+    -- it YEARS AFTER the January 2020 shifts these cavities are supposed to have
+    -- run in. That is not an oversight and it is not laziness: it reproduces the
+    -- exact production condition that killed the CreatedAt lower bound. On the
+    -- 2026-09-18 prod snapshot, 88 of 149 cavities across 17 dies carried
+    -- CreatedAt on 2026-09-17 -- the day AFTER the 2026-09-16 night shift the
+    -- reconciliation screen exists to fix -- because CreatedAt records when
+    -- somebody typed the cavity into the MES, not when it was fitted to the die.
+    -- Workorder.DieCastShiftReconciliation_Save 1.8 therefore has no CreatedAt
+    -- predicate at all (only DeprecatedAt), and this fixture is what holds it to
+    -- that: reinstate the bound and every one of this suite's cavity-dependent
+    -- assertions fails on "This die had no active cavities during <shift>".
+    -- A backdated CreatedAt here would make that reinstatement pass silently.
     DECLARE @Active BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
-    INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedAt, CreatedByUserId)
-    VALUES (@Tool, N'a', @Active, N'RC cavity a', @ItemA, '2019-12-01T00:00:00', @Usr),
-           (@Tool, N'b', @Active, N'RC cavity b', @ItemB, '2019-12-01T00:00:00', @Usr);
+    INSERT INTO Tools.ToolCavity (ToolId, CavityCode, StatusCodeId, Description, ItemId, CreatedByUserId)
+    VALUES (@Tool, N'a', @Active, N'RC cavity a', @ItemA, @Usr),
+           (@Tool, N'b', @Active, N'RC cavity b', @ItemB, @Usr);
 
     INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, ReleasedAt, AssignedByUserId, ReleasedByUserId)
     VALUES (@Tool, @Cell, '2020-01-01T00:00:00', '2020-02-01T00:00:00', @Usr, @Usr);

@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_ListRejects.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.2
+-- Version:     1.3
 -- Description: The reject block's Recorded side: scrap on record for this
 --              shift x press x die, by reason, part AND APPROVER (spec sec 6.2).
 --              Warm-up (999) is excluded -- it is its own field on the screen
@@ -34,8 +34,10 @@
 --              on record, and the team lead has to be able to see a row in order
 --              to clear it. It was the SAVE that filtered by an as-of-NOW cavity
 --              set and so could not back such a row out, which is why the two
---              disagreed; Workorder.DieCastShiftReconciliation_Save 1.7 fixed
---              that end by resolving its cavities as of the shift.
+--              disagreed; Workorder.DieCastShiftReconciliation_Save 1.8 fixed
+--              that end by keeping a cavity deprecated AFTER the shift in its
+--              set. It does NOT exclude a cavity created after the shift -- see
+--              that proc's header for the production evidence behind that.
 --
 -- Change Log:
 --   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 6.2).
@@ -43,6 +45,10 @@
 --                      set. Result-set SHAPE CHANGE -- see the grain note above.
 --   2026-09-28 - 1.2 - Documentation only, no query change: records why there is
 --                      no cavity predicate, alongside Save 1.7.
+--   2026-09-28 - 1.3 - Documentation only, no query change: retarget that note
+--                      at Save 1.8, which dropped 1.7's CreatedAt lower bound
+--                      after production measurement. The note's own point is
+--                      unchanged -- this read still has no cavity predicate.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_ListRejects
     @ShiftId        BIGINT,

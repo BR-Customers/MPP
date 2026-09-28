@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_ListLots.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.2
+-- Version:     1.3
 -- Change Log:
 --   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 6.2).
 --   2026-09-25 - 1.1 - Dropped the ISNULL(ProducedAtLocationId, @CellLocationId)
@@ -12,6 +12,10 @@
 --                      masked bad data. See the comment at the predicate.
 --   2026-09-28 - 1.2 - Documentation only, no query change: records why there is
 --                      no cavity predicate, alongside Save 1.7.
+--   2026-09-28 - 1.3 - Documentation only, no query change: retarget that note
+--                      at Save 1.8, which dropped 1.7's CreatedAt lower bound
+--                      after production measurement. The note's own point is
+--                      unchanged -- this read still has no cavity predicate.
 -- Description: Every LOT the reconciliation screen lists for this shift x
 --              press x die: the ones credited in the shift, plus any opened on
 --              this die during it (an Open LOT at zero still belongs on the
@@ -28,8 +32,8 @@
 --              basket made on a since-deprecated cavity is still a basket, and
 --              it must appear on the list the team lead reconciles from. Do not
 --              add a DeprecatedAt or status predicate to that join --
---              Workorder.DieCastShiftReconciliation_Save 1.7 resolves ITS cavity
---              set as of the shift so the two agree.
+--              Workorder.DieCastShiftReconciliation_Save 1.8 keeps a cavity
+--              deprecated AFTER the shift in ITS set so the two agree.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_ListLots
     @ShiftId        BIGINT,

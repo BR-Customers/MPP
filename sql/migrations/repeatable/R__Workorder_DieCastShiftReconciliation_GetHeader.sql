@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_GetHeader.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.1
+-- Version:     1.2
 -- Description: What the reconciliation screen puts in its banner and its
 --              Recorded column (spec 2026-09-21 sec 6.2, amendment A6).
 --              ONE result set, no OUTPUT params; an empty result set means the
@@ -16,26 +16,41 @@
 --              RecordedWarmUpShots divides the 999 pieces by the cavity count,
 --              which is how they were fanned out in the first place.
 --
---              ActiveCavities IS RESOLVED AS OF THE SHIFT (1.1), by the same
---              half-open overlap Workorder.DieCastShiftReconciliation_Save uses
---              for the die's mount and, since Save 1.7, for its own cavity set.
---              The two MUST agree: the screen computes the total good it expects
---              as (good shots x ActiveCavities - no-good), and the save then
+--              ActiveCavities KEEPS A CAVITY THAT WAS DEPRECATED AFTER THE
+--              SHIFT (1.1), by the same DeprecatedAt half Workorder.DieCast
+--              ShiftReconciliation_Save uses for its own cavity set. The two
+--              MUST agree: the screen computes the total good it expects as
+--              (good shots x ActiveCavities - no-good), and the save then
 --              recomputes it from its own cavity set and refuses any mismatch.
---              Resolving one as of the shift and the other as of now would make
---              a correctly entered press sheet unsaveable the moment a cavity
---              was deprecated. The full rationale, and the status-history
---              limitation this does NOT fix, are in the Save's header under
---              "THE CAVITIES ARE RESOLVED AS OF THE SHIFT".
+--              Resolving one one way and the other another would make a
+--              correctly entered press sheet unsaveable the moment a cavity was
+--              deprecated. The full rationale -- including WHY THERE IS NO
+--              CreatedAt LOWER BOUND, which is a measured decision and not an
+--              omission -- is in the Save's header under "A CAVITY DEPRECATED
+--              AFTER THE SHIFT STILL COUNTS FOR IT".
 --
---              An OPEN shift has no ActualEnd; it takes "now" as its end, the
---              same substitution R__..._ListLots.sql and _ListShifts.sql make.
+--              THERE IS NO @EndUtc HERE (1.2). Until 1.2 this proc computed the
+--              shift's end in UTC for a `tc.CreatedAt < @EndUtc` bound that has
+--              since been dropped; with that bound gone nothing else in this
+--              proc needs the end of the shift, so the variable went with it.
+--              Do not reintroduce either. See the Save's header.
 --
 -- Change Log:
 --   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 6.2).
 --   2026-09-28 - 1.1 - ActiveCavities counts the cavities that were on the die
 --                      DURING the shift, not the ones on it today. Mirrors
 --                      Workorder.DieCastShiftReconciliation_Save 1.7.
+--   2026-09-28 - 1.2 - Drop the `tc.CreatedAt < @EndUtc` half of 1.1's window
+--                      (and the now-dead @EndEt/@EndUtc that served it). 1.1
+--                      shipped an interval overlap; measurement against a
+--                      production snapshot the same day showed the CreatedAt
+--                      half excludes real cavities wholesale -- 88 of prod's 149
+--                      cavities across 17 dies were configured on 2026-09-17
+--                      itself, so ActiveCavities returned 0 for the 2026-09-16
+--                      night shift this feature exists to fix, and the screen
+--                      had no expectation to compute at all. Mirrors
+--                      Workorder.DieCastShiftReconciliation_Save 1.8, whose
+--                      header carries the evidence and the reasoning.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_GetHeader
     @ShiftId        BIGINT,
@@ -48,18 +63,17 @@ BEGIN
     DECLARE @WarmCodeId BIGINT = (SELECT Id FROM Quality.DefectCode WHERE Code = N'999');
 
     -- Oee.Shift is Eastern wall clock (OI-38); Tools.ToolCavity's stamps are UTC.
-    DECLARE @StartEt DATETIME2(3), @EndEt DATETIME2(3);
-    SELECT @StartEt = s.ActualStart, @EndEt = s.ActualEnd FROM Oee.Shift s WHERE s.Id = @ShiftId;
+    DECLARE @StartEt DATETIME2(3);
+    SELECT @StartEt = s.ActualStart FROM Oee.Shift s WHERE s.Id = @ShiftId;
     DECLARE @StartUtc DATETIME2(3) = CAST(@StartEt AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3));
-    DECLARE @EndUtc   DATETIME2(3) = CASE WHEN @EndEt IS NULL THEN SYSUTCDATETIME()
-                                          ELSE CAST(@EndEt AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)) END;
 
-    -- AS OF THE SHIFT (1.1) -- the identical predicate
-    -- Workorder.DieCastShiftReconciliation_Save 1.7 sec 8 uses. See the header.
+    -- The identical predicate Workorder.DieCastShiftReconciliation_Save sec 8
+    -- builds @ActiveCav from. A cavity deprecated AFTER the shift still counts
+    -- for it; there is NO CreatedAt lower bound, deliberately -- see the header
+    -- and the Save's, which carries the production measurement behind it.
     DECLARE @Cavities INT = (SELECT COUNT(*) FROM Tools.ToolCavity tc
                              INNER JOIN Tools.ToolCavityStatusCode cs ON cs.Id = tc.StatusCodeId
                              WHERE tc.ToolId = @ToolId AND cs.Code = N'Active'
-                               AND tc.CreatedAt < @EndUtc
                                AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc));
 
     SELECT

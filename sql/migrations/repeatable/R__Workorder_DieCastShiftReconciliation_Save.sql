@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.7
+-- Version:     1.8
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -85,49 +85,68 @@
 --              Same division of labour as Lots.Lot_ApplyPieceCountCorrection:
 --              the worker raises, the caller owns the user-facing validation.
 --
---              THE CAVITIES ARE RESOLVED AS OF THE SHIFT (1.7). The shift being
---              reconciled is in the PAST, so the cavity set is worked out from
---              the same half-open overlap the die's own mount test uses two
---              sections above, and the same shape the landing list's `dies` CTE
---              uses (R__..._ListShifts.sql):
---                  tc.CreatedAt < @EndUtc
+--              A CAVITY DEPRECATED AFTER THE SHIFT STILL COUNTS FOR IT (1.7),
+--              AND THERE IS NO CreatedAt LOWER BOUND (1.8). The cavity set in
+--              sec 8 (and the new-LOT check in sec 7) is:
+--                  cs.Code = N'Active'
 --                  AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)
---              Until 1.7 it was `tc.DeprecatedAt IS NULL` -- as of NOW -- so a
---              cavity that ran during the shift and has since been deprecated
---              was invisible to the comparison. Its recorded scrap could never
---              be backed out: the gap query in sec 10 filters `rec` down to the
---              cavity set, so with the cavity missing there was no gap, the save
---              answered "Nothing to save: the record already matches actual",
---              and Workorder.DieCastShiftReconciliation_ListRejects (which has
---              never filtered by cavity at all) went on showing the scrap. A
---              team lead saw a discrepancy they had no way to clear.
---              @Cavities is also the multiplier in sec 9's total-good
---              arithmetic and the A7 span a reject line divides across, so the
---              same predicate had to go into
---              Workorder.DieCastShiftReconciliation_GetHeader -- the screen
---              computes what it expects from ActiveCavities -- and into the
---              new-LOT cavity check in sec 7.
+--              Read the two halves separately -- they were decided separately
+--              and only one of them survived contact with production data.
+--
+--              THE DeprecatedAt HALF IS LOAD-BEARING. Until 1.7 the set was
+--              `tc.DeprecatedAt IS NULL` -- as of NOW -- so a cavity that ran
+--              during the shift and has since been deprecated was invisible to
+--              the comparison. Its recorded scrap could never be backed out:
+--              the gap query in sec 10 filters `rec` down to the cavity set, so
+--              with the cavity missing there was no gap, the save answered
+--              "Nothing to save: the record already matches actual", and
+--              Workorder.DieCastShiftReconciliation_ListRejects (which has never
+--              filtered by cavity at all) went on showing the scrap. A team lead
+--              saw a discrepancy they had no way to clear. DeprecatedAt records
+--              that a cavity STOPPED BEING USED, which is a real manufacturing
+--              fact about a real date, so comparing it to the shift is sound.
+--              Do not drop this half.
+--
+--              THERE IS NO `tc.CreatedAt < @EndUtc` HALF, AND ITS ABSENCE IS
+--              THE DECISION (1.8, owner 2026-09-28). 1.7 shipped one, on the
+--              reasoning that a cavity configured after the shift cannot have
+--              cast anything in it. Measurement against a production snapshot
+--              the same day killed it: 88 of prod's 149 cavities, spread over
+--              17 dies, carry CreatedAt on 2026-09-17 itself (12:56-17:51 UTC)
+--              -- among them DMO 130, DMO-101, DMO-108, DMO-113 and DMO-114 at
+--              12-13 cavities each, plus DMO-107, DMO-131 and ten single-cavity
+--              dies. Every one of those 17 dies resolved to a SMALLER set, most
+--              of them to ZERO, for the 2026-09-16 3rd shift -- the Building 2
+--              night shift this entire feature was built to reconcile -- and the
+--              save refused it outright with "This die had no active cavities
+--              during <shift>". Machine 11's DMO125 happened to be configured on
+--              2026-08-18, a month earlier, so the planned acceptance replay
+--              would have passed: the bound worked there by luck of the order
+--              somebody typed the configuration in, not by design.
+--
+--              The root cause is that CreatedAt is a CONFIGURATION timestamp --
+--              when a person entered the cavity into the MES -- and carries no
+--              information about whether the cavity was physically on the die.
+--              During a cutover ALL configuration is recent, so the bound
+--              systematically excludes real cavities from every earlier shift,
+--              and it does so silently in the direction of refusing work.
+--
+--              The worst case WITHOUT the bound is that a picker offers a cavity
+--              for a shift that predates its physical existence, and a team lead
+--              does not choose it. That is strictly better than refusing 17 dies
+--              for the shift the feature exists to fix. If a lower bound is ever
+--              wanted, it has to come from a manufacturing fact -- a cavity
+--              fitted/removed history, or ToolAssignment -- never from CreatedAt.
+--              Do not "tighten" this back.
 --
 --              KNOWN LIMITATION, DELIBERATELY NOT SOLVED. `cs.Code = 'Active'`
---              is still evaluated as of NOW, because Tools.ToolCavityStatusCode
---              has no history: nothing records WHEN a cavity became Closed or
---              Scrapped. A cavity that was running during the shift but is
---              Blocked today therefore still cannot be resolved historically,
---              and its scrap still cannot be backed out. The owner's decision
---              (2026-09-28) is to fix the date window now and record this rather
---              than build a status-history table speculatively. Do not add one
---              without that decision being revisited.
---
---              A SECOND CONSEQUENCE, worth knowing before reading a support
---              ticket: the window is `CreatedAt`, which is when the cavity ROW
---              was configured, not when the physical cavity started running. A
---              die whose cavities were entered into the Config Tool AFTER a
---              shift had already run cannot have that shift reconciled -- it
---              resolves to zero cavities and refuses with "This die had no
---              active cavities during <shift>". That is the honest answer for a
---              die with no configuration at the time, and it is the same shape
---              as the mount test, which also refuses a shift with no
---              Tools.ToolAssignment covering it.
+--              is evaluated as of NOW, because Tools.ToolCavityStatusCode has no
+--              history: nothing records WHEN a cavity became Closed or Scrapped.
+--              A cavity that was running during the shift but is Blocked today
+--              therefore cannot be resolved historically, and its scrap cannot
+--              be backed out. The owner's decision (2026-09-28) is to record
+--              this rather than build a status-history table speculatively. Do
+--              not add one without that decision being revisited.
 --
 --              FDS-11-011 + Msg-3915: no OUTPUT params, ONE result set, all
 --              rejecting validations BEFORE BEGIN TRANSACTION, CATCH the only
@@ -217,6 +236,21 @@
 --                      open. Workorder.DieCastShiftReconciliation_GetHeader 1.1
 --                      carries the identical predicate so the screen and the
 --                      save cannot disagree about how many cavities there were.
+--   2026-09-28 - 1.8 - The `tc.CreatedAt < @EndUtc` half of 1.7's window is
+--                      REMOVED, in sec 7 and sec 8 both, and in
+--                      Workorder.DieCastShiftReconciliation_GetHeader 1.2
+--                      alongside them. Production measurement (same day, a real
+--                      snapshot) showed 88 of 149 cavities across 17 dies were
+--                      configured on 2026-09-17, so the bound resolved the
+--                      2026-09-16 night shift to zero cavities on every one of
+--                      those dies and refused the shift the feature exists to
+--                      fix. CreatedAt is a configuration timestamp, not a
+--                      manufacturing one. The DeprecatedAt half stays -- it is
+--                      what lets scrap on a since-deprecated cavity be
+--                      reconciled away. Full evidence and reasoning in the
+--                      header under "A CAVITY DEPRECATED AFTER THE SHIFT STILL
+--                      COUNTS FOR IT". This is a decision, not an oversight:
+--                      the absence of the bound is deliberate.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -407,15 +441,17 @@ BEGIN
         UPDATE lt SET lt.ToolCavityId = l.ToolCavityId
         FROM @Lots lt INNER JOIN Lots.Lot l ON l.Id = lt.LotId;
 
-        -- AS OF THE SHIFT, not as of now (1.7) -- see the header. A basket cast
-        -- on a cavity that has since been deprecated is still a basket this
-        -- shift made, so the cavity it names must be one that EXISTED during the
-        -- shift, on the same half-open overlap the die's own mount test uses.
+        -- A basket cast on a cavity that has since been deprecated is still a
+        -- basket this shift made, so the cavity it names only has to be one that
+        -- had not ALREADY come off the die when the shift started. There is no
+        -- CreatedAt lower bound here and that is deliberate -- see the header,
+        -- "A CAVITY DEPRECATED AFTER THE SHIFT STILL COUNTS FOR IT". Same
+        -- predicate as sec 8's @ActiveCav; the two must not drift.
         SET @Bad = NULL;
         SELECT @Bad = STRING_AGG(lt.Ltt, N', ')
         FROM @Lots lt LEFT JOIN Tools.ToolCavity tc ON tc.Id = lt.ToolCavityId
         WHERE lt.LotId IS NULL AND (tc.Id IS NULL OR tc.ToolId <> @ToolId
-              OR NOT (tc.CreatedAt < @EndUtc AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc)));
+              OR NOT (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc));
         IF @Bad IS NOT NULL
         BEGIN SET @Message = N'Choose a cavity that was on this die during ' + @ShiftLabel + N' for: ' + @Bad + N'.'; GOTO Fail; END
 
@@ -456,15 +492,16 @@ BEGIN
 
         -- ---- 8. the reject lines, per cavity that was running THEN (A7) ----
         -- Before the totals arithmetic: their sum IS an input to it (see header).
-        -- The date window is the shift's, not today's -- see the header section
-        -- "THE CAVITIES ARE RESOLVED AS OF THE SHIFT" for why, and for the one
-        -- part of this that the date window cannot fix.
+        -- A cavity deprecated AFTER this shift is still in the set; a cavity
+        -- deprecated BEFORE it is not. There is no CreatedAt lower bound -- read
+        -- the header section "A CAVITY DEPRECATED AFTER THE SHIFT STILL COUNTS
+        -- FOR IT" before adding one, it was measured out, not forgotten.
         DECLARE @ActiveCav TABLE (ToolCavityId BIGINT PRIMARY KEY, ItemId BIGINT NULL);
         INSERT INTO @ActiveCav (ToolCavityId, ItemId)
         SELECT tc.Id, tc.ItemId FROM Tools.ToolCavity tc
         INNER JOIN Tools.ToolCavityStatusCode cs ON cs.Id = tc.StatusCodeId
         WHERE tc.ToolId = @ToolId AND cs.Code = N'Active'
-          AND tc.CreatedAt < @EndUtc AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc);
+          AND (tc.DeprecatedAt IS NULL OR tc.DeprecatedAt > @StartUtc);
         DECLARE @Cavities INT = (SELECT COUNT(*) FROM @ActiveCav);
 
         IF @HasActual = 0 AND (EXISTS (SELECT 1 FROM @Lots) OR EXISTS (SELECT 1 FROM @Rej))
