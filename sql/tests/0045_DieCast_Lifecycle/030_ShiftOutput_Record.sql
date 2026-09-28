@@ -190,6 +190,16 @@ EXEC test.Assert_IsEqual @TestName=N'[Record] basket PieceCount += net good (95)
 DECLARE @contrib NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.DieCastContribution
     WHERE LotId=@Lot AND ShiftId=@Shift AND PieceDelta=95 AND AppUserId=1);
 EXEC test.Assert_IsEqual @TestName=N'[Record] contribution row present', @Expected=N'1', @Actual=@contrib;
+-- 0099: the LIVE shift-output path stamps the attribution as DERIVED, because it
+-- is: the operator's @ShiftId is the shift running now and EventAt is now. That
+-- is what keeps Oee.ShiftOverride_Restamp entitled to re-derive this row when a
+-- supervisor later says the press ran long. Only a shift reconciliation writes
+-- the other value.
+DECLARE @src NVARCHAR(50) = (SELECT sas.Code FROM Workorder.DieCastContribution dc
+    INNER JOIN Oee.ShiftAttributionSource sas ON sas.Id = dc.ShiftAttributionSourceId
+    WHERE dc.LotId=@Lot AND dc.ShiftId=@Shift AND dc.PieceDelta=95);
+EXEC test.Assert_IsEqual @TestName=N'[Record] the live credit is stamped Derived, so the restamp still owns it',
+    @Expected=N'Derived', @Actual=@src;
 -- additive reject recorded, LOT not decremented, not closed
 DECLARE @rej NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent WHERE LotId=@Lot AND Quantity=5);
 EXEC test.Assert_IsEqual @TestName=N'[Record] additive scrap RejectEvent present', @Expected=N'1', @Actual=@rej;

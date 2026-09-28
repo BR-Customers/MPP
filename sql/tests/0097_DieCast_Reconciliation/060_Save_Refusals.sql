@@ -213,6 +213,54 @@ DECLARE @DupMoveRows NVARCHAR(50) = CAST((SELECT COUNT(*) FROM Workorder.DieCast
 EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...leaving no move on record',
     @Expected = N'0', @Actual = @DupMoveRows;
 
+-- ---- migration 0099: a row with NO shift at all ----
+-- The save used to test `c.ShiftId = @ShiftId`, and @ShiftId is never NULL, so
+-- an unattributed contribution was silently unmovable -- the exact gap the
+-- feature exists to close. It is now "this shift OR no shift", with the press
+-- and die scoping UNCHANGED. Both halves are pinned here, and neither writes
+-- anything: each is refused by the NEXT gate along, and WHICH message comes back
+-- is the whole assertion.
+--
+-- Neither insert disturbs @Stamp: Workorder.ufn_DieCastShiftStamp counts rows
+-- WHERE c.ShiftId = @ShiftId, so a NULL-shift row is invisible to it.
+DELETE FROM #Res;
+INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId)
+VALUES (@Lot, NULL, 7, @Usr, '2020-01-07T13:05:00', @Cell);
+DECLARE @NoShiftC BIGINT = SCOPE_IDENTITY();
+DECLARE @NoShiftMoves NVARCHAR(MAX) = N'[{"entityType":"Contribution","entityId":' + CAST(@NoShiftC AS NVARCHAR(20))
+    + N',"toShiftId":' + CAST(@S1 AS NVARCHAR(20)) + N'}]';
+INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @MovesJson = @NoShiftMoves, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+SET @m = (SELECT Message FROM #Res);
+-- S1 is further than two shifts from S4, so the DISTANCE guard is what refuses
+-- it. Getting that message at all means the shiftless row got PAST the
+-- recorded-against-this-shift gate, which before 0099 it could not.
+EXEC test.Assert_Contains @TestName = N'[Refuse] a SHIFTLESS row on this press reaches the distance guard -- it is no longer rejected as unrecorded',
+    @HaystackStr = @m, @NeedleStr = N'within two shifts';
+
+-- ...and the other half: press and die scoping still refuses a shiftless row
+-- that belongs to a different press. Same far target, so if scoping had been
+-- lost with the shift test, this would come back with the distance message
+-- instead.
+IF @OtherCell IS NOT NULL
+BEGIN
+    DELETE FROM #Res;
+    INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId)
+    VALUES (@Lot, NULL, 8, @Usr, '2020-01-07T13:06:00', @OtherCell);
+    DECLARE @ElsewhereC BIGINT = SCOPE_IDENTITY();
+    DECLARE @ElsewhereMoves NVARCHAR(MAX) = N'[{"entityType":"Contribution","entityId":' + CAST(@ElsewhereC AS NVARCHAR(20))
+        + N',"toShiftId":' + CAST(@S1 AS NVARCHAR(20)) + N'}]';
+    INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
+        @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+        @MovesJson = @ElsewhereMoves, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+    SET @m = (SELECT Message FROM #Res);
+    EXEC test.Assert_Contains @TestName = N'[Refuse] a shiftless row on ANOTHER press is still not this reconciliation''s business',
+        @HaystackStr = @m, @NeedleStr = N'not recorded against this shift, press and die';
+    DELETE FROM Workorder.DieCastContribution WHERE Id = @ElsewhereC;
+END
+DELETE FROM Workorder.DieCastContribution WHERE Id = @NoShiftC;
+
 -- nothing to do
 DELETE FROM #Res;
 SET @Lots = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20)) + N',"quantity":100}]';

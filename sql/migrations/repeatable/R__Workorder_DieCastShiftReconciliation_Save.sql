@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.4
+-- Version:     1.5
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -119,6 +119,12 @@
 --                      Workorder.DieCastScrap_Write and they disagreed on what
 --                      a valid approver is. Amended in place (no second check),
 --                      with path 1's message verbatim. Optional stays optional.
+--   2026-09-25 - 1.5 - Migration 0099: a row being moved may be on THIS shift or
+--                      on NO shift. `ShiftId = @ShiftId` alone silently refused
+--                      every unattributed row, which is precisely the gap the
+--                      reconciliation exists to close. Press-and-die scoping is
+--                      unchanged. Applies to both halves -- Workorder.RejectEvent
+--                      .ShiftId has been nullable since 0084.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -240,13 +246,21 @@ BEGIN
         IF EXISTS (SELECT 1 FROM @Moves WHERE EntityType NOT IN (N'Contribution', N'Reject') OR EntityId IS NULL OR ToShiftId IS NULL)
         BEGIN SET @Message = N'A move must name a contribution or reject row and a target shift.'; GOTO Fail; END
 
+        -- A movable row is on THIS shift -- or on NO shift at all (migration
+        -- 0099). The NULL case is deliberate and is the point of that migration:
+        -- Oee.ShiftOverride_Restamp leaves a row it cannot resolve alone, so
+        -- unattributed contributions exist, and until 0099 nothing could ever
+        -- file one. `c.ShiftId = @ShiftId` alone silently excluded exactly the
+        -- rows this feature is for, because @ShiftId is never NULL. The press
+        -- and die scoping is UNCHANGED and is what still makes a shiftless row
+        -- this reconciliation's business rather than anyone else's.
         IF EXISTS (SELECT 1 FROM @Moves m WHERE m.EntityType = N'Contribution' AND NOT EXISTS (
                         SELECT 1 FROM Workorder.DieCastContribution c INNER JOIN Lots.Lot l ON l.Id = c.LotId
-                        WHERE c.Id = m.EntityId AND c.ShiftId = @ShiftId
+                        WHERE c.Id = m.EntityId AND (c.ShiftId = @ShiftId OR c.ShiftId IS NULL)
                           AND c.CellLocationId = @CellLocationId AND l.ToolId = @ToolId))
            OR EXISTS (SELECT 1 FROM @Moves m WHERE m.EntityType = N'Reject' AND NOT EXISTS (
                         SELECT 1 FROM Workorder.RejectEvent r
-                        WHERE r.Id = m.EntityId AND r.ShiftId = @ShiftId
+                        WHERE r.Id = m.EntityId AND (r.ShiftId = @ShiftId OR r.ShiftId IS NULL)
                           AND r.CellLocationId = @CellLocationId AND r.ToolId = @ToolId))
         BEGIN SET @Message = N'A row being moved is not recorded against this shift, press and die. Reload and try again.'; GOTO Fail; END
 

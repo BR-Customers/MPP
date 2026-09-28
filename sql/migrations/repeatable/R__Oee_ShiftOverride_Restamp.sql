@@ -2,7 +2,7 @@
 -- Procedure:   Oee.ShiftOverride_Restamp
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-19
--- Version:     1.1
+-- Version:     1.2
 --
 -- Description:
 --   THE RESTAMP. Re-attributes already-recorded rows whose correct shift changed
@@ -75,6 +75,16 @@
 --   The restamp only ever MOVES attribution between real shifts; it never wipes
 --   one to NULL.
 --
+--   ---- WHAT IT WILL NOT TOUCH, AND HOW IT KNOWS (0099) ----
+--   Workorder.DieCastContribution.ShiftAttributionSourceId says where a row's
+--   ShiftId came from. This proc restamps rows stamped 'Derived' and no others,
+--   and it LEAVES THAT COLUMN ALONE when it moves one: a row this proc moved is
+--   still derived. The override changed the DERIVATION RULE -- which shift the
+--   press was running -- not the AUTHORSHIP of the attribution. There is
+--   deliberately no 'Override' value: stamping one would make the NEXT override
+--   skip the row, and would break the reversibility above, since a row could
+--   never be moved back when the override is deprecated. See migration 0099.
+--
 --   ---- TIME BASIS (OI-38) ----
 --   Oee.ShiftOverride.BusinessDate is a LOCAL Eastern calendar date. The event
 --   columns it is compared against -- Oee.DowntimeEvent.StartedAt and
@@ -94,7 +104,8 @@
 --
 -- Dependencies:
 --   Tables: Oee.ShiftOverride, Oee.DowntimeEvent, Workorder.DieCastContribution,
---           Oee.Shift, Oee.ShiftSchedule, Location.Location
+--           Oee.Shift, Oee.ShiftSchedule, Location.Location,
+--           Oee.ShiftAttributionSource
 --   Funcs:  Oee.ufn_ShiftIdForInstant, Audit.ufn_MidDot, Audit.ufn_TruncateActivity
 --   Procs:  Audit.Audit_LogConfigChange
 --
@@ -113,6 +124,15 @@
 --                      not when the work happened -- re-deriving it would undo
 --                      the team lead's reading of the press sheet the next
 --                      time an override is applied to that press.
+--   2026-09-25 - 1.2 - Migration 0099: that two-table, id-keyed exclusion is
+--                      replaced by the single column
+--                      DieCastContribution.ShiftAttributionSourceId = Derived.
+--                      Same rows excluded, one condition, and no future writer
+--                      has to remember both halves. It also retires a real
+--                      hazard: the old NOT EXISTS keyed on a BARE ENTITY ID,
+--                      and DieCastContribution.Id / RejectEvent.Id are
+--                      independent IDENTITY sequences, so the Audit.LogEntityType
+--                      join in it was load-bearing and its absence invisible.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.ShiftOverride_Restamp
     @ShiftOverrideId BIGINT,
@@ -135,6 +155,12 @@ BEGIN
         RETURN;   -- no such override: nothing to restamp, and not this proc's job to complain
 
     DECLARE @LocCode NVARCHAR(50) = (SELECT Code FROM Location.Location WHERE Id = @LocationId);
+
+    -- The one state this proc owns. Anything else on a contribution row is an
+    -- authored attribution and is not ours to re-derive (see the exclusion
+    -- below, and migration 0099's header for why there is no 'Override' value).
+    DECLARE @DerivedSourceId BIGINT =
+        (SELECT Id FROM Oee.ShiftAttributionSource WHERE Code = N'Derived');
 
     -- Local scope bounds -> UTC, once. AT TIME ZONE is DST-aware; the CAST back
     -- to DATETIME2(3) is mandatory (no datetimeoffset may escape).
@@ -173,14 +199,13 @@ BEGIN
       AND dc.EventAt <  @ScopeEndUtc
       AND r.ShiftId IS NOT NULL
       AND (dc.ShiftId IS NULL OR dc.ShiftId <> r.ShiftId)
-      -- 0097 amendment A2: a row a reconciliation WROTE or MOVED is the team
-      -- lead's decision, not the resolver's. Its EventAt is deliberately not
-      -- when the work happened -- a night-shift entry keyed at 09:35 the next
-      -- morning keeps its 09:35 stamp -- so re-deriving would silently undo it.
-      AND dc.ReconciliationId IS NULL
-      AND NOT EXISTS (SELECT 1 FROM Workorder.DieCastReconciliationMove mv
-                      INNER JOIN Audit.LogEntityType et ON et.Id = mv.LogEntityTypeId
-                      WHERE et.Code = N'DieCastContribution' AND mv.EntityId = dc.Id);
+      -- THE EXCLUSION (0099). One column, one test: this proc owns rows whose
+      -- attribution is still DERIVABLE from EventAt, and only those. A row a
+      -- reconciliation wrote or moved is stamped Reconciled and is the team
+      -- lead's decision, not the resolver's -- its EventAt is deliberately not
+      -- when the work happened (a night-shift entry keyed at 09:35 the next
+      -- morning keeps its 09:35 stamp), so re-deriving would silently undo it.
+      AND dc.ShiftAttributionSourceId = @DerivedSourceId;
 
     UPDATE de
     SET    de.ShiftId = m.NewShiftId

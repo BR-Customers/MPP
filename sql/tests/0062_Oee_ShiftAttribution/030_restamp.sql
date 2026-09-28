@@ -16,6 +16,10 @@
 -- Plus the OI-2 consequence: a Workorder.DieCastContribution row moves via its
 -- stamped CellLocationId, and one with CellLocationId NULL is EXCLUDED rather
 -- than guessed at (spec sec 5).
+-- Plus, since migration 0099, the exclusion itself: the restamp owns rows whose
+-- ShiftAttributionSourceId is 'Derived' and no others, it LEAVES that column
+-- alone when it moves one, and there is deliberately no third 'Override' value
+-- (Test 1's last assertion and Test 4 are the two ends of that decision).
 --
 -- All event instants are UTC (that is what the columns store); all shift windows
 -- are LOCAL Eastern (OI-38). Every probe is written as a local wall-clock
@@ -117,23 +121,33 @@ VALUES (@SecondShift, @EqA, (SELECT Id FROM Tools.Tool WHERE Code = N'TEST_AT_DI
         (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'WrongShift'), N'TEST_AT', 0, 0, 1);
 DECLARE @RcH BIGINT = SCOPE_IDENTITY();
 
-INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId, ReconciliationId)
-VALUES (@LotId, @SecondShift, 7, 1, @At15, @EqA, @RcH);          -- written by a reconciliation
-INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId)
-VALUES (@LotId, @SecondShift, 9, 1, @At15, @EqA);                 -- moved by a reconciliation
+-- Both rows carry ShiftAttributionSourceId = Reconciled, which since migration
+-- 0099 is the WHOLE of the exclusion -- one column, not a ReconciliationId test
+-- plus a NOT EXISTS over another table. These are raw inserts standing in for
+-- what the writers produce; that the writers actually stamp the column is proved
+-- separately, against the real procs, in
+-- 0097_DieCast_Reconciliation/020_Workers.sql and 021_Workers_Lifecycle.sql.
+DECLARE @Reconciled BIGINT = (SELECT Id FROM Oee.ShiftAttributionSource WHERE Code = N'Reconciled');
+
+INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId, ReconciliationId, ShiftAttributionSourceId)
+VALUES (@LotId, @SecondShift, 7, 1, @At15, @EqA, @RcH, @Reconciled);          -- written by a reconciliation
+INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId, ShiftAttributionSourceId)
+VALUES (@LotId, @SecondShift, 9, 1, @At15, @EqA, @Reconciled);                 -- moved by a reconciliation
 DECLARE @RcMoved BIGINT = SCOPE_IDENTITY();
 INSERT INTO Workorder.DieCastReconciliationMove (ReconciliationId, LogEntityTypeId, EntityId, FromShiftId, ToShiftId)
 VALUES (@RcH, (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DieCastContribution'), @RcMoved, @FirstShift, @SecondShift);
 
--- The Audit.LogEntityType join inside that exclusion's NOT EXISTS is LOAD-BEARING,
--- and nothing above proved it: Workorder.DieCastContribution.Id and
--- Workorder.RejectEvent.Id are INDEPENDENT BIGINT IDENTITY sequences, so an id
--- that exists in both tables is the normal case, not an edge case. A move filed
--- against a REJECT row must not exclude the CONTRIBUTION that happens to carry
--- the same id. So: a Reject-typed move whose EntityId IS the PieceDelta = 5
--- contribution's id. That contribution must still be restamped to First below.
--- (Delete the `et` join from Oee.ShiftOverride_Restamp and this row makes the
--- PieceDelta = 5 assertions in Test 1 fail -- verified 2026-09-24.)
+-- A REGRESSION GUARD, and it is worth saying plainly what changed about it.
+-- Until migration 0099 the exclusion did a NOT EXISTS over
+-- Workorder.DieCastReconciliationMove keyed on the BARE ENTITY ID, and
+-- DieCastContribution.Id / RejectEvent.Id are INDEPENDENT IDENTITY sequences --
+-- so an id that exists in both tables is the normal case and the
+-- Audit.LogEntityType join in that NOT EXISTS was load-bearing. This row (a
+-- Reject-typed move carrying the PieceDelta = 5 CONTRIBUTION's id) is what made
+-- it discriminating. Since 0099 the exclusion reads one column on the row
+-- itself, so the hazard is gone BY CONSTRUCTION and this row can no longer make
+-- any assertion fail. It stays as a guard against ever keying an exclusion on a
+-- bare id again: the PieceDelta = 5 contribution must still be restamped below.
 DECLARE @C5 BIGINT = (SELECT Id FROM Workorder.DieCastContribution
                       WHERE LotId = @LotId AND PieceDelta = 5 AND CellLocationId = @EqA);
 INSERT INTO Workorder.DieCastReconciliationMove (ReconciliationId, LogEntityTypeId, EntityId, FromShiftId, ToShiftId)
@@ -188,6 +202,19 @@ EXEC test.Assert_IsEqual @TestName = N'[RS.create] the die-cast contribution mov
 EXEC test.Assert_IsEqual @TestName = N'[RS.create] a contribution with NO press stays put -- never guessed',
      @Expected = N'TEST_AT_Second', @Actual = @nameN;
 
+-- Migration 0099's two-values decision, made checkable. A row THIS proc moved is
+-- STILL 'Derived': an override changes the DERIVATION RULE -- which shift the
+-- press was running -- not the AUTHORSHIP of the attribution. Were it stamped
+-- some third 'Override' value instead, the next override would skip it, and Test
+-- 4 below (deprecate RESTORES) could not move it back. Those two assertions are
+-- the same decision seen from either end.
+DECLARE @srcC NVARCHAR(50) = (
+    SELECT sas.Code FROM Workorder.DieCastContribution dc
+    INNER JOIN Oee.ShiftAttributionSource sas ON sas.Id = dc.ShiftAttributionSourceId
+    WHERE dc.PieceDelta = 5 AND dc.CellLocationId = @EqA1);
+EXEC test.Assert_IsEqual @TestName = N'[RS.create] a row the restamp MOVED is still Derived -- an override is not authorship',
+     @Expected = N'Derived', @Actual = @srcC;
+
 -- 0097 / amendment A2. The reconciliation re-derives nothing from EventAt: a
 -- night-shift entry keyed at 09:35 the next morning keeps its 09:35 stamp, so this
 -- proc would drag it back the next time an override touched the press and silently
@@ -207,12 +234,11 @@ EXEC test.Assert_IsEqual @TestName = N'[RS.create] a row a reconciliation WROTE 
 EXEC test.Assert_IsEqual @TestName = N'[RS.create] a row a reconciliation MOVED is not re-derived',
      @Expected = N'TEST_AT_Second', @Actual = @nameRcM;
 
--- ...and the other side of that exclusion: it is keyed on the ENTITY TYPE, not on
--- the bare id. A Reject-typed move carrying the PieceDelta = 5 contribution's id
--- (the fixture above) must not exclude that contribution -- the two tables have
--- independent IDENTITY sequences, so colliding ids are the norm. @nameC is that
--- row; asserting it again here is what makes the `et` join in the exclusion's
--- NOT EXISTS discriminating instead of decorative.
+-- ...and the guard described in the fixture: a Reject-typed move carrying the
+-- PieceDelta = 5 CONTRIBUTION's id must not exclude that contribution. Since
+-- migration 0099 the exclusion reads ShiftAttributionSourceId on the row itself
+-- and no longer looks at DieCastReconciliationMove at all, so this can only fail
+-- if an id-keyed exclusion is ever reintroduced. @nameC is that row.
 EXEC test.Assert_IsEqual @TestName = N'[RS.create] a REJECT-typed move with a colliding id does NOT exclude the contribution',
      @Expected = N'TEST_AT_First', @Actual = @nameC;
 GO

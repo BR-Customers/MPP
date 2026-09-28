@@ -94,6 +94,22 @@ EXEC test.Assert_IsEqual @TestName = N'[A] backfilled one second inside the shif
 SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastContribution WHERE ReconciliationId = @RecId AND ShotCounterReading IS NOT NULL) AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[A] a reconciliation credit carries no reading -- the anchor does (A3)', @Expected = N'0', @Actual = @v;
 
+-- 0099, end to end and through the real Save: BOTH kinds of row this
+-- reconciliation touched carry the Reconciled stamp -- the ones it WROTE (via
+-- DieCastCredit_Write) and the ones it MOVED (via DieCastEntry_Restamp). That
+-- one column is the whole of Oee.ShiftOverride_Restamp's exclusion now, so a
+-- writer that misses it hands the team lead's decision back to the resolver.
+SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastContribution dc
+               INNER JOIN Oee.ShiftAttributionSource sas ON sas.Id = dc.ShiftAttributionSourceId
+               WHERE dc.ReconciliationId = @RecId AND sas.Code <> N'Reconciled') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[A] every credit the save WROTE is stamped Reconciled', @Expected = N'0', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastContribution dc
+               INNER JOIN Lots.Lot l ON l.Id = dc.LotId
+               INNER JOIN Oee.ShiftAttributionSource sas ON sas.Id = dc.ShiftAttributionSourceId
+               WHERE dc.ShiftId = @S3 AND l.LotName IN (N'99700601', N'99700602')
+                 AND sas.Code = N'Reconciled') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[A] every credit the save MOVED is stamped Reconciled too', @Expected = N'2', @Actual = @v;
+
 SET @v = CAST((SELECT PieceCount FROM Lots.Lot WHERE Id = @L3) AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[A] the released, unlocked LOT is corrected 500 -> 1,580', @Expected = N'1580', @Actual = @v;
 SET @v = (SELECT TOP 1 Reason FROM Lots.LotAttributeChange WHERE LotId = @L3 ORDER BY Id DESC);

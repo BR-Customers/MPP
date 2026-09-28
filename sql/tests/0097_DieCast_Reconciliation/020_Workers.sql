@@ -47,6 +47,22 @@ EXEC test.Assert_IsEqual @TestName = N'[Credit] carries the reconciliation and t
 SET @v = (SELECT TOP 1 Description FROM Lots.LotEventLog WHERE (LotId = @Lot OR EntityId = @Lot) ORDER BY Id DESC);
 EXEC test.Assert_Contains @TestName = N'[Credit] audit text carries the delta and the suffix',
     @HaystackStr = @v, @NeedleStr = N'Added -5 pc (shift reconciliation #1)';
+
+-- 0099: WHERE THE ShiftId CAME FROM. This proc is the only INSERT into
+-- Workorder.DieCastContribution in the system, and it derives the stamp from
+-- @ReconciliationId rather than taking a parameter -- so there is nothing for a
+-- caller to forget. Both directions are asserted against rows written above:
+-- the 40 came in with no reconciliation, the -5 under one.
+SET @v = (SELECT sas.Code FROM Workorder.DieCastContribution dc
+          INNER JOIN Oee.ShiftAttributionSource sas ON sas.Id = dc.ShiftAttributionSourceId
+          WHERE dc.LotId = @Lot AND dc.PieceDelta = 40);
+EXEC test.Assert_IsEqual @TestName = N'[Credit] a live credit is stamped Derived -- the restamp still owns it',
+    @Expected = N'Derived', @Actual = @v;
+SET @v = (SELECT sas.Code FROM Workorder.DieCastContribution dc
+          INNER JOIN Oee.ShiftAttributionSource sas ON sas.Id = dc.ShiftAttributionSourceId
+          WHERE dc.LotId = @Lot AND dc.PieceDelta = -5);
+EXEC test.Assert_IsEqual @TestName = N'[Credit] a credit written under a reconciliation is stamped Reconciled',
+    @Expected = N'Reconciled', @Actual = @v;
 GO
 
 -- ---- DieCastScrap_Write ----

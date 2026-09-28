@@ -152,6 +152,16 @@ SET @v = (SELECT TOP 1 ol.Description FROM Audit.OperationLog ol
           WHERE ol.EntityId = @H AND et.Code = N'DieCastShiftReconciliation' AND ev.Code = N'DieCastEntryMoved'
           ORDER BY ol.Id DESC);
 EXEC test.Assert_Contains @TestName = N'[Restamp] one audit row naming what moved', @HaystackStr = @v, @NeedleStr = N'Moved 2 rows';
+
+-- 0099: the move also stamps WHERE THE SHIFT CAME FROM. This single column is
+-- now the whole of Oee.ShiftOverride_Restamp's exclusion, so if the UPDATE ever
+-- stops carrying it, the next shift override applied to this press silently
+-- drags the row back to whatever EventAt resolves to -- undoing the team lead.
+SET @v = (SELECT sas.Code FROM Workorder.DieCastContribution dc
+          INNER JOIN Oee.ShiftAttributionSource sas ON sas.Id = dc.ShiftAttributionSourceId
+          WHERE dc.Id = @C);
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] a moved contribution is stamped Reconciled, not left Derived',
+    @Expected = N'Reconciled', @Actual = @v;
 GO
 
 -- ---- DieCastEntry_Restamp: what it REFUSES, and what it deduplicates ----
@@ -237,6 +247,78 @@ SET @v = CAST((SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove WHERE Re
 SET @Want = CAST(@Before5 AS NVARCHAR(400));
 EXEC test.Assert_IsEqual @TestName = N'[Restamp] a row already on its target shift is still skipped',
     @Expected = @Want, @Actual = @v;
+GO
+
+-- ---- DieCastEntry_Restamp: a row that never had a shift at all (0099) ----
+-- Until migration 0099 the worker's FromShiftId IS NOT NULL filter dropped this
+-- row, and Workorder.DieCastReconciliationMove.FromShiftId was NOT NULL anyway,
+-- so an unattributed contribution could never be filed. A NULL attribution is
+-- exactly the gap the reconciliation exists to close:
+-- Oee.ShiftOverride_Restamp deliberately leaves a row it cannot resolve alone,
+-- and Trim OUT stamps NULL when no Oee.Shift instance covers the business date.
+DECLARE @Lot BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700101');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId, ToolCavityId)
+SELECT @Lot, NULL, 13, @Usr, '2020-01-06T12:55:00', test.ufn_RC(N'Cell'), l.ToolCavityId
+FROM Lots.Lot l WHERE l.Id = @Lot;
+GO
+
+DECLARE @H BIGINT = (SELECT Id FROM Workorder.DieCastShiftReconciliation WHERE Note = N'021 worker test');
+DECLARE @Lot BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700101');
+DECLARE @S2 BIGINT = test.ufn_RC(N'S2'), @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @CT BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DieCastContribution');
+DECLARE @N BIGINT = (SELECT Id FROM Workorder.DieCastContribution WHERE LotId = @Lot AND PieceDelta = 13);
+DECLARE @v NVARCHAR(400), @Want NVARCHAR(400), @Json NVARCHAR(MAX);
+
+SET @Json = N'[{"entityType":"Contribution","entityId":' + CAST(@N AS NVARCHAR(20))
+          + N',"toShiftId":' + CAST(@S2 AS NVARCHAR(20)) + N'}]';
+EXEC Workorder.DieCastEntry_Restamp @ReconciliationId = @H, @MovesJson = @Json, @AppUserId = @Usr;
+
+SET @v = CAST((SELECT ShiftId FROM Workorder.DieCastContribution WHERE Id = @N) AS NVARCHAR(400));
+SET @Want = CAST(@S2 AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] a contribution with NO shift is brought into one',
+    @Expected = @Want, @Actual = @v;
+
+-- The move row records the truth: it came from nowhere.
+SET @v = (SELECT CONCAT(CASE WHEN FromShiftId IS NULL THEN N'NULL' ELSE CAST(FromShiftId AS NVARCHAR(20)) END,
+                        N'|', ToShiftId)
+          FROM Workorder.DieCastReconciliationMove
+          WHERE ReconciliationId = @H AND LogEntityTypeId = @CT AND EntityId = @N);
+SET @Want = N'NULL|' + CAST(@S2 AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] ...and its move row records a NULL origin, not a guess',
+    @Expected = @Want, @Actual = @v;
+
+SET @v = (SELECT sas.Code FROM Workorder.DieCastContribution dc
+          INNER JOIN Oee.ShiftAttributionSource sas ON sas.Id = dc.ShiftAttributionSourceId
+          WHERE dc.Id = @N);
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] ...and it is stamped Reconciled like any other move',
+    @Expected = N'Reconciled', @Actual = @v;
+
+-- ...which is only meaningful because the row did NOT start out that way. The
+-- insert above named no source at all, so it took the column's DEFAULT -- and
+-- that default has to be Derived, or every backfilled row and every future
+-- writer that forgets would quietly opt itself out of the restamp.
+DECLARE @Pre BIGINT;
+INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId)
+VALUES (@Lot, @S2, 17, @Usr, '2020-01-06T12:56:00', test.ufn_RC(N'Cell'));
+SET @Pre = SCOPE_IDENTITY();
+SET @v = (SELECT sas.Code FROM Workorder.DieCastContribution dc
+          INNER JOIN Oee.ShiftAttributionSource sas ON sas.Id = dc.ShiftAttributionSourceId
+          WHERE dc.Id = @Pre);
+DELETE FROM Workorder.DieCastContribution WHERE Id = @Pre;
+EXEC test.Assert_IsEqual @TestName = N'[Restamp] a row inserted naming no source defaults to Derived',
+    @Expected = N'Derived', @Actual = @v;
+
+-- The audit row still has prose. A NULL FromShiftId would have INNER-joined to
+-- nothing, left the from-label NULL, and collapsed the whole concatenated
+-- description to NULL -- an audit row saying nothing about the move it records.
+SET @v = (SELECT TOP 1 ol.Description FROM Audit.OperationLog ol
+          JOIN Audit.LogEntityType et ON et.Id = ol.LogEntityTypeId
+          JOIN Audit.LogEventType  ev ON ev.Id = ol.LogEventTypeId
+          WHERE ol.EntityId = @H AND et.Code = N'DieCastShiftReconciliation' AND ev.Code = N'DieCastEntryMoved'
+          ORDER BY ol.Id DESC);
+EXEC test.Assert_Contains @TestName = N'[Restamp] the audit names the move as coming from (unattributed)',
+    @HaystackStr = @v, @NeedleStr = N'from (unattributed) to ';
 GO
 
 EXEC test.EndTestFile;

@@ -127,5 +127,55 @@ EXEC test.Assert_IsEqual @TestName = N'[0098] the accepted insert raised no erro
     @Expected = N'(no error)', @Actual = @AccErr;
 GO
 
+-- =============================================
+-- Migration 0099 -- the attribution's origin is a first-class column, and a
+-- reconciliation move may come from no shift at all.
+-- =============================================
+DECLARE @v99 NVARCHAR(200);
+
+-- TWO values, deliberately. The question the column answers is "is this
+-- attribution still re-derivable from EventAt?", and a row
+-- Oee.ShiftOverride_Restamp moved is STILL derived -- an override changes the
+-- derivation RULE, not the AUTHORSHIP. A third 'Override' value would make the
+-- next override skip the row and would destroy the documented reversibility of
+-- deprecate-and-re-apply. This assertion is that decision, written down.
+SET @v99 = (SELECT STRING_AGG(Code, N',') WITHIN GROUP (ORDER BY SortOrder) FROM Oee.ShiftAttributionSource);
+EXEC test.Assert_IsEqual @TestName = N'[0099] exactly two attribution sources: Derived and Reconciled, and no Override',
+    @Expected = N'Derived,Reconciled', @Actual = @v99;
+
+SET @v99 = (SELECT CAST(c.is_nullable AS NVARCHAR(10))
+            FROM sys.columns c
+            WHERE c.object_id = OBJECT_ID(N'Workorder.DieCastContribution') AND c.name = N'ShiftAttributionSourceId');
+EXEC test.Assert_IsEqual @TestName = N'[0099] DieCastContribution.ShiftAttributionSourceId is NOT NULL',
+    @Expected = N'0', @Actual = @v99;
+
+SET @v99 = CAST((SELECT COUNT(*) FROM sys.foreign_keys
+                 WHERE name = N'FK_DieCastContribution_ShiftAttributionSource') AS NVARCHAR(200));
+EXEC test.Assert_IsEqual @TestName = N'[0099] ...code-table backed by an FK, not a magic integer',
+    @Expected = N'1', @Actual = @v99;
+
+-- Nullable, so a contribution that never had a shift can be re-filed into one.
+SET @v99 = (SELECT CAST(is_nullable AS NVARCHAR(10)) FROM sys.columns
+            WHERE object_id = OBJECT_ID(N'Workorder.DieCastReconciliationMove') AND name = N'FromShiftId');
+EXEC test.Assert_IsEqual @TestName = N'[0099] DieCastReconciliationMove.FromShiftId is nullable -- a row may come from no shift',
+    @Expected = N'1', @Actual = @v99;
+GO
+
+-- The DEFAULT is the derived case, so the backfilled rows and anything that
+-- inserts without naming a source keep the OLD behaviour -- the restamp still
+-- owns them -- rather than silently opting out of it. Asserted here against the
+-- constraint definition because this file runs before any fixture exists; the
+-- runtime behaviour is asserted in 021_Workers_Lifecycle.sql, which has LOTs.
+DECLARE @DefDef99 NVARCHAR(200) = (
+    SELECT d.definition FROM sys.columns c
+    INNER JOIN sys.default_constraints d ON d.object_id = c.default_object_id
+    WHERE c.object_id = OBJECT_ID(N'Workorder.DieCastContribution') AND c.name = N'ShiftAttributionSourceId');
+DECLARE @WantDef99 NVARCHAR(50) = (SELECT CAST(Id AS NVARCHAR(50)) FROM Oee.ShiftAttributionSource WHERE Code = N'Derived');
+DECLARE @GotDef99  NVARCHAR(200) = CASE WHEN @DefDef99 IS NULL THEN N'(no default)'
+                                        ELSE REPLACE(REPLACE(@DefDef99, N'(', N''), N')', N'') END;
+EXEC test.Assert_IsEqual @TestName = N'[0099] ...and its DEFAULT is the Derived row',
+    @Expected = @WantDef99, @Actual = @GotDef99;
+GO
+
 EXEC test.EndTestFile;
 GO

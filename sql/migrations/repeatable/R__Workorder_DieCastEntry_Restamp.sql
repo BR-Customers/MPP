@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastEntry_Restamp.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.1
+-- Version:     1.2
 -- Description: INTERNAL WORKER -- re-files recorded die cast rows against the
 --              shift they belong to (spec 2026-09-21 sec 3.5, amendment A4).
 --              Modelled on Oee.ShiftOverride_Restamp: the ShiftId is re-stamped
@@ -12,12 +12,15 @@
 --              The facts do not change -- shots, pieces, LOTs and die life are
 --              untouched. Only which shift is credited moves.
 --
---              A row moved here is EXCLUDED from Oee.ShiftOverride_Restamp
---              from then on (amendment A2): that proc re-derives the shift
---              from EventAt, and an entry made at 09:35 for the night shift
---              would otherwise be dragged back the next time an override is
---              applied to the press. The team lead's reading of the press
---              sheet outranks the time-based resolver.
+--              A contribution moved here is stamped
+--              ShiftAttributionSourceId = Reconciled (1.2 / migration 0099),
+--              which EXCLUDES it from Oee.ShiftOverride_Restamp from then on
+--              (amendment A2): that proc re-derives the shift from EventAt, and
+--              an entry made at 09:35 for the night shift would otherwise be
+--              dragged back the next time an override is applied to the press.
+--              The team lead's reading of the press sheet outranks the
+--              time-based resolver. That stamp is now the ONLY thing saying so,
+--              so the UPDATE below must always carry it.
 --
 --              EMITS NO RESULT SET, OWNS NO TRANSACTION, NO TRY/CATCH. The
 --              caller validates every row and target shift first.
@@ -25,7 +28,8 @@
 --              ---- WHAT IT REFUSES, AND WHY (1.1, code review 2026-09-24) ----
 --              Version 1.0 returned SILENTLY in four cases: malformed JSON, an
 --              entity row that does not exist, an entityType that is neither
---              Contribution nor Reject, and a current ShiftId that is NULL. The
+--              Contribution nor Reject, and a current ShiftId that is NULL (the
+--              last of those is no longer refused at all -- see 1.2 below). The
 --              last three were all swallowed by the IS NOT NULL filter, and
 --              because a worker emits no result set a five-element payload that
 --              resolved to zero rows was indistinguishable from an empty one --
@@ -40,29 +44,46 @@
 --                   1.0's CASE ... ELSE @RejectTypeId typed every unrecognised
 --                   string as a Reject, and the row was saved only by the
 --                   coincidence that the Reject LEFT JOIN then failed and the
---                   IS NOT NULL filter dropped it. Loosen that filter later and
---                   the proc would start writing DieCastReconciliationMove rows
---                   under the WRONG entity type -- which is precisely what the
---                   Oee.ShiftOverride_Restamp exclusion keys on, so the
---                   exclusion would break silently.
+--                   IS NOT NULL filter dropped it -- and 1.2 DID loosen that
+--                   filter, which would have started writing
+--                   DieCastReconciliationMove rows under the WRONG entity type.
+--                   (In 1.1 that also broke the Oee.ShiftOverride_Restamp
+--                   exclusion, which keyed on the type; since 0099 it keys on a
+--                   column instead, but a move row under the wrong type is still
+--                   a durable lie about what happened.)
 --                3. The payload is DEDUPLICATED on (EntityTypeId, EntityId).
 --                   Naming the same row twice with two different toShiftIds gave
 --                   a non-deterministic UPDATE and TWO move rows, one of which
 --                   durably recorded a move that never happened. Structural
 --                   here (GROUP BY + a table-variable PK); callers are not
 --                   trusted for it.
---              A row that still resolves to nothing -- unknown id, unknown type,
---              NULL current shift -- is dropped here, so the CALLER verifies its
+--              A row that still resolves to nothing -- unknown id, unknown type
+--              -- is dropped here, so the CALLER verifies its
 --              payload landed. Workorder.DieCastShiftReconciliation_Save does
 --              exactly that after this EXEC and fails the transaction if any
 --              element neither moved nor was already on its target shift.
 --
---              NOT changed, deliberately: the IS NOT NULL filter still excludes
---              a contribution whose ShiftId is NULL (whether a shiftless row
---              should be re-fileable at all is an open question, and
---              Workorder.DieCastReconciliationMove.FromShiftId is NOT NULL in
---              migration 0097 regardless); and an element already ON its target
---              shift is still skipped, which is the feature's idempotency.
+--              An element already ON its target shift is still skipped, which is
+--              the feature's idempotency.
+--
+--              ---- A SHIFTLESS ROW CAN NOW BE RE-FILED (1.2, migration 0099) ----
+--              1.1 left the IS NOT NULL filter excluding a contribution whose
+--              ShiftId is NULL, noting it as an open question and that
+--              Workorder.DieCastReconciliationMove.FromShiftId was NOT NULL
+--              regardless. Both halves are resolved: FromShiftId is nullable, and
+--              a shiftless row moves like any other, its move row recording NULL
+--              for where it came from. A NULL attribution is precisely the gap
+--              this feature exists to close -- Oee.ShiftOverride_Restamp
+--              explicitly leaves a row it cannot resolve alone, so the system
+--              does produce them, and until now nothing could ever file one.
+--
+--              That relaxation had a trap in it. FromShiftId IS NOT NULL was
+--              doing TWO jobs: dropping a shiftless row AND dropping a row that
+--              does not exist (the LEFT JOINs miss, so FromShiftId is NULL either
+--              way). Only the first was meant to go, so 1.2 splits the existence
+--              test out as EntityFound. Tests (3) in
+--              0097_DieCast_Reconciliation/021_Workers_Lifecycle.sql -- "a row
+--              that does not exist records no move" -- is what holds that line.
 --
 -- Parameters (input):
 --   @ReconciliationId BIGINT        - the header the moves are filed under.
@@ -84,6 +105,14 @@
 --                      mapping is explicit with no ELSE, and the payload is
 --                      deduplicated on (EntityTypeId, EntityId). See header
 --                      "WHAT IT REFUSES, AND WHY".
+--   2026-09-25 - 1.2 - Migration 0099. (a) A contribution or reject with a NULL
+--                      ShiftId can now be re-filed; the existence test is split
+--                      out of the old FromShiftId IS NOT NULL so nothing else
+--                      loosens with it, and the audit's FROM label LEFT-joins so
+--                      a NULL origin cannot blank the whole description.
+--                      (b) A moved contribution is stamped
+--                      ShiftAttributionSourceId = Reconciled, which is now the
+--                      single thing excluding it from Oee.ShiftOverride_Restamp.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastEntry_Restamp
     @ReconciliationId   BIGINT,
@@ -106,12 +135,17 @@ BEGIN
 
     DECLARE @ContribTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DieCastContribution');
     DECLARE @RejectTypeId  BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'RejectEvent');
+    DECLARE @ReconciledSourceId BIGINT =
+        (SELECT Id FROM Oee.ShiftAttributionSource WHERE Code = N'Reconciled');
 
     -- The PK is the dedup made structural: at most one move per entity row, so
     -- neither the UPDATEs below nor the DieCastReconciliationMove insert can be
     -- fed a row twice. The GROUP BY is what keeps it from ever having to throw.
+    -- FromShiftId is NULLABLE (1.2 / migration 0099): a row that had no shift at
+    -- all is exactly the gap this feature exists to close, and NULL is how the
+    -- move row says "it came from nowhere".
     DECLARE @M TABLE (EntityTypeId BIGINT NOT NULL, EntityId BIGINT NOT NULL,
-                      FromShiftId BIGINT NOT NULL, ToShiftId BIGINT NOT NULL,
+                      FromShiftId BIGINT NULL, ToShiftId BIGINT NOT NULL,
                       PRIMARY KEY (EntityTypeId, EntityId));
     INSERT INTO @M (EntityTypeId, EntityId, FromShiftId, ToShiftId)
     SELECT j.EntityTypeId, j.EntityId, j.FromShiftId, MIN(j.ToShiftId)
@@ -124,6 +158,12 @@ BEGIN
                END                            AS EntityTypeId,
                p.entityId                     AS EntityId,
                COALESCE(c.ShiftId, r.ShiftId) AS FromShiftId,
+               -- 1.2: the EXISTENCE test, split out of FromShiftId. Until now the
+               -- two were the same condition -- FromShiftId IS NOT NULL dropped an
+               -- unknown row AND a shiftless one -- so relaxing the shift half
+               -- without this would have started writing moves, and
+               -- DieCastReconciliationMove rows, for entity ids that do not exist.
+               CASE WHEN c.Id IS NOT NULL OR r.Id IS NOT NULL THEN 1 ELSE 0 END AS EntityFound,
                p.toShiftId                    AS ToShiftId
         FROM OPENJSON(@MovesJson) WITH (entityType NVARCHAR(20) N'$.entityType', entityId BIGINT N'$.entityId',
                                         toShiftId BIGINT N'$.toShiftId') p
@@ -132,12 +172,18 @@ BEGIN
     ) j
     WHERE j.EntityTypeId IS NOT NULL      -- unknown entityType
       AND j.EntityId     IS NOT NULL
-      AND j.FromShiftId  IS NOT NULL      -- unknown row, or a NULL current shift (deliberate, see header)
+      AND j.EntityFound  = 1              -- the row it names does not exist
       AND j.ToShiftId    IS NOT NULL
-      AND j.FromShiftId <> j.ToShiftId    -- already on target: the idempotent skip
+      -- already on target: the idempotent skip. A shiftless row is never already
+      -- there, so it always moves.
+      AND (j.FromShiftId IS NULL OR j.FromShiftId <> j.ToShiftId)
     GROUP BY j.EntityTypeId, j.EntityId, j.FromShiftId;
 
-    UPDATE c SET c.ShiftId = m.ToShiftId
+    -- The shift AND where it came from, in ONE write (1.2 / migration 0099). A
+    -- row this proc moved is the team lead's decision, and that stamp is now the
+    -- only thing telling Oee.ShiftOverride_Restamp not to re-derive it.
+    UPDATE c SET c.ShiftId = m.ToShiftId,
+                 c.ShiftAttributionSourceId = @ReconciledSourceId
     FROM Workorder.DieCastContribution c
     INNER JOIN @M m ON m.EntityTypeId = @ContribTypeId AND m.EntityId = c.Id;
 
@@ -153,12 +199,17 @@ BEGIN
     IF @Total = 0 RETURN;
     DECLARE @PairCount INT = (SELECT COUNT(*) FROM (SELECT DISTINCT FromShiftId, ToShiftId FROM @M) p);
     DECLARE @FromLabel NVARCHAR(120) = NULL, @ToLabel NVARCHAR(120) = NULL;
+    -- The FROM side LEFT-joins (1.2): FromShiftId may be NULL now, and an INNER
+    -- join would return no row, leave @FromLabel NULL, and silently collapse the
+    -- whole @ActivityRaw concatenation below to NULL -- an audit row with no
+    -- description. '(unattributed)' matches Oee.ShiftOverride_Restamp's wording
+    -- for the same case.
     IF @PairCount = 1
         SELECT TOP 1
-               @FromLabel = CONVERT(NVARCHAR(5), sf.ActualStart, 110) + N' ' + ssf.Name,
+               @FromLabel = ISNULL(CONVERT(NVARCHAR(5), sf.ActualStart, 110) + N' ' + ssf.Name, N'(unattributed)'),
                @ToLabel   = CONVERT(NVARCHAR(5), st.ActualStart, 110) + N' ' + sst.Name
         FROM @M m
-        INNER JOIN Oee.Shift sf ON sf.Id = m.FromShiftId INNER JOIN Oee.ShiftSchedule ssf ON ssf.Id = sf.ShiftScheduleId
+        LEFT  JOIN Oee.Shift sf ON sf.Id = m.FromShiftId LEFT  JOIN Oee.ShiftSchedule ssf ON ssf.Id = sf.ShiftScheduleId
         INNER JOIN Oee.Shift st ON st.Id = m.ToShiftId   INNER JOIN Oee.ShiftSchedule sst ON sst.Id = st.ShiftScheduleId;
 
     DECLARE @PressCode NVARCHAR(50) = (SELECT loc.Code FROM Workorder.DieCastShiftReconciliation h
