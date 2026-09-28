@@ -184,34 +184,53 @@ EXEC test.Assert_Contains @TestName = N'[Refuse] a move further than two shifts 
 -- A move the worker cannot land: the SAME contribution named twice with two
 -- different targets. The worker deduplicates on (entity type, entity id), so it
 -- can honour only one of them -- and a worker emits no result set, so before
--- Save 1.1 this reported SUCCESS on a decision it had half-applied. Now the Save
--- verifies every element it sent and fails the transaction. Plain EXEC, not
--- INSERT-EXEC: this path ends in the CATCH, and a ROLLBACK inside an INSERT-EXEC
--- raises Msg 3915 instead of the message under test.
+-- Save 1.1 this reported SUCCESS on a decision it had half-applied.
+--
+-- Save 1.1 caught it INSIDE the transaction, which was the wrong place: that
+-- path ended in the CATCH, and a ROLLBACK inside a proc invoked by INSERT-EXEC
+-- raises Msg 3915, so a team lead got no message at all -- the capture below is
+-- exactly what used to break. Save 1.6 refuses the payload BEFORE the
+-- transaction, so this is now an ordinary clean Status = 0 row, asserted through
+-- INSERT-EXEC like every other refusal in this file.
 DECLARE @S3 BIGINT = test.ufn_RC(N'S3'), @S5 BIGINT = test.ufn_RC(N'S5');
 DECLARE @DupMoves NVARCHAR(MAX) =
       N'[{"entityType":"Contribution","entityId":' + CAST(@C AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S3 AS NVARCHAR(20)) + N'},'
     + N'{"entityType":"Contribution","entityId":' + CAST(@C AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S5 AS NVARCHAR(20)) + N'}]';
-DECLARE @DupErr NVARCHAR(4000) = N'(no error)';
-BEGIN TRY
-    EXEC Workorder.DieCastShiftReconciliation_Save
-        @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
-        @MovesJson = @DupMoves, @LoadedStamp = @Stamp, @AppUserId = @Usr;
-END TRY
-BEGIN CATCH
-    SET @DupErr = ERROR_MESSAGE();
-END CATCH
-EXEC test.Assert_Contains @TestName = N'[Refuse] a move the worker could not land fails the whole save',
-    @HaystackStr = @DupErr, @NeedleStr = N'did not end up on the shift they were sent to';
+DELETE FROM #Res;
+INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @MovesJson = @DupMoves, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+DECLARE @DupStatus NVARCHAR(50) = CAST((SELECT Status FROM #Res) AS NVARCHAR(50));
+SET @m = (SELECT Message FROM #Res);
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] a move the worker could not land comes back as a clean status row, not Msg 3915',
+    @Expected = N'0', @Actual = @DupStatus;
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...naming the contradiction in words a team lead can act on',
+    @Expected = N'The same entry is listed twice, going to two different shifts. Pick one shift for it and try again.',
+    @Actual = @m;
 DECLARE @DupShift NVARCHAR(50) = CAST((SELECT ShiftId FROM Workorder.DieCastContribution WHERE Id = @C) AS NVARCHAR(50));
 DECLARE @WantShift NVARCHAR(50) = CAST(@S4 AS NVARCHAR(50));
-EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...and the half-applied move was rolled back',
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...and nothing moved',
     @Expected = @WantShift, @Actual = @DupShift;
 DECLARE @DupMoveRows NVARCHAR(50) = CAST((SELECT COUNT(*) FROM Workorder.DieCastReconciliationMove m
     INNER JOIN Workorder.DieCastShiftReconciliation h ON h.Id = m.ReconciliationId
     WHERE h.ToolId = @Tool) AS NVARCHAR(50));
 EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...leaving no move on record',
     @Expected = N'0', @Actual = @DupMoveRows;
+
+-- The same row named twice with the SAME target is NOT the contradiction and
+-- must still be accepted -- it is the idempotent skip the whole feature rests
+-- on. S1 is further than two shifts away, so the DISTANCE guard is what refuses
+-- it; getting THAT message is the proof it got past the duplicate gate.
+DELETE FROM #Res;
+DECLARE @SameMoves NVARCHAR(MAX) =
+      N'[{"entityType":"Contribution","entityId":' + CAST(@C AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S1 AS NVARCHAR(20)) + N'},'
+    + N'{"entityType":"Contribution","entityId":' + CAST(@C AS NVARCHAR(20)) + N',"toShiftId":' + CAST(@S1 AS NVARCHAR(20)) + N'}]';
+INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @MovesJson = @SameMoves, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+SET @m = (SELECT Message FROM #Res);
+EXEC test.Assert_Contains @TestName = N'[Refuse] ...but the same row twice with the SAME target is not a contradiction',
+    @HaystackStr = @m, @NeedleStr = N'within two shifts';
 
 -- ---- migration 0099: a row with NO shift at all ----
 -- The save used to test `c.ShiftId = @ShiftId`, and @ShiftId is never NULL, so
@@ -270,6 +289,56 @@ INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
     @ActualJson = @Actual, @LotsJson = @Lots, @LoadedStamp = @Stamp, @AppUserId = @Usr;
 SET @m = (SELECT Message FROM #Res);
 EXEC test.Assert_Contains @TestName = N'[Refuse] totals that still do not add up', @HaystackStr = @m, @NeedleStr = N'has a typo';
+
+-- ---- die life may not go below zero (Save 1.6, sec 12) ----
+-- A wrong actual total shots is a TEAM LEAD'S TYPO. Until 1.6 it was a
+-- RAISERROR inside the transaction, after the die-life UPDATE, so it reached the
+-- CATCH -- which logs a FailureLog defect, answers "Unexpected error" and
+-- re-raises as critical. Captured through INSERT-EXEC, as the screen and every
+-- other test here capture it, the CATCH's ROLLBACK raised Msg 3915 and the
+-- status row never ran: the message reached nobody. The INSERT-EXEC below is the
+-- whole point of this test.
+--
+-- The fixture die carries 10,000 lifetime shots. A shift whose record reads
+-- 30,000 and whose declared actual is 200 asks for -29,800, which is more life
+-- than the die has.
+--
+-- These seeds put NEW contributions on S4, which changes
+-- Workorder.ufn_DieCastShiftStamp -- so @Stamp is recomputed, and this block
+-- must stay LAST, after every test above that uses the old stamp.
+EXEC test.DieCastRecon_SeedLot @Ltt = N'99700601', @CavKey = N'CavA', @StatusCode = N'Open';
+EXEC test.DieCastRecon_SeedLot @Ltt = N'99700602', @CavKey = N'CavB', @StatusCode = N'Open';
+EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700601', @ShiftKey = N'S4', @Pieces = 100, @Reading = 30000, @AtUtc = '2020-01-07T13:10:00';
+EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700602', @ShiftKey = N'S4', @Pieces = 200, @Reading = NULL,  @AtUtc = '2020-01-07T13:11:00';
+SET @Stamp = Workorder.ufn_DieCastShiftStamp(@S4, @Cell, @Tool);
+
+DECLARE @L601 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700601');
+DECLARE @L602 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700602');
+-- 200 shots, 200 good, 0 warm-up => total good 200 x 2 cavities = 400, and the
+-- three LOTs on record for this shift hold exactly that, each at or under 200.
+-- Every gap is zero, so nothing but the reading is in question.
+DELETE FROM #Res;
+SET @Actual = N'{"totalShots":200,"goodShots":200,"warmUpShots":0}';
+SET @Lots = N'[{"lotId":' + CAST(@Lot  AS NVARCHAR(20)) + N',"quantity":100},'
+          + N'{"lotId":' + CAST(@L601 AS NVARCHAR(20)) + N',"quantity":100},'
+          + N'{"lotId":' + CAST(@L602 AS NVARCHAR(20)) + N',"quantity":200}]';
+INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @Actual, @LotsJson = @Lots, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+DECLARE @LifeStatus NVARCHAR(50) = CAST((SELECT Status FROM #Res) AS NVARCHAR(50));
+SET @m = (SELECT Message FROM #Res);
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] die life below zero comes back as a clean status row, not Msg 3915',
+    @Expected = N'0', @Actual = @LifeStatus;
+EXEC test.Assert_Contains @TestName = N'[Refuse] ...in words a team lead can act on',
+    @HaystackStr = @m, @NeedleStr = N'lifetime shot count below zero';
+EXEC test.Assert_Contains @TestName = N'[Refuse] ...naming the shots it has and the shots it was asked for',
+    @HaystackStr = @m, @NeedleStr = N'10000 now, -29800 from this shift';
+EXEC test.Assert_Contains @TestName = N'[Refuse] ...and NOT as an unexpected error',
+    @HaystackStr = @m, @NeedleStr = N'Check the actual total shots';
+DECLARE @LifeUnexpected NVARCHAR(50) = CASE WHEN @m LIKE N'Unexpected error%' THEN N'yes' ELSE N'no' END;
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...the CATCH never saw it', @Expected = N'no', @Actual = @LifeUnexpected;
+DECLARE @LifeShots NVARCHAR(50) = CAST((SELECT ShotCount FROM Tools.Tool WHERE Id = @Tool) AS NVARCHAR(50));
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...and die life is untouched', @Expected = N'10000', @Actual = @LifeShots;
 
 -- nothing was written by ANY of the refusals
 DECLARE @v NVARCHAR(50) = CAST((SELECT COUNT(*) FROM Workorder.DieCastShiftReconciliation WHERE ToolId = @Tool) AS NVARCHAR(50));

@@ -327,6 +327,77 @@ SET @v = CAST((SELECT ISNULL(SUM(Quantity), 0) FROM Workorder.RejectEvent
 EXEC test.Assert_IsEqual @TestName = N'[D] ...and no 008 scrap at all', @Expected = N'0', @Actual = @v;
 GO
 
+-- ====== E: the moves lower the watermark, and the die-life guard knows it ======
+-- The trap the sec-12 guard (Save 1.6) must not fall into. The guard is
+-- pre-transaction, but the die-life delta it has to judge depends on the
+-- watermark AFTER the payload's moves -- and a move can only ever LOWER it,
+-- because Oee.ufn_ShiftNeighbours excludes the shift being reconciled, so
+-- nothing is ever moved ONTO it. Gating on the watermark AS IT IS NOW would
+-- OVER-REFUSE: it would reject exactly the save this feature exists for.
+--
+-- S4 records two credits: 100 pieces at a reading of 30,000 -- the wrong number,
+-- which is why it is being moved off to the night shift -- and 200 pieces at an
+-- honest 110. The declared actual is 200 shots.
+--   watermark as it is now : 30,000  ->  delta 200 - 30,000 = -29,800
+--                            against 10,000 lifetime shots that is BELOW ZERO,
+--                            so the naive guard refuses.
+--   watermark after the move:    110  ->  delta 200 -    110 =     +90, fine.
+-- The save must succeed, and die life must move by +90.
+--
+-- Fresh fixture: D left S1..S5 carrying four sections' worth of history.
+EXEC test.DieCastRecon_Setup;
+EXEC test.DieCastRecon_SeedLot @Ltt = N'99700701', @CavKey = N'CavA', @StatusCode = N'Open';
+EXEC test.DieCastRecon_SeedLot @Ltt = N'99700702', @CavKey = N'CavB', @StatusCode = N'Open';
+EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700701', @ShiftKey = N'S4', @Pieces = 100, @Reading = 30000, @AtUtc = '2020-01-07T13:20:00';
+EXEC test.DieCastRecon_SeedCredit @Ltt = N'99700702', @ShiftKey = N'S4', @Pieces = 200, @Reading = 110,   @AtUtc = '2020-01-07T13:21:00';
+GO
+
+DECLARE @S3 BIGINT = test.ufn_RC(N'S3'), @S4 BIGINT = test.ufn_RC(N'S4');
+DECLARE @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool'), @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'WrongNumbers');
+DECLARE @v NVARCHAR(400);
+
+DECLARE @E1 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700701');
+DECLARE @E2 BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'99700702');
+DECLARE @CBad BIGINT = (SELECT c.Id FROM Workorder.DieCastContribution c
+                        WHERE c.LotId = @E1 AND c.ShotCounterReading = 30000);
+DECLARE @Stamp NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S4, @Cell, @Tool);
+SET @v = CAST(Workorder.ufn_DieShotWatermark(@Tool, @S4, @Cell) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[E] before the save the shift''s record still reads the wrong 30,000',
+    @Expected = N'30000', @Actual = @v;
+
+DECLARE @Moves NVARCHAR(MAX) = N'[{"entityType":"Contribution","entityId":' + CAST(@CBad AS NVARCHAR(20))
+    + N',"toShiftId":' + CAST(@S3 AS NVARCHAR(20)) + N'}]';
+-- 200 shots, 200 good, 0 warm-up => total good 200 x 2 cavities = 400.
+-- 701 loses its 100 to the night shift, so its gap is the full 200.
+DECLARE @Actual NVARCHAR(MAX) = N'{"totalShots":200,"goodShots":200,"warmUpShots":0}';
+DECLARE @Lots NVARCHAR(MAX) = N'[{"lotId":' + CAST(@E1 AS NVARCHAR(20)) + N',"quantity":200},'
+                            + N'{"lotId":' + CAST(@E2 AS NVARCHAR(20)) + N',"quantity":200}]';
+
+CREATE TABLE #E (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #E EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @Actual, @MovesJson = @Moves, @LotsJson = @Lots,
+    @LoadedStamp = @Stamp, @AppUserId = @Usr;
+DECLARE @EMsg NVARCHAR(500) = (SELECT Message FROM #E);
+SET @v = CAST((SELECT Status FROM #E) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[E] a save whose moves lower the watermark is NOT refused for die life',
+    @Expected = N'1', @Actual = @v;
+EXEC test.Assert_Contains @TestName = N'[E] ...and in particular not for the lifetime shot count',
+    @HaystackStr = @EMsg, @NeedleStr = N'reconciled.';
+DROP TABLE #E;
+
+SET @v = CAST((SELECT ShiftId FROM Workorder.DieCastContribution WHERE Id = @CBad) AS NVARCHAR(400));
+DECLARE @WantS3 NVARCHAR(400) = CAST(@S3 AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[E] the wrong reading went to the night shift with its row',
+    @Expected = @WantS3, @Actual = @v;
+SET @v = CAST(Workorder.ufn_DieShotWatermark(@Tool, @S4, @Cell) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[E] the shift now reads the declared 200', @Expected = N'200', @Actual = @v;
+SET @v = CAST((SELECT ShotCount FROM Tools.Tool WHERE Id = @Tool) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[E] die life moved by the POST-move delta of +90, not the pre-move -29,800',
+    @Expected = N'10090', @Actual = @v;
+GO
+
 EXEC test.DieCastRecon_Cleanup;
 GO
 EXEC test.EndTestFile;

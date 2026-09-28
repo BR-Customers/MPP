@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.5
+-- Version:     1.6
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -62,6 +62,29 @@
 --              target shift", not "moved": a row already there is the intended
 --              idempotent skip (sec 3.5) and still passes.
 --
+--              NOTHING IN THIS PROC REFUSES INSIDE THE TRANSACTION (1.6).
+--              Two checks used to. Both were reachable from ordinary operator
+--              input, and both reached the CATCH -- which has no concept of a
+--              refusal: it logs a FailureLog defect, returns "Unexpected error"
+--              and re-raises as critical. Under INSERT-EXEC the CATCH's ROLLBACK
+--              raises Msg 3915 instead, the batch aborts, and the status-row
+--              SELECT never runs at all, so the team lead got nothing. They are
+--              now pre-transaction refusals (sec 6 duplicate targets, sec 12 die
+--              life) and what stayed behind was reworded as an INVARIANT.
+--
+--              TWO INVARIANTS remain inside the transaction, and neither can
+--              fire from user input:
+--                * the move-landing check after DieCastEntry_Restamp -- every
+--                  reason the worker can drop an element is refused in sec 6;
+--                * die life below zero after the UPDATE in (e) -- sec 12 refuses
+--                  the totals that would cause it, using the watermark as (e)
+--                  will see it.
+--              Both are addressed to an engineer, not to a team lead, and both
+--              exist so that a drift between what sec 12 PREDICTS and what the
+--              transaction DOES fails loudly instead of corrupting die life.
+--              Same division of labour as Lots.Lot_ApplyPieceCountCorrection:
+--              the worker raises, the caller owns the user-facing validation.
+--
 --              FDS-11-011 + Msg-3915: no OUTPUT params, ONE result set, all
 --              rejecting validations BEFORE BEGIN TRANSACTION, CATCH the only
 --              ROLLBACK site, RAISERROR not THROW. Every write goes through a
@@ -95,6 +118,9 @@
 -- Error Handling:
 --   Three-tier. Validation -> clean Status = 0 row with a FailureLog entry.
 --   Unexpected -> CATCH rolls back, logs, returns Status = 0, RAISERRORs.
+--   EVERY validation that can reject runs before BEGIN TRANSACTION and exits
+--   through Fail. The two RAISERRORs left inside the transaction are invariants
+--   over this proc's own workers, not refusals -- see the header.
 --
 -- Change Log:
 --   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 5.2).
@@ -125,6 +151,19 @@
 --                      reconciliation exists to close. Press-and-die scoping is
 --                      unchanged. Applies to both halves -- Workorder.RejectEvent
 --                      .ShiftId has been nullable since 0084.
+--   2026-09-28 - 1.6 - The last two refusals move out of the transaction. See
+--                      header "NOTHING IN THIS PROC REFUSES INSIDE THE
+--                      TRANSACTION". (a) Sec 6 refuses a move payload naming one
+--                      row twice with two different targets -- the only
+--                      caller-reachable way the landing check could fire.
+--                      (b) NEW sec 12 refuses a total that would take die life
+--                      below zero, computing the watermark AS IT WILL BE after
+--                      the payload's moves rather than as it is now; gating on
+--                      the current watermark would over-refuse, because a move
+--                      only ever lowers it (Oee.ufn_ShiftNeighbours never
+--                      returns @ShiftId, so nothing is moved ONTO this shift).
+--                      (c) Both in-transaction RAISERRORs are reworded as
+--                      internal invariants.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -267,6 +306,21 @@ BEGIN
         IF EXISTS (SELECT 1 FROM @Moves m
                    WHERE NOT EXISTS (SELECT 1 FROM Oee.ufn_ShiftNeighbours(@ShiftId, 2) n WHERE n.ShiftId = m.ToShiftId))
         BEGIN SET @Message = N'An entry can only move to a closed shift within two shifts of ' + @ShiftLabel + N'.'; GOTO Fail; END
+
+        -- THE CONTRADICTORY DUPLICATE (1.6). Workorder.DieCastEntry_Restamp
+        -- deduplicates its payload on (entity type, entity id) and keeps ONE
+        -- target, so the same row named twice with two different shifts is a
+        -- decision the worker cannot carry out -- one half of it would be
+        -- silently dropped. Until 1.6 that was only discovered AFTER the EXEC,
+        -- inside the transaction, by the landing check below, which RAISERRORed
+        -- into the CATCH: under INSERT-EXEC the ROLLBACK there throws Msg 3915
+        -- and the team lead never saw a message at all. It is a payload the
+        -- screen can produce and so it is a REFUSAL, tested here where a
+        -- refusal belongs -- before BEGIN TRANSACTION. An EXACT duplicate (same
+        -- row, same target, twice) is NOT refused: the worker honours it and
+        -- every element lands, which is the idempotency the feature is built on.
+        IF EXISTS (SELECT 1 FROM @Moves GROUP BY EntityType, EntityId HAVING COUNT(DISTINCT ToShiftId) > 1)
+        BEGIN SET @Message = N'The same entry is listed twice, going to two different shifts. Pick one shift for it and try again.'; GOTO Fail; END
 
         DECLARE @MovedC TABLE (Id BIGINT PRIMARY KEY);
         INSERT INTO @MovedC (Id) SELECT DISTINCT EntityId FROM @Moves WHERE EntityType = N'Contribution';
@@ -520,6 +574,67 @@ BEGIN
         DECLARE @ShotBefore INT = (SELECT ShotCount FROM Tools.Tool WHERE Id = @ToolId);
         DECLARE @AnchorReasonId BIGINT = (SELECT Id FROM Workorder.DieCastCounterAnchorReason WHERE Code = N'ShiftReconciliation');
 
+        -- ---- 12. die life may not go below zero (1.6) ----
+        -- A typo in the actual total shots is a TEAM LEAD'S MISTAKE, so it is a
+        -- refusal, and every refusal runs before BEGIN TRANSACTION. Until 1.6
+        -- this was a RAISERROR inside the transaction, after the die-life
+        -- UPDATE: it reached the CATCH, which treats everything as a system
+        -- failure -- logged as a defect, re-raised as critical -- and under
+        -- INSERT-EXEC the CATCH's ROLLBACK raises Msg 3915 and the status row
+        -- never runs, so the message reached nobody.
+        --
+        -- WHY THE WATERMARK IS RECOMPUTED HERE AND @DieWmBefore IS NOT ENOUGH.
+        -- Step (e) reads the watermark AFTER the moves have been applied, and a
+        -- move can only ever LOWER it: Oee.ufn_ShiftNeighbours excludes @ShiftId
+        -- itself, so no row is ever moved ONTO this shift, only off it. Gating
+        -- on @DieWmBefore would therefore OVER-REFUSE -- a save that moves a
+        -- wrong, huge reading off this shift and declares an honest small total
+        -- is exactly the shape the feature exists for, and the "before" figure
+        -- would reject it. The moves are known from the payload, so the "after"
+        -- figure is derivable here.
+        --
+        -- The block below MIRRORS Workorder.ufn_DieShotWatermark (anchor floor,
+        -- readings strictly after the anchor, ISNULL to 0), minus the
+        -- contributions this save is about to move away. Nothing between here
+        -- and step (e) can raise it again: Lots.DieCastLot_Mint writes no
+        -- contribution, and every credit loop (c) writes goes in with
+        -- @CounterReading = NULL. The mirror is allowed to be wrong in only one
+        -- direction without harm -- too HIGH over-refuses and is visible; too
+        -- LOW is caught by the invariant that stayed behind in step (e).
+        DECLARE @WmAnchorReading INT, @WmAnchorAt DATETIME2(3);
+        SELECT TOP 1 @WmAnchorReading = a.DeclaredReading, @WmAnchorAt = a.EventAt
+        FROM Workorder.DieCastCounterAnchor a
+        WHERE a.ToolId = @ToolId AND a.ShiftId = @ShiftId
+          AND ISNULL(a.CellLocationId, -1) = ISNULL(@CellLocationId, -1)
+        ORDER BY a.EventAt DESC, a.Id DESC;
+
+        DECLARE @DieWmAfterMoves INT;
+        SELECT @DieWmAfterMoves = MAX(c.ShotCounterReading)
+        FROM Workorder.DieCastContribution c
+        INNER JOIN Lots.Lot l ON l.Id = c.LotId
+        WHERE l.ToolId = @ToolId AND c.ShiftId = @ShiftId
+          AND ISNULL(c.CellLocationId, -1) = ISNULL(@CellLocationId, -1)
+          AND (@WmAnchorAt IS NULL OR c.EventAt > @WmAnchorAt)
+          AND c.Id NOT IN (SELECT Id FROM @MovedC);
+        SET @DieWmAfterMoves = ISNULL(@DieWmAfterMoves, 0);
+        IF @WmAnchorReading IS NOT NULL AND @WmAnchorReading > @DieWmAfterMoves
+            SET @DieWmAfterMoves = @WmAnchorReading;
+
+        -- Same condition step (e) uses: no reading declared, or one that matches
+        -- what is already on record, moves die life by nothing at all.
+        IF @Total IS NOT NULL AND @Total <> @DieWmAfterMoves
+        BEGIN
+            DECLARE @PlannedDelta INT = @Total - @DieWmAfterMoves;
+            IF @ShotBefore + @PlannedDelta < 0
+            BEGIN
+                SET @Message = N'That would take this die''s lifetime shot count below zero ('
+                             + CAST(@ShotBefore AS NVARCHAR(11)) + N' now, '
+                             + CAST(@PlannedDelta AS NVARCHAR(11)) + N' from this shift). '
+                             + N'Check the actual total shots.';
+                GOTO Fail;
+            END
+        END
+
         -- ===================== mutation =====================
         BEGIN TRANSACTION;
 
@@ -544,20 +659,28 @@ BEGIN
             EXEC Workorder.DieCastEntry_Restamp @ReconciliationId = @NewId, @MovesJson = @MovesOut,
                 @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId;
 
-            -- VERIFY THE PAYLOAD LANDED (code review 2026-09-24, approved
-            -- departure from the plan's SQL). The worker emits no result set, so
-            -- a five-element payload that resolved to zero rows in there is
+            -- AN INVARIANT, NOT A REFUSAL (1.6). The worker emits no result set,
+            -- so a five-element payload that resolved to zero rows in there is
             -- indistinguishable from an empty one -- this Save would report
             -- success and the team lead's decision would vanish with nobody
             -- watching, which is the exact failure the feature exists to
             -- prevent. So check every element we sent ourselves.
             --
+            -- Every reason the worker can drop an element is now refused BEFORE
+            -- the transaction, each with its own message: an unknown entityType
+            -- or a missing id or target (sec 6), a row that does not exist or is
+            -- not this shift/press/die's (sec 6), a target that is not a closed
+            -- shift within two (sec 6), and -- 1.6 -- the same row named twice
+            -- with two different targets, which the worker's dedup can honour
+            -- only half of. Nothing a caller can send reaches this check any
+            -- more, so it is a last-resort internal invariant over the worker's
+            -- behaviour and its message is addressed to an engineer, not to a
+            -- team lead. Same division as Lots.Lot_ApplyPieceCountCorrection:
+            -- the worker raises, the caller owns the user-facing validation.
+            --
             -- "Landed" deliberately means the row is ON its target shift, not
             -- that it moved: a row already there is the intended idempotent
-            -- skip and must keep passing. What this catches is a row the worker
-            -- dropped -- and, in particular, a payload naming one row twice with
-            -- two different targets, where the worker's dedup can only honour
-            -- one of them.
+            -- skip and must keep passing.
             DECLARE @NotLanded INT = (
                 SELECT COUNT(*) FROM @Moves m
                 WHERE NOT EXISTS (SELECT 1 FROM Workorder.DieCastContribution c
@@ -567,7 +690,7 @@ BEGIN
                                   WHERE m.EntityType = N'Reject'
                                     AND r.Id = m.EntityId AND r.ShiftId = m.ToShiftId));
             IF @NotLanded > 0
-                RAISERROR(N'%d of the entries being moved did not end up on the shift they were sent to. Nothing was saved.',
+                RAISERROR(N'DieCastShiftReconciliation_Save invariant: %d move(s) are not on their target shift after Workorder.DieCastEntry_Restamp, although every element was validated before the transaction. Nothing was saved.',
                           16, 1, @NotLanded);
         END
 
@@ -631,8 +754,16 @@ BEGIN
             UPDATE Tools.Tool WITH (UPDLOCK, HOLDLOCK)
             SET ShotCount = ShotCount + @ShotDelta, UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @AppUserId
             WHERE Id = @ToolId;
+            -- AN INVARIANT, NOT A REFUSAL (1.6). Section 12 above already refused
+            -- a total that would take die life negative, using the watermark as
+            -- it will be here -- so a team lead's typo never reaches this line.
+            -- What is left guards the one thing section 12 cannot see: that the
+            -- watermark it PREDICTED is the watermark step (e) actually read.
+            -- The dangerous direction is a prediction that came out too LOW
+            -- (planned delta too high, guard passed, real delta smaller), and
+            -- that is precisely what lands here. Engineer's wording.
             IF (SELECT ShotCount FROM Tools.Tool WHERE Id = @ToolId) < 0
-                RAISERROR(N'That would take this die''s lifetime shot count below zero. Check the actual total shots.', 16, 1);
+                RAISERROR(N'DieCastShiftReconciliation_Save invariant: die life went below zero although the pre-transaction guard passed -- the predicted post-move watermark disagrees with the real one. Nothing was saved.', 16, 1);
         END
 
         -- (f) new LOTs leave the press, exactly as a live release does (D4)
