@@ -285,6 +285,94 @@ DECLARE @v NVARCHAR(400) = CAST((SELECT COUNT(*) FROM Lots.Lot WHERE LotName IN 
 EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and none of the three refusals minted a LOT', @Expected = N'0', @Actual = @v;
 GO
 
+-- ============ 6: the cavity-and-part list the screen picks from ============
+-- Workorder.DieCastShiftReconciliation_ListCavities exists because the screen's
+-- Cavity picker and Part dropdown had no backing read: _GetHeader returns a
+-- COUNT and _ListLots is empty for a shift where nothing was recorded, which is
+-- the case the LTT entry bar exists for. It resolves the same set the save does
+-- -- so a cavity it offers is a cavity the save accepts, and one it hides is one
+-- the save would have refused.
+DECLARE @S4 BIGINT = test.ufn_RC(N'S4'), @Cell BIGINT = test.ufn_RC(N'Cell'), @Tool BIGINT = test.ufn_RC(N'Tool');
+DECLARE @Usr BIGINT = test.ufn_RC(N'Usr');
+DECLARE @Reason BIGINT = (SELECT Id FROM Workorder.DieCastReconciliationReason WHERE Code = N'MissedEntry');
+DECLARE @v NVARCHAR(400), @m NVARCHAR(500);
+
+CREATE TABLE #CV (ToolCavityId BIGINT, CavityCode NVARCHAR(4), ItemId BIGINT, PartNumber NVARCHAR(50),
+                  PartDescription NVARCHAR(200), CanMintLot BIT, DeprecatedAtEt DATETIME2(3), IsOffDieNow BIT);
+INSERT INTO #CV EXEC Workorder.DieCastShiftReconciliation_ListCavities @ShiftId = @S4, @ToolId = @Tool;
+
+SET @v = (SELECT STRING_AGG(CavityCode, N',') WITHIN GROUP (ORDER BY CavityCode) FROM #CV);
+EXEC test.Assert_IsEqual @TestName = N'[Cav] the list is every cavity not already off the die',
+    @Expected = N'a,b,c,d,e', @Actual = @v;
+-- f came off the die BEFORE the shift and is the only exclusion. d was
+-- CONFIGURED after the shift and is included deliberately -- see spec A16.
+SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE CavityCode = N'f') AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and a cavity deprecated BEFORE the shift is not in it',
+    @Expected = N'0', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE IsOffDieNow = 1) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ...and says which of them have since come off the die',
+    @Expected = N'2', @Actual = @v;
+
+-- the list and the header must not be able to disagree about how many
+CREATE TABLE #H6 (ShiftId BIGINT, ShiftLabel NVARCHAR(120), StartEt DATETIME2(3), EndEt DATETIME2(3), IsOpen BIT,
+                  CellLocationId BIGINT, PressCode NVARCHAR(50), PressName NVARCHAR(200), ToolId BIGINT,
+                  AssetNumber NVARCHAR(50), DieName NVARCHAR(200), ActiveCavities INT, DieShotCount INT,
+                  RecordedTotalShots INT, RecordedWarmUpShots INT, RecordedNoGood INT, RecordedGood INT,
+                  HasShiftEndNumber BIT, Stamp NVARCHAR(100), LastReconciledAtEt DATETIME2(3), LastReconciledBy NVARCHAR(20));
+INSERT INTO #H6 EXEC Workorder.DieCastShiftReconciliation_GetHeader
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool;
+SET @v = CAST((SELECT COUNT(*) FROM #CV) AS NVARCHAR(400));
+DECLARE @WantCav NVARCHAR(400) = CAST((SELECT ActiveCavities FROM #H6) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] the list and the header count the same set',
+    @Expected = @WantCav, @Actual = @v;
+DROP TABLE #H6;
+
+-- every cavity carries the part it was making -- this is the Part dropdown's source
+SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE PartNumber IS NULL) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] every cavity on the list names its part',
+    @Expected = N'0', @Actual = @v;
+SET @v = CAST((SELECT COUNT(DISTINCT ItemId) FROM #CV) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] the Part dropdown has both parts this die makes',
+    @Expected = N'2', @Actual = @v;
+SET @v = CAST((SELECT COUNT(*) FROM #CV WHERE CanMintLot = 0) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ...so every one of them can take a new LOT',
+    @Expected = N'0', @Actual = @v;
+
+-- ordered part, then letter: a letter is unique per (Tool, Item, CavityCode),
+-- never per tool, so the letter alone is ambiguous on a family die.
+SET @v = (SELECT STRING_AGG(CONCAT(PartNumber, N'/', CavityCode), N' ') FROM
+          (SELECT TOP 100 PartNumber, CavityCode FROM #CV ORDER BY PartNumber, CavityCode) o);
+DECLARE @WantOrder NVARCHAR(400) = (SELECT STRING_AGG(CONCAT(PartNumber, N'/', CavityCode), N' ') FROM #CV);
+EXEC test.Assert_IsEqual @TestName = N'[Cav] ordered by part, then cavity letter',
+    @Expected = @WantOrder, @Actual = @v;
+
+-- THE POINT OF THE READ: what it offers, the save accepts. Cavity c is on the
+-- list and is deprecated today; feeding it back in must get PAST the cavity gate
+-- and be refused by the NEXT gate instead.
+DECLARE @OfferedC BIGINT = (SELECT ToolCavityId FROM #CV WHERE CavityCode = N'c');
+DECLARE @S2 BIGINT = test.ufn_RC(N'S2');
+DECLARE @Stamp2 NVARCHAR(100) = Workorder.ufn_DieCastShiftStamp(@S2, @Cell, @Tool);
+DECLARE @LotsOffered NVARCHAR(MAX) = N'[{"ltt":"99700903","toolCavityId":' + CAST(@OfferedC AS NVARCHAR(20)) + N',"quantity":10}]';
+CREATE TABLE #O (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #O EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S2, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @LotsJson = @LotsOffered, @LoadedStamp = @Stamp2, @AppUserId = @Usr;
+SET @m = (SELECT Message FROM #O);
+DECLARE @CavRefused NVARCHAR(50) = CASE WHEN @m LIKE N'%Choose a cavity that was on this die%' THEN N'yes' ELSE N'no' END;
+EXEC test.Assert_IsEqual @TestName = N'[Cav] a cavity the list OFFERS is a cavity the save ACCEPTS',
+    @Expected = N'no', @Actual = @CavRefused;
+DROP TABLE #O;
+DROP TABLE #CV;
+
+-- an unknown shift is empty, not an invented row
+CREATE TABLE #CX (ToolCavityId BIGINT, CavityCode NVARCHAR(4), ItemId BIGINT, PartNumber NVARCHAR(50),
+                  PartDescription NVARCHAR(200), CanMintLot BIT, DeprecatedAtEt DATETIME2(3), IsOffDieNow BIT);
+INSERT INTO #CX EXEC Workorder.DieCastShiftReconciliation_ListCavities @ShiftId = -1, @ToolId = @Tool;
+SET @v = CAST((SELECT COUNT(*) FROM #CX) AS NVARCHAR(400));
+EXEC test.Assert_IsEqual @TestName = N'[Cav] an unknown shift returns no rows', @Expected = N'0', @Actual = @v;
+DROP TABLE #CX;
+GO
+
 EXEC test.DieCastRecon_Cleanup;
 GO
 EXEC test.EndTestFile;
