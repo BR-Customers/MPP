@@ -243,8 +243,17 @@ EXEC test.Assert_IsEqual @TestName = N'[ID.midnight] the sibling press has alrea
      @Expected = N'TEST_AT_First', @Actual = @nB7;
 GO
 
--- ---- teardown: leave no overrides behind for 020 / 030 ----
+-- ---- teardown: leave no overrides and no Shift rows behind ----
+-- The 2026-10-20 06:00 instance above is deliberately OPEN (ActualEnd NULL) so
+-- the "still inside the running shift" cases can be asserted. Oee.Shift carries
+-- UIX_Shift_SingleOpen -- UNIQUE on ActualEnd WHERE ActualEnd IS NULL -- which
+-- permits exactly ONE open shift database-wide. Leaving it behind is therefore
+-- not harmless residue: it makes every later suite that needs to open a shift
+-- fail on a duplicate key (0097/030_Functions did, from here). This delete
+-- mirrors the one in the fixture above; 020 does not touch Oee.Shift and 030
+-- re-creates the 2026-10-19 trio under its own IF NOT EXISTS guard.
 DELETE FROM Oee.ShiftOverride WHERE BusinessDate BETWEEN '2026-10-16' AND '2026-10-23';
+DELETE FROM Oee.Shift WHERE ActualStart >= '2026-10-18' AND ActualStart < '2026-10-23';
 GO
 
 EXEC test.EndTestFile;
