@@ -1,29 +1,36 @@
 """
 usb_tcp_bridge.py  --  local loopback TCP:9100 -> USB Zebra bridge (no dependencies)
 
-Lets the MES's ZPL dispatcher (BlueRidge.Lots.LotLabel._dispatchZpl, a raw-TCP
-write to host:9100) print to a USB-connected Zebra WITHOUT putting the printer on
-the network. It listens ONLY on 127.0.0.1 (loopback -- nothing is exposed to the
-LAN) and forwards received bytes to a Windows print queue via the spooler RAW
-datatype, calling winspool.drv directly through ctypes -- PURE STANDARD LIBRARY,
-no pywin32 needed.
+Lets the MES's ZPL dispatcher (BlueRidge.Lots.LabelTransport, a raw-TCP write to
+host:9100) print to a USB-connected Zebra by exposing it on the LAN. Listens on
+ALL interfaces (0.0.0.0) and forwards received bytes to a Windows print queue via
+the spooler RAW datatype, calling winspool.drv directly through ctypes -- PURE
+STANDARD LIBRARY, no pywin32 needed.
+
+TEST/PROTOTYPE MODE: binding 0.0.0.0 means ANY machine that can reach this host on
+port 9100 can print to it, unauthenticated. Fine for a one-off reachability test on
+a coworker's laptop; NOT what should ship to a terminal PC long-term without also
+firewalling the port to just the Gateway's IP (open item, design doc S10.3) and
+running this as a proper Windows service instead of a console session.
 
 Run:
     python zebraPrinter/usb_tcp_bridge.py                        # -> "Zebra GX420d (RAW)"
     python zebraPrinter/usb_tcp_bridge.py "Some Printer Name"    # override the queue
 
-Then point the terminal's Printer endpoint at  127.0.0.1:9100  (or test from the
-Designer Script Console:
-     import BlueRidge.Lots.LotLabel as LL
-     print LL._dispatchZpl("127.0.0.1:9100", "^XA^CFA,30^FO50,50^FDMES TEST^FS^XZ")
-).  Ctrl-C to stop.
+Then, from another machine on the LAN, point the printer endpoint at
+<this-host's-IP>:9100  (find the IP with `ipconfig`), or test from the Designer
+Script Console:
+     print BlueRidge.Lots.LabelTransport.send("<ip>:9100", "^XA^CFA,30^FO50,50^FDMES TEST^FS^XZ")
+Windows Firewall will likely prompt to allow python.exe on first run -- allow it,
+or add an inbound rule for TCP 9100, or nothing outside this machine can connect.
+Ctrl-C to stop.
 """
 import ctypes
 from ctypes import wintypes
 import socket
 import sys
 
-HOST = "127.0.0.1"          # loopback ONLY -- not reachable from the network
+HOST = "0.0.0.0"            # ALL interfaces -- reachable from the LAN, test/prototype only
 PORT = 9100
 DEFAULT_PRINTER = "Zebra GX420d (RAW)"
 
