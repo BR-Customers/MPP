@@ -1,8 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Lots_DieCastLot_Release.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-25
--- Version:     2.4
+-- Modified:    2026-09-28
+-- Version:     2.5
+-- Change:      v2.5 (2026-09-28) -- comment only; no behaviour change. Two
+--              places cited DieCastContribution's CHECK (PieceDelta >= 0) as
+--              the reason the negative-delta guard exists. Migration 0097
+--              relaxed that constraint to
+--              (PieceDelta >= 0 OR ReconciliationId IS NOT NULL) so a shift
+--              reconciliation can take production back off a shift, which
+--              leaves this proc's own guard -- not the table -- as what refuses
+--              a negative delta here. The guard is unchanged; only its stated
+--              reason was stale, and a future reader acts on the reason.
 -- Change:      v2.4 (2026-09-25) -- pre-transaction validation of a scrap
 --              line's approvedByUserId, closing the last of three write paths
 --              that disagreed about it. This proc wraps caller-supplied
@@ -106,10 +115,15 @@
 --                formed JSON when supplied -> every scrap defectCodeId active
 --                -> every SUPPLIED scrap approvedByUserId an active AppUser
 --                (v2.4) -> @FinalPieceDelta must not be
---                negative (mirrors DieCastShiftOutput_Record's own guard +
---                DieCastContribution's CHECK (PieceDelta >= 0); the mutation
---                below only applies the delta when > 0, so a negative value
---                must reject rather than silently no-op) -> projected
+--                negative (mirrors DieCastShiftOutput_Record's own guard; the
+--                mutation below only applies the delta when > 0, so a negative
+--                value must reject rather than silently no-op. NOT because the
+--                table forbids it: migration 0097 relaxed
+--                CK_DieCastContribution_DeltaNonNeg to
+--                (PieceDelta >= 0 OR ReconciliationId IS NOT NULL), so a
+--                negative delta is legal for a shift reconciliation and this
+--                proc -- which never sets ReconciliationId -- is now the only
+--                thing refusing it on THIS path, v2.5) -> projected
 --                PieceCount (current + ISNULL(@FinalPieceDelta,0)) must be
 --                > 0, else reject (an empty basket is Void's job, not
 --                Release's).
@@ -256,9 +270,14 @@ BEGIN
             IF @FinalPieceDelta < 0 SET @FinalPieceDelta = 0;
         END
 
-        -- mirrors DieCastShiftOutput_Record's negative-delta guard + DieCastContribution's
-        -- CHECK (PieceDelta >= 0): a negative @FinalPieceDelta must reject, not silently
-        -- no-op.
+        -- mirrors DieCastShiftOutput_Record's negative-delta guard: a negative
+        -- @FinalPieceDelta must reject, not silently no-op (the mutation below
+        -- only applies the delta when > 0). The table no longer backs this up --
+        -- migration 0097 relaxed CK_DieCastContribution_DeltaNonNeg to
+        -- (PieceDelta >= 0 OR ReconciliationId IS NOT NULL) so a shift
+        -- reconciliation can take production back off a shift. This proc never
+        -- writes a ReconciliationId, so on THIS path the guard below is the only
+        -- thing standing between a negative delta and a silent no-op (v2.5).
         IF @FinalPieceDelta IS NOT NULL AND @FinalPieceDelta < 0
         BEGIN SET @Message = N'FinalPieceDelta cannot be negative.'; GOTO Fail; END
 

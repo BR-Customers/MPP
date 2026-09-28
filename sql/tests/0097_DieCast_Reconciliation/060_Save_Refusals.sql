@@ -116,6 +116,43 @@ INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
 SET @m = (SELECT Message FROM #Res);
 EXEC test.Assert_Contains @TestName = N'[Refuse] not a valid LTT', @HaystackStr = @m, @NeedleStr = N'8 or 9 digits';
 
+-- a lotId that does not exist at all.
+-- This one is here because of HOW it used to fail, not just that it did. Every
+-- other check in sec 7 was structurally blind to it: the tool check INNER JOINs
+-- Lots.Lot, so the join dropped the row instead of naming it, and the LTT,
+-- cavity and part checks are all gated on LotId IS NULL. Its quantity still
+-- balanced the sec 9 arithmetic (100 + 100 = 100 good shots x 2 cavities), so
+-- the save went ahead, and step (c)'s DieCastCredit_Write wrote no rows, left
+-- @LotName NULL and hit Audit.OperationLog.Description NOT NULL -- inside the
+-- transaction, so CATCH, so ROLLBACK, so Msg 3915 under the INSERT-EXEC below,
+-- so NO result row at all. The INSERT-EXEC capture is therefore the assertion:
+-- if the refusal is removed this test does not report a wrong message, it
+-- ABORTS the batch. Same shape as the die-life case at the end of this file.
+DELETE FROM #Res;
+DECLARE @Ghost BIGINT = ISNULL((SELECT MAX(Id) FROM Lots.Lot), 0) + 1000000;
+SET @Actual = N'{"totalShots":110,"goodShots":100,"warmUpShots":10}';
+SET @Lots = N'[{"lotId":' + CAST(@Lot   AS NVARCHAR(20)) + N',"quantity":100},'
+          + N'{"lotId":' + CAST(@Ghost AS NVARCHAR(20)) + N',"quantity":100}]';
+INSERT INTO #Res EXEC Workorder.DieCastShiftReconciliation_Save
+    @ShiftId = @S4, @CellLocationId = @Cell, @ToolId = @Tool, @ReasonId = @Reason,
+    @ActualJson = @Actual, @LotsJson = @Lots, @LoadedStamp = @Stamp, @AppUserId = @Usr;
+DECLARE @GhostStatus NVARCHAR(50) = CAST((SELECT Status FROM #Res) AS NVARCHAR(50));
+SET @m = (SELECT Message FROM #Res);
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] a lotId that no longer exists comes back as a clean status row, not Msg 3915',
+    @Expected = N'0', @Actual = @GhostStatus;
+EXEC test.Assert_Contains @TestName = N'[Refuse] ...in words a team lead can act on',
+    @HaystackStr = @m, @NeedleStr = N'no longer exists';
+EXEC test.Assert_Contains @TestName = N'[Refuse] ...telling them what to do about it',
+    @HaystackStr = @m, @NeedleStr = N'Reload the shift';
+DECLARE @GhostUnexpected NVARCHAR(50) = CASE WHEN @m LIKE N'Unexpected error%' THEN N'yes' ELSE N'no' END;
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...the CATCH never saw it', @Expected = N'no', @Actual = @GhostUnexpected;
+-- and it refuses for the RIGHT reason: a real LOT from another die must still
+-- get the tool message, which is why the new check sits before the tool check
+-- rather than after it.
+DECLARE @GhostStoleToolMsg NVARCHAR(50) = CASE WHEN @m LIKE N'%Not a LOT from%' THEN N'yes' ELSE N'no' END;
+EXEC test.Assert_IsEqual @TestName = N'[Refuse] ...and did not borrow the wrong-die wording',
+    @Expected = N'no', @Actual = @GhostStoleToolMsg;
+
 -- a reject amount that does not divide across the cavities it covers
 DELETE FROM #Res;
 SET @Lots = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20)) + N',"quantity":189}]';

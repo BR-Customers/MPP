@@ -2,7 +2,7 @@
 -- Procedure:   Oee.ShiftOverride_Restamp
 -- Author:      Blue Ridge Automation
 -- Created:     2026-08-19
--- Version:     1.2
+-- Version:     1.3
 --
 -- Description:
 --   THE RESTAMP. Re-attributes already-recorded rows whose correct shift changed
@@ -65,10 +65,24 @@
 --                                   Rows with CellLocationId NULL -- a die with
 --                                   no active assignment at EventAt -- are
 --                                   EXCLUDED, not guessed.
---   NOT in scope: Workorder.RejectEvent has no ShiftId at all (see
---   R__Workorder_DieCastSupervisor_GetShiftTotals.sql's "SCRAP IS DELIBERATELY
---   ABSENT" note), and Oee.EndOfShiftEntry is submitted against an
---   operator-chosen shift, not a resolved one.
+--   NOT in scope: Workorder.RejectEvent, and Oee.EndOfShiftEntry, which is
+--   submitted against an operator-chosen shift rather than a resolved one.
+--
+--   REJECTS ARE OUT OF SCOPE BY DESIGN, NOT BY ABSENCE (1.3). This note used to
+--   say RejectEvent "has no ShiftId at all". That has been false since migration
+--   0084: the column exists, Workorder.DieCastScrap_Write stamps it and
+--   Workorder.DieCastEntry_Restamp moves it. The body is still right to leave
+--   rejects alone -- scrap attribution is a QUALITY decision made when the
+--   defect is recorded (see R__Workorder_DieCastSupervisor_GetShiftTotals.sql's
+--   "SCRAP IS DELIBERATELY ABSENT" note), not a derivation off an instant, and
+--   nothing on the reject row claims otherwise.
+--   THAT IS EXACTLY WHY BRINGING THEM IN WOULD NEED A NEW COLUMN FIRST.
+--   Workorder.RejectEvent carries NO ShiftAttributionSource marker, so this proc
+--   has no way to tell a derived stamp from one a person chose -- the very
+--   distinction that makes the contribution half safe and reversible (see "WHAT
+--   IT WILL NOT TOUCH, AND HOW IT KNOWS" below). Restamping rejects without one
+--   would silently overwrite a supervisor's attribution and could never be
+--   undone. Add the marker before the scope, never the other way round.
 --
 --   A row whose instant resolves to NO shift (resolver returns zero rows) or to
 --   a shift with no runtime Oee.Shift instance keeps whatever it already has.
@@ -133,6 +147,15 @@
 --                      and DieCastContribution.Id / RejectEvent.Id are
 --                      independent IDENTITY sequences, so the Audit.LogEntityType
 --                      join in it was load-bearing and its absence invisible.
+--   2026-09-28 - 1.3 - Comment only; no behaviour change. The scope note claimed
+--                      Workorder.RejectEvent "has no ShiftId at all", which
+--                      migration 0084 made false -- DieCastScrap_Write writes
+--                      the column and DieCastEntry_Restamp moves it. Rejects
+--                      stay out of scope, but now for the reason that is
+--                      actually true: their attribution is a quality decision,
+--                      and the row carries no ShiftAttributionSource marker, so
+--                      this proc could not tell a derived stamp from a chosen
+--                      one. Stated as a precondition for any future widening.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.ShiftOverride_Restamp
     @ShiftOverrideId BIGINT,

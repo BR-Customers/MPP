@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.9
+-- Version:     1.10
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -72,8 +72,9 @@
 --              now pre-transaction refusals (sec 6 duplicate targets, sec 12 die
 --              life) and what stayed behind was reworded as an INVARIANT.
 --
---              TWO INVARIANTS remain inside the transaction, and neither can
---              fire from user input:
+--              THREE RAISE SITES remain inside the transaction (1.10 corrects
+--              an enumeration that said two), and none of them can fire from
+--              what the team lead typed. TWO are this proc's own invariants:
 --                * the move-landing check after DieCastEntry_Restamp -- every
 --                  reason the worker can drop an element is refused in sec 6;
 --                * die life below zero after the UPDATE in (e) -- sec 12 refuses
@@ -84,6 +85,25 @@
 --              transaction DOES fails loudly instead of corrupting die life.
 --              Same division of labour as Lots.Lot_ApplyPieceCountCorrection:
 --              the worker raises, the caller owns the user-facing validation.
+--
+--              THE THIRD IS A WORKER'S, AND IT IS A CONCURRENCY RACE, NOT A
+--              DRIFT. Step (g) calls Lots.Lot_ApplyPieceCountCorrection, which
+--              RAISERRORs on a stale @ExpectedPieceCount and on the corrected
+--              count falling below what is already consumed. Sec 11 reads
+--              Lots.Lot.PieceCount and step (g) passes it back as the expected
+--              value, and the stale guard does NOT close that window:
+--              Workorder.ufn_DieCastShiftStamp covers DieCastContribution,
+--              RejectEvent and DieCastCounterAnchor counts and maxima -- it does
+--              not look at Lots.Lot.PieceCount at all. Another writer moving a
+--              count between sec 11 and step (g) therefore reaches the CATCH,
+--              and under INSERT-EXEC the team lead gets Msg 3915 rather than a
+--              message. That is the worker's own optimistic-concurrency contract
+--              and is deliberately NOT turned into a pre-transaction refusal:
+--              a pre-check could not hold the value either, and losing the
+--              check would silently overwrite someone else's correction.
+--              Widening the stamp to cover the counts of the LOTs on the sheet
+--              would narrow the window to the transaction itself; it has not
+--              been done, and this note is where that starts.
 --
 --              A CAVITY DEPRECATED AFTER THE SHIFT STILL COUNTS FOR IT (1.7),
 --              AND THERE IS NO CreatedAt LOWER BOUND (1.8). The cavity set in
@@ -144,7 +164,10 @@
 --              history: nothing records WHEN a cavity became Closed or Scrapped.
 --              A cavity that was running during the shift but is Blocked today
 --              therefore cannot be resolved historically, and its scrap cannot
---              be backed out. The owner's decision (2026-09-28) is to record
+--              be backed out. Nor can its WARM-UP (1.10): sec 10's warm-up gap
+--              is driven off the same @ActiveCav set, so a warm-up figure
+--              recorded against a since-Blocked cavity is equally unreachable.
+--              The owner's decision (2026-09-28) is to record
 --              this rather than build a status-history table speculatively. Do
 --              not add one without that decision being revisited.
 --
@@ -232,8 +255,10 @@
 --   Three-tier. Validation -> clean Status = 0 row with a FailureLog entry.
 --   Unexpected -> CATCH rolls back, logs, returns Status = 0, RAISERRORs.
 --   EVERY validation that can reject runs before BEGIN TRANSACTION and exits
---   through Fail. The two RAISERRORs left inside the transaction are invariants
---   over this proc's own workers, not refusals -- see the header.
+--   through Fail. The two RAISERRORs written into this proc's own body are
+--   invariants over its workers, not refusals; a third raise site is
+--   Lots.Lot_ApplyPieceCountCorrection's own optimistic-concurrency check in
+--   step (g), which the stale guard does not cover -- see the header.
 --
 -- Change Log:
 --   2026-09-22 - 1.0 - Initial version (die cast shift reconciliation, sec 5.2).
@@ -312,6 +337,27 @@
 --                      of inside it, so the plan can state a die-life delta of
 --                      zero when no reading is declared. Its assignment, its
 --                      refusal and their order are untouched.
+--   2026-09-28 - 1.10 - Sec 7 refuses a @LotsJson element naming a lotId that no
+--                      longer exists (final branch review). Every check in that
+--                      section was structurally unable to see one -- the tool
+--                      check's INNER JOIN dropped it, the LTT/cavity/part checks
+--                      are gated on LotId IS NULL, and sec 11's LEFT JOIN gave
+--                      it the one shape the negative-gap guards skip -- while
+--                      its quantity still balanced sec 9's arithmetic. It
+--                      survived to step (c), where DieCastCredit_Write wrote no
+--                      rows, @LotName was NULL and Audit.OperationLog
+--                      .Description is NOT NULL: an in-transaction error, so
+--                      CATCH ROLLBACK, so Msg 3915 under INSERT-EXEC, so no
+--                      status row at all. Placed immediately before the tool
+--                      check, so a real LOT on the wrong die still gets the
+--                      tool message. Also three header corrections, code
+--                      unchanged: the raise sites inside the transaction are
+--                      THREE and not two (step (g)'s
+--                      Lots.Lot_ApplyPieceCountCorrection has two of its own,
+--                      reachable because Workorder.ufn_DieCastShiftStamp does
+--                      not cover Lots.Lot.PieceCount); the `cs.Code = 'Active'`
+--                      limitation costs WARM-UP as well as scrap; and the Error
+--                      Handling note is brought into line with both.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -485,6 +531,30 @@ BEGIN
 
         IF EXISTS (SELECT 1 FROM @Lots WHERE Qty IS NULL OR Qty < 0)
         BEGIN SET @Message = N'Every LOT needs an actual quantity of zero or more.'; GOTO Fail; END
+
+        -- A SUPPLIED lotId that resolves to nothing is INVISIBLE to every other
+        -- check in this section (1.10). The tool check below INNER JOINs
+        -- Lots.Lot, so the join DROPS the row instead of naming it; the LTT,
+        -- cavity and part checks are all gated on LotId IS NULL, so none of them
+        -- looks at it; and sec 11 LEFT JOINs it to IsNew = 0, ApplyToLot = 0,
+        -- CorrectCount = 0, PieceCount = 0, which is exactly the shape the
+        -- negative-gap guards there do not test. Its quantity still counts into
+        -- sec 9's @LotSum, so the shift's arithmetic balances on paper and the
+        -- save proceeds. It then reached step (c), where DieCastCredit_Write's
+        -- INSERT ... SELECT ... FROM Lots.Lot inserts ZERO rows, @LotName comes
+        -- back NULL and Audit.OperationLog.Description is NVARCHAR(1000) NOT
+        -- NULL -- an error INSIDE the transaction, so the CATCH ROLLBACKs, and
+        -- under INSERT-EXEC that ROLLBACK is Msg 3915: the batch aborts and the
+        -- status-row SELECT never runs, so the team lead gets nothing at all.
+        -- The same failure mode 1.6 spent itself removing from every other path.
+        -- It sits BEFORE the tool check on purpose: a REAL LOT from another die
+        -- must still get the tool message, which names the die and the LOT.
+        -- The id is not named here because a Lots.Lot.Id is not something a team
+        -- lead can act on -- reloading is.
+        IF EXISTS (SELECT 1 FROM @Lots lt
+                   WHERE lt.LotId IS NOT NULL
+                     AND NOT EXISTS (SELECT 1 FROM Lots.Lot l WHERE l.Id = lt.LotId))
+        BEGIN SET @Message = N'A LOT on the list no longer exists. Reload the shift and try again.'; GOTO Fail; END
 
         SET @Bad = NULL;
         SELECT @Bad = STRING_AGG(l.LotName, N', ')
