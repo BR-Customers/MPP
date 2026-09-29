@@ -23,7 +23,7 @@ MODULE = os.path.join(
     "BlueRidge", "Lots", "LabelTransport", "code.py",
 )
 
-WANTED = ("_parseAck", "_unquote")
+WANTED = ("_parseAck", "_unquote", "_dispatchLogParams")
 
 
 def load_helpers(path=MODULE):
@@ -32,7 +32,10 @@ def load_helpers(path=MODULE):
     tree = ast.parse(src)
     keep = [n for n in tree.body
             if isinstance(n, ast.FunctionDef) and n.name in WANTED]
-    ns = {}
+    # _SYSTEM_NAME is a module-level constant, not a function, so the extractor
+    # does not pick it up. Seed it -- its value is asserted nowhere here; the
+    # column it lands in is verified against the live DB in the plan's Task 5.
+    ns = {"_SYSTEM_NAME": "Zebra"}
     exec(compile(ast.Module(body=keep, type_ignores=[]), path, "exec"), ns)
     return ns
 
@@ -83,3 +86,45 @@ def test_an_unparseable_line_is_reported_not_swallowed(helpers):
     assert got["acked"] is True
     assert got["ok"] is False
     assert "banana" in got["error"]
+
+
+def _params(helpers, outcome, endpoint="10.20.11.157:9100"):
+    return helpers["_dispatchLogParams"](endpoint, "^XA^XZ", outcome, "Shipping label")
+
+
+def test_a_spooled_print_records_the_queue_and_job(helpers):
+    ack = {"acked": True, "ok": True, "queue": "Zebra GX420d (RAW)",
+           "job": 41, "bytes": 1264, "error": None}
+    p = _params(helpers, {"ok": True, "error": None, "transport": "tcp", "ack": ack})
+    assert p["errorCondition"] is None
+    assert "Spooled" in p["responsePayload"]
+    assert "job=41" in p["responsePayload"]
+    assert "Zebra GX420d (RAW)" in p["responsePayload"]
+
+
+def test_a_networked_printer_with_no_ack_is_recorded_as_sent_not_failed(helpers):
+    ack = {"acked": False, "ok": False, "queue": None,
+           "job": None, "bytes": None, "error": None}
+    p = _params(helpers, {"ok": True, "error": None, "transport": "tcp", "ack": ack})
+    assert p["errorCondition"] is None
+    assert "no ack" in p["responsePayload"]
+
+
+def test_a_transport_failure_names_the_stage(helpers):
+    p = _params(helpers, {"ok": False, "error": "Connect timed out",
+                          "transport": "tcp", "ack": {"acked": False, "ok": False,
+                                                      "queue": None, "job": None,
+                                                      "bytes": None, "error": None}})
+    assert p["errorCondition"] == "DispatchFailed"
+    assert p["errorDescription"] == "Connect timed out"
+
+
+def test_a_bridge_refusal_is_distinguished_from_a_network_failure(helpers):
+    """The bridge answered -- so the network is fine and the queue is wrong.
+       That must not read as a connectivity problem."""
+    ack = {"acked": True, "ok": False, "queue": None, "job": None,
+           "bytes": None, "error": "queue not found: 'ZDesigner GX420d'"}
+    p = _params(helpers, {"ok": False, "error": ack["error"],
+                          "transport": "tcp", "ack": ack})
+    assert p["errorCondition"] == "QueueRejected"
+    assert "ZDesigner GX420d" in p["errorDescription"]

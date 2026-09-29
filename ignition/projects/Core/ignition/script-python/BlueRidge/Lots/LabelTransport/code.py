@@ -228,25 +228,53 @@ def send(endpoint, zpl):
     return {"ok": False, "error": p["reason"], "transport": None}
 
 
+def _dispatchLogParams(endpoint, zpl, outcome, labelKind):
+    """Build the Audit.InterfaceLog row for ONE dispatch attempt.
+
+       Self-contained (no BlueRidge.* calls) so the tests can exec it.
+
+       The stage reached goes in responsePayload on success and in
+       errorCondition on failure, so 'where did it stop' is one column and not
+       a cross-reference. A bridge that ANSWERED with ERR is QueueRejected, not
+       DispatchFailed -- the network was fine and the queue was wrong, and
+       conflating those sends whoever is diagnosing it to the wrong place."""
+    ok = bool(outcome and outcome.get("ok"))
+    transport = (outcome or {}).get("transport") or "unknown"
+    ack = (outcome or {}).get("ack") or {}
+    if ok:
+        if ack.get("acked") and ack.get("ok"):
+            response = "Spooled queue='%s' job=%s bytes=%s" % (
+                ack.get("queue"), ack.get("job"), ack.get("bytes"))
+        else:
+            response = "Sent, no ack (raw 9100)"
+        condition, detail = None, None
+    else:
+        response = None
+        if ack.get("acked"):
+            condition = "QueueRejected"
+        else:
+            condition = "DispatchFailed"
+        detail = (outcome or {}).get("error") or "unknown"
+    return {
+        "systemName":       _SYSTEM_NAME,
+        "direction":        "Outbound",
+        "logEventTypeCode": "LabelDispatched",
+        "description":      "%s dispatch via %s to %s" % (labelKind, transport, endpoint or "(none)"),
+        "requestPayload":   "%s | %s" % (endpoint or "", (zpl or "")[:200]),
+        "responsePayload":  response,
+        "errorCondition":   condition,
+        "errorDescription": detail,
+        "isHighFidelity":   True,
+    }
+
+
 def logDispatch(endpoint, zpl, outcome, labelKind):
     """Log ONE dispatch attempt to Audit.InterfaceLog -- every attempt: success,
        failure, retry (FDS-01-014). labelKind is the human label for the description,
        e.g. 'LTT' or 'Shipping label'. High-fidelity so endpoint, transport and the
        ZPL head persist; the transport name is what distinguishes a TCP failure from
        a queue failure in the audit trail without re-parsing the endpoint."""
-    ok = bool(outcome and outcome.get("ok"))
-    transport = (outcome or {}).get("transport") or "unknown"
-    params = {
-        "systemName":       _SYSTEM_NAME,
-        "direction":        "Outbound",
-        "logEventTypeCode": "LabelDispatched",
-        "description":      "%s dispatch via %s to %s" % (labelKind, transport, endpoint or "(none)"),
-        "requestPayload":   "%s | %s" % (endpoint or "", (zpl or "")[:200]),
-        "responsePayload":  "OK" if ok else None,
-        "errorCondition":   None if ok else "DispatchFailed",
-        "errorDescription": None if ok else (outcome.get("error") if outcome else "unknown"),
-        "isHighFidelity":   True,
-    }
+    params = _dispatchLogParams(endpoint, zpl, outcome, labelKind)
     # audit/Audit_LogInterfaceCall is "UpdateQuery"-typed (the proc emits no result set),
     # so it MUST go through execNonQuery -- execList would hand _rowsToDicts an Integer
     # row count and throw. Bare except (not `except Exception`) because Jython's
