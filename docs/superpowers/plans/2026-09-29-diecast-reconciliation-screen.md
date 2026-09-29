@@ -112,7 +112,7 @@ Workorder.DieCastShiftReconciliation_ListMoveTargets(@ShiftId, @CellLocationId, 
     MAY RETURN FEWER THAN FOUR ROWS at the ends of history. Never assume four,
     never pad, never pre-select.
 
-Workorder.DieCastShiftReconciliation_ListCavities(@ShiftId, @CellLocationId, @ToolId)
+Workorder.DieCastShiftReconciliation_ListCavities(@ShiftId, @ToolId)   -- TWO params, not three
   ToolCavityId | CavityCode nvarchar(4) | ItemId | PartNumber | PartDescription
   CanMintLot bit | DeprecatedAtEt datetime2(3) | IsOffDieNow bit
 
@@ -194,7 +194,7 @@ The sheet is the only large view. It uses **per-section ownership** for its four
 
 ---
 
-## Task 1: The ten named queries
+## Task 1: The eleven named queries
 
 **Files:**
 - Create: `ignition/projects/Core/ignition/named-query/workorder/DieCastShiftReconciliation_ListShifts/{query.sql,resource.json}`
@@ -209,7 +209,7 @@ Named queries share one folder tree and one gateway scan, so **author all ten, t
 
 - [ ] **Step 1: Write the eight three-parameter read NQs**
 
-Six of them (`GetHeader`, `ListEntries`, `ListLots`, `ListRejects`, `ListMoveTargets`, `ListCavities`) take exactly the same three parameters. `query.sql`, substituting `<NAME>`:
+Five of them (`GetHeader`, `ListEntries`, `ListLots`, `ListRejects`, `ListMoveTargets`) take exactly the same three parameters. **`ListCavities` does NOT** — it takes `(@ShiftId, @ToolId)` only; see Step 2. `query.sql`, substituting `<NAME>`:
 
 ```sql
 EXEC Workorder.DieCastShiftReconciliation_<NAME>
@@ -365,7 +365,8 @@ git commit -m "feat(ignition): named queries for the die cast shift reconciliati
   - `listFlagged(days=7)` → `list[dict]` (the alerting claim only — the tile's source)
   - `getHeader(shiftId, cellLocationId, toolId)` → `dict` or `None`
   - `getHeaderOrEmpty(shiftId, cellLocationId, toolId)` → `dict`, always fully shaped
-  - `listEntries / listLots / listRejects / listMoveTargets / listCavities(shiftId, cellLocationId, toolId)` → `list[dict]`
+  - `listEntries / listLots / listRejects / listMoveTargets(shiftId, cellLocationId, toolId)` → `list[dict]`
+  - `listCavities(shiftId, toolId)` → `list[dict]` — **two params; the proc has no `@CellLocationId`**
   - `listReasons()` → `list[dict]`; `reasonOptions()` → `[{label, value}]`
   - `resolveLtt(ltt, toolId)` → `dict`, always fully shaped
   - `save(payload, appUserId, terminalLocationId, previewOnly=False)` → `{Status, Message, NewId, PlanJson}`
@@ -521,13 +522,17 @@ def listMoveTargets(shiftId, cellLocationId, toolId):
                       shiftId, cellLocationId, toolId)
 
 
-def listCavities(shiftId, cellLocationId, toolId):
-    """The die's cavities and parts AS OF THE SHIFT -- the same set the Save
+def listCavities(shiftId, toolId):
+    """TWO parameters -- this proc has no @CellLocationId, unlike its siblings.
+    The die alone identifies the cavity set; the press adds nothing.
+
+    The die's cavities and parts AS OF THE SHIFT -- the same set the Save
     resolves. Feeds the reject block's Part dropdown and the LTT bar's cavity
     picker. Do not substitute a resolved-as-of-now list from anywhere else:
     the Save would then refuse a cavity the screen offered."""
-    return _listThree("workorder/DieCastShiftReconciliation_ListCavities",
-                      shiftId, cellLocationId, toolId)
+    return BlueRidge.Common.Db.execList(
+        "workorder/DieCastShiftReconciliation_ListCavities",
+        {"shiftId": shiftId, "toolId": toolId})
 
 
 def listReasons():
@@ -1035,7 +1040,7 @@ customMethods go on the **root** container. A sibling calls `self.X()`; a view-l
 	entries  = R.listEntries(shiftId, cellId, toolId)
 	lots     = R.listLots(shiftId, cellId, toolId)
 	rejects  = R.listRejects(shiftId, cellId, toolId)
-	cavities = R.listCavities(shiftId, cellId, toolId)
+	cavities = R.listCavities(shiftId, toolId)
 
 	self.view.custom.header        = header
 	self.view.custom.entries       = entries
