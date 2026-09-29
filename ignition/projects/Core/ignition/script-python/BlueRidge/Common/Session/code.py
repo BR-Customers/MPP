@@ -299,12 +299,13 @@ def requireElevation(session, code, label, params=None):
 # isElevated (now True) and proceeds. Adding a gated action = one entry here plus
 # the requireElevation guard at the top of that handler.
 _ELEVATED_REPLAY_MESSAGES = {
-    "DowntimeReason":  "dtReasonSelected",           # Downtime Manager - change/clear a reason
-    "DowntimeEdit":    "dtEditRequested",            # Downtime Manager - open the time/remarks editor
-    "DowntimeVoid":    "dtVoidRequested",            # Downtime Manager - void an event
-    "SortCageMigrate": "sortCageMigrateAuthorized",  # Sort Cage - re-containerize a serial
-    "CrtToggle":       "crtToggleRequested",         # LOT Detail - apply/release a Controlled Run Tag
-    "DieMount":        "dieMountRequested",          # Die Cast - open the Die Mount popup, then mount / release
+    "DowntimeReason":     "dtReasonSelected",           # Downtime Manager - change/clear a reason
+    "DowntimeEdit":       "dtEditRequested",            # Downtime Manager - open the time/remarks editor
+    "DowntimeVoid":       "dtVoidRequested",            # Downtime Manager - void an event
+    "SortCageMigrate":    "sortCageMigrateAuthorized",  # Sort Cage - re-containerize a serial
+    "CrtToggle":          "crtToggleRequested",         # LOT Detail - apply/release a Controlled Run Tag
+    "DieMount":           "dieMountRequested",          # Die Cast - open the Die Mount popup, then mount / release
+    "DieCastReconcile":   "dieCastReconcileRequested",  # Die Cast - enter the shift reconciliation screen
 }
 
 # NOTE on "DieMount": it is the first replay whose handler is NOT on an already
