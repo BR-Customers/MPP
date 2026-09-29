@@ -1,0 +1,361 @@
+{
+  "custom": {
+    "header": {
+      "ShiftLabel": ""
+    }
+  },
+  "params": {
+    "entry": {
+      "EntryKey": "",
+      "EnteredAtEt": null,
+      "EnteredAtDisplay": "",
+      "EnteredBy": "",
+      "ReconciliationId": null,
+      "EnteredDuringShiftId": null,
+      "EnteredDuringShift": "",
+      "Reading": null,
+      "Pieces": 0,
+      "Lots": 0,
+      "WarmUpPieces": 0,
+      "OtherScrapPieces": 0,
+      "RowCount": 0,
+      "ContributionIds": "",
+      "RejectIds": ""
+    },
+    "shiftId": null,
+    "cellLocationId": null,
+    "toolId": null,
+    "fromShiftLabel": "",
+    "isStaged": false,
+    "stagedToShiftLabel": ""
+  },
+  "propConfig": {
+    "params.entry": {
+      "paramDirection": "input"
+    },
+    "params.shiftId": {
+      "paramDirection": "input"
+    },
+    "params.cellLocationId": {
+      "paramDirection": "input"
+    },
+    "params.toolId": {
+      "paramDirection": "input"
+    },
+    "params.fromShiftLabel": {
+      "paramDirection": "input"
+    },
+    "params.isStaged": {
+      "paramDirection": "input"
+    },
+    "params.stagedToShiftLabel": {
+      "paramDirection": "input"
+    },
+    "custom.header.ShiftLabel": {
+      "binding": {
+        "type": "property",
+        "config": {
+          "path": "view.params.fromShiftLabel"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 120,
+      "width": 640
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "surface-card",
+        "gap": "8px",
+        "padding": "12px 16px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "TopRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "TimeByLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.entry.EnteredAtDisplay} + \" \" + char(183) + \" \" + {view.params.entry.EnteredBy}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "14px",
+                "fontWeight": 700
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "TopRowSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": ""
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "EnteredDuringChip"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Entered during \" + {view.params.entry.EnteredDuringShift}"
+                  }
+                }
+              },
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.entry.EnteredDuringShiftId} != {view.params.shiftId}, \"pf-pill pf-pill-warn\", \"pf-kpi-sub\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "FiledUnderLabel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"Filed under \" + {view.custom.header.ShiftLabel}"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "FactsLine"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"Reading \" + toStr({view.params.entry.Reading}) + \" \" + char(183) + \" Credits \" + toStr({view.params.entry.Pieces}) + \" \" + char(183) + \" LOTs \" + toStr({view.params.entry.Lots}) + \" \" + char(183) + \" Warm-up scrap \" + toStr({view.params.entry.WarmUpPieces}) + \" \" + char(183) + \" Other scrap \" + toStr({view.params.entry.OtherScrapPieces}) + \" \" + char(183) + \" Rows \" + toStr({view.params.entry.RowCount})"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "13px"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "MoveRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!{view.params.isStaged}"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "justify": "flex-end",
+          "style": {
+            "gap": "8px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "MoveButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Move to another shift",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\te = BlueRidge.Common.Util.extractQualifiedValues(self.view.params.entry) or {}\n\tsystem.perspective.openPopup(\"mpp-dc-recon-move\",\n\t\t\"BlueRidge/Components/Popups/DieCastReconcileMove\",\n\t\tparams={\"popupId\": \"mpp-dc-recon-move\", \"replyMessage\": \"reconcileMoveChosen\",\n\t\t\t\"entry\": e,\n\t\t\t\"shiftId\": self.view.params.shiftId,\n\t\t\t\"cellLocationId\": self.view.params.cellLocationId,\n\t\t\t\"toolId\": self.view.params.toolId,\n\t\t\t\"fromShiftLabel\": self.view.custom.header.ShiftLabel},\n\t\tmodal=True, showCloseIcon=True)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "StagedRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.isStaged"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "MovingToLabel"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Moving to \" + {view.params.stagedToShiftLabel}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "color": "var(--pf-status-warn-fg)",
+                "fontWeight": 700,
+                "fontSize": "13px",
+                "textAlign": "right"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "UndoButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Undo",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"reconcileMoveUndoRequested\", {\"entryKey\": self.view.params.entry.EntryKey}, scope=\"page\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

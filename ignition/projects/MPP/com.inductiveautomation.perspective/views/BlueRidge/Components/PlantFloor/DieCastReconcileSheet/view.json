@@ -97,11 +97,40 @@
         {
           "name": "load",
           "params": [],
-          "script": "\tshiftId = self.view.params.shiftId\n\tcellId  = self.view.params.cellLocationId\n\ttoolId  = self.view.params.toolId\n\tif shiftId is None or cellId is None or toolId is None:\n\t\treturn\n\tR = BlueRidge.Workorder.DieCastReconciliation\n\theader   = R.getHeaderOrEmpty(shiftId, cellId, toolId)\n\tentries  = R.listEntries(shiftId, cellId, toolId)\n\tlots     = R.listLots(shiftId, cellId, toolId)\n\trejects  = R.listRejects(shiftId, cellId, toolId)\n\tcavities = R.listCavities(shiftId, toolId)\n\tself.view.custom.header        = header\n\tself.view.custom.entries       = entries\n\tself.view.custom.lots          = lots\n\tself.view.custom.rejects       = rejects\n\tself.view.custom.cavities      = cavities\n\tself.view.custom.reasonOptions = R.reasonOptions()\n\t# A shift with NOTHING on record is the Machine 202 case this screen exists\n\t# for. Say so explicitly -- an empty screen must never be mistaken for a\n\t# failed load.\n\tself.view.custom.isEmptyShift = (len(entries) == 0 and len(lots) == 0\n\t                                 and len(rejects) == 0)\n\t# Who the banner's \"Reconciling as\" line names -- not in the brief's custom\n\t# block; Step 4 needs a name + initials and header carries neither. Resolved\n\t# the same way every mutation on this screen will attribute itself, so the\n\t# banner can never name someone other than who Save credits.\n\t# The banner names WHO THIS SAVE WILL BE ATTRIBUTED TO, and that is\n\t# exactly session.custom.user: set by the PIN sign-in, and REPLACED by\n\t# the supervisor for the length of an elevation window. Already the right\n\t# answer, with no lookup.\n\t#\n\t# NOT Common.Session.currentAppUserId(): that is the MUTATION-attribution\n\t# resolver and it fires an ERROR TOAST (\"Not saved / No one is signed in\")\n\t# whenever nobody is attributed -- a scary toast on every load of a\n\t# read-only banner, on every load where no AD IdP exists, and in prod any\n\t# time an elevation lapses before the sheet mounts. It also cost an\n\t# AppUser.getUser round trip per load, and load() runs once per param.\n\t#\n\t# Reading scalars off the session wrapper is safe; it is read-modify-write\n\t# of a whole property object that silently loses writes.\n\t# GUARDED, and the guard is the point. This is a COSMETIC banner lookup\n\t# sitting upstream of the single load-bearing state write below. A session\n\t# property read returns a live property-tree wrapper, not a dict; it\n\t# normally supports .get(), but this project has at least one documented\n\t# case of a map-like value where .get() raises and only bracket access\n\t# works. If that happened here, load() would die BEFORE seeding state and\n\t# loadedStamp -- so the sheet would have no stale guard and no draft, from\n\t# a failure to render somebody's name. Bracket access with a catch-all\n\t# mirrors the on-point precedent in Common/Session (resetTerminal), and a\n\t# blank name is a cost worth paying to keep the load alive.\n\tname = \"\"\n\tinitials = \"\"\n\ttry:\n\t\tu = self.session.custom.user\n\t\tif u:\n\t\t\tname = u[\"displayName\"] or \"\"\n\t\t\tinitials = u[\"initials\"] or \"\"\n\texcept:\n\t\tBlueRidge.Common.Util.log(\"banner: could not read session.custom.user\",\n\t\t                          level=\"warn\")\n\tself.view.custom.currentUser = {\"name\": name, \"initials\": initials}\n\t# ONE property write. Seeding state in two steps lets a dirty binding\n\t# observe a half-loaded sheet and latch. The LOT lines start at their\n\t# RECORDED value so an untouched LOT contributes its existing number and\n\t# the totals reconcile before anything is typed.\n\tself.view.custom.state = {\n\t\t\"actual\": {\"totalShots\": None, \"goodShots\": None, \"warmUpShots\": None},\n\t\t\"reasonId\": None,\n\t\t\"note\": \"\",\n\t\t\"moves\": [],\n\t\t\"lotLines\": [{\"lotId\": r.get(\"LotId\"), \"ltt\": r.get(\"Ltt\"),\n\t\t              \"toolCavityId\": r.get(\"ToolCavityId\"),\n\t\t              \"quantity\": r.get(\"Recorded\"), \"isNew\": False}\n\t\t             for r in lots],\n\t\t\"rejectLines\": [{\"defectCodeId\": r.get(\"DefectCodeId\"), \"itemId\": r.get(\"ItemId\"),\n\t\t                 \"quantity\": r.get(\"Quantity\"),\n\t\t                 \"approvedByUserId\": r.get(\"ApprovedByUserId\")}\n\t\t                for r in rejects],\n\t\t\"loadedStamp\": header.get(\"Stamp\") or \"\",\n\t}"
+          "script": "\tshiftId = self.view.params.shiftId\n\tcellId  = self.view.params.cellLocationId\n\ttoolId  = self.view.params.toolId\n\tif shiftId is None or cellId is None or toolId is None:\n\t\treturn\n\tR = BlueRidge.Workorder.DieCastReconciliation\n\theader   = R.getHeaderOrEmpty(shiftId, cellId, toolId)\n\t# IsStaged / StagedToShiftLabel are display-only fields this screen adds on\n\t# top of the SQL row -- entries is the flex-repeater's own bound source, so\n\t# stageMove()/undoMove() rewrite it in place to make the cards re-render\n\t# (a direct property write retriggers the binding; refreshBinding() from a\n\t# handler does not).\n\t# EnteredAtDisplay is pre-formatted to a STRING here, once, while EnteredAtEt\n\t# is still a real Date fresh off Common.Db -- stageMove()/undoMove() detach\n\t# entries through a JSON round trip, which does not preserve a Date's type,\n\t# so a card reading dateFormat() on the post-stage value renders \"null\".\n\tentries = []\n\tfor r in (R.listEntries(shiftId, cellId, toolId) or []):\n\t\td = dict(r, IsStaged=False, StagedToShiftLabel='')\n\t\td[\"EnteredAtDisplay\"] = (system.date.format(d[\"EnteredAtEt\"], \"MM/dd HH:mm\")\n\t\t                         if d.get(\"EnteredAtEt\") else \"\")\n\t\tentries.append(d)\n\tlots     = R.listLots(shiftId, cellId, toolId)\n\trejects  = R.listRejects(shiftId, cellId, toolId)\n\tcavities = R.listCavities(shiftId, toolId)\n\tself.view.custom.header        = header\n\tself.view.custom.entries       = entries\n\tself.view.custom.lots          = lots\n\tself.view.custom.rejects       = rejects\n\tself.view.custom.cavities      = cavities\n\tself.view.custom.reasonOptions = R.reasonOptions()\n\t# A shift with NOTHING on record is the Machine 202 case this screen exists\n\t# for. Say so explicitly -- an empty screen must never be mistaken for a\n\t# failed load.\n\tself.view.custom.isEmptyShift = (len(entries) == 0 and len(lots) == 0\n\t                                 and len(rejects) == 0)\n\t# Who the banner's \"Reconciling as\" line names -- not in the brief's custom\n\t# block; Step 4 needs a name + initials and header carries neither. Resolved\n\t# the same way every mutation on this screen will attribute itself, so the\n\t# banner can never name someone other than who Save credits.\n\t# The banner names WHO THIS SAVE WILL BE ATTRIBUTED TO, and that is\n\t# exactly session.custom.user: set by the PIN sign-in, and REPLACED by\n\t# the supervisor for the length of an elevation window. Already the right\n\t# answer, with no lookup.\n\t#\n\t# NOT Common.Session.currentAppUserId(): that is the MUTATION-attribution\n\t# resolver and it fires an ERROR TOAST (\"Not saved / No one is signed in\")\n\t# whenever nobody is attributed -- a scary toast on every load of a\n\t# read-only banner, on every load where no AD IdP exists, and in prod any\n\t# time an elevation lapses before the sheet mounts. It also cost an\n\t# AppUser.getUser round trip per load, and load() runs once per param.\n\t#\n\t# Reading scalars off the session wrapper is safe; it is read-modify-write\n\t# of a whole property object that silently loses writes.\n\t# GUARDED, and the guard is the point. This is a COSMETIC banner lookup\n\t# sitting upstream of the single load-bearing state write below. A session\n\t# property read returns a live property-tree wrapper, not a dict; it\n\t# normally supports .get(), but this project has at least one documented\n\t# case of a map-like value where .get() raises and only bracket access\n\t# works. If that happened here, load() would die BEFORE seeding state and\n\t# loadedStamp -- so the sheet would have no stale guard and no draft, from\n\t# a failure to render somebody's name. Bracket access with a catch-all\n\t# mirrors the on-point precedent in Common/Session (resetTerminal), and a\n\t# blank name is a cost worth paying to keep the load alive.\n\tname = \"\"\n\tinitials = \"\"\n\ttry:\n\t\tu = self.session.custom.user\n\t\tif u:\n\t\t\tname = u[\"displayName\"] or \"\"\n\t\t\tinitials = u[\"initials\"] or \"\"\n\texcept:\n\t\tBlueRidge.Common.Util.log(\"banner: could not read session.custom.user\",\n\t\t                          level=\"warn\")\n\tself.view.custom.currentUser = {\"name\": name, \"initials\": initials}\n\t# ONE property write. Seeding state in two steps lets a dirty binding\n\t# observe a half-loaded sheet and latch. The LOT lines start at their\n\t# RECORDED value so an untouched LOT contributes its existing number and\n\t# the totals reconcile before anything is typed.\n\tself.view.custom.state = {\n\t\t\"actual\": {\"totalShots\": None, \"goodShots\": None, \"warmUpShots\": None},\n\t\t\"reasonId\": None,\n\t\t\"note\": \"\",\n\t\t\"moves\": [],\n\t\t\"lotLines\": [{\"lotId\": r.get(\"LotId\"), \"ltt\": r.get(\"Ltt\"),\n\t\t              \"toolCavityId\": r.get(\"ToolCavityId\"),\n\t\t              \"quantity\": r.get(\"Recorded\"), \"isNew\": False}\n\t\t             for r in lots],\n\t\t\"rejectLines\": [{\"defectCodeId\": r.get(\"DefectCodeId\"), \"itemId\": r.get(\"ItemId\"),\n\t\t                 \"quantity\": r.get(\"Quantity\"),\n\t\t                 \"approvedByUserId\": r.get(\"ApprovedByUserId\")}\n\t\t                for r in rejects],\n\t\t\"loadedStamp\": header.get(\"Stamp\") or \"\",\n\t}"
+        },
+        {
+          "name": "stageMove",
+          "params": [
+            "payload"
+          ],
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tentryKey  = p.get(\"entryKey\")\n\ttoShiftId = p.get(\"toShiftId\")\n\tentry = None\n\tfor e in (self.view.custom.entries or []):\n\t\tif e.get(\"EntryKey\") == entryKey:\n\t\t\tentry = e\n\t\t\tbreak\n\tif entry is None or toShiftId is None:\n\t\treturn\n\n\tdef ids(csv):\n\t\treturn [int(x) for x in (csv or \"\").split(\",\") if x.strip()]\n\n\t# The Save takes one element PER ROW, not per entry. The grouping into\n\t# entries is presentation; ContributionIds / RejectIds are the real targets,\n\t# which is what stops a wrong grouping ever producing a wrong write.\n\tstaged = [m for m in (self.view.custom.state.moves or [])\n\t          if m.get(\"entryKey\") != entryKey]\n\tfor cid in ids(entry.get(\"ContributionIds\")):\n\t\tstaged.append({\"entryKey\": entryKey, \"entityType\": \"Contribution\",\n\t\t               \"entityId\": cid, \"toShiftId\": toShiftId})\n\tfor rid in ids(entry.get(\"RejectIds\")):\n\t\tstaged.append({\"entryKey\": entryKey, \"entityType\": \"Reject\",\n\t\t               \"entityId\": rid, \"toShiftId\": toShiftId})\n\n\tst = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)\n\tst = system.util.jsonDecode(st)\n\tst[\"moves\"] = staged\n\tself.view.custom.state = st\n\n\t# Card display join. entries is the flex-repeater's own bound source, so\n\t# rewriting it (not refreshBinding, which no-ops from a handler) is what\n\t# makes the cards re-render with their staged state.\n\ttoShiftLabel = p.get(\"toShiftLabel\") or \"\"\n\tej = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.entries or [])\n\tentries = system.util.jsonDecode(ej)\n\tfor row in entries:\n\t\tif row.get(\"EntryKey\") == entryKey:\n\t\t\trow[\"IsStaged\"] = True\n\t\t\trow[\"StagedToShiftLabel\"] = toShiftLabel\n\tself.view.custom.entries = entries"
+        },
+        {
+          "name": "undoMove",
+          "params": [
+            "entryKey"
+          ],
+          "script": "\tif not entryKey:\n\t\treturn\n\n\tst = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)\n\tst = system.util.jsonDecode(st)\n\tst[\"moves\"] = [m for m in (st.get(\"moves\") or []) if m.get(\"entryKey\") != entryKey]\n\tself.view.custom.state = st\n\n\tej = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.entries or [])\n\tentries = system.util.jsonDecode(ej)\n\tfor row in entries:\n\t\tif row.get(\"EntryKey\") == entryKey:\n\t\t\trow[\"IsStaged\"] = False\n\t\t\trow[\"StagedToShiftLabel\"] = \"\"\n\tself.view.custom.entries = entries"
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": []
+      "messageHandlers": [
+        {
+          "messageType": "reconcileMoveChosen",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.stageMove(payload)"
+        },
+        {
+          "messageType": "reconcileMoveUndoRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tself.undoMove(p.get(\"entryKey\"))"
+        }
+      ]
     },
     "events": {
       "system": {
@@ -694,7 +723,156 @@
             "overflow": "auto"
           }
         },
-        "children": []
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "EntriesSection"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "EntriesHeaderRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "EntriesTitle"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Entries on record",
+                      "style": {
+                        "fontSize": "15px",
+                        "fontWeight": 700
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "EntriesCount"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "toStr(len({view.custom.entries})) + \" on record\""
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "NoEntriesText"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len({view.custom.entries}) = 0"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Nothing is on record yet for this shift.",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "EntriesList"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len({view.custom.entries}) > 0"
+                      }
+                    }
+                  },
+                  "props.instances": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.entries"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tshiftId = self.view.params.shiftId\n\tcellId = self.view.params.cellLocationId\n\ttoolId = self.view.params.toolId\n\tfromLabel = self.view.custom.header.ShiftLabel\n\tout = []\n\tfor r in (value or []):\n\t\trow = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({\n\t\t\t\"entry\": row,\n\t\t\t\"shiftId\": shiftId,\n\t\t\t\"cellLocationId\": cellId,\n\t\t\t\"toolId\": toolId,\n\t\t\t\"fromShiftLabel\": fromLabel,\n\t\t\t\"isStaged\": row.get(\"IsStaged\") or False,\n\t\t\t\"stagedToShiftLabel\": row.get(\"StagedToShiftLabel\") or \"\",\n\t\t})\n\treturn out"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto",
+                    "grow": 0,
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/_DieCastReconcileSheet/EntryCard",
+                  "style": {
+                    "gap": "10px"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   }

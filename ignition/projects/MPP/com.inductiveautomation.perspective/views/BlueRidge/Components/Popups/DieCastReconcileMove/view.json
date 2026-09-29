@@ -1,0 +1,537 @@
+{
+  "custom": {
+    "targets": [],
+    "fromGoodRecorded": 0,
+    "selectedShiftId": null,
+    "selectedShiftLabel": "",
+    "confirmButtonText": "SELECT A SHIFT"
+  },
+  "params": {
+    "popupId": "mpp-dc-recon-move",
+    "replyMessage": "reconcileMoveChosen",
+    "entry": {
+      "EntryKey": "",
+      "EnteredAtEt": null,
+      "EnteredAtDisplay": "",
+      "EnteredBy": "",
+      "Reading": null,
+      "Pieces": 0,
+      "Lots": 0,
+      "WarmUpPieces": 0,
+      "OtherScrapPieces": 0,
+      "RowCount": 0
+    },
+    "shiftId": null,
+    "cellLocationId": null,
+    "toolId": null,
+    "fromShiftLabel": ""
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.entry": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.shiftId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.cellLocationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.toolId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.fromShiftLabel": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 620
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\tR = BlueRidge.Workorder.DieCastReconciliation\n\tshiftId = self.view.params.shiftId\n\tcellId  = self.view.params.cellLocationId\n\ttoolId  = self.view.params.toolId\n\tself.view.custom.targets = R.listMoveTargets(shiftId, cellId, toolId) or []\n\tfromHeader = R.getHeaderOrEmpty(shiftId, cellId, toolId)\n\tself.view.custom.fromGoodRecorded = fromHeader.get(\"RecordedGood\") or 0"
+        },
+        {
+          "name": "pickTarget",
+          "params": [
+            "shiftId",
+            "shiftLabel"
+          ],
+          "script": "\t# The TargetRow highlight is computed by a binding transform over\n\t# custom.targets + custom.selectedShiftId, so the SOURCE (targets) has to\n\t# be rewritten for that transform to re-fire -- a plain assignment of\n\t# selectedShiftId alone would leave every row's highlight stale.\n\tself.view.custom.selectedShiftId = shiftId\n\tself.view.custom.selectedShiftLabel = shiftLabel\n\tself.view.custom.confirmButtonText = \"MOVE TO \" + (shiftLabel or \"\").upper()\n\ttj = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.targets or [])\n\tself.view.custom.targets = system.util.jsonDecode(tj)"
+        },
+        {
+          "name": "confirm",
+          "params": [],
+          "script": "\te = BlueRidge.Common.Util.extractQualifiedValues(self.view.params.entry) or {}\n\tentryKey = e.get(\"EntryKey\")\n\ttoShiftId = self.view.custom.selectedShiftId\n\ttoShiftLabel = self.view.custom.selectedShiftLabel\n\tif not entryKey or toShiftId is None:\n\t\treturn\n\tsystem.perspective.sendMessage(self.view.params.replyMessage,\n\t\tpayload={\"entryKey\": entryKey, \"toShiftId\": toShiftId, \"toShiftLabel\": toShiftLabel},\n\t\tscope=\"page\")\n\tsystem.perspective.closePopup(self.view.params.popupId)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "reconcileMoveTargetPicked",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tself.pickTarget(p.get(\"shiftId\"), p.get(\"shiftLabel\"))"
+        }
+      ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.load()"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "Move this entry",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": 700
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body",
+            "gap": "14px",
+            "overflowY": "auto"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "EntryFactsLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.entry.EnteredAtDisplay} + \" \" + char(183) + \" \" + {view.params.entry.EnteredBy} + \" \" + char(183) + \" Reading \" + toStr({view.params.entry.Reading}) + \" \" + char(183) + \" Credits \" + toStr({view.params.entry.Pieces}) + \" \" + char(183) + \" LOTs \" + toStr({view.params.entry.Lots}) + \" \" + char(183) + \" Warm-up scrap \" + toStr({view.params.entry.WarmUpPieces}) + \" \" + char(183) + \" Other scrap \" + toStr({view.params.entry.OtherScrapPieces})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FromToRow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "gap": "18px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "FromColumn"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "surface-card",
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "FromEyebrow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "From",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "FromShiftLabelText"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.params.fromShiftLabel"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "classes": "heading-lg"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "FromGoodText"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "toStr({view.custom.fromGoodRecorded}) + \" good\""
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ToColumn"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "6px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ToEyebrow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "To",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "NoTargetsText"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.targets}) = 0"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "No eligible shifts to move to.",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "TargetList"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.targets}) > 0"
+                          }
+                        }
+                      },
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.targets"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\tsel = self.view.custom.selectedShiftId\n\tout = []\n\tfor r in (value or []):\n\t\trow = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({\n\t\t\t\"ShiftId\": row.get(\"ShiftId\"),\n\t\t\t\"ShiftLabel\": row.get(\"ShiftLabel\"),\n\t\t\t\"GoodRecorded\": row.get(\"GoodRecorded\"),\n\t\t\t\"Selected\": (row.get(\"ShiftId\") == sel),\n\t\t})\n\treturn out"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/Popups/_DieCastReconcileMove/TargetRow",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "NoChangeNote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Shots, pieces, LOTs and die life do not change — only which shift is credited.",
+              "style": {
+                "fontStyle": "italic",
+                "classes": "pf-kpi-sub"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "RowCountNote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "toStr({view.params.entry.RowCount}) + \" rows move with it\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontWeight": 600
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Cancel",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ConfirmButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.confirmButtonText"
+                  }
+                }
+              },
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.selectedShiftId}) && len({view.custom.targets}) > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "SELECT A SHIFT",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.confirm()"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

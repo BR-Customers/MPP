@@ -1,0 +1,121 @@
+{
+  "custom": {},
+  "params": {
+    "ShiftId": null,
+    "ShiftLabel": "",
+    "GoodRecorded": 0,
+    "Selected": false
+  },
+  "propConfig": {
+    "params.ShiftId": {
+      "paramDirection": "input"
+    },
+    "params.ShiftLabel": {
+      "paramDirection": "input"
+    },
+    "params.GoodRecorded": {
+      "paramDirection": "input"
+    },
+    "params.Selected": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 56,
+      "width": 420
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.Selected}, \"pf-toggle-btn pf-toggle-btn-selected\", \"pf-toggle-btn\")"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "justify": "space-between",
+      "style": {
+        "cursor": "pointer",
+        "gap": "10px",
+        "padding": "10px 14px",
+        "width": "100%",
+        "height": "100%"
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"reconcileMoveTargetPicked\",\n\t\t{\"shiftId\": self.view.params.ShiftId, \"shiftLabel\": self.view.params.ShiftLabel},\n\t\tscope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ShiftLabelText"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.ShiftLabel"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "16px",
+            "fontWeight": 700
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "GoodRecordedText"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.GoodRecorded}) + \" good\""
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        }
+      }
+    ]
+  }
+}
