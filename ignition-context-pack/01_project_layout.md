@@ -107,6 +107,19 @@ views/
 
 The underscore-prefix convention means "internals of `<X>`" — *not* "things related to schema `<X>`". See `07_conventions_and_antipatterns.md` for the full naming rules.
 
+### A view folder SHALL NOT contain another view folder
+
+A resource folder — one that holds a `resource.json` — is a **leaf** in Ignition's resource tree. Nesting a view inside another view's folder is not merely a naming-convention violation: the child view is never registered at all.
+
+- **The Gateway's project scan silently skips it.** No error in `wrapper.log`, no scan failure — the child simply never appears in the running project's view catalog, so every `ia.display.view` / `ia.display.flex-repeater` whose `path` points at it renders a Component Error / "View Not Found" at runtime. (Observed on a live 8.3.5 Gateway, 2026-09-29: the nested path was absent from the Perspective client's registered-view map while its parent was present.)
+- **The Designer refuses to import it:** *"Unable to create folder path, found non-folder in the way at `<parent view path>`"* — the same resource-tree rule, surfacing loudly on the export/import path instead of silently.
+
+This is why the underscore-prefixed folder above is a **sibling** of the view it serves and never a child of it: view `Components/<X>` keeps its private sub-views at `Components/_<X>/<Child>`.
+
+Container folders that merely *group* sibling views are fine — the container has no `resource.json`, so it is a plain folder, not a resource. The rule is specifically "no resource inside a resource".
+
+To audit a tree for this shape, list every folder containing a `view.json` and flag any whose ancestor is also in that set.
+
 ## Empty folders + git
 
 Git does not track empty folders. If you scaffold the structure ahead of populating it, drop a `.gitkeep` file in each empty leaf so the layout shows up in commits. Once a leaf has real content, the `.gitkeep` becomes optional and can be removed.

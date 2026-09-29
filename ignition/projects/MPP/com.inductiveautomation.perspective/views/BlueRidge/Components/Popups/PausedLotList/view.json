@@ -231,7 +231,7 @@
                 "grow": 0,
                 "shrink": 0
               },
-              "path": "BlueRidge/Components/Popups/PausedLotList/PausedLotRow",
+              "path": "BlueRidge/Components/Popups/_PausedLotList/PausedLotRow",
               "style": {
                 "gap": "0px"
               },
