@@ -70,6 +70,63 @@ def describeEndpoint(endpoint):
     return {"transport": None, "target": None, "valid": False, "reason": p["reason"]}
 
 
+def _unquote(text):
+    """Undo PROTOCOL.md's value quoting: strip the single quotes, undouble any
+       embedded quote. Self-contained -- no imports, so the tests can exec it."""
+    t = (text or "").strip()
+    if len(t) >= 2 and t[0] == "'" and t[-1] == "'":
+        t = t[1:-1]
+    return t.replace("''", "'")
+
+
+def _parseAck(line):
+    """Parse one bridge response line (PROTOCOL.md v1.0.0).
+
+       Returns {acked, ok, queue, job, bytes, error}. acked is False when the
+       far end said nothing -- a real networked Zebra never replies, and that
+       is NOT a failure, so callers must not treat it as one."""
+    out = {"acked": False, "ok": False, "queue": None,
+           "job": None, "bytes": None, "error": None}
+    text = (line or "").strip()
+    if not text:
+        return out
+    out["acked"] = True
+    if text[:4] == "ERR ":
+        out["error"] = text[4:].strip()
+        return out
+    if text[:3] != "OK ":
+        out["error"] = "unparseable bridge response: %s" % text
+        return out
+    out["ok"] = True
+    rest = text[3:]
+    # Split on spaces that are not inside a quoted value.
+    parts, buf, inq = [], "", False
+    for ch in rest:
+        if ch == "'":
+            inq = not inq
+            buf += ch
+        elif ch == " " and not inq:
+            if buf:
+                parts.append(buf)
+            buf = ""
+        else:
+            buf += ch
+    if buf:
+        parts.append(buf)
+    for p in parts:
+        if "=" not in p:
+            continue
+        k, v = p.split("=", 1)
+        if k == "queue":
+            out["queue"] = _unquote(v)
+        elif k in ("job", "bytes"):
+            try:
+                out[k] = int(v)
+            except (TypeError, ValueError):
+                out[k] = None
+    return out
+
+
 def _sendTcp(host, port, zpl):
     """Raw-TCP write of the ZPL bytes, bounded timeout. Returns {ok, error}.
        Catches Throwable FIRST: a socket failure is java.net.ConnectException, and
