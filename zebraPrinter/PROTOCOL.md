@@ -68,3 +68,33 @@ A real networked Zebra on raw 9100 never replies. A client that reads nothing
 before its timeout records `sent, no ack (raw 9100)`. That is **not** an
 error -- it is the expected result for a `ConnectionKind = Networked` printer
 and must be recorded as distinct from a failure.
+
+## Verified
+
+Observed 2026-09-29 against the real Windows spooler and the real Zebra driver
+(`ZDesigner GX420d` / USB002), bridge and client both on `127.0.0.1`:
+
+    ?STATUS  -> OK bridge=1.0.0 queue='ZDesigner GX420d' ready=true jobs=0
+    ^XA...   -> OK queue='ZDesigner GX420d' job=15 bytes=38
+    (empty)  -> no reply
+
+The job id is real, not a placeholder: `Get-PrintJob` independently reported
+`Id 15, MES ZPL, 38 bytes` for that exchange. `StartDocPrinterW`'s return
+value **is** the spooler job id on this driver, and `bytes` matches the
+spooler's own size. The job was purged afterwards.
+
+Binding a queue name that does not exist on the host returns
+`ready=false` while still naming what it tried -- which is how commissioning
+catches the wrong-queue-name mistake before any label is wasted.
+
+### Not yet verified
+
+- **That a label physically emerges.** Requires the printer attached; the
+  spooler accepts and numbers jobs regardless. See the note under Print: `OK`
+  has never meant "printed".
+- **The exchange over the network**, Gateway host to a remote bridge. Raw TCP
+  reachability to `10.20.11.157:9100` was proven on 2026-09-29, but not
+  carrying this protocol.
+
+The C# `MesZebraBridge` service is correct when it reproduces the three
+verified exchanges above byte for byte.
