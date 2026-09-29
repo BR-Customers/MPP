@@ -1,0 +1,201 @@
+{
+  "custom": {
+    "phase": "landing",
+    "selection": { "shiftId": null, "cellLocationId": null, "toolId": null },
+    "savedResult": { "NewId": null, "Message": "" }
+  },
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "canvas" }
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# A PIN is presence, never privilege. This screen writes production records,\n\t# LOT counts and die life into Honda traceability for a shift that is\n\t# already closed, so it takes an AD credential at the door -- the same\n\t# per-action elevation path every other protected action uses.\n\t# On success Session.dispatchElevatedAction re-sends dieCastReconcileRequested,\n\t# whose handler below simply lets the screen stand.\n\tif not BlueRidge.Common.Session.isElevated(self.session):\n\t\tBlueRidge.Common.Session.requireElevation(\n\t\t\tself.session, \"DieCastReconcile\", \"Reconcile a die cast shift\", {})"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "dieCastReconcileRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# Replay hook (Session._ELEVATED_REPLAY_MESSAGES). Fired only after a\n\t# successful authorization, so the screen is now open to a named person.\n\tpass"
+        },
+        {
+          "messageType": "reconcileShiftChosen",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\t# ONE property write: phase and selection move together, so no binding ever\n\t# observes a sheet phase against a stale selection.\n\tself.view.custom.selection = {\"shiftId\": p.get(\"shiftId\"),\n\t\t\"cellLocationId\": p.get(\"cellLocationId\"), \"toolId\": p.get(\"toolId\")}\n\tself.view.custom.phase = \"sheet\""
+        },
+        {
+          "messageType": "reconcileBackToShifts",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.selection = {\"shiftId\": None, \"cellLocationId\": None, \"toolId\": None}\n\tself.view.custom.phase = \"landing\""
+        },
+        {
+          "messageType": "reconcileSaved",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tself.view.custom.savedResult = {\"NewId\": p.get(\"NewId\"), \"Message\": p.get(\"Message\") or \"\"}\n\tself.view.custom.phase = \"result\""
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.view",
+        "meta": { "name": "LandingEmbed" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.custom.phase} = \"landing\"" }
+            }
+          }
+        },
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/DieCastReconcileLanding"
+        }
+      },
+      {
+        "type": "ia.display.view",
+        "meta": { "name": "SheetEmbed" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.custom.phase} = \"sheet\"" }
+            }
+          },
+          "props.params.shiftId": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.custom.selection.shiftId" }
+            }
+          },
+          "props.params.cellLocationId": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.custom.selection.cellLocationId" }
+            }
+          },
+          "props.params.toolId": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.custom.selection.toolId" }
+            }
+          }
+        },
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/DieCastReconcileSheet"
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ResultPanel" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.custom.phase} = \"result\"" }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": { "classes": "canvas", "gap": "12px", "padding": "24px" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ResultHeading" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "\"Shift \" + toStr({view.custom.selection.shiftId}) + \" reconciled\"" }
+                }
+              }
+            },
+            "props": {
+              "style": { "classes": "pf-kpi-sub", "fontWeight": "bold", "fontSize": "20px" }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ResultId" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "\"Reconciliation #\" + toStr({view.custom.savedResult.NewId})" }
+                }
+              }
+            },
+            "props": {
+              "style": { "classes": "pf-kpi-sub" }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ResultMessage" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.savedResult.Message" }
+                }
+              }
+            },
+            "props": {
+              "style": { "classes": "pf-kpi-sub" }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BackToShifts" },
+            "position": { "shrink": 0, "basis": "auto" },
+            "props": {
+              "text": "Back to shifts",
+              "style": { "classes": "pf-btn pf-btn-primary", "minHeight": "44px" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"reconcileBackToShifts\", scope=\"page\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
