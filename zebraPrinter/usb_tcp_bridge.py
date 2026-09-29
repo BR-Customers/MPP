@@ -64,13 +64,14 @@ winspool.ClosePrinter.restype = wintypes.BOOL
 
 
 def send_raw(printer_name, data):
-    """Send raw bytes to a Windows print queue via the spooler RAW datatype."""
+    """Send raw bytes to a Windows print queue. Returns (job_id, bytes_written)."""
     h = wintypes.HANDLE()
     if not winspool.OpenPrinterW(printer_name, ctypes.byref(h), None):
         raise ctypes.WinError(ctypes.get_last_error())
     try:
         di = DOCINFO("MES ZPL", None, "RAW")
-        if not winspool.StartDocPrinterW(h, 1, ctypes.byref(di)):
+        job = winspool.StartDocPrinterW(h, 1, ctypes.byref(di))
+        if not job:
             raise ctypes.WinError(ctypes.get_last_error())
         try:
             if not winspool.StartPagePrinter(h):
@@ -78,7 +79,7 @@ def send_raw(printer_name, data):
             written = wintypes.DWORD(0)
             if not winspool.WritePrinter(h, data, len(data), ctypes.byref(written)):
                 raise ctypes.WinError(ctypes.get_last_error())
-            return written.value
+            return (int(job), int(written.value))
         finally:
             winspool.EndPagePrinter(h)
             winspool.EndDocPrinter(h)
@@ -115,7 +116,11 @@ def handle_request(data, printer_name, spool, status):
                 BRIDGE_VERSION, _quote(s["queue"]),
                 "true" if s["ready"] else "false", int(s["jobs"]))
         return "ERR unknown command %s" % _quote(cmd)
-    return "ERR not implemented"
+    try:
+        job, written = spool(data)
+    except Exception as e:
+        return "ERR %s" % _oneline(e)
+    return "OK queue=%s job=%d bytes=%d" % (_quote(printer_name), int(job), int(written))
 
 
 def main():
@@ -155,8 +160,9 @@ def main():
         data = b"".join(chunks)
         if data:
             try:
-                n = send_raw(printer_name, data)
-                print("  received %d bytes -> spooled %d to '%s'" % (len(data), n, printer_name))
+                job, n = send_raw(printer_name, data)
+                print("  received %d bytes -> spooled %d to '%s' as job %d"
+                      % (len(data), n, printer_name, job))
             except Exception as e:
                 print("  PRINT ERROR: %s" % e)
             sys.stdout.flush()

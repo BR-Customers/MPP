@@ -68,3 +68,28 @@ def test_unknown_command_is_refused_not_ignored():
     reply = bridge.handle_request(b"?WAT", "Q", _spool_ok, _status_ok)
     assert reply.startswith("ERR unknown command")
     assert "?WAT" in reply
+
+
+def test_zpl_is_spooled_and_acked_with_the_job_id():
+    seen = {}
+
+    def spool(data):
+        seen["data"] = data
+        return (41, len(data))
+
+    reply = bridge.handle_request(b"^XA^XZ", "Zebra GX420d (RAW)",
+                                  spool, _status_ok)
+    assert seen["data"] == b"^XA^XZ"
+    assert reply == "OK queue='Zebra GX420d (RAW)' job=41 bytes=6"
+
+
+def test_a_spooler_failure_is_reported_on_exactly_one_line():
+    """The queue-not-found error names every visible queue, which is
+       multi-line. One-line framing is not negotiable, so it is collapsed."""
+    def spool(data):
+        raise RuntimeError("queue not found: 'ZDesigner GX420d'\nvisible:\n  A\n  B")
+
+    reply = bridge.handle_request(b"^XA^XZ", "Q", spool, _status_ok)
+    assert reply.startswith("ERR ")
+    assert "\n" not in reply
+    assert "ZDesigner GX420d" in reply
