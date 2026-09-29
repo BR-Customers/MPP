@@ -2,7 +2,7 @@
 -- Repeatable:  R__Workorder_DieCastShiftReconciliation_Save.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-09-22
--- Version:     1.10
+-- Version:     1.11
 -- Description: Reconciles ONE past shift x press x die against its press sheet
 --              (spec docs/superpowers/specs/2026-09-21-diecast-shift-
 --              reconciliation-design.md sec 5.2, amendments sec 14): adds the
@@ -216,6 +216,40 @@
 --              sheet is typing, not failing, and would otherwise fill the failure
 --              log with it. A refused SAVE still logs, unchanged.
 --
+--              SCRAP IS RECONCILED PER APPROVER, NOT PER CAVITY (1.11), AND
+--              THAT EXTRA COLUMN IN THE GRAIN IS THE WHOLE POINT. Section 8
+--              keys the typed lines on (DefectCodeId, ToolCavityId,
+--              ApprovedByUserId) and section 10 joins them to the recorded rows
+--              on the same three columns, so every gap is closed against the
+--              person who signed for it. It costs rows; it buys the thing the
+--              record exists for.
+--
+--              WHY, since a per-cavity grain would be fewer rows: 1.10 and
+--              earlier keyed @RejTarget on (DefectCodeId, ToolCavityId) and took
+--              MAX(ApprovedByUserId). Two lines on one defect code and one
+--              cavity signed by two different QAS therefore merged -- the
+--              quantity right, one approver picked by MAX, the other gone, and
+--              the whole amount standing against someone who approved part of
+--              it. Workorder.DieCastShiftReconciliation_ListRejects 1.1 had
+--              already reshaped the READ side around the principle that scrap
+--              approval "must not name the wrong person, and it must not
+--              silently lose one"; the WRITE side did not hold it. Do not
+--              collapse the grain back.
+--
+--              THE JOIN IS NULL-SAFE ON PURPOSE. ApprovedByUserId is nullable
+--              on both sides (an unapproved line is legitimate, 1.4) and
+--              NULL = NULL is UNKNOWN, so a plain equality would strand an
+--              unapproved typed line on one side of section 10's FULL JOIN and
+--              the unapproved row on record on the other -- producing a
+--              "remove all, add all back" pair where the honest answer is no
+--              rows at all. The comparison uses an ISNULL(-1) sentinel, a value
+--              Location.AppUser.Id (BIGINT IDENTITY(1,1)) cannot hold. And the
+--              gap row takes COALESCE(typed, recorded) for its approver, so a
+--              pure removal's compensating negative is attributed to the
+--              approver of the row it cancels -- which is what lets
+--              ListRejects' HAVING SUM(...) <> 0 net the pair away instead of
+--              showing +N by a person and -N by nobody for ever.
+--
 --              FDS-11-011 + Msg-3915: no OUTPUT params, ONE result set, all
 --              rejecting validations BEFORE BEGIN TRANSACTION, CATCH the only
 --              ROLLBACK site, RAISERROR not THROW. Every write goes through a
@@ -358,6 +392,26 @@
 --                      not cover Lots.Lot.PieceCount); the `cs.Code = 'Active'`
 --                      limitation costs WARM-UP as well as scrap; and the Error
 --                      Handling note is brought into line with both.
+--   2026-09-29 - 1.11 - SCRAP IS RECONCILED PER APPROVER (final branch review).
+--                      @RejTarget is keyed on (DefectCodeId, ToolCavityId,
+--                      ApprovedByUserId) instead of the first two, and the
+--                      approver is a GROUP BY column instead of
+--                      MAX(rs.ApprovedByUserId), which silently discarded one of
+--                      two approvers on one defect code and one cavity. Section
+--                      10's rec CTE and its FULL JOIN carry the same third
+--                      column, so a gap is computed per approver; the join is
+--                      null-safe via an ISNULL(-1) sentinel, and the gap row
+--                      takes COALESCE(typed, recorded) so a removal's negative
+--                      lands on the approver it cancels. UNIQUE replaces PRIMARY
+--                      KEY on the table variable purely because a PK column may
+--                      not be nullable. The plan's scrap lines gain approvedBy
+--                      and an approver tie-break in their ORDER BY -- the grain
+--                      allows two lines per cavity+code, which without the name
+--                      read as an unexplained pair and without the tie-break
+--                      have undefined order. See the header sections "SCRAP IS
+--                      RECONCILED PER APPROVER" and "THE JOIN IS NULL-SAFE ON
+--                      PURPOSE"; the principle is
+--                      Workorder.DieCastShiftReconciliation_ListRejects 1.1's.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.DieCastShiftReconciliation_Save
     @ShiftId            BIGINT,
@@ -684,13 +738,38 @@ BEGIN
             GOTO Fail;
         END
 
+        -- THE APPROVER IS PART OF THE GRAIN (1.11), NOT AN AGGREGATE OVER IT.
+        -- Two reject lines that share a defect code AND a cavity but were signed
+        -- by two different QAS -- one defect on one part signed by both, or an
+        -- "All" line beside a per-part line carrying the same code -- are TWO
+        -- facts about who approved what. Until 1.11 the key was
+        -- (DefectCodeId, ToolCavityId) and the approver arrived as
+        -- MAX(rs.ApprovedByUserId): the QUANTITY came out right and ONE OF THE
+        -- TWO APPROVERS WAS SILENTLY DROPPED, on a Honda-traceable record, with
+        -- the whole amount then standing against a person who approved part of
+        -- it. The key made representing both structurally impossible, so nothing
+        -- could refuse the duplicate either.
+        --
+        -- Workorder.DieCastShiftReconciliation_ListRejects 1.1 had already
+        -- reshaped the READ side on exactly this principle -- scrap approval
+        -- "must not name the wrong person, and it must not silently lose one"
+        -- -- so until now the two ends of one column disagreed about what a
+        -- scrap fact IS. They now agree. DO NOT simplify this back to a
+        -- per-cavity grain to save a row.
+        --
+        -- UNIQUE rather than PRIMARY KEY, and only for that reason: a PK column
+        -- may not be nullable, and an UNAPPROVED line is legitimate (1.4 --
+        -- approvedByUserId is optional). SQL Server's UNIQUE treats NULLs as
+        -- equal, so it still enforces one row per (code, cavity, approver) with
+        -- the unapproved line as its own row alongside the approved ones --
+        -- the same "NULL groups as one value" rule the read side relies on.
         DECLARE @RejTarget TABLE (DefectCodeId BIGINT, ToolCavityId BIGINT, Qty INT, ApprovedByUserId BIGINT NULL,
-                                  PRIMARY KEY (DefectCodeId, ToolCavityId));
+                                  UNIQUE (DefectCodeId, ToolCavityId, ApprovedByUserId));
         INSERT INTO @RejTarget (DefectCodeId, ToolCavityId, Qty, ApprovedByUserId)
-        SELECT rs.DefectCodeId, ac.ToolCavityId, SUM(rs.Qty / rs.Span), MAX(rs.ApprovedByUserId)
+        SELECT rs.DefectCodeId, ac.ToolCavityId, SUM(rs.Qty / rs.Span), rs.ApprovedByUserId
         FROM @RejSpan rs
         INNER JOIN @ActiveCav ac ON rs.ItemId IS NULL OR ac.ItemId = rs.ItemId
-        GROUP BY rs.DefectCodeId, ac.ToolCavityId;
+        GROUP BY rs.DefectCodeId, ac.ToolCavityId, rs.ApprovedByUserId;
 
         -- ---- 9. the actual totals must add up (sec 7.4) ----
         DECLARE @NoGood INT = ISNULL((SELECT SUM(Qty) FROM @Rej), 0);
@@ -729,22 +808,42 @@ BEGIN
         END
 
         -- ---- 10. scrap and warm-up gaps: actual minus recorded, per cavity ----
+        -- PER CAVITY *AND PER APPROVER* since 1.11. Workorder.RejectEvent carries
+        -- its own ApprovedByUserId, so both sides of this join are per-approver
+        -- and the gap is closed against the person who signed it -- not against
+        -- whoever an aggregate happened to pick.
         DECLARE @Scrap TABLE (ToolCavityId BIGINT, DefectCodeId BIGINT, Qty INT, ApprovedByUserId BIGINT NULL);
         IF @HasActual = 1
         BEGIN
             ;WITH rec AS (
-                SELECT r.DefectCodeId, r.ToolCavityId, SUM(r.Quantity) AS Qty
+                SELECT r.DefectCodeId, r.ToolCavityId, r.ApprovedByUserId, SUM(r.Quantity) AS Qty
                 FROM Workorder.RejectEvent r
                 WHERE r.ShiftId = @ShiftId AND r.CellLocationId = @CellLocationId AND r.ToolId = @ToolId
                   AND r.DefectCodeId <> @WarmCodeId
                   AND r.Id NOT IN (SELECT Id FROM @MovedR)
                   AND r.ToolCavityId IN (SELECT ToolCavityId FROM @ActiveCav)
-                GROUP BY r.DefectCodeId, r.ToolCavityId)
+                GROUP BY r.DefectCodeId, r.ToolCavityId, r.ApprovedByUserId)
             INSERT INTO @Scrap (ToolCavityId, DefectCodeId, Qty, ApprovedByUserId)
             SELECT COALESCE(t.ToolCavityId, rec.ToolCavityId), COALESCE(t.DefectCodeId, rec.DefectCodeId),
-                   ISNULL(t.Qty, 0) - ISNULL(rec.Qty, 0), t.ApprovedByUserId
+                   ISNULL(t.Qty, 0) - ISNULL(rec.Qty, 0),
+                   -- the side that EXISTS owns the name. On a removal there is no
+                   -- typed line, so the compensating negative must be attributed
+                   -- to the approver of the row it cancels -- otherwise the read
+                   -- side sees +N by that person and -N by nobody, two rows that
+                   -- never net to zero and so never drop out of
+                   -- ListRejects' HAVING SUM(...) <> 0.
+                   COALESCE(t.ApprovedByUserId, rec.ApprovedByUserId)
             FROM @RejTarget t
-            FULL JOIN rec ON rec.DefectCodeId = t.DefectCodeId AND rec.ToolCavityId = t.ToolCavityId
+            -- NULL = NULL is UNKNOWN, so a plain equality would never match an
+            -- UNAPPROVED typed line to the UNAPPROVED row already on record: the
+            -- two would fall to opposite sides of the FULL JOIN and this proc
+            -- would write a spurious "remove all, add all back" pair for a
+            -- reconciliation that changes nothing. ApprovedByUserId is nullable
+            -- on BOTH sides, so the comparison is made null-safe with a sentinel
+            -- that Location.AppUser.Id (BIGINT IDENTITY(1,1)) can never take.
+            FULL JOIN rec ON rec.DefectCodeId = t.DefectCodeId
+                         AND rec.ToolCavityId = t.ToolCavityId
+                         AND ISNULL(rec.ApprovedByUserId, -1) = ISNULL(t.ApprovedByUserId, -1)
             WHERE ISNULL(t.Qty, 0) <> ISNULL(rec.Qty, 0);
 
             ;WITH recw AS (
@@ -926,15 +1025,24 @@ BEGIN
                                       OUTER APPLY Lots.ufn_DieCastLotCountLock(p.LotId) lk
                                       ORDER BY i.PartNumber, tc.CavityCode, p.Ltt
                                       FOR JSON PATH), N'[]')) AS lots,
+                   -- approvedBy is on the line, and the ORDER BY carries the
+                   -- approver too (1.11): the scrap grain is per-approver, so
+                   -- one cavity and one defect code can legitimately produce two
+                   -- lines. Without the name they read as an unexplained
+                   -- +N / -N pair, and without the tie-break their ORDER is
+                   -- undefined -- which would let the preview's PlanJson and the
+                   -- save's differ by row order alone and break the one
+                   -- assertion (090_Preview) that holds them to one computation.
                    JSON_QUERY(ISNULL((SELECT tc.CavityCode AS cavityCode, i.PartNumber AS partNumber,
                                              dc.Code AS defectCode, dc.Description AS defect,
-                                             sp.Qty AS delta,
+                                             sp.Qty AS delta, au.Initials AS approvedBy,
                                              CAST(CASE WHEN sp.DefectCodeId = @WarmCodeId THEN 1 ELSE 0 END AS BIT) AS isWarmUp
                                       FROM @Scrap sp
                                       INNER JOIN Tools.ToolCavity tc ON tc.Id = sp.ToolCavityId
                                       INNER JOIN Quality.DefectCode dc ON dc.Id = sp.DefectCodeId
                                       LEFT JOIN Parts.Item i ON i.Id = tc.ItemId
-                                      ORDER BY i.PartNumber, tc.CavityCode, dc.Code
+                                      LEFT JOIN Location.AppUser au ON au.Id = sp.ApprovedByUserId
+                                      ORDER BY i.PartNumber, tc.CavityCode, dc.Code, au.Initials
                                       FOR JSON PATH), N'[]')) AS scrap
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 

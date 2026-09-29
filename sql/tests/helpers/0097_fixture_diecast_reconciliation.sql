@@ -164,17 +164,22 @@ END;
 GO
 
 -- A live-style scrap row against a cavity (no LOT), as the die-wide fan-out writes it.
+-- @ApprovedByUserId is OPTIONAL and defaults to NULL, which is the unapproved
+-- row every caller before it relied on. Supply it to seed a row that a named QAS
+-- signed for -- the reconciliation's scrap grain is per approver, so who signed
+-- decides which recorded row a typed line meets.
 CREATE OR ALTER PROCEDURE test.DieCastRecon_SeedReject
     @ShiftKey NVARCHAR(10), @CavKey NVARCHAR(10), @DefectCode NVARCHAR(20), @Qty INT,
-    @AtUtc DATETIME2(3), @UserId BIGINT = NULL
+    @AtUtc DATETIME2(3), @UserId BIGINT = NULL, @ApprovedByUserId BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     INSERT INTO Workorder.RejectEvent (ProductionEventId, LotId, ItemId, ToolId, ToolCavityId, ShiftId, CellLocationId,
-                                       DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt)
+                                       DefectCodeId, Quantity, ChargeToArea, Remarks, AppUserId, TerminalLocationId, RecordedAt,
+                                       ApprovedByUserId)
     SELECT NULL, NULL, tc.ItemId, tc.ToolId, tc.Id, test.ufn_RC(@ShiftKey), test.ufn_RC(N'Cell'),
            (SELECT Id FROM Quality.DefectCode WHERE Code = @DefectCode), @Qty, NULL, N'fixture',
-           ISNULL(@UserId, test.ufn_RC(N'Usr')), NULL, @AtUtc
+           ISNULL(@UserId, test.ufn_RC(N'Usr')), NULL, @AtUtc, @ApprovedByUserId
     FROM Tools.ToolCavity tc WHERE tc.Id = test.ufn_RC(@CavKey);
 END;
 GO
