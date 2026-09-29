@@ -45,6 +45,8 @@
     "lttCavityId": null,
     "blockers": [],
     "isEmptyShift": false,
+    "approverOptions": [],
+    "rejectLinesSeed": 0,
     "currentUser": {
       "name": "",
       "initials": ""
@@ -76,6 +78,20 @@
         "enabled": true,
         "script": "\tself.rootContainer.load()"
       }
+    },
+    "custom.blockers": {
+      "binding": {
+        "type": "property",
+        "config": {
+          "path": "view.custom.state"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\t# UX PRE-FLIGHT ONLY -- see Global Constraint 6. Every check below is\n\t# re-run by Workorder.DieCastShiftReconciliation_Save, which refuses\n\t# authoritatively. This list exists so Save can say WHY it is disabled\n\t# rather than failing on click.\n\tU  = BlueRidge.Common.Util\n\tst = U.extractQualifiedValues(self.view.custom.state) or {}\n\thd = U.extractQualifiedValues(self.view.custom.header) or {}\n\tact = st.get(\"actual\") or {}\n\tlots = st.get(\"lotLines\") or []\n\trejs = st.get(\"rejectLines\") or []\n\tout = []\n\n\tif st.get(\"reasonId\") is None:\n\t\tout.append(\"Choose a reason for this reconciliation.\")\n\n\thasLines = len(lots) > 0 or len(rejs) > 0\n\ttotal = act.get(\"totalShots\")\n\tgood  = act.get(\"goodShots\")\n\twarm  = act.get(\"warmUpShots\")\n\n\t# A11: LOT or reject lines require the three actual totals; a save with\n\t# only moves does not -- the checks below cannot run without them.\n\tif hasLines and (total is None or good is None or warm is None):\n\t\tout.append(\"Enter the actual total shots, good shots and warm-up shots.\")\n\t\treturn out\n\n\tif total is not None and good is not None and warm is not None:\n\t\tif good + warm > total:\n\t\t\tout.append(\"Good shots plus warm-up shots (%d) is more than total shots (%d).\"\n\t\t\t           % (good + warm, total))\n\t\tcav    = hd.get(\"ActiveCavities\") or 0\n\t\tnoGood = sum([(r.get(\"quantity\") or 0) for r in rejs])\n\t\texpected = good * cav - noGood\n\t\tlotSum   = sum([(l.get(\"quantity\") or 0) for l in lots])\n\t\tif lots and lotSum != expected:\n\t\t\tout.append(\"LOT list totals %s; actual total good is %s. One of them has a typo.\"\n\t\t\t           % (\"{:,}\".format(lotSum), \"{:,}\".format(expected)))\n\t\tfor l in lots:\n\t\t\tif (l.get(\"quantity\") or 0) > good:\n\t\t\t\tout.append(\"%s is %s pieces, more than the shift's %s good shots.\"\n\t\t\t\t           % (l.get(\"ltt\"), \"{:,}\".format(l.get(\"quantity\") or 0),\n\t\t\t\t              \"{:,}\".format(good)))\n\treturn out"
+          }
+        ]
+      }
     }
   },
   "props": {},
@@ -97,7 +113,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\tshiftId = self.view.params.shiftId\n\tcellId  = self.view.params.cellLocationId\n\ttoolId  = self.view.params.toolId\n\tif shiftId is None or cellId is None or toolId is None:\n\t\treturn\n\tR = BlueRidge.Workorder.DieCastReconciliation\n\theader   = R.getHeaderOrEmpty(shiftId, cellId, toolId)\n\t# IsStaged / StagedToShiftLabel are display-only fields this screen adds on\n\t# top of the SQL row -- entries is the flex-repeater's own bound source, so\n\t# stageMove()/undoMove() rewrite it in place to make the cards re-render\n\t# (a direct property write retriggers the binding; refreshBinding() from a\n\t# handler does not).\n\t# EnteredAtDisplay is pre-formatted to a STRING here, once, while EnteredAtEt\n\t# is still a real Date fresh off Common.Db -- stageMove()/undoMove() detach\n\t# entries through a JSON round trip, which does not preserve a Date's type,\n\t# so a card reading dateFormat() on the post-stage value renders \"null\".\n\tentries = []\n\tfor r in (R.listEntries(shiftId, cellId, toolId) or []):\n\t\td = dict(r, IsStaged=False, StagedToShiftLabel='')\n\t\td[\"EnteredAtDisplay\"] = (system.date.format(d[\"EnteredAtEt\"], \"MM/dd HH:mm\")\n\t\t                         if d.get(\"EnteredAtEt\") else \"\")\n\t\tentries.append(d)\n\tlots     = R.listLots(shiftId, cellId, toolId)\n\trejects  = R.listRejects(shiftId, cellId, toolId)\n\tcavities = R.listCavities(shiftId, toolId)\n\tself.view.custom.header        = header\n\tself.view.custom.entries       = entries\n\tself.view.custom.lots          = lots\n\tself.view.custom.rejects       = rejects\n\tself.view.custom.cavities      = cavities\n\tself.view.custom.reasonOptions = R.reasonOptions()\n\t# A shift with NOTHING on record is the Machine 202 case this screen exists\n\t# for. Say so explicitly -- an empty screen must never be mistaken for a\n\t# failed load.\n\tself.view.custom.isEmptyShift = (len(entries) == 0 and len(lots) == 0\n\t                                 and len(rejects) == 0)\n\t# Who the banner's \"Reconciling as\" line names -- not in the brief's custom\n\t# block; Step 4 needs a name + initials and header carries neither. Resolved\n\t# the same way every mutation on this screen will attribute itself, so the\n\t# banner can never name someone other than who Save credits.\n\t# The banner names WHO THIS SAVE WILL BE ATTRIBUTED TO, and that is\n\t# exactly session.custom.user: set by the PIN sign-in, and REPLACED by\n\t# the supervisor for the length of an elevation window. Already the right\n\t# answer, with no lookup.\n\t#\n\t# NOT Common.Session.currentAppUserId(): that is the MUTATION-attribution\n\t# resolver and it fires an ERROR TOAST (\"Not saved / No one is signed in\")\n\t# whenever nobody is attributed -- a scary toast on every load of a\n\t# read-only banner, on every load where no AD IdP exists, and in prod any\n\t# time an elevation lapses before the sheet mounts. It also cost an\n\t# AppUser.getUser round trip per load, and load() runs once per param.\n\t#\n\t# Reading scalars off the session wrapper is safe; it is read-modify-write\n\t# of a whole property object that silently loses writes.\n\t# GUARDED, and the guard is the point. This is a COSMETIC banner lookup\n\t# sitting upstream of the single load-bearing state write below. A session\n\t# property read returns a live property-tree wrapper, not a dict; it\n\t# normally supports .get(), but this project has at least one documented\n\t# case of a map-like value where .get() raises and only bracket access\n\t# works. If that happened here, load() would die BEFORE seeding state and\n\t# loadedStamp -- so the sheet would have no stale guard and no draft, from\n\t# a failure to render somebody's name. Bracket access with a catch-all\n\t# mirrors the on-point precedent in Common/Session (resetTerminal), and a\n\t# blank name is a cost worth paying to keep the load alive.\n\tname = \"\"\n\tinitials = \"\"\n\ttry:\n\t\tu = self.session.custom.user\n\t\tif u:\n\t\t\tname = u[\"displayName\"] or \"\"\n\t\t\tinitials = u[\"initials\"] or \"\"\n\texcept:\n\t\tBlueRidge.Common.Util.log(\"banner: could not read session.custom.user\",\n\t\t                          level=\"warn\")\n\tself.view.custom.currentUser = {\"name\": name, \"initials\": initials}\n\t# ONE property write. Seeding state in two steps lets a dirty binding\n\t# observe a half-loaded sheet and latch. The LOT lines start at their\n\t# RECORDED value so an untouched LOT contributes its existing number and\n\t# the totals reconcile before anything is typed.\n\tself.view.custom.state = {\n\t\t\"actual\": {\"totalShots\": None, \"goodShots\": None, \"warmUpShots\": None},\n\t\t\"reasonId\": None,\n\t\t\"note\": \"\",\n\t\t\"moves\": [],\n\t\t\"lotLines\": [{\"lotId\": r.get(\"LotId\"), \"ltt\": r.get(\"Ltt\"),\n\t\t              \"toolCavityId\": r.get(\"ToolCavityId\"),\n\t\t              \"quantity\": r.get(\"Recorded\"), \"isNew\": False}\n\t\t             for r in lots],\n\t\t\"rejectLines\": [{\"defectCodeId\": r.get(\"DefectCodeId\"), \"itemId\": r.get(\"ItemId\"),\n\t\t                 \"quantity\": r.get(\"Quantity\"),\n\t\t                 \"approvedByUserId\": r.get(\"ApprovedByUserId\")}\n\t\t                for r in rejects],\n\t\t\"loadedStamp\": header.get(\"Stamp\") or \"\",\n\t}"
+          "script": "\tshiftId = self.view.params.shiftId\n\tcellId  = self.view.params.cellLocationId\n\ttoolId  = self.view.params.toolId\n\tif shiftId is None or cellId is None or toolId is None:\n\t\treturn\n\tR = BlueRidge.Workorder.DieCastReconciliation\n\theader   = R.getHeaderOrEmpty(shiftId, cellId, toolId)\n\t# IsStaged / StagedToShiftLabel are display-only fields this screen adds on\n\t# top of the SQL row -- entries is the flex-repeater's own bound source, so\n\t# stageMove()/undoMove() rewrite it in place to make the cards re-render\n\t# (a direct property write retriggers the binding; refreshBinding() from a\n\t# handler does not).\n\t# EnteredAtDisplay is pre-formatted to a STRING here, once, while EnteredAtEt\n\t# is still a real Date fresh off Common.Db -- stageMove()/undoMove() detach\n\t# entries through a JSON round trip, which does not preserve a Date's type,\n\t# so a card reading dateFormat() on the post-stage value renders \"null\".\n\tentries = []\n\tfor r in (R.listEntries(shiftId, cellId, toolId) or []):\n\t\td = dict(r, IsStaged=False, StagedToShiftLabel='')\n\t\td[\"EnteredAtDisplay\"] = (system.date.format(d[\"EnteredAtEt\"], \"MM/dd HH:mm\")\n\t\t                         if d.get(\"EnteredAtEt\") else \"\")\n\t\tentries.append(d)\n\tlots     = R.listLots(shiftId, cellId, toolId)\n\trejects  = R.listRejects(shiftId, cellId, toolId)\n\tcavities = R.listCavities(shiftId, toolId)\n\tself.view.custom.header        = header\n\tself.view.custom.entries       = entries\n\tself.view.custom.lots          = lots\n\tself.view.custom.rejects       = rejects\n\tself.view.custom.cavities      = cavities\n\tself.view.custom.reasonOptions = R.reasonOptions()\n\t# Reject block's Approved-by dropdown -- ALL ACTIVE Location.AppUser rows\n\t# (every person has one from first PIN sign-in, so a QAS signer always\n\t# resolves), plus a leading Unapproved/blank choice: an unapproved reject\n\t# line is legitimate and becomes its own NULL-approver row (spec sec 6.2).\n\t# Pure projection onto the existing Users-screen helper -- no new named\n\t# query, no business logic.\n\tapproverOptions = [{\"label\": \"Unapproved\", \"value\": None}]\n\tfor u in (BlueRidge.Location.AppUser.getUserList() or []):\n\t\tname = u.get(\"DisplayName\") or u.get(\"Initials\") or (\"User %s\" % u.get(\"Id\"))\n\t\tinitials = u.get(\"Initials\") or \"\"\n\t\tlabel = (\"%s (%s)\" % (name, initials)) if initials else name\n\t\tapproverOptions.append({\"label\": label, \"value\": u.get(\"Id\")})\n\tself.view.custom.approverOptions = approverOptions\n\t# Reject line rows reseed their local edit-copy from params whenever this\n\t# changes (mirrors DieCastEntry/DieWideLineRow's seedToken) -- a fresh load\n\t# is always a full structural reset.\n\tself.view.custom.rejectLinesSeed = 0\n\t# A shift with NOTHING on record is the Machine 202 case this screen exists\n\t# for. Say so explicitly -- an empty screen must never be mistaken for a\n\t# failed load.\n\tself.view.custom.isEmptyShift = (len(entries) == 0 and len(lots) == 0\n\t                                 and len(rejects) == 0)\n\t# Who the banner's \"Reconciling as\" line names -- not in the brief's custom\n\t# block; Step 4 needs a name + initials and header carries neither. Resolved\n\t# the same way every mutation on this screen will attribute itself, so the\n\t# banner can never name someone other than who Save credits.\n\t# The banner names WHO THIS SAVE WILL BE ATTRIBUTED TO, and that is\n\t# exactly session.custom.user: set by the PIN sign-in, and REPLACED by\n\t# the supervisor for the length of an elevation window. Already the right\n\t# answer, with no lookup.\n\t#\n\t# NOT Common.Session.currentAppUserId(): that is the MUTATION-attribution\n\t# resolver and it fires an ERROR TOAST (\"Not saved / No one is signed in\")\n\t# whenever nobody is attributed -- a scary toast on every load of a\n\t# read-only banner, on every load where no AD IdP exists, and in prod any\n\t# time an elevation lapses before the sheet mounts. It also cost an\n\t# AppUser.getUser round trip per load, and load() runs once per param.\n\t#\n\t# Reading scalars off the session wrapper is safe; it is read-modify-write\n\t# of a whole property object that silently loses writes.\n\t# GUARDED, and the guard is the point. This is a COSMETIC banner lookup\n\t# sitting upstream of the single load-bearing state write below. A session\n\t# property read returns a live property-tree wrapper, not a dict; it\n\t# normally supports .get(), but this project has at least one documented\n\t# case of a map-like value where .get() raises and only bracket access\n\t# works. If that happened here, load() would die BEFORE seeding state and\n\t# loadedStamp -- so the sheet would have no stale guard and no draft, from\n\t# a failure to render somebody's name. Bracket access with a catch-all\n\t# mirrors the on-point precedent in Common/Session (resetTerminal), and a\n\t# blank name is a cost worth paying to keep the load alive.\n\tname = \"\"\n\tinitials = \"\"\n\ttry:\n\t\tu = self.session.custom.user\n\t\tif u:\n\t\t\tname = u[\"displayName\"] or \"\"\n\t\t\tinitials = u[\"initials\"] or \"\"\n\texcept:\n\t\tBlueRidge.Common.Util.log(\"banner: could not read session.custom.user\",\n\t\t                          level=\"warn\")\n\tself.view.custom.currentUser = {\"name\": name, \"initials\": initials}\n\t# ONE property write. Seeding state in two steps lets a dirty binding\n\t# observe a half-loaded sheet and latch. The LOT lines start at their\n\t# RECORDED value so an untouched LOT contributes its existing number and\n\t# the totals reconcile before anything is typed.\n\tself.view.custom.state = {\n\t\t\"actual\": {\"totalShots\": None, \"goodShots\": None, \"warmUpShots\": None},\n\t\t\"reasonId\": None,\n\t\t\"note\": \"\",\n\t\t\"moves\": [],\n\t\t\"lotLines\": [{\"lotId\": r.get(\"LotId\"), \"ltt\": r.get(\"Ltt\"),\n\t\t              \"toolCavityId\": r.get(\"ToolCavityId\"),\n\t\t              \"quantity\": r.get(\"Recorded\"), \"isNew\": False}\n\t\t             for r in lots],\n\t\t\"rejectLines\": [{\"defectCodeId\": r.get(\"DefectCodeId\"), \"itemId\": r.get(\"ItemId\"),\n\t\t                 \"quantity\": r.get(\"Quantity\"),\n\t\t                 \"approvedByUserId\": r.get(\"ApprovedByUserId\")}\n\t\t                for r in rejects],\n\t\t\"loadedStamp\": header.get(\"Stamp\") or \"\",\n\t}"
         },
         {
           "name": "stageMove",
@@ -112,6 +128,25 @@
             "entryKey"
           ],
           "script": "\tif not entryKey:\n\t\treturn\n\n\tst = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)\n\tst = system.util.jsonDecode(st)\n\tst[\"moves\"] = [m for m in (st.get(\"moves\") or []) if m.get(\"entryKey\") != entryKey]\n\tself.view.custom.state = st\n\n\tej = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.entries or [])\n\tentries = system.util.jsonDecode(ej)\n\tfor row in entries:\n\t\tif row.get(\"EntryKey\") == entryKey:\n\t\t\trow[\"IsStaged\"] = False\n\t\t\trow[\"StagedToShiftLabel\"] = \"\"\n\tself.view.custom.entries = entries"
+        },
+        {
+          "name": "addRejectLine",
+          "params": [],
+          "script": "\t# A fresh typed line, unapproved and unpicked -- the team lead fills it in.\n\t# The reject block's grain is (DefectCode, Part, Approver): a blank line\n\t# does not collide with anything because it carries no defect code yet.\n\tst = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)\n\tst = system.util.jsonDecode(st)\n\tlines = st.get(\"rejectLines\") or []\n\tlines.append({\"defectCodeId\": None, \"itemId\": None, \"quantity\": None, \"approvedByUserId\": None})\n\tst[\"rejectLines\"] = lines\n\tself.view.custom.state = st\n\t# Bumps every row's seedToken so RejectLineRow re-syncs from params -- the\n\t# new blank row needs this to pick up its index; existing rows re-adopt\n\t# their own already-correct values, a no-op for them.\n\tself.view.custom.rejectLinesSeed = (self.view.custom.rejectLinesSeed or 0) + 1"
+        },
+        {
+          "name": "changeRejectLine",
+          "params": [
+            "payload"
+          ],
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tidx = p.get(\"index\")\n\tif idx is None:\n\t\treturn\n\tst = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)\n\tst = system.util.jsonDecode(st)\n\tlines = st.get(\"rejectLines\") or []\n\tif 0 <= idx < len(lines):\n\t\tlines[idx] = {\"defectCodeId\": p.get(\"defectCodeId\"), \"itemId\": p.get(\"itemId\"),\n\t\t              \"quantity\": p.get(\"quantity\"), \"approvedByUserId\": p.get(\"approvedByUserId\")}\n\t\tst[\"rejectLines\"] = lines\n\t\tself.view.custom.state = st\n\t# rejectLinesSeed is DELIBERATELY NOT bumped here -- a field edit must not\n\t# force every other row to re-sync from params (it would clobber whatever\n\t# a team lead is mid-typing in a different row). Seed is a STRUCTURAL\n\t# reset signal only (add/remove), matching DieCastEntry/DieWideLineRow."
+        },
+        {
+          "name": "removeRejectLine",
+          "params": [
+            "payload"
+          ],
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tidx = p.get(\"index\")\n\tif idx is None:\n\t\treturn\n\tst = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)\n\tst = system.util.jsonDecode(st)\n\tlines = st.get(\"rejectLines\") or []\n\tif 0 <= idx < len(lines):\n\t\tdel lines[idx]\n\tst[\"rejectLines\"] = lines\n\tself.view.custom.state = st\n\tself.view.custom.rejectLinesSeed = (self.view.custom.rejectLinesSeed or 0) + 1"
         }
       ],
       "extensionFunctions": null,
@@ -129,6 +164,20 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tself.undoMove(p.get(\"entryKey\"))"
+        },
+        {
+          "messageType": "dieCastRejectLineChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.changeRejectLine(payload)"
+        },
+        {
+          "messageType": "dieCastRejectLineRemoved",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.removeRejectLine(payload)"
         }
       ]
     },
@@ -871,6 +920,1258 @@
                 }
               }
             ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "TotalsRejectsRow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "wrap": "wrap",
+              "style": {
+                "gap": "14px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "TotalsPanel"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "0",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "surface-card",
+                    "padding": "14px 16px",
+                    "gap": "8px",
+                    "minWidth": "380px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "TotalsTitle"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Shift totals",
+                      "style": {
+                        "fontSize": "15px",
+                        "fontWeight": 700
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "TotalsHeaderRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ColLabel"
+                        },
+                        "position": {
+                          "basis": "150px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": ""
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ColRecorded"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Recorded",
+                          "style": {
+                            "classes": "pf-kpi-sub",
+                            "textAlign": "right",
+                            "fontWeight": 700
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ColActual"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Actual",
+                          "style": {
+                            "classes": "pf-kpi-sub",
+                            "textAlign": "right",
+                            "fontWeight": 700
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ColGap"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Gap",
+                          "style": {
+                            "classes": "pf-kpi-sub",
+                            "textAlign": "right",
+                            "fontWeight": 700
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "TotalShotsRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TotalShotsLabel"
+                        },
+                        "position": {
+                          "basis": "150px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Total shots",
+                          "style": {}
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TotalShotsRecorded"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "numberFormat({view.custom.header.RecordedTotalShots}, \"#,##0\")"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.numeric-entry-field",
+                        "meta": {
+                          "name": "TotalShotsActual"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.state.actual.totalShots",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "deferUpdates": false,
+                          "style": {
+                            "classes": "pf-field-input",
+                            "minHeight": "38px",
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TotalShotsGap"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if(isNull({view.custom.state.actual.totalShots}), \"N/A\", if(({view.custom.state.actual.totalShots} - {view.custom.header.RecordedTotalShots}) > 0, \"+\", \"\") + numberFormat({view.custom.state.actual.totalShots} - {view.custom.header.RecordedTotalShots}, \"#,##0\"))"
+                              }
+                            }
+                          },
+                          "props.style.color": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if(isNull({view.custom.state.actual.totalShots}), \"var(--mpp-text-tertiary)\", if({view.custom.state.actual.totalShots} = {view.custom.header.RecordedTotalShots}, \"var(--mpp-state-good-fg)\", \"var(--mpp-state-bad-fg)\"))"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "textAlign": "right"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "GoodShotsRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "GoodShotsLabel"
+                        },
+                        "position": {
+                          "basis": "150px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Good shots"
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "GoodShotsRecorded"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "N/A",
+                          "style": {
+                            "classes": "pf-kpi-sub",
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.numeric-entry-field",
+                        "meta": {
+                          "name": "GoodShotsActual"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.state.actual.goodShots",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "deferUpdates": false,
+                          "style": {
+                            "classes": "pf-field-input",
+                            "minHeight": "38px",
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "GoodShotsGap"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "N/A",
+                          "style": {
+                            "classes": "pf-kpi-sub",
+                            "textAlign": "right"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "WarmUpShotsRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "WarmUpShotsLabel"
+                        },
+                        "position": {
+                          "basis": "150px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Warm-up shots",
+                          "style": {}
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "WarmUpShotsRecorded"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "numberFormat({view.custom.header.RecordedWarmUpShots}, \"#,##0\")"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.numeric-entry-field",
+                        "meta": {
+                          "name": "WarmUpShotsActual"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.state.actual.warmUpShots",
+                                "bidirectional": true
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "deferUpdates": false,
+                          "style": {
+                            "classes": "pf-field-input",
+                            "minHeight": "38px",
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "WarmUpShotsGap"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if(isNull({view.custom.state.actual.warmUpShots}), \"N/A\", if(({view.custom.state.actual.warmUpShots} - {view.custom.header.RecordedWarmUpShots}) > 0, \"+\", \"\") + numberFormat({view.custom.state.actual.warmUpShots} - {view.custom.header.RecordedWarmUpShots}, \"#,##0\"))"
+                              }
+                            }
+                          },
+                          "props.style.color": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if(isNull({view.custom.state.actual.warmUpShots}), \"var(--mpp-text-tertiary)\", if({view.custom.state.actual.warmUpShots} = {view.custom.header.RecordedWarmUpShots}, \"var(--mpp-state-good-fg)\", \"var(--mpp-state-bad-fg)\"))"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "textAlign": "right"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "NoGoodRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "NoGoodLabel"
+                        },
+                        "position": {
+                          "basis": "150px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "No-good pieces",
+                          "style": {}
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "NoGoodRecorded"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "numberFormat({view.custom.header.RecordedNoGood}, \"#,##0\")"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "NoGoodActual"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.state"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\tst = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\trejs = st.get(\"rejectLines\") or []\n\ttotal = sum([(r.get(\"quantity\") or 0) for r in rejs])\n\treturn \"{:,}\".format(total)"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "NoGoodGap"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.state"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\tst = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\trejs = st.get(\"rejectLines\") or []\n\ttotal = sum([(r.get(\"quantity\") or 0) for r in rejs])\n\trec = self.view.custom.header.RecordedNoGood or 0\n\tdiff = total - rec\n\tsign = \"+\" if diff > 0 else \"\"\n\treturn \"%s%s\" % (sign, \"{:,}\".format(diff))"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "textAlign": "right"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "TotalGoodRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TotalGoodLabel"
+                        },
+                        "position": {
+                          "basis": "150px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Total good pieces",
+                          "style": {
+                            "fontWeight": 700
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TotalGoodRecorded"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "numberFormat({view.custom.header.RecordedGood}, \"#,##0\")"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "fontWeight": 700,
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TotalGoodActual"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.state"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\tst = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\tact = st.get(\"actual\") or {}\n\tgood = act.get(\"goodShots\")\n\tif good is None:\n\t\treturn \"N/A\"\n\tcav = self.view.custom.header.ActiveCavities or 0\n\trejs = st.get(\"rejectLines\") or []\n\tnoGood = sum([(r.get(\"quantity\") or 0) for r in rejs])\n\ttotal = good * cav - noGood\n\treturn \"{:,}\".format(total)"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "fontWeight": 700,
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "TotalGoodGap"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.state"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\tst = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\tact = st.get(\"actual\") or {}\n\tgood = act.get(\"goodShots\")\n\tif good is None:\n\t\treturn \"N/A\"\n\tcav = self.view.custom.header.ActiveCavities or 0\n\trejs = st.get(\"rejectLines\") or []\n\tnoGood = sum([(r.get(\"quantity\") or 0) for r in rejs])\n\ttotal = good * cav - noGood\n\trec = self.view.custom.header.RecordedGood or 0\n\tdiff = total - rec\n\tsign = \"+\" if diff > 0 else \"\"\n\treturn \"%s%s\" % (sign, \"{:,}\".format(diff))"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "fontWeight": 700,
+                            "textAlign": "right"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "TotalsNote"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "No-good and Total good are worked out from the reject block and good shots x cavities.",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "RejectsPanel"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "0",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "surface-card",
+                    "padding": "14px 16px",
+                    "gap": "8px",
+                    "minWidth": "460px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "RejectsTitle"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Rejects",
+                      "style": {
+                        "fontSize": "15px",
+                        "fontWeight": 700
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "RecordedSubheading"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Recorded",
+                      "style": {
+                        "classes": "pf-kpi-sub",
+                        "fontWeight": 700
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "RecordedSummary"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.rejects"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tif not rows:\n\t\treturn \"No rejects on record for this shift.\"\n\ttotals = {}\n\torder = []\n\tfor r in rows:\n\t\tcode = r.get(\"DefectCode\") or \"?\"\n\t\tif code not in totals:\n\t\t\ttotals[code] = 0\n\t\t\torder.append(code)\n\t\ttotals[code] += r.get(\"Quantity\") or 0\n\t# Summed per defect code ACROSS every part/approver row that carries it --\n\t# the grain is (DefectCode, Part, Approver); a per-code total read off any\n\t# one row would silently drop the others (the earlier, fixed bug).\n\tlines = [\"Recorded by code:\"]\n\tfor code in order:\n\t\tlines.append(\"  \" + code + \": \" + \"{:,}\".format(totals[code]) + \" pcs\")\n\treturn \"\\n\".join(lines)"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "whiteSpace": "pre-line"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "RecordedDetail"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.rejects"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tif not rows:\n\t\treturn \"\"\n\t# One line PER ROW, never flattened -- two approvers on one code stay two\n\t# lines, each owning only its own quantity (grain: DefectCode, Part, Approver).\n\tlines = []\n\tfor r in rows:\n\t\tpart = r.get(\"PartNumber\") or \"All\"\n\t\tappr = r.get(\"ApprovedBy\") or \"Unapproved\"\n\t\tlines.append((r.get(\"DefectCode\") or \"?\") + \" - \" + part + \" - \" + \"{:,}\".format(r.get(\"Quantity\") or 0) + \" pcs - \" + appr)\n\treturn \"\\n\".join(lines)"
+                            }
+                          ]
+                        }
+                      },
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.rejects}) > 0"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "classes": "pf-kpi-sub",
+                        "whiteSpace": "pre-line"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "YourEntriesSubheading"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Your entries",
+                      "style": {
+                        "classes": "pf-kpi-sub",
+                        "fontWeight": 700
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "RejectColumnHeaderRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.state.rejectLines}) > 0"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "10px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "HdrApprovedBy"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 1
+                        },
+                        "props": {
+                          "text": "Approved by (QAS)",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "HdrReason"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 1
+                        },
+                        "props": {
+                          "text": "Reason",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "HdrPart"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1,
+                          "shrink": 1
+                        },
+                        "props": {
+                          "text": "Part",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "HdrAmt"
+                        },
+                        "position": {
+                          "basis": "110px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Amt",
+                          "style": {
+                            "classes": "pf-kpi-sub",
+                            "textAlign": "right"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "HdrRemoveSpacer"
+                        },
+                        "position": {
+                          "basis": "44px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": ""
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "NoRejectLinesText"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.state.rejectLines}) = 0"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "No reject lines typed yet.",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "RejectLinesList"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.state.rejectLines"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\t_u = BlueRidge.Common.Util.extractQualifiedValues\n\trows = _u(value) or []\n\tdefectOpts = BlueRidge.Quality.DefectCode.getForDropdown(\"DieCast\") or []\n\t# Part dropdown: All (itemId null) plus the die's distinct parts, off the\n\t# same cavity set the LTT bar and the Save both resolve from.\n\tcavRows = _u(self.view.custom.cavities) or []\n\tseen = set()\n\tpartOpts = [{\"label\": \"All\", \"value\": None}]\n\tfor c in cavRows:\n\t\tiid = c.get(\"ItemId\")\n\t\tif iid is None or iid in seen:\n\t\t\tcontinue\n\t\tseen.add(iid)\n\t\tpartOpts.append({\"label\": c.get(\"PartNumber\") or (\"Item %s\" % iid), \"value\": iid})\n\tapprOpts = _u(self.view.custom.approverOptions) or []\n\tseed = self.view.custom.rejectLinesSeed or 0\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = r or {}\n\t\tout.append({\n\t\t\t\"index\": i,\n\t\t\t\"defectCodeId\": r.get(\"defectCodeId\"),\n\t\t\t\"itemId\": r.get(\"itemId\"),\n\t\t\t\"quantity\": r.get(\"quantity\"),\n\t\t\t\"approvedByUserId\": r.get(\"approvedByUserId\"),\n\t\t\t\"defectOptions\": defectOpts,\n\t\t\t\"partOptions\": partOpts,\n\t\t\t\"approverOptions\": apprOpts,\n\t\t\t\"seedToken\": seed,\n\t\t})\n\treturn out"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/_DieCastReconcileSheet/RejectLineRow",
+                      "style": {
+                        "gap": "8px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "AddRejectLineButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "+ Reject line",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.addRejectLine()"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "RejectsNote"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "\"All\" spreads the amount across every cavity. Approved by is the QAS who signed off -- it may be left Unapproved.",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "BlockerStrip"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "len({view.custom.blockers}) > 0"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "backgroundColor": "var(--mpp-state-bad-bg)",
+            "border": "1px solid var(--mpp-state-bad-border)",
+            "borderRadius": "var(--mpp-radius-md)",
+            "padding": "10px 14px",
+            "gap": "2px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "BlockerText"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.blockers"
+                  },
+                  "transforms": [
+                    {
+                      "type": "script",
+                      "code": "\titems = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn \"\\n\".join([(\"- \" + str(x)) for x in items if x])"
+                    }
+                  ]
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "color": "var(--mpp-state-bad-fg)",
+                "whiteSpace": "pre-line"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "FooterRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "DiscardButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Discard",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"reconcileBackToShifts\", scope=\"page\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ReviewSaveButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.blockers}) = 0"
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(len({view.custom.blockers}) = 0, \"Review & Save\", toStr(len({view.custom.blockers})) + \" to fix before saving\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Review & Save",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            }
           }
         ]
       }

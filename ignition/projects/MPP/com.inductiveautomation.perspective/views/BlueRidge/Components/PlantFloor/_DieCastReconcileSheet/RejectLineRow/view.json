@@ -1,0 +1,305 @@
+{
+  "custom": {
+    "defectCodeId": null,
+    "itemId": null,
+    "quantity": null,
+    "approvedByUserId": null
+  },
+  "params": {
+    "index": 0,
+    "defectCodeId": null,
+    "itemId": null,
+    "quantity": null,
+    "approvedByUserId": null,
+    "defectOptions": [],
+    "partOptions": [],
+    "approverOptions": [],
+    "seedToken": -1
+  },
+  "propConfig": {
+    "params.index": {
+      "paramDirection": "input"
+    },
+    "params.defectCodeId": {
+      "paramDirection": "input"
+    },
+    "params.itemId": {
+      "paramDirection": "input"
+    },
+    "params.quantity": {
+      "paramDirection": "input"
+    },
+    "params.approvedByUserId": {
+      "paramDirection": "input"
+    },
+    "params.defectOptions": {
+      "paramDirection": "input"
+    },
+    "params.partOptions": {
+      "paramDirection": "input"
+    },
+    "params.approverOptions": {
+      "paramDirection": "input"
+    },
+    "params.seedToken": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\t# seedToken carries the parent's rejectLinesSeed, which changes only on a\n\t# STRUCTURAL rebuild (add/remove a line) -- mirrors DieCastEntry/\n\t# DieWideLineRow. Local inputs take the parent's authoritative values back.\n\tself.view.custom.defectCodeId = self.view.params.defectCodeId\n\tself.view.custom.itemId = self.view.params.itemId\n\tself.view.custom.quantity = BlueRidge.Common.Util.toIntOrNone(self.view.params.quantity)\n\tself.view.custom.approvedByUserId = self.view.params.approvedByUserId"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 52,
+      "width": 900
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "gap": "10px",
+        "overflow": "visible"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "emitChanged",
+          "params": [],
+          "script": "\t# Page-scoped up to DieCastReconcileSheet, which owns\n\t# view.custom.state.rejectLines -- embed params are input-only, so this is\n\t# the only channel there is (feedback_ignition_embed_params_input_only).\n\tsystem.perspective.sendMessage(\"dieCastRejectLineChanged\", payload={\n\t\t\"index\": self.view.params.index,\n\t\t\"defectCodeId\": self.view.custom.defectCodeId,\n\t\t\"itemId\": self.view.custom.itemId,\n\t\t\"quantity\": self.view.custom.quantity,\n\t\t\"approvedByUserId\": self.view.custom.approvedByUserId,\n\t}, scope=\"page\")"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.input.dropdown",
+        "meta": {
+          "name": "ApprovedByDropdown"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.approverOptions"
+              }
+            }
+          },
+          "props.value": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.approvedByUserId"
+              }
+            }
+          }
+        },
+        "props": {
+          "placeholder": {
+            "text": "Unapproved"
+          },
+          "style": {
+            "classes": "pf-field-select",
+            "minWidth": "180px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.custom.approvedByUserId = self.props.value\n\tself.view.rootContainer.emitChanged()"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.dropdown",
+        "meta": {
+          "name": "ReasonDropdown"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.defectOptions"
+              }
+            }
+          },
+          "props.value": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.defectCodeId"
+              }
+            }
+          }
+        },
+        "props": {
+          "placeholder": {
+            "text": "Choose a reason"
+          },
+          "style": {
+            "classes": "pf-field-select",
+            "minWidth": "220px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.custom.defectCodeId = self.props.value\n\tself.view.rootContainer.emitChanged()"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.dropdown",
+        "meta": {
+          "name": "PartDropdown"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.partOptions"
+              }
+            }
+          },
+          "props.value": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.itemId"
+              }
+            }
+          }
+        },
+        "props": {
+          "placeholder": {
+            "text": "All"
+          },
+          "style": {
+            "classes": "pf-field-select",
+            "minWidth": "160px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.custom.itemId = self.props.value\n\tself.view.rootContainer.emitChanged()"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.numeric-entry-field",
+        "meta": {
+          "name": "AmtInput"
+        },
+        "position": {
+          "basis": "110px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.value": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.quantity"
+              }
+            }
+          }
+        },
+        "props": {
+          "deferUpdates": false,
+          "style": {
+            "classes": "pf-field-input",
+            "minHeight": "44px",
+            "textAlign": "right"
+          }
+        },
+        "events": {
+          "dom": {
+            "onBlur": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.rootContainer.emitChanged()"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "RemoveButton",
+          "tooltip": {
+            "text": "Remove this line"
+          }
+        },
+        "position": {
+          "basis": "44px",
+          "shrink": 0
+        },
+        "props": {
+          "text": "",
+          "image": {
+            "icon": {
+              "path": "mpp/cancel"
+            }
+          },
+          "style": {
+            "minHeight": "44px",
+            "classes": "pf-btn pf-btn-secondary"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"dieCastRejectLineRemoved\", payload={\"index\": self.view.params.index}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
