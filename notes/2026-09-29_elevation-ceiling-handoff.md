@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-29
 **Branch:** `jacques/working`
-**Status:** SQL + Core scripts done and green. **Two Designer edits owed** (below). Not deployed.
+**Status:** Complete on `jacques/working` (`b164fffb` + `8f486526`). Not deployed.
 
 Pulled forward out of Plan 2 (die cast reconciliation screen) because it fixes existing
 flows too — Die Mount, CRT toggle, downtime edit/void, sort-cage migrate all sit behind
@@ -110,10 +110,13 @@ is likely to do that, but it is the reason the Designer edit should not sit for 
 
 ---
 
-## OWED — two Designer edits
+## DONE 2026-09-29 (commit `8f486526`) — both view edits
 
-File-editing an existing view risks the Designer-vs-disk reconciliation race, so these
-are deliberately **not** done as file edits.
+Originally left as Designer work because file-editing an existing view risks the
+Designer-vs-disk reconciliation race. **Jacques confirmed his Designer was attached to a
+different gateway**, so both were done as byte-level file edits anchored on the on-disk
+escape forms, each verified to still parse as JSON and as Python, then scanned. The
+recipes below are what was applied.
 
 ### 1. `MPP` → `Views/ShopFloor/AppHeaderLarge` — wire the touch
 
