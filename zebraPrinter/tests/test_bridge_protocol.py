@@ -31,3 +31,40 @@ def test_empty_request_gets_no_reply():
     """validateEndpoint connects and closes without sending. Replying to that
        would be a protocol change; staying silent is the contract."""
     assert bridge.handle_request(b"", "Q", _spool_ok, _status_ok) is None
+
+
+def test_status_reports_version_queue_and_readiness():
+    reply = bridge.handle_request(b"?STATUS", "Zebra GX420d (RAW)",
+                                  _spool_ok, _status_ok)
+    assert reply == ("OK bridge=%s queue='Zebra GX420d (RAW)' ready=true jobs=0"
+                     % bridge.BRIDGE_VERSION)
+
+
+def test_status_is_case_insensitive():
+    lower = bridge.handle_request(b"?status", "Q", _spool_ok, _status_ok)
+    upper = bridge.handle_request(b"?STATUS", "Q", _spool_ok, _status_ok)
+    # Assert the CONTENT too, not just that the two agree -- comparing them
+    # alone passes against any stub that returns one constant for both.
+    assert lower == upper
+    assert lower.startswith("OK bridge=")
+
+
+def test_status_reports_a_not_ready_queue():
+    def busy():
+        return {"queue": "Q", "ready": False, "jobs": 3}
+    reply = bridge.handle_request(b"?STATUS", "Q", _spool_ok, busy)
+    assert "ready=false" in reply
+    assert "jobs=3" in reply
+
+
+def test_a_quote_in_a_queue_name_is_doubled():
+    def odd():
+        return {"queue": "Bob's Zebra", "ready": True, "jobs": 0}
+    reply = bridge.handle_request(b"?STATUS", "Q", _spool_ok, odd)
+    assert "queue='Bob''s Zebra'" in reply
+
+
+def test_unknown_command_is_refused_not_ignored():
+    reply = bridge.handle_request(b"?WAT", "Q", _spool_ok, _status_ok)
+    assert reply.startswith("ERR unknown command")
+    assert "?WAT" in reply

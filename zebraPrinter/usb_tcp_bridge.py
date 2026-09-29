@@ -107,6 +107,14 @@ def handle_request(data, printer_name, spool, status):
        testable with no printer attached."""
     if not data:
         return None
+    if data[:1] == b"?":
+        cmd = data.decode("ascii", "replace").strip().upper()
+        if cmd == "?STATUS":
+            s = status()
+            return "OK bridge=%s queue=%s ready=%s jobs=%d" % (
+                BRIDGE_VERSION, _quote(s["queue"]),
+                "true" if s["ready"] else "false", int(s["jobs"]))
+        return "ERR unknown command %s" % _quote(cmd)
     return "ERR not implemented"
 
 
