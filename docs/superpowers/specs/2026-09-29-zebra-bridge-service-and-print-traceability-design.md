@@ -42,9 +42,13 @@ Two gaps were worse than the failures:
   `PrintedAt NULL` / `PrintFailedAt NULL` with **no `InterfaceLog` row at all**. The dispatch
   worker never ran and nothing recorded why. A stage that fails silently is worse than one that
   fails loudly.
-- **There is no test print.** `BlueRidge.Location.Printer.validateEndpoint` checks endpoint string
-  grammar only; nothing opens a socket. Commissioning 54 printers with no way to verify one --
-  short of manufacturing a real container -- is the largest avoidable cost in the rollout.
+- **Reachability can be checked; correctness cannot.**
+  `BlueRidge.Location.Printer.validateEndpoint` *does* open a socket and reports
+  "Reachable: host:port is accepting connections". What it cannot see is **which queue the far
+  end is bound to** -- and that is a real failure mode, not a theoretical one: on 2026-09-29 the
+  printer host started its bridge with no argument and bound the default queue name. A connect
+  test passes in that state and a label still never prints. Verifying the *whole* path today
+  means manufacturing a real container, which is the largest avoidable cost in the rollout.
 
 ## 2. Scope
 
@@ -219,11 +223,15 @@ Per machine, in order:
 1. **Driver** -- install the Zebra driver; confirm the queue name with `Get-Printer`.
 2. **Bridge** -- copy `MesZebraBridge.exe`, run `MesZebraBridge.exe install`. Registers the
    service, sets SCM recovery, adds the inbound rule for TCP 9100 scoped to the Gateway, starts.
-3. **Address** -- static IP or a DHCP reservation (section 10.1).
-4. **Configuration** (section 8) -- Terminal row IP, Printer row `Endpoint` and `ConnectionKind`.
+3. **Address** -- already done. Terminals carry static IPs for screen selection (section 10.1).
+4. **Configuration** (section 8) -- a Printer row under the terminal with
+   `ConnectionKind = UsbBridge`. **No endpoint is entered**; it derives from the terminal's
+   existing IP (section 8.1).
 5. **Verify** (section 9) -- `?STATUS` probe, then one real label.
 
-Steps 1-3 happen at the machine; 4-5 from the Config Tool.
+Steps 1-2 happen at the machine; 4-5 from the Config Tool. Because step 3 is already satisfied
+and step 4 is a single dropdown, the per-terminal cost is dominated by the driver install -- which
+is the floor for a USB printer and cannot be engineered away.
 
 ## 8. Configuration per terminal
 
@@ -243,12 +251,46 @@ printer is attached to. Conflating them cost time on 2026-09-29.
 a **new session**, not a page refresh. There is a DB re-resolve fallback, but it fires only when
 the session value is empty, or on failure when the freshly resolved endpoint *differs*.
 
+### 8.1 The endpoint is derived, not entered
+
+Terminals already carry static IPs, because that is how screen selection resolves. And with every
+printer USB-attached, **the bridge always runs on the terminal PC** -- so a bridge printer's
+endpoint host is, by construction, its parent terminal's IP. There is no second address.
+
+So it is not stored. `ConnectionKind` gains a third value beside the existing `Networked` and
+`Hardwired`:
+
+| `ConnectionKind` | Endpoint | Transport |
+|---|---|---|
+| `Networked` | stored `host:port` | TCP direct to a printer with its own NIC |
+| `Hardwired` | stored queue name | `javax.print` on the Gateway host |
+| **`UsbBridge`** (new) | **derived: parent terminal IP + 9100** | TCP to the bridge service |
+
+This removes an entire class of defect rather than mitigating it:
+
+- **54 hand-entered addresses become zero.** The one field that differs per printer stops
+  existing.
+- **The port-omission trap cannot occur.** Section 5's silent reclassification of `10.20.11.157`
+  into a print-queue name is unreachable when no human types the endpoint.
+- **Endpoint and terminal IP cannot drift apart.** Today they are two fields that must agree by
+  convention; here there is one value with one owner.
+- **A terminal that is re-addressed stays correct** with no second edit and no stale row.
+
+The three existing `Networked` printers (`172.17.20.228/229:9100`) are untouched -- their
+endpoints are genuinely independent of their terminals' addresses, which is precisely why the
+kinds must stay distinct rather than derivation being applied universally.
+
+`validateEndpoint` branches on the new kind: derive the host, connect, then issue `?STATUS`
+(section 4.2) so the check reports the bound queue rather than only that something answered.
+
 ## 9. Commissioning check
 
 Per printer, before it is considered live:
 
 1. `?STATUS` from the Gateway returns `ready=true` and the expected queue name. Proves route,
-   firewall, service, and queue binding in one call, with no label consumed.
+   firewall, service, and queue binding in one call, with no label consumed. This *extends* the
+   existing `validateEndpoint` connect test rather than replacing it -- the connect proves
+   something answered, the probe proves it is our bridge bound to the right queue.
 2. One real label. Confirm the `InterfaceLog` row reads `Spooled` with a job id, and that a label
    physically emerged -- the one step a human still has to do (section 6.4).
 
@@ -258,12 +300,16 @@ temporarily shrinking a container configuration.
 
 ## 10. Risks
 
-### 10.1 DHCP drift
+### 10.1 Address drift
 
-A moved lease breaks the printer endpoint and any source-scoped firewall rule, silently, and
-presents as a printer fault. This has already happened once: the Gateway host carries a stale
-inbound rule for `10.20.11.106`, the printer host's former address. **Static addressing or DHCP
-reservations are a prerequisite, not a nicety.**
+**Terminals already hold static IPs** -- that is how screen selection works, so the terminal side
+of this is already solved and section 8.1 inherits it.
+
+The residual risk is anything *not* a terminal. The Gateway host carries a stale inbound rule for
+`10.20.11.106`, a printer host's former address, which is what a moved lease leaves behind: a
+silent failure that presents as a printer fault. Any bench or temporary host used during
+commissioning needs the same static treatment, and stale source-scoped firewall rules should be
+pruned rather than accumulated.
 
 ### 10.2 Data quality in existing rows
 
