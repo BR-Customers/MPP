@@ -103,10 +103,9 @@ required-parameter guard refuses, and every save on that panel reports *"Not sav
 the stored ceiling and passes it through. A caller that omits the key gets the value
 already in force, never a widened one.
 
-**Consequence while the Designer edit is outstanding:** the panel works, but raising the
-elevation timeout **above 30 minutes** will be refused ("The elevation ceiling must be at
-least the elevation timeout…") with no way to raise the ceiling from that screen. Nobody
-is likely to do that, but it is the reason the Designer edit should not sit for long.
+That fallback stays for any other caller, but the panel no longer relies on it: the
+ceiling is a field on the screen as of `8f486526`, so raising the elevation timeout past
+the ceiling is now a thing the user can actually fix where they hit it.
 
 ---
 
@@ -153,8 +152,13 @@ the existing two fields do.
   `"elevationMaxMinutes": int(round((p.get("ElevationMaxSeconds") or 1800) / 60.0))`
 - Save (≈ line 699): read it, guard `None`, and pass
   `"elevationMaxSeconds": mx * 60` into `updatePolicy`.
-- Add the numeric input bound to `view.custom.policy.elevationMaxMinutes`
-  (`deferUpdates: false`, per the input-commit rule — the Save reads what is typed).
+- Add the input bound bidirectionally to `view.custom.policy.elevationMaxMinutes`.
+  **Built as an `ia.input.text-field` with no `deferUpdates` override, matching the two
+  fields already on the panel** — a deliberate divergence from this note's first draft,
+  which called for `deferUpdates: false`. Clicking Save blurs the field, which commits the
+  writeback, and the two shipped fields depend on exactly that. Introducing a third field
+  that behaves differently from its neighbours would be the odd one out for no gain. If
+  this panel ever grows a keyboard-driven save, all three need revisiting together.
 - Label it as the ceiling, not a third timeout. Suggested helper text:
   *"The longest a supervisor's elevated session can last, even while they keep working.
   Must be at least the elevation timeout."*
