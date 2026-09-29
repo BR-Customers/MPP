@@ -11,7 +11,7 @@
     "params.locationId": {
       "onChange": {
         "enabled": true,
-        "script": "\tself.view.rootContainer.load()"
+        "script": "\tself.rootContainer.load()"
       },
       "paramDirection": "input",
       "persistent": true

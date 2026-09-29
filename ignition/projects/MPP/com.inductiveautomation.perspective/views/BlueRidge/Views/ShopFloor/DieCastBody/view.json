@@ -402,7 +402,7 @@
               "display": false
             },
             "propConfig": {
-              "props.params.cellLocationId": {
+              "props.params.locationId": {
                 "binding": {
                   "config": {
                     "path": "session.custom.cell.locationId"
