@@ -596,11 +596,15 @@ def preview(payload, appUserId, terminalLocationId):
 
 def save(payload, appUserId, terminalLocationId, previewOnly=False):
     """The one write in this feature."""
+    # Log from the EXTRACTED params, never from the raw payload: a payload from
+    # a view can be a QualifiedValue or a Perspective ImmutableMap, and .get()
+    # raises on both. _saveParams does the extraction; borrowing its result
+    # keeps this trace safe without extracting twice.
+    params = _saveParams(payload, appUserId, terminalLocationId, bool(previewOnly))
     BlueRidge.Common.Util.log("shiftId=%s previewOnly=%s"
-                              % ((payload or {}).get("shiftId"), previewOnly))
+                              % (params.get("shiftId"), previewOnly))
     return BlueRidge.Common.Db.execMutation(
-        "workorder/DieCastShiftReconciliation_Save",
-        _saveParams(payload, appUserId, terminalLocationId, bool(previewOnly)))
+        "workorder/DieCastShiftReconciliation_Save", params)
 
 
 def planFrom(result):
