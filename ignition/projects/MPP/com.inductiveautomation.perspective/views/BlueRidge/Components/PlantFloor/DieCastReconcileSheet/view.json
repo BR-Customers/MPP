@@ -1,0 +1,701 @@
+{
+  "custom": {
+    "header": {
+      "ShiftId": null,
+      "ShiftLabel": "",
+      "StartEt": null,
+      "EndEt": null,
+      "IsOpen": false,
+      "CellLocationId": null,
+      "PressCode": "",
+      "PressName": "",
+      "ToolId": null,
+      "AssetNumber": "",
+      "DieName": "",
+      "ActiveCavities": 0,
+      "DieShotCount": 0,
+      "RecordedTotalShots": 0,
+      "RecordedWarmUpShots": 0,
+      "RecordedNoGood": 0,
+      "RecordedGood": 0,
+      "HasShiftEndNumber": false,
+      "Stamp": "",
+      "LastReconciledAtEt": null,
+      "LastReconciledBy": ""
+    },
+    "entries": [],
+    "lots": [],
+    "rejects": [],
+    "cavities": [],
+    "reasonOptions": [],
+    "state": {
+      "actual": {
+        "totalShots": null,
+        "goodShots": null,
+        "warmUpShots": null
+      },
+      "reasonId": null,
+      "note": "",
+      "moves": [],
+      "lotLines": [],
+      "rejectLines": [],
+      "loadedStamp": ""
+    },
+    "lttInput": "",
+    "lttCavityId": null,
+    "blockers": [],
+    "isEmptyShift": false,
+    "currentUser": {
+      "name": "",
+      "initials": ""
+    }
+  },
+  "params": {
+    "shiftId": null,
+    "cellLocationId": null,
+    "toolId": null
+  },
+  "propConfig": {
+    "params.shiftId": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.load()"
+      }
+    },
+    "params.cellLocationId": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.load()"
+      }
+    },
+    "params.toolId": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.load()"
+      }
+    }
+  },
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "gap": "14px",
+        "padding": "20px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\tshiftId = self.view.params.shiftId\n\tcellId  = self.view.params.cellLocationId\n\ttoolId  = self.view.params.toolId\n\tif shiftId is None or cellId is None or toolId is None:\n\t\treturn\n\tR = BlueRidge.Workorder.DieCastReconciliation\n\theader   = R.getHeaderOrEmpty(shiftId, cellId, toolId)\n\tentries  = R.listEntries(shiftId, cellId, toolId)\n\tlots     = R.listLots(shiftId, cellId, toolId)\n\trejects  = R.listRejects(shiftId, cellId, toolId)\n\tcavities = R.listCavities(shiftId, toolId)\n\tself.view.custom.header        = header\n\tself.view.custom.entries       = entries\n\tself.view.custom.lots          = lots\n\tself.view.custom.rejects       = rejects\n\tself.view.custom.cavities      = cavities\n\tself.view.custom.reasonOptions = R.reasonOptions()\n\t# A shift with NOTHING on record is the Machine 202 case this screen exists\n\t# for. Say so explicitly -- an empty screen must never be mistaken for a\n\t# failed load.\n\tself.view.custom.isEmptyShift = (len(entries) == 0 and len(lots) == 0\n\t                                 and len(rejects) == 0)\n\t# Who the banner's \"Reconciling as\" line names -- not in the brief's custom\n\t# block; Step 4 needs a name + initials and header carries neither. Resolved\n\t# the same way every mutation on this screen will attribute itself, so the\n\t# banner can never name someone other than who Save credits.\n\tappUserId = BlueRidge.Common.Session.currentAppUserId(self.session)\n\tcurrentUser = BlueRidge.Location.AppUser.getUser(appUserId) if appUserId is not None else None\n\tself.view.custom.currentUser = {\"name\": (currentUser or {}).get(\"DisplayName\") or \"\",\n\t                                \"initials\": (currentUser or {}).get(\"Initials\") or \"\"}\n\t# ONE property write. Seeding state in two steps lets a dirty binding\n\t# observe a half-loaded sheet and latch. The LOT lines start at their\n\t# RECORDED value so an untouched LOT contributes its existing number and\n\t# the totals reconcile before anything is typed.\n\tself.view.custom.state = {\n\t\t\"actual\": {\"totalShots\": None, \"goodShots\": None, \"warmUpShots\": None},\n\t\t\"reasonId\": None,\n\t\t\"note\": \"\",\n\t\t\"moves\": [],\n\t\t\"lotLines\": [{\"lotId\": r.get(\"LotId\"), \"ltt\": r.get(\"Ltt\"),\n\t\t              \"toolCavityId\": r.get(\"ToolCavityId\"),\n\t\t              \"quantity\": r.get(\"Recorded\"), \"isNew\": False}\n\t\t             for r in lots],\n\t\t\"rejectLines\": [{\"defectCodeId\": r.get(\"DefectCodeId\"), \"itemId\": r.get(\"ItemId\"),\n\t\t                 \"quantity\": r.get(\"Quantity\"),\n\t\t                 \"approvedByUserId\": r.get(\"ApprovedByUserId\")}\n\t\t                for r in rejects],\n\t\t\"loadedStamp\": header.get(\"Stamp\") or \"\",\n\t}"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.view.rootContainer.load()"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "HeaderRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "8px",
+            "overflow": "visible"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Reconcile shift",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": 600
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": ""
+            }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "HowToButton",
+              "tooltip": {
+                "text": "How to reconcile this shift"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/help_outline",
+              "style": {
+                "cursor": "pointer",
+                "height": "30px",
+                "width": "30px"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"dieCastReconcileHowTo\",\n\t\t\"BlueRidge/Components/Popups/DieCastReconcileHowTo\",\n\t\tparams={\"popupId\": \"dieCastReconcileHowTo\"},\n\t\tposition={\"width\": \"54%\", \"height\": \"80%\"},\n\t\tmodal=False, overlayDismiss=False, showCloseIcon=False)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ShiftBanner"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "",
+            "backgroundColor": "var(--mpp-state-warn-bg)",
+            "border": "4px solid var(--mpp-state-warn-border)",
+            "borderRadius": "var(--mpp-radius-lg)",
+            "padding": "16px 20px",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "BannerTopRow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "flex-start",
+              "style": {
+                "gap": "24px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "BannerInfoColumn"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ShiftLabelText"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.header.ShiftLabel"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "color": "var(--mpp-state-warn-fg)",
+                        "fontSize": "34px",
+                        "fontWeight": 900,
+                        "lineHeight": "1.1"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "WindowText"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if(isNull({view.custom.header.StartEt}) || isNull({view.custom.header.EndEt}), \"\", dateFormat({view.custom.header.StartEt}, \"HH:mm\") + \" - \" + dateFormat({view.custom.header.EndEt}, \"HH:mm\"))"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "BannerMetaRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "wrap": "wrap",
+                      "style": {
+                        "gap": "16px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "PressText"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.header.PressName"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "fontWeight": 700,
+                            "fontSize": "15px"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "DieText"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "\"Die \" + {view.custom.header.DieName} + \" \" + char(183) + \" Asset # \" + {view.custom.header.AssetNumber}"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "CavitiesText"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "toStr({view.custom.header.ActiveCavities}) + \" cavities\""
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "DieLifeBox"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "center",
+                  "style": {
+                    "backgroundColor": "rgba(0,0,0,0.15)",
+                    "borderRadius": "var(--mpp-radius-md)",
+                    "padding": "8px 18px",
+                    "minWidth": "110px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "DieLifeLabel"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Die life",
+                      "style": {
+                        "fontSize": "12px",
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "DieLifeValue"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "toStr({view.custom.header.DieShotCount})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "0",
+                      "style": {
+                        "color": "var(--mpp-state-warn-fg)",
+                        "fontSize": "26px",
+                        "fontWeight": 800
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "WhoLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Reconciling as \" + {view.custom.currentUser.name} + \" (\" + {view.custom.currentUser.initials} + \"). Everything saved here is recorded under your name.\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub",
+                "fontWeight": 600
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ReasonRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "12px",
+            "overflow": "visible"
+          },
+          "wrap": "wrap"
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ReasonLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Reason",
+              "style": {
+                "classes": "pf-field-label"
+              }
+            }
+          },
+          {
+            "type": "ia.input.dropdown",
+            "meta": {
+              "name": "ReasonDropdown"
+            },
+            "position": {
+              "basis": "320px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.reasonOptions"
+                  }
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.state.reasonId"
+                  }
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Select a reason"
+              },
+              "style": {
+                "classes": "pf-field-select"
+              }
+            }
+          },
+          {
+            "type": "ia.input.text-field",
+            "meta": {
+              "name": "NoteField"
+            },
+            "position": {
+              "basis": "280px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Workorder.DieCastReconciliation.reasonRequiresNote\", 0, {view.custom.state.reasonId})"
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.state.note"
+                  }
+                }
+              }
+            },
+            "props": {
+              "placeholder": "What happened?"
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ReasonRowSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": ""
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BackButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "All shifts",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"reconcileBackToShifts\", scope=\"page\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "EmptyShiftBanner"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.isEmptyShift}"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "surface-card",
+            "padding": "12px 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "EmptyShiftText"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Nothing is recorded for this shift on \" + {view.custom.header.PressName} + \" — no entries, no LOTs, no rejects. Everything below comes from the press sheet.\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ContentBody"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "14px",
+            "overflow": "auto"
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

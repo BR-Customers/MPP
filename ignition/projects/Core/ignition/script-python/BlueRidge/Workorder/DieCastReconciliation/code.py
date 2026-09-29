@@ -144,6 +144,21 @@ def reasonOptions():
     return [{"label": r.get("Name"), "value": r.get("Id")} for r in listReasons()]
 
 
+def reasonRequiresNote(reasonId):
+    """True when the given DieCastReconciliationReason.Id demands a note.
+
+    Sibling of reasonOptions() over the same listReasons() read -- the
+    dropdown needs {label, value} only, but the note field's visibility needs
+    the RequiresNote flag reasonOptions() deliberately leaves off. Pure
+    projection, same as reasonOptions() itself; no rule is decided here."""
+    if reasonId is None:
+        return False
+    for r in listReasons():
+        if r.get("Id") == reasonId:
+            return bool(r.get("RequiresNote"))
+    return False
+
+
 def resolveLtt(ltt, toolId):
     """Called AS EACH LTT IS TYPED OR SCANNED, never at save.
 

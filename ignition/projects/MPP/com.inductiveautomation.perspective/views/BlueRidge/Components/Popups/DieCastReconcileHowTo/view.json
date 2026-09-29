@@ -1,0 +1,124 @@
+{
+  "custom": {},
+  "params": {
+    "popupId": "dieCastReconcileHowTo"
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 620,
+      "width": 700
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "surface-card"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "modal-header"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": "How to reconcile a shift"
+            }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "padding": "16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.markdown",
+            "meta": {
+              "name": "Guide"
+            },
+            "position": {
+              "basis": "0px",
+              "grow": 1
+            },
+            "props": {
+              "source": "<div style=\"font-size:14.5px;color:#C9D2E0;line-height:1.55;padding:0 0 16px 0;\">Reconcile one past shift on one press and die against its paper press sheet. You picked the shift from the list; this screen is where you compare what the MES has on record against what the sheet says, and settle the difference.</div><div style=\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr style=\"border:none;\"><td width=\"46\" valign=\"top\" style=\"border:none;background-color:#172238;\"><div style=\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\">1</div></td><td valign=\"top\" style=\"border:none;background-color:#172238;padding-top:2px;\"><div style=\"font-size:15px;font-weight:bold;color:#F0F3F8;\">Check the banner</div><div style=\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\">The amber banner across the top names the exact <b style=\"color:#F0F3F8;\">shift</b>, <b style=\"color:#F0F3F8;\">press</b> and <b style=\"color:#F0F3F8;\">die</b> you are reconciling, with its time window and current die life. If any of the three is wrong, use <b style=\"color:#F0F3F8;\">All shifts</b> below to go back and pick again — nothing here is guessed or pre-selected for you.</div></td></tr></table></div><div style=\"font-size:12.5px;color:#9AA8BF;font-style:italic;padding:2px 0 14px 46px;line-height:1.5;\">The line under the banner — “Reconciling as …” — is not decorative: everything you save on this screen is recorded under that name.</div><div style=\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr style=\"border:none;\"><td width=\"46\" valign=\"top\" style=\"border:none;background-color:#172238;\"><div style=\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\">2</div></td><td valign=\"top\" style=\"border:none;background-color:#172238;padding-top:2px;\"><div style=\"font-size:15px;font-weight:bold;color:#F0F3F8;\">Say why you are here</div><div style=\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\">Pick a <b style=\"color:#F0F3F8;\">Reason</b> for the reconciliation. Some reasons ask for a short note as well — the note field appears only when the reason you picked needs one.</div></td></tr></table></div><div style=\"background-color:#172238;border-radius:6px;padding:14px;margin:0 0 12px 0;\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr style=\"border:none;\"><td width=\"46\" valign=\"top\" style=\"border:none;background-color:#172238;\"><div style=\"width:34px;height:34px;border-radius:17px;background-color:#22A8CC;color:#0B1220;font-size:17px;font-weight:bold;text-align:center;line-height:34px;\">3</div></td><td valign=\"top\" style=\"border:none;background-color:#172238;padding-top:2px;\"><div style=\"font-size:15px;font-weight:bold;color:#F0F3F8;\">An empty shift is not a broken screen</div><div style=\"font-size:13.5px;color:#C9D2E0;padding-top:3px;line-height:1.5;\">If nothing was ever recorded for this shift — no entries, no LOTs, no rejects — the screen says so directly, in its own panel. That is the Machine 202 case this screen exists for: a shift that ran but never got a shift-end number. Everything from here comes straight off the press sheet.</div></td></tr></table></div><div style=\"background-color:#093240;border-left:5px solid #22A8CC;border-radius:4px;padding:12px 14px;margin:4px 0 16px 0;\"><div style=\"font-size:14px;font-weight:bold;color:#F0F3F8;padding-bottom:4px;\">This screen is still being built</div><div style=\"font-size:13.5px;color:#C9D2E0;line-height:1.5;\">The sections below the reason — entries on record, shift totals, rejects, and the LOT list with its LTT entry bar — are landing in upcoming updates. For now this guide covers the banner, the reason and the empty-shift notice only.</div></div>",
+              "markdown": {
+                "escapeHtml": false
+              },
+              "sectionSpacing": 8,
+              "style": {
+                "fontSize": 13,
+                "overflow": "auto"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
