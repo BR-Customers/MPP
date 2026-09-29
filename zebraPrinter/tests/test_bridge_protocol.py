@@ -12,7 +12,9 @@ Run: python -m pytest zebraPrinter/tests/test_bridge_protocol.py
 """
 
 import os
+import socket
 import sys
+import threading
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -93,3 +95,47 @@ def test_a_spooler_failure_is_reported_on_exactly_one_line():
     assert reply.startswith("ERR ")
     assert "\n" not in reply
     assert "ZDesigner GX420d" in reply
+
+
+def _serve_one(printer_name, spool, status):
+    """Accept exactly one connection on an ephemeral port. Returns the port."""
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    port = srv.getsockname()[1]
+
+    def run():
+        try:
+            conn, _ = srv.accept()
+            bridge.serve_connection(conn, printer_name, spool, status)
+        finally:
+            srv.close()
+
+    t = threading.Thread(target=run)
+    t.daemon = True
+    t.start()
+    return port
+
+
+def test_half_close_then_read_the_ack_over_a_real_socket():
+    port = _serve_one("Q", lambda d: (7, len(d)), _status_ok)
+    c = socket.create_connection(("127.0.0.1", port), timeout=5)
+    try:
+        c.sendall(b"^XA^XZ")
+        c.shutdown(socket.SHUT_WR)
+        line = c.makefile("rb").readline()
+    finally:
+        c.close()
+    assert line == b"OK queue='Q' job=7 bytes=6\n"
+
+
+def test_a_bare_connect_gets_no_bytes_and_no_hang():
+    """The reachability probe: connect, send nothing, close. Must not print
+       and must not leave the client waiting."""
+    port = _serve_one("Q", lambda d: (7, len(d)), _status_ok)
+    c = socket.create_connection(("127.0.0.1", port), timeout=5)
+    try:
+        c.shutdown(socket.SHUT_WR)
+        assert c.makefile("rb").readline() == b""
+    finally:
+        c.close()

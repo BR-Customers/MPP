@@ -47,6 +47,23 @@ class DOCINFO(ctypes.Structure):
                 ("pDatatype", wintypes.LPWSTR)]
 
 
+class PRINTER_INFO_2(ctypes.Structure):
+    _fields_ = [("pServerName", wintypes.LPWSTR), ("pPrinterName", wintypes.LPWSTR),
+                ("pShareName", wintypes.LPWSTR), ("pPortName", wintypes.LPWSTR),
+                ("pDriverName", wintypes.LPWSTR), ("pComment", wintypes.LPWSTR),
+                ("pLocation", wintypes.LPWSTR), ("pDevMode", wintypes.LPVOID),
+                ("pSepFile", wintypes.LPWSTR), ("pPrintProcessor", wintypes.LPWSTR),
+                ("pDatatype", wintypes.LPWSTR), ("pParameters", wintypes.LPWSTR),
+                ("pSecurityDescriptor", wintypes.LPVOID),
+                ("Attributes", wintypes.DWORD), ("Priority", wintypes.DWORD),
+                ("DefaultPriority", wintypes.DWORD), ("StartTime", wintypes.DWORD),
+                ("UntilTime", wintypes.DWORD), ("Status", wintypes.DWORD),
+                ("cJobs", wintypes.DWORD), ("AveragePPM", wintypes.DWORD)]
+
+
+winspool.GetPrinterW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPBYTE,
+                                 wintypes.DWORD, ctypes.POINTER(wintypes.DWORD)]
+winspool.GetPrinterW.restype = wintypes.BOOL
 winspool.OpenPrinterW.argtypes = [wintypes.LPWSTR, ctypes.POINTER(wintypes.HANDLE), wintypes.LPVOID]
 winspool.OpenPrinterW.restype = wintypes.BOOL
 winspool.StartDocPrinterW.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.POINTER(DOCINFO)]
@@ -97,6 +114,32 @@ def _quote(value):
     return "'" + ("%s" % value).replace("'", "''") + "'"
 
 
+def queue_status(printer_name):
+    """Read the queue's real state. ready = the queue opens and reports no
+       error/offline/paused bit; jobs = its current job count. Never raises --
+       an unopenable queue is a not-ready answer, which is the honest one."""
+    h = wintypes.HANDLE()
+    if not winspool.OpenPrinterW(printer_name, ctypes.byref(h), None):
+        return {"queue": printer_name, "ready": False, "jobs": 0}
+    try:
+        needed = wintypes.DWORD(0)
+        winspool.GetPrinterW(h, 2, None, 0, ctypes.byref(needed))
+        if not needed.value:
+            return {"queue": printer_name, "ready": False, "jobs": 0}
+        buf = ctypes.create_string_buffer(needed.value)
+        if not winspool.GetPrinterW(h, 2, ctypes.cast(buf, wintypes.LPBYTE),
+                                    needed.value, ctypes.byref(needed)):
+            return {"queue": printer_name, "ready": False, "jobs": 0}
+        info = ctypes.cast(buf, ctypes.POINTER(PRINTER_INFO_2)).contents
+        # PRINTER_STATUS_ERROR | _OFFLINE | _PAUSED | _NOT_AVAILABLE | _NO_TONER
+        bad = 0x00000002 | 0x00000080 | 0x00000001 | 0x00001000 | 0x00040000
+        return {"queue": printer_name,
+                "ready": (info.Status & bad) == 0,
+                "jobs": int(info.cJobs)}
+    finally:
+        winspool.ClosePrinter(h)
+
+
 def handle_request(data, printer_name, spool, status):
     """Map one request's bytes to one response line WITHOUT its trailing
        newline, or None when the protocol says stay silent.
@@ -123,6 +166,42 @@ def handle_request(data, printer_name, spool, status):
     return "OK queue=%s job=%d bytes=%d" % (_quote(printer_name), int(job), int(written))
 
 
+def _read_request(conn):
+    """Read until the peer half-closes, or the idle timeout, or the size cap."""
+    chunks, total = [], 0
+    try:
+        while True:
+            b = conn.recv(4096)
+            if not b:
+                break
+            chunks.append(b)
+            total += len(b)
+            if total >= MAX_REQUEST_BYTES:
+                break
+    except socket.timeout:
+        pass
+    return b"".join(chunks)
+
+
+def serve_connection(conn, printer_name, spool, status):
+    """Read one request, write one response line, close. Never raises."""
+    try:
+        conn.settimeout(READ_TIMEOUT)
+        reply = handle_request(_read_request(conn), printer_name, spool, status)
+        if reply is not None:
+            conn.sendall((reply + "\n").encode("ascii", "replace"))
+            print("  %s" % reply)
+            sys.stdout.flush()
+    except Exception as e:
+        print("  HANDLER ERROR: %s" % _oneline(e))
+        sys.stdout.flush()
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
 def main():
     printer_name = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_PRINTER
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -145,27 +224,9 @@ def main():
         # shows the Gateway's IP, a Designer Script Console test shows the local machine.
         print("  connection from %s" % (addr[0],))
         sys.stdout.flush()
-        conn.settimeout(2.0)
-        chunks = []
-        try:
-            while True:
-                b = conn.recv(4096)
-                if not b:
-                    break
-                chunks.append(b)
-        except socket.timeout:
-            pass
-        finally:
-            conn.close()
-        data = b"".join(chunks)
-        if data:
-            try:
-                job, n = send_raw(printer_name, data)
-                print("  received %d bytes -> spooled %d to '%s' as job %d"
-                      % (len(data), n, printer_name, job))
-            except Exception as e:
-                print("  PRINT ERROR: %s" % e)
-            sys.stdout.flush()
+        serve_connection(conn, printer_name,
+                         lambda d: send_raw(printer_name, d),
+                         lambda: queue_status(printer_name))
 
 
 if __name__ == "__main__":
