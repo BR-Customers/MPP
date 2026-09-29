@@ -131,11 +131,17 @@ def test_a_bridge_refusal_is_distinguished_from_a_network_failure(helpers):
 
 
 def test_a_resolved_endpoint_records_which_tier_chose_it(helpers):
+    """The tier and the endpoint go in the DESCRIPTION, not a payload.
+       Audit_LogInterfaceCall NULLs both payloads unless IsHighFidelity = 1
+       (FRS 3.17.4), and a routine resolve is low fidelity -- verified against
+       the live table on 2026-09-29, InterfaceLog row 24."""
     p = helpers["_resolveLogParams"]("10.20.11.157:9100", "terminal-printer",
                                      "Shipping label")
     assert p["errorCondition"] is None
-    assert "terminal-printer" in p["responsePayload"]
-    assert "10.20.11.157:9100" in p["responsePayload"]
+    assert p["isHighFidelity"] is False
+    assert p["responsePayload"] is None
+    assert "terminal-printer" in p["description"]
+    assert "10.20.11.157:9100" in p["description"]
 
 
 def test_an_unresolved_endpoint_leaves_a_row_rather_than_silence(helpers):

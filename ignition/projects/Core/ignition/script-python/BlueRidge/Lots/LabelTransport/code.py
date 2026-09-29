@@ -239,13 +239,19 @@ def _resolveLogParams(endpoint, via, labelKind):
        worse than one that fails loudly."""
     ep = (endpoint or "").strip()
     if ep:
+        # A routine resolve does not warrant payload retention, so this row is
+        # low fidelity -- and Audit_LogInterfaceCall NULLs RequestPayload and
+        # ResponsePayload unless IsHighFidelity = 1 (FRS 3.17.4). The endpoint
+        # and the tier therefore go in the Description, which is always kept.
+        # Setting a payload here would look informative and be discarded.
         return {
             "systemName":       _SYSTEM_NAME,
             "direction":        "Outbound",
             "logEventTypeCode": "LabelDispatched",
-            "description":      "%s endpoint resolved via %s" % (labelKind, via or "unknown"),
+            "description":      "%s endpoint resolved via %s to %s" % (
+                labelKind, via or "unknown", ep),
             "requestPayload":   None,
-            "responsePayload":  "Resolved %s via %s" % (ep, via or "unknown"),
+            "responsePayload":  None,
             "errorCondition":   None,
             "errorDescription": None,
             "isHighFidelity":   False,
