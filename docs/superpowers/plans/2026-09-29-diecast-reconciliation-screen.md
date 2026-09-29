@@ -171,6 +171,44 @@ RESULT: exactly one row, FOUR columns, on every exit path:
 
 ---
 
+## The Dev verification fixture — use this, do not report "code reading only"
+
+Found 2026-09-29, after Tasks 5 and 6 both reported they could not exercise a populated
+sheet. **They could.** `MPP_MES_Dev` carries real die cast production on **`DC1-M11` /
+`DMO125`** — the acceptance sheet's own press and die — dated 09-21 and 09-22. It reads as
+"No Entry" everywhere only because the landing's window is the last **7 days** and the data
+is 7-8 days old. Nothing is broken; the window is correct product behaviour.
+
+The **sheet view takes its ids as params**, so it renders a populated shift regardless of
+that window. Use:
+
+```
+shiftId = 20126   cellLocationId = 14   toolId = 1     (09-21 First Shift, DC1-M11 / DMO125)
+shiftId = 20129   cellLocationId = 14   toolId = 1     (09-22 First Shift, same press and die)
+```
+
+Verified row counts for **20126**, straight from the procs — these are what a correct screen
+must show:
+
+| Read | Rows |
+|---|---|
+| `_GetHeader` | 1 |
+| `_ListEntries` | 2 entries |
+| `_ListLots` | 10 LOTs |
+| `_ListRejects` | **0** |
+| `_ListMoveTargets` | 4 |
+| `_ListCavities` | 12 cavities |
+
+Two consequences worth stating:
+
+- `_ListMoveTargets` returning **4** here does not license assuming four. It legitimately
+  returns fewer at the ends of history, and the popup must render whatever arrives.
+- `_ListRejects` returns **0**, so the reject block's *recorded* side has no live data on
+  Dev. The typed side can still be exercised. Do not manufacture reject rows to fix this —
+  say it is unverified, the way Plan 1 refused to reconstruct a fixture.
+
+---
+
 ## File Structure
 
 | File | Responsibility |
