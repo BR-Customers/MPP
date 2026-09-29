@@ -718,7 +718,9 @@ git commit -m "feat(ignition): route and elevation replay entry for the reconcil
 
 **Interfaces:**
 - Consumes: `BlueRidge.Common.Session.isElevated / requireElevation`.
-- Produces: `view.custom.phase` (`"landing" | "sheet" | "result"`), `view.custom.selection` (`{shiftId, cellLocationId, toolId}`), and the page messages `reconcileShiftChosen`, `reconcileBackToShifts`, `reconcileSaved`.
+- Produces: `view.custom.phase` (`"landing" | "sheet" | "result"`), `view.custom.selection` (`{shiftId, cellLocationId, toolId, shiftLabel}`), and the page messages `reconcileShiftChosen`, `reconcileBackToShifts`, `reconcileSaved`.
+
+**`shiftLabel` travels with the selection** because the result panel (Step 5) and the crumb both name the shift, and the shell reads nothing from the database. The landing already has it on every row (`ListShifts.ShiftLabel`), so passing it costs nothing and keeps the shell free of a lookup it would otherwise need purely to render a heading.
 
 **A view folder needs BOTH `view.json` and `resource.json`** (scope `G`) or the page renders *"View Not Found"*.
 
@@ -750,7 +752,7 @@ git commit -m "feat(ignition): route and elevation replay entry for the reconcil
 ```json
 "custom": {
   "phase": "landing",
-  "selection": { "shiftId": null, "cellLocationId": null, "toolId": null },
+  "selection": { "shiftId": null, "cellLocationId": null, "toolId": null, "shiftLabel": "" },
   "savedResult": { "NewId": null, "Message": "" }
 }
 ```
@@ -798,14 +800,16 @@ Root is `ia.container.flex`, `direction: "column"`, `meta.name: "root"`, with th
 	# ONE property write: phase and selection move together, so no binding ever
 	# observes a sheet phase against a stale selection.
 	self.view.custom.selection = {"shiftId": p.get("shiftId"),
-		"cellLocationId": p.get("cellLocationId"), "toolId": p.get("toolId")}
+		"cellLocationId": p.get("cellLocationId"), "toolId": p.get("toolId"),
+		"shiftLabel": p.get("shiftLabel") or ""}
 	self.view.custom.phase = "sheet"
 ```
 
 `reconcileBackToShifts`:
 
 ```python
-	self.view.custom.selection = {"shiftId": None, "cellLocationId": None, "toolId": None}
+	self.view.custom.selection = {"shiftId": None, "cellLocationId": None, "toolId": None,
+		"shiftLabel": ""}
 	self.view.custom.phase = "landing"
 ```
 
@@ -823,7 +827,7 @@ All three handlers set `pageScope: true`. View scope does not propagate from an 
 
 `ResultPanel` is the `phase = "result"` child. It carries three things and nothing else:
 
-- a success heading naming the shift — `{view.custom.selection}`'s shift label as the banner rendered it;
+- a success heading naming the shift — `{view.custom.selection.shiftLabel}`;
 - **the reconciliation number**, `{view.custom.savedResult.NewId}`, and the proc's own `Message`;
 - a **Back to shifts** button.
 
@@ -859,7 +863,7 @@ git commit -m "feat(ignition): reconciliation shell -- route, AD gate, phase"
 
 **Interfaces:**
 - Consumes: `listShifts`, `listUnreconciled`, `Location.Location` press list.
-- Produces: page message `reconcileShiftChosen` `{shiftId, cellLocationId, toolId}`.
+- Produces: page message `reconcileShiftChosen` `{shiftId, cellLocationId, toolId, shiftLabel}`.
 
 **Nothing is pre-selected.** The wrong-shift defect this feature repairs came from a screen that preselected the current shift; this is the single most important behaviour on this view.
 
@@ -956,7 +960,7 @@ Use `onSelectionChange`, not `onRowClick`. Guard on `None`, not falsiness — `i
 		return
 	system.perspective.sendMessage("reconcileShiftChosen", payload={
 		"shiftId": row.get("ShiftId"), "cellLocationId": row.get("CellLocationId"),
-		"toolId": row.get("ToolId")}, scope="page")
+		"toolId": row.get("ToolId"), "shiftLabel": row.get("ShiftLabel")}, scope="page")
 ```
 
 - [ ] **Step 6: Group a mid-shift die change as two collapsible events**
