@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-12
-# Version:          2.1
+# Version:          2.2
 #
 # Description:
 #   Entity-script for Location.Location and its attribute values.
@@ -14,6 +14,7 @@
 #       getAllAreas(includeAll=False)     -> list[{label, value}]
 #       listByTier(tierCode)             -> list[dict]
 #       getDieCastMachineDropdown(itemId) -> list[{label, value}]
+#       getDieCastPressDropdown()        -> list[{label, value}]
 #       getCutoverDestinationDropdown(lineLocationId, itemId=None) -> list[{label, value}]
 #       listCutoverDestinations(lineLocationId, itemId=None) -> list[dict]
 #       getCutoverSourceDropdown()       -> list[{label, value}]
@@ -98,6 +99,16 @@
 #                      (location/CutoverSource_List). listCutoverDestinations
 #                      exposes the proc's IsDefault; getCutoverDestinationDropdown
 #                      takes itemId (the default follows the part's trim shop).
+#   2026-09-29 - 2.2 - Die cast reconciliation landing: getDieCastPressDropdown()
+#                      -- every active die cast machine (no item filter),
+#                      labelled 'Name . Asset # Code' per the Tools screen's
+#                      physical-asset convention (design spec 2026-09-21 sec 6).
+#                      Reuses location/DieCastMachine_ListForItem -- itemId=None
+#                      trips its own item-eligibility fallback (@EligibleCount
+#                      is forced to 0 when @ItemId IS NULL) so this is EVERY
+#                      active machine, unfiltered by any part. Sibling to
+#                      getDieCastMachineDropdown, not a replacement -- that one
+#                      keeps its Area-prefixed label for the cutover scan.
 # =============================================================================
 
 import java.lang
@@ -1182,3 +1193,37 @@ def getCutoverSourceDropdown(_refreshToken=None):
        _refreshToken is ignored -- runScript caches on args."""
     return [{"label": r.get("DisplayName") or r.get("Name") or r.get("Code") or "",
              "value": r.get("Id")} for r in listCutoverSources()]
+
+
+def getDieCastPressDropdown():
+    """Every active die cast machine (press) for the reconciliation landing's
+       press picker, shaped for ia.input.dropdown: [{label, value}].
+
+       Label is 'Name · Asset # Code' -- the plant's physical-asset naming
+       order (the Tools screen has called Tools.Tool.Code the asset number
+       since the 2026-09-10 punch list; design spec 2026-09-21 sec 6 applies
+       the same order here). The word "code" never reaches the operator.
+
+       Calls location/DieCastMachine_ListForItem with itemId=None. That proc's
+       @EligibleCount is computed with an `@ItemId IS NOT NULL` guard, so a
+       NULL itemId forces @EligibleCount = 0 and the proc's own fallback
+       branch returns EVERY active machine -- exactly what a press picker
+       (not a part-scoped cutover scan) needs. Sibling to
+       getDieCastMachineDropdown(itemId), which keeps its Area-prefixed label
+       for that scan; this one is not a drop-in replacement for it.
+
+       Always a list, never None."""
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "location/DieCastMachine_ListForItem", {"itemId": None}) or []
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("getDieCastPressDropdown failed: %s" % str(e),
+                                  level="warn")
+        return []
+    options = []
+    for r in rows:
+        name = r.get("Name") or r.get("Code") or ""
+        code = r.get("Code") or ""
+        label = (u"%s \xb7 Asset # %s" % (name, code)) if code else name
+        options.append({"label": label, "value": r.get("Id")})
+    return options

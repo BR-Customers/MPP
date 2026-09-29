@@ -1,0 +1,60 @@
+{
+  "custom": {},
+  "params": {
+    "value": ""
+  },
+  "propConfig": {
+    "params.value": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 32,
+      "width": 180
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "alignItems": "center",
+      "justify": "start",
+      "style": { "height": "100%", "width": "100%" }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Pill" },
+        "position": { "shrink": 0 },
+        "propConfig": {
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"pf-pill \" + if({view.params.value} = \"ReleasedNoShiftEnd\", \"pf-pill-warn\", if({view.params.value} = \"Reconciled\", \"pf-pill-good\", \"\"))"
+              }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.value} = \"Open\", \"Open - live screen owns it\", if({view.params.value} = \"ReleasedNoShiftEnd\", \"Released, no shift-end number\", if({view.params.value} = \"Reconciled\", \"Reconciled\", if({view.params.value} = \"EntryRecorded\", \"Entry recorded\", if({view.params.value} = \"NoEntry\", \"No entry\", if({view.params.value} = \"GroupHeaderCollapsed\", \"Tap to expand\", if({view.params.value} = \"GroupHeaderExpanded\", \"Tap to collapse\", toStr({view.params.value}))))))))"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "borderRadius": "999px",
+            "fontSize": "12px",
+            "fontWeight": "600",
+            "padding": "3px 10px",
+            "whiteSpace": "nowrap"
+          }
+        }
+      }
+    ]
+  }
+}

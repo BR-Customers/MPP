@@ -1,0 +1,579 @@
+{
+  "custom": {
+    "presses": [],
+    "selectedPressId": null,
+    "rows": [],
+    "displayRows": [],
+    "collapsedShiftIds": [],
+    "flagged": [],
+    "flaggedCount": 0,
+    "days": 7
+  },
+  "params": {},
+  "propConfig": {
+    "custom.presses": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getDieCastPressDropdown\", 0)"
+        }
+      }
+    },
+    "custom.flagged": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCastReconciliation.listFlagged\", 0, {view.custom.days})"
+        }
+      }
+    },
+    "custom.flaggedCount": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "len({view.custom.flagged})"
+        }
+      }
+    },
+    "custom.rows": {
+      "binding": {
+        "type": "property",
+        "config": {
+          "path": "view.custom.selectedPressId"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\t# rows is loaded whenever selectedPressId changes. listShifts does NOT\n\t# return CellLocationId (see R__Workorder_DieCastShiftReconciliation_ListShifts.sql)\n\t# -- this table is always scoped to ONE press, so the selected press id IS\n\t# every row's CellLocationId. Stamp it on so the hidden CellLocationId\n\t# column (and the reconcileShiftChosen payload it feeds) is populated.\n\tif value is None:\n\t\treturn []\n\trows = BlueRidge.Workorder.DieCastReconciliation.listShifts(value, 7) or []\n\tout = []\n\tfor r in rows:\n\t\td = dict(r)\n\t\td[\"CellLocationId\"] = value\n\t\tout.append(d)\n\treturn out"
+          }
+        ]
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Recompute the mid-shift-die-change grouping every time the press's raw\n\t# row list changes (new press picked, or the same press re-loaded).\n\t# onChange is a SIBLING of \"binding\" in propConfig -- nesting it inside\n\t# binding is accepted by the deserializer with no error and simply never\n\t# fires (verified against a running gateway 2026-09-29).\n\tself.rootContainer.rebuildDisplayRows()"
+      }
+    }
+  },
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "canvas", "gap": "16px", "padding": "20px" }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "rebuildDisplayRows",
+          "params": [],
+          "script": "\t# Presentation-only grouping: two rows sharing a ShiftId but differing in\n\t# ToolId are a mid-shift die change. They are collapsed under one\n\t# synthetic header row that is never itself sent to reconcileShiftChosen\n\t# (see ShiftsTable's onSelectionChange) -- each member row stays its own\n\t# selectable reconciliation. Default is EXPANDED (collapsedShiftIds starts\n\t# empty) so nothing an operator needs to act on starts out hidden.\n\trows = self.view.custom.rows or []\n\tcollapsed = self.view.custom.collapsedShiftIds or []\n\torder = []\n\tbyShift = {}\n\tfor r in rows:\n\t\tsid = r.get(\"ShiftId\")\n\t\tif sid not in byShift:\n\t\t\tbyShift[sid] = []\n\t\t\torder.append(sid)\n\t\tbyShift[sid].append(r)\n\tout = []\n\tfor sid in order:\n\t\tmembers = byShift[sid]\n\t\ttoolIds = set([m.get(\"ToolId\") for m in members])\n\t\tif len(members) > 1 and len(toolIds) > 1:\n\t\t\tisCollapsed = sid in collapsed\n\t\t\tsep = u\" \" + unichr(183) + u\" Asset # \"\n\t\t\tlabels = []\n\t\t\tfor m in members:\n\t\t\t\tname = m.get(\"DieName\") or \"\"\n\t\t\t\tcode = m.get(\"AssetNumber\") or \"\"\n\t\t\t\tlabels.append((name + sep + code) if code else name)\n\t\t\theader = dict(members[0])\n\t\t\theader[\"StatusCode\"] = \"GroupHeaderCollapsed\" if isCollapsed else \"GroupHeaderExpanded\"\n\t\t\theader[\"AssetNumber\"] = u\" / \".join(labels)\n\t\t\theader[\"ContributionRows\"] = None\n\t\t\theader[\"GoodRecorded\"] = None\n\t\t\theader[\"RecordedTotalShots\"] = None\n\t\t\tmarker = \"[+] \" if isCollapsed else \"[-] \"\n\t\t\theader[\"ShiftLabel\"] = marker + (members[0].get(\"ShiftLabel\") or \"\") + \" (mid-shift die change)\"\n\t\t\tout.append(header)\n\t\t\tif not isCollapsed:\n\t\t\t\tout.extend(members)\n\t\telse:\n\t\t\tout.extend(members)\n\tself.view.custom.displayRows = out"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    },
+    "children": [
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "UnreconciledTile",
+          "tooltip": { "text": "Jump to the first press with an unreconciled shift" }
+        },
+        "position": { "shrink": 0, "basis": "auto" },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.custom.flaggedCount}) + char(10) + \"Shifts not reconciled \" + char(183) + \" last 7 days\""
+              }
+            }
+          },
+          "props.style.backgroundColor": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.custom.flaggedCount} > 0, \"var(--pf-status-warn-bg)\", \"var(--mpp-surface-card)\")"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.custom.flaggedCount} > 0, \"var(--pf-status-warn-fg)\", \"var(--mpp-text-primary)\")"
+              }
+            }
+          },
+          "props.style.borderColor": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.custom.flaggedCount} > 0, \"var(--pf-status-warn-fg)\", \"var(--mpp-border-subtle)\")"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-btn",
+            "whiteSpace": "pre-line",
+            "textAlign": "left",
+            "fontSize": "20px",
+            "fontWeight": "700",
+            "lineHeight": "1.4",
+            "minHeight": "76px",
+            "width": "320px",
+            "padding": "10px 16px",
+            "borderWidth": "1px",
+            "borderStyle": "solid"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\t# The tile is a shortcut into the SAME per-press list below, not a second\n\t# view: jump to the first flagged press and let the existing rows binding\n\t# (on selectedPressId) do the rest. Nothing else is pre-selected.\n\tflagged = self.view.custom.flagged or []\n\tif flagged:\n\t\tself.view.custom.selectedPressId = flagged[0].get(\"CellLocationId\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "PressRow" },
+        "position": { "shrink": 0, "basis": "auto" },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "10px" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "PressLabel" },
+            "position": { "shrink": 0, "basis": "auto" },
+            "props": {
+              "text": "Press:",
+              "style": { "classes": "pf-field-label" }
+            }
+          },
+          {
+            "type": "ia.input.dropdown",
+            "meta": { "name": "PressDropdown" },
+            "position": { "basis": "340px", "shrink": 0 },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.presses" }
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": { "bidirectional": true, "path": "view.custom.selectedPressId" }
+                }
+              }
+            },
+            "props": {
+              "placeholder": { "text": "Select a press" },
+              "style": { "classes": "pf-field-select" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "EmptyStateHint" },
+        "position": { "shrink": 0, "basis": "auto" },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "isNull({view.custom.selectedPressId})" }
+            }
+          }
+        },
+        "props": {
+          "text": "Select a press above to see its last 7 days of shifts.",
+          "style": { "classes": "pf-kpi-sub" }
+        }
+      },
+      {
+        "type": "ia.display.table",
+        "meta": { "name": "ShiftsTable" },
+        "position": { "grow": 1, "basis": "0" },
+        "events": {
+          "component": {
+            "onSelectionChange": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsel = self.props.selection.data\n\tif sel is None or len(sel) == 0:\n\t\treturn\n\trow = sel[0]\n\tcode = row.get(\"StatusCode\") or \"\"\n\tif code.startswith(\"GroupHeader\"):\n\t\t# The header row is presentation only -- toggle its group's collapsed\n\t\t# state and rebuild the display list. It never reaches reconcileShiftChosen.\n\t\tsid = row.get(\"ShiftId\")\n\t\tids = list(self.view.custom.collapsedShiftIds or [])\n\t\tif sid in ids:\n\t\t\tids.remove(sid)\n\t\telse:\n\t\t\tids.append(sid)\n\t\tself.view.custom.collapsedShiftIds = ids\n\t\tself.view.rootContainer.rebuildDisplayRows()\n\t\treturn\n\tif row.get(\"StatusCode\") == \"Open\":\n\t\tBlueRidge.Common.Notify.toast(\"Shift is open\",\n\t\t\t\"This shift is still running. The live die cast screen owns it.\", \"info\")\n\t\treturn\n\tsystem.perspective.sendMessage(\"reconcileShiftChosen\", payload={\n\t\t\"shiftId\": row.get(\"ShiftId\"), \"cellLocationId\": row.get(\"CellLocationId\"),\n\t\t\"toolId\": row.get(\"ToolId\"), \"shiftLabel\": row.get(\"ShiftLabel\")}, scope=\"page\")"
+              }
+            }
+          }
+        },
+        "propConfig": {
+          "props.data": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.custom.displayRows" }
+            }
+          }
+        },
+        "props": {
+          "columns": [
+            {
+              "align": "left",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "ShiftLabel",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Shift" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100, "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": 190
+            },
+            {
+              "align": "left",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "AssetNumber",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Die asset #" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100, "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": 260
+            },
+            {
+              "align": "right",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "ContributionRows",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Entries" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100, "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "number",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": 90
+            },
+            {
+              "align": "right",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "GoodRecorded",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Good recorded" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100, "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "number",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": 130
+            },
+            {
+              "align": "right",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "RecordedTotalShots",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Shift-end reading" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "none", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100, "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "number",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": 160
+            },
+            {
+              "align": "left",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "StatusCode",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Status" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100, "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "view",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "BlueRidge/Components/PlantFloor/_DieCastReconcileLanding/StatusChip",
+              "visible": true,
+              "width": 240
+            },
+            {
+              "align": "left",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "ShiftId",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Shift Id" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100, "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": false,
+              "width": ""
+            },
+            {
+              "align": "left",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "ToolId",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Tool Id" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100, "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": false,
+              "width": ""
+            },
+            {
+              "align": "left",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "CellLocationId",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Cell Location Id" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100, "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": false,
+              "width": ""
+            }
+          ],
+          "style": { "width": "100%" }
+        }
+      }
+    ]
+  }
+}
