@@ -88,10 +88,22 @@ def main():
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     srv.bind((HOST, PORT))
     srv.listen(5)
+    # A blocking accept() never returns to the interpreter loop, and on Windows CPython
+    # only delivers KeyboardInterrupt to the main thread BETWEEN bytecode instructions --
+    # so a Ctrl-C sits queued until the next connection arrives and appears to do nothing.
+    # A 1s timeout hands control back every second so the interrupt lands promptly.
+    srv.settimeout(1.0)
     print("Bridging  %s:%d  ->  printer '%s'   (Ctrl-C to stop)" % (HOST, PORT, printer_name))
     sys.stdout.flush()
     while True:
-        conn, addr = srv.accept()
+        try:
+            conn, addr = srv.accept()
+        except socket.timeout:
+            continue
+        # Log the source so a dispatch self-documents its origin: a Gateway-scope print
+        # shows the Gateway's IP, a Designer Script Console test shows the local machine.
+        print("  connection from %s" % (addr[0],))
+        sys.stdout.flush()
         conn.settimeout(2.0)
         chunks = []
         try:
