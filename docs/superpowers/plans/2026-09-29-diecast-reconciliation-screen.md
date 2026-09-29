@@ -1336,6 +1336,10 @@ Bind `view.custom.blockers` to a script transform:
 
 	if st.get("reasonId") is None:
 		out.append("Choose a reason for this reconciliation.")
+	elif BlueRidge.Workorder.DieCastReconciliation.reasonRequiresNote(
+			st.get("reasonId")) and not (st.get("note") or "").strip():
+		# Save line 498 refuses this too.
+		out.append("This reason needs a note saying what happened.")
 
 	hasLines = len(lots) > 0 or len(rejs) > 0
 	total = act.get("totalShots")
@@ -1349,10 +1353,19 @@ Bind `view.custom.blockers` to a script transform:
 		return out
 
 	if total is not None and good is not None and warm is not None:
-		if good + warm > total:
-			out.append("Good shots plus warm-up shots (%d) is more than total shots (%d)."
-			           % (good + warm, total))
+		# EQUALITY, not ">". Save line 782 is `IF @Total <> @Good + @Warm` and
+		# refuses either way. A ">"-only mirror leaves total=900 good=750 warm=12
+		# with an empty blocker strip and an enabled Save that then fails on click.
+		if good + warm != total:
+			out.append("Total shots %s should equal good shots %s + warm-up %s = %s. One of them has a typo."
+			           % ("{:,}".format(total), "{:,}".format(good),
+			              "{:,}".format(warm), "{:,}".format(good + warm)))
 		cav    = hd.get("ActiveCavities") or 0
+		if cav == 0:
+			# Save line 701. Without this the zero makes expected negative and
+			# surfaces as a baffling LOT-sum message instead.
+			out.append("This die had no active cavities during this shift, so there is nothing to reconcile against.")
+			return out
 		noGood = sum([(r.get("quantity") or 0) for r in rejs])
 		expected = good * cav - noGood
 		lotSum   = sum([(l.get("quantity") or 0) for l in lots])
