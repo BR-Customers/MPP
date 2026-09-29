@@ -1612,9 +1612,26 @@ sqlcmd -S localhost -d MPP_MES_Dev -E -C -h -1 -W -Q "SET NOCOUNT ON; SELECT CAS
 
 Expected: `ok` twice. Tasks 17/18 of Plan 1 were committed but **not** applied to Dev until 2026-09-29; do not assume.
 
-- [ ] **Step 2: Walk the whole flow with a real AD sign-in**
+- [ ] **Step 2: Walk the whole flow with elevation BYPASSED**
 
-Every popup in spec §7; a blocked save for **each** blocking check; a reduction that needs its tick box; a move; a new LTT; a locked LOT whose count stands.
+**Decided 2026-09-29 (Jacques): the Dev gateway has no AD identity provider configured, so an
+elevation can never complete on it. Smoke the screen with the gate bypassed and accept the AD
+gate itself as untested until prod.** This is pre-existing
+(`notes/2026-08-19_backlog_crt_and_shop_floor.md` item 4.3), not caused by this feature.
+
+How to bypass without weakening anything: **dismiss the ElevationModal** (the screen renders
+beneath it — verified in Tasks 4 and 5) and **sign in with a PIN** at the terminal. The PIN sets
+`session.custom.appUserId`, which is what `Common.Session.currentAppUserId` returns and what the
+Save stamps, so attribution works and the write path is exercised end to end. Do **not** edit the
+gate out of the view to make this easier — the shipped code must carry the gate.
+
+Then walk it: every popup in spec §7; a blocked save for **each** blocking check; a reduction that
+needs its tick box; a move; a new LTT; a locked LOT whose count stands.
+
+**What this leaves untested, and must therefore be verified in the prod window:** that
+`requireElevation` → credential → `dispatchElevatedAction` actually replays
+`dieCastReconcileRequested` and lands the team lead on a working screen, and that the Save is then
+attributed to the **supervisor** rather than to whoever was PIN-signed-in. Both are in the runbook.
 
 - [ ] **Step 3: Confirm what was written**
 
