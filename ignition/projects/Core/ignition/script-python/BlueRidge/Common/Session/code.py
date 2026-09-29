@@ -117,14 +117,26 @@ def loadPolicyIntoSession(session):
     session.custom.policy = {
         "operatorPresenceTimeoutSeconds": p.get("OperatorPresenceTimeoutSeconds") or 1800,
         "elevationTimeoutSeconds":        p.get("ElevationTimeoutSeconds") or 300,
+        "elevationMaxSeconds":            p.get("ElevationMaxSeconds") or 1800,
     }
 
 
 def isElevated(session):
-    """True while a rolling elevation window is open."""
+    """True while a rolling elevation window is open.
+
+    BOTH clocks must still be in the future: the rolling deadline that activity
+    pushes forward (elevatedUntil) and the absolute ceiling stamped at grant
+    (elevatedHardUntil, 0100). The ceiling is tested here as well as clamped in
+    touchElevation so an elevatedUntil written by an older build -- or by any
+    future caller that forgets the clamp -- still cannot outlive the ceiling.
+    A session with no ceiling (pre-0100 session state, mid-upgrade) is governed
+    by the rolling deadline alone, which is exactly the old behaviour."""
     try:
         until = session.custom.elevatedUntil
-        return until is not None and until > nowMs()
+        if until is None or until <= nowMs():
+            return False
+        hard = session.custom.elevatedHardUntil
+        return hard is None or hard > nowMs()
     except Exception:
         return False
 
@@ -134,6 +146,18 @@ def _elevationSeconds(session):
         return (session.custom.policy or {}).get("elevationTimeoutSeconds") or 300
     except Exception:
         return 300
+
+
+def _elevationMaxSeconds(session):
+    """The absolute ceiling, in seconds. Never below the rolling timeout -- the
+    proc and a CHECK constraint both enforce that, and this max() is the third
+    line of defence so a hand-edited row cannot produce a window that is over
+    before it starts."""
+    try:
+        v = (session.custom.policy or {}).get("elevationMaxSeconds") or 1800
+    except Exception:
+        v = 1800
+    return max(v, _elevationSeconds(session))
 
 
 def beginElevatedWindow(session, payload):
@@ -148,13 +172,37 @@ def beginElevatedWindow(session, payload):
         "initials":     "",
     }
     session.custom.appUserId = p.get("appUserId")
-    session.custom.elevatedUntil = nowMs() + _elevationSeconds(session) * 1000
+    now = nowMs()
+    session.custom.elevatedUntil     = now + _elevationSeconds(session) * 1000
+    session.custom.elevatedHardUntil = now + _elevationMaxSeconds(session) * 1000
 
 
 def touchElevation(session):
-    """Push the rolling elevation deadline forward on activity."""
-    if isElevated(session):
-        session.custom.elevatedUntil = nowMs() + _elevationSeconds(session) * 1000
+    """Push the rolling elevation deadline forward on activity, never past the
+    ceiling stamped at grant.
+
+    Called from the app header's idle poll (AppHeaderLarge, custom.idleTick)
+    on every tick where the session is elevated and NOT idle. Without it the
+    two clocks disagree: session.props.lastActivity governs the idle reset and
+    resets on real interaction, while elevatedUntil was stamped once at grant --
+    so somebody working continuously for longer than the elevation timeout is
+    never idle, never reset, and yet silently loses their elevation.
+
+    The clamp is what keeps that from becoming unbounded. beginElevatedWindow
+    REPLACES session.custom.user with the supervisor, so an elevation that
+    activity alone could extend forever would attribute an operator's whole
+    shift to a supervisor who left. Activity buys time up to the ceiling and
+    no further."""
+    if not isElevated(session):
+        return
+    extended = nowMs() + _elevationSeconds(session) * 1000
+    try:
+        hard = session.custom.elevatedHardUntil
+    except Exception:
+        hard = None
+    if hard is not None and extended > hard:
+        extended = hard
+    session.custom.elevatedUntil = extended
 
 
 def activeTimeoutSeconds(session):
@@ -213,6 +261,7 @@ def resetTerminal(session):
     session.custom.user = {"appUserId": None, "displayName": "", "ignitionRole": "", "initials": ""}
     session.custom.appUserId = None
     session.custom.elevatedUntil = None
+    session.custom.elevatedHardUntil = None
     session.custom.pendingElevatedAction = None
     system.perspective.navigate(_resetDestination(session))
     system.perspective.openPopup(

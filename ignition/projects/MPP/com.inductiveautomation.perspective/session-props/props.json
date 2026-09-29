@@ -9,6 +9,7 @@
     "closureCapabilities": [],
     "closureMethod": "",
     "elevatedUntil": null,
+    "elevatedHardUntil": null,
     "lotTrail": [],
     "pendingElevatedAction": null,
     "plcDevices": [],

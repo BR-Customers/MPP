@@ -329,6 +329,7 @@ def applyToSession(session, terminal):
     # tid branch so BOTH the fallback and registered-terminal paths get it.
     BlueRidge.Common.Session.loadPolicyIntoSession(session)
     session.custom.elevatedUntil = None
+    session.custom.elevatedHardUntil = None
     session.custom.pendingElevatedAction = None
     if tid is None:
         session.custom.terminal = term
