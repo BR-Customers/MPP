@@ -34,6 +34,10 @@ HOST = "0.0.0.0"            # ALL interfaces -- reachable from the LAN, test/pro
 PORT = 9100
 DEFAULT_PRINTER = "Zebra GX420d (RAW)"
 
+BRIDGE_VERSION = "1.0.0"
+MAX_REQUEST_BYTES = 1048576   # 1 MiB -- see PROTOCOL.md "Framing"
+READ_TIMEOUT = 2.0
+
 winspool = ctypes.WinDLL("winspool.drv", use_last_error=True)
 
 
@@ -80,6 +84,30 @@ def send_raw(printer_name, data):
             winspool.EndDocPrinter(h)
     finally:
         winspool.ClosePrinter(h)
+
+
+def _oneline(text):
+    """Collapse whitespace so an error can never break the one-line framing."""
+    return " ".join(("%s" % text).split())
+
+
+def _quote(value):
+    """Single-quote a wire value, doubling any embedded quote (PROTOCOL.md)."""
+    return "'" + ("%s" % value).replace("'", "''") + "'"
+
+
+def handle_request(data, printer_name, spool, status):
+    """Map one request's bytes to one response line WITHOUT its trailing
+       newline, or None when the protocol says stay silent.
+
+       spool(data)  -> (job_id, bytes_written), raises on failure
+       status()     -> {"queue": str, "ready": bool, "jobs": int}
+
+       Pure apart from the two injected callables, so the whole protocol is
+       testable with no printer attached."""
+    if not data:
+        return None
+    return "ERR not implemented"
 
 
 def main():
