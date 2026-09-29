@@ -361,7 +361,8 @@ git commit -m "feat(ignition): named queries for the die cast shift reconciliati
 - Consumes: the ten NQ paths from Task 1.
 - Produces, all on `BlueRidge.Workorder.DieCastReconciliation`:
   - `listShifts(cellLocationId, days=7)` → `list[dict]`
-  - `listUnreconciled(days=7)` → `list[dict]`
+  - `listUnreconciled(days=7)` → `list[dict]` (both claims)
+  - `listFlagged(days=7)` → `list[dict]` (the alerting claim only — the tile's source)
   - `getHeader(shiftId, cellLocationId, toolId)` → `dict` or `None`
   - `getHeaderOrEmpty(shiftId, cellLocationId, toolId)` → `dict`, always fully shaped
   - `listEntries / listLots / listRejects / listMoveTargets / listCavities(shiftId, cellLocationId, toolId)` → `list[dict]`
@@ -450,6 +451,18 @@ def listUnreconciled(days=7):
     BlueRidge.Common.Util.log("days=%s" % days)
     return BlueRidge.Common.Db.execList(
         "workorder/DieCastShift_ListUnreconciled", {"days": days})
+
+
+def listFlagged(days=7):
+    """listUnreconciled filtered to the ALERTING claim, which is the only thing
+    the dashboard tile and its drill-through ever count.
+
+    It lives here rather than in a per-view script transform because BOTH the
+    landing tile and the supervisor dashboard tile need exactly this list, and
+    two copies of the filter is two places for the two tiles to drift apart and
+    disagree about the same number. Projection, not domain logic -- IsAlerting
+    is decided in SQL and this only selects on it."""
+    return [r for r in listUnreconciled(days) if r.get("IsAlerting")]
 
 
 def getHeader(shiftId, cellLocationId, toolId):
@@ -860,7 +873,16 @@ git commit -m "feat(ignition): reconciliation shell -- route, AD gate, phase"
 
 A single `ia.input.button` styled as a tile at the top: the count in large type, then *"Shifts not reconciled · last 7 days"*.
 
-`view.custom.flagged` binds to `runScript('BlueRidge.Workorder.DieCastReconciliation.listUnreconciled', 0, 7)`, with a **script transform that keeps only `IsAlerting` rows**:
+`view.custom.flagged` binds to `runScript('BlueRidge.Workorder.DieCastReconciliation.listFlagged', 0, 7)`.
+No script transform: the filter lives in the entity module so this tile and the supervisor
+dashboard's tile (Task 12) cannot drift apart about the same number. `listFlagged` returns only
+the **alerting** claim — production on record with no shift-end number. The idle claim
+(`IsAlerting = 0`) is a die left assigned between runs; it fires over every weekend and prep
+window, and counting it would train people to ignore amber. Merging the two is forbidden by the
+spec, and the read keeps them distinguishable precisely so the screen can filter rather than
+re-derive.
+
+The landing's inline idle rows come from the per-press `listShifts` read, not from this one:
 
 ```python
 	# The tile counts ONLY the alerting claim -- production on record with no
@@ -1537,7 +1559,7 @@ This is an **existing** view. See "Editing existing views" above — file editin
 
 - [ ] **Step 1: Add the tile**
 
-**Shifts not reconciled** — a count, amber when non-zero, matching the existing tiles' shape. It binds to `runScript('BlueRidge.Workorder.DieCastReconciliation.listUnreconciled', 0, 7)` with the same `IsAlerting` script transform as Task 5 Step 2; the count is the alerting claim **only**.
+**Shifts not reconciled** — a count, amber when non-zero, matching the existing tiles' shape. It binds to `runScript('BlueRidge.Workorder.DieCastReconciliation.listFlagged', 0, 7)` — the **same function** Task 5's tile uses, so the two tiles cannot disagree. The count is the alerting claim **only**.
 
 - [ ] **Step 2: Navigate on tap**
 
