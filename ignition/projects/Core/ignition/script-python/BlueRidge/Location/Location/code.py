@@ -1222,8 +1222,15 @@ def getDieCastPressDropdown():
         return []
     options = []
     for r in rows:
-        name = r.get("Name") or r.get("Code") or ""
-        code = r.get("Code") or ""
-        label = (u"%s \xb7 Asset # %s" % (name, code)) if code else name
-        options.append({"label": label, "value": r.get("Id")})
+        # The press is labelled by its NAME alone -- "Machine 11".
+        #
+        # NOT "Machine 11 . Asset # DC1-M01". An asset number is a DIE's
+        # identifier (Tools.Tool.Code, e.g. DMO125); DC1-M01 is this
+        # machine's Location code, and presenting it as an asset number
+        # invents a concept the plant does not use. The die's asset number
+        # belongs to the shift table's own "Die asset #" column, where it
+        # is a fact about the die that ran. "Machine 11" is what the
+        # operator calls this thing.
+        options.append({"label": r.get("Name") or r.get("Code") or "",
+                        "value": r.get("Id")})
     return options

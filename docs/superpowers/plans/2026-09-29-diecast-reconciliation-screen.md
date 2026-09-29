@@ -913,7 +913,12 @@ Clicking the tile does **not** open a separate list — it sets `view.custom.sel
 
 - [ ] **Step 3: Build the press selector and the shift table**
 
-An `ia.input.dropdown` over `view.custom.presses` (`{label, value}` only — `label` is `Name · Asset # Code` order per constraint 8), with **no default selection**.
+An `ia.input.dropdown` over `view.custom.presses` (`{label, value}` only), with **no default
+selection**. The label is the press's **Name alone** — *Machine 11*. **Not** *Machine 11 · Asset #
+DC1-M01*: an asset number is a **die's** identifier (`Tools.Tool.Code`, e.g. `DMO125`), while
+`DC1-M01` is the machine's Location code, and presenting it as an asset number invents a concept
+the plant does not use. Constraint 8's name-then-asset-number order governs **dies**; the die's
+asset number appears in the shift table's own *Die asset #* column.
 
 `view.custom.rows` is loaded whenever `selectedPressId` changes, by
 `BlueRidge.Workorder.DieCastReconciliation.listShifts(self.view.custom.selectedPressId, 7)`;
