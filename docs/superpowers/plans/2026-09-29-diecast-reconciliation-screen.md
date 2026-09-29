@@ -199,6 +199,19 @@ must show:
 | `_ListMoveTargets` | 4 |
 | `_ListCavities` | 12 cavities |
 
+**Shift 20126 is a genuinely UNDER-RECORDED shift, which makes it the right end-to-end
+fixture.** The die has **12 active cavities**, but only **10 LOTs** exist, one per cavity, at
+894 pieces each. So 894 x 12 = 10,728 pieces were made and only 8,940 are on baskets -- the
+missing 1,788 is exactly two cavities' worth. That is precisely the failure this feature
+exists to repair (SS 6.3: LTTs on paper, nowhere in the MES).
+
+Consequence for testing: **the blocking checks cannot all pass on this shift from the totals
+fields alone**, and that is correct behaviour, not a defect. Matching the LOT sum needs
+`goodShots = 745`, while the per-LOT ceiling needs `goodShots >= 894`; the two are
+irreconcilable until the two missing baskets are entered. **After Task 9 ships the LTT entry
+bar, adding the two missing LTTs at `goodShots = 894` should make the sheet fully saveable**
+-- which is the real end-to-end test for Task 10, on real production rows.
+
 Two consequences worth stating:
 
 - `_ListMoveTargets` returning **4** here does not license assuming four. It legitimately
