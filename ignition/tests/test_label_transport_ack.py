@@ -23,7 +23,7 @@ MODULE = os.path.join(
     "BlueRidge", "Lots", "LabelTransport", "code.py",
 )
 
-WANTED = ("_parseAck", "_unquote", "_dispatchLogParams")
+WANTED = ("_parseAck", "_unquote", "_dispatchLogParams", "_resolveLogParams")
 
 
 def load_helpers(path=MODULE):
@@ -128,3 +128,19 @@ def test_a_bridge_refusal_is_distinguished_from_a_network_failure(helpers):
                           "transport": "tcp", "ack": ack})
     assert p["errorCondition"] == "QueueRejected"
     assert "ZDesigner GX420d" in p["errorDescription"]
+
+
+def test_a_resolved_endpoint_records_which_tier_chose_it(helpers):
+    p = helpers["_resolveLogParams"]("10.20.11.157:9100", "terminal-printer",
+                                     "Shipping label")
+    assert p["errorCondition"] is None
+    assert "terminal-printer" in p["responsePayload"]
+    assert "10.20.11.157:9100" in p["responsePayload"]
+
+
+def test_an_unresolved_endpoint_leaves_a_row_rather_than_silence(helpers):
+    """ShippingLabel 20016/20017 on 2026-09-29: no PrintedAt, no PrintFailedAt,
+       and no InterfaceLog row at all. This is that gap."""
+    p = helpers["_resolveLogParams"]("", "none", "Shipping label")
+    assert p["errorCondition"] == "EndpointUnresolved"
+    assert p["responsePayload"] is None

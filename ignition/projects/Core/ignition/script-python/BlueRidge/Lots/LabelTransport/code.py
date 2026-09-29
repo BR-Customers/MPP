@@ -228,6 +228,41 @@ def send(endpoint, zpl):
     return {"ok": False, "error": p["reason"], "transport": None}
 
 
+def _resolveLogParams(endpoint, via, labelKind):
+    """Build the Audit.InterfaceLog row for the RESOLVE stage.
+
+       Self-contained (no BlueRidge.* calls) so the tests can exec it.
+
+       An unresolved endpoint used to write nothing at all: the dispatch worker
+       never ran, so no transport row was ever attempted, and the label sat with
+       PrintedAt and PrintFailedAt both NULL. A stage that can fail silently is
+       worse than one that fails loudly."""
+    ep = (endpoint or "").strip()
+    if ep:
+        return {
+            "systemName":       _SYSTEM_NAME,
+            "direction":        "Outbound",
+            "logEventTypeCode": "LabelDispatched",
+            "description":      "%s endpoint resolved via %s" % (labelKind, via or "unknown"),
+            "requestPayload":   None,
+            "responsePayload":  "Resolved %s via %s" % (ep, via or "unknown"),
+            "errorCondition":   None,
+            "errorDescription": None,
+            "isHighFidelity":   False,
+        }
+    return {
+        "systemName":       _SYSTEM_NAME,
+        "direction":        "Outbound",
+        "logEventTypeCode": "LabelDispatched",
+        "description":      "%s endpoint could not be resolved" % labelKind,
+        "requestPayload":   None,
+        "responsePayload":  None,
+        "errorCondition":   "EndpointUnresolved",
+        "errorDescription": "No printer endpoint for this terminal (tried: %s)" % (via or "unknown"),
+        "isHighFidelity":   True,
+    }
+
+
 def _dispatchLogParams(endpoint, zpl, outcome, labelKind):
     """Build the Audit.InterfaceLog row for ONE dispatch attempt.
 
@@ -266,6 +301,16 @@ def _dispatchLogParams(endpoint, zpl, outcome, labelKind):
         "errorDescription": detail,
         "isHighFidelity":   True,
     }
+
+
+def logResolve(endpoint, via, labelKind):
+    """Log the resolve stage. Bare except for the same reason logDispatch has
+       one: logging must never break a print."""
+    try:
+        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall",
+                                         _resolveLogParams(endpoint, via, labelKind))
+    except:
+        pass
 
 
 def logDispatch(endpoint, zpl, outcome, labelKind):

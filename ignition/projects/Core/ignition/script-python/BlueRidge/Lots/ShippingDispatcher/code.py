@@ -62,12 +62,19 @@ def _resolveEndpoint(terminalLocationId, printerLocationId):
     pid = _u(printerLocationId)
     if pid is not None:
         printer = BlueRidge.Location.Printer.getById(pid) or {}
-        return (printer.get("endpoint") or printer.get("Endpoint") or "").strip()
+        endpoint = (printer.get("endpoint") or printer.get("Endpoint") or "").strip()
+        BlueRidge.Lots.LabelTransport.logResolve(endpoint, "printer-card", "Shipping label")
+        return endpoint
     printer = _sessionPrinter()
     endpoint = (printer.get("endpoint") or "").strip()
+    via = "session-printer"
     if not endpoint and terminalLocationId is not None:
         printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId) or {}
         endpoint = (printer.get("endpoint") or "").strip()
+        via = "terminal-printer"
+    if not endpoint:
+        via = "none"
+    BlueRidge.Lots.LabelTransport.logResolve(endpoint, via, "Shipping label")
     return endpoint
 
 

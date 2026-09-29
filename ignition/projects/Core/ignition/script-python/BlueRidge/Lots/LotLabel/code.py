@@ -83,6 +83,9 @@ def _dispatchAfterRender(res, appUserId, terminalLocationId):
         endpoint = (fresh.get("endpoint") or "").strip()
         printerCode = fresh.get("code") or printerCode
 
+    BlueRidge.Lots.LabelTransport.logResolve(
+        endpoint, "session-printer" if printer.get("endpoint") else "terminal-printer", "LTT")
+
     # Fail-fast: genuinely no printer configured for this terminal. LOT/label already exist.
     if not endpoint:
         return {"Status": 0,
