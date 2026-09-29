@@ -101,7 +101,7 @@
 #                      takes itemId (the default follows the part's trim shop).
 #   2026-09-29 - 2.2 - Die cast reconciliation landing: getDieCastPressDropdown()
 #                      -- every active die cast machine (no item filter),
-#                      labelled 'Name . Asset # Code' per the Tools screen's
+#                      labelled by the machine's NAME ALONE ('Machine 11') --
 #                      physical-asset convention (design spec 2026-09-21 sec 6).
 #                      Reuses location/DieCastMachine_ListForItem -- itemId=None
 #                      trips its own item-eligibility fallback (@EligibleCount
@@ -1199,10 +1199,16 @@ def getDieCastPressDropdown():
     """Every active die cast machine (press) for the reconciliation landing's
        press picker, shaped for ia.input.dropdown: [{label, value}].
 
-       Label is 'Name · Asset # Code' -- the plant's physical-asset naming
-       order (the Tools screen has called Tools.Tool.Code the asset number
-       since the 2026-09-10 punch list; design spec 2026-09-21 sec 6 applies
-       the same order here). The word "code" never reaches the operator.
+       Label is the machine's NAME ALONE -- 'Machine 11'.
+
+       NOT 'Machine 11 · Asset # DC1-M01'. An asset number is a DIE's
+       identifier (Tools.Tool.Code, e.g. DMO125), which is what the Tools
+       screen has labelled Asset Number since the 2026-09-10 punch list;
+       DC1-M01 is this machine's Location code. Design spec 2026-09-21
+       sec 6's name-then-asset-number order governs DIES, and applying it
+       to a press invents a concept the plant does not use. The die's
+       asset number belongs to the landing table's own 'Die asset #'
+       column. The word "code" never reaches the operator either way.
 
        Calls location/DieCastMachine_ListForItem with itemId=None. That proc's
        @EligibleCount is computed with an `@ItemId IS NOT NULL` guard, so a
