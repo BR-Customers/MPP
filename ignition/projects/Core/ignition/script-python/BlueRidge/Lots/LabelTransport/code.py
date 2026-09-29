@@ -132,6 +132,7 @@ def _sendTcp(host, port, zpl):
        Catches Throwable FIRST: a socket failure is java.net.ConnectException, and
        Jython's `except Exception` does NOT catch java.lang.Throwable."""
     from java.net import Socket, InetSocketAddress
+    from java.io import BufferedReader, InputStreamReader
     from java.lang import String as JString
     from java.lang import Throwable
     s = None
@@ -142,11 +143,28 @@ def _sendTcp(host, port, zpl):
         out = s.getOutputStream()
         out.write(JString(zpl or "").getBytes("US-ASCII"))
         out.flush()
-        return {"ok": True, "error": None}
+        # PROTOCOL.md "Framing": half-close so the bridge's read returns at once
+        # instead of waiting out its idle timeout. Then read exactly one line.
+        # A real networked Zebra never replies -- readLine() returns None on
+        # timeout or EOF, which _parseAck reports as acked=False, NOT an error.
+        try:
+            s.shutdownOutput()
+        except Throwable:
+            pass
+        line = None
+        try:
+            reader = BufferedReader(InputStreamReader(s.getInputStream(), "US-ASCII"))
+            line = reader.readLine()
+        except Throwable:
+            line = None
+        ack = _parseAck(line)
+        if ack["acked"] and not ack["ok"]:
+            return {"ok": False, "error": ack["error"], "ack": ack}
+        return {"ok": True, "error": None, "ack": ack}
     except Throwable as t:
-        return {"ok": False, "error": t.getMessage() or str(t)}
+        return {"ok": False, "error": t.getMessage() or str(t), "ack": _parseAck(None)}
     except Exception as e:
-        return {"ok": False, "error": str(e)}
+        return {"ok": False, "error": str(e), "ack": _parseAck(None)}
     finally:
         try:
             if s is not None:
@@ -180,17 +198,18 @@ def _sendQueue(queueName, zpl):
             return {"ok": False,
                     "error": ("print queue not found: '%s'. The queue must be installed on the "
                               "Gateway host under the Gateway service account. Visible queues: %s"
-                              % (queueName, visible))}
+                              % (queueName, visible)),
+                    "ack": _parseAck(None)}
         doc = SimpleDoc(JString(zpl or "").getBytes("US-ASCII"),
                         DocFlavor.BYTE_ARRAY.AUTOSENSE, None)
         job = target.createPrintJob()
         # getattr because `print` is a Jython 2 keyword -- job.print(...) will not parse.
         getattr(job, "print")(doc, HashPrintRequestAttributeSet())
-        return {"ok": True, "error": None}
+        return {"ok": True, "error": None, "ack": _parseAck(None)}
     except Throwable as t:
-        return {"ok": False, "error": t.getMessage() or str(t)}
+        return {"ok": False, "error": t.getMessage() or str(t), "ack": _parseAck(None)}
     except Exception as e:
-        return {"ok": False, "error": str(e)}
+        return {"ok": False, "error": str(e), "ack": _parseAck(None)}
 
 
 def send(endpoint, zpl):
