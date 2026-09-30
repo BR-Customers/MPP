@@ -602,7 +602,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tres = BlueRidge.Location.Printer.validateFromAttributes(self.view.custom.state.editDraft.attributes)\n\tBlueRidge.Common.Notify.toast(res[\"title\"], res[\"message\"], res[\"level\"])"
+                                "script": "\tres = BlueRidge.Location.Printer.testFromSelection((self.view.custom.selected or {}).get(\"id\"), self.view.custom.state.editDraft.attributes)\n\tBlueRidge.Common.Notify.toast(res[\"title\"], res[\"message\"], res[\"level\"])"
                               },
                               "scope": "G",
                               "type": "script"
@@ -626,7 +626,7 @@
                           "style": {
                             "classes": "btn btn-sm"
                           },
-                          "text": "Validate endpoint"
+                          "text": "Test printer"
                         },
                         "type": "ia.input.button"
                       },
