@@ -493,6 +493,140 @@ def die_cast_lot_release_source():
     return ''.join(parts)
 
 
+# Verified against the live DieCastReconcileSheet / LotLineRow /
+# DieCastReconcileMove / DieCastReconcileConfirm view.json, plus the SQL
+# behind them (Lots.DieCastLot_ResolveLtt, Lots.ufn_DieCastLotCountLock,
+# Workorder.DieCastShiftReconciliation_Save) - a different screen from the
+# three above (BlueRidge/Views/ShopFloor/DieCastReconcile, opened from the
+# landing list, not a Lot Management tab). A team lead reconciles one past
+# shift x press x die against its paper press sheet here, and may not be a
+# daily user of this screen, so this guide is written for someone reading it
+# while holding the sheet, not a field-by-field reference.
+def die_cast_reconcile_source():
+    parts = []
+    parts.append(_lead(
+        'Reconcile one past shift on one press and die against the press '
+        'sheet in your hand. Every figure on this screen is one of two '
+        'kinds: %s is what the MES already has on record; %s is what the '
+        'sheet says, and it is what you type.'
+        % (_b('Recorded'), _b('Actual'))))
+
+    parts.append(_callout(INFO_BG, INFO_EDGE,
+        'Nothing is written until you confirm',
+        'Everything you type, every LOT you add, and every entry you '
+        're-file to another shift stays on this screen only, until you '
+        'say so. Pressing %s at the bottom writes nothing by itself '
+        '&ndash; see the last step below for what it actually does. '
+        '%s at any point discards the whole sheet with no trace left '
+        'behind.' % (_b('Review & Save'), _b('Discard'))))
+
+    parts.append(_step(1, 'Check the banner',
+        'It names the exact %s, %s and %s you are reconciling &ndash; the '
+        'die by its name first, with its %s underneath &ndash; plus '
+        'current die life. If any of the three is wrong, use %s below to '
+        'go back and pick again.'
+        % (_b('shift'), _b('press'), _b('die'), _b('Asset #'),
+           _b('All shifts'))))
+    parts.append(_note(
+        'The line under the banner names who this save will be credited '
+        'to &ndash; that is not decorative.'))
+
+    parts.append(_step(2, 'Say why you are here',
+        'Pick a %s for the reconciliation. Some reasons ask for a short '
+        'note as well &ndash; the note field only appears when the '
+        'reason you picked needs one.' % _b('Reason')))
+    parts.append(_note(
+        'If nothing was ever recorded for this shift at all, the screen '
+        'says so directly instead of looking broken. Everything from '
+        'there on comes straight off the press sheet.'))
+
+    parts.append(_step(3, 'Type the shift totals',
+        'Under %s, enter %s, %s and %s straight off the sheet. Each row '
+        'shows what is already %s beside what you type as %s, and a %s '
+        'that turns green the moment the two agree.'
+        % (_b('Shift totals'), _b('Total shots'), _b('Good shots'),
+           _b('Warm-up shots'), _b('Recorded'), _b('Actual'), _b('Gap'))))
+    parts.append(_note(
+        'Total shots has to equal good shots plus warm-up shots. If it '
+        'does not, Save tells you which figure looks wrong, not just '
+        'that something does not add up.'))
+
+    parts.append(_callout(INFO_BG, INFO_EDGE,
+        'Why the numbers have to add up',
+        '%s and %s are not boxes you fill in yourself &ndash; the screen '
+        'works them out: good shots times the die\'s active cavities, '
+        'less whatever no-good you log below. That worked-out figure is '
+        'what every LOT\'s %s has to add up to before Save will go '
+        'through &ndash; which is also why a shift with LOTs still '
+        'missing cannot be saved until every LTT from the sheet has been '
+        'entered.'
+        % (_b('Total good pieces'), _b('No-good pieces'), _b('Actual'))))
+
+    parts.append(_step(4, 'Log any no-good pieces',
+        'Add a %s for each one: pick the %s and the %s, and %s if it was '
+        'approved by QAS. These are what the screen subtracts to work '
+        'out Total good pieces above.'
+        % (_b('+ Reject line'), _b('Reason'), _b('Amt'),
+           _b('Approved by (QAS)'))))
+
+    parts.append(_step(5, 'Add the LTTs from the press sheet',
+        'Under %s, scan or type each %s off the ticket, one at a time, '
+        'then press %s. LTTs are shared across the whole die building, '
+        'so consecutive numbers say nothing about which press or shift '
+        'used them.' % (_b('LOTs on this die'), _b('LTT'), _b('+ Add LTT'))))
+    parts.append(_note(
+        'A brand-new LTT is created and released the moment you add it '
+        'here &ndash; you do not have to wait for Save for it to exist.'))
+
+    parts.append(_callout(WARN_BG, WARN_EDGE,
+        'If an LTT is refused',
+        'Every LTT is checked the instant you enter it, not when you '
+        'save, so you find out with the LOT still in your hand. It is '
+        'refused when it belongs to another press or die (the message '
+        'names which one), when it is not a die cast LOT at all (it is '
+        'some other part elsewhere in the plant), or when it is not a '
+        'valid LTT (an LTT is 8 or 9 digits). An LTT already on this die '
+        'is not a refusal &ndash; it just adds to that LOT.'))
+
+    parts.append(_step(6, 'Enter what actually landed on each LOT',
+        'Type the piece count from the sheet into that LOT\'s %s box. '
+        'What is already %s sits right next to it, so you can see the '
+        'difference as you type.' % (_b('Actual'), _b('Recorded'))))
+
+    parts.append(_callout(INFO_BG, INFO_EDGE,
+        'When a LOT\'s count stands',
+        'Once a LOT has been counted at Trim, or its count has already '
+        'been corrected once, its %s box locks and says why &ndash; '
+        'something like %s. That number is what goes forward: a '
+        'reconciliation still records the shift\'s production against '
+        'that LOT, it just leaves the count itself alone.'
+        % (_b('Actual'), '&ldquo;Counted at Trim 14:22&rdquo;')))
+
+    parts.append(_step(7, 'Re-file an entry on the wrong shift',
+        'If %s shows something that was recorded against the wrong '
+        'shift, open it and pick the shift it actually happened on. %s '
+        'do not change &ndash; only which shift is credited.'
+        % (_b('Entries on record'),
+           _b('Shots, pieces, LOTs and die life'))))
+
+    parts.append(_rule())
+
+    parts.append(_step(8, 'Review, then Save',
+        'Press %s. It runs every check the save will and opens a '
+        'confirmation panel laying out exactly what would change '
+        '&ndash; pieces added, pieces removed, new LOTs, counts '
+        'corrected, counts left standing, die life before and after. '
+        'Only pressing %s inside that panel commits it.'
+        % (_b('Review & Save'), _b('SAVE'))))
+    parts.append(_note(
+        '%s stays disabled while anything still needs fixing, and the '
+        'label on it says how many &ndash; never that the totals do not '
+        'match, because fixing that is filling in a number, not forcing '
+        'one.' % _b('Review & Save')))
+
+    return ''.join(parts)
+
+
 # --------------------------------------------------------------- trim -------
 # Verified against the live TrimBody view.json, not the older written guide -
 # the guide still describes a destination picker that the terminal-mint
@@ -2482,6 +2616,13 @@ GUIDES = [
         "defaultSize": {"width": 660, "height": 420},
         "title": "How to release baskets",
         "popupId": "dieCastLotReleaseHowTo",
+    },
+    {
+        "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "DieCastReconcileHowTo"),
+        "source": die_cast_reconcile_source,
+        "defaultSize": {"width": 760, "height": 760},
+        "title": "How to reconcile a shift",
+        "popupId": "dieCastReconcileHowTo",
     },
     {
         "dir": os.path.join(MPP_VIEWS, "Components", "Popups", "TrimCheckInHowTo"),
