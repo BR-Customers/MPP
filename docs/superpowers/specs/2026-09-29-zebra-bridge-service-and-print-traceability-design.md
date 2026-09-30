@@ -381,11 +381,30 @@ carries an inbound rule for `10.20.11.106`, a printer host's former address.
 
 ### 10.2 Data quality in existing rows
 
-Terminal 147 (`MA2-6MACH-AOUT3`) holds `http://172.17.21.237` in its IP attribute -- a URL where
-every other row holds a bare address. It can never match a client IP. Whether this is deliberate
-(consumed as a URL elsewhere) or drift is **unresolved**; it is a live 6MA parallel-run row and
-was not touched. Commissioning should validate the shape of this attribute across all 77
-terminals before the rollout, not during it.
+**The survey asked for here has been run** (2026-09-30, read-only, against `MPP_MES_Dev`), and it
+changed the picture:
+
+| `IpAddress` shape | Terminals |
+|---|---|
+| ok (dotted quad) | 16 |
+| **missing** | **60** -- of which **38 already have a printer** |
+| not a dotted quad | 1 (`MA2-RPY6B2-MIN` = `localhost`, no printer) |
+| URL | **0** |
+
+**The `http://172.17.21.237` on terminal 147 is gone.** That row now holds `10.20.11.157`, so the
+URL-shaped address this section was written about no longer exists anywhere. `ufn_PrinterEndpoint`
+keeps its scheme guard and its test regardless: nothing constrains this attribute, the value was
+real once, and a guard that costs one `CHARINDEX` is worth keeping against a class of input that
+has already occurred.
+
+Two things this survey did surface:
+
+1. **38 terminals have a printer and no address.** That is not a defect list, it is the
+   commissioning worklist -- section 7 step 2 sets each one as its line is walked.
+2. **Terminal 147 currently holds `10.20.11.157`, which is a laptop on the office network**, left
+   from the 2026-09-30 bridge bring-up. It is a live 6MA parallel-run row carrying a test address.
+   Harmless while `SuppressAimAndLabel = 1`, but it is not real configuration and must not reach a
+   release.
 
 ### 10.3 Silent async failure
 
