@@ -20,9 +20,17 @@
 
     <!-- The deployment is the exe plus its conf file (spec section 7 step 4) and
          NOTHING ELSE. No PackageReference may put a DLL in bin/.
-         AutoGenerateBindingRedirects off keeps MesZebraBridge.exe.config from
-         being emitted at all, so bin/ holds the exe and its pdb and nothing else. -->
+         Two properties are needed to keep MesZebraBridge.exe.config from being
+         emitted at all, so bin/ holds the exe and its pdb and nothing else:
+         AutoGenerateBindingRedirects suppresses the assembly-redirect block, and
+         GenerateSupportedRuntime suppresses the <supportedRuntime> stub that
+         MSBuild otherwise emits for a net48 target even with no App.config in the
+         project. (The plan attributed that stub to AutoGenerateBindingRedirects;
+         it is a separate target.) Safe to drop because .NET Framework 4.8 is on
+         every Windows 10/11 image, which is the whole reason for the target, and
+         the two-file pair is verified to run standalone in Task 14 step 4. -->
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <DebugType>pdbonly</DebugType>
