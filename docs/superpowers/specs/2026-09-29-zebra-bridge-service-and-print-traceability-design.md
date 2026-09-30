@@ -38,10 +38,16 @@ That does not scale to 54 terminals.
 
 Two gaps were worse than the failures:
 
-- **Stage 3 (endpoint resolution) is silent.** `ShippingLabel` 20016 and 20017 sat at
-  `PrintedAt NULL` / `PrintFailedAt NULL` with **no `InterfaceLog` row at all**. The dispatch
-  worker never ran and nothing recorded why. A stage that fails silently is worse than one that
-  fails loudly.
+- **Stage 3 (endpoint resolution) is silent.** A terminal with no printer produced **no
+  `InterfaceLog` row at all** -- the dispatch worker never ran and nothing recorded why. A stage
+  that fails silently is worse than one that fails loudly.
+
+  *(An earlier draft attributed `ShippingLabel` 20016/20017's `PrintedAt NULL` /
+  `PrintFailedAt NULL` state to this. That was wrong and is corrected here: those two resolved
+  perfectly well to `10.20.11.157:9100`. They were silent because the UI called `reprintLabel`,
+  which creates the row and deliberately does not dispatch, so nothing reached `LabelTransport`
+  until `PrintFailureGateway.sweepTick` ran seven minutes later. **That window is still silent**
+  and is a separate gap -- see section 12.5.)*
 - **Reachability can be checked; correctness cannot.**
   `BlueRidge.Location.Printer.validateEndpoint` *does* open a socket and reports
   "Reachable: host:port is accepting connections". What it cannot see is **which queue the far
@@ -189,23 +195,38 @@ already the write path. No schema change is required.
 
 `ShippingDispatcher._resolveEndpoint` and `LotLabel._dispatchAfterRender` log the endpoint they
 chose **and which tier chose it** (printer-card override / session printer / terminal printer),
-or log the failure to resolve one. This is the fix for the `20016`/`20017` silence.
+or log the failure to resolve one.
+
+The endpoint and the tier go in the **Description**, not a payload:
+`Audit_LogInterfaceCall` NULLs both payloads unless `IsHighFidelity = 1` (FRS 3.17.4), and a
+routine resolve does not warrant payload retention. A failed resolve **is** high fidelity.
 
 ### 6.3 Reading a failure
 
-The stage reached is a field on the row, so diagnosis is one query and no cross-referencing:
+The stage reached is a field on the row, so diagnosis is one query and no cross-referencing.
+**Observed** against a live Gateway, a real socket and the real spooler on 2026-09-29
+(`Audit.InterfaceLog` rows 24-30), not predicted:
 
-```
-Resolved -> Sent -> Acked -> Spooled(job 41)    success
-Resolved -> Sent -> (no ack)                    networked printer, expected
-Resolved -> Sent -> ERR no such queue           queue-name mismatch on the terminal
-Resolved -> ConnectTimeout                      firewall on the printer host
-Resolved -> ConnectionRefused                   bridge service is down
-(resolve failed, no further stages)             configuration -- no endpoint for this terminal
-```
+| `ErrorCondition` | `Description` / `ErrorDescription` | Means |
+|---|---|---|
+| `NULL` | `Spooled queue='ZDesigner GX420d' job=16 bytes=1264` | success -- the queue took it as that job |
+| `NULL` | `Sent, no ack (raw 9100)` | networked Zebra, expected, **not** a failure |
+| `NULL` | `endpoint resolved via terminal-printer to <ep>` | the resolve stage, which chose it and how |
+| `EndpointUnresolved` | `No printer endpoint for this terminal (tried: ...)` | configuration -- nothing was ever attempted |
+| `DispatchFailed` | `Connection refused: getsockopt` | host is up, **nothing listening** -- bridge is down |
+| `DispatchFailed` | `Connect timed out` | packets dropped -- **firewall** on the printer host |
+| `QueueRejected` | the bridge's own `ERR ...` text | network fine, **queue name wrong** |
 
 `Connect timed out` versus `Connection refused` is the distinction that identified the real fault
-on 2026-09-29 and it is preserved verbatim rather than normalised into a generic failure.
+on 2026-09-29 and it is preserved verbatim rather than normalised into a generic failure. The
+same reasoning separates `QueueRejected` from `DispatchFailed`: a bridge that *answered* proves
+the network, so conflating them sends a diagnosis to the wrong machine.
+
+A transport failure writes one row **per attempt** -- three, 2s apart (rows 28-30 at
+`19:45:43.414 / 45.428 / 47.459`), which is the retry policy made visible.
+
+`QueueRejected` is covered by unit test but has **not** been produced against a live bridge yet;
+every other row above has.
 
 ### 6.4 What is deliberately not claimed
 
@@ -355,3 +376,12 @@ the primitive a heartbeat would be built on, so nothing is foreclosed.
 4. **Signing.** An unsigned executable on locked-down plant PCs risks SmartScreen and AV
    heuristics. Whether MPP IT has a signing certificate or a deployment channel that exempts it
    is unknown -- and the answer may also give a push mechanism for the 54 installs.
+5. **The created-but-not-yet-dispatched window is still silent.** `Shipping.reprintLabel`
+   appends the row and deliberately does not dispatch; nothing reaches `LabelTransport` until
+   `PrintFailureGateway.sweepTick` re-fires it, which on 2026-09-29 was **seven minutes** later
+   (`ShippingLabel` 20016 created 16:14:54, dispatched 16:24:19). For that whole window the label
+   has no `PrintedAt`, no `PrintFailedAt` and no `InterfaceLog` row, so an operator who reprints
+   and watches for a label has nothing to look at and no way to tell waiting from broken.
+   Nothing in this spec changes that. Options are to log the render itself, to have the UI path
+   call `reprintAndDispatch` rather than `reprintLabel`, or to accept it and make the wait
+   visible in the UI. Raised, not decided -- it is a UX question more than a logging one.

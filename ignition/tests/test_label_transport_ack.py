@@ -145,8 +145,13 @@ def test_a_resolved_endpoint_records_which_tier_chose_it(helpers):
 
 
 def test_an_unresolved_endpoint_leaves_a_row_rather_than_silence(helpers):
-    """ShippingLabel 20016/20017 on 2026-09-29: no PrintedAt, no PrintFailedAt,
-       and no InterfaceLog row at all. This is that gap."""
+    """A terminal with no printer used to produce no InterfaceLog row at all --
+       the dispatch worker never ran and nothing recorded why. Verified against
+       the live table on 2026-09-29: row 27, EndpointUnresolved.
+
+       NOT the same as ShippingLabel 20016/20017's NULL/NULL state that day --
+       those resolved fine and were merely awaiting the sweep. See spec
+       section 12.5; that window is still silent."""
     p = helpers["_resolveLogParams"]("", "none", "Shipping label")
     assert p["errorCondition"] == "EndpointUnresolved"
     assert p["responsePayload"] is None
