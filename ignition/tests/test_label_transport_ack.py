@@ -23,7 +23,8 @@ MODULE = os.path.join(
     "BlueRidge", "Lots", "LabelTransport", "code.py",
 )
 
-WANTED = ("_parseAck", "_unquote", "_dispatchLogParams", "_resolveLogParams")
+WANTED = ("_parseAck", "_unquote", "_dispatchLogParams", "_resolveLogParams",
+          "_describeProbe")
 
 
 def load_helpers(path=MODULE):
@@ -155,3 +156,101 @@ def test_an_unresolved_endpoint_leaves_a_row_rather_than_silence(helpers):
     p = helpers["_resolveLogParams"]("", "none", "Shipping label")
     assert p["errorCondition"] == "EndpointUnresolved"
     assert p["responsePayload"] is None
+
+
+# ---------------------------------------------------------------- ?STATUS
+# PROTOCOL.md section "?STATUS". The probe is what makes commissioning 54
+# printers tractable -- it proves route, firewall, service AND queue binding in
+# one call with no label consumed -- so its grammar is pinned here exactly as
+# the print ACK's is.
+
+
+def test_a_status_reply_is_parsed_by_the_same_parser(helpers):
+    """One grammar, one parser. A second copy would drift."""
+    got = helpers["_parseAck"](
+        "OK bridge=1.0.0 queue='Zebra GX420d (RAW)' ready=true jobs=0")
+    assert got["acked"] is True
+    assert got["ok"] is True
+    assert got["bridge"] == "1.0.0"
+    assert got["queue"] == "Zebra GX420d (RAW)"
+    assert got["ready"] is True
+    assert got["jobs"] == 0
+
+
+def test_a_not_ready_queue_is_reported_as_such(helpers):
+    got = helpers["_parseAck"]("OK bridge=1.0.0 queue='Q' ready=false jobs=3")
+    assert got["ready"] is False
+    assert got["jobs"] == 3
+
+
+def test_a_print_ack_states_no_readiness(helpers):
+    """ready is None, not False, when the line never mentioned it -- that is how
+       a print ACK is told apart from a status ACK."""
+    got = helpers["_parseAck"]("OK queue='Q' job=41 bytes=1264")
+    assert got["ready"] is None
+    assert got["jobs"] is None
+    assert got["bridge"] is None
+
+
+def test_jobs_and_job_are_not_confused(helpers):
+    got = helpers["_parseAck"]("OK bridge=1.0.0 queue='Q' ready=true jobs=7")
+    assert got["jobs"] == 7
+    assert got["job"] is None
+
+
+def test_an_unknown_command_err_is_carried_through(helpers):
+    got = helpers["_parseAck"]("ERR unknown command '?WAT'")
+    assert got["acked"] is True
+    assert got["ok"] is False
+    assert "?WAT" in got["error"]
+
+
+def test_a_probe_that_could_not_connect_is_not_reached(helpers):
+    out = {"ok": False, "error": "Connect timed out",
+           "ack": {"acked": False, "ok": False, "queue": None, "job": None,
+                   "bytes": None, "error": None, "bridge": None,
+                   "ready": None, "jobs": None}}
+    got = helpers["_describeProbe"](out)
+    assert got["reached"] is False
+    assert got["isBridge"] is False
+    assert got["error"] == "Connect timed out"
+
+
+def test_a_silent_far_end_is_reached_but_is_not_the_bridge(helpers):
+    """A real networked Zebra on raw 9100 never replies (PROTOCOL.md
+       'Non-bridge printers'). It is a legitimate printer and NOT a bridge --
+       conflating the two sends whoever is commissioning to the wrong machine."""
+    out = {"ok": True, "error": None,
+           "ack": {"acked": False, "ok": False, "queue": None, "job": None,
+                   "bytes": None, "error": None, "bridge": None,
+                   "ready": None, "jobs": None}}
+    got = helpers["_describeProbe"](out)
+    assert got["reached"] is True
+    assert got["isBridge"] is False
+    assert got["error"] is None
+
+
+def test_a_bridge_err_is_the_bridge_answering(helpers):
+    out = {"ok": False, "error": "queue not found: 'ZDesigner GX420d'",
+           "ack": {"acked": True, "ok": False, "queue": None, "job": None,
+                   "bytes": None, "error": "queue not found: 'ZDesigner GX420d'",
+                   "bridge": None, "ready": None, "jobs": None}}
+    got = helpers["_describeProbe"](out)
+    assert got["reached"] is True
+    assert got["isBridge"] is True
+    assert got["ready"] is False
+    assert "ZDesigner GX420d" in got["error"]
+
+
+def test_a_good_status_carries_the_bound_queue(helpers):
+    out = {"ok": True, "error": None,
+           "ack": {"acked": True, "ok": True, "queue": "Zebra GX420d (RAW)",
+                   "job": None, "bytes": None, "error": None,
+                   "bridge": "1.0.0", "ready": True, "jobs": 0}}
+    got = helpers["_describeProbe"](out)
+    assert got["reached"] is True
+    assert got["isBridge"] is True
+    assert got["ready"] is True
+    assert got["queue"] == "Zebra GX420d (RAW)"
+    assert got["bridge"] == "1.0.0"
+    assert got["jobs"] == 0

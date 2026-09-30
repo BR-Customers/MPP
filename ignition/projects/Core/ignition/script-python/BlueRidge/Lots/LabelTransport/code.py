@@ -22,7 +22,11 @@
    HARDWARE-GATED. TCP reaches a networked Zebra or a terminal running
    zebraPrinter/usb_tcp_bridge.py. The queue transport requires the queue to be
    installed on the GATEWAY host under the Gateway service account -- naming a
-   UNC path is not by itself enough. Real-print certification is a deployment gate."""
+   UNC path is not by itself enough. Real-print certification is a deployment gate.
+
+   Also owns the ?STATUS PROBE (probeStatus), because it owns the socket and the
+   ACK grammar. The probe prints nothing and is the basis of the Config Tool's
+   Test printer action (design 2026-09-29 sec 4.2 / 9)."""
 import re
 
 _SYSTEM_NAME = "Zebra"
@@ -82,11 +86,21 @@ def _unquote(text):
 def _parseAck(line):
     """Parse one bridge response line (PROTOCOL.md v1.0.0).
 
-       Returns {acked, ok, queue, job, bytes, error}. acked is False when the
-       far end said nothing -- a real networked Zebra never replies, and that
-       is NOT a failure, so callers must not treat it as one."""
+       Returns {acked, ok, queue, job, bytes, error, bridge, ready, jobs}.
+       acked is False when the far end said nothing -- a real networked Zebra
+       never replies, and that is NOT a failure, so callers must not treat it
+       as one.
+
+       ONE parser for both reply kinds. A print ACK sets job/bytes; a ?STATUS
+       reply sets bridge/ready/jobs. They share this grammar, so a second copy
+       would drift from the frozen protocol."""
+    # bridge / ready / jobs are the ?STATUS keys (PROTOCOL.md section "?STATUS").
+    # ready stays None when the line never stated it -- that is how a PRINT ack
+    # ("OK queue=.. job=.. bytes=..") is told apart from a STATUS ack, and why it
+    # is not defaulted to False.
     out = {"acked": False, "ok": False, "queue": None,
-           "job": None, "bytes": None, "error": None}
+           "job": None, "bytes": None, "error": None,
+           "bridge": None, "ready": None, "jobs": None}
     text = (line or "").strip()
     if not text:
         return out
@@ -119,7 +133,13 @@ def _parseAck(line):
         k, v = p.split("=", 1)
         if k == "queue":
             out["queue"] = _unquote(v)
-        elif k in ("job", "bytes"):
+        elif k == "bridge":
+            out["bridge"] = _unquote(v)
+        elif k == "ready":
+            # PROTOCOL.md: "ready is true or false". Anything else is not ready,
+            # which is the honest read of a value we do not understand.
+            out["ready"] = (_unquote(v).strip().lower() == "true")
+        elif k in ("job", "bytes", "jobs"):
             try:
                 out[k] = int(v)
             except (TypeError, ValueError):
@@ -173,6 +193,53 @@ def _sendTcp(host, port, zpl):
             pass
         except Exception:
             pass
+
+
+def _describeProbe(outcome):
+    """Classify one ?STATUS exchange. Self-contained (no BlueRidge.*, no java)
+       so the tests can exec it.
+
+       reached  -- the socket connected and the write completed
+       isBridge -- the far end answered at all, so it speaks this protocol
+
+       The three failure shapes are kept apart on purpose, because each sends
+       whoever is commissioning to a different place:
+         not reached            -> the service is down, or packets are dropped
+         reached, not a bridge  -> something else owns 9100 on that PC, OR it is
+                                   a real networked Zebra, which never replies
+                                   (PROTOCOL.md 'Non-bridge printers')
+         bridge answered ERR    -> right machine, wrong queue name
+       Flattening these into one 'printer offline' was the 2026-09-29 cost."""
+    out = outcome or {}
+    ack = out.get("ack") or {}
+    if not out.get("ok") and not ack.get("acked"):
+        return {"reached": False, "isBridge": False, "bridge": None, "queue": None,
+                "ready": None, "jobs": None, "error": out.get("error") or "unknown"}
+    if not ack.get("acked"):
+        return {"reached": True, "isBridge": False, "bridge": None, "queue": None,
+                "ready": None, "jobs": None, "error": None}
+    if not ack.get("ok"):
+        return {"reached": True, "isBridge": True, "bridge": ack.get("bridge"),
+                "queue": ack.get("queue"), "ready": False, "jobs": ack.get("jobs"),
+                "error": ack.get("error") or "unknown"}
+    return {"reached": True, "isBridge": True, "bridge": ack.get("bridge"),
+            "queue": ack.get("queue"), "ready": bool(ack.get("ready")),
+            "jobs": ack.get("jobs"), "error": None}
+
+
+def probeStatus(host, port):
+    """PROTOCOL.md section "?STATUS": connect, send the command, half-close, read
+       one line. NO LABEL IS CONSUMED, so this is safe to call against a live
+       printer's bridge at any time -- which is the whole point: it proves route,
+       firewall, service and queue binding in one call, and that is what makes
+       commissioning 54 printers tractable instead of manufacturing a real
+       container per printer.
+
+       Reuses _sendTcp because the PAYLOAD is the only difference between a print
+       and a probe. The framing, the half-close, the bounded read and _parseAck
+       are identical, and a second copy of them would drift from the frozen
+       protocol. Never raises."""
+    return _describeProbe(_sendTcp(host, port, "?STATUS"))
 
 
 def _sendQueue(queueName, zpl):
