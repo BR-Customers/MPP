@@ -105,7 +105,22 @@ namespace BlueRidge.MesZebraBridge
                 return Cap("ERR unknown command " + Quote(cmd));
             }
 
-            return Cap("ERR not implemented");
+            SpoolResult result;
+            try
+            {
+                result = spool(data);
+            }
+            catch (SpoolException ex)
+            {
+                return Cap("ERR " + OneLine(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return Cap("ERR " + OneLine(ex.GetType().Name + ": " + ex.Message));
+            }
+
+            return Cap(string.Format("OK queue={0} job={1} bytes={2}",
+                Quote(queueName), result.JobId, result.BytesWritten));
         }
     }
 }

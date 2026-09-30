@@ -10,6 +10,7 @@
 //
 // Run: dotnet test zebraPrinter/MesZebraBridge.Tests/MesZebraBridge.Tests.csproj
 
+using System;
 using System.Text;
 using BlueRidge.MesZebraBridge;
 using Xunit;
@@ -130,6 +131,48 @@ namespace BlueRidge.MesZebraBridge.Tests
                 Encoding.ASCII.GetBytes("?WAT"), "Q", SpoolOk, StatusOk);
             Assert.StartsWith("ERR unknown command", reply);
             Assert.Contains("?WAT", reply);
+        }
+
+        [Fact]
+        public void Zpl_is_spooled_and_acked_with_the_job_id()
+        {
+            byte[] seen = null;
+            Func<byte[], SpoolResult> spool = d => { seen = d; return new SpoolResult(41, d.Length); };
+
+            string reply = Protocol.HandleRequest(
+                Encoding.ASCII.GetBytes("^XA^XZ"), "Zebra GX420d (RAW)", spool, StatusOk);
+
+            Assert.Equal(Encoding.ASCII.GetBytes("^XA^XZ"), seen);
+            Assert.Equal("OK queue='Zebra GX420d (RAW)' job=41 bytes=6", reply);
+        }
+
+        [Fact]
+        public void A_spooler_failure_is_reported_on_exactly_one_line()
+        {
+            // The queue-not-found error names every visible queue, which is
+            // multi-line. One-line framing is not negotiable, so it is collapsed.
+            Func<byte[], SpoolResult> spool = d =>
+            {
+                throw new SpoolException("queue not found: 'ZDesigner GX420d'\nvisible:\n  A\n  B");
+            };
+
+            string reply = Protocol.HandleRequest(Encoding.ASCII.GetBytes("^XA^XZ"), "Q", spool, StatusOk);
+
+            Assert.StartsWith("ERR ", reply);
+            Assert.DoesNotContain("\n", reply);
+            Assert.Contains("ZDesigner GX420d", reply);
+        }
+
+        [Fact]
+        public void An_unexpected_exception_type_is_named_so_it_is_diagnosable()
+        {
+            // A SpoolException's Message is already self-describing; anything else
+            // ("Object reference not set...") is not, so its type is prefixed.
+            Func<byte[], SpoolResult> spool = d => { throw new InvalidOperationException("boom"); };
+
+            string reply = Protocol.HandleRequest(Encoding.ASCII.GetBytes("^XA^XZ"), "Q", spool, StatusOk);
+
+            Assert.Equal("ERR InvalidOperationException: boom", reply);
         }
     }
 }
