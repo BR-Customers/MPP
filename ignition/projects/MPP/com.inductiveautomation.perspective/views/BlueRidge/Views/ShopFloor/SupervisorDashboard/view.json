@@ -1,7 +1,26 @@
 {
-  "custom": {},
+  "custom": {
+    "flaggedCount": 0,
+    "flaggedShifts": []
+  },
   "params": {},
   "propConfig": {
+    "custom.flaggedCount": {
+      "binding": {
+        "config": {
+          "expression": "len({view.custom.flaggedShifts})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.flaggedShifts": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Workorder.DieCastReconciliation.listFlagged\", 0, 7)"
+        },
+        "type": "expr"
+      }
+    },
     "custom.openSummary": {
       "binding": {
         "config": {
@@ -400,6 +419,91 @@
                 "classes": "pf-panel",
                 "gap": "6px",
                 "opacity": "0.6",
+                "padding": "16px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "L"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-label"
+                  },
+                  "text": "Shifts Not Reconciled"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "V"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.custom.flaggedCount} > 0, \"pf-kpi-value pf-kpi-value-warn\", \"pf-kpi-value\")"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr({view.custom.flaggedCount})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "S"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "last 7 days"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(page=\"/shop-floor/die-cast/reconcile\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "TileReconcile"
+            },
+            "position": {
+              "basis": "240px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "cursor": "pointer",
+                "gap": "6px",
                 "padding": "16px"
               }
             },
