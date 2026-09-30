@@ -13,10 +13,20 @@
        MPP project page-config (FAT #13). Parameterized (:areaId/:lotId), dev,
        and non-station routes are intentionally excluded. Keep in sync with
        com.inductiveautomation.perspective/page-config/config.json (MPP project).
-     - ConnectionKind is the Printer networked/hardwired choice (FAT #14).
+     - ConnectionKind is the Printer transport choice. UsbBridge printers store
+       NO endpoint -- Location.ufn_PrinterEndpoint derives it from the parent
+       Terminal's IpAddress plus port 9100 (design 2026-09-29 sec 8.1). This list
+       is the ONLY place the three values are enumerated anywhere in the system:
+       Location.LocationAttributeDefinition has no allowed-values column and
+       LocationAttribute.AttributeValue is one NVARCHAR shared by every attribute,
+       so nothing in SQL constrains the set. The dropdown is also authored
+       allowCustomOptions = true, so this list is advisory even in the UI --
+       Location.ufn_PrinterEndpoint is written to fall back to the stored endpoint
+       for any kind it does not recognise rather than guess.
 
    Change Log:
-       2026-08-05 - Initial version (FAT #13 DefaultScreen + #14 ConnectionKind)."""
+       2026-08-05 - Initial version (FAT #13 DefaultScreen + #14 ConnectionKind).
+       2026-09-30 - UsbBridge added as a third ConnectionKind (migration 0101)."""
 
 
 # Curated operator-station screens a terminal may default to. value = route as
@@ -36,7 +46,11 @@ _DEFAULT_SCREENS = [
     ("/shop-floor/shipping",              "Shipping Dock"),
 ]
 
+# Order is deliberate: UsbBridge is what MPP is deploying to 54 terminals, and it
+# is the one kind that needs NO endpoint typed, so it goes first to be the obvious
+# pick. Networked stays second because three live printers use it.
 _CONNECTION_KINDS = [
+    ("UsbBridge", "USB bridge (no endpoint - derives from the terminal IP)"),
     ("Networked", "Networked (IP:port - validatable)"),
     ("Hardwired", "Hardwired (print-queue name)"),
 ]
