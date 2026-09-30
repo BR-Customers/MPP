@@ -1,0 +1,495 @@
+{
+  "custom": {
+    "quantity": 0
+  },
+  "params": {
+    "rowKind": "lot",
+    "groupLabel": "",
+    "groupDetail": "",
+    "ltt": "",
+    "cavityCode": "",
+    "quantity": 0,
+    "recorded": 0,
+    "isLocked": false,
+    "lockReason": "",
+    "stateLabel": "",
+    "pieceCountBefore": 0,
+    "pieceCountAfter": 0,
+    "isNew": false,
+    "seedToken": -1
+  },
+  "propConfig": {
+    "params.rowKind": {
+      "paramDirection": "input"
+    },
+    "params.groupLabel": {
+      "paramDirection": "input"
+    },
+    "params.groupDetail": {
+      "paramDirection": "input"
+    },
+    "params.ltt": {
+      "paramDirection": "input"
+    },
+    "params.cavityCode": {
+      "paramDirection": "input"
+    },
+    "params.quantity": {
+      "paramDirection": "input"
+    },
+    "params.recorded": {
+      "paramDirection": "input"
+    },
+    "params.isLocked": {
+      "paramDirection": "input"
+    },
+    "params.lockReason": {
+      "paramDirection": "input"
+    },
+    "params.stateLabel": {
+      "paramDirection": "input"
+    },
+    "params.pieceCountBefore": {
+      "paramDirection": "input"
+    },
+    "params.pieceCountAfter": {
+      "paramDirection": "input"
+    },
+    "params.isNew": {
+      "paramDirection": "input"
+    },
+    "params.seedToken": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\t# seedToken carries the parent's lotLinesSeed, which changes only on a\n\t# STRUCTURAL rebuild (an LTT added or a staged LOT removed) -- the grouped\n\t# list can shift every row's position, so a reseed on anything less than\n\t# that would leave a row showing a DIFFERENT LOT's stale local draft.\n\t# Mirrors RejectLineRow/DieCastEntry's DieWideLineRow.\n\tif self.view.params.rowKind == \"group\":\n\t\treturn\n\tself.view.custom.quantity = BlueRidge.Common.Util.toIntOrNone(self.view.params.quantity)"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 40,
+      "width": 1000
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "gap": "10px",
+        "overflow": "visible"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "emitChanged",
+          "params": [],
+          "script": "\t# Page-scoped up to DieCastReconcileSheet, which owns\n\t# view.custom.state.lotLines -- embed params are input-only, so this is the\n\t# only channel there is (feedback_ignition_embed_params_input_only).\n\tif self.view.params.rowKind == \"group\" or self.view.params.isLocked:\n\t\treturn\n\tsystem.perspective.sendMessage(\"dieCastLotQuantityChanged\", payload={\n\t\t\"ltt\": self.view.params.ltt,\n\t\t\"quantity\": self.view.custom.quantity,\n\t}, scope=\"page\")"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "GroupBand"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.rowKind} = \"group\""
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "10px",
+            "borderBottom": "1px solid var(--mpp-border-subtle, #2C3A55)",
+            "paddingTop": "10px",
+            "paddingBottom": "4px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "GroupPart"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.groupLabel"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontWeight": 700,
+                "whiteSpace": "nowrap"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "GroupDetail"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.groupDetail"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "LotContent"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.rowKind} != \"group\""
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "10px",
+            "overflow": "visible"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LttLabel"
+            },
+            "position": {
+              "basis": "150px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.ltt"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontWeight": 700,
+                "classes": "pf-field-input-mono"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CavLabel"
+            },
+            "position": {
+              "basis": "60px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.cavityCode"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": ""
+            }
+          },
+          {
+            "type": "ia.input.numeric-entry-field",
+            "meta": {
+              "name": "ActualInput"
+            },
+            "position": {
+              "basis": "110px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!{view.params.isLocked}"
+                  }
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.quantity"
+                  }
+                }
+              }
+            },
+            "props": {
+              "deferUpdates": false,
+              "min": 0,
+              "style": {
+                "classes": "pf-field-input",
+                "minHeight": "36px",
+                "textAlign": "right"
+              }
+            },
+            "events": {
+              "dom": {
+                "onBlur": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.emitChanged()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "RecordedLabel"
+            },
+            "position": {
+              "basis": "90px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "numberFormat({view.params.recorded}, \"#,##0\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "textAlign": "right"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "StateBlock"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 1
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "gap": "6px",
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.icon",
+                "meta": {
+                  "name": "LockIcon"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.params.isLocked"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "path": "mpp/lock",
+                  "style": {
+                    "height": "16px",
+                    "width": "16px",
+                    "color": "var(--mpp-state-warn-fg)"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "StateText"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1,
+                  "shrink": 1
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.params.isLocked}, {view.params.lockReason}, {view.params.stateLabel})"
+                      }
+                    }
+                  },
+                  "props.style.color": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.params.isLocked}, \"var(--mpp-state-warn-fg)\", \"var(--mpp-text-secondary)\")"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
+                    "whiteSpace": "nowrap"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CountLabel"
+            },
+            "position": {
+              "basis": "170px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "numberFormat({view.params.pieceCountBefore}, \"#,##0\") + \" -> \" + numberFormat({view.params.pieceCountAfter}, \"#,##0\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "textAlign": "right",
+                "classes": "pf-field-input-mono"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "RemoveButton",
+              "tooltip": {
+                "text": "Remove this staged LOT"
+              }
+            },
+            "position": {
+              "basis": "44px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.isNew}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "image": {
+                "icon": {
+                  "path": "mpp/cancel"
+                }
+              },
+              "style": {
+                "minHeight": "36px",
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"dieCastLotLineRemoved\",\n\t\tpayload={\"ltt\": self.view.params.ltt}, scope=\"page\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

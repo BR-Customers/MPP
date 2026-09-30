@@ -43,6 +43,7 @@
     },
     "lttInput": "",
     "lttCavityId": null,
+    "lotLinesSeed": 0,
     "blockers": [],
     "isEmptyShift": false,
     "approverOptions": [],
@@ -147,6 +148,25 @@
             "payload"
           ],
           "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tidx = p.get(\"index\")\n\tif idx is None:\n\t\treturn\n\tst = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)\n\tst = system.util.jsonDecode(st)\n\tlines = st.get(\"rejectLines\") or []\n\tif 0 <= idx < len(lines):\n\t\tdel lines[idx]\n\tst[\"rejectLines\"] = lines\n\tself.view.custom.state = st\n\tself.view.custom.rejectLinesSeed = (self.view.custom.rejectLinesSeed or 0) + 1"
+        },
+        {
+          "name": "addLtt",
+          "params": [],
+          "script": "\tU = BlueRidge.Common.Util\n\tltt = (U.extractQualifiedValues(self.view.custom.lttInput) or \"\").strip()\n\tif not ltt:\n\t\treturn\n\ttoolId = self.view.params.toolId\n\n\tst = system.util.jsonDecode(U.convertWrapperObjectToJson(self.view.custom.state))\n\tlines = st.get(\"lotLines\") or []\n\n\tif any([(l.get(\"ltt\") or \"\") == ltt for l in lines]):\n\t\tBlueRidge.Common.Notify.toast(\"Already on the list\",\n\t\t\t\"%s is already on this sheet.\" % ltt, \"info\")\n\t\tself.view.custom.lttInput = \"\"\n\t\treturn\n\n\t# Resolved AT THE FIELD, never at save -- the team lead finds out now, with\n\t# the LOT in their hand, not twenty minutes later on a refused save.\n\tres = BlueRidge.Workorder.DieCastReconciliation.resolveLtt(ltt, toolId)\n\tresult = res.get(\"Result\")\n\n\t# Result vocabulary per Lots.DieCastLot_ResolveLtt (verified against the\n\t# proc source, R__Lots_DieCastLot_ResolveLtt.sql): New | OnThisDie |\n\t# Elsewhere | Invalid, plus Error from resolveLtt()'s _EMPTY_LTT fallback.\n\t# (An earlier draft of this handler checked for Foreign/NewLot -- those\n\t# literals appear nowhere in the SQL or the Python glue and would have let\n\t# a foreign LTT through instead of refusing it. Corrected here.)\n\tif result in (\"Elsewhere\", \"Invalid\", \"Error\"):\n\t\t# Message is operator-ready prose naming where the LTT belongs.\n\t\tBlueRidge.Common.Notify.toast(\"LTT not added\", res.get(\"Message\"), \"error\")\n\t\treturn\n\n\tcavityId = res.get(\"ToolCavityId\") or U.extractQualifiedValues(self.view.custom.lttCavityId)\n\tif cavityId is None:\n\t\tcavs = U.extractQualifiedValues(self.view.custom.cavities) or []\n\t\tif len(cavs) == 1:\n\t\t\tcavityId = cavs[0].get(\"ToolCavityId\")\n\tif cavityId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Choose a cavity\",\n\t\t\t\"This die has more than one cavity -- pick the one that cast %s.\" % ltt, \"warning\")\n\t\treturn\n\n\tlines.append({\"lotId\": res.get(\"LotId\"), \"ltt\": ltt, \"toolCavityId\": cavityId,\n\t              \"quantity\": 0, \"isNew\": (result == \"New\")})\n\tst[\"lotLines\"] = lines\n\tself.view.custom.state = st\n\tself.view.custom.lttInput = \"\"\n\t# Structural insert -- the grouped LOT list can shift every row's position,\n\t# so every LotLineRow must reseed from its (possibly new) params, exactly as\n\t# rejectLinesSeed does for an added/removed reject line.\n\tself.view.custom.lotLinesSeed = (self.view.custom.lotLinesSeed or 0) + 1"
+        },
+        {
+          "name": "changeLotQuantity",
+          "params": [
+            "payload"
+          ],
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tltt = p.get(\"ltt\")\n\tif not ltt:\n\t\treturn\n\tst = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)\n\tst = system.util.jsonDecode(st)\n\tlines = st.get(\"lotLines\") or []\n\tfor l in lines:\n\t\tif (l.get(\"ltt\") or \"\") == ltt:\n\t\t\tl[\"quantity\"] = p.get(\"quantity\")\n\t\t\tbreak\n\tst[\"lotLines\"] = lines\n\tself.view.custom.state = st\n\t# lotLinesSeed is DELIBERATELY NOT bumped here -- a field edit must not\n\t# force every other row to re-sync from params mid-type (mirrors\n\t# changeRejectLine)."
+        },
+        {
+          "name": "removeLotLine",
+          "params": [
+            "payload"
+          ],
+          "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(payload) or {}\n\tltt = p.get(\"ltt\")\n\tif not ltt:\n\t\treturn\n\tst = BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)\n\tst = system.util.jsonDecode(st)\n\tlines = st.get(\"lotLines\") or []\n\t# Only a locally-staged NEW LOT may be pulled back -- nothing is written\n\t# until the confirmation, so this is purely local, but a line already on\n\t# record must never silently vanish from what the team lead is reviewing.\n\tst[\"lotLines\"] = [l for l in lines\n\t                  if not ((l.get(\"ltt\") or \"\") == ltt and l.get(\"isNew\"))]\n\tself.view.custom.state = st\n\tself.view.custom.lotLinesSeed = (self.view.custom.lotLinesSeed or 0) + 1"
         }
       ],
       "extensionFunctions": null,
@@ -178,6 +198,20 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tself.removeRejectLine(payload)"
+        },
+        {
+          "messageType": "dieCastLotQuantityChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.changeLotQuantity(payload)"
+        },
+        {
+          "messageType": "dieCastLotLineRemoved",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.removeLotLine(payload)"
         }
       ]
     },
@@ -914,6 +948,461 @@
                   "path": "BlueRidge/Components/PlantFloor/_DieCastReconcileSheet/EntryCard",
                   "style": {
                     "gap": "10px"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "LotsSection"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "LotsHeaderRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "LotsTitle"
+                    },
+                    "props": {
+                      "text": "LOTs on this die",
+                      "style": {
+                        "fontSize": "15px",
+                        "fontWeight": 700
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "LotsCount"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "toStr(len({view.custom.state.lotLines})) + \" on this sheet\""
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "LttEntryBarRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "wrap": "wrap",
+                  "style": {
+                    "gap": "12px",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "LttFieldLabel"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Add LTT",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "LttField"
+                    },
+                    "position": {
+                      "basis": "220px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.lttInput"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "deferUpdates": false,
+                      "placeholder": "Scan or type LTT",
+                      "style": {
+                        "classes": "pf-field-input-mono"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "CavityFieldLabel"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.cavities}) > 1"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "Cavity",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {
+                      "name": "CavityDropdown"
+                    },
+                    "position": {
+                      "basis": "220px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.cavities}) > 1"
+                          }
+                        }
+                      },
+                      "props.options": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.cavities"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout = []\n\tfor c in rows:\n\t\tcode = c.get(\"CavityCode\") or \"?\"\n\t\tpart = c.get(\"PartNumber\") or \"\"\n\t\tlabel = (code + \" - \" + part) if part else code\n\t\tout.append({\"label\": label, \"value\": c.get(\"ToolCavityId\")})\n\treturn out"
+                            }
+                          ]
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.lttCavityId"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": {
+                        "text": "Which cavity cast it?"
+                      },
+                      "style": {
+                        "classes": "pf-field-select"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "AddLttButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "+ Add LTT",
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.addLtt()"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "LotsEntryNote"
+                },
+                "props": {
+                  "text": "One LTT at a time, off the ticket in your hand. LTTs are shared across the whole die building, so consecutive numbers say nothing about which press or shift used them.",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "NoLotLinesText"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len({view.custom.state.lotLines}) = 0"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "No LOTs staged yet. Add the LTTs from the press sheet above.",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "LotColumnHeaderRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "len({view.custom.state.lotLines}) > 0"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "10px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "HdrLtt"
+                    },
+                    "position": {
+                      "basis": "150px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "LTT",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "HdrCav"
+                    },
+                    "position": {
+                      "basis": "60px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Cav",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "HdrActual"
+                    },
+                    "position": {
+                      "basis": "110px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Actual",
+                      "style": {
+                        "classes": "pf-kpi-sub",
+                        "textAlign": "right"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "HdrRecorded"
+                    },
+                    "position": {
+                      "basis": "90px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Recorded",
+                      "style": {
+                        "classes": "pf-kpi-sub",
+                        "textAlign": "right"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "HdrState"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1,
+                      "shrink": 1
+                    },
+                    "props": {
+                      "text": "LOT state",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "HdrCount"
+                    },
+                    "position": {
+                      "basis": "170px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Count before -> after",
+                      "style": {
+                        "classes": "pf-kpi-sub",
+                        "textAlign": "right"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "HdrRemoveSpacer"
+                    },
+                    "position": {
+                      "basis": "44px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": ""
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "LotLinesList"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.state.lotLines"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\t_u = BlueRidge.Common.Util.extractQualifiedValues\n\tlines = _u(value) or []\n\n\t# Authoritative per-LOT detail (Recorded, PieceCount, IsLocked, LockReason,\n\t# StatusName, real PartNumber/CavityCode) for every LOT this shift already\n\tlotsById = {}\n\tfor r in (_u(self.view.custom.lots) or []):\n\t\tlid = r.get(\"LotId\")\n\t\tif lid is not None:\n\t\t\tlotsById[lid] = r\n\n\t# Fallback for a line just staged by the entry bar and not (yet) on\n\t# view.custom.lots -- a New LOT, or an existing LOT on this die that this\n\t# shift had not recorded. Cavity/part only; PieceCount/lock status are not\n\tcavByTc = {}\n\tfor c in (_u(self.view.custom.cavities) or []):\n\t\ttcId = c.get(\"ToolCavityId\")\n\t\tif tcId is not None:\n\t\t\tcavByTc[tcId] = c\n\n\tgroups = []\n\tbyKey = {}\n\n\tdef groupFor(itemId, partNumber, partDescription):\n\t\tkey = itemId if itemId is not None else (\"?\" + str(partNumber))\n\t\tg = byKey.get(key)\n\t\tif g is None:\n\t\t\tg = {\"partNumber\": partNumber or \"Unknown part\",\n\t\t\t     \"partDescription\": partDescription or \"\", \"rows\": []}\n\t\t\tbyKey[key] = g\n\t\t\tgroups.append(g)\n\t\treturn g\n\n\tfor ln in lines:\n\t\tln = ln or {}\n\t\tlotId = ln.get(\"lotId\")\n\t\tltt = ln.get(\"ltt\") or \"\"\n\t\ttoolCavityId = ln.get(\"toolCavityId\")\n\t\tqty = ln.get(\"quantity\")\n\t\tisNew = bool(ln.get(\"isNew\"))\n\t\tlotRow = lotsById.get(lotId) if lotId is not None else None\n\t\tcav = cavByTc.get(toolCavityId) if toolCavityId is not None else None\n\n\t\tif lotRow is not None:\n\t\t\titemId = lotRow.get(\"ItemId\")\n\t\t\tpartNumber = lotRow.get(\"PartNumber\")\n\t\t\tpartDescription = lotRow.get(\"PartDescription\")\n\t\t\tcavityCode = lotRow.get(\"CavityCode\") or (cav.get(\"CavityCode\") if cav else \"?\")\n\t\t\trecorded = lotRow.get(\"Recorded\") or 0\n\t\t\tpieceCountBefore = lotRow.get(\"PieceCount\") or 0\n\t\t\tisLocked = bool(lotRow.get(\"IsLocked\"))\n\t\t\tlockReason = lotRow.get(\"LockReason\") or \"\"\n\t\t\tstateLabel = lotRow.get(\"StatusName\") or \"\"\n\t\telse:\n\t\t\titemId = cav.get(\"ItemId\") if cav else None\n\t\t\tpartNumber = (cav.get(\"PartNumber\") if cav else None) or \"Unknown part\"\n\t\t\tpartDescription = cav.get(\"PartDescription\") if cav else \"\"\n\t\t\tcavityCode = cav.get(\"CavityCode\") if cav else \"?\"\n\t\t\trecorded = 0\n\t\t\tpieceCountBefore = 0\n\t\t\tisLocked = False\n\t\t\tlockReason = \"\"\n\t\t\tstateLabel = (\"New LOT -- created at save\" if isNew\n\t\t\t              else \"Existing LOT on this die\")\n\n\t\tpieceCountAfter = pieceCountBefore + ((qty or 0) - recorded)\n\t\tg = groupFor(itemId, partNumber, partDescription)\n\t\tg[\"rows\"].append({\n\t\t\t\"ltt\": ltt, \"cavityCode\": cavityCode, \"quantity\": qty,\n\t\t\t\"recorded\": recorded, \"isLocked\": isLocked, \"lockReason\": lockReason,\n\t\t\t\"stateLabel\": stateLabel, \"pieceCountBefore\": pieceCountBefore,\n\t\t\t\"pieceCountAfter\": pieceCountAfter, \"isNew\": isNew,\n\t\t})\n\n\t# Sub-total is what the team lead actually reads off the sheet: it MUST\n\tseed = self.view.custom.lotLinesSeed or 0\n\tout = []\n\tfor g in groups:\n\t\tsubTotal = sum([(r.get(\"quantity\") or 0) for r in g[\"rows\"]])\n\t\tout.append({\n\t\t\t\"rowKind\": \"group\",\n\t\t\t\"groupLabel\": g[\"partNumber\"],\n\t\t\t\"groupDetail\": (((g[\"partDescription\"] + \" -- \") if g[\"partDescription\"] else \"\")\n\t\t\t                + \"sub-total \" + \"{:,}\".format(subTotal)),\n\t\t\t\"seedToken\": seed,\n\t\t})\n\t\tfor r in g[\"rows\"]:\n\t\t\trow = dict(r)\n\t\t\trow[\"rowKind\"] = \"lot\"\n\t\t\trow[\"seedToken\"] = seed\n\t\t\tout.append(row)\n\treturn out"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto",
+                    "grow": 0,
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/_DieCastReconcileSheet/LotLineRow",
+                  "style": {
+                    "gap": "6px"
                   },
                   "useDefaultViewHeight": false,
                   "useDefaultViewWidth": false
