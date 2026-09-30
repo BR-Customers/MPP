@@ -10,6 +10,7 @@
 //
 // Run: dotnet test zebraPrinter/MesZebraBridge.Tests/MesZebraBridge.Tests.csproj
 
+using System.Text;
 using BlueRidge.MesZebraBridge;
 using Xunit;
 
@@ -75,6 +76,60 @@ namespace BlueRidge.MesZebraBridge.Tests
             Assert.EndsWith("...", capped);
             Assert.StartsWith("ERR xxx", capped);
             Assert.Equal("ERR short", Protocol.Cap("ERR short"));
+        }
+
+        [Fact]
+        public void Status_reports_version_queue_and_readiness()
+        {
+            string reply = Protocol.HandleRequest(
+                Encoding.ASCII.GetBytes("?STATUS"), "Zebra GX420d (RAW)", SpoolOk, StatusOk);
+            Assert.Equal("OK bridge=1.0.0 queue='Zebra GX420d (RAW)' ready=true jobs=0", reply);
+        }
+
+        [Fact]
+        public void Status_is_case_insensitive()
+        {
+            string lower = Protocol.HandleRequest(Encoding.ASCII.GetBytes("?status"), "Q", SpoolOk, StatusOk);
+            string upper = Protocol.HandleRequest(Encoding.ASCII.GetBytes("?STATUS"), "Q", SpoolOk, StatusOk);
+            // Assert the CONTENT too, not just that the two agree -- comparing them
+            // alone passes against any stub that returns one constant for both.
+            Assert.Equal(upper, lower);
+            Assert.StartsWith("OK bridge=", lower);
+        }
+
+        [Fact]
+        public void Status_tolerates_a_trailing_newline_from_a_line_oriented_client()
+        {
+            string reply = Protocol.HandleRequest(
+                Encoding.ASCII.GetBytes("?STATUS\r\n"), "Q", SpoolOk, StatusOk);
+            Assert.StartsWith("OK bridge=", reply);
+        }
+
+        [Fact]
+        public void Status_reports_a_not_ready_queue()
+        {
+            string reply = Protocol.HandleRequest(
+                Encoding.ASCII.GetBytes("?STATUS"), "Q", SpoolOk, () => new QueueStatus("Q", false, 3));
+            Assert.Contains("ready=false", reply);
+            Assert.Contains("jobs=3", reply);
+        }
+
+        [Fact]
+        public void A_quote_in_a_queue_name_is_doubled_on_the_wire()
+        {
+            string reply = Protocol.HandleRequest(
+                Encoding.ASCII.GetBytes("?STATUS"), "Q", SpoolOk,
+                () => new QueueStatus("Bob's Zebra", true, 0));
+            Assert.Contains("queue='Bob''s Zebra'", reply);
+        }
+
+        [Fact]
+        public void An_unknown_command_is_refused_not_ignored()
+        {
+            string reply = Protocol.HandleRequest(
+                Encoding.ASCII.GetBytes("?WAT"), "Q", SpoolOk, StatusOk);
+            Assert.StartsWith("ERR unknown command", reply);
+            Assert.Contains("?WAT", reply);
         }
     }
 }

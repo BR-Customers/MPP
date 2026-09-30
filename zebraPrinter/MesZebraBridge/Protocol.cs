@@ -88,6 +88,23 @@ namespace BlueRidge.MesZebraBridge
                                            Func<QueueStatus> status)
         {
             if (data == null || data.Length == 0) return null;
+
+            if (data[0] == (byte)'?')
+            {
+                // Mirrors Python's data.decode("ascii","replace").strip().upper().
+                // Encoding.ASCII substitutes '?' for a non-ASCII byte where Python
+                // substitutes U+FFFD -- cosmetic, and reachable only in the echoed
+                // text of an unknown command.
+                string cmd = Encoding.ASCII.GetString(data).Trim().ToUpperInvariant();
+                if (cmd == "?STATUS")
+                {
+                    QueueStatus s = status();
+                    return Cap(string.Format("OK bridge={0} queue={1} ready={2} jobs={3}",
+                        BridgeVersion, Quote(s.Queue), s.Ready ? "true" : "false", s.Jobs));
+                }
+                return Cap("ERR unknown command " + Quote(cmd));
+            }
+
             return Cap("ERR not implemented");
         }
     }
