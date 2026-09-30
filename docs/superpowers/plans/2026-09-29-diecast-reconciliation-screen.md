@@ -1441,7 +1441,12 @@ A text field bound to `view.custom.lttInput` (`deferUpdates: false`), a cavity d
 	res = BlueRidge.Workorder.DieCastReconciliation.resolveLtt(ltt, toolId)
 	result = res.get("Result")
 
-	if result in ("Foreign", "Invalid", "Error"):
+	# Result vocabulary is New | OnThisDie | Elsewhere | Invalid, per
+	# Lots.DieCastLot_ResolveLtt. "Error" is the Python wrapper's _EMPTY_LTT
+	# default for the not-found path, so it belongs in the refusal set too.
+	# NOT "Foreign"/"NewLot" -- those literals exist nowhere, and testing for
+	# them lets a foreign LTT through UNREFUSED.
+	if result in ("Elsewhere", "Invalid", "Error"):
 		# Message is operator-ready prose naming where the LTT belongs.
 		BlueRidge.Common.Notify.toast("LTT not added", res.get("Message"), "error")
 		return
@@ -1457,7 +1462,7 @@ A text field bound to `view.custom.lttInput` (`deferUpdates: false`), a cavity d
 		return
 
 	lines.append({"lotId": res.get("LotId"), "ltt": ltt, "toolCavityId": cavityId,
-	              "quantity": 0, "isNew": (result == "NewLot")})
+	              "quantity": 0, "isNew": (result == "New")})
 	st["lotLines"] = lines
 	self.view.custom.state = st
 	self.view.custom.lttInput = ""
