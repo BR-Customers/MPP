@@ -203,7 +203,7 @@
                       "transforms": [
                         {
                           "type": "script",
-                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\trows = plan.get(\"moves\") or []\n\tn = len(rows)\n\tif n == 0:\n\t\treturn \"\"\n\tlabels = []\n\tfor r in rows:\n\t\tlbl = r.get(\"toShiftLabel\")\n\t\tif lbl and lbl not in labels:\n\t\t\tlabels.append(lbl)\n\tdest = \" and \".join(labels) if labels else \"another shift\"\n\tnoun = \"row\" if n == 1 else \"rows\"\n\tverb = \"moves\" if n == 1 else \"move\"\n\treturn \"%d %s %s from %s to %s.\" % (n, noun, verb, plan.get(\"shiftLabel\") or \"this shift\", dest)"
+                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\trows = plan.get(\"moves\") or []\n\tn = (plan.get(\"totals\") or {}).get(\"rowsMoved\") or 0\n\tif n == 0:\n\t\treturn \"\"\n\tlabels = []\n\tfor r in rows:\n\t\tlbl = r.get(\"toShiftLabel\")\n\t\tif lbl and lbl not in labels:\n\t\t\tlabels.append(lbl)\n\tdest = \" and \".join(labels) if labels else \"another shift\"\n\tnoun = \"row\" if n == 1 else \"rows\"\n\tverb = \"moves\" if n == 1 else \"move\"\n\treturn \"%d %s %s from %s to %s.\" % (n, noun, verb, plan.get(\"shiftLabel\") or \"this shift\", dest)"
                         }
                       ]
                     }
