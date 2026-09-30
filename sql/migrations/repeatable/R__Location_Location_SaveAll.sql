@@ -2,7 +2,7 @@
 -- Procedure:   Location.Location_SaveAll
 -- Author:      Blue Ridge Automation
 -- Created:     2026-05-18
--- Version:     1.3
+-- Version:     1.4
 --
 -- Description:
 --   Bundled save for a Location instance and its LocationAttribute values
@@ -81,6 +81,13 @@
 --                       CURRENT (persisted) Code, not the incoming @Code --
 --                       a same-call rename must not surface a code that was
 --                       never saved.
+--   2026-09-30 - 1.4 - Printer (LTD 16) Endpoint is conditionally required:
+--                       demanded for Networked / Hardwired, permitted absent for
+--                       ConnectionKind = 'UsbBridge' (endpoint derives from the
+--                       parent Terminal IpAddress). Migration 0101 relaxed the
+--                       definition-level IsRequired flag; this is where the
+--                       requirement actually lives now, because only here is the
+--                       sibling ConnectionKind value visible.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Location_SaveAll
     @Id                       BIGINT          = NULL,
@@ -340,6 +347,57 @@ BEGIN
                 @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
+        END
+
+        -- ====================
+        -- Printer (LTD 16): Endpoint is CONDITIONALLY required
+        -- ====================
+        -- Endpoint was IsRequired = 1 until migration 0101. ConnectionKind =
+        -- 'UsbBridge' stores NO endpoint -- it derives from the parent Terminal's
+        -- IpAddress via Location.ufn_PrinterEndpoint -- so the definition-level
+        -- flag had to be relaxed. Relaxing it ALONE would let a Networked printer
+        -- save with no address at all and fail silently at dispatch, so the
+        -- requirement lives here, where the sibling ConnectionKind value is in
+        -- scope. @Incoming.Value is already NULL for empty/whitespace.
+        --
+        -- Runs with the other rejecting validations, BEFORE any transaction: this
+        -- proc is captured via INSERT-EXEC, so a ROLLBACK inside it would throw
+        -- Msg 3915. Every rejection SELECTs the status row and RETURNs with no
+        -- open transaction.
+        IF @LocationTypeDefinitionId = 16
+        BEGIN
+            DECLARE @IncomingKind NVARCHAR(255) = (
+                SELECT TOP 1 i.Value
+                FROM @Incoming i
+                INNER JOIN Location.LocationAttributeDefinition lad
+                    ON lad.Id = i.LocationAttributeDefinitionId
+                   AND lad.AttributeName = N'ConnectionKind'
+            );
+            DECLARE @IncomingEndpoint NVARCHAR(255) = (
+                SELECT TOP 1 i.Value
+                FROM @Incoming i
+                INNER JOIN Location.LocationAttributeDefinition lad
+                    ON lad.Id = i.LocationAttributeDefinitionId
+                   AND lad.AttributeName = N'Endpoint'
+            );
+
+            -- An absent ConnectionKind reads as the attribute DefaultValue,
+            -- 'Networked' -- the same default Location.ufn_PrinterEndpoint applies.
+            IF ISNULL(NULLIF(LTRIM(RTRIM(ISNULL(@IncomingKind, N''))), N''), N'Networked') <> N'UsbBridge'
+               AND @IncomingEndpoint IS NULL
+            BEGIN
+                SET @Message = N'Endpoint is required unless ConnectionKind is UsbBridge.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId           = @AppUserId,
+                    @LogEntityTypeCode   = N'Location',
+                    @EntityId            = @Id,
+                    @LogEventTypeCode    = @EventCode,
+                    @FailureReason       = @Message,
+                    @ProcedureName       = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+                RETURN;
+            END
         END
 
         -- ====================
