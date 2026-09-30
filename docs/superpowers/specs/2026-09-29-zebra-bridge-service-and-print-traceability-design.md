@@ -101,13 +101,25 @@ as "the printer is broken."
 - `SO_EXCLUSIVEADDRUSE` instead of `SO_REUSEADDR`. On Windows the latter permits a *second live
   process* to bind the same port with undefined delivery between them -- unlike POSIX, where it
   only permits rebinding a `TIME_WAIT` port.
-- Queue resolution: auto-detect the Zebra queue, overridable in config. The queue name is the one
-  value that differs per machine, and hand-typing it 54 times is 54 chances to hit the
-  `Zebra GX420d (RAW)` vs `ZDesigner GX420d` trap observed on 2026-09-29. Detection enumerates
-  local queues and selects the single one whose driver is a Zebra/ZDesigner driver **on a live
-  port**; zero matches or more than one is a startup error naming what it found, never a guess.
-  That host on 2026-09-29 had three candidate queues, two of them stale (`ZDesigner GX420d` bound
-  to `LPT1:`), so the live-port test is the part doing the work.
+- Queue resolution: **the queue name is explicit configuration, read from the conf file. There is
+  no runtime detection.** Detection exists only as an *install-time convenience*: `install`
+  enumerates local queues, and if exactly one is a plausible Zebra it writes that name to the conf
+  and **prints it**; if zero or several, it lists what it found and requires `--queue "<name>"`.
+  Nothing is ever detected while serving and nothing is guessed.
+
+  An earlier draft made detection the runtime mechanism, selecting the single Zebra-driver queue
+  "on a live port". That was wrong twice over. Win32 has no such thing as a live-port test --
+  `LPT1:` *is* an installed port -- and real data kills it outright: the printer host on
+  2026-09-30 carried **three** candidates, `ZDesigner GX420d (Copy 1)` on USB001,
+  `ZDesigner GX420d` on `LPT1:` (stale), and `Zebra GX420d (RAW)` on USB001 (the one in use).
+  Filtering dead ports removes only the `LPT1:` row and leaves **two live candidates on the same
+  port**, which nothing in the spooler can separate. Section 7 step 1 has the commissioner running
+  `Get-Printer` at the machine anyway, so confirming a name costs nothing and removes a whole class
+  of silent mis-binding.
+- A printer swap must not require a reinstall. `install` is **idempotent** -- run against a machine
+  that already has the service, it updates the conf and restarts -- and a `set-queue "<name>"` verb
+  covers the narrow case. After either, `?STATUS` reports the new binding, so a swap is: re-run,
+  probe, done.
 - A rolling local log file. On 2026-09-29 the bridge's output existed only because it happened to
   be redirected.
 
