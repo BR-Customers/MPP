@@ -215,7 +215,7 @@ The stage reached is a field on the row, so diagnosis is one query and no cross-
 | `EndpointUnresolved` | `No printer endpoint for this terminal (tried: ...)` | configuration -- nothing was ever attempted |
 | `DispatchFailed` | `Connection refused: getsockopt` | host is up, **nothing listening** -- bridge is down |
 | `DispatchFailed` | `Connect timed out` | packets dropped -- **firewall** on the printer host |
-| `QueueRejected` | the bridge's own `ERR ...` text | network fine, **queue name wrong** |
+| `QueueRejected` | `[WinError 1801] The printer name is invalid.` | network fine, **queue name wrong** |
 
 `Connect timed out` versus `Connection refused` is the distinction that identified the real fault
 on 2026-09-29 and it is preserved verbatim rather than normalised into a generic failure. The
@@ -223,10 +223,14 @@ same reasoning separates `QueueRejected` from `DispatchFailed`: a bridge that *a
 the network, so conflating them sends a diagnosis to the wrong machine.
 
 A transport failure writes one row **per attempt** -- three, 2s apart (rows 28-30 at
-`19:45:43.414 / 45.428 / 47.459`), which is the retry policy made visible.
+`19:45:43.414 / 45.428 / 47.459`, rows 32-34 at `14:21:02.503 / 04.511 / 06.517`), which is the
+retry policy made visible.
 
-`QueueRejected` is covered by unit test but has **not** been produced against a live bridge yet;
-every other row above has.
+**Every row above has been produced against a live bridge**, on 2026-09-29 and 2026-09-30.
+`QueueRejected` was obtained by starting the bridge bound to a queue that does not exist on the
+host: it answers, so the network is proven, and its own spooler error (`WinError 1801`) reaches
+the audit row intact. That is the case a `?STATUS` probe catches at commissioning before a single
+label is wasted (section 9).
 
 ### 6.4 What is deliberately not claimed
 
