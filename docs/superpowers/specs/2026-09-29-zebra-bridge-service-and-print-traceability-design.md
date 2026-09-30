@@ -243,20 +243,32 @@ existing consumers and is **left alone**; the precision lives in `InterfaceLog`.
 
 ## 7. Per-terminal deployment
 
-Per machine, in order:
+This is a **single visit per terminal**, walking the line. The order matters: the terminal's IP
+is set one step before the things that depend on it.
 
-1. **Driver** -- install the Zebra driver; confirm the queue name with `Get-Printer`.
-2. **Bridge** -- copy `MesZebraBridge.exe`, run `MesZebraBridge.exe install`. Registers the
-   service, sets SCM recovery, adds the inbound rule for TCP 9100 scoped to the Gateway, starts.
-3. **Address** -- already done. Terminals carry static IPs for screen selection (section 10.1).
-4. **Configuration** (section 8) -- a Printer row under the terminal with
-   `ConnectionKind = UsbBridge`. **No endpoint is entered**; it derives from the terminal's
-   existing IP (section 8.1).
-5. **Verify** (section 9) -- `?STATUS` probe, then one real label.
+1. **Read the PC's address and the queue name.** `ipconfig` and `Get-Printer` at the machine.
+2. **Terminal IP** -- set it on the Terminal row in the Config Tool to match what the PC reports.
+   This is a **commissioning step, not a prerequisite**: as of 2026-09-30 only 17 of 77 terminals
+   carry an IP, and the remaining 60 get one as their line is walked. It must precede steps 4-6,
+   because the printer's endpoint derives from it (section 8.1).
+3. **Driver** -- install the Zebra driver if it is not already there.
+4. **Bridge** -- copy `MesZebraBridge.exe` and its conf file, run `MesZebraBridge.exe install`.
+   Registers the service, sets SCM recovery, adds the inbound rule for TCP 9100 scoped to the
+   Gateway, starts, and **reports the queue it bound** so it can be checked against step 1.
+5. **Printer row** (section 8) -- under that terminal, `ConnectionKind = UsbBridge`.
+   **No endpoint is entered**; it derives from the terminal IP set in step 2.
+6. **Verify** (section 9) -- `?STATUS` probe, then one real label.
+7. **Restart the plant-floor session on that terminal.** Not optional, and easy to skip because
+   step 6 has just gone green. `session.custom.printer` resolves **once at session startup**
+   (section 8), so an operator session opened before step 5 still holds no printer. The Config
+   Tool reads the database; the plant floor reads its cached session value. Skipping this looks
+   like a successful commissioning that does not print.
 
-Steps 1-2 happen at the machine; 4-5 from the Config Tool. Because step 3 is already satisfied
-and step 4 is a single dropdown, the per-terminal cost is dominated by the driver install -- which
-is the floor for a USB printer and cannot be engineered away.
+Steps 1, 3, 4 and 7 happen at the machine; 2, 5 and 6 from the Config Tool -- all in one visit.
+
+Because the address is entered **once** (on the terminal, never again on the printer), the
+per-terminal cost is dominated by the driver install, which is the floor for a USB printer and
+cannot be engineered away.
 
 ## 8. Configuration per terminal
 
@@ -278,9 +290,18 @@ the session value is empty, or on failure when the freshly resolved endpoint *di
 
 ### 8.1 The endpoint is derived, not entered
 
-Terminals already carry static IPs, because that is how screen selection resolves. And with every
-printer USB-attached, **the bridge always runs on the terminal PC** -- so a bridge printer's
-endpoint host is, by construction, its parent terminal's IP. There is no second address.
+With every printer USB-attached, **the bridge always runs on the terminal PC** -- so a bridge
+printer's endpoint host is, by construction, its parent terminal's IP. There is no second address.
+
+**The terminal IP is set during commissioning, not before it.** An earlier draft asserted that
+terminals "already carry static IPs, so that side is already solved". That was wrong: as of
+2026-09-30, 17 of 77 terminals carry one and **47 of 54 printers sit under a terminal with no
+IP at all**. The PCs have static addresses; the *configuration* catches up one terminal at a
+time, as the line is walked (section 7 step 2).
+
+That sequencing is what makes derivation the right mechanism rather than merely a workable one.
+The address is entered once, at the terminal, one step before anything consumes it -- so the
+terminal IP and the printer endpoint cannot disagree, because there is only one of them.
 
 So it is not stored. `ConnectionKind` gains a third value beside the existing `Networked` and
 `Hardwired`:
@@ -327,14 +348,19 @@ temporarily shrinking a container configuration.
 
 ### 10.1 Address drift
 
-**Terminals already hold static IPs** -- that is how screen selection works, so the terminal side
-of this is already solved and section 8.1 inherits it.
+Terminal PCs hold static addresses, and section 7 step 2 records each one in the configuration as
+its line is walked. The exposure is a PC whose address changes *after* commissioning: the printer
+endpoint derives from the recorded value, so the two silently diverge and it presents as a printer
+fault. Re-running section 7 steps 2 and 6 is the repair, and `?STATUS` names it in one probe.
 
-The residual risk is anything *not* a terminal. The Gateway host carries a stale inbound rule for
-`10.20.11.106`, a printer host's former address, which is what a moved lease leaves behind: a
-silent failure that presents as a printer fault. Any bench or temporary host used during
-commissioning needs the same static treatment, and stale source-scoped firewall rules should be
-pruned rather than accumulated.
+**Nothing may be compiled into the bridge binary.** The Gateway address for the firewall rule
+lives in the conf file shipped beside the executable -- authored once for all 54 installs, never
+per machine, and never baked in. A hardcoded address is invisible when it is wrong: an earlier
+draft of the C# plan carried `10.20.11.53`, the Gateway host's address on 2026-09-29, which was
+already stale hours later when that machine moved networks.
+
+Stale source-scoped rules should be pruned rather than accumulated -- the Gateway host still
+carries an inbound rule for `10.20.11.106`, a printer host's former address.
 
 ### 10.2 Data quality in existing rows
 
