@@ -1,0 +1,709 @@
+{
+  "custom": {
+    "reductionChecked": false
+  },
+  "params": {
+    "popupId": "mpp-dc-recon-confirm",
+    "replyMessage": "reconcileConfirmed",
+    "plan": {
+      "shiftLabel": "",
+      "pressCode": "",
+      "dieName": "",
+      "assetNumber": "",
+      "activeCavities": 0,
+      "hasReduction": false,
+      "dieLife": {
+        "before": 0,
+        "delta": 0,
+        "after": 0
+      },
+      "totals": {
+        "piecesAdded": 0,
+        "piecesRemoved": 0,
+        "newLots": 0,
+        "countsCorrected": 0,
+        "countsStanding": 0,
+        "rowsMoved": 0
+      },
+      "moves": [],
+      "lots": [],
+      "scrap": []
+    },
+    "payload": {}
+  },
+  "propConfig": {
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.plan": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.payload": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 760,
+      "width": 1040
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "width": "100%",
+        "height": "100%",
+        "overflow": "hidden"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "padding": "18px 24px 10px 24px",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "4px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ShiftTitle"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.plan.shiftLabel"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "34px",
+                "fontWeight": 800,
+                "lineHeight": "1.1",
+                "textTransform": "uppercase",
+                "color": "var(--mpp-text-primary)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SubLine"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.plan.pressCode} + \" \" + char(183) + \" \" + {view.params.plan.dieName} + \" (Asset # \" + {view.params.plan.assetNumber} + \") \" + char(183) + \" \" + toStr({view.params.plan.activeCavities}) + \" active cavities\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "padding": "16px 24px",
+            "gap": "12px",
+            "overflowY": "auto"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "EntriesMovedGroup"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.plan.totals.rowsMoved} > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "padding": "12px 14px",
+                "borderRadius": "var(--mpp-radius-md)",
+                "backgroundColor": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "EntriesMovedGroupText"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.params.plan"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\trows = plan.get(\"moves\") or []\n\tn = len(rows)\n\tif n == 0:\n\t\treturn \"\"\n\tlabels = []\n\tfor r in rows:\n\t\tlbl = r.get(\"toShiftLabel\")\n\t\tif lbl and lbl not in labels:\n\t\t\tlabels.append(lbl)\n\tdest = \" and \".join(labels) if labels else \"another shift\"\n\tnoun = \"row\" if n == 1 else \"rows\"\n\tverb = \"moves\" if n == 1 else \"move\"\n\treturn \"%d %s %s from %s to %s.\" % (n, noun, verb, plan.get(\"shiftLabel\") or \"this shift\", dest)"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "whiteSpace": "pre-line",
+                    "lineHeight": "1.5"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ProductionAddedGroup"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.plan.totals.piecesAdded} > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "padding": "12px 14px",
+                "borderRadius": "var(--mpp-radius-md)",
+                "backgroundColor": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ProductionAddedGroupText"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.params.plan"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\tadded = (plan.get(\"totals\") or {}).get(\"piecesAdded\") or 0\n\tlots = plan.get(\"lots\") or []\n\tn = len([l for l in lots if (l.get(\"gap\") or 0) > 0])\n\treturn \"%s good pieces credited to %s LOT%s.\" % (\"{:,}\".format(added), n, \"\" if n == 1 else \"s\")"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "whiteSpace": "pre-line",
+                    "lineHeight": "1.5"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ProductionReducedGroup"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.plan.totals.piecesRemoved} > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "padding": "12px 14px",
+                "borderRadius": "var(--mpp-radius-md)",
+                "backgroundColor": "var(--mpp-state-warn-bg)",
+                "border": "1px solid var(--mpp-state-warn-border)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ProductionReducedGroupText"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.params.plan"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\tremoved = (plan.get(\"totals\") or {}).get(\"piecesRemoved\") or 0\n\tlots = plan.get(\"lots\") or []\n\tltts = [l.get(\"ltt\") for l in lots if (l.get(\"gap\") or 0) < 0]\n\tnames = \", \".join([x for x in ltts if x])\n\treturn \"%s pieces removed from %s (a correction).\" % (\"{:,}\".format(removed), names or \"the LOT(s) below\")"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "whiteSpace": "pre-line",
+                    "lineHeight": "1.5",
+                    "color": "var(--mpp-state-warn-fg)",
+                    "fontWeight": 600
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "NewLotsGroup"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.plan.totals.newLots} > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "padding": "12px 14px",
+                "borderRadius": "var(--mpp-radius-md)",
+                "backgroundColor": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "NewLotsGroupText"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.params.plan"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\tnewN = (plan.get(\"totals\") or {}).get(\"newLots\") or 0\n\tlots = plan.get(\"lots\") or []\n\tltts = [l.get(\"ltt\") for l in lots if l.get(\"isNew\")]\n\tnames = \", \".join([x for x in ltts if x])\n\treturn \"%s LOT%s created and released to Warehouse: %s.\" % (newN, \"\" if newN == 1 else \"s\", names)"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "whiteSpace": "pre-line",
+                    "lineHeight": "1.5"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "CountsChangedGroup"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.plan.totals.countsCorrected} > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "padding": "12px 14px",
+                "borderRadius": "var(--mpp-radius-md)",
+                "backgroundColor": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "CountsChangedGroupText"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.params.plan"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\tcorr = (plan.get(\"totals\") or {}).get(\"countsCorrected\") or 0\n\tlots = plan.get(\"lots\") or []\n\tparts = []\n\tfor l in lots:\n\t\tif l.get(\"countChanges\") and (l.get(\"gap\") or 0) != 0:\n\t\t\tbefore = l.get(\"pieceCountBefore\") or 0\n\t\t\tafter = l.get(\"pieceCountAfter\") or 0\n\t\t\tparts.append(\"%s %s -> %s\" % (l.get(\"ltt\"), \"{:,}\".format(before), \"{:,}\".format(after)))\n\treturn \"%s released LOT%s: %s\" % (corr, \"\" if corr == 1 else \"s\", \", \".join(parts))"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "whiteSpace": "pre-line",
+                    "lineHeight": "1.5"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "CountsStandingGroup"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.plan.totals.countsStanding} > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "padding": "12px 14px",
+                "borderRadius": "var(--mpp-radius-md)",
+                "backgroundColor": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "CountsStandingGroupText"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.params.plan"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\tlines = []\n\tfor l in (plan.get(\"lots\") or []):\n\t\tif l.get(\"isLocked\") and (l.get(\"gap\") or 0) != 0:\n\t\t\treason = l.get(\"lockReason\") or \"downstream\"\n\t\t\tlines.append(\"%s was counted at %s -- its count stands; its production is still recorded.\"\n\t\t\t\t% (l.get(\"ltt\"), reason))\n\treturn \"\\n\".join(lines)"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "whiteSpace": "pre-line",
+                    "lineHeight": "1.5",
+                    "color": "var(--mpp-text-tertiary)"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "DieLifeGroup"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "true"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "padding": "12px 14px",
+                "borderRadius": "var(--mpp-radius-md)",
+                "backgroundColor": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "DieLifeGroupText"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.params.plan"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\tdl = plan.get(\"dieLife\") or {}\n\tbefore = dl.get(\"before\") or 0\n\tdelta = dl.get(\"delta\") or 0\n\tafter = dl.get(\"after\") or 0\n\tsign = \"+\" if delta >= 0 else \"\"\n\treturn \"Asset # %s (%s): %s -> %s (%s%s shots).\" % (\n\t\tplan.get(\"assetNumber\") or \"\", plan.get(\"dieName\") or \"\",\n\t\t\"{:,}\".format(before), \"{:,}\".format(after), sign, \"{:,}\".format(delta))"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "whiteSpace": "pre-line",
+                    "lineHeight": "1.5",
+                    "fontWeight": 600
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.input.checkbox",
+            "meta": {
+              "name": "ReductionCheckbox"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.plan.hasReduction}"
+                  }
+                }
+              },
+              "props.selected": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.reductionChecked"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "I have checked this reduction against the actual count",
+              "style": {
+                "color": "var(--mpp-state-warn-fg)",
+                "fontWeight": 600
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "padding": "14px 24px",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Cancel",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ConfirmButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!{view.params.plan.hasReduction} || {view.custom.reductionChecked}"
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "upper(\"SAVE \" + {view.params.plan.shiftLabel})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "SAVE",
+              "style": {
+                "classes": "pf-btn pf-btn-primary pf-btn-large"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tp = BlueRidge.Common.Util.extractQualifiedValues(self.view.params.payload) or {}\n\tsystem.perspective.sendMessage(self.view.params.replyMessage,\n\t\tpayload={\"payload\": p}, scope=\"page\")\n\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
