@@ -13,7 +13,8 @@ DECLARE @EpDef BIGINT = (SELECT Id FROM Location.LocationAttributeDefinition WHE
 INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue) VALUES (@Pid, @EpDef, N'10.20.30.40:9100');
 GO
 DECLARE @Ep NVARCHAR(200), @Code NVARCHAR(50), @Rows INT, @TestPid BIGINT;
-CREATE TABLE #P (LocationId BIGINT, Code NVARCHAR(50), Name NVARCHAR(200), Endpoint NVARCHAR(200), Model NVARCHAR(200), ConnectionKind NVARCHAR(50));
+-- v2.0 of the proc appends StoredEndpoint / TerminalIpAddress / EndpointSource.
+CREATE TABLE #P (LocationId BIGINT, Code NVARCHAR(50), Name NVARCHAR(200), Endpoint NVARCHAR(200), Model NVARCHAR(200), ConnectionKind NVARCHAR(50), StoredEndpoint NVARCHAR(255), TerminalIpAddress NVARCHAR(255), EndpointSource NVARCHAR(30));
 SELECT @TestPid = Id FROM Location.Location WHERE Code = N'TEST-PRN-1';
 INSERT INTO #P EXEC Location.Printer_GetById @PrinterLocationId = @TestPid;
 SELECT @Ep = Endpoint, @Code = Code, @Rows = COUNT(*) OVER() FROM #P;
@@ -22,7 +23,7 @@ EXEC test.Assert_IsEqual @TestName = N'[PrinterById] endpoint resolves', @Expect
 EXEC test.Assert_IsEqual @TestName = N'[PrinterById] code resolves', @Expected = N'TEST-PRN-1', @Actual = @Code;
 GO
 DECLARE @Rows2 INT;
-CREATE TABLE #U (LocationId BIGINT, Code NVARCHAR(50), Name NVARCHAR(200), Endpoint NVARCHAR(200), Model NVARCHAR(200), ConnectionKind NVARCHAR(50));
+CREATE TABLE #U (LocationId BIGINT, Code NVARCHAR(50), Name NVARCHAR(200), Endpoint NVARCHAR(200), Model NVARCHAR(200), ConnectionKind NVARCHAR(50), StoredEndpoint NVARCHAR(255), TerminalIpAddress NVARCHAR(255), EndpointSource NVARCHAR(30));
 INSERT INTO #U EXEC Location.Printer_GetById @PrinterLocationId = -999;
 SELECT @Rows2 = COUNT(*) FROM #U;
 DROP TABLE #U;

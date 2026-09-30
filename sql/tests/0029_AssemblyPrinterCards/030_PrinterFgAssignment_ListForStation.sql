@@ -15,7 +15,8 @@ DECLARE @Fg BIGINT = (SELECT TOP 1 i.Id FROM Parts.Item i JOIN Parts.ItemType it
 INSERT INTO Location.PrinterFgAssignment (PrinterLocationId, ItemId, SortOrder) VALUES (@P1, @Fg, 1);
 GO
 DECLARE @Cnt INT, @Assigned INT, @Unassigned INT;
-CREATE TABLE #L (PrinterLocationId BIGINT, PrinterCode NVARCHAR(50), PrinterName NVARCHAR(200), Endpoint NVARCHAR(200), ConnectionKind NVARCHAR(50), AssignedItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), SortOrder INT);
+-- v2.0 of the proc appends StoredEndpoint / TerminalIpAddress / EndpointSource.
+CREATE TABLE #L (PrinterLocationId BIGINT, PrinterCode NVARCHAR(50), PrinterName NVARCHAR(200), Endpoint NVARCHAR(200), ConnectionKind NVARCHAR(50), AssignedItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), SortOrder INT, StoredEndpoint NVARCHAR(255), TerminalIpAddress NVARCHAR(255), EndpointSource NVARCHAR(30));
 -- NOTE: EXEC parameters must be a literal or a @variable (never an inline subquery) --
 -- resolve the terminal id into @StationTerm first, then pass the @variable.
 DECLARE @StationTerm BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-LST-TERM');

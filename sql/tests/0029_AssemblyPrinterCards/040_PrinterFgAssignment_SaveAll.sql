@@ -85,7 +85,8 @@ EXEC test.Assert_Contains @TestName=N'[SaveAll] audit NewValue carries resolved 
 -- ONLY order, not the FG<->printer binding.
 SET @Json = N'[{"PrinterLocationId":' + CAST(@P1 AS NVARCHAR(20)) + N',"ItemId":' + CAST(@Fg1 AS NVARCHAR(20)) + N',"SortOrder":1},{"PrinterLocationId":' + CAST(@P2 AS NVARCHAR(20)) + N',"ItemId":' + CAST(@Fg2 AS NVARCHAR(20)) + N',"SortOrder":2}]';
 INSERT INTO #R EXEC Location.PrinterFgAssignment_SaveAll @StationTerminalLocationId=@T, @AppUserId=@U, @AssignmentsJson=@Json; DELETE FROM #R;
-CREATE TABLE #L (PrinterLocationId BIGINT, PrinterCode NVARCHAR(50), PrinterName NVARCHAR(200), Endpoint NVARCHAR(200), ConnectionKind NVARCHAR(50), AssignedItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), SortOrder INT);
+-- v2.0 of the proc appends StoredEndpoint / TerminalIpAddress / EndpointSource.
+CREATE TABLE #L (PrinterLocationId BIGINT, PrinterCode NVARCHAR(50), PrinterName NVARCHAR(200), Endpoint NVARCHAR(200), ConnectionKind NVARCHAR(50), AssignedItemId BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), SortOrder INT, StoredEndpoint NVARCHAR(255), TerminalIpAddress NVARCHAR(255), EndpointSource NVARCHAR(30));
 INSERT INTO #L EXEC Location.PrinterFgAssignment_ListForStation @StationTerminalLocationId=@T;
 DECLARE @First BIGINT;
 SELECT TOP 1 @First = PrinterLocationId FROM #L ORDER BY SortOrder, PrinterLocationId;
