@@ -174,5 +174,68 @@ namespace BlueRidge.MesZebraBridge.Tests
 
             Assert.Equal("ERR InvalidOperationException: boom", reply);
         }
+
+        // ---- PROTOCOL.md "Verified": the exchanges observed 2026-09-29 against the
+        // real Windows spooler and the real ZDesigner GX420d / USB002 driver.
+        // PROTOCOL.md says this service is correct when it reproduces them byte for
+        // byte, so that sentence is these tests.
+
+        [Fact]
+        public void Verified_exchange_1_status_against_ZDesigner_GX420d()
+        {
+            string reply = Protocol.HandleRequest(
+                Encoding.ASCII.GetBytes("?STATUS"), "ZDesigner GX420d",
+                SpoolOk, () => new QueueStatus("ZDesigner GX420d", true, 0));
+            Assert.Equal("OK bridge=1.0.0 queue='ZDesigner GX420d' ready=true jobs=0", reply);
+        }
+
+        [Fact]
+        public void Verified_exchange_2_a_38_byte_label_acked_as_job_15()
+        {
+            // Get-PrintJob independently reported `Id 15, MES ZPL, 38 bytes` for this
+            // exchange, so both numbers on this line came from the spooler, not from us.
+            byte[] zpl = new byte[38];
+            for (int i = 0; i < zpl.Length; i++) zpl[i] = (byte)'x';
+
+            string reply = Protocol.HandleRequest(zpl, "ZDesigner GX420d",
+                d => new SpoolResult(15, d.Length), StatusOk);
+
+            Assert.Equal("OK queue='ZDesigner GX420d' job=15 bytes=38", reply);
+        }
+
+        [Fact]
+        public void Verified_exchange_3_empty_gets_no_reply()
+        {
+            Assert.Null(Protocol.HandleRequest(new byte[0], "ZDesigner GX420d", SpoolOk, StatusOk));
+        }
+
+        [Fact]
+        public void A_queue_that_does_not_exist_on_the_host_reports_not_ready_while_naming_it()
+        {
+            // PROTOCOL.md: "Binding a queue name that does not exist on the host
+            // returns ready=false while still naming what it tried -- which is how
+            // commissioning catches the wrong-queue-name mistake before any label
+            // is wasted."
+            string reply = Protocol.HandleRequest(
+                Encoding.ASCII.GetBytes("?STATUS"), "Zebra GX420d (RAW)",
+                SpoolOk, () => new QueueStatus("Zebra GX420d (RAW)", false, 0));
+            Assert.Equal("OK bridge=1.0.0 queue='Zebra GX420d (RAW)' ready=false jobs=0", reply);
+        }
+
+        [Fact]
+        public void The_documented_queue_not_found_error_shape_survives_the_wire()
+        {
+            // PROTOCOL.md's Print example:
+            //   ERR queue not found: 'ZDesigner GX420d'; visible: Zebra GX420d (RAW)
+            Func<byte[], SpoolResult> spool = d =>
+            {
+                throw new SpoolException(
+                    "queue not found: 'ZDesigner GX420d'; visible: Zebra GX420d (RAW)");
+            };
+
+            string reply = Protocol.HandleRequest(Encoding.ASCII.GetBytes("^XA^XZ"), "Q", spool, StatusOk);
+
+            Assert.Equal("ERR queue not found: 'ZDesigner GX420d'; visible: Zebra GX420d (RAW)", reply);
+        }
     }
 }
