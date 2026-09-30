@@ -2,34 +2,36 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A single self-contained `MesZebraBridge.exe` that replaces `zebraPrinter/usb_tcp_bridge.py` as the deployed artifact on 54 plant PCs. It listens on `0.0.0.0:9100`, speaks `zebraPrinter/PROTOCOL.md` v1.0.0 byte for byte, spools ZPL to the local Zebra queue through `winspool.drv` RAW, auto-detects that queue, rolls a local log, and installs itself as a service with SCM restart-on-failure recovery and its own inbound firewall rule -- from one command at the machine.
+**Goal:** A `MesZebraBridge.exe` that replaces `zebraPrinter/usb_tcp_bridge.py` as the deployed artifact on 54 plant PCs. It listens on `0.0.0.0:9100`, speaks `zebraPrinter/PROTOCOL.md` v1.0.0 byte for byte, spools ZPL to the Windows print queue **named in its conf file** through `winspool.drv` RAW, rolls a local log, and installs itself as a service with SCM restart-on-failure recovery and its own inbound firewall rule scoped to the Gateway.
 
 **Architecture:** The Python reference's testability seam is carried over verbatim: request-to-response is a pure function with the spooler and the queue-status reader injected. Everything that touches Win32 sits behind a thin, barely-logic-bearing shim so that the parts worth testing are testable with no printer attached.
 
 ```
-Program.cs        verb dispatch: (no args) | run | install | uninstall | status | detect
-  Host.cs         shared bootstrap -- config -> log -> QueueBinding -> BridgeServer
-    BridgeConfig  key=value conf file + command-line overrides          [pure, tested]
-    RollingLog    daily file, N-day retention, never throws            [tested]
-    QueueBinding  resolve-once-then-latch, retries while unresolved    [tested]
-      QueueResolver.Select(IEnumerable<PrinterEntry>) -> QueueResolution [pure, tested]
-      Spooler.EnumerateLocalQueues()                                   [P/Invoke shim]
+Program.cs        verbs: (no args) | run | install | set-queue | uninstall | status | detect
+  Host.cs         shared bootstrap -- conf -> log -> QueueBinding -> BridgeServer
+    BridgeConfig  key=value conf file beside the exe + CLI overrides     [pure, tested]
+    RollingLog    daily file, N-day retention, never throws             [tested]
+    QueueBinding  the conf'd queue name, or null -> ERR queue unconfigured [tested]
     BridgeServer  SO_EXCLUSIVEADDRUSE socket, half-close read, 1 line out [tested]
-      Router.Route(data, binding, spool, status)                       [pure, tested]
-        Protocol.HandleRequest(data, queue, spool, status)             [pure, tested]
-      Spooler.SpoolRaw / ReadQueueStatus                               [P/Invoke shim]
-  BridgeService.cs  ServiceBase wrapper over Host
-  Installer.cs      CreateService + failure actions + netsh rule
-      Installer.BuildFirewallAddArgs(...)                              [pure, tested]
+      Router.Route(data, binding, spool, status)                        [pure, tested]
+        Protocol.HandleRequest(data, queue, spool, status)              [pure, tested]
+      Spooler.SpoolRaw / ReadQueueStatus                                [P/Invoke shim]
+  Installer.cs    CreateService + failure actions + netsh rule + conf write
+      Installer.BuildFirewallAddArgs(...)                               [pure, tested]
+      QueueResolver.Select(IEnumerable<PrinterEntry>) -> QueueResolution [pure, tested]
+        ^^ INSTALL-TIME ONLY. Never on the runtime path.
+      Spooler.EnumerateLocalQueues()                                    [P/Invoke shim]
 ```
 
 `Protocol.cs` is a direct transliteration of `usb_tcp_bridge.handle_request` / `_quote` / `_oneline`, and `Spooler.cs` of `send_raw` / `queue_status`. Where the two implementations could drift, a test pins the C# side to the bytes recorded in `PROTOCOL.md` § Verified.
 
-**Tech Stack:** C# 7.3, .NET Framework 4.8 (`net48`), BCL only -- **zero runtime NuGet dependencies**, so the build output is one `.exe`. Built with the .NET 10 SDK (`dotnet build`); `Microsoft.NETFramework.ReferenceAssemblies` 1.0.3 supplies the targeting pack, because no .NET Framework reference assemblies are installed on this machine and there is no Visual Studio or standalone MSBuild. Tests: xUnit 2.9.3 + Microsoft.NET.Test.Sdk 17.14.1 + xunit.runner.visualstudio 3.1.4, all already in the local NuGet cache, run with `dotnet test`.
+**Tech Stack:** C# 7.3, .NET Framework 4.8 (`net48`), BCL only -- **zero runtime NuGet dependencies**, so the build output is a single `.exe`. Built with the .NET 10 SDK (`dotnet build`); `Microsoft.NETFramework.ReferenceAssemblies` 1.0.3 supplies the targeting pack, because no .NET Framework reference assemblies are installed on this machine and there is no Visual Studio or standalone MSBuild. Tests: xUnit 2.9.3 + Microsoft.NET.Test.Sdk 17.14.1 + xunit.runner.visualstudio 3.1.4, all already in the local NuGet cache, run with `dotnet test`.
 
-**Spec:** `docs/superpowers/specs/2026-09-29-zebra-bridge-service-and-print-traceability-design.md` §§ 2, 3, 4, 7, 9, 11, 12.
+**Spec:** `docs/superpowers/specs/2026-09-29-zebra-bridge-service-and-print-traceability-design.md` §§ 2, 3, 4, 7, 9, 10.1, 11, 12.
 **Contract:** `zebraPrinter/PROTOCOL.md` v1.0.0 -- **frozen**. Nothing in this plan changes it.
 **Reference implementation:** `zebraPrinter/usb_tcp_bridge.py`, and its protocol tests at `zebraPrinter/tests/test_bridge_protocol.py`, whose every case has a C# counterpart here.
+
+> **Note on spec § 3.** Its "Changed:" bullet still describes runtime queue auto-detection *"on a live port"*. That is superseded -- see Global Constraint 5. Spec § 7 step 4 (*"copy `MesZebraBridge.exe` **and its conf file**"*, *"**reports the queue it bound** so it can be checked against step 1"*), § 7's `set-queue` reference, and § 10.1 (*"Nothing may be compiled into the bridge binary"*) are the current model, and this plan follows those.
 
 ---
 
@@ -38,12 +40,14 @@ Program.cs        verb dispatch: (no args) | run | install | uninstall | status 
 ### Non-negotiable
 
 - **`PROTOCOL.md` is frozen.** If an implementation detail seems to require a wire change, stop and raise it with Jacques. Three workstreams build against that file.
-- **Zero runtime NuGet dependencies.** One file to copy to 54 machines is the deployment story (spec § 3, § 7). A `PackageReference` that lands a DLL in `bin/` breaks it. `Microsoft.NETFramework.ReferenceAssemblies` carries `PrivateAssets="All"` and is build-time only.
+- **Zero runtime NuGet dependencies.** A `PackageReference` that lands a DLL in `bin/` turns a two-file deployment into a folder deployment. `Microsoft.NETFramework.ReferenceAssemblies` carries `PrivateAssets="All"` and is build-time only.
 - **BCL only, and `net48` only.** No `net8.0`, no self-contained publish, no ILMerge. .NET Framework 4.8 is on every Windows 10/11 image, which is the entire reason for the target.
+- **The deployed artifact is two files: `MesZebraBridge.exe` and `MesZebraBridge.conf`** (spec § 7 step 4). The exe is identical on all 54 machines; the conf is authored **once** with the Gateway address and copied with it.
+- **Nothing is compiled in** (spec § 10.1). No Gateway address, no queue name, no port. Every deployment-specific value comes from the conf file or the command line, and `install` refuses rather than defaulting where a wrong value would be silent.
+- **No runtime queue detection.** The queue name is explicit configuration. See Global Constraint 5.
 - **`SO_EXCLUSIVEADDRUSE`, never `SO_REUSEADDR`.** Set via `Socket.ExclusiveAddressUse = true` **before `Bind`** (setting it after throws `InvalidOperationException`). On Windows `SO_REUSEADDR` lets a *second live process* bind the same port with undefined delivery between them. Task 11 pins both halves of this as tests.
-- **An empty request gets no response at all**, resolved queue or not. `BlueRidge.Location.Printer.validateEndpoint` connects and closes without sending; that bare-connect probe must keep working unchanged. The silence check runs *before* the queue check in `Router.Route`.
+- **An empty request gets no response at all**, configured queue or not. `BlueRidge.Location.Printer.validateEndpoint` connects and closes without sending; that bare-connect probe must keep working unchanged. The silence check runs *before* the queue check in `Router.Route`.
 - **Responses are exactly one line**, ASCII, terminated `\n`. Any embedded newline in error text is collapsed to spaces before it reaches the socket.
-- **Never guess a queue.** Zero or multiple detection matches is an error that names what it found (spec § 3).
 - **Do not touch port 9100 during development.** Other work is using it. Every automated test binds `127.0.0.1:0` (ephemeral). Only Task 15, at the machine with the printer, uses 9100.
 - **Do not touch the database, the Ignition gateway, `scan.ps1`, or any Ignition resource.** This workstream is entirely under `zebraPrinter/`.
 - **Logging must never fail a print.** Every log write is inside a `try`/`catch` that swallows.
@@ -53,21 +57,29 @@ Program.cs        verb dispatch: (no args) | run | install | uninstall | status 
 These are **decisions taken to unblock the build**, not resolutions. Each is cheap to change and is called out in the task that implements it.
 
 1. **Configuration file (open item 12.1 -- "format and location not yet specified").**
-   Assumed: an optional ASCII `key=value` text file at
-   `%ProgramData%\BlueRidge\MesZebraBridge\bridge.conf`, `#` for comments, keys
-   case-insensitive. Keys: `Queue`, `GatewayAddress`, `Port`, `LogDirectory`,
-   `LogRetainDays`. Absent file = all defaults. `install` **writes** it from its own
-   command-line options, so no operator hand-authors it.
-   *Why:* XML `app.config` would put a second file beside the exe and break the
-   one-file deployment; `net48` has no first-class JSON reader; `key=value` parses in
-   20 lines with no dependency. Chosen for the one-file constraint, not on merit.
-2. **Gateway address for the firewall rule.** The spec wants `MesZebraBridge.exe install`
-   with no arguments to be the whole deployment (§ 3, § 7), but the inbound rule must be
-   *scoped* to the Gateway or the scoping is pointless. Assumed: a single compile-time
-   default `BridgeConfig.DefaultGatewayAddress = "10.20.11.53"` (the Gateway host from the
-   spec's 2026-09-29 evidence), overridable by `--gateway` and by the conf file, and
-   **echoed loudly** by `install` so the deploying human sees the address being trusted.
-   A hardcoded production IP in a binary is a real wart; flagged for Jacques.
+   Assumed: an ASCII `key=value` text file named **`MesZebraBridge.conf`, beside the
+   executable**, `#` for comments, keys case-insensitive. Keys: `Queue`,
+   `GatewayAddress`, `Port`, `LogDirectory`, `LogRetainDays`. Overridable with
+   `--conf <path>`.
+   *Location:* spec § 7 step 4 says the deployment is *"`MesZebraBridge.exe` and its
+   conf file"* and § 10.1 says the Gateway address *"lives in the conf file shipped
+   beside the executable -- authored once for all 54 installs"*. Beside the exe is
+   therefore the spec's location, not mine.
+   *Format:* XML `app.config` would bind the file to assembly loading and make it
+   awkward for a human to author once and copy; `net48` has no first-class JSON
+   reader; `key=value` parses in 30 lines with no dependency and a commissioner can
+   read it over someone's shoulder. Chosen for that, not on merit.
+   Logs stay under `%ProgramData%\BlueRidge\MesZebraBridge\logs` -- machine state, not
+   shipped configuration, and it keeps the deployment directory clean.
+2. **Gateway address -- NO LONGER AN ASSUMPTION. Settled by spec § 10.1.**
+   `172.17.10.161`, the plant Ignition Gateway (confirmed 2026-09-30), **in the conf
+   file**, and *"Nothing may be compiled into the bridge binary."* There is no
+   `DefaultGatewayAddress` constant and `install` **fails loudly** when the conf
+   carries no address rather than widening the rule.
+   *Recorded because an earlier revision of this plan got it wrong:* it carried a
+   compile-time default of `10.20.11.53`, which was the **development** Gateway on a
+   laptop -- correct on 2026-09-29 and stale that same evening when the machine
+   changed networks. A hardcoded address is invisible when it is wrong.
 3. **Service account (open item 12.3).** Assumed **`LocalSystem`** (`CreateServiceW` with
    `lpServiceStartName = null`). `winspool`'s `OpenPrinter` must see the local queue, and a
    lower-privilege account may not; install already needs elevation for the SCM and the
@@ -83,28 +95,51 @@ These are **decisions taken to unblock the build**, not resolutions. Each is che
 Each of these is a place the spec or `PROTOCOL.md` does not say, where a C# implementation
 has to say something. Flagged rather than buried.
 
-5. **"On a live port" is not defined anywhere, and Win32 has no "is this port live" API.**
-   The only hard datum is the 2026-09-29 host: three Zebra-driver candidates, the stale one
-   bound to `LPT1:`, the real one on a `USB00n` port. Assumed policy: a port is *dead* when
-   its name begins `LPT`, `COM`, `FILE:`, `PORTPROMPT:`, `NUL`, `XPSPORT:`, `SHRFAX:`,
-   `MICROSOFT.OFFICE.` or `ONENOTE`; anything else (`USB002`, `DOT4_001`, `IP_10.0.0.5`,
-   `\\host\share`) is live. Printer *status* bits are used only as a tie-breaker when more
-   than one live-port candidate remains -- deliberately **not** as a primary filter, so a
-   Zebra that is merely switched off at boot still resolves.
-6. **An unresolved queue does not stop the service listening.** Spec § 3 calls zero-or-many
-   matches "a startup error", but a service that refuses to start presents to the Gateway as
-   `Connection refused`, which spec § 6.3 maps to *"bridge is down"* -- sending the diagnosis
-   to the wrong machine. Assumed: the service **starts, logs the error loudly (file + Windows
-   Event Log), binds the socket, and answers every request `ERR queue unresolved: <what it
-   found>`**. Nothing is guessed and nothing prints, so § 3's intent holds, and commissioning
-   (§ 9) can read the real fault over the wire. Detection is re-attempted on each request
-   while unresolved, so installing the driver after the bridge self-heals.
+5. **The queue name is EXPLICIT CONFIGURATION. Detection is an install-time
+   convenience and never runs at runtime.**
+
+   An earlier revision of this plan implemented spec § 3's *"single Zebra/ZDesigner
+   driver **on a live port**"* as a runtime heuristic, with a dead-port name list
+   standing in for a "live port" test that Win32 does not provide. **Real data
+   settles it against that.** One observed printer host carried three candidates:
+
+   | Queue | Driver | Port | |
+   |---|---|---|---|
+   | `ZDesigner GX420d (Copy 1)` | ZDesigner GX420d | `USB001` | live |
+   | `ZDesigner GX420d` | ZDesigner GX420d | `LPT1:` | stale |
+   | `Zebra GX420d (RAW)` | ZDesigner GX420d | `USB001` | live -- **the one in use** |
+
+   Dead-port filtering removes only the `LPT1:` row and leaves **two live candidates
+   on the same port**, which no status bit separates. Any rule that picks one is a
+   coin flip whose wrong side is a terminal that spools to a queue nobody watches.
+
+   So:
+   - The **runtime** path reads `Queue=` from the conf and does nothing else. No
+     enumeration, no heuristic, no retry, no latch.
+   - `install` runs detection **once, as a convenience**: exactly one candidate and it
+     writes that name into the conf and **prints it**; zero or several and it lists
+     every queue it found with its driver and port and **requires
+     `--queue "<name>"`**. It never guesses and never proceeds unbound.
+   - `detect` exposes the same listing as a standalone verb.
+
+   This costs the commissioner nothing: spec § 7 step 1 has them run `Get-Printer` at
+   the machine before anything else, and § 7 step 4 wants `install` to *"report the
+   queue it bound so it can be checked against step 1"*. Confirming a name they are
+   already looking at removes a whole class of silent mis-binding.
+6. **An unconfigured queue does not stop the service listening.** If the conf carries no
+   `Queue=`, the bridge **starts, logs the error loudly, binds, and answers every request
+   `ERR queue unconfigured: ...`**. A service that refuses to start presents to the Gateway
+   as `Connection refused`, which spec § 6.3 maps to *"host is up, nothing listening --
+   bridge is down"* -- sending the diagnosis to the wrong machine and defeating § 9's
+   commissioning probe. A `Queue=` naming a queue that is **not on the host** needs nothing
+   extra: `PROTOCOL.md` already requires `?STATUS` to answer `ready=false` while naming it,
+   and a print to answer `ERR queue not found: 'X'; visible: ...`.
 7. **`PROTOCOL.md`'s `ERR queue not found: 'X'; visible: ...` example is richer than what
    the Python bridge actually emits** (it emits the bare `WinError` text). Assumed: the C#
    service produces the documented richer shape for the specific "no such queue" error codes
    (1801 / 123 / 2) by enumerating visible queues, and the plain Win32 message otherwise.
    This matches the example in the frozen document and is what makes spec § 6.3's
-   `QueueRejected` diagnostic.
+   `QueueRejected` diagnostic -- and it is now the *primary* signal for a mistyped `Queue=`.
 8. **`PROTOCOL.md` caps the request at 1 MiB but says nothing about the response.** Assumed
    a **1024-byte cap**, truncating with `...`, because `; visible: <30 queues>` on a real host
    could otherwise produce a very long line. The Gateway's `_parseAck` reads one line, so a
@@ -125,6 +160,24 @@ has to say something. Flagged rather than buried.
     mirrors Python's `.decode("ascii","replace").strip().upper()`. One cosmetic difference:
     a non-ASCII byte becomes `?` in C# and U+FFFD in Python. It can only ever appear in the
     echoed text of an unknown command, never in a verified exchange.
+13. **A printer swap must not require a reinstall.** Printers get swapped in service, and
+    spec § 7 calls re-commissioning *"the case that needs care, not first commissioning"*.
+    So:
+    - **`install` is idempotent.** Run against a machine that already has the service, it
+      rewrites the conf, reconfigures the service and the firewall rule, and **restarts**
+      rather than failing.
+    - **`set-queue "<name>"`** is the narrow verb for the swap case: write the conf, restart
+      the service, print the new binding. No SCM or firewall work.
+    - Both write the same conf file and take the same code path, so they cannot diverge.
+    - After either, `?STATUS` reports the new queue. A swap is: re-run, probe, done.
+
+    The bridge does **not** reload the conf while running -- the restart is the reload, and
+    it is one line of either verb. A file watcher would be a second, quieter path to the
+    same state.
+
+    Note for whoever runs the swap: spec § 7 says a swap on a terminal already in service
+    also needs the **workstation session** restarted, because `session.custom.printer`
+    resolved once at its startup. That is Config-Tool-side and outside this plan.
 
 ### Conventions
 
@@ -212,7 +265,8 @@ Create `zebraPrinter/MesZebraBridge/MesZebraBridge.csproj`:
     <Version>1.0.0</Version>
     <FileVersion>1.0.0.0</FileVersion>
 
-    <!-- ONE FILE TO DEPLOY. No PackageReference may put a DLL in bin/.
+    <!-- The deployment is the exe plus its conf file (spec section 7 step 4) and
+         NOTHING ELSE. No PackageReference may put a DLL in bin/.
          AutoGenerateBindingRedirects off keeps MesZebraBridge.exe.config from
          being emitted at all, so bin/ holds the exe and its pdb and nothing else. -->
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
@@ -1345,11 +1399,23 @@ git commit -m "feat(bridge): spool RAW through winspool and return the real job 
 
 ---
 
-### Task 7: Queue auto-detection
+### Task 7: Install-time queue detection
 
-Spec § 3: *"Detection enumerates local queues and selects the single one whose driver is a Zebra/ZDesigner driver **on a live port**; zero matches or more than one is a startup error naming what it found, never a guess."* The 2026-09-29 host had three candidates, two stale, one of them `ZDesigner GX420d` bound to `LPT1:` -- *"so the live-port test is the part doing the work."*
+**This code never runs at runtime** (Global Constraint 5). It exists so `install` and `detect` can offer the commissioner a name to confirm, and so that when it cannot offer one it says exactly what it saw. The runtime path reads `Queue=` from the conf and does nothing else.
 
-**"Live port" is not defined in the spec and Win32 has no API for it** (Global Constraint 5). The policy here is a dead-port name list, with printer status used only to break a tie. The selection is a pure function over the enumeration, so the policy is entirely visible in tests and changing it later touches one method.
+The rule is deliberately strict: **Zebra/ZDesigner driver, on a live port, exactly one, or nothing.** The real host that killed the earlier heuristic is the headline test:
+
+| Queue | Driver | Port | |
+|---|---|---|---|
+| `ZDesigner GX420d (Copy 1)` | ZDesigner GX420d | `USB001` | live |
+| `ZDesigner GX420d` | ZDesigner GX420d | `LPT1:` | stale |
+| `Zebra GX420d (RAW)` | ZDesigner GX420d | `USB001` | live -- the one in use |
+
+Dead-port filtering removes one row and leaves **two live candidates on the same port**. No status bit separates them, so `Select` returns **unresolved** and names all three. That is the correct answer, and getting it is the whole point of this task.
+
+There is **no status tie-breaker**. An earlier revision had one; with the human confirming the name anyway it only adds a way to pick wrong quietly.
+
+`IsLivePort` survives for two reasons: on a single-Zebra machine it stops a stale `LPT1:` queue making the answer ambiguous, and in the `detect` listing it is what labels that row `DEAD-PORT` for the person reading it.
 
 **Files:**
 - Create: `zebraPrinter/MesZebraBridge/QueueResolver.cs`
@@ -1357,7 +1423,7 @@ Spec § 3: *"Detection enumerates local queues and selects the single one whose 
 
 **Interfaces:**
 - Consumes: `PrinterEntry` from Task 6, `Protocol.Quote` / `.Cap` / `.OneLine`
-- Produces:
+- Produces (all **install-time only**):
   - `sealed class QueueResolution { string Queue; string Diagnosis; bool Resolved; }`
   - `QueueResolver.Select(IEnumerable<PrinterEntry>) -> QueueResolution`
   - `QueueResolver.IsZebraDriver(string) -> bool`
@@ -1368,12 +1434,17 @@ Spec § 3: *"Detection enumerates local queues and selects the single one whose 
 Create `zebraPrinter/MesZebraBridge.Tests/QueueResolverTests.cs`:
 
 ```csharp
-// Queue auto-detection. Pure over the enumeration, so the whole policy is visible
-// here -- including the part the spec does not define ("on a live port"), which is
-// implemented as a dead-port name list with printer status as a tie-breaker only.
+// INSTALL-TIME queue detection. Nothing here is on the runtime path: the service
+// reads Queue= from its conf file and does not enumerate anything.
 //
-// The three-candidate case is the REAL 2026-09-29 host: two stale queues, one of
-// them bound to LPT1:, and one live on USB002.
+// Detection exists so `install` can offer the commissioner a name to confirm
+// against the Get-Printer they just ran (spec section 7 step 1), and so that when
+// it cannot offer one it says exactly what it saw.
+//
+// The headline case is the REAL observed host: three candidates, one stale on
+// LPT1: and TWO LIVE ONES ON USB001. It must come back UNRESOLVED. An earlier
+// revision of this plan picked one of those two with a heuristic; the wrong side
+// of that coin flip is a terminal spooling to a queue nobody watches.
 
 using System.Collections.Generic;
 using BlueRidge.MesZebraBridge;
@@ -1383,15 +1454,6 @@ namespace BlueRidge.MesZebraBridge.Tests
 {
     public class QueueResolverTests
     {
-        private const uint PrinterAttributeWorkOffline = 0x00000400;
-        private const uint PrinterStatusOffline = 0x00000080;
-
-        private static PrinterEntry Q(string name, string driver, string port,
-                                      uint attributes, uint status)
-        {
-            return new PrinterEntry(name, driver, port, attributes, status);
-        }
-
         private static PrinterEntry Q(string name, string driver, string port)
         {
             return new PrinterEntry(name, driver, port, 0, 0);
@@ -1413,6 +1475,30 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
+        public void The_real_observed_host_is_UNRESOLVED_because_two_live_queues_share_a_port()
+        {
+            // THE case this task exists for. Two live candidates on USB001 plus one
+            // stale on LPT1:. Dead-port filtering leaves two, nothing separates them,
+            // so install must stop and ask rather than pick.
+            QueueResolution r = QueueResolver.Select(WithNoise(
+                Q("ZDesigner GX420d (Copy 1)", "ZDesigner GX420d", "USB001"),
+                Q("ZDesigner GX420d", "ZDesigner GX420d", "LPT1:"),
+                Q("Zebra GX420d (RAW)", "ZDesigner GX420d", "USB001")));
+
+            Assert.False(r.Resolved);
+            Assert.Null(r.Queue);
+
+            // Every candidate named, with its port, so the commissioner can pick.
+            Assert.Contains("ZDesigner GX420d (Copy 1)", r.Diagnosis);
+            Assert.Contains("Zebra GX420d (RAW)", r.Diagnosis);
+            Assert.Contains("USB001", r.Diagnosis);
+            Assert.Contains("LPT1:", r.Diagnosis);
+            Assert.Contains("dead-port", r.Diagnosis);
+            Assert.Contains("--queue", r.Diagnosis);   // tells them what to do about it
+            Assert.DoesNotContain("\n", r.Diagnosis);
+        }
+
+        [Fact]
         public void A_zebra_driver_is_recognised_by_either_vendor_spelling()
         {
             Assert.True(QueueResolver.IsZebraDriver("ZDesigner GX420d"));
@@ -1426,7 +1512,7 @@ namespace BlueRidge.MesZebraBridge.Tests
         [Fact]
         public void A_legacy_hardware_port_is_dead_and_a_usb_port_is_live()
         {
-            // LPT1: is the exact stale binding observed on the 2026-09-29 host.
+            // LPT1: is the exact stale binding on the observed host.
             Assert.False(QueueResolver.IsLivePort("LPT1:"));
             Assert.False(QueueResolver.IsLivePort("COM3:"));
             Assert.False(QueueResolver.IsLivePort("PORTPROMPT:"));
@@ -1435,6 +1521,7 @@ namespace BlueRidge.MesZebraBridge.Tests
             Assert.False(QueueResolver.IsLivePort(""));
             Assert.False(QueueResolver.IsLivePort(null));
 
+            Assert.True(QueueResolver.IsLivePort("USB001"));
             Assert.True(QueueResolver.IsLivePort("USB002"));
             Assert.True(QueueResolver.IsLivePort("DOT4_001"));
             Assert.True(QueueResolver.IsLivePort("IP_10.20.11.157"));
@@ -1442,8 +1529,10 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
-        public void The_single_live_zebra_is_selected_and_the_diagnosis_says_why()
+        public void One_live_zebra_resolves_and_the_diagnosis_names_the_queue_and_its_port()
         {
+            // install prints this line, and spec section 7 step 4 wants it checked
+            // against the Get-Printer from step 1 -- so the port and driver are in it.
             QueueResolution r = QueueResolver.Select(
                 WithNoise(Q("Zebra GX420d (RAW)", "ZDesigner GX420d", "USB002")));
 
@@ -1455,18 +1544,51 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
-        public void The_real_2026_09_29_host_resolves_because_the_stale_queues_are_on_dead_ports()
+        public void One_live_zebra_beside_a_stale_one_on_a_dead_port_still_resolves()
         {
-            // Three Zebra candidates, two stale. The live-port test is the part
-            // doing the work (spec section 3).
+            // The case dead-port filtering DOES settle, and the only reason
+            // IsLivePort is still here rather than deleted.
             QueueResolution r = QueueResolver.Select(WithNoise(
                 Q("Zebra GX420d (RAW)", "ZDesigner GX420d", "USB002"),
-                Q("ZDesigner GX420d", "ZDesigner GX420d", "LPT1:"),
-                Q("ZDesigner GX420d (Copy 1)", "ZDesigner GX420d", "FILE:")));
+                Q("ZDesigner GX420d", "ZDesigner GX420d", "LPT1:")));
 
             Assert.True(r.Resolved);
             Assert.Equal("Zebra GX420d (RAW)", r.Queue);
-            Assert.Contains("3 Zebra candidate", r.Diagnosis);
+        }
+
+        [Fact]
+        public void Two_live_zebras_on_different_ports_are_also_unresolved()
+        {
+            // Two printers on one PC is out of scope (spec 11.1) -- but guessing
+            // between them is worse than saying so.
+            QueueResolution r = QueueResolver.Select(WithNoise(
+                Q("Zebra One", "ZDesigner GX420d", "USB002"),
+                Q("Zebra Two", "ZDesigner GX420d", "USB003")));
+
+            Assert.False(r.Resolved);
+            Assert.Contains("Zebra One", r.Diagnosis);
+            Assert.Contains("Zebra Two", r.Diagnosis);
+        }
+
+        [Fact]
+        public void An_offline_status_bit_never_decides_anything()
+        {
+            // No tie-breaker: an earlier revision used printer status to separate
+            // two live candidates. It cannot separate the observed host's pair, and
+            // a rule that only sometimes applies is a rule that surprises people.
+            const uint workOffline = 0x00000400;
+            const uint statusOffline = 0x00000080;
+
+            QueueResolution ambiguous = QueueResolver.Select(WithNoise(
+                new PrinterEntry("Zebra Stale", "ZDesigner GX420d", "USB001", workOffline, 0),
+                new PrinterEntry("Zebra Real", "ZDesigner GX420d", "USB001", 0, 0)));
+            Assert.False(ambiguous.Resolved);
+
+            // And the converse: a lone Zebra that is merely switched off still resolves.
+            QueueResolution lone = QueueResolver.Select(WithNoise(
+                new PrinterEntry("Zebra GX420d (RAW)", "ZDesigner GX420d", "USB002", 0, statusOffline)));
+            Assert.True(lone.Resolved);
+            Assert.Equal("Zebra GX420d (RAW)", lone.Queue);
         }
 
         [Fact]
@@ -1481,26 +1603,10 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
-        public void An_empty_enumeration_is_unresolved_and_does_not_throw()
+        public void A_zebra_only_on_a_dead_port_is_refused_and_named()
         {
-            QueueResolution r = QueueResolver.Select(new PrinterEntry[0]);
-            Assert.False(r.Resolved);
-            Assert.Contains("0 local queue", r.Diagnosis);
-        }
-
-        [Fact]
-        public void A_null_enumeration_is_unresolved_and_does_not_throw()
-        {
-            QueueResolution r = QueueResolver.Select(null);
-            Assert.False(r.Resolved);
-            Assert.NotNull(r.Diagnosis);
-        }
-
-        [Fact]
-        public void A_zebra_only_on_a_dead_port_is_refused_and_named_rather_than_guessed()
-        {
-            // Never a guess (spec section 3). The operator needs to know the queue
-            // exists but is bound to LPT1:, which is a different fix from "no driver".
+            // "the queue exists but is bound to LPT1:" is a different fix from
+            // "no driver is installed", so the two must not read the same.
             QueueResolution r = QueueResolver.Select(
                 WithNoise(Q("ZDesigner GX420d", "ZDesigner GX420d", "LPT1:")));
 
@@ -1511,40 +1617,15 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
-        public void Two_live_zebras_are_ambiguous_and_both_are_named()
+        public void An_empty_or_null_enumeration_is_unresolved_and_does_not_throw()
         {
-            QueueResolution r = QueueResolver.Select(WithNoise(
-                Q("Zebra One", "ZDesigner GX420d", "USB002"),
-                Q("Zebra Two", "ZDesigner GX420d", "USB003")));
+            QueueResolution empty = QueueResolver.Select(new PrinterEntry[0]);
+            Assert.False(empty.Resolved);
+            Assert.Contains("0 local queue", empty.Diagnosis);
 
-            Assert.False(r.Resolved);
-            Assert.Contains("Zebra One", r.Diagnosis);
-            Assert.Contains("Zebra Two", r.Diagnosis);
-        }
-
-        [Fact]
-        public void An_offline_bit_breaks_a_tie_between_two_live_ports()
-        {
-            QueueResolution r = QueueResolver.Select(WithNoise(
-                Q("Zebra Stale", "ZDesigner GX420d", "USB002", PrinterAttributeWorkOffline, 0),
-                Q("Zebra Real", "ZDesigner GX420d", "USB003")));
-
-            Assert.True(r.Resolved);
-            Assert.Equal("Zebra Real", r.Queue);
-            Assert.Contains("tie-break", r.Diagnosis);
-        }
-
-        [Fact]
-        public void A_single_zebra_that_is_merely_switched_off_still_resolves()
-        {
-            // Status is a TIE-BREAKER, not a filter. A printer powered off at boot
-            // must not leave the bridge unable to name its own queue -- the stale-queue
-            // problem observed on 2026-09-29 was a dead PORT, not an offline status.
-            QueueResolution r = QueueResolver.Select(WithNoise(
-                Q("Zebra GX420d (RAW)", "ZDesigner GX420d", "USB002", 0, PrinterStatusOffline)));
-
-            Assert.True(r.Resolved);
-            Assert.Equal("Zebra GX420d (RAW)", r.Queue);
+            QueueResolution nothing = QueueResolver.Select(null);
+            Assert.False(nothing.Resolved);
+            Assert.NotNull(nothing.Diagnosis);
         }
 
         [Fact]
@@ -1577,18 +1658,25 @@ Expected: compile failure, `error CS0246: The type or namespace name 'QueueResol
 Create `zebraPrinter/MesZebraBridge/QueueResolver.cs`:
 
 ```csharp
-// Queue auto-detection (spec section 3). The queue name is the one value that
-// differs per machine, and hand-typing it 54 times is 54 chances to hit the
-// `Zebra GX420d (RAW)` vs `ZDesigner GX420d` trap observed on 2026-09-29.
+// INSTALL-TIME queue detection. NOT on the runtime path -- the service reads
+// Queue= from its conf file and enumerates nothing (Global Constraint 5).
 //
-// Zero matches or more than one is an error that NAMES WHAT IT FOUND, never a guess.
+// This exists so `install` can offer the commissioner a name to confirm against
+// the Get-Printer they ran in spec section 7 step 1, and so that when it cannot
+// offer one it names everything it saw and asks for --queue.
 //
-// "On a live port" is not defined in the spec and Win32 has no "is this port live"
-// API. The only hard datum is the 2026-09-29 host: three Zebra-driver candidates,
-// the stale one bound to LPT1:, the real one on USB002. So the policy is a dead-port
-// NAME list -- legacy hardware ports and the pseudo-ports virtual printers use.
-// Printer status is a TIE-BREAKER only, never a filter, so a Zebra that is merely
-// switched off at boot still resolves.
+// The rule is Zebra/ZDesigner driver + live port + EXACTLY ONE, or nothing.
+//
+// Why "exactly one, or nothing" and not a cleverer rule: one real printer host
+// carried `ZDesigner GX420d (Copy 1)` on USB001, `ZDesigner GX420d` on LPT1:
+// (stale), and `Zebra GX420d (RAW)` on USB001 (the one actually in use). Dead-port
+// filtering removes the LPT1: row and leaves TWO LIVE CANDIDATES ON THE SAME PORT.
+// No status bit separates those, so there is no rule that picks correctly -- only
+// rules that pick quietly. The wrong side of that coin flip is a terminal spooling
+// to a queue nobody watches.
+//
+// IsLivePort is kept because it settles the single-Zebra-plus-stale-LPT1: case,
+// and because the `detect` listing uses it to label that row for a human.
 
 using System;
 using System.Collections.Generic;
@@ -1597,7 +1685,7 @@ namespace BlueRidge.MesZebraBridge
 {
     public sealed class QueueResolution
     {
-        /// <summary>The bound queue name, or null when detection refused to guess.</summary>
+        /// <summary>The detected queue name, or null when detection would have to guess.</summary>
         public string Queue { get; internal set; }
 
         /// <summary>Always populated, always one line: what was found and what was chosen.</summary>
@@ -1608,10 +1696,6 @@ namespace BlueRidge.MesZebraBridge
 
     public static class QueueResolver
     {
-        private const uint PrinterAttributeWorkOffline = 0x00000400;
-        private const uint PrinterStatusOffline = 0x00000080;
-        private const uint PrinterStatusNotAvailable = 0x00001000;
-
         /// <summary>
         /// Ports a queue can be bound to while having no hardware behind it. Matched
         /// as a case-insensitive prefix, because a port name may or may not carry its
@@ -1638,12 +1722,6 @@ namespace BlueRidge.MesZebraBridge
             return true;
         }
 
-        private static bool IsMarkedOffline(PrinterEntry q)
-        {
-            return (q.Attributes & PrinterAttributeWorkOffline) != 0
-                || (q.Status & (PrinterStatusOffline | PrinterStatusNotAvailable)) != 0;
-        }
-
         public static QueueResolution Select(IEnumerable<PrinterEntry> queues)
         {
             var all = new List<PrinterEntry>(queues ?? new PrinterEntry[0]);
@@ -1657,55 +1735,42 @@ namespace BlueRidge.MesZebraBridge
                 if (IsLivePort(q.Port)) live.Add(q);
             }
 
+            // Exactly one, or nothing. No tie-breaker.
             if (live.Count == 1)
-                return Resolved(live[0], all.Count, zebra.Count, null);
-
-            if (live.Count > 1)
             {
-                var onlineOnly = new List<PrinterEntry>();
-                foreach (PrinterEntry q in live) if (!IsMarkedOffline(q)) onlineOnly.Add(q);
-                if (onlineOnly.Count == 1)
-                    return Resolved(onlineOnly[0], all.Count, zebra.Count,
-                        "tie-break on printer status among " + live.Count + " live-port candidates");
+                string line = string.Format(
+                    "{0} on port {1} (driver {2}); {3} Zebra candidate(s) among {4} local queue(s)",
+                    Protocol.Quote(live[0].Name), live[0].Port, Protocol.Quote(live[0].Driver),
+                    zebra.Count, all.Count);
+                return new QueueResolution
+                {
+                    Queue = live[0].Name,
+                    Diagnosis = Protocol.Cap(Protocol.OneLine(line))
+                };
             }
 
             return new QueueResolution { Queue = null, Diagnosis = Describe(all, zebra, live) };
-        }
-
-        private static QueueResolution Resolved(PrinterEntry chosen, int total, int candidates, string how)
-        {
-            string line = string.Format(
-                "bound {0} on port {1} (driver {2}); {3} Zebra candidate(s) among {4} local queue(s){5}",
-                Protocol.Quote(chosen.Name), chosen.Port, Protocol.Quote(chosen.Driver),
-                candidates, total, how == null ? "" : "; " + how);
-            return new QueueResolution
-            {
-                Queue = chosen.Name,
-                Diagnosis = Protocol.Cap(Protocol.OneLine(line))
-            };
         }
 
         private static string Describe(List<PrinterEntry> all, List<PrinterEntry> zebra, List<PrinterEntry> live)
         {
             if (zebra.Count == 0)
                 return Protocol.Cap(Protocol.OneLine(string.Format(
-                    "no Zebra/ZDesigner driver among {0} local queue(s): {1}",
+                    "no Zebra/ZDesigner driver among {0} local queue(s): {1}. "
+                    + "Install the driver, or name the queue with --queue \"<name>\".",
                     all.Count, JoinNames(all))));
 
             var parts = new List<string>();
             foreach (PrinterEntry q in zebra)
-            {
-                string why = !IsLivePort(q.Port) ? "dead-port"
-                    : IsMarkedOffline(q) ? "live-port offline"
-                    : "live-port";
                 parts.Add(string.Format("{0} port={1} {2}",
                     Protocol.Quote(q.Name),
-                    string.IsNullOrEmpty(q.Port) ? "(none)" : q.Port, why));
-            }
+                    string.IsNullOrEmpty(q.Port) ? "(none)" : q.Port,
+                    IsLivePort(q.Port) ? "live-port" : "dead-port"));
 
             return Protocol.Cap(Protocol.OneLine(string.Format(
-                "no single live Zebra queue: {0} Zebra candidate(s), {1} on a live port -- {2}. {3} local queue(s) total.",
-                zebra.Count, live.Count, string.Join(", ", parts.ToArray()), all.Count)));
+                "cannot choose between {0} Zebra candidate(s), {1} on a live port -- {2}. "
+                + "Name the one you want with --queue \"<name>\".",
+                zebra.Count, live.Count, string.Join(", ", parts.ToArray()))));
         }
 
         private static string JoinNames(List<PrinterEntry> queues)
@@ -1725,22 +1790,29 @@ namespace BlueRidge.MesZebraBridge
 dotnet test zebraPrinter/MesZebraBridge.Tests/MesZebraBridge.Tests.csproj
 ```
 
-Expected: `Failed: 0, Passed: 37`.
+Expected: `Failed: 0, Passed: 36`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add zebraPrinter/MesZebraBridge/QueueResolver.cs zebraPrinter/MesZebraBridge.Tests/QueueResolverTests.cs
-git commit -m "feat(bridge): detect the one live Zebra queue, and name every candidate when it cannot"
+git commit -m "feat(bridge): detection offers a queue name to confirm, or names every candidate and asks"
 ```
 
 ---
 
-### Task 8: The unresolved-queue state, and the request router
+### Task 8: The request router, and the unconfigured-queue answer
 
-Spec § 3 calls an ambiguous detection *"a startup error"*. But a service that refuses to start presents to the Gateway as `Connection refused`, which spec § 6.3 maps to *"host is up, nothing listening -- bridge is down"* -- sending the diagnosis to the wrong machine, and defeating the whole point of § 9's commissioning probe.
+The runtime queue binding, which after Global Constraint 5 is almost nothing: the conf'd name, or null. No enumeration, no heuristic, no retry, no latch -- `QueueResolver` from Task 7 is install-time only and is not referenced from here.
 
-So (Global Constraint 6) the bridge **starts, logs the error loudly, binds, and answers every request `ERR queue unresolved: <what it found>`**. Nothing is guessed and nothing prints, so § 3's intent holds, while commissioning can read the real fault over the wire. Detection is re-attempted per request while unresolved, so installing the driver *after* the bridge self-heals without a restart.
+What is left is still load-bearing, in two parts:
+
+- **`Router.Route`'s ordering.** The silence check runs **before** the queue check. `validateEndpoint` connects and closes without sending, and that bare-connect probe must get zero bytes back whatever state the bridge is in -- including on a terminal whose conf has no queue yet. Getting this backwards breaks reachability testing on every un-commissioned terminal, and it is the single most valuable test in this task.
+- **`ERR queue unconfigured`.** If the conf carries no `Queue=`, the bridge still listens and says so. A service that refuses to start presents to the Gateway as `Connection refused`, which spec § 6.3 maps to *"host is up, nothing listening -- bridge is down"* -- the wrong machine to go and look at.
+
+A `Queue=` naming a queue that is **not on the host** needs nothing here: Task 6's spooler already answers `ERR queue not found: 'X'; visible: ...`, and `?STATUS` already answers `ready=false` while naming it, which is what `PROTOCOL.md` requires and what catches a mistyped conf.
+
+> **Smallest task in the plan, and deliberately still its own task.** An earlier revision had `QueueBinding` doing runtime detection with latching and retry; all of that is gone. The Router ordering contract is what justifies the remaining boundary, and folding it into Task 11 would bury the one test nobody should delete.
 
 **Files:**
 - Create: `zebraPrinter/MesZebraBridge/QueueBinding.cs`
@@ -1748,10 +1820,11 @@ So (Global Constraint 6) the bridge **starts, logs the error loudly, binds, and 
 - Create: `zebraPrinter/MesZebraBridge.Tests/RouterTests.cs`
 
 **Interfaces:**
-- Consumes: `QueueResolver`, `PrinterEntry`, `Protocol.HandleRequest`
+- Consumes: `Protocol.HandleRequest`, `Protocol.Cap` / `.OneLine`
 - Produces:
-  - `sealed class QueueBinding(string queueOverride, Func<IList<PrinterEntry>> enumerate)`
-  - `QueueBinding.Resolve(out string diagnosis) -> string` (null while unresolved; latches once resolved)
+  - `sealed class QueueBinding(string configuredQueue)`
+  - `QueueBinding.Queue -> string` (null when the conf named none)
+  - `QueueBinding.IsConfigured -> bool`, `.Diagnosis -> string`
   - `Router.Route(byte[] data, QueueBinding binding, Func<string, byte[], SpoolResult> spool, Func<string, QueueStatus> status) -> string`
 
 - [ ] **Step 1: Write the failing tests**
@@ -1759,13 +1832,17 @@ So (Global Constraint 6) the bridge **starts, logs the error loudly, binds, and 
 Create `zebraPrinter/MesZebraBridge.Tests/RouterTests.cs`:
 
 ```csharp
-// The bridge's degraded state. Spec section 3 calls an ambiguous detection a
-// startup error, but refusing to start makes it look like `Connection refused`,
-// which spec 6.3 reads as "bridge is down" -- the wrong machine to go and look at.
-// So the service listens and says what is actually wrong.
+// One request -> one response line, with the conf'd queue in between.
+//
+// Two things are pinned here. First, the ORDER: silence before the queue check,
+// because validateEndpoint's bare connect must get zero bytes on a terminal that
+// is not commissioned yet. Second, that a missing Queue= still listens and says
+// so -- spec 6.3 reads `Connection refused` as "bridge is down", which would send
+// somebody to the wrong machine.
+//
+// There is no detection here. QueueResolver is install-time only.
 
 using System;
-using System.Collections.Generic;
 using System.Text;
 using BlueRidge.MesZebraBridge;
 using Xunit;
@@ -1774,17 +1851,6 @@ namespace BlueRidge.MesZebraBridge.Tests
 {
     public class RouterTests
     {
-        private static readonly PrinterEntry LiveZebra =
-            new PrinterEntry("Zebra GX420d (RAW)", "ZDesigner GX420d", "USB002", 0, 0);
-        private static readonly PrinterEntry StaleZebra =
-            new PrinterEntry("ZDesigner GX420d", "ZDesigner GX420d", "LPT1:", 0, 0);
-
-        private static Func<IList<PrinterEntry>> Enum(params PrinterEntry[] entries)
-        {
-            IList<PrinterEntry> list = new List<PrinterEntry>(entries);
-            return () => list;
-        }
-
         private static SpoolResult SpoolOk(string queue, byte[] data)
         {
             return new SpoolResult(41, data.Length);
@@ -1796,114 +1862,113 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
-        public void A_resolved_binding_prints_and_acks_with_the_detected_queue_name()
+        public void The_configured_queue_is_used_verbatim_with_no_detection()
         {
-            var binding = new QueueBinding(null, Enum(LiveZebra));
+            var binding = new QueueBinding("Zebra GX420d (RAW)");
 
-            string reply = Router.Route(Encoding.ASCII.GetBytes("^XA^XZ"), binding, SpoolOk, StatusOk);
+            string queueSeen = null;
+            string reply = Router.Route(Encoding.ASCII.GetBytes("^XA^XZ"), binding,
+                (q, d) => { queueSeen = q; return new SpoolResult(41, d.Length); }, StatusOk);
 
+            Assert.Equal("Zebra GX420d (RAW)", queueSeen);
             Assert.Equal("OK queue='Zebra GX420d (RAW)' job=41 bytes=6", reply);
         }
 
         [Fact]
-        public void An_unresolved_binding_refuses_the_print_and_says_what_it_found()
+        public void A_name_that_is_not_on_this_host_is_passed_through_so_the_spooler_can_name_it()
         {
-            var binding = new QueueBinding(null, Enum(StaleZebra));
+            // PROTOCOL.md requires the wrong-queue-name mistake to be caught by the
+            // spooler's own ERR, not pre-empted here -- that ERR is the one that
+            // lists what IS visible, which is the useful half.
+            var binding = new QueueBinding("Typo GX420d");
+
+            string reply = Router.Route(Encoding.ASCII.GetBytes("^XA^XZ"), binding,
+                (q, d) => { throw new SpoolException("queue not found: 'Typo GX420d'; visible: A, B"); },
+                StatusOk);
+
+            Assert.Equal("ERR queue not found: 'Typo GX420d'; visible: A, B", reply);
+        }
+
+        [Fact]
+        public void An_unconfigured_queue_refuses_the_print_and_says_what_to_do()
+        {
+            var binding = new QueueBinding(null);
 
             string reply = Router.Route(Encoding.ASCII.GetBytes("^XA^XZ"), binding, SpoolOk, StatusOk);
 
-            Assert.StartsWith("ERR queue unresolved: ", reply);
-            Assert.Contains("LPT1:", reply);
+            Assert.StartsWith("ERR queue unconfigured: ", reply);
+            Assert.Contains("install", reply);       // the fix, named on the wire
             Assert.DoesNotContain("\n", reply);
         }
 
         [Fact]
-        public void An_unresolved_binding_also_refuses_STATUS_rather_than_lying_about_a_queue()
+        public void An_unconfigured_queue_also_refuses_STATUS_rather_than_inventing_a_queue()
         {
-            var binding = new QueueBinding(null, Enum());
+            var binding = new QueueBinding("");
 
             string reply = Router.Route(Encoding.ASCII.GetBytes("?STATUS"), binding, SpoolOk, StatusOk);
 
-            Assert.StartsWith("ERR queue unresolved: ", reply);
+            Assert.StartsWith("ERR queue unconfigured: ", reply);
         }
 
         [Fact]
-        public void An_empty_request_is_silent_even_when_the_queue_is_unresolved()
+        public void An_unconfigured_queue_never_reaches_the_spooler()
         {
-            // ORDERING MATTERS. validateEndpoint's bare-connect probe must get zero
-            // bytes whatever state the bridge is in, so the silence check runs before
-            // the queue check. Getting this backwards breaks reachability testing on
-            // every un-commissioned terminal.
-            var binding = new QueueBinding(null, Enum());
+            var binding = new QueueBinding(null);
+
+            Router.Route(Encoding.ASCII.GetBytes("^XA^XZ"), binding,
+                (q, d) => { throw new InvalidOperationException("must not spool without a queue"); },
+                StatusOk);
+        }
+
+        [Fact]
+        public void An_empty_request_is_silent_even_when_the_queue_is_unconfigured()
+        {
+            // ORDERING MATTERS, AND THIS IS THE TEST THAT SAYS SO. validateEndpoint's
+            // bare-connect probe must get zero bytes whatever state the bridge is in,
+            // so the silence check runs before the queue check. Backwards, this breaks
+            // reachability testing on every un-commissioned terminal.
+            var binding = new QueueBinding(null);
 
             Assert.Null(Router.Route(new byte[0], binding, SpoolOk, StatusOk));
             Assert.Null(Router.Route(null, binding, SpoolOk, StatusOk));
         }
 
         [Fact]
-        public void A_configured_override_wins_and_is_not_validated_against_the_enumeration()
+        public void An_empty_request_is_silent_when_the_queue_is_configured_too()
         {
-            // PROTOCOL.md requires a queue name that is not on the host to report
-            // ready=false while NAMING what it tried. Validating the override here
-            // would instead refuse to bind, and commissioning would lose the name.
-            var binding = new QueueBinding("Hand Typed Queue", Enum(LiveZebra));
+            var binding = new QueueBinding("Zebra GX420d (RAW)");
 
-            string reply = Router.Route(Encoding.ASCII.GetBytes("?STATUS"), binding, SpoolOk, StatusOk);
-
-            Assert.Equal("OK bridge=1.0.0 queue='Hand Typed Queue' ready=true jobs=0", reply);
+            Assert.Null(Router.Route(new byte[0], binding, SpoolOk, StatusOk));
         }
 
         [Fact]
-        public void Detection_is_retried_while_unresolved_so_a_late_driver_install_self_heals()
+        public void A_binding_reports_whether_it_is_configured_and_why_for_the_startup_log()
         {
-            var queues = new List<PrinterEntry>();
-            var binding = new QueueBinding(null, () => queues);
+            var bound = new QueueBinding("Zebra GX420d (RAW)");
+            Assert.True(bound.IsConfigured);
+            Assert.Equal("Zebra GX420d (RAW)", bound.Queue);
+            Assert.Contains("Zebra GX420d (RAW)", bound.Diagnosis);
 
-            string first = Router.Route(Encoding.ASCII.GetBytes("?STATUS"), binding, SpoolOk, StatusOk);
-            Assert.StartsWith("ERR queue unresolved: ", first);
-
-            queues.Add(LiveZebra);   // the driver gets installed
-
-            string second = Router.Route(Encoding.ASCII.GetBytes("?STATUS"), binding, SpoolOk, StatusOk);
-            Assert.Equal("OK bridge=1.0.0 queue='Zebra GX420d (RAW)' ready=true jobs=0", second);
+            var unbound = new QueueBinding(null);
+            Assert.False(unbound.IsConfigured);
+            Assert.Null(unbound.Queue);
+            Assert.Contains("no Queue=", unbound.Diagnosis);
         }
 
         [Fact]
-        public void A_resolved_binding_latches_and_stops_enumerating()
+        public void A_blank_or_whitespace_queue_value_counts_as_unconfigured()
         {
-            int calls = 0;
-            IList<PrinterEntry> list = new List<PrinterEntry> { LiveZebra };
-            var binding = new QueueBinding(null, () => { calls++; return list; });
-
-            Router.Route(Encoding.ASCII.GetBytes("?STATUS"), binding, SpoolOk, StatusOk);
-            Router.Route(Encoding.ASCII.GetBytes("?STATUS"), binding, SpoolOk, StatusOk);
-            Router.Route(Encoding.ASCII.GetBytes("?STATUS"), binding, SpoolOk, StatusOk);
-
-            Assert.Equal(1, calls);
+            // A conf line left as `Queue=` must not become a queue named "".
+            Assert.False(new QueueBinding("").IsConfigured);
+            Assert.False(new QueueBinding("   ").IsConfigured);
+            Assert.Null(new QueueBinding("  ").Queue);
         }
 
         [Fact]
-        public void An_enumeration_that_throws_is_an_unresolved_answer_not_a_crash()
+        public void A_configured_name_is_trimmed_because_a_conf_file_is_hand_edited()
         {
-            var binding = new QueueBinding(null,
-                () => { throw new SpoolException("EnumPrinters failed: [5] Access is denied"); });
-
-            string reply = Router.Route(Encoding.ASCII.GetBytes("?STATUS"), binding, SpoolOk, StatusOk);
-
-            Assert.StartsWith("ERR queue unresolved: ", reply);
-            Assert.Contains("Access is denied", reply);
-        }
-
-        [Fact]
-        public void The_binding_reports_its_diagnosis_for_the_startup_log_and_the_status_verb()
-        {
-            string diagnosis;
-            var binding = new QueueBinding(null, Enum(LiveZebra, StaleZebra));
-
-            string queue = binding.Resolve(out diagnosis);
-
-            Assert.Equal("Zebra GX420d (RAW)", queue);
-            Assert.Contains("2 Zebra candidate", diagnosis);
+            Assert.Equal("Zebra GX420d (RAW)", new QueueBinding("  Zebra GX420d (RAW)  ").Queue);
         }
     }
 }
@@ -1922,90 +1987,49 @@ Expected: compile failure, `error CS0246: The type or namespace name 'QueueBindi
 Create `zebraPrinter/MesZebraBridge/QueueBinding.cs`:
 
 ```csharp
-// Which queue this bridge is bound to, and why.
+// Which queue this bridge is bound to. It is whatever the conf file said, and
+// nothing else (Global Constraint 5): no enumeration, no heuristic, no retry.
 //
-// Resolves once and latches, because a bound queue does not change under a running
-// service and EnumPrinters on every label would be wasteful. While UNRESOLVED it
-// retries on every request, so a terminal where the driver is installed after the
-// bridge heals itself without anyone remembering to restart a service.
+// Detection lives in QueueResolver and runs only during `install` / `detect`,
+// where a human is standing at the machine to confirm the name. Nothing on this
+// path can guess.
+//
+// A name that is not actually on the host is NOT rejected here. PROTOCOL.md
+// requires ?STATUS to answer ready=false while naming what it tried, and a print
+// to answer `ERR queue not found: 'X'; visible: ...` -- the spooler's error is the
+// one that lists what IS present, which is the half that helps.
 
 using System;
-using System.Collections.Generic;
 
 namespace BlueRidge.MesZebraBridge
 {
     public sealed class QueueBinding
     {
-        private readonly string _override;
-        private readonly Func<IList<PrinterEntry>> _enumerate;
-        private readonly object _gate = new object();
+        /// <summary>The conf'd queue name, trimmed, or null when the conf named none.</summary>
+        public string Queue { get; private set; }
 
-        private string _queue;
-        private string _diagnosis = "not yet resolved";
+        public bool IsConfigured { get { return Queue != null; } }
 
-        /// <param name="queueOverride">The configured queue name, or null to auto-detect.</param>
-        /// <param name="enumerate">Local-queue enumeration, normally Spooler.EnumerateLocalQueues.</param>
-        public QueueBinding(string queueOverride, Func<IList<PrinterEntry>> enumerate)
+        /// <summary>One line for the startup log, the `status` verb, and the wire.</summary>
+        public string Diagnosis { get; private set; }
+
+        public QueueBinding(string configuredQueue)
         {
-            if (enumerate == null) throw new ArgumentNullException("enumerate");
-            _override = string.IsNullOrEmpty(queueOverride) ? null : queueOverride;
-            _enumerate = enumerate;
-        }
+            string name = (configuredQueue ?? "").Trim();
 
-        /// <summary>
-        /// The bound queue name, or null when nothing could be resolved. The diagnosis
-        /// is always populated and always one line: it goes in the startup log, in the
-        /// `status` verb's output, and on the wire as `ERR queue unresolved: ...`.
-        /// </summary>
-        public string Resolve(out string diagnosis)
-        {
-            lock (_gate)
+            if (name.Length == 0)
             {
-                if (_queue != null)
-                {
-                    diagnosis = _diagnosis;
-                    return _queue;
-                }
-
-                if (_override != null)
-                {
-                    // Deliberately NOT validated against the enumeration. PROTOCOL.md
-                    // requires a queue name that is not on the host to answer
-                    // ready=false while naming what it tried; refusing to bind would
-                    // lose that name and the commissioning check with it.
-                    _queue = _override;
-                    _diagnosis = Protocol.Cap("queue " + Protocol.Quote(_override)
-                        + " taken from configuration (not validated -- an absent queue reports ready=false)");
-                    diagnosis = _diagnosis;
-                    return _queue;
-                }
-
-                IList<PrinterEntry> queues;
-                try
-                {
-                    queues = _enumerate();
-                }
-                catch (Exception ex)
-                {
-                    _diagnosis = Protocol.Cap("could not enumerate local print queues: "
-                        + Protocol.OneLine(ex.Message));
-                    diagnosis = _diagnosis;
-                    return null;
-                }
-
-                QueueResolution r = QueueResolver.Select(queues);
-                _diagnosis = r.Diagnosis;
-                if (r.Resolved) _queue = r.Queue;
-
-                diagnosis = _diagnosis;
-                return _queue;
+                Queue = null;
+                Diagnosis = Protocol.Cap(
+                    "no Queue= in the configuration. Nothing will print. Run "
+                    + "'MesZebraBridge.exe install' at this machine (it detects the queue and "
+                    + "writes it), or 'MesZebraBridge.exe set-queue \"<exact queue name>\"'.");
             }
-        }
-
-        /// <summary>The last diagnosis, without forcing a resolve. For the log banner.</summary>
-        public string LastDiagnosis
-        {
-            get { lock (_gate) { return _diagnosis; } }
+            else
+            {
+                Queue = name;
+                Diagnosis = Protocol.Cap("queue " + Protocol.Quote(name) + " from the configuration");
+            }
         }
     }
 }
@@ -2016,11 +2040,11 @@ namespace BlueRidge.MesZebraBridge
 Create `zebraPrinter/MesZebraBridge/Router.cs`:
 
 ```csharp
-// One request -> one response line, with the queue resolved in between.
+// One request -> one response line, with the conf'd queue in between.
 //
 // The silence check comes FIRST and is not negotiable: validateEndpoint connects
 // and closes without sending, and that bare-connect probe must get zero bytes back
-// whatever state the bridge is in -- including on a terminal that has no driver yet.
+// whatever state the bridge is in -- including on a terminal that has no Queue= yet.
 
 using System;
 
@@ -2034,11 +2058,10 @@ namespace BlueRidge.MesZebraBridge
         {
             if (data == null || data.Length == 0) return null;
 
-            string diagnosis;
-            string queue = binding.Resolve(out diagnosis);
-            if (queue == null)
-                return Protocol.Cap("ERR queue unresolved: " + Protocol.OneLine(diagnosis));
+            if (!binding.IsConfigured)
+                return Protocol.Cap("ERR queue unconfigured: " + Protocol.OneLine(binding.Diagnosis));
 
+            string queue = binding.Queue;
             return Protocol.HandleRequest(data, queue,
                 d => spool(queue, d),
                 () => status(queue));
@@ -2059,7 +2082,7 @@ Expected: `Failed: 0, Passed: 46`.
 
 ```bash
 git add zebraPrinter/MesZebraBridge/QueueBinding.cs zebraPrinter/MesZebraBridge/Router.cs zebraPrinter/MesZebraBridge.Tests/RouterTests.cs
-git commit -m "feat(bridge): an unresolved queue answers with the reason instead of going dark"
+git commit -m "feat(bridge): the queue comes from the conf, and a missing one answers instead of going dark"
 ```
 
 ---
@@ -2364,32 +2387,45 @@ git commit -m "feat(bridge): a daily log file that prunes itself and never fails
 
 ### Task 10: The configuration file and the command line
 
-Spec § 12.1 leaves the config file's format and location unspecified. Global Constraint 1 is the assumption taken: an optional ASCII `key=value` file at `%ProgramData%\BlueRidge\MesZebraBridge\bridge.conf`, written by `install` so nobody hand-authors it.
+The conf file is now the **authority** for the queue name, not an override of a runtime heuristic (Global Constraint 5), and it is where the Gateway address lives.
+
+Spec § 12.1 still leaves the *format* unspecified -- Global Constraint 1 is the assumption taken. But the **location** and the **no-compiled-in-values** rule are settled by the spec:
+
+- § 7 step 4: *"copy `MesZebraBridge.exe` **and its conf file**"* -> the conf ships **beside the executable**, named `MesZebraBridge.conf`.
+- § 10.1: *"**Nothing may be compiled into the bridge binary.** The Gateway address for the firewall rule is `172.17.10.161` ... It lives in the conf file shipped beside the executable -- authored once for all 54 installs, never typed per machine, and never baked in."*
+
+So there is **no `DefaultGatewayAddress` constant**. `GatewayAddress` defaults to `null`, and `install` refuses (Task 13) rather than widening the rule. § 10.1 records why: an earlier revision of this plan compiled in `10.20.11.53`, which was the *development* Gateway on a laptop -- correct on 2026-09-29 and stale that same evening. *A hardcoded address is invisible when it is wrong.*
+
+Logs stay under `%ProgramData%\BlueRidge\MesZebraBridge\logs`: machine state, not shipped configuration, and it keeps the two-file deployment directory clean.
 
 An unknown key or an unparseable number is a **warning, not a failure** -- a typo in a conf file must not stop 9100 listening, but it must be visible in the log.
 
 **Files:**
 - Create: `zebraPrinter/MesZebraBridge/BridgeConfig.cs`
+- Create: `zebraPrinter/MesZebraBridge.conf` (the authored template that ships with the exe)
 - Create: `zebraPrinter/MesZebraBridge.Tests/BridgeConfigTests.cs`
 
 **Interfaces:**
-- Consumes: nothing
+- Consumes: `Protocol.OneLine`
 - Produces:
   - `sealed class BridgeConfig` with `Queue`, `GatewayAddress`, `Port`, `LogDirectory`, `LogRetainDays`, `Warnings`
-  - `BridgeConfig.DefaultGatewayAddress`, `.DefaultPort`, `.DefaultLogRetainDays` (consts)
-  - `BridgeConfig.DefaultDirectory` / `.DefaultPath` / `.DefaultLogDirectory` (static properties)
+  - `BridgeConfig.DefaultPort` = 9100, `.DefaultLogRetainDays` = 14 (**no gateway constant**)
+  - `BridgeConfig.DefaultPath -> string` (beside the executable), `.DefaultLogDirectory -> string`
   - `BridgeConfig.Parse(IEnumerable<string> lines) -> BridgeConfig`
   - `BridgeConfig.Load(string path) -> BridgeConfig`
   - `BridgeConfig.ApplyCommandLine(string[] args) -> void`
+  - `BridgeConfig.ConfPathFromCommandLine(string[] args) -> string`
   - `BridgeConfig.ToConfLines() -> IList<string>` / `.Save(string path)`
+  - `BridgeConfig.SetQueue(string) -> void`
 
 - [ ] **Step 1: Write the failing tests**
 
 Create `zebraPrinter/MesZebraBridge.Tests/BridgeConfigTests.cs`:
 
 ```csharp
-// The conf file and the command line. Spec 12.1 leaves the format open; this is
-// the assumption, and these tests are where it is pinned.
+// The conf file and the command line. Spec 12.1 leaves the FORMAT open; this is
+// the assumption, and these tests are where it is pinned. The LOCATION (beside the
+// exe) and the no-compiled-in-values rule are settled by spec 7 step 4 and 10.1.
 //
 // A typo must never stop the bridge listening, so an unknown key or a bad number
 // is a warning the log will name, not a startup failure.
@@ -2397,6 +2433,7 @@ Create `zebraPrinter/MesZebraBridge.Tests/BridgeConfigTests.cs`:
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using BlueRidge.MesZebraBridge;
 using Xunit;
 
@@ -2405,13 +2442,29 @@ namespace BlueRidge.MesZebraBridge.Tests
     public class BridgeConfigTests
     {
         [Fact]
+        public void Nothing_deployment_specific_is_compiled_in()
+        {
+            // Spec 10.1: "Nothing may be compiled into the bridge binary." An earlier
+            // revision of this plan carried a DefaultGatewayAddress of 10.20.11.53 --
+            // the DEVELOPMENT gateway on a laptop, correct on 2026-09-29 and stale
+            // that same evening. A hardcoded address is invisible when it is wrong.
+            Type t = typeof(BridgeConfig);
+            Assert.Null(t.GetField("DefaultGatewayAddress",
+                BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic));
+
+            BridgeConfig c = BridgeConfig.Parse(new string[0]);
+            Assert.Null(c.GatewayAddress);
+            Assert.Null(c.Queue);
+        }
+
+        [Fact]
         public void An_absent_file_is_all_defaults_and_not_an_error()
         {
             BridgeConfig c = BridgeConfig.Load(Path.Combine(
                 Path.GetTempPath(), "no-such-bridge-conf-" + Guid.NewGuid().ToString("N") + ".conf"));
 
-            Assert.Null(c.Queue);                                       // auto-detect
-            Assert.Equal(BridgeConfig.DefaultGatewayAddress, c.GatewayAddress);
+            Assert.Null(c.Queue);                 // unconfigured, not detected
+            Assert.Null(c.GatewayAddress);        // install will refuse, not widen
             Assert.Equal(9100, c.Port);
             Assert.Equal(14, c.LogRetainDays);
             Assert.Equal(BridgeConfig.DefaultLogDirectory, c.LogDirectory);
@@ -2419,13 +2472,24 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
-        public void The_default_gateway_is_the_one_the_firewall_rule_will_be_scoped_to()
+        public void The_conf_lives_beside_the_executable_not_under_ProgramData()
         {
-            // Spec 12.1 does not say where this comes from and section 3 wants
-            // `MesZebraBridge.exe install` with no arguments to be the whole
-            // deployment, so it is a compile-time default. If the Gateway moves,
-            // this constant and every installed rule move with it.
-            Assert.Equal("10.20.11.53", BridgeConfig.DefaultGatewayAddress);
+            // Spec 7 step 4: the deployment is "MesZebraBridge.exe and its conf file".
+            // Spec 10.1: the gateway address "lives in the conf file shipped beside
+            // the executable -- authored once for all 54 installs".
+            string exeDir = Path.GetDirectoryName(typeof(BridgeConfig).Assembly.Location);
+
+            Assert.Equal(Path.Combine(exeDir, "MesZebraBridge.conf"), BridgeConfig.DefaultPath);
+        }
+
+        [Fact]
+        public void The_log_directory_is_machine_state_under_ProgramData()
+        {
+            // Not beside the exe: logs are machine state, not shipped configuration,
+            // and the deployment directory stays two files.
+            Assert.Contains("BlueRidge", BridgeConfig.DefaultLogDirectory);
+            Assert.Contains("MesZebraBridge", BridgeConfig.DefaultLogDirectory);
+            Assert.EndsWith("logs", BridgeConfig.DefaultLogDirectory);
         }
 
         [Fact]
@@ -2434,13 +2498,13 @@ namespace BlueRidge.MesZebraBridge.Tests
             BridgeConfig c = BridgeConfig.Parse(new[]
             {
                 "queue =  Zebra GX420d (RAW)  ",
-                "GATEWAYADDRESS=10.20.11.53",
+                "GATEWAYADDRESS=172.17.10.161",
                 "Port = 9100",
                 "LogRetainDays=30"
             });
 
             Assert.Equal("Zebra GX420d (RAW)", c.Queue);
-            Assert.Equal("10.20.11.53", c.GatewayAddress);
+            Assert.Equal("172.17.10.161", c.GatewayAddress);
             Assert.Equal(9100, c.Port);
             Assert.Equal(30, c.LogRetainDays);
             Assert.Empty(c.Warnings);
@@ -2454,12 +2518,12 @@ namespace BlueRidge.MesZebraBridge.Tests
                 "# MES Zebra Bridge configuration",
                 "",
                 "   ",
-                "# Queue = overridden by hand only when detection cannot decide",
-                "Port=9100"
+                "# Queue = written by install",
+                "GatewayAddress=172.17.10.161"
             });
 
             Assert.Null(c.Queue);
-            Assert.Equal(9100, c.Port);
+            Assert.Equal("172.17.10.161", c.GatewayAddress);
             Assert.Empty(c.Warnings);
         }
 
@@ -2501,7 +2565,7 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
-        public void An_empty_queue_value_means_auto_detect_rather_than_an_empty_name()
+        public void An_empty_queue_value_stays_unconfigured_rather_than_becoming_a_blank_name()
         {
             BridgeConfig c = BridgeConfig.Parse(new[] { "Queue=" });
             Assert.Null(c.Queue);
@@ -2510,12 +2574,12 @@ namespace BlueRidge.MesZebraBridge.Tests
         [Fact]
         public void Command_line_options_override_the_file()
         {
-            BridgeConfig c = BridgeConfig.Parse(new[] { "Queue=From File", "Port=9100" });
+            BridgeConfig c = BridgeConfig.Parse(new[] { "Queue=From File", "GatewayAddress=10.0.0.1" });
 
-            c.ApplyCommandLine(new[] { "install", "--queue", "From Args", "--gateway", "10.0.0.9", "--port", "9101" });
+            c.ApplyCommandLine(new[] { "install", "--queue", "From Args", "--gateway", "172.17.10.161", "--port", "9101" });
 
             Assert.Equal("From Args", c.Queue);
-            Assert.Equal("10.0.0.9", c.GatewayAddress);
+            Assert.Equal("172.17.10.161", c.GatewayAddress);
             Assert.Equal(9101, c.Port);
             Assert.Empty(c.Warnings);
         }
@@ -2523,11 +2587,11 @@ namespace BlueRidge.MesZebraBridge.Tests
         [Fact]
         public void An_option_with_no_value_is_a_warning_and_changes_nothing()
         {
-            BridgeConfig c = BridgeConfig.Parse(new string[0]);
+            BridgeConfig c = BridgeConfig.Parse(new[] { "GatewayAddress=172.17.10.161" });
 
             c.ApplyCommandLine(new[] { "install", "--gateway" });
 
-            Assert.Equal(BridgeConfig.DefaultGatewayAddress, c.GatewayAddress);
+            Assert.Equal("172.17.10.161", c.GatewayAddress);
             Assert.Single(c.Warnings);
             Assert.Contains("--gateway", c.Warnings[0]);
         }
@@ -2544,12 +2608,38 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
+        public void The_conf_path_can_be_redirected_from_the_command_line()
+        {
+            Assert.Equal(@"D:\alt\bridge.conf",
+                BridgeConfig.ConfPathFromCommandLine(new[] { "run", "--conf", @"D:\alt\bridge.conf" }));
+
+            Assert.Equal(BridgeConfig.DefaultPath,
+                BridgeConfig.ConfPathFromCommandLine(new[] { "run" }));
+
+            Assert.Equal(BridgeConfig.DefaultPath,
+                BridgeConfig.ConfPathFromCommandLine(new[] { "run", "--conf" }));   // no value
+        }
+
+        [Fact]
+        public void Set_queue_records_the_name_and_blanks_it_back_out_when_asked()
+        {
+            BridgeConfig c = BridgeConfig.Parse(new string[0]);
+
+            c.SetQueue("  Zebra GX420d (RAW) ");
+            Assert.Equal("Zebra GX420d (RAW)", c.Queue);
+
+            c.SetQueue("");
+            Assert.Null(c.Queue);
+        }
+
+        [Fact]
         public void A_written_conf_file_reads_back_identically()
         {
-            // install writes this file, so the round trip is the contract.
+            // install and set-queue both write this file, so the round trip is the
+            // contract -- a printer swap must not lose the gateway address.
             BridgeConfig original = BridgeConfig.Parse(new string[0]);
             original.Queue = "Zebra GX420d (RAW)";
-            original.GatewayAddress = "10.20.11.53";
+            original.GatewayAddress = "172.17.10.161";
             original.Port = 9100;
             original.LogRetainDays = 21;
 
@@ -2575,7 +2665,28 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
-        public void A_written_conf_file_is_commented_so_a_human_can_read_it_at_the_machine()
+        public void A_rewrite_after_a_printer_swap_keeps_every_other_value()
+        {
+            // The swap path: load, SetQueue, Save. Nothing else may move.
+            BridgeConfig c = BridgeConfig.Parse(new[]
+            {
+                "Queue=Old Printer",
+                "GatewayAddress=172.17.10.161",
+                "Port=9100",
+                "LogRetainDays=21"
+            });
+
+            c.SetQueue("New Printer");
+            IList<string> lines = c.ToConfLines();
+            BridgeConfig reloaded = BridgeConfig.Parse(lines);
+
+            Assert.Equal("New Printer", reloaded.Queue);
+            Assert.Equal("172.17.10.161", reloaded.GatewayAddress);
+            Assert.Equal(21, reloaded.LogRetainDays);
+        }
+
+        [Fact]
+        public void A_written_conf_file_is_commented_and_ascii_so_a_human_can_read_it()
         {
             BridgeConfig c = BridgeConfig.Parse(new string[0]);
             IList<string> lines = c.ToConfLines();
@@ -2583,21 +2694,19 @@ namespace BlueRidge.MesZebraBridge.Tests
             Assert.Contains(lines, l => l.StartsWith("#"));
             Assert.Contains(lines, l => l.StartsWith("Port="));
             foreach (string l in lines)
-            {
-                // ASCII only, same rule as every other MPP-authored data file.
-                foreach (char ch in l) Assert.True(ch < 128, "non-ASCII in conf line: " + l);
-            }
+                foreach (char ch in l)
+                    Assert.True(ch < 128, "non-ASCII in conf line: " + l);
         }
 
         [Fact]
-        public void The_default_paths_live_under_ProgramData_not_beside_the_exe()
+        public void An_unconfigured_gateway_is_written_as_a_commented_placeholder_not_a_guess()
         {
-            // Beside the exe would break the one-file deployment and would not
-            // survive replacing the binary.
-            Assert.Contains("BlueRidge", BridgeConfig.DefaultDirectory);
-            Assert.Contains("MesZebraBridge", BridgeConfig.DefaultDirectory);
-            Assert.EndsWith("bridge.conf", BridgeConfig.DefaultPath);
-            Assert.EndsWith("logs", BridgeConfig.DefaultLogDirectory);
+            BridgeConfig c = BridgeConfig.Parse(new string[0]);
+
+            string text = string.Join("\n", new List<string>(c.ToConfLines()).ToArray());
+
+            Assert.Contains("# GatewayAddress=", text);
+            Assert.DoesNotContain("\nGatewayAddress=", "\n" + text);
         }
     }
 }
@@ -2616,15 +2725,24 @@ Expected: compile failure, `error CS0246: The type or namespace name 'BridgeConf
 Create `zebraPrinter/MesZebraBridge/BridgeConfig.cs`:
 
 ```csharp
-// Configuration. Spec section 12 open item 1 leaves the format and location
-// unspecified; this is the assumption taken to unblock the build:
+// Configuration.
 //
-//   %ProgramData%\BlueRidge\MesZebraBridge\bridge.conf   (optional, ASCII, key=value)
+//   <beside the exe>\MesZebraBridge.conf    (ASCII, key=value, # comments)
 //
-// Under ProgramData rather than beside the exe, because the deployment story is
-// ONE FILE copied to 54 machines and replacing that file must not disturb the
-// configuration. `install` writes this file from its own options, so no operator
-// hand-authors it.
+// Location per spec 7 step 4 ("copy MesZebraBridge.exe AND ITS CONF FILE") and
+// spec 10.1 ("lives in the conf file shipped beside the executable -- authored
+// once for all 54 installs"). Format per spec open item 12.1, which leaves it
+// unspecified; key=value is the assumption, chosen because a commissioner can read
+// it over someone's shoulder and net48 has no first-class JSON reader.
+//
+// NOTHING DEPLOYMENT-SPECIFIC IS COMPILED IN (spec 10.1). There is deliberately no
+// DefaultGatewayAddress and no default Queue. GatewayAddress defaults to null and
+// `install` refuses rather than widening the firewall rule; Queue defaults to null
+// and the bridge answers `ERR queue unconfigured` rather than guessing.
+//
+// An earlier revision of this plan compiled in 10.20.11.53 -- the DEVELOPMENT
+// gateway on a laptop, correct on 2026-09-29 and stale that same evening when the
+// machine changed networks. That is the whole argument.
 //
 // A typo must never stop 9100 listening: an unknown key or a bad number is a
 // warning the startup log names, not a failure.
@@ -2633,31 +2751,23 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text;
 
 namespace BlueRidge.MesZebraBridge
 {
     public sealed class BridgeConfig
     {
-        /// <summary>
-        /// The Gateway address the inbound firewall rule is scoped to.
-        ///
-        /// Spec section 3 and section 7 want `MesZebraBridge.exe install` with no
-        /// arguments to be the entire per-machine deployment, and an unscoped rule
-        /// would defeat the point of scoping it -- so there has to be a default, and
-        /// this is it: the Gateway host from the spec's 2026-09-29 evidence.
-        /// Override with --gateway or the conf file. If the Gateway ever moves, this
-        /// constant moves and every installed rule has to be re-added.
-        /// </summary>
-        public const string DefaultGatewayAddress = "10.20.11.53";
-
         public const int DefaultPort = 9100;
         public const int DefaultLogRetainDays = 14;
+        public const string ConfFileName = "MesZebraBridge.conf";
 
-        /// <summary>null = auto-detect (the normal case on all 54 terminals).</summary>
+        /// <summary>null = unconfigured. The bridge will answer ERR, never guess.</summary>
         public string Queue { get; set; }
 
+        /// <summary>null = unconfigured. install refuses rather than widening the rule.</summary>
         public string GatewayAddress { get; set; }
+
         public int Port { get; set; }
         public string LogDirectory { get; set; }
         public int LogRetainDays { get; set; }
@@ -2670,25 +2780,47 @@ namespace BlueRidge.MesZebraBridge
         private BridgeConfig()
         {
             Queue = null;
-            GatewayAddress = DefaultGatewayAddress;
+            GatewayAddress = null;
             Port = DefaultPort;
             LogDirectory = DefaultLogDirectory;
             LogRetainDays = DefaultLogRetainDays;
         }
 
-        public static string DefaultDirectory
+        /// <summary>Beside the executable -- it ships with it and is copied with it.</summary>
+        public static string DefaultPath
+        {
+            get
+            {
+                string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                return Path.Combine(exeDir, ConfFileName);
+            }
+        }
+
+        /// <summary>
+        /// Machine state, not shipped configuration -- so under ProgramData rather
+        /// than beside the exe, which keeps the deployment directory two files.
+        /// </summary>
+        public static string DefaultLogDirectory
         {
             get
             {
                 return Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                    Path.Combine("BlueRidge", "MesZebraBridge"));
+                    Path.Combine("BlueRidge", Path.Combine("MesZebraBridge", "logs")));
             }
         }
 
-        public static string DefaultPath { get { return Path.Combine(DefaultDirectory, "bridge.conf"); } }
-
-        public static string DefaultLogDirectory { get { return Path.Combine(DefaultDirectory, "logs"); } }
+        /// <summary>--conf &lt;path&gt;, else the file beside the exe.</summary>
+        public static string ConfPathFromCommandLine(string[] args)
+        {
+            if (args != null)
+            {
+                for (int i = 1; i < args.Length - 1; i++)
+                    if (string.Equals(args[i], "--conf", StringComparison.OrdinalIgnoreCase))
+                        return args[i + 1];
+            }
+            return DefaultPath;
+        }
 
         public static BridgeConfig Load(string path)
         {
@@ -2731,7 +2863,7 @@ namespace BlueRidge.MesZebraBridge
                         c.Queue = value.Length == 0 ? null : value;
                         break;
                     case "GATEWAYADDRESS":
-                        if (value.Length > 0) c.GatewayAddress = value;
+                        c.GatewayAddress = value.Length == 0 ? null : value;
                         break;
                     case "LOGDIRECTORY":
                         if (value.Length > 0) c.LogDirectory = value;
@@ -2765,7 +2897,8 @@ namespace BlueRidge.MesZebraBridge
 
         /// <summary>
         /// Apply --queue / --gateway / --port / --log-dir / --retain-days, which win
-        /// over the file. args[0] is the verb and is skipped.
+        /// over the file. args[0] is the verb and is skipped; --conf is consumed by
+        /// ConfPathFromCommandLine and ignored here.
         /// </summary>
         public void ApplyCommandLine(string[] args)
         {
@@ -2789,8 +2922,9 @@ namespace BlueRidge.MesZebraBridge
                 string value = args[++i];
                 switch (opt)
                 {
-                    case "--queue": Queue = value.Length == 0 ? null : value; break;
-                    case "--gateway": GatewayAddress = value; break;
+                    case "--conf": break;                          // handled separately
+                    case "--queue": SetQueue(value); break;
+                    case "--gateway": GatewayAddress = value.Length == 0 ? null : value; break;
                     case "--log-dir": LogDirectory = value; break;
                     case "--port": Port = ReadInt("--port", value, 1, 65535, Port); break;
                     case "--retain-days": LogRetainDays = ReadInt("--retain-days", value, 1, 3650, LogRetainDays); break;
@@ -2801,26 +2935,52 @@ namespace BlueRidge.MesZebraBridge
             }
         }
 
+        /// <summary>
+        /// The one place a queue name is recorded. install and set-queue both go
+        /// through it, so a first install and a printer swap cannot diverge.
+        /// </summary>
+        public void SetQueue(string name)
+        {
+            string trimmed = (name ?? "").Trim();
+            Queue = trimmed.Length == 0 ? null : trimmed;
+        }
+
         public IList<string> ToConfLines()
         {
             var lines = new List<string>
             {
                 "# MES Zebra Bridge configuration",
-                "# Written by MesZebraBridge.exe install. Wire protocol: zebraPrinter/PROTOCOL.md v1.0.0.",
+                "# Sits beside MesZebraBridge.exe and is copied with it (spec section 7 step 4).",
+                "# Wire protocol: zebraPrinter/PROTOCOL.md v1.0.0.",
                 "#",
-                "# Queue          the Windows print queue to spool to. Leave commented out to",
-                "#                auto-detect the single live Zebra/ZDesigner queue.",
-                "# GatewayAddress the only address allowed inbound on the firewall rule.",
-                "# Port           the TCP port to listen on. 9100 unless something else owns it.",
-                "# LogDirectory   where the daily bridge-YYYYMMDD.log files go.",
-                "# LogRetainDays  how many days of those files to keep.",
-                "",
-                (Queue == null ? "# Queue=" : "Queue=" + Queue),
-                "GatewayAddress=" + GatewayAddress,
-                "Port=" + Port.ToString(CultureInfo.InvariantCulture),
-                "LogDirectory=" + LogDirectory,
-                "LogRetainDays=" + LogRetainDays.ToString(CultureInfo.InvariantCulture)
+                "# GatewayAddress  the ONLY source address the inbound firewall rule admits.",
+                "#                 Authored once for all 54 installs; never typed per machine",
+                "#                 and never compiled into the binary (spec section 10.1).",
+                "#                 install refuses to run without it rather than widening",
+                "#                 the rule to any source.",
+                "# Queue           the exact Windows print queue name to spool to. Written by",
+                "#                 'install' when detection finds exactly one candidate, or by",
+                "#                 'set-queue \"<name>\"' after a printer swap. There is no",
+                "#                 runtime detection: an absent Queue means nothing prints and",
+                "#                 the bridge answers 'ERR queue unconfigured'.",
+                "# Port            TCP port to listen on. 9100 unless something else owns it.",
+                "# LogDirectory    where the daily bridge-YYYYMMDD.log files go.",
+                "# LogRetainDays   how many days of those files to keep.",
+                ""
             };
+
+            lines.Add(GatewayAddress == null
+                ? "# GatewayAddress=172.17.10.161"
+                : "GatewayAddress=" + GatewayAddress);
+
+            lines.Add(Queue == null
+                ? "# Queue="
+                : "Queue=" + Queue);
+
+            lines.Add("Port=" + Port.ToString(CultureInfo.InvariantCulture));
+            lines.Add("LogDirectory=" + LogDirectory);
+            lines.Add("LogRetainDays=" + LogRetainDays.ToString(CultureInfo.InvariantCulture));
+
             return lines;
         }
 
@@ -2845,13 +3005,55 @@ namespace BlueRidge.MesZebraBridge
 dotnet test zebraPrinter/MesZebraBridge.Tests/MesZebraBridge.Tests.csproj
 ```
 
-Expected: `Failed: 0, Passed: 69`.
+Expected: `Failed: 0, Passed: 74`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Author the conf file that ships with the binary**
+
+This is the file copied to all 54 machines alongside the exe. It carries the Gateway address and **nothing machine-specific** -- `install` adds the `Queue=` line per machine.
+
+Create `zebraPrinter/MesZebraBridge.conf`:
+
+```ini
+# MES Zebra Bridge configuration
+# Sits beside MesZebraBridge.exe and is copied with it (spec section 7 step 4).
+# Wire protocol: zebraPrinter/PROTOCOL.md v1.0.0.
+#
+# GatewayAddress  the ONLY source address the inbound firewall rule admits.
+#                 Authored once for all 54 installs; never typed per machine
+#                 and never compiled into the binary (spec section 10.1).
+#                 install refuses to run without it rather than widening
+#                 the rule to any source.
+# Queue           the exact Windows print queue name to spool to. Written by
+#                 'install' when detection finds exactly one candidate, or by
+#                 'set-queue "<name>"' after a printer swap. There is no
+#                 runtime detection: an absent Queue means nothing prints and
+#                 the bridge answers 'ERR queue unconfigured'.
+# Port            TCP port to listen on. 9100 unless something else owns it.
+# LogDirectory    where the daily bridge-YYYYMMDD.log files go.
+# LogRetainDays   how many days of those files to keep.
+
+GatewayAddress=172.17.10.161
+# Queue=
+Port=9100
+LogRetainDays=14
+```
+
+`LogDirectory` is left out on purpose: omitted means `%ProgramData%\BlueRidge\MesZebraBridge\logs`, which is what every machine should use.
+
+Verify it is ASCII, since `Save` will round-trip it:
+
+```powershell
+$bytes = [IO.File]::ReadAllBytes("zebraPrinter\MesZebraBridge.conf")
+($bytes | Where-Object { $_ -ge 128 }).Count
+```
+
+Expected: `0`.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add zebraPrinter/MesZebraBridge/BridgeConfig.cs zebraPrinter/MesZebraBridge.Tests/BridgeConfigTests.cs
-git commit -m "feat(bridge): an optional conf file under ProgramData, written by install"
+git add zebraPrinter/MesZebraBridge/BridgeConfig.cs zebraPrinter/MesZebraBridge.conf zebraPrinter/MesZebraBridge.Tests/BridgeConfigTests.cs
+git commit -m "feat(bridge): the conf file beside the exe is the authority, and nothing is compiled in"
 ```
 
 ---
@@ -2921,15 +3123,15 @@ namespace BlueRidge.MesZebraBridge.Tests
             try { if (Directory.Exists(_logDir)) Directory.Delete(_logDir, true); } catch (Exception) { }
         }
 
-        private static readonly PrinterEntry LiveZebra =
-            new PrinterEntry("Zebra GX420d (RAW)", "ZDesigner GX420d", "USB002", 0, 0);
+        private const string ConfiguredQueue = "Zebra GX420d (RAW)";
 
         private BridgeServer Serve(Func<string, byte[], SpoolResult> spool = null,
                                    Func<string, QueueStatus> status = null,
-                                   IList<PrinterEntry> queues = null)
+                                   string queue = ConfiguredQueue)
         {
-            var binding = new QueueBinding(null,
-                () => queues ?? new List<PrinterEntry> { LiveZebra });
+            // The queue comes from the conf file and nothing else -- pass null to
+            // model a terminal that has not been commissioned yet.
+            var binding = new QueueBinding(queue);
 
             var server = new BridgeServer(IPAddress.Loopback, 0, binding,
                 new RollingLog(_logDir, 14, false),
@@ -3029,16 +3231,26 @@ namespace BlueRidge.MesZebraBridge.Tests
         }
 
         [Fact]
-        public void An_unresolved_queue_answers_over_the_socket_rather_than_refusing_the_connection()
+        public void An_unconfigured_queue_answers_over_the_socket_rather_than_refusing_the_connection()
         {
-            // Spec 6.3 maps `Connection refused` to "bridge is down". An ambiguous
-            // queue is a different fault on a different machine, so it must not
-            // present that way.
-            BridgeServer s = Serve(queues: new List<PrinterEntry>());
+            // Spec 6.3 maps `Connection refused` to "bridge is down". A conf file
+            // with no Queue= is a different fault needing a different fix, so it
+            // must not present that way.
+            BridgeServer s = Serve(queue: null);
 
             string line = Exchange(s.BoundPort, Encoding.ASCII.GetBytes("^XA^XZ"));
 
-            Assert.StartsWith("ERR queue unresolved: ", line);
+            Assert.StartsWith("ERR queue unconfigured: ", line);
+        }
+
+        [Fact]
+        public void An_unconfigured_bridge_still_answers_a_bare_connect_with_silence()
+        {
+            // Both halves at once, over a real socket: the un-commissioned terminal
+            // is exactly where validateEndpoint's probe gets used.
+            BridgeServer s = Serve(queue: null);
+
+            Assert.Null(Exchange(s.BoundPort, new byte[0]));
         }
 
         [Fact]
@@ -3472,7 +3684,7 @@ namespace BlueRidge.MesZebraBridge
 dotnet test zebraPrinter/MesZebraBridge.Tests/MesZebraBridge.Tests.csproj
 ```
 
-Expected: `Failed: 0, Passed: 83`.
+Expected: `Failed: 0, Passed: 89`.
 
 If `Without_exclusive_use_windows_lets_a_second_live_socket_steal_the_port` fails, the OS is not behaving as the spec's rationale assumes -- **report that rather than deleting the test**, because it is the entire justification for the option.
 
@@ -3549,9 +3761,15 @@ namespace BlueRidge.MesZebraBridge.Tests
             // Spec section 1: the 2026-09-29 diagnosis needed three uncorrelated
             // sources. The banner is the machine's own answer to "what is this thing
             // bound to", which is the question that cost the most time.
-            BridgeConfig c = BridgeConfig.Parse(new[] { "Port=9100", "LogDirectory=" + _dir });
+            BridgeConfig c = BridgeConfig.Parse(new[]
+            {
+                "Port=9100",
+                "Queue=Zebra GX420d (RAW)",
+                "GatewayAddress=172.17.10.161",
+                "LogDirectory=" + _dir
+            });
 
-            IList<string> banner = Host.StartupBanner(c, "bound 'Zebra GX420d (RAW)' on port USB002");
+            IList<string> banner = Host.StartupBanner(c, new QueueBinding(c.Queue).Diagnosis);
             string text = string.Join(" | ", new List<string>(banner).ToArray());
 
             Assert.Contains("MesZebraBridge", text);
@@ -3559,7 +3777,22 @@ namespace BlueRidge.MesZebraBridge.Tests
             Assert.Contains("0.0.0.0:9100", text);
             Assert.Contains("Zebra GX420d (RAW)", text);
             Assert.Contains(_dir, text);
-            Assert.Contains(BridgeConfig.DefaultGatewayAddress, text);
+            Assert.Contains("172.17.10.161", text);
+            Assert.Contains(BridgeConfig.ConfFileName, text);   // where to go and change it
+        }
+
+        [Fact]
+        public void The_banner_shouts_when_there_is_no_queue_to_bind()
+        {
+            // A commissioned terminal and an un-commissioned one must not produce
+            // banners that read the same at a glance.
+            BridgeConfig c = BridgeConfig.Parse(new[] { "GatewayAddress=172.17.10.161" });
+
+            string text = string.Join(" | ", new List<string>(
+                Host.StartupBanner(c, new QueueBinding(c.Queue).Diagnosis)).ToArray());
+
+            Assert.Contains("(none)", text);
+            Assert.Contains("no Queue=", text);
         }
 
         [Fact]
@@ -3593,7 +3826,13 @@ namespace BlueRidge.MesZebraBridge.Tests
         [Fact]
         public void The_host_builds_a_server_that_starts_and_stops_cleanly()
         {
-            BridgeConfig c = BridgeConfig.Parse(new[] { "Port=0", "LogDirectory=" + _dir });
+            BridgeConfig c = BridgeConfig.Parse(new[] { "LogDirectory=" + _dir });
+
+            // Set Port DIRECTLY rather than through the conf: `Port=0` is outside
+            // BridgeConfig's valid [1, 65535] range, so parsing it would warn and
+            // fall back to 9100 -- and this test would then bind the real port that
+            // other work is using. 0 here means "ephemeral", which is what we want.
+            c.Port = 0;
 
             RollingLog log;
             QueueBinding binding;
@@ -3665,9 +3904,10 @@ namespace BlueRidge.MesZebraBridge
         /// </summary>
         public static IPAddress BindAddress { get { return IPAddress.Any; } }
 
+        /// <summary>Read the conf beside the exe (or --conf), then apply CLI overrides.</summary>
         public static BridgeConfig LoadConfig(string[] args)
         {
-            BridgeConfig config = BridgeConfig.Load(BridgeConfig.DefaultPath);
+            BridgeConfig config = BridgeConfig.Load(BridgeConfig.ConfPathFromCommandLine(args));
             config.ApplyCommandLine(args);
             return config;
         }
@@ -3681,11 +3921,12 @@ namespace BlueRidge.MesZebraBridge
                 string.Format(CultureInfo.InvariantCulture,
                     "listen        {0}:{1}", BindAddress, config.Port),
                 string.Format(CultureInfo.InvariantCulture,
-                    "queue         {0}", config.Queue == null ? "(auto-detect)" : config.Queue),
+                    "queue         {0}", config.Queue == null ? "(none)" : config.Queue),
                 string.Format(CultureInfo.InvariantCulture,
-                    "detection     {0}", diagnosis),
+                    "binding       {0}", diagnosis),
                 string.Format(CultureInfo.InvariantCulture,
-                    "gateway       {0} (the only source the firewall rule admits)", config.GatewayAddress),
+                    "gateway       {0} (the only source the firewall rule admits)",
+                    config.GatewayAddress == null ? "(none)" : config.GatewayAddress),
                 string.Format(CultureInfo.InvariantCulture,
                     "conf          {0}", BridgeConfig.DefaultPath),
                 string.Format(CultureInfo.InvariantCulture,
@@ -3698,12 +3939,15 @@ namespace BlueRidge.MesZebraBridge
 
         /// <summary>
         /// Build the server, the log and the binding from a config. Does not Start().
+        ///
+        /// The binding is the conf'd queue name and nothing else -- no enumeration
+        /// on this path (Global Constraint 5). Detection is install-time only.
         /// </summary>
         public static BridgeServer Build(BridgeConfig config, bool echoToConsole,
                                          out RollingLog log, out QueueBinding binding)
         {
             log = new RollingLog(config.LogDirectory, config.LogRetainDays, echoToConsole);
-            binding = new QueueBinding(config.Queue, Spooler.EnumerateLocalQueues);
+            binding = new QueueBinding(config.Queue);
 
             return new BridgeServer(BindAddress, config.Port, binding, log,
                 (queue, data) => Spooler.SpoolRaw(queue, data),
@@ -3714,7 +3958,7 @@ namespace BlueRidge.MesZebraBridge
         /// Start, log the banner, and hand back the running server. Shared by
         /// BridgeService.OnStart and the `run` verb.
         ///
-        /// An UNRESOLVED QUEUE is logged as an error and does NOT stop the listener
+        /// An UNCONFIGURED QUEUE is logged as an error and does NOT stop the listener
         /// (Global Constraint 6): a service that refuses to start looks to the
         /// Gateway like `Connection refused`, which spec 6.3 reads as "bridge is
         /// down" -- the wrong machine to go and look at. A BIND failure does throw,
@@ -3725,14 +3969,12 @@ namespace BlueRidge.MesZebraBridge
             QueueBinding binding;
             BridgeServer server = Build(config, echoToConsole, out log, out binding);
 
-            string diagnosis;
-            string queue = binding.Resolve(out diagnosis);
+            foreach (string line in StartupBanner(config, binding.Diagnosis)) log.Info(line);
 
-            foreach (string line in StartupBanner(config, diagnosis)) log.Info(line);
-
-            if (queue == null)
-                log.Error("QUEUE UNRESOLVED -- listening, but every request will be refused with "
-                          + "'ERR queue unresolved'. Nothing is guessed and nothing will print. " + diagnosis);
+            if (!binding.IsConfigured)
+                log.Error("NO QUEUE CONFIGURED -- listening, but every request will be refused "
+                          + "with 'ERR queue unconfigured'. Nothing is guessed and nothing will "
+                          + "print. " + binding.Diagnosis);
 
             server.Start();
             return server;
@@ -3761,9 +4003,11 @@ namespace BlueRidge.MesZebraBridge
 
         /// <summary>
         /// Every local queue with its driver, its port, and the detection verdict.
-        /// This is what turns the 2026-09-29 three-candidate host into a sentence,
-        /// and `install` calls it so an ambiguity surfaces at the machine where
-        /// somebody can still fix it.
+        /// INSTALL-TIME ONLY -- the running service never calls this.
+        ///
+        /// This is what turns the ambiguous three-candidate host into a sentence a
+        /// commissioner can act on, and `install` prints it when it has to ask for
+        /// --queue. Exit code 1 for unresolved so a script can branch on it.
         /// </summary>
         public static int PrintDetection()
         {
@@ -3791,20 +4035,26 @@ namespace BlueRidge.MesZebraBridge
 
             QueueResolution r = QueueResolver.Select(queues);
             Console.WriteLine();
-            Console.WriteLine(r.Resolved ? "RESOLVED: " + r.Diagnosis : "UNRESOLVED: " + r.Diagnosis);
-            return r.Resolved ? 0 : 1;
+            if (r.Resolved)
+            {
+                Console.WriteLine("ONE CANDIDATE: " + r.Diagnosis);
+                Console.WriteLine("'install' would write that name into the conf file.");
+                return 0;
+            }
+            Console.WriteLine("CANNOT CHOOSE: " + r.Diagnosis);
+            return 1;
         }
 
-        /// <summary>Configuration, detection and service state, for commissioning.</summary>
+        /// <summary>
+        /// Configuration, binding and service state, for commissioning. Reads the
+        /// conf -- it does not detect, so it reports what the service will actually do.
+        /// </summary>
         public static int PrintStatus(string[] args)
         {
             BridgeConfig config = LoadConfig(args);
-            var binding = new QueueBinding(config.Queue, Spooler.EnumerateLocalQueues);
+            var binding = new QueueBinding(config.Queue);
 
-            string diagnosis;
-            binding.Resolve(out diagnosis);
-
-            foreach (string line in StartupBanner(config, diagnosis)) Console.WriteLine(line);
+            foreach (string line in StartupBanner(config, binding.Diagnosis)) Console.WriteLine(line);
 
             Console.WriteLine();
             try
@@ -3816,6 +4066,19 @@ namespace BlueRidge.MesZebraBridge
             {
                 Console.WriteLine("service       {0} is NOT INSTALLED (run: MesZebraBridge.exe install)",
                     Installer.ServiceName);
+            }
+
+            // The queue is a name from a text file, so say whether the spooler
+            // actually has it -- that is the mistyped-conf case, and PROTOCOL.md
+            // requires ?STATUS to report it as ready=false rather than an error.
+            if (binding.IsConfigured)
+            {
+                QueueStatus s = Spooler.ReadQueueStatus(binding.Queue);
+                Console.WriteLine("spooler       queue {0} ready={1} jobs={2}",
+                    Protocol.Quote(binding.Queue), s.Ready ? "true" : "false", s.Jobs);
+                if (!s.Ready)
+                    Console.WriteLine("              not ready -- is the name exactly right, and is the "
+                                      + "printer on? 'detect' lists this machine's queues.");
             }
 
             return 0;
@@ -3861,6 +4124,8 @@ namespace BlueRidge.MesZebraBridge
         {
             try
             {
+                // Always the conf beside the exe -- the SCM binary path carries no
+                // arguments, so a --conf override is a console-only thing.
                 BridgeConfig config = Host.LoadConfig(new string[] { "service" });
                 _server = Host.StartUp(config, false, out _log);
             }
@@ -3915,22 +4180,32 @@ namespace BlueRidge.MesZebraBridge
 Accepts ZPL on TCP 9100 and spools it to the local Zebra queue (RAW).
 Wire protocol: zebraPrinter/PROTOCOL.md v" + Protocol.BridgeVersion + @"
 
-  MesZebraBridge.exe install     register the service, set SCM restart-on-failure
-                                 recovery, add the inbound firewall rule, and start
-  MesZebraBridge.exe uninstall   stop, remove the service, remove the firewall rule
-  MesZebraBridge.exe run         run in this console instead of as a service
-  MesZebraBridge.exe status      configuration, detected queue, and service state
-  MesZebraBridge.exe detect      list every local print queue and the detection verdict
+  MesZebraBridge.exe install             register the service, set SCM restart-on-failure
+                                         recovery, write the conf, add the inbound firewall
+                                         rule, start, and report the queue it bound.
+                                         Safe to re-run: it reconfigures and restarts.
+  MesZebraBridge.exe set-queue ""<name>""   point the bridge at a different print queue
+                                         after a printer swap, and restart
+  MesZebraBridge.exe uninstall           stop, remove the service, remove the firewall rule
+  MesZebraBridge.exe run                 run in this console instead of as a service
+  MesZebraBridge.exe status              configuration, bound queue, and service state
+  MesZebraBridge.exe detect              list every local print queue and say whether one
+                                         Zebra candidate can be picked out
 
-Options (install / run / status):
-  --queue <name>        the Windows print queue to bind. Omit to auto-detect the
-                        single live Zebra/ZDesigner queue.
-  --gateway <address>   the only source address the firewall rule admits.
+Options (install / set-queue / run / status):
+  --conf <path>         use this conf file instead of MesZebraBridge.conf beside the exe.
+  --queue <name>        the exact Windows print queue name to bind. Required when
+                        this machine has zero or several Zebra candidates.
+  --gateway <address>   the only source address the firewall rule admits. Normally
+                        already in the shipped conf file; install refuses without it.
   --port <n>            TCP port to listen on. Default 9100.
   --log-dir <path>      where the daily bridge-YYYYMMDD.log files go.
   --retain-days <n>     how many days of log files to keep. Default 14.
 
-install and uninstall require an elevated (Administrator) prompt.
+There is no runtime queue detection: the bridge spools to the queue named in its
+conf file, and answers 'ERR queue unconfigured' when there is none.
+
+install, set-queue and uninstall require an elevated (Administrator) prompt.
 ";
 
         public static int Main(string[] args)
@@ -3949,6 +4224,7 @@ install and uninstall require an elevated (Administrator) prompt.
             switch (args[0].ToLowerInvariant())
             {
                 case "install":   return Installer.Install(args);
+                case "set-queue": return Installer.SetQueue(args);
                 case "uninstall": return Installer.Uninstall();
                 case "run":       return Host.RunConsole(args);
                 case "status":    return Host.PrintStatus(args);
@@ -3989,6 +4265,12 @@ namespace BlueRidge.MesZebraBridge
             return 1;
         }
 
+        public static int SetQueue(string[] args)
+        {
+            Console.Error.WriteLine("set-queue is not implemented yet");
+            return 1;
+        }
+
         public static int Uninstall()
         {
             Console.Error.WriteLine("uninstall is not implemented yet");
@@ -4004,11 +4286,13 @@ namespace BlueRidge.MesZebraBridge
 dotnet test zebraPrinter/MesZebraBridge.Tests/MesZebraBridge.Tests.csproj
 ```
 
-Expected: `Failed: 0, Passed: 90`.
+Expected: `Failed: 0, Passed: 96`.
 
 - [ ] **Step 8: Run the bridge in a console, on a port that is not 9100**
 
 Other work is using 9100, so prove the whole path on a spare port.
+
+Task 10 has not shipped the conf template yet at this point in the plan, so drive it from the command line. Run it **twice**: once unconfigured, to see the degraded answer, and once with `--queue` to see a real binding.
 
 ```powershell
 dotnet build zebraPrinter/MesZebraBridge/MesZebraBridge.csproj -c Debug
@@ -4027,7 +4311,25 @@ $s.Write($b, 0, $b.Length); $s.Flush(); $c.Client.Shutdown('Send')
 $c.Close()
 ```
 
-Expected on a machine with **no** Zebra driver: `ERR queue unresolved: no Zebra/ZDesigner driver among <n> local queue(s): ...` -- which is the point of Global Constraint 6, and is a far better answer than a refused connection. On a machine with the driver: `OK bridge=1.0.0 queue='...' ready=true jobs=0`.
+Expected, with no `--queue` and no conf: `ERR queue unconfigured: no Queue= in the configuration. Nothing will print. Run 'MesZebraBridge.exe install' ...` -- which is Global Constraint 6, and is a far better answer than a refused connection, because it names both the fault and the fix. Confirm a bare connect is still silent:
+
+```powershell
+(Test-NetConnection 127.0.0.1 -Port 19100).TcpTestSucceeded
+```
+
+Expected: `True`, and a `connection from 127.0.0.1 (0 bytes)` line in the log -- an un-commissioned terminal must still answer `validateEndpoint`'s probe with silence.
+
+Now stop it and run it bound to a queue this machine really has, so the other half is exercised:
+
+```powershell
+Stop-Process -Name MesZebraBridge
+$q = (Get-Printer | Select-Object -First 1).Name
+Start-Process -FilePath "zebraPrinter\MesZebraBridge\bin\Debug\MesZebraBridge.exe" -ArgumentList "run","--port","19100","--queue",$q,"--log-dir",$env:TEMP_BRIDGE_LOG
+```
+
+Probe it again with the same `?STATUS` snippet.
+
+Expected: `OK bridge=1.0.0 queue='<that queue>' ready=true jobs=0`. **Any local queue will do** -- `?STATUS` prints nothing, so this is safe against a PDF writer. Do not send ZPL to it.
 
 Then check the banner landed in the log and stop it:
 
@@ -4036,7 +4338,7 @@ Get-Content (Join-Path $env:TEMP_BRIDGE_LOG ("bridge-" + (Get-Date -Format 'yyyy
 Stop-Process -Name MesZebraBridge
 ```
 
-Expected: the seven banner lines, `listening on 0.0.0.0:19100`, a `connection from 127.0.0.1` line, and the reply.
+Expected: the seven banner lines including `binding queue '<that queue>' from the configuration`, `listening on 0.0.0.0:19100`, the `connection from 127.0.0.1` lines, and both replies.
 
 - [ ] **Step 9: Commit**
 
@@ -4047,46 +4349,52 @@ git commit -m "feat(bridge): one bootstrap for the service and the console, plus
 
 ---
 
-### Task 13: Self-install
+### Task 13: Self-install, idempotently, plus `set-queue`
 
-Spec § 3 and § 7: *"Deployment per machine is one file and one command."* `install` registers the service, sets its own recovery options, adds its own inbound firewall rule scoped to the Gateway address, and starts.
+Spec § 7 step 4: copy the exe **and its conf file**, run `MesZebraBridge.exe install`. It registers the service, sets its own recovery options, adds its own inbound firewall rule scoped to the Gateway, starts, and **reports the queue it bound** so it can be checked against the `Get-Printer` from step 1.
 
-Three design notes:
+Four things this task must get right:
 
-- **SCM work goes through `advapi32` P/Invoke, not `sc.exe`.** `CreateServiceW` / `ChangeServiceConfig2W` give a real error code to put in the message, and keep the install verb from depending on parsing another program's output.
-- **The firewall rule goes through `netsh advfirewall`**, called by absolute path from `%SystemRoot%\System32` so nothing on `PATH` can be substituted. The alternative is the late-bound `HNetCfg.FwPolicy2` COM object; `netsh` wins because the command is one line the operator can read, re-run, and verify by hand -- which matters for a rule whose absence presented on 2026-09-29 as `DispatchFailed / "Connect timed out"`.
-- **Idempotent.** The rule is deleted before it is added, and re-running `install` on an already-installed service reconfigures and restarts it rather than failing. Spec § 10.1 notes stale source-scoped rules *"should be pruned rather than accumulated"*, and the Gateway host already carries one for a printer host's former address.
+- **Detection decides nothing on its own.** Exactly one live Zebra candidate and `install` writes that name into the conf and prints it. Zero or several and it prints the full listing and **exits requiring `--queue "<name>"`** (Global Constraint 5). It never proceeds unbound and never guesses.
+- **A missing `GatewayAddress` is a hard refusal**, not a widened rule (spec § 10.1). `BuildFirewallAddArgs` throws on empty or `"any"`; `install` checks first and names the conf file it read.
+- **`install` is idempotent** (Global Constraint 13). Against a machine that already has the service it rewrites the conf, reconfigures the service and the rule, and **restarts**. Printers get swapped in service and spec § 7 calls re-commissioning *"the case that needs care"*.
+- **`set-queue "<name>"`** is the narrow swap verb: write the conf, restart, print the new binding. It shares `WriteConf` and `RestartService` with `install`, so the two cannot diverge.
 
-Only the command builders and the elevation check are unit-testable; Task 15 exercises the rest against a live install.
+Mechanism notes: SCM work goes through `advapi32` P/Invoke rather than `sc.exe`, for real error codes and no output parsing. The firewall rule goes through `netsh advfirewall`, called by **absolute path** from `%SystemRoot%\System32` so nothing on `PATH` can be substituted into an elevated run -- and because the command is one line the operator can read, re-run and verify by hand, which matters for a rule whose absence presented on 2026-09-29 as `DispatchFailed / "Connect timed out"`. The rule is deleted before it is added, because spec § 10.1 wants stale source-scoped rules *"pruned rather than accumulated"* -- the Gateway host still carries one for `10.20.11.106`.
+
+Only the command builders, the refusals and the elevation check are unit-testable; Task 15 exercises the rest against a live install.
 
 **Files:**
 - Modify: `zebraPrinter/MesZebraBridge/Installer.cs`
 - Create: `zebraPrinter/MesZebraBridge.Tests/InstallerTests.cs`
 
 **Interfaces:**
-- Consumes: `BridgeConfig`, `Host.PrintDetection`, `Protocol.OneLine`
+- Consumes: `BridgeConfig`, `QueueResolver`, `Spooler.EnumerateLocalQueues`, `Host.PrintDetection`
 - Produces:
   - `Installer.ServiceName` / `.DisplayName` / `.Description` / `.FirewallRuleName` (consts)
   - `Installer.QuoteArg(string) -> string`
   - `Installer.BuildFirewallAddArgs(string gatewayAddress, int port) -> string`
   - `Installer.BuildFirewallDeleteArgs() -> string`
-  - `Installer.NetshPath -> string`
+  - `Installer.NetshPath -> string`, `.ExecutablePath -> string`
   - `Installer.IsElevated() -> bool`
-  - `Installer.Install(string[] args) -> int`, `.Uninstall() -> int`
+  - `Installer.ResolveQueueForInstall(BridgeConfig, IList<PrinterEntry>, out string message) -> bool`
+  - `Installer.Install(string[] args) -> int`, `.SetQueue(string[] args) -> int`, `.Uninstall() -> int`
 
 - [ ] **Step 1: Write the failing tests**
 
 Create `zebraPrinter/MesZebraBridge.Tests/InstallerTests.cs`:
 
 ```csharp
-// The install verb's command builders. Pure, so the exact netsh arguments are
-// pinned here -- a missing inbound rule is the failure that on 2026-09-29 read as
-// `DispatchFailed / "Connect timed out"` and cost most of an afternoon.
+// The install verb's decisions and command strings. Pure, so the exact netsh
+// arguments and the exact refusals are pinned here -- a missing inbound rule is
+// the failure that on 2026-09-29 read as `DispatchFailed / "Connect timed out"`
+// and cost most of an afternoon, and a wrongly-scoped one is worse than missing.
 //
-// CreateService, ChangeServiceConfig2 and the real netsh call need an elevated
-// prompt and a real machine; Task 15 covers those.
+// CreateService, ChangeServiceConfig2, the real netsh call and the restart need an
+// elevated prompt and a real machine; Task 15 covers those.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using BlueRidge.MesZebraBridge;
 using Xunit;
@@ -4095,6 +4403,16 @@ namespace BlueRidge.MesZebraBridge.Tests
 {
     public class InstallerTests
     {
+        private static PrinterEntry Q(string name, string driver, string port)
+        {
+            return new PrinterEntry(name, driver, port, 0, 0);
+        }
+
+        private static BridgeConfig Conf(params string[] lines)
+        {
+            return BridgeConfig.Parse(lines);
+        }
+
         [Fact]
         public void The_service_identity_is_the_one_the_spec_names()
         {
@@ -4115,14 +4433,14 @@ namespace BlueRidge.MesZebraBridge.Tests
         [Fact]
         public void The_firewall_rule_is_inbound_tcp_on_the_port_and_scoped_to_the_gateway()
         {
-            string args = Installer.BuildFirewallAddArgs("10.20.11.53", 9100);
+            string args = Installer.BuildFirewallAddArgs("172.17.10.161", 9100);
 
             Assert.StartsWith("advfirewall firewall add rule ", args);
             Assert.Contains("dir=in", args);
             Assert.Contains("action=allow", args);
             Assert.Contains("protocol=TCP", args);
             Assert.Contains("localport=9100", args);
-            Assert.Contains("remoteip=\"10.20.11.53\"", args);
+            Assert.Contains("remoteip=\"172.17.10.161\"", args);
             Assert.Contains("enable=yes", args);
             Assert.Contains("name=" + Installer.QuoteArg(Installer.FirewallRuleName), args);
             Assert.DoesNotContain("\n", args);
@@ -4131,18 +4449,19 @@ namespace BlueRidge.MesZebraBridge.Tests
         [Fact]
         public void A_non_default_port_reaches_the_rule()
         {
-            Assert.Contains("localport=19100", Installer.BuildFirewallAddArgs("10.0.0.1", 19100));
+            Assert.Contains("localport=19100", Installer.BuildFirewallAddArgs("172.17.10.161", 19100));
         }
 
         [Fact]
         public void The_rule_is_never_left_unscoped_because_an_unscoped_rule_defeats_the_point()
         {
-            // 0.0.0.0/9100 open to the plant is an unauthenticated raw-print listener
-            // on 54 machines. Refusing beats silently widening.
+            // 9100 open to the plant is an unauthenticated raw-print listener on 54
+            // machines. Refusing beats silently widening.
             Assert.Throws<ArgumentException>(() => Installer.BuildFirewallAddArgs(null, 9100));
             Assert.Throws<ArgumentException>(() => Installer.BuildFirewallAddArgs("", 9100));
             Assert.Throws<ArgumentException>(() => Installer.BuildFirewallAddArgs("   ", 9100));
             Assert.Throws<ArgumentException>(() => Installer.BuildFirewallAddArgs("any", 9100));
+            Assert.Throws<ArgumentException>(() => Installer.BuildFirewallAddArgs("ANY", 9100));
         }
 
         [Fact]
@@ -4167,9 +4486,104 @@ namespace BlueRidge.MesZebraBridge.Tests
         [Fact]
         public void The_elevation_check_answers_without_throwing()
         {
-            // Just that it is answerable here; the refusal path is Task 15.
             bool elevated = Installer.IsElevated();
             Assert.True(elevated || !elevated);
+        }
+
+        // ---- what install decides about the queue -----------------------------
+
+        [Fact]
+        public void An_explicit_queue_wins_and_detection_is_not_consulted_at_all()
+        {
+            // --queue is how the commissioner resolves the ambiguous host, so it
+            // must not be second-guessed by a detection result.
+            BridgeConfig c = Conf();
+            c.SetQueue("Zebra GX420d (RAW)");
+
+            string message;
+            bool ok = Installer.ResolveQueueForInstall(c, new List<PrinterEntry>(), out message);
+
+            Assert.True(ok);
+            Assert.Equal("Zebra GX420d (RAW)", c.Queue);
+            Assert.Contains("Zebra GX420d (RAW)", message);
+            Assert.Contains("detection skipped", message);
+        }
+
+        [Fact]
+        public void Exactly_one_live_candidate_is_written_to_the_conf_and_reported()
+        {
+            // Spec 7 step 4: install "reports the queue it bound so it can be checked
+            // against step 1".
+            BridgeConfig c = Conf();
+
+            string message;
+            bool ok = Installer.ResolveQueueForInstall(c, new List<PrinterEntry>
+            {
+                Q("Microsoft Print to PDF", "Microsoft Print To PDF", "PORTPROMPT:"),
+                Q("Zebra GX420d (RAW)", "ZDesigner GX420d", "USB002")
+            }, out message);
+
+            Assert.True(ok);
+            Assert.Equal("Zebra GX420d (RAW)", c.Queue);
+            Assert.Contains("Zebra GX420d (RAW)", message);
+            Assert.Contains("USB002", message);
+        }
+
+        [Fact]
+        public void The_real_ambiguous_host_stops_the_install_and_demands_a_name()
+        {
+            // Two live candidates on USB001 plus a stale LPT1:. install must NOT
+            // proceed -- an unbound service that silently picked wrong is worse than
+            // a commissioner re-running one command with a name they can see.
+            BridgeConfig c = Conf();
+
+            string message;
+            bool ok = Installer.ResolveQueueForInstall(c, new List<PrinterEntry>
+            {
+                Q("ZDesigner GX420d (Copy 1)", "ZDesigner GX420d", "USB001"),
+                Q("ZDesigner GX420d", "ZDesigner GX420d", "LPT1:"),
+                Q("Zebra GX420d (RAW)", "ZDesigner GX420d", "USB001")
+            }, out message);
+
+            Assert.False(ok);
+            Assert.Null(c.Queue);
+            Assert.Contains("--queue", message);
+            Assert.Contains("Zebra GX420d (RAW)", message);
+            Assert.Contains("ZDesigner GX420d (Copy 1)", message);
+        }
+
+        [Fact]
+        public void No_zebra_driver_stops_the_install_and_says_so()
+        {
+            BridgeConfig c = Conf();
+
+            string message;
+            bool ok = Installer.ResolveQueueForInstall(c, new List<PrinterEntry>
+            {
+                Q("Microsoft Print to PDF", "Microsoft Print To PDF", "PORTPROMPT:")
+            }, out message);
+
+            Assert.False(ok);
+            Assert.Null(c.Queue);
+            Assert.Contains("no Zebra", message);
+        }
+
+        [Fact]
+        public void A_queue_already_in_the_conf_is_kept_across_a_re_install()
+        {
+            // Idempotency: re-running install on a commissioned machine must not
+            // re-detect and silently move the binding.
+            BridgeConfig c = Conf("Queue=Zebra GX420d (RAW)", "GatewayAddress=172.17.10.161");
+
+            string message;
+            bool ok = Installer.ResolveQueueForInstall(c, new List<PrinterEntry>
+            {
+                Q("Some Other Zebra", "ZDesigner GX420d", "USB003")
+            }, out message);
+
+            Assert.True(ok);
+            Assert.Equal("Zebra GX420d (RAW)", c.Queue);
+            Assert.Contains("detection skipped", message);
         }
     }
 }
@@ -4181,16 +4595,30 @@ namespace BlueRidge.MesZebraBridge.Tests
 dotnet test zebraPrinter/MesZebraBridge.Tests/MesZebraBridge.Tests.csproj
 ```
 
-Expected: compile failure, `error CS0117: 'Installer' does not contain a definition for 'DisplayName'` and the same for `Description`, `FirewallRuleName`, `QuoteArg`, `BuildFirewallAddArgs`, `BuildFirewallDeleteArgs`, `NetshPath`, `IsElevated`.
+Expected: compile failure, `error CS0117: 'Installer' does not contain a definition for 'DisplayName'`, and the same for `Description`, `FirewallRuleName`, `QuoteArg`, `BuildFirewallAddArgs`, `BuildFirewallDeleteArgs`, `NetshPath`, `IsElevated`, `ResolveQueueForInstall`.
 
 - [ ] **Step 3: Implement `Installer`**
 
 Replace the whole of `zebraPrinter/MesZebraBridge/Installer.cs` with:
 
 ```csharp
-// Self-install (spec sections 3 and 7): "Deployment per machine is one file and
-// one command." Registers the service, sets restart-on-failure recovery, adds its
-// own inbound firewall rule scoped to the Gateway, and starts.
+// Self-install (spec sections 3, 7 and 10.1). Registers the service, sets
+// restart-on-failure recovery, writes the conf, adds its own inbound firewall rule
+// scoped to the Gateway, starts, and REPORTS THE QUEUE IT BOUND so the commissioner
+// can check it against the Get-Printer from spec section 7 step 1.
+//
+// IDEMPOTENT. Printers get swapped in service and spec section 7 calls
+// re-commissioning "the case that needs care, not first commissioning", so running
+// install again reconfigures and restarts rather than failing. `set-queue` is the
+// narrow verb for the same job; both share WriteConf and RestartService so a first
+// install and a swap cannot diverge.
+//
+// DETECTION DECIDES NOTHING ON ITS OWN (Global Constraint 5). Exactly one live
+// candidate and the name goes in the conf; zero or several and install stops and
+// requires --queue. An unbound service that silently picked wrong is worse than one
+// more command typed by someone who can see both names.
+//
+// A MISSING GatewayAddress IS A HARD REFUSAL, never a widened rule (spec 10.1).
 //
 // SCM work goes through advapi32 rather than sc.exe, for real error codes and no
 // output parsing. The firewall rule goes through netsh advfirewall, called by
@@ -4198,12 +4626,9 @@ Replace the whole of `zebraPrinter/MesZebraBridge/Installer.cs` with:
 // elevated run -- and because the command is one line the operator can read,
 // re-run and verify, which matters for a rule whose absence presented on
 // 2026-09-29 as `DispatchFailed / "Connect timed out"`.
-//
-// Idempotent: the rule is deleted before it is added, and re-running install on an
-// installed service reconfigures and restarts it. Spec 10.1: stale source-scoped
-// rules should be pruned, not accumulated.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -4338,7 +4763,6 @@ namespace BlueRidge.MesZebraBridge
             return "advfirewall firewall delete rule name=" + QuoteArg(FirewallRuleName);
         }
 
-        /// <summary>Run netsh and return its exit code. Its output is echoed as-is.</summary>
         private static int Netsh(string arguments)
         {
             var psi = new ProcessStartInfo(NetshPath, arguments)
@@ -4361,6 +4785,37 @@ namespace BlueRidge.MesZebraBridge
             }
         }
 
+        /// <summary>
+        /// Decide the queue name for an install. Returns false when the operator has
+        /// to name it, with `message` explaining exactly what was seen.
+        ///
+        /// An already-configured name (conf or --queue) is kept and detection is not
+        /// consulted: re-running install on a commissioned machine must not silently
+        /// move the binding, and --queue is how the ambiguous host gets resolved.
+        /// </summary>
+        public static bool ResolveQueueForInstall(BridgeConfig config,
+                                                  IList<PrinterEntry> queues,
+                                                  out string message)
+        {
+            if (!string.IsNullOrEmpty(config.Queue))
+            {
+                message = "queue " + Protocol.Quote(config.Queue)
+                    + " from the configuration / --queue; detection skipped";
+                return true;
+            }
+
+            QueueResolution r = QueueResolver.Select(queues);
+            if (r.Resolved)
+            {
+                config.SetQueue(r.Queue);
+                message = "detected " + r.Diagnosis;
+                return true;
+            }
+
+            message = r.Diagnosis;
+            return false;
+        }
+
         // --- verbs -------------------------------------------------------------
 
         public static int Install(string[] args)
@@ -4373,54 +4828,72 @@ namespace BlueRidge.MesZebraBridge
                 return 3;
             }
 
-            BridgeConfig config = Host.LoadConfig(args);
+            string confPath = BridgeConfig.ConfPathFromCommandLine(args);
+            BridgeConfig config = BridgeConfig.Load(confPath);
+            config.ApplyCommandLine(args);
             foreach (string w in config.Warnings) Console.WriteLine("CONFIG WARNING " + w);
 
-            string exePath = ExecutablePath;
             Console.WriteLine("MesZebraBridge {0} install", Protocol.BridgeVersion);
-            Console.WriteLine("  binary   {0}", exePath);
+            Console.WriteLine("  binary   {0}", ExecutablePath);
+            Console.WriteLine("  conf     {0}", confPath);
             Console.WriteLine("  account  LocalSystem");
-            Console.WriteLine("  gateway  {0}   <-- the ONLY source the firewall rule will admit", config.GatewayAddress);
             Console.WriteLine("  port     {0}", config.Port);
             Console.WriteLine();
 
-            // 1. Write the conf file, so nobody hand-authors it and `status` can read
-            //    back exactly what this install decided.
+            // 1. The Gateway address. A hard refusal, never a widened rule (spec 10.1).
+            if (string.IsNullOrEmpty(config.GatewayAddress))
+            {
+                Console.Error.WriteLine(
+                    "REFUSING: no GatewayAddress. Nothing is compiled into this binary, so the "
+                    + "inbound firewall rule has no source to scope to, and an unscoped rule "
+                    + "would leave an unauthenticated raw-print listener open to the plant.");
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("Fix either way:");
+                Console.Error.WriteLine("  * add   GatewayAddress=172.17.10.161   to {0}", confPath);
+                Console.Error.WriteLine("    (that is the conf file that ships beside the exe -- check it was copied)");
+                Console.Error.WriteLine("  * or run  MesZebraBridge.exe install --gateway 172.17.10.161");
+                return 4;
+            }
+            Console.WriteLine("  gateway  {0}   <-- the ONLY source the firewall rule will admit",
+                config.GatewayAddress);
+            Console.WriteLine();
+
+            // 2. The queue. Detection offers a name; it never decides alone.
+            IList<PrinterEntry> queues;
             try
             {
-                config.Save(BridgeConfig.DefaultPath);
-                Console.WriteLine("wrote {0}", BridgeConfig.DefaultPath);
+                queues = Spooler.EnumerateLocalQueues();
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine("could not write " + BridgeConfig.DefaultPath + ": "
+                Console.Error.WriteLine("could not enumerate local print queues: "
                                         + Protocol.OneLine(ex.Message));
                 return 1;
             }
 
-            // 2. Detection, printed HERE: an ambiguity has to surface at the machine
-            //    while somebody is still standing at it (the 2026-09-29 host had three
-            //    candidates, two stale). Not fatal -- the service will listen and say
-            //    so over the wire either way (Global Constraint 6).
-            Console.WriteLine();
-            if (config.Queue == null)
+            string queueMessage;
+            if (!ResolveQueueForInstall(config, queues, out queueMessage))
             {
-                if (Host.PrintDetection() != 0)
-                    Console.WriteLine(
-                        "WARNING: no single live Zebra queue. The service will still install and "
-                        + "listen, and will answer 'ERR queue unresolved' until this is fixed. "
-                        + "Install the driver, or re-run install with --queue \"<exact queue name>\".");
+                Console.Error.WriteLine("REFUSING: " + queueMessage);
+                Console.Error.WriteLine();
+                Host.PrintDetection();
+                Console.Error.WriteLine();
+                Console.Error.WriteLine(
+                    "Nothing was installed. Pick the queue from the list above -- it is the one "
+                    + "'Get-Printer' showed you in step 1 -- and run:");
+                Console.Error.WriteLine("  MesZebraBridge.exe install --queue \"<exact queue name>\"");
+                return 5;
             }
-            else
-            {
-                Console.WriteLine("queue pinned by configuration: {0} (detection skipped)", config.Queue);
-            }
+            Console.WriteLine("queue    {0}", queueMessage);
             Console.WriteLine();
 
-            // 3. Register, or reconfigure if it is already there.
-            if (!RegisterService(exePath)) return 1;
+            // 3. Write the conf, so `status` reads back exactly what this install decided.
+            if (!WriteConf(config, confPath)) return 1;
 
-            // 4. The inbound rule. Delete first so re-running install prunes the old
+            // 4. Register, or reconfigure if it is already there (idempotent).
+            if (!RegisterService(ExecutablePath)) return 1;
+
+            // 5. The inbound rule. Delete first so re-running install prunes the old
             //    scoping instead of accumulating rules (spec 10.1).
             Netsh(BuildFirewallDeleteArgs());
             int rc = Netsh(BuildFirewallAddArgs(config.GatewayAddress, config.Port));
@@ -4433,34 +4906,108 @@ namespace BlueRidge.MesZebraBridge
             Console.WriteLine("firewall rule {0} -> allow TCP {1} inbound from {2}",
                 FirewallRuleName, config.Port, config.GatewayAddress);
 
-            // 5. Start it.
+            // 6. Start, or restart if it was already running with the old conf.
+            if (!RestartService()) return 1;
+
+            Console.WriteLine();
+            Console.WriteLine("BOUND QUEUE: {0}", config.Queue);
+            Console.WriteLine("Check that against the 'Get-Printer' from step 1, then verify from");
+            Console.WriteLine("the Gateway with a ?STATUS probe (spec section 9) and one real label.");
+            Console.WriteLine("'MesZebraBridge.exe status' reports state here.");
+            return 0;
+        }
+
+        /// <summary>
+        /// The printer-swap verb. Same conf write and same restart as install, no SCM
+        /// or firewall work -- so a swap cannot drift from a first install.
+        /// </summary>
+        public static int SetQueue(string[] args)
+        {
+            if (!IsElevated())
+            {
+                Console.Error.WriteLine("set-queue needs an elevated prompt (it restarts the service).");
+                return 3;
+            }
+
+            string name = null;
+            for (int i = 1; i < args.Length; i++)
+            {
+                if (args[i].StartsWith("--")) { i++; continue; }   // skip --conf <path> etc.
+                name = args[i];
+                break;
+            }
+
+            if (string.IsNullOrEmpty((name ?? "").Trim()))
+            {
+                Console.Error.WriteLine("usage: MesZebraBridge.exe set-queue \"<exact queue name>\"");
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("Run 'MesZebraBridge.exe detect' to list this machine's queues.");
+                return 2;
+            }
+
+            string confPath = BridgeConfig.ConfPathFromCommandLine(args);
+            BridgeConfig config = BridgeConfig.Load(confPath);
+            foreach (string w in config.Warnings) Console.WriteLine("CONFIG WARNING " + w);
+
+            string previous = config.Queue == null ? "(none)" : config.Queue;
+            config.SetQueue(name);
+
+            if (!WriteConf(config, confPath)) return 1;
+            Console.WriteLine("queue {0} -> {1}", previous, config.Queue);
+
+            if (!RestartService()) return 1;
+
+            Console.WriteLine();
+            Console.WriteLine("BOUND QUEUE: {0}", config.Queue);
+            Console.WriteLine("Probe it with ?STATUS to confirm the new binding.");
+            Console.WriteLine();
+            Console.WriteLine("If this terminal already has an operator session running, restart the");
+            Console.WriteLine("workstation session too: session.custom.printer resolved once at its");
+            Console.WriteLine("startup and will keep printing to the old endpoint (spec section 7).");
+            return 0;
+        }
+
+        private static bool WriteConf(BridgeConfig config, string confPath)
+        {
+            try
+            {
+                config.Save(confPath);
+                Console.WriteLine("wrote {0}", confPath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("could not write " + confPath + ": " + Protocol.OneLine(ex.Message));
+                return false;
+            }
+        }
+
+        /// <summary>Start it, or stop-then-start so a new conf is actually picked up.</summary>
+        private static bool RestartService()
+        {
             try
             {
                 using (var sc = new ServiceController(ServiceName))
                 {
-                    if (sc.Status != ServiceControllerStatus.Running)
+                    if (sc.Status != ServiceControllerStatus.Stopped)
                     {
-                        sc.Start();
-                        sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+                        sc.Stop();
+                        sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
                     }
+                    sc.Start();
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
                     Console.WriteLine("service {0} is {1}", ServiceName, sc.Status);
                 }
+                return true;
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine("the service was installed but did not start: "
-                                        + Protocol.OneLine(ex.Message));
-                Console.Error.WriteLine("check " + config.LogDirectory + " and the Windows Event Log.");
-                return 1;
+                Console.Error.WriteLine("the service did not come back up: " + Protocol.OneLine(ex.Message));
+                Console.Error.WriteLine("check the log directory and the Windows Event Log.");
+                return false;
             }
-
-            Console.WriteLine();
-            Console.WriteLine("Done. Verify from the Gateway with a ?STATUS probe (spec section 9),");
-            Console.WriteLine("then print one real label. `MesZebraBridge.exe status` reports state here.");
-            return 0;
         }
 
-        /// <summary>CreateService, or reconfigure an existing one. Then description + recovery.</summary>
         private static bool RegisterService(string exePath)
         {
             IntPtr scm = OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -4489,6 +5036,7 @@ namespace BlueRidge.MesZebraBridge
                         return false;
                     }
 
+                    // Idempotent: a re-install reconfigures rather than failing.
                     Console.WriteLine("service {0} already exists -- reconfiguring it", ServiceName);
                     service = OpenService(scm, ServiceName, SERVICE_ALL_ACCESS);
                     if (service == IntPtr.Zero)
@@ -4638,8 +5186,8 @@ namespace BlueRidge.MesZebraBridge
             Netsh(BuildFirewallDeleteArgs());
             Console.WriteLine("removed firewall rule {0}", FirewallRuleName);
             Console.WriteLine();
-            Console.WriteLine("{0} and {1} were left in place.",
-                BridgeConfig.DefaultPath, BridgeConfig.DefaultLogDirectory);
+            Console.WriteLine("The conf file and {0} were left in place.",
+                BridgeConfig.DefaultLogDirectory);
             return 0;
         }
 
@@ -4651,46 +5199,73 @@ namespace BlueRidge.MesZebraBridge
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [ ] **Step 4: Wire the `set-queue` verb into `Program`**
+
+In `zebraPrinter/MesZebraBridge/Program.cs`, add the case beside `install`:
+
+```csharp
+                case "install":   return Installer.Install(args);
+                case "set-queue": return Installer.SetQueue(args);
+                case "uninstall": return Installer.Uninstall();
+```
+
+Task 12 already put `set-queue` and `--conf` in `Program.Usage`, and `HostTests.The_usage_text_names_every_verb_and_every_option` asserts they are there.
+
+- [ ] **Step 5: Run the tests to verify they pass**
 
 ```powershell
 dotnet test zebraPrinter/MesZebraBridge.Tests/MesZebraBridge.Tests.csproj
 ```
 
-Expected: `Failed: 0, Passed: 98`.
+Expected: `Failed: 0, Passed: 109`.
 
-- [ ] **Step 5: Confirm the refusal paths without installing anything**
+- [ ] **Step 6: Confirm the refusal paths without installing anything**
 
 From a **non-elevated** prompt:
 
 ```powershell
 dotnet build zebraPrinter/MesZebraBridge/MesZebraBridge.csproj -c Debug
+Copy-Item zebraPrinter\MesZebraBridge.conf zebraPrinter\MesZebraBridge\bin\Debug\
 .\zebraPrinter\MesZebraBridge\bin\Debug\MesZebraBridge.exe install
 echo "exit=$LASTEXITCODE"
 ```
 
 Expected: the elevation refusal text and `exit=3`. Nothing is registered, no rule is added.
 
+Then prove the missing-gateway refusal, which is the one that must never silently widen:
+
+```powershell
+$alt = Join-Path $env:TEMP "no-gateway.conf"
+"Port=9100" | Set-Content -Encoding ascii $alt
+.\zebraPrinter\MesZebraBridge\bin\Debug\MesZebraBridge.exe install --conf $alt
+echo "exit=$LASTEXITCODE"
+```
+
+Expected on an elevated prompt: `REFUSING: no GatewayAddress`, the two suggested fixes naming the conf path, and `exit=4`. From a non-elevated prompt the elevation refusal fires first (`exit=3`) -- run this one elevated to see it, and **only** with `--conf` pointed at the temp file so the real conf is untouched.
+
 ```powershell
 .\zebraPrinter\MesZebraBridge\bin\Debug\MesZebraBridge.exe detect
 .\zebraPrinter\MesZebraBridge\bin\Debug\MesZebraBridge.exe status
+.\zebraPrinter\MesZebraBridge\bin\Debug\MesZebraBridge.exe set-queue
 .\zebraPrinter\MesZebraBridge\bin\Debug\MesZebraBridge.exe wat
 ```
 
-Expected: `detect` lists this machine's queues with the verdict; `status` prints the banner and `MesZebraBridge is NOT INSTALLED`; `wat` prints `unknown verb: wat` plus usage and exits 2. **Do not run `install` here** -- it would bind 9100, which other work is using.
+Expected: `detect` lists this machine's queues with the verdict; `status` prints the banner and `MesZebraBridge is NOT INSTALLED`; `set-queue` with no name prints its usage and exits 2 (or 3 unelevated); `wat` prints `unknown verb: wat` plus usage and exits 2.
 
-- [ ] **Step 6: Commit**
+**Do not run a real `install` here** -- it would bind 9100, which other work is using.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add zebraPrinter/MesZebraBridge/Installer.cs zebraPrinter/MesZebraBridge.Tests/InstallerTests.cs
-git commit -m "feat(bridge): one command registers the service, its recovery, and its own firewall rule"
+git add zebraPrinter/MesZebraBridge/Installer.cs zebraPrinter/MesZebraBridge/Program.cs zebraPrinter/MesZebraBridge.Tests/InstallerTests.cs
+git commit -m "feat(bridge): install is idempotent, reports the queue it bound, and refuses an unscoped rule"
 ```
 
 ---
 
-### Task 14: The release build, the one-file check, and the binary hash
+### Task 14: The release build, the two-file check, and the binary hash
 
-The whole deployment story is *"one file and one command"* (spec § 3). This task **proves** the one-file claim rather than assuming it, and produces the SHA-256 that spec § 12.4 needs: with no code-signing certificate, a hash is what MPP IT can allowlist against SmartScreen and AV heuristics.
+The deployment is **`MesZebraBridge.exe` plus `MesZebraBridge.conf`, and nothing else** (spec § 7 step 4). This task **proves** that rather than assuming it -- a stray DLL in `bin/Release` turns a copy-two-files install into a copy-a-folder install, and nobody notices until a machine is missing one. It also produces the SHA-256 that spec § 12.4 needs: with no code-signing certificate, a hash is what MPP IT can allowlist against SmartScreen and AV heuristics.
 
 **Files:**
 - Create: `zebraPrinter/MesZebraBridge/RELEASE.md`
@@ -4746,8 +5321,8 @@ namespace BlueRidge.MesZebraBridge.Tests
         [Fact]
         public void The_bridge_assembly_references_no_third_party_dependency()
         {
-            // The one-file deployment depends on this. A PackageReference that
-            // lands a DLL in bin/ makes `copy MesZebraBridge.exe` a broken install.
+            // The two-file deployment depends on this. A PackageReference that
+            // lands a DLL in bin/ makes "copy the exe and its conf" a broken install.
             foreach (AssemblyName reference in typeof(Protocol).Assembly.GetReferencedAssemblies())
             {
                 bool bcl = reference.Name == "mscorlib"
@@ -4766,9 +5341,9 @@ namespace BlueRidge.MesZebraBridge.Tests
 dotnet test zebraPrinter/MesZebraBridge.Tests/MesZebraBridge.Tests.csproj
 ```
 
-Expected: `Failed: 0, Passed: 101`. Task 1's csproj already sets the metadata, so these should be green; a failure here means a `PackageReference` crept in or a property was dropped.
+Expected: `Failed: 0, Passed: 112`. Task 1's csproj already sets the metadata, so these should be green; a failure here means a `PackageReference` crept in or a property was dropped.
 
-- [ ] **Step 3: Build Release and prove the output is one deployable file**
+- [ ] **Step 3: Build Release and prove the output is two deployable files, not a folder**
 
 ```powershell
 dotnet build zebraPrinter/MesZebraBridge/MesZebraBridge.csproj -c Release
@@ -4777,17 +5352,21 @@ Get-ChildItem zebraPrinter\MesZebraBridge\bin\Release | Select-Object Name, Leng
 
 Expected: exactly `MesZebraBridge.exe` and `MesZebraBridge.pdb`, and **no `.dll` and no `MesZebraBridge.exe.config`**. If a `.config` appears, `AutoGenerateBindingRedirects` is not `false`. If any `.dll` appears, a `PackageReference` is missing `PrivateAssets="All"` -- fix the csproj, do not ship the folder.
 
-- [ ] **Step 4: Confirm the binary runs with only itself present**
+The conf file is authored separately (Task 10) and is the second deployed file; the `.pdb` is optional at the target and is only worth copying when a stack trace with line numbers is wanted.
+
+- [ ] **Step 4: Confirm the pair works with nothing else present**
 
 ```powershell
-$probe = Join-Path $env:TEMP ("bridge-onefile-" + [guid]::NewGuid().ToString("N"))
+$probe = Join-Path $env:TEMP ("bridge-deploy-" + [guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory $probe | Out-Null
 Copy-Item zebraPrinter\MesZebraBridge\bin\Release\MesZebraBridge.exe $probe
+Copy-Item zebraPrinter\MesZebraBridge.conf $probe
 & (Join-Path $probe "MesZebraBridge.exe") detect
+& (Join-Path $probe "MesZebraBridge.exe") status
 Remove-Item -Recurse -Force $probe
 ```
 
-Expected: the queue listing and the detection verdict. A `FileNotFoundException` for an assembly means the one-file claim is false.
+Expected: `detect` lists the queues and its verdict. `status` reads the conf **from that directory** and prints `gateway 172.17.10.161`, `queue (none)` and `conf <$probe>\MesZebraBridge.conf`. A `FileNotFoundException` for an assembly means the deployment is not two files; a `conf` line pointing anywhere other than `$probe` means `BridgeConfig.DefaultPath` is not resolving beside the executable.
 
 - [ ] **Step 5: Record the hash and write the deployment sheet**
 
@@ -4822,46 +5401,81 @@ Rebuild:
 
 `bin/Release/` must contain only `MesZebraBridge.exe` and `MesZebraBridge.pdb`.
 
+## What gets copied to a machine
+
+**Two files, same pair on all 54 machines:**
+
+| File | Per machine? |
+|---|---|
+| `MesZebraBridge.exe` | identical everywhere |
+| `MesZebraBridge.conf` | identical everywhere as shipped -- it carries `GatewayAddress=172.17.10.161` and no queue. `install` adds this machine's `Queue=` line. |
+
+Nothing is compiled into the exe (spec section 10.1). The Gateway address is in the
+conf, authored once, never typed per machine. If it is ever wrong, it is wrong
+visibly in a text file rather than invisibly in a binary.
+
 ## Per-machine deployment (spec section 7)
 
-1. **Driver** -- install the Zebra driver. Confirm the queue with `Get-Printer`.
-2. **Bridge** -- copy `MesZebraBridge.exe` anywhere local (`C:\BlueRidge\` by
-   convention), then from an **elevated** prompt:
+This is a **single visit per terminal**, walking the line. Steps 1, 3, 4 and 7
+happen at the machine; 2, 5 and 6 from the Config Tool.
+
+1. **Read the address and the queue name** -- `ipconfig` and `Get-Printer`.
+   Write down the exact queue name; step 4 checks against it.
+2. **Terminal IP** -- set it on the Terminal row in the Config Tool to match what
+   the PC reports. This must precede steps 4-6: the printer endpoint derives from it.
+3. **Driver** -- install the Zebra driver if it is not already there.
+4. **Bridge** -- copy **both** `MesZebraBridge.exe` and `MesZebraBridge.conf` to a
+   local folder (`C:\BlueRidge\` by convention), then from an **elevated** prompt:
 
        MesZebraBridge.exe install
 
-   It writes `%ProgramData%\BlueRidge\MesZebraBridge\bridge.conf`, prints the
-   detected queue, registers the service as `LocalSystem` with start=auto, sets
-   restart-on-failure recovery (5s / 5s / 60s), adds the inbound TCP 9100 rule
-   scoped to the Gateway, and starts.
+   It reads the conf beside it, detects the queue, writes the `Queue=` line, registers
+   the service as `LocalSystem` with start=auto, sets restart-on-failure recovery
+   (5s / 5s / 60s), adds the inbound TCP 9100 rule scoped to the Gateway, starts, and
+   prints `BOUND QUEUE: <name>`.
 
-   If the Gateway is not at the built-in default, pass it:
+   **Check that against the name from step 1.**
 
-       MesZebraBridge.exe install --gateway 10.20.11.53
-
-   If detection reports more than one live Zebra queue, pin it:
+   If it reports more than one Zebra candidate, or none, it installs nothing and asks
+   for the name -- pick it from the listing it printed:
 
        MesZebraBridge.exe install --queue "Zebra GX420d (RAW)"
 
-3. **Verify at the machine**
+   If it refuses with `no GatewayAddress`, the conf file was not copied alongside the exe.
+5. **Printer row** -- under that terminal in the Config Tool, `ConnectionKind = UsbBridge`.
+   No endpoint is entered; it derives from the terminal IP from step 2.
+6. **Verify from the Gateway** -- the `?STATUS` probe (spec section 9), then one real
+   label. The probe consumes nothing.
+7. **Launch the workstation session**, last, so it resolves the printer on its first startup.
 
-       MesZebraBridge.exe status
+## Swapping a printer on a terminal already in service
 
-   Expected: `service MesZebraBridge is Running`, and a `detection` line naming
-   the bound queue and its port.
+    MesZebraBridge.exe set-queue "<exact new queue name>"
 
-4. **Verify from the Gateway** -- the `?STATUS` probe (spec section 9), then one
-   real label. No label is consumed by the probe.
+Writes the conf, restarts the service, prints the new binding. `MesZebraBridge.exe detect`
+lists the machine's queues if the name is not to hand. Then probe with `?STATUS` to confirm.
+
+`MesZebraBridge.exe install` is safe to re-run instead and does the same thing plus
+re-checking the service and firewall rule.
+
+**Also restart the workstation session.** `session.custom.printer` resolved once at its
+startup, so a live operator session keeps printing to the old endpoint and the Config Tool
+test will pass against the database while it does (spec section 7).
 
 ## Diagnostics
 
 | Symptom at the Gateway | Where to look |
 |---|---|
 | `Connection refused` | the service is not running. `MesZebraBridge.exe status`, then the log. |
-| `Connect timed out` | the firewall rule is missing or scoped to the wrong address. Re-run `install --gateway <addr>`. |
-| `ERR queue unresolved: ...` | the bridge is up and the network is fine. Read the rest of the line: it names every Zebra candidate and its port. |
-| `ERR queue not found: 'X'; visible: ...` | a pinned `Queue=` that is not on this host. Re-run `install` without `--queue`. |
+| `Connect timed out` | the firewall rule is missing or scoped to the wrong address. Re-run `install`. |
+| `ERR queue unconfigured: ...` | the bridge is up and the network is fine, but no `Queue=` was ever written. Run `install` at the machine. |
+| `ERR queue not found: 'X'; visible: ...` | the conf names a queue this host does not have -- usually a typo or a swapped printer. `set-queue "<name>"` from the `visible:` list. |
+| `?STATUS` says `ready=false` | the queue exists but is offline, paused or in error. Check the printer itself. |
 | nothing at all in reply | not our bridge -- a real networked Zebra on raw 9100. Expected for `ConnectionKind = Networked`. |
+
+`MesZebraBridge.exe status` answers most of these at the machine in one command: it
+prints the conf it read, the queue it will use, whether the spooler actually has that
+queue, and the service state.
 
 Logs: `%ProgramData%\BlueRidge\MesZebraBridge\logs\bridge-YYYYMMDD.log`, local
 time with offset, 14 days retained.
@@ -4894,25 +5508,57 @@ that touches port 9100.** Do not start it while another workstream is using 9100
 - Consumes: the release binary from Task 14
 - Produces: the evidence that `MesZebraBridge` reproduces the Python bridge's verified exchanges, which is what lets spec § 2 call the Python script superseded
 
-- [ ] **Step 1: Confirm 9100 is free, then install**
+- [ ] **Step 1: Read the queue name first, the way a commissioner does**
+
+Spec § 7 step 1. Everything after this is checked against what it prints.
+
+```powershell
+Get-Printer | Select-Object Name, DriverName, PortName
+```
+
+Write down the exact name of the queue actually in use. If this host is the one with three candidates, **record all three with their ports** -- that listing is the evidence behind Global Constraint 5 and is worth keeping.
+
+- [ ] **Step 2: Confirm 9100 is free, and that both files are present, then install**
 
 On the printer host, from an **elevated** prompt:
 
 ```powershell
 Get-NetTCPConnection -LocalPort 9100 -ErrorAction SilentlyContinue
+Get-ChildItem . | Select-Object Name
 ```
 
-Expected: nothing. If the Python bridge is still running, stop it first -- and note that with `SO_EXCLUSIVEADDRUSE` our `install` would otherwise fail its start with a bind error, which is the option working as intended.
+Expected: no connection on 9100, and **both** `MesZebraBridge.exe` and `MesZebraBridge.conf` in the folder. If the Python bridge is still running, stop it first -- with `SO_EXCLUSIVEADDRUSE` our `install` would otherwise fail its start with a bind error, which is the option working as intended.
 
 ```powershell
 .\MesZebraBridge.exe install
 ```
 
-Expected, in order: the banner with `account LocalSystem` and the gateway address, `wrote C:\ProgramData\BlueRidge\MesZebraBridge\bridge.conf`, the queue listing with `RESOLVED: bound '<queue>' on port USB00n`, `registered service MesZebraBridge`, `recovery: restart after 5s, 5s, then 60s`, `firewall rule ... -> allow TCP 9100 inbound from <gateway>`, and `service MesZebraBridge is Running`.
+Expected, in order: the header naming the binary, the conf path, `account LocalSystem` and the gateway address; then `queue ...`, `wrote <folder>\MesZebraBridge.conf`, `registered service MesZebraBridge`, `recovery: restart after 5s, 5s, then 60s`, `firewall rule ... -> allow TCP 9100 inbound from 172.17.10.161`, `service MesZebraBridge is Running`, and finally **`BOUND QUEUE: <name>`**.
 
-If the listing shows more than one live candidate, **stop and record what it found** -- that is the real-world calibration of Global Constraint 5's live-port policy, and it is more valuable than working around it.
+**Check `BOUND QUEUE` against the name from Step 1.** That comparison is the whole reason spec § 7 step 4 asks install to report it.
 
-- [ ] **Step 2: Probe locally, consuming no label**
+Two outcomes are also correct and must be recorded rather than worked around:
+
+- **It refuses with `no GatewayAddress`** -- the conf file was not copied beside the exe. Copy it and re-run; do **not** pass `--gateway` to get past it, or the next machine hides the same mistake.
+- **It refuses and lists several Zebra candidates** -- exactly the observed three-candidate case. Re-run naming the one from Step 1:
+
+  ```powershell
+  .\MesZebraBridge.exe install --queue "<exact queue name>"
+  ```
+
+  Confirm nothing was installed by the refused run (`Get-Service MesZebraBridge` should error), then confirm the second run reports the name you gave it.
+
+- [ ] **Step 3: Confirm `status` reads back what install decided**
+
+```powershell
+.\MesZebraBridge.exe status
+```
+
+Expected: `queue <name>`, `binding queue '<name>' from the configuration`, `conf <folder>\MesZebraBridge.conf`, `gateway 172.17.10.161`, `service MesZebraBridge is Running`, and `spooler queue '<name>' ready=true jobs=0`.
+
+This is the one command to run on any machine later that somebody reports as "the printer is broken".
+
+- [ ] **Step 4: Probe locally, consuming no label**
 
 ```powershell
 $c = New-Object Net.Sockets.TcpClient('127.0.0.1', 9100)
@@ -4925,7 +5571,7 @@ $c.Close()
 
 Expected: `OK bridge=1.0.0 queue='ZDesigner GX420d' ready=true jobs=0` -- byte for byte the line `PROTOCOL.md` § Verified records for the Python bridge. **No label prints.**
 
-- [ ] **Step 3: Print one label locally and read the ACK**
+- [ ] **Step 5: Print one label locally and read the ACK**
 
 ```powershell
 $c = New-Object Net.Sockets.TcpClient('127.0.0.1', 9100)
@@ -4948,7 +5594,7 @@ Expected: an entry whose `Id` matches `<n>` and whose `DocumentName` is `MES ZPL
 
 **If `job=0`**, `StartDocPrinterW`'s return is not the job id under this marshaling. Record that and stop: shipping a zero would make every `InterfaceLog` row's `job=` meaningless.
 
-- [ ] **Step 4: Confirm the bare-connect probe still prints nothing**
+- [ ] **Step 6: Confirm the bare-connect probe still prints nothing**
 
 ```powershell
 (Test-NetConnection 127.0.0.1 -Port 9100).TcpTestSucceeded
@@ -4956,12 +5602,14 @@ Expected: an entry whose `Id` matches `<n>` and whose `DocumentName` is `MES ZPL
 
 Expected: `True`, a `connection from 127.0.0.1 (0 bytes)` line in the log, and **no label**. This is the behaviour `BlueRidge.Location.Printer.validateEndpoint` depends on.
 
-- [ ] **Step 5: Close the network gap `PROTOCOL.md` names**
+- [ ] **Step 7: Close the network gap `PROTOCOL.md` names**
 
-From the **Gateway host** (`10.20.11.53`), against the printer host:
+From the **Gateway host whose address the firewall rule admits** -- `172.17.10.161`, the plant Gateway (spec § 10.1) -- against the printer host. Substitute the printer host's real address for `<printer-host>` throughout.
+
+**The rule is scoped, so this only works from that host.** Running it from anywhere else times out, and that is the rule doing its job -- worth trying from a second machine once, so the difference between `Connect timed out` (scoped out) and `Connection refused` (nothing listening) is one you have seen rather than read about.
 
 ```powershell
-$c = New-Object Net.Sockets.TcpClient('10.20.11.157', 9100)
+$c = New-Object Net.Sockets.TcpClient('<printer-host>', 9100)
 $s = $c.GetStream()
 $b = [Text.Encoding]::ASCII.GetBytes('?STATUS')
 $s.Write($b, 0, $b.Length); $s.Flush(); $c.Client.Shutdown('Send')
@@ -4974,13 +5622,13 @@ Expected: the same `OK bridge=1.0.0 queue='...' ready=true jobs=0`. This is the 
 Then from the Designer Script Console on that Gateway:
 
 ```python
-print BlueRidge.Lots.LabelTransport.send("10.20.11.157:9100",
+print BlueRidge.Lots.LabelTransport.send("<printer-host>:9100",
     "^XA^CFA,30^FO50,50^FDGATEWAY TO BRIDGE^FS^XZ")
 ```
 
 Expected: a result carrying the parsed ACK with `job` and `bytes`, a label emerging, and a `Spooled queue='...' job=<n> bytes=<m>` row in `Audit.InterfaceLog` (spec § 6.3). **This step only reads and dispatches -- it changes no schema and no Ignition resource.**
 
-- [ ] **Step 6: Prove the recovery actions, which are the reason for a service at all**
+- [ ] **Step 8: Prove the recovery actions, which are the reason for a service at all**
 
 ```powershell
 Stop-Process -Name MesZebraBridge -Force
@@ -4998,7 +5646,7 @@ Then confirm the bridge still answers:
 
 Expected: `True`, and a fresh banner in today's log from the restart.
 
-- [ ] **Step 7: Confirm the firewall rule is scoped and not duplicated**
+- [ ] **Step 9: Confirm the firewall rule is scoped and not duplicated**
 
 ```powershell
 Get-NetFirewallRule -DisplayName "MES Zebra Bridge (TCP 9100 inbound)" |
@@ -5006,9 +5654,59 @@ Get-NetFirewallRule -DisplayName "MES Zebra Bridge (TCP 9100 inbound)" |
 (Get-NetFirewallRule -DisplayName "MES Zebra Bridge (TCP 9100 inbound)").Count
 ```
 
-Expected: `RemoteAddress` is the Gateway address, not `Any`, and the count is `1`. Then re-run `install` and check the count is still `1` -- spec § 10.1 wants stale rules pruned rather than accumulated.
+Expected: `RemoteAddress` is `172.17.10.161`, not `Any`, and the count is `1`. Then re-run `install` and check the count is still `1` -- spec § 10.1 wants stale rules pruned rather than accumulated, and the Gateway host still carries an orphan rule for `10.20.11.106` as the example of what not to do.
 
-- [ ] **Step 8: Record the observed exchange in `PROTOCOL.md`**
+- [ ] **Step 10: Prove a printer swap, and that re-installing is safe**
+
+The case spec § 7 calls *"the case that needs care"*. Printers get swapped in service, so this has to work without a reinstall and without anyone editing a file by hand.
+
+First a re-install on a machine that is already commissioned:
+
+```powershell
+.\MesZebraBridge.exe install
+```
+
+Expected: `service MesZebraBridge already exists -- reconfiguring it`, the same `BOUND QUEUE: <name>` as before, and `service MesZebraBridge is Running`. It must **not** fail, and it must **not** silently re-detect and move the binding -- the conf already names a queue, so the output says `detection skipped`.
+
+Now the swap itself. Point it at any other local queue (a PDF writer will do -- `?STATUS` prints nothing):
+
+```powershell
+$other = (Get-Printer | Where-Object Name -ne "<the real queue>" | Select-Object -First 1).Name
+.\MesZebraBridge.exe set-queue $other
+```
+
+Expected: `queue <real queue> -> <other>`, `wrote <folder>\MesZebraBridge.conf`, `service MesZebraBridge is Running`, `BOUND QUEUE: <other>`, and the reminder about restarting the workstation session.
+
+Then confirm `?STATUS` reports the **new** binding, which is what makes a swap verifiable in one probe:
+
+```powershell
+$c = New-Object Net.Sockets.TcpClient('127.0.0.1', 9100)
+$s = $c.GetStream()
+$b = [Text.Encoding]::ASCII.GetBytes('?STATUS')
+$s.Write($b, 0, $b.Length); $s.Flush(); $c.Client.Shutdown('Send')
+(New-Object IO.StreamReader($s)).ReadLine()
+$c.Close()
+```
+
+Expected: `OK bridge=1.0.0 queue='<other>' ready=... jobs=0`.
+
+Also confirm the swap did not lose the rest of the conf -- a swap that drops the Gateway address would break the next `install`:
+
+```powershell
+Get-Content .\MesZebraBridge.conf | Select-String "GatewayAddress|Queue|Port"
+```
+
+Expected: `GatewayAddress=172.17.10.161` still present, `Queue=<other>`, `Port=9100`.
+
+Then put it back:
+
+```powershell
+.\MesZebraBridge.exe set-queue "<the real queue>"
+```
+
+Expected: `BOUND QUEUE: <the real queue>`, and a `?STATUS` probe agreeing.
+
+- [ ] **Step 11: Record the observed exchange in `PROTOCOL.md`**
 
 Append to the **existing** `## Verified` section of `zebraPrinter/PROTOCOL.md` -- adding evidence, changing no normative text:
 
@@ -5037,7 +5735,7 @@ Also strike the now-closed bullet from `### Not yet verified`, leaving the
 *"That a label physically emerges"* caveat only if it still holds -- it does not,
 if Step 3 produced a label, so record that instead of carrying a stale caveat.
 
-- [ ] **Step 9: Record the verified host in `RELEASE.md`**
+- [ ] **Step 12: Record the verified host in `RELEASE.md`**
 
 Add to the `## 1.0.0` table in `zebraPrinter/MesZebraBridge/RELEASE.md`:
 
@@ -5045,7 +5743,7 @@ Add to the `## 1.0.0` table in `zebraPrinter/MesZebraBridge/RELEASE.md`:
 | Verified | <date> on `<printer host>` / `<queue>` / `<port>`, driver `<driver>`; Gateway `<gateway host>` end to end |
 ```
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 13: Commit**
 
 ```bash
 git add zebraPrinter/PROTOCOL.md zebraPrinter/MesZebraBridge/RELEASE.md
@@ -5060,5 +5758,7 @@ git commit -m "docs(bridge): MesZebraBridge reproduces the verified exchanges, o
 - **It does not touch `LabelTransport`, the Config Tool, the database, or any Ignition resource.** The ACK read and the resolve-stage logging are the sibling plan `docs/superpowers/plans/2026-09-29-labeltransport-ack-and-dispatch-logging.md`; `validateEndpoint`'s `?STATUS` branch and the `UsbBridge` `ConnectionKind` (spec § 8.1) are a third workstream.
 - **It does not delete `zebraPrinter/usb_tcp_bridge.py`.** Spec § 2 supersedes it *as a deployment artifact* while keeping it as the bench tool and the reference implementation of the spooler call, and `zebraPrinter/tests/test_bridge_protocol.py` remains the other half of the cross-implementation guard.
 - **It does not implement a heartbeat or a status board** (spec § 11.2) or **multiple printers behind one bridge** (spec § 11.1). `MA2-59B-AOUT1`'s ten printer rows are the case that would force the endpoint grammar to grow a queue selector; revisit before that station is commissioned.
+- **It does not detect the queue at runtime, and it does not reload the conf while running.** The queue name is explicit configuration (Global Constraint 5); `install` and `set-queue` restart the service, and that restart *is* the reload. A file watcher would be a second, quieter path to the same state.
+- **It does not restart the workstation session after a printer swap.** Spec § 7 says a swap on a terminal already in service needs that too, because `session.custom.printer` resolved once at the session's startup -- the Config Tool test will pass against the database while the live session keeps printing to the old endpoint. `set-queue` prints the reminder; doing it is Config-Tool-side and outside this plan.
 - **It does not claim a label printed.** `OK` means the named Windows queue took the bytes as that job, which is the strongest honest claim available (spec § 6.4).
 - **It does not resolve spec § 12.2** (the reprint toast reporting success on a failed send) **or § 12.5** (the created-but-not-yet-dispatched silent window). Both are Gateway-side and were raised, not decided.
