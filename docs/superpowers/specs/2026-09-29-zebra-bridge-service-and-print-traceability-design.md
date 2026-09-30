@@ -258,13 +258,17 @@ is set one step before the things that depend on it.
 5. **Printer row** (section 8) -- under that terminal, `ConnectionKind = UsbBridge`.
    **No endpoint is entered**; it derives from the terminal IP set in step 2.
 6. **Verify** (section 9) -- `?STATUS` probe, then one real label.
-7. **Restart the plant-floor session on that terminal.** Not optional, and easy to skip because
-   step 6 has just gone green. `session.custom.printer` resolves **once at session startup**
-   (section 8), so an operator session opened before step 5 still holds no printer. The Config
-   Tool reads the database; the plant floor reads its cached session value. Skipping this looks
-   like a successful commissioning that does not print.
+7. **Launch the workstation.** The plant-floor session is started only once configuration is
+   complete, so it resolves the printer correctly on its first startup. There is no session
+   running during steps 1-6 and therefore no cache to invalidate.
 
 Steps 1, 3, 4 and 7 happen at the machine; 2, 5 and 6 from the Config Tool -- all in one visit.
+
+**Re-commissioning is the case that needs care, not first commissioning.** Swapping a printer on
+a terminal that is already in service (section 3, `set-queue`) happens with an operator session
+live, and `session.custom.printer` resolved once at *its* startup (section 8). The Config Tool
+test will pass against the database while that session keeps printing to the old endpoint, so a
+swap ends with restarting the workstation session, where a first install does not.
 
 Because the address is entered **once** (on the terminal, never again on the printer), the
 per-terminal cost is dominated by the driver install, which is the floor for a USB printer and
@@ -353,11 +357,12 @@ its line is walked. The exposure is a PC whose address changes *after* commissio
 endpoint derives from the recorded value, so the two silently diverge and it presents as a printer
 fault. Re-running section 7 steps 2 and 6 is the repair, and `?STATUS` names it in one probe.
 
-**Nothing may be compiled into the bridge binary.** The Gateway address for the firewall rule
-lives in the conf file shipped beside the executable -- authored once for all 54 installs, never
-per machine, and never baked in. A hardcoded address is invisible when it is wrong: an earlier
-draft of the C# plan carried `10.20.11.53`, the Gateway host's address on 2026-09-29, which was
-already stale hours later when that machine moved networks.
+**Nothing may be compiled into the bridge binary.** The Gateway address for the firewall rule is
+**`172.17.10.161`**, the plant Ignition Gateway (confirmed 2026-09-30). It lives in the conf file
+shipped beside the executable -- authored once for all 54 installs, never typed per machine, and
+never baked in. A hardcoded address is invisible when it is wrong: an earlier draft of the C# plan
+carried `10.20.11.53`, which was the *development* Gateway on a laptop, correct on 2026-09-29 and
+stale that same evening when the machine moved networks.
 
 Stale source-scoped rules should be pruned rather than accumulated -- the Gateway host still
 carries an inbound rule for `10.20.11.106`, a printer host's former address.
