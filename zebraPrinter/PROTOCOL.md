@@ -37,11 +37,34 @@ a quoted value is doubled (`Bob's` becomes `'Bob''s'`).
 ```
 -> ^XA...^XZ            then shutdown(SHUT_WR)
 <- OK queue='Zebra GX420d (RAW)' job=41 bytes=1264
-<- ERR queue not found: 'ZDesigner GX420d'; visible: Zebra GX420d (RAW)
+<- ERR [WinError 1801] The printer name is invalid.
 ```
 
 `job` is the Windows spooler job id. `bytes` is the byte count handed to the
 spooler.
+
+Everything after `ERR ` is **free text**, collapsed to one line. The minimum is
+the underlying error, exactly as the reference implementation emits it above --
+that string was observed on 2026-09-30 and is what `Audit.InterfaceLog` records
+as `QueueRejected`.
+
+An implementation **SHOULD** do better for an unknown queue by naming what it
+found, because the bare Win32 message says the name is wrong without saying what
+would be right:
+
+```
+<- ERR queue not found: 'ZDesigner GX420d'; visible: Zebra GX420d (RAW), Microsoft Print to PDF
+```
+
+This is a SHOULD, not a MUST: the Python reference bridge takes its queue name
+as an argument and does not enumerate, so it emits the minimum. `MesZebraBridge`
+already enumerates local queues for auto-detection and is expected to emit the
+richer form. Both are conformant -- a client parses `ERR ` plus free text and
+must not depend on either wording.
+
+*(An earlier revision of this file showed only the richer form as though it were
+what the reference implementation produced. It was not, and no implementation
+emitted it. Corrected 2026-09-30.)*
 
 `OK` means the named Windows queue accepted these bytes as that job. It does
 **not** mean a label physically printed -- that is not knowable from here and
@@ -77,6 +100,11 @@ Observed 2026-09-29 against the real Windows spooler and the real Zebra driver
     ?STATUS  -> OK bridge=1.0.0 queue='ZDesigner GX420d' ready=true jobs=0
     ^XA...   -> OK queue='ZDesigner GX420d' job=15 bytes=38
     (empty)  -> no reply
+
+And with the bridge bound to a queue that does not exist on the host, which is
+what reaches `Audit.InterfaceLog` as `QueueRejected` (rows 32-34, 2026-09-30):
+
+    ^XA...   -> ERR [WinError 1801] The printer name is invalid.
 
 The job id is real, not a placeholder: `Get-PrintJob` independently reported
 `Id 15, MES ZPL, 38 bytes` for that exchange. `StartDocPrinterW`'s return
