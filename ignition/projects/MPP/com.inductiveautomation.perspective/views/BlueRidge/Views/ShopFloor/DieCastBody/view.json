@@ -399,7 +399,7 @@
               "name": "PausedIndicator"
             },
             "position": {
-              "display": false
+              "shrink": 0
             },
             "propConfig": {
               "props.params.locationId": {
