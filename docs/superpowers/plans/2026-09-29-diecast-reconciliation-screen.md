@@ -1704,7 +1704,9 @@ attributed to the **supervisor** rather than to whoever was PIN-signed-in. Both 
 
 - [ ] **Step 3: Confirm what was written**
 
-For the reconciliation id the result panel names, check `Workorder.DieCastShiftReconciliation`, `DieCastReconciliationMove`, the `DieCastContribution` rows' `ShiftAttributionSourceId` = `Reconciled`, the anchor with reason `ShiftReconciliation`, and `Audit.ConfigLog`.
+For the reconciliation id the result panel names, check `Workorder.DieCastShiftReconciliation`, `DieCastReconciliationMove`, the `DieCastContribution` rows' `ShiftAttributionSourceId` = `Reconciled`, the anchor with reason `ShiftReconciliation`, and **`Audit.OperationLog`** — *not*
+`Audit.ConfigLog`. The Save calls `Audit_LogOperation`: this is a production event, and
+`ConfigLog` sits on a sliding-retention `TRUNCATE` window for configuration changes.
 
 - [ ] **Step 4: Record the outcome in `PROJECT_STATUS.md`**
 
