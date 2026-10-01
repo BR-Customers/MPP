@@ -1,0 +1,179 @@
+
+=== LAD 2 MAIN (32 rungs incl. END)
+  000: XIC B3:0/1  |  XIC B3:0/0  |  XIO B3:0/2  |  XIC I:0.1/1  |  XIC I:0.1/2  |  XIC I:0.1/3  |  OTE B3:0/0  |  OTE O:0.0/0  |  XIO O:0.0/9  |  OTE O:0.0/11
+         ; B3:0/1 = START FROM HMI
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:0/2 = STOP FROM HMI
+  001: XIC B3:0/0  |  XIO B3:2/0  |  XIO B3:2/1  |  XIO B3:1/15  |  XIC B3:1/15  |  XIC B3:1/0  |  XIC B3:0/15  |  OTE O:0.0/5
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:2/0 = CAM PASSED GO TO RIGHT
+         ; B3:2/1 = OIL PASSED GO TO LEFT
+         ; B3:1/15 = MANUAL MODE FROM HMI
+         ; B3:1/0 = RAISE XFER FROM HMI
+         ; B3:0/15 = RESET ALL FROM HMI
+  002: XIO I:0.0/0  |  TON T4:1 base 0.01 pre 100
+         ; T4:1 = DWELL FOR INSPECTION TIMER
+  003: XIC I:0.0/6  |  TON T4:5 base 0.01 pre 250  |  XIC I:0.0/7  |  TON T4:6 base 0.01 pre 250
+         ; T4:5 = OIL SIDE CLEAR DWELL TIMER
+         ; T4:6 = CAM SIDE CLEAR DWELL TIMER
+  004: XIC I:0.0/8  |  XIO I:0.0/0  |  XIC T4:1/DN  |  XIC T4:5/DN  |  XIC T4:6/DN  |  XIO B3:1/15  |  ONS B3:0/3  |  OTL B3:0/5
+         ; T4:1 = DWELL FOR INSPECTION TIMER
+         ; T4:5 = OIL SIDE CLEAR DWELL TIMER
+         ; T4:6 = CAM SIDE CLEAR DWELL TIMER
+         ; B3:1/15 = MANUAL MODE FROM HMI
+         ; B3:0/3 = ONE-SHOT
+         ; B3:0/5 = START VISION INSPECTION
+  005: XIC B3:0/0  |  XIC B3:0/5  |  TON T4:2 base 0.01 pre 20
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:0/5 = START VISION INSPECTION
+         ; T4:2 = TRIGGER VISION SYSTEM TIMER
+  006: XIC T4:2/TT  |  OTE O:0.0/2
+         ; T4:2 = TRIGGER VISION SYSTEM TIMER
+  007: XIC T4:2/DN  |  OTL B3:0/6  |  OTU B3:0/5
+         ; T4:2 = TRIGGER VISION SYSTEM TIMER
+         ; B3:0/6 = CHECK VISION RESULTS
+         ; B3:0/5 = START VISION INSPECTION
+  008: XIC B3:2/0  |  MOV 1 -> N7:0  |  TON T4:10 base 0.01 pre 100  |  XIC T4:10/DN  |  MOV 1 -> N7:2  |  TON T4:11 base 0.01 pre 200  |  XIC T4:11/DN  |  MOV 1 -> N7:30
+         ; B3:2/0 = CAM PASSED GO TO RIGHT
+         ; N7:0 = TRAY LOCK
+         ; T4:10 = DELAY FOR TRAY LOCK
+         ; N7:2 = 1=CAM 2=OIL
+         ; T4:11 = DELAY FOR TRAY
+         ; N7:30 = INSPECTION COMPLETE TO FLEXWARE
+  009: XIC B3:2/1  |  MOV 1 -> N7:0  |  TON T4:14 base 0.01 pre 100  |  XIC T4:14/DN  |  MOV 2 -> N7:2  |  TON T4:15 base 0.01 pre 200  |  XIC T4:15/DN  |  MOV 1 -> N7:30
+         ; B3:2/1 = OIL PASSED GO TO LEFT
+         ; N7:0 = TRAY LOCK
+         ; T4:14 = DELAY FOR TRAY LOCK
+         ; N7:2 = 1=CAM 2=OIL
+         ; T4:15 = DELAY FOR TRAY
+         ; N7:30 = INSPECTION COMPLETE TO FLEXWARE
+  010: XIC B3:0/0  |  XIC B3:0/6  |  XIC I:0.0/1  |  XIO I:0.0/2  |  XIO I:0.0/3  |  XIO I:0.0/4  |  XIO I:0.0/5  |  XIO B3:2/1  |  XIO B3:2/2  |  OTL B3:2/1  |  XIC I:0.0/3  |  XIO I:0.0/1  |  XIO I:0.0/2  |  XIO I:0.0/4  |  XIO I:0.0/5  |  XIO B3:2/0  |  XIO B3:2/2  |  OTL B3:2/0  |  XIC I:0.0/2  |  XIC I:0.0/4  |  XIC I:0.0/5  |  OTL B3:2/2  |  OTU B3:2/0  |  OTU B3:2/1
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:0/6 = CHECK VISION RESULTS
+         ; B3:2/1 = OIL PASSED GO TO LEFT
+         ; B3:2/2 = PART FAILED OR UNIDENTIFIED
+         ; B3:2/0 = CAM PASSED GO TO RIGHT
+  011: XIC I:0.0/0  |  OTU B3:0/6  |  OTU B3:2/2
+         ; B3:0/6 = CHECK VISION RESULTS
+         ; B3:2/2 = PART FAILED OR UNIDENTIFIED
+  012: XIC B3:0/0  |  XIO B3:1/15  |  XIC B3:2/0  |  XIC B3:2/1  |  XIC B3:1/15  |  XIC B3:1/1  |  OTE O:0.0/4
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:1/15 = MANUAL MODE FROM HMI
+         ; B3:2/0 = CAM PASSED GO TO RIGHT
+         ; B3:2/1 = OIL PASSED GO TO LEFT
+         ; B3:1/1 = LOWER XFER FROM HMI
+  013: XIC B3:0/0  |  XIO B3:1/15  |  XIO O:0.0/5  |  XIC I:0.0/9  |  XIC B3:1/15  |  XIO T4:4/DN  |  XIC B3:2/0  |  XIO B3:1/15  |  XIC B3:1/3  |  XIC I:0.0/7  |  XIO O:0.0/6  |  OTE O:0.0/7  |  XIO T4:7/DN  |  XIC B3:2/1  |  XIO B3:1/15  |  XIC B3:1/2  |  XIC I:0.0/6  |  XIO O:0.0/7  |  OTE O:0.0/6
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:1/15 = MANUAL MODE FROM HMI
+         ; T4:4 = RIGHT SIDE PE BLOCKED DWELL TIMER
+         ; B3:2/0 = CAM PASSED GO TO RIGHT
+         ; B3:1/3 = GOTO RIGHT SIDE FROM HMI
+         ; T4:7 = LEFT SIDE PE BLOCKED DWELL TIMER
+         ; B3:2/1 = OIL PASSED GO TO LEFT
+         ; B3:1/2 = GOTO LEFT SIDE FROM HMI
+  014: XIO B3:1/15  |  XIC O:0.0/6  |  XIC O:0.0/7  |  OTE B3:0/14
+         ; B3:1/15 = MANUAL MODE FROM HMI
+         ; B3:0/14 = LIFE COUNTER GLOBAL BIT
+  015: XIC B3:0/14  |  ONS B3:0/4  |  ADD 1 + L9:10 -> L9:10
+         ; B3:0/14 = LIFE COUNTER GLOBAL BIT
+         ; B3:0/4 = ONE-SHOT
+         ; L9:10 = LIFE COUNTER
+  016: XIO I:0.0/7  |  TON T4:4 base 0.01 pre 100
+         ; T4:4 = RIGHT SIDE PE BLOCKED DWELL TIMER
+  017: XIC T4:5/TT  |  XIC T4:6/TT  |  ONS B3:1/4  |  MOV 0 -> N7:0  |  MOV 0 -> N7:2  |  MOV 0 -> N7:30
+         ; T4:5 = OIL SIDE CLEAR DWELL TIMER
+         ; T4:6 = CAM SIDE CLEAR DWELL TIMER
+         ; B3:1/4 = ONE-SHOT
+         ; N7:0 = TRAY LOCK
+         ; N7:2 = 1=CAM 2=OIL
+         ; N7:30 = INSPECTION COMPLETE TO FLEXWARE
+  018: XIC B3:2/0  |  XIC T4:4/DN  |  ONS B3:0/11  |  OTU B3:2/0
+         ; B3:2/0 = CAM PASSED GO TO RIGHT
+         ; T4:4 = RIGHT SIDE PE BLOCKED DWELL TIMER
+         ; B3:0/11 = ONE-SHOT
+  019: XIO I:0.0/6  |  TON T4:7 base 0.01 pre 100
+         ; T4:7 = LEFT SIDE PE BLOCKED DWELL TIMER
+  020: XIC B3:2/1  |  XIC T4:7/DN  |  ONS B3:0/12  |  OTU B3:2/1
+         ; B3:2/1 = OIL PASSED GO TO LEFT
+         ; T4:7 = LEFT SIDE PE BLOCKED DWELL TIMER
+         ; B3:0/12 = ONE-SHOT
+  021: XIC B3:2/0  |  ONS B3:0/7  |  ADD L9:5 + 1 -> L9:5
+         ; B3:2/0 = CAM PASSED GO TO RIGHT
+         ; B3:0/7 = ONE-SHOT
+         ; L9:5 = GOOD CAM TRAYS
+  022: XIC B3:2/1  |  ONS B3:0/8  |  ADD L9:0 + 1 -> L9:0
+         ; B3:2/1 = OIL PASSED GO TO LEFT
+         ; B3:0/8 = ONE-SHOT
+         ; L9:0 = GOOD OIL TRAYS
+  023: XIC I:0.0/2  |  ONS B3:0/9  |  ADD L9:1 + 1 -> L9:1
+         ; B3:0/9 = ONE-SHOT
+         ; L9:1 = BAD OIL TRAYS
+  024: XIC I:0.0/4  |  ONS B3:0/10  |  ADD L9:6 + 1 -> L9:6
+         ; B3:0/10 = ONE-SHOT
+         ; L9:6 = BAD CAM TRAYS
+  025: XIC B3:0/0  |  XIC B3:2/2  |  OTE O:0.0/9  |  XIC S:4/14  |  OTE O:0.0/8
+         ; B3:0/0 = SYSTEM STARTED
+         ; B3:2/2 = PART FAILED OR UNIDENTIFIED
+  026: XIC B3:7/0  |  OTL B3:7/1  |  XIC B3:7/1  |  TON T4:0 base 0.01 pre 150  |  XIC T4:0/DN  |  OTU B3:7/1
+         ; B3:7/0 = RESET COUNTS FROM HMI
+         ; B3:7/1 = COUNTS RESET TO HMI
+         ; T4:0 = COUNTER RESET TIMER
+  027: ADD L9:0 + L9:5 -> L9:2
+         ; L9:0 = GOOD OIL TRAYS
+         ; L9:5 = GOOD CAM TRAYS
+         ; L9:2 = TOTAL GOOD TRAYS
+  028: XIC B3:7/1  |  MOV 0 -> L9:0  |  MOV 0 -> L9:1  |  MOV 0 -> L9:2  |  MOV 0 -> L9:5  |  MOV 0 -> L9:6
+         ; B3:7/1 = COUNTS RESET TO HMI
+         ; L9:0 = GOOD OIL TRAYS
+         ; L9:1 = BAD OIL TRAYS
+         ; L9:2 = TOTAL GOOD TRAYS
+         ; L9:5 = GOOD CAM TRAYS
+         ; L9:6 = BAD CAM TRAYS
+  029: XIC B3:0/15  |  OTU B3:0/5  |  OTU B3:0/6  |  OTU B3:2/0  |  OTU B3:2/1  |  OTU B3:2/2  |  MOV 0 -> N7:0  |  MOV 0 -> N7:2  |  MOV 0 -> N7:30
+         ; B3:0/15 = RESET ALL FROM HMI
+         ; B3:0/5 = START VISION INSPECTION
+         ; B3:0/6 = CHECK VISION RESULTS
+         ; B3:2/0 = CAM PASSED GO TO RIGHT
+         ; B3:2/1 = OIL PASSED GO TO LEFT
+         ; B3:2/2 = PART FAILED OR UNIDENTIFIED
+         ; N7:0 = TRAY LOCK
+         ; N7:2 = 1=CAM 2=OIL
+         ; N7:30 = INSPECTION COMPLETE TO FLEXWARE
+  030: JSR U:3
+
+=== LAD 3 HOST (11 rungs incl. END)
+  000: XIC B3:2/0  |  ONS B3:20/3  |  CTU C5:0 pre 26
+         ; B3:2/0 = CAM PASSED GO TO RIGHT
+         ; B3:20/3 = ONE-SHOT
+         ; C5:0 = GOOD TRAY COUNTER FOR CAM
+  001: XIC C5:0/DN  |  ONS B3:20/4  |  OTL B3:20/0
+         ; C5:0 = GOOD TRAY COUNTER FOR CAM
+         ; B3:20/4 = ONE-SHOT
+         ; B3:20/0 = SEND MESSAGE TO OFFLINE COMPUTER
+  002: XIC B3:20/0  |  ONS B3:20/10  |  ARL 2 ST10:0 R6:1 70 66 00h  |  OTL B3:5/12  |  OTU B3:20/0  |  RES C5:0
+         ; B3:20/0 = SEND MESSAGE TO OFFLINE COMPUTER
+         ; B3:20/10 = ONE-SHOT
+         ; B3:5/12 = CLEAR PORT LATCH
+         ; C5:0 = GOOD TRAY COUNTER FOR CAM
+  003: XIC B3:5/12  |  TON T4:28 base 0.01 pre 200  |  XIC T4:28/DN  |  OTL B3:5/4  |  OTU B3:5/12
+         ; B3:5/12 = CLEAR PORT LATCH
+         ; T4:28 = RESET PORT DATA AFTER SEND
+         ; B3:5/4 = CLEAR PORT
+  004: XIC B3:5/4  |  ACL 2 No Yes  |  OTU B3:5/4
+         ; B3:5/4 = CLEAR PORT
+  005: XIC B3:2/1  |  ONS B3:20/8  |  CTU C5:1 pre 13
+         ; B3:2/1 = OIL PASSED GO TO LEFT
+         ; C5:1 = GOOD TRAY COUNTER FOR OIL
+  006: XIC C5:1/DN  |  ONS B3:20/9  |  OTL B3:20/1
+         ; C5:1 = GOOD TRAY COUNTER FOR OIL
+         ; B3:20/1 = SEND MESSAGE TO OFFLINE COMPUTER OIL
+  007: XIC B3:20/1  |  ONS B3:20/11  |  ARL 0 ST10:0 R6:2 70 66 00h  |  OTL B3:5/13  |  OTU B3:20/1  |  RES C5:1
+         ; B3:20/1 = SEND MESSAGE TO OFFLINE COMPUTER OIL
+         ; B3:5/13 = CLEAR PORT LATCH
+         ; C5:1 = GOOD TRAY COUNTER FOR OIL
+  008: XIC B3:5/13  |  TON T4:29 base 0.01 pre 200  |  XIC T4:29/DN  |  OTL B3:5/5  |  OTU B3:5/13
+         ; B3:5/13 = CLEAR PORT LATCH
+         ; T4:29 = RESET PORT DATA AFTER SEND
+         ; B3:5/5 = CLEAR PORT
+  009: XIC B3:5/5  |  ACL 0 Yes Yes  |  OTU B3:5/5
+         ; B3:5/5 = CLEAR PORT
