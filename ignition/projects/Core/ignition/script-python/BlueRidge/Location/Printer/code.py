@@ -133,6 +133,32 @@ def _describeBridgeResult(host, port, probe):
                            "(%s job(s) queued). Check the queue exists on that PC and is "
                            "online." % (probe.get("bridge") or "?", target,
                                         probe.get("queue") or "(none)", probe.get("jobs"))}
+    # ready=true means the printer status bits are clear. It does NOT mean a
+    # device is attached: a Windows queue outlives its printer, keeps accepting
+    # jobs, and sets no error / offline / paused / not-available bit while doing
+    # it. On 2026-09-30 two labels spooled cleanly, PrintedAt was set, the
+    # InterfaceLog was clean, and nothing printed -- the Zebra was unplugged, and
+    # the ONLY signal was jobs climbing and never falling.
+    #
+    # A healthy queue drains in milliseconds (verified the same evening: jobs=0
+    # before and after job 30), so a non-zero count at probe time is worth
+    # surfacing. This is a commissioning check, so a false positive on a
+    # genuinely busy printer costs a second look and a false negative costs an
+    # operator holding a basket with no label.
+    jobs = probe.get("jobs")
+    try:
+        queued = int(jobs or 0)
+    except (TypeError, ValueError):
+        queued = 0
+    if queued > 0:
+        return {"status": False, "level": "warning", "title": "Queue not draining",
+                "message": "Bridge %s at %s is bound to queue '%s' and the queue reports no "
+                           "fault -- but %d job(s) are already waiting in it. A queue that "
+                           "does not drain usually means the printer is unplugged or powered "
+                           "off; Windows reports the queue healthy either way. Check the "
+                           "printer, then probe again: a working queue reads 0."
+                           % (probe.get("bridge") or "?", target,
+                              probe.get("queue") or "(none)", queued)}
     return {"status": True, "level": "success", "title": "Printer ready",
             "message": "Bridge %s at %s, bound to queue '%s', ready, %s job(s) queued. "
                        "No label was consumed." % (probe.get("bridge") or "?", target,

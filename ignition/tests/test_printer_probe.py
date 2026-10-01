@@ -118,6 +118,40 @@ def test_a_bound_but_not_ready_queue_says_which_queue(helpers):
     assert "3" in got["message"]
 
 
+def test_a_queue_with_a_backlog_is_not_reported_as_simply_ready(helpers):
+    """2026-09-30: two labels spooled cleanly, ShippingLabel.PrintedAt set,
+       InterfaceLog clean -- and nothing printed, because the Zebra was
+       unplugged. A Windows queue outlives its device: it keeps accepting jobs
+       and sets no error, offline or paused bit, so ready stayed true while
+       jobs climbed. ready is accurate about the status bits and useless for
+       the question being asked, so jobs is read alongside it."""
+    got = helpers["_describeBridgeResult"]("172.17.20.5", 9100, _probe(jobs=2))
+    assert got["status"] is False
+    assert got["level"] == "warning"
+    assert "2 job" in got["message"]
+    assert "unplugged" in got["message"] or "powered off" in got["message"]
+    # Still names the binding -- the bridge and queue are fine, the device is not.
+    assert "Zebra GX420d (RAW)" in got["message"]
+
+
+def test_an_empty_queue_is_still_a_clean_pass(helpers):
+    """A healthy queue drains in milliseconds -- verified 2026-09-30, job 30,
+       jobs=0 before and after. So the backlog check must not fire on zero."""
+    got = helpers["_describeBridgeResult"]("172.17.20.5", 9100, _probe(jobs=0))
+    assert got["status"] is True
+    assert got["level"] == "success"
+
+
+def test_a_not_ready_queue_still_wins_over_the_backlog_warning(helpers):
+    """An explicit NOT-ready queue is a harder fault than a backlog and must
+       keep its own error rather than being softened to a warning."""
+    got = helpers["_describeBridgeResult"]("172.17.20.5", 9100,
+                                           _probe(ready=False, jobs=2))
+    assert got["status"] is False
+    assert got["level"] == "error"
+    assert got["title"] == "Queue not ready"
+
+
 def test_a_derived_endpoint_says_where_the_host_came_from(helpers):
     """Without this the message names an address that appears nowhere on the
        printer row, because a UsbBridge printer stores no endpoint at all."""
