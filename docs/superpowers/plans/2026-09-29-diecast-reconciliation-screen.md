@@ -1410,7 +1410,26 @@ git commit -m "feat(ignition): totals, rejects, and the pre-flight blocking chec
 
 Grouped by part in the sheet's order (part name, Macola #, sub-total). Per row: LTT, Cav, **Actual qty** (editable, `deferUpdates: false`), Recorded, LOT state, Count before → after.
 
-A row whose `IsLocked` is true shows `LockReason` and its count is **not** editable — its production is still recorded, its count stands.
+A row whose `IsLocked` is true shows `LockReason`, and its **Actual stays EDITABLE** — its
+production is still recorded in full; only its *count* is left alone.
+
+> **Do not disable that field.** An earlier draft of this plan said the count was "not editable",
+> and that was wrong. Spec §3.3 reads *"Counted downstream — Left alone. … The production record
+> is still written in full"*, and the Save's step (c) loops `@Plan WHERE Gap <> 0` over **every**
+> row, passing `@ApplyToLot = 0` for a locked one — writing the production and skipping the count.
+> `@PlanStand = COUNT(*) WHERE IsLocked = 1 AND Gap <> 0` exists *only* to report locked LOTs
+> that carry a gap.
+>
+> Disabling it breaks two things. The confirmation's "Counts left standing" group becomes dead
+> code, because `countsStanding` can never be non-zero. And an **under-recorded locked LOT walls
+> the sheet**: `lotSum` is pinned to that LOT's `Recorded` while `expected` reflects the real
+> production, so the mismatch blocker fires and the team lead cannot clear it — the only way to
+> save a correctly-read press sheet becomes putting the missing pieces on a different LOT, which
+> is a falsified genealogy row as the escape from a hard block. Dev has zero locked LOTs, so
+> nothing catches this before prod, where a shift a few days old has LOTs through Trim already.
+>
+> The row must still say plainly that this LOT's count will not change even though its production
+> is recorded.
 
 - [ ] **Step 2: Build the entry bar**
 
