@@ -67,7 +67,11 @@ def sweepTick():
             BlueRidge.Common.Util.log(msg, level="warn")
             _pushToAllSessions({"level": "critical", "strandedCount": len(stranded), "message": msg})
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("sweepTick failed: %s" % str(e), level="debug")
+        # warn, not debug. Both ticks swallowed their own failures at debug,
+        # which meant a timer that was doing nothing at all looked identical to
+        # a timer with nothing to do. That is what made the 2026-10-01
+        # broadcastPageMessage defect take an afternoon to see.
+        BlueRidge.Common.Util.log("sweepTick failed: %s" % str(e), level="warn")
 
 
 def broadcastTick():
@@ -89,7 +93,7 @@ def broadcastTick():
                 "level":              "error",
             })
     except (Exception, java.lang.Exception) as e:
-        BlueRidge.Common.Util.log("broadcastTick failed: %s" % str(e), level="debug")
+        BlueRidge.Common.Util.log("broadcastTick failed: %s" % str(e), level="warn")
 
 
 # ---------------------------------------------------------------------------

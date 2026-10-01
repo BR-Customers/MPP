@@ -137,9 +137,9 @@
       "messageHandlers": [
         {
           "messageType": "print-failure-alert",
-          "pageScope": false,
+          "pageScope": true,
           "script": "\tr = BlueRidge.Lots.PrintFailureGateway.handleAlert(self.session, payload, self.view.custom.seen)\n\tif r:\n\t\tself.view.custom.seen = r[\"seen\"]\n\t\tself.view.custom.alert = r[\"alert\"]",
-          "sessionScope": true,
+          "sessionScope": false,
           "viewScope": false
         }
       ]

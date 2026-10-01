@@ -146,9 +146,19 @@ def broadcastPageMessage(messageType, payload):
             sid = s["id"]
             if not _looksLikeUuid(sid):
                 continue
+            # NO UUID GUARD ON pid -- a Perspective pageId is a SHORT HEX string
+            # ('3464d0e5', '562e972'), never a UUID, so guarding it here rejected
+            # every page of every real session and this function delivered
+            # NOTHING from 2026-08-20 until 2026-10-01. Proven by A/B on the live
+            # Dev gateway: with the guard, four broadcastTick ticks produced zero
+            # handler calls; without it, every tick was delivered and the banner
+            # and modal appeared. The sessionId guard above is the one that
+            # matters and is kept -- the exception that prompted both guards was
+            # 'Invalid UUID string: B97CC435', which is a SESSION id, from the
+            # same pseudo-session whose pageIds are 'session-props' and a view
+            # path. That entry is already excluded by the sid guard, so the pid
+            # guard bought nothing and cost every delivery.
             for pid in (s["pageIds"] or []):
-                if not _looksLikeUuid(pid):
-                    continue
                 try:
                     system.perspective.sendMessage(
                         messageType, payload=payload, scope="page",
