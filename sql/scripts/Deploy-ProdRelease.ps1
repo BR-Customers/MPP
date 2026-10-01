@@ -121,7 +121,13 @@ function Q([string]$sql, [string]$db = "") {
         return ,@($dt.Rows)
     } finally { if ($db -ne "") { $c.Close() } }
 }
-function S([string]$sql) { $r = Q $sql; if ($r.Count -eq 0) { return $null }; return $r[0][0] }
+# A SQL NULL arrives as [System.DBNull]::Value, and [bool][DBNull]::Value is $TRUE in
+# PowerShell -- so every `[bool](S "SELECT COL_LENGTH(...)")` existence probe read as
+# "the column is there" when it was not. Normalising to $null here fixes the probe at
+# every call site, including the 0076 gates that have carried the same latent inversion
+# since they were written (it never fired: 0076 only runs on a target where those
+# columns already exist). Found 2026-10-01 writing the 0098 gate, where it DID fire.
+function S([string]$sql) { $r = Q $sql; if ($r.Count -eq 0) { return $null }; $v = $r[0][0]; if ($v -is [System.DBNull]) { return $null }; return $v }
 function Table($rows, [string[]]$cols) {
     if (-not $rows -or $rows.Count -eq 0) { Log "    (none)" "DarkGray"; return }
     $w = @{}; foreach ($c in $cols) { $w[$c] = $c.Length }
@@ -630,11 +636,24 @@ if (& $has "0098_rejectevent_quantity_nonneg") {
     # window is gone. The migration's own failure is recoverable -- the cost is
     # the window, which is why this is worth knowing an hour beforehand rather
     # than at 06:10.
-    $neg = S "SELECT COUNT(*) FROM Workorder.RejectEvent WHERE Quantity < 0"
+    # The constraint is (Quantity >= 0 OR ReconciliationId IS NOT NULL), so the
+    # exact predicate needs ReconciliationId -- which 0097 ADDS, in this same
+    # release. At preview time against a target below 0097 the column does not
+    # exist and naming it is a hard error, so the predicate is chosen from the
+    # target's actual shape. On a pre-0097 target every surviving row gets
+    # ReconciliationId NULL from 0097's nullable add, so bare "Quantity < 0" IS
+    # the exact predicate there.
+    $haveRecId = [bool](S "SELECT COL_LENGTH('Workorder.RejectEvent','ReconciliationId')")
+    $negWhere  = if ($haveRecId) { "Quantity < 0 AND ReconciliationId IS NULL" } else { "Quantity < 0" }
+    $neg = S "SELECT COUNT(*) FROM Workorder.RejectEvent WHERE $negWhere"
     if ($neg -gt 0) {
-        $negDetail = Q "SELECT TOP 5 Id, Quantity, RejectedAt FROM Workorder.RejectEvent WHERE Quantity < 0 ORDER BY Id"
+        $negDetail = Q "SELECT TOP 20 Id, LotId, ToolId, ShiftId, DefectCodeId, Quantity, Remarks, RecordedAt FROM Workorder.RejectEvent WHERE $negWhere ORDER BY Id"
         Save-Csv $negDetail "rejectevent_negative_quantity.csv"
-        Finding "BLOCK" "0098" "$neg Workorder.RejectEvent row(s) have Quantity < 0 -- the WITH CHECK constraint will fail the ALTER and roll the whole release back. Correct them through Workorder.RejectEvent_Record's reversal path first; the first 5 are in rejectevent_negative_quantity.csv."
+        # NOT "reverse them through RejectEvent_Record" -- that proc refuses
+        # @Quantity <= 0, so there is no reversal path through it, and sending
+        # someone there at 6am wastes the window twice. 0098's own RAISERROR
+        # says establish what wrote these, then correct or attribute them.
+        Finding "BLOCK" "0098" "$neg Workorder.RejectEvent row(s) have a negative Quantity with no ReconciliationId. 0098 aborts on exactly this and the release rolls back. Establish what WROTE them -- no live path can, because RejectEvent_Record, TrimOut_Record, TrimPartial_Record and MachiningOut_Mint all refuse Quantity <= 0 -- then correct or attribute them. The first 20 are in rejectevent_negative_quantity.csv."
     }
     # The validation scan is NOT partition-aware: it reads every partition of
     # RejectEvent under a whole-table Sch-M lock, which blocks every scrap write

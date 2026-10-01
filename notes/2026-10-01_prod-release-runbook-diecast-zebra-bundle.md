@@ -231,9 +231,11 @@ Expect, section by section (ProdSim's values; prod's `[5]` counts will be real n
   The script compares **text on the target**, not commit history. Per-object diffs are in the report's
   `diffs/` folder. A larger list is information, not automatically an error, but this runbook no longer
   describes what you are about to do.
-- *`[5] 0098` BLOCKs on negative quantities* -- **stop.** The constraint will fail the `ALTER` and roll the
-  whole release back. Correct those rows through `Workorder.RejectEvent_Record`'s reversal path first; the
-  offenders are in the report's `rejectevent_negative_quantity.csv`.
+- *`[5] 0098` BLOCKs on negative quantities* -- **stop.** `0098` aborts on exactly this and the release rolls
+  back. **There is no reversal path through a proc**: `RejectEvent_Record`, `TrimOut_Record`,
+  `TrimPartial_Record` and `MachiningOut_Mint` all refuse `Quantity <= 0`, so no live path can have written
+  them. Establish what did, then correct or attribute them. The offenders are in the report's
+  `rejectevent_negative_quantity.csv`.
 - *The `0098` / `0099` row counts are large* -- this is the window estimate. Re-check the presses are idle.
 - *`[6]` shows open baskets or a running shift* -- the die-cast tables are frozen with `TABLOCKX` for the
   whole transaction. That is survivable but it is exactly what makes the lock window matter.
