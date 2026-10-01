@@ -151,7 +151,15 @@ def reprintLastForTerminal(terminalLocationId, appUserId=None):
     last = getLastForTerminal(terminalLocationId)
     if last is None:
         return {"Status": False, "Message": "No shipping label has printed at this terminal yet."}
-    return reprintLabel(last.get("Id"), appUserId=appUserId, terminalLocationId=terminalLocationId)
+    # reprintAndDispatch, not reprintLabel: an operator standing at the terminal
+    # pressing reprint expects a label, not a row. reprintLabel only appends the
+    # Initial=0 row and nothing dispatches it, so the label waited for
+    # PrintFailureSweepTimer -- 5 minutes nominal, and longer in practice because
+    # the timer is fixedDelay and drifts behind slow sweeps. For that whole window
+    # there is no PrintedAt, no PrintFailedAt and no InterfaceLog row, so the
+    # operator cannot tell waiting from broken and presses it again.
+    # The sweep goes back to being the safety net it was designed as.
+    return reprintAndDispatch(last.get("Id"), None, appUserId, terminalLocationId)
 
 
 def ackBanner(shippingLabelId):
