@@ -3018,6 +3018,23 @@ BEGIN
                          @level2type = N'COLUMN', @level2name = N'LastPrintError';
     END
 
+    IF COL_LENGTH(N'[Lots].[ShippingLabel]', N'LastPrintErrorCondition') IS NOT NULL
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.extended_properties
+                   WHERE major_id = OBJECT_ID(N'[Lots].[ShippingLabel]')
+                     AND minor_id = COLUMNPROPERTY(OBJECT_ID(N'[Lots].[ShippingLabel]'), N'LastPrintErrorCondition', 'ColumnId')
+                     AND name = N'MS_Description')
+            EXEC sys.sp_updateextendedproperty @name = N'MS_Description', @value = N'Added 2026-10-01 (migration 0102). The taxonomy NAME of the most recent failure, beside the raw text in LastPrintError - EndpointUnresolved, DispatchFailed, QueueRejected. Written by BlueRidge.Lots.LabelTransport.classifyOutcome, the same call that stamps Audit.InterfaceLog.ErrorCondition, so the audit trail and the operator dialog cannot name one failure differently. Free text rather than code-table backed for that reason - one Gateway-side owner, two columns, one string. It exists because operatorGuidance keys on the condition, not the text: without it every async print failure reached the terminal as the generic "tell a supervisor". Cleared on a successful dispatch alongside LastPrintError.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ShippingLabel',
+                         @level2type = N'COLUMN', @level2name = N'LastPrintErrorCondition';
+        ELSE
+            EXEC sys.sp_addextendedproperty @name = N'MS_Description', @value = N'Added 2026-10-01 (migration 0102). The taxonomy NAME of the most recent failure, beside the raw text in LastPrintError - EndpointUnresolved, DispatchFailed, QueueRejected. Written by BlueRidge.Lots.LabelTransport.classifyOutcome, the same call that stamps Audit.InterfaceLog.ErrorCondition, so the audit trail and the operator dialog cannot name one failure differently. Free text rather than code-table backed for that reason - one Gateway-side owner, two columns, one string. It exists because operatorGuidance keys on the condition, not the text: without it every async print failure reached the terminal as the generic "tell a supervisor". Cleared on a successful dispatch alongside LastPrintError.',
+                         @level0type = N'SCHEMA', @level0name = N'Lots',
+                         @level1type = N'TABLE',  @level1name = N'ShippingLabel',
+                         @level2type = N'COLUMN', @level2name = N'LastPrintErrorCondition';
+    END
+
     IF COL_LENGTH(N'[Lots].[ShippingLabel]', N'PrintFailedAt') IS NOT NULL
     BEGIN
         IF EXISTS (SELECT 1 FROM sys.extended_properties
@@ -7252,4 +7269,4 @@ BEGIN
 END
 GO
 
--- 72 table descriptions, 346 column descriptions
+-- 72 table descriptions, 347 column descriptions

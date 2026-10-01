@@ -227,6 +227,31 @@ def _describeProbe(outcome):
             "jobs": ack.get("jobs"), "error": None}
 
 
+def classifyOutcome(outcome):
+    """The ErrorCondition for ONE dispatch outcome, or None when it succeeded.
+       Self-contained (no BlueRidge.*, no java) so the tests can exec it.
+
+       This classification used to live inline in _dispatchLogParams, where it
+       only ever reached Audit.InterfaceLog. The dispatch worker had no name for
+       what went wrong, so it persisted the raw error text and nothing else --
+       and operatorGuidance, which keys on the condition, always fell through to
+       its generic "tell a supervisor" branch. Naming it here gives both the
+       audit row and the operator's dialog ONE source.
+
+       A bridge that ANSWERED with ERR is QueueRejected, not DispatchFailed: the
+       network was fine and the queue name was wrong. Each sends whoever is
+       diagnosing it to a different machine, and flattening them was the
+       2026-09-29 cost.
+
+       Note QueueNotDraining is in operatorGuidance's taxonomy and is NOT
+       produced here. It is a ?STATUS observation (ready, but jobs waiting) --
+       a print that got an ACK succeeded, so it cannot be read off one."""
+    out = outcome or {}
+    if out.get("ok"):
+        return None
+    return "QueueRejected" if (out.get("ack") or {}).get("acked") else "DispatchFailed"
+
+
 def operatorGuidance(errorCondition, errorDescription=None):
     """Translate a dispatch failure into something an operator at a station can
        act on. Self-contained (no BlueRidge.*, no java) so the tests can exec it.
@@ -416,25 +441,22 @@ def _dispatchLogParams(endpoint, zpl, outcome, labelKind):
 
        The stage reached goes in responsePayload on success and in
        errorCondition on failure, so 'where did it stop' is one column and not
-       a cross-reference. A bridge that ANSWERED with ERR is QueueRejected, not
-       DispatchFailed -- the network was fine and the queue was wrong, and
-       conflating those sends whoever is diagnosing it to the wrong place."""
+       a cross-reference. The condition itself comes from classifyOutcome --
+       the same call the dispatch worker persists on the label row, so the audit
+       trail and the operator's dialog can never name the failure differently."""
     ok = bool(outcome and outcome.get("ok"))
     transport = (outcome or {}).get("transport") or "unknown"
     ack = (outcome or {}).get("ack") or {}
+    condition = classifyOutcome(outcome)
     if ok:
         if ack.get("acked") and ack.get("ok"):
             response = "Spooled queue='%s' job=%s bytes=%s" % (
                 ack.get("queue"), ack.get("job"), ack.get("bytes"))
         else:
             response = "Sent, no ack (raw 9100)"
-        condition, detail = None, None
+        detail = None
     else:
         response = None
-        if ack.get("acked"):
-            condition = "QueueRejected"
-        else:
-            condition = "DispatchFailed"
         detail = (outcome or {}).get("error") or "unknown"
     return {
         "systemName":       _SYSTEM_NAME,

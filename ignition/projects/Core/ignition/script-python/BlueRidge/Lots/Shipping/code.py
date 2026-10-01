@@ -81,11 +81,23 @@ def reprintAndDispatch(shippingLabelId, printReasonCode, appUserId, terminalLoca
         shippingLabelId=newId, terminalLocationId=terminalLocationId) or {}
     if disp.get("Status"):
         return {"Status": 1, "Message": "Shipping label reprinted and sent to the printer.",
-                "NewId": newId, "Dispatched": True}
+                "NewId": newId, "Dispatched": True, "ErrorCondition": None}
+    # ErrorCondition is forwarded, not invented: it is what Ui.notifyPrintResult
+    # reads to word the operator's dialog, and a dispatch that could not START
+    # (no printer on this station) is the one case where the reason is knowable
+    # here rather than on the async thread.
+    #
+    # Status STAYS 1 -- the reprint row WAS written, and whether a failed send
+    # should make this read as a failure is spec open item 2 (section 10.3),
+    # raised and not decided. It is also no longer the only signal: a send that
+    # fails stamps PrintFailedAt on the new row, broadcastTick picks it up
+    # within ~5 s, and the banner opens the modal for it as a label this
+    # terminal has not seen before.
     return {"Status": 1,
             "Message": "Reprint recorded, but it could not be sent to the printer: %s"
                        % (disp.get("Message") or "unknown error"),
-            "NewId": newId, "Dispatched": False}
+            "NewId": newId, "Dispatched": False,
+            "ErrorCondition": disp.get("ErrorCondition")}
 
 
 # Elevation action code for the reprint. Recorded on the ElevationGranted /

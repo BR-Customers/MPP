@@ -138,10 +138,22 @@ DROP TABLE #M1;
 DECLARE @Pr NVARCHAR(10) = (SELECT CASE WHEN PrintedAt IS NOT NULL AND PrintAttempts >= 1 THEN N'1' ELSE N'0' END FROM Lots.ShippingLabel WHERE Id = @SLId);
 EXEC test.Assert_IsEqual @TestName = N'[Mark] success sets PrintedAt + bumps PrintAttempts', @Expected = N'1', @Actual = @Pr;
 
+-- the condition round-trips and is CLEARED on a later success, exactly as
+-- LastPrintError is. A stale condition on a printed label would word the next
+-- failure's operator dialog from the previous fault.
+CREATE TABLE #MC (Status BIT, Message NVARCHAR(500));
+INSERT INTO #MC EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = @SLId, @Success = 0, @ErrorText = N'unknown printer', @ErrorCondition = N'QueueRejected';
+DECLARE @CondSet NVARCHAR(50) = (SELECT LastPrintErrorCondition FROM Lots.ShippingLabel WHERE Id = @SLId);
+EXEC test.Assert_IsEqual @TestName = N'[Mark] failure records LastPrintErrorCondition', @Expected = N'QueueRejected', @Actual = @CondSet;
+INSERT INTO #MC EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = @SLId, @Success = 1;
+DROP TABLE #MC;
+DECLARE @CondCleared NVARCHAR(10) = (SELECT CASE WHEN LastPrintErrorCondition IS NULL THEN N'1' ELSE N'0' END FROM Lots.ShippingLabel WHERE Id = @SLId);
+EXEC test.Assert_IsEqual @TestName = N'[Mark] success clears LastPrintErrorCondition', @Expected = N'1', @Actual = @CondCleared;
+
 -- failure x2 on the reprint row with MaxAttempts 2 -> PrintFailedAt + LastPrintError
 CREATE TABLE #M2 (Status BIT, Message NVARCHAR(500));
-INSERT INTO #M2 EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = @ReprintId, @Success = 0, @ErrorText = N'conn refused', @MaxAttempts = 2;
-INSERT INTO #M2 EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = @ReprintId, @Success = 0, @ErrorText = N'conn refused', @MaxAttempts = 2;
+INSERT INTO #M2 EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = @ReprintId, @Success = 0, @ErrorText = N'conn refused', @ErrorCondition = N'DispatchFailed', @MaxAttempts = 2;
+INSERT INTO #M2 EXEC Lots.ShippingLabel_MarkDispatch @ShippingLabelId = @ReprintId, @Success = 0, @ErrorText = N'conn refused', @ErrorCondition = N'DispatchFailed', @MaxAttempts = 2;
 DROP TABLE #M2;
 DECLARE @Fail NVARCHAR(10) = (SELECT CASE WHEN PrintFailedAt IS NOT NULL AND LastPrintError = N'conn refused' AND PrintAttempts >= 2 THEN N'1' ELSE N'0' END FROM Lots.ShippingLabel WHERE Id = @ReprintId);
 EXEC test.Assert_IsEqual @TestName = N'[Mark] attempts exhausted -> PrintFailedAt + LastPrintError', @Expected = N'1', @Actual = @Fail;
@@ -173,17 +185,22 @@ EXEC test.Assert_IsEqual @TestName = N'[Stranded] printed row excluded', @Expect
 DROP TABLE #S;
 
 -- the reprint row is failed (PrintFailedAt) + unacked -> banner
-CREATE TABLE #B (Id BIGINT, ContainerId BIGINT, TerminalLocationId BIGINT, AimShipperId NVARCHAR(50), LastPrintError NVARCHAR(500));
+CREATE TABLE #B (Id BIGINT, ContainerId BIGINT, TerminalLocationId BIGINT, AimShipperId NVARCHAR(50), LastPrintError NVARCHAR(500), LastPrintErrorCondition NVARCHAR(50));
 INSERT INTO #B EXEC Lots.ShippingLabel_GetForBanner;
 DECLARE @BannerHit NVARCHAR(10) = CASE WHEN EXISTS (SELECT 1 FROM #B WHERE Id = @ReprintId) THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName = N'[Banner] failed-unacked row returned', @Expected = N'1', @Actual = @BannerHit;
+-- The banner needs the CONDITION, not just the raw text: it is what
+-- LabelTransport.operatorGuidance keys on to turn a socket error into an
+-- instruction. Without it every async failure shows the generic guidance.
+DECLARE @BannerCond NVARCHAR(50) = (SELECT LastPrintErrorCondition FROM #B WHERE Id = @ReprintId);
+EXEC test.Assert_IsEqual @TestName = N'[Banner] row carries LastPrintErrorCondition', @Expected = N'DispatchFailed', @Actual = @BannerCond;
 DROP TABLE #B;
 
 -- ack it -> no longer in the banner set
 CREATE TABLE #A (Status BIT, Message NVARCHAR(500));
 INSERT INTO #A EXEC Lots.ShippingLabel_AckBanner @ShippingLabelId = @ReprintId;
 DROP TABLE #A;
-CREATE TABLE #B2 (Id BIGINT, ContainerId BIGINT, TerminalLocationId BIGINT, AimShipperId NVARCHAR(50), LastPrintError NVARCHAR(500));
+CREATE TABLE #B2 (Id BIGINT, ContainerId BIGINT, TerminalLocationId BIGINT, AimShipperId NVARCHAR(50), LastPrintError NVARCHAR(500), LastPrintErrorCondition NVARCHAR(50));
 INSERT INTO #B2 EXEC Lots.ShippingLabel_GetForBanner;
 DECLARE @AckedMiss NVARCHAR(10) = CASE WHEN EXISTS (SELECT 1 FROM #B2 WHERE Id = @ReprintId) THEN N'0' ELSE N'1' END;
 EXEC test.Assert_IsEqual @TestName = N'[Banner] acknowledged row cleared', @Expected = N'1', @Actual = @AckedMiss;

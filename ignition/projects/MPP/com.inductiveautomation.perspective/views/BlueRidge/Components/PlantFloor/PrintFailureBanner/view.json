@@ -4,7 +4,8 @@
       "text": "",
       "visible": false,
       "shippingLabelId": null
-    }
+    },
+    "seen": []
   },
   "params": {},
   "props": {
@@ -137,7 +138,7 @@
         {
           "messageType": "print-failure-alert",
           "pageScope": false,
-          "script": "\tif payload and payload.get(\"terminalLocationId\") is not None:\n\t\tterm = self.session.custom.terminal or {}\n\t\tif term.get(\"terminalLocationId\") is not None and term.get(\"terminalLocationId\") != payload.get(\"terminalLocationId\"):\n\t\t\treturn\n\tmsg = (payload.get(\"message\") if payload else None) or \"A shipping label failed to print.\"\n\tsid = payload.get(\"shippingLabelId\") if payload else None\n\tself.view.custom.alert = {\"visible\": True, \"text\": msg, \"shippingLabelId\": sid}",
+          "script": "\tr = BlueRidge.Lots.PrintFailureGateway.handleAlert(self.session, payload, self.view.custom.seen)\n\tif r:\n\t\tself.view.custom.seen = r[\"seen\"]\n\t\tself.view.custom.alert = r[\"alert\"]",
           "sessionScope": true,
           "viewScope": false
         }

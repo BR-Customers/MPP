@@ -23,8 +23,11 @@ MODULE = os.path.join(
     "BlueRidge", "Lots", "LabelTransport", "code.py",
 )
 
+# classifyOutcome is here because _dispatchLogParams CALLS it -- the extractor
+# execs only the names listed, so a helper's own dependency has to be named too
+# or the extracted copy raises NameError at call time.
 WANTED = ("_parseAck", "_unquote", "_dispatchLogParams", "_resolveLogParams",
-          "_describeProbe", "operatorGuidance")
+          "_describeProbe", "operatorGuidance", "classifyOutcome")
 
 
 def load_helpers(path=MODULE):

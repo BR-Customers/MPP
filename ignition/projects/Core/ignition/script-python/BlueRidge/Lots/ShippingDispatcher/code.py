@@ -99,6 +99,12 @@ def _dispatchWorker(shippingLabelId, endpoint, zpl):
             "shippingLabelId": shippingLabelId,
             "success":         1 if outcome.get("ok") else 0,
             "errorText":       None if outcome.get("ok") else (outcome.get("error") or "unknown"),
+            # The taxonomy NAME of the failure, from the same classifier that
+            # stamps the Audit.InterfaceLog row above. Without it the banner has
+            # only the raw socket text, and operatorGuidance -- which keys on the
+            # condition -- falls through to the generic "tell a supervisor" for
+            # every async failure.
+            "errorCondition":  BlueRidge.Lots.LabelTransport.classifyOutcome(outcome),
             "maxAttempts":     1,
         })
     except (Exception, java.lang.Exception) as e:
@@ -109,20 +115,32 @@ def dispatch(shippingLabelId=None, terminalLocationId=None, printerLocationId=No
     """Dispatch a persisted container shipping label. Resolves the endpoint + reads the
        persisted ZplContent synchronously, then fires the 3x/backoff transport on a
        gateway-async thread so the UI never blocks. Returns {Status, Message} immediately;
-       the ShippingLabel state (PrintedAt / PrintFailedAt) reflects the real outcome."""
+       the ShippingLabel state (PrintedAt / PrintFailedAt) reflects the real outcome.
+
+       Every Status 0 path also carries ErrorCondition, which is what
+       Ui.notifyPrintResult reads to word the operator's dialog. It used to read
+       a key nothing set, so a refusal the caller could see RIGHT THERE -- a
+       station with no printer configured -- still showed the generic
+       "tell a supervisor and read them this message". Only the no-endpoint case
+       has a taxonomy name (EndpointUnresolved); the other two are MES-side
+       data faults with nothing in section 6.3 to map to, so they stay None and
+       get the generic guidance honestly rather than a borrowed label."""
     sid = _u(shippingLabelId)
     BlueRidge.Common.Util.log("dispatch shippingLabelId=%s printerLocationId=%s" % (sid, printerLocationId))
     row = _resolveShippingLabel(sid)
     if not row:
-        return {"Status": 0, "Message": "Shipping label not found for dispatch."}
+        return {"Status": 0, "Message": "Shipping label not found for dispatch.",
+                "ErrorCondition": None}
     sid = row.get("Id")
     zpl = row.get("ZplContent") or ""
     if not zpl:
-        return {"Status": 0, "Message": "Shipping label has no rendered ZPL."}
+        return {"Status": 0, "Message": "Shipping label has no rendered ZPL.",
+                "ErrorCondition": None}
 
     endpoint = _resolveEndpoint(terminalLocationId, printerLocationId)
     if not endpoint:
-        return {"Status": 0, "Message": "No printer endpoint resolved for this label."}
+        return {"Status": 0, "Message": "No printer endpoint resolved for this label.",
+                "ErrorCondition": "EndpointUnresolved"}
 
     system.util.invokeAsynchronous(lambda: _dispatchWorker(sid, endpoint, zpl))
     return {"Status": 1, "Message": "Shipping label sent to printer."}
