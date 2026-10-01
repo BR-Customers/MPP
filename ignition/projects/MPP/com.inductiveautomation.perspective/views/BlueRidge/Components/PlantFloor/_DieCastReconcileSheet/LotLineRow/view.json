@@ -89,7 +89,7 @@
         {
           "name": "emitChanged",
           "params": [],
-          "script": "\t# Page-scoped up to DieCastReconcileSheet, which owns\n\t# view.custom.state.lotLines -- embed params are input-only, so this is the\n\t# only channel there is (feedback_ignition_embed_params_input_only).\n\tif self.view.params.rowKind == \"group\" or self.view.params.isLocked:\n\t\treturn\n\tsystem.perspective.sendMessage(\"dieCastLotQuantityChanged\", payload={\n\t\t\"ltt\": self.view.params.ltt,\n\t\t\"quantity\": self.view.custom.quantity,\n\t}, scope=\"page\")"
+          "script": "\t# Page-scoped up to DieCastReconcileSheet, which owns\n\t# view.custom.state.lotLines -- embed params are input-only, so this is the\n\t# only channel there is (feedback_ignition_embed_params_input_only).\n\t#\n\t# A locked LOT's ACTUAL is not exempt from being typed -- only the COUNT\n\t# is spared, and that is the Save's own @ApplyToLot = 0 decision (spec\n\t# sec 3.3), not something this row decides by refusing to emit. An early\n\t# return here used to also swallow a locked row's gap, which pinned\n\t# lotSum to Recorded and walled the sheet on a mismatch a team lead could\n\t# never clear. Group rows still never emit -- they carry no LOT.\n\tif self.view.params.rowKind == \"group\":\n\t\treturn\n\tsystem.perspective.sendMessage(\"dieCastLotQuantityChanged\", payload={\n\t\t\"ltt\": self.view.params.ltt,\n\t\t\"quantity\": self.view.custom.quantity,\n\t}, scope=\"page\")"
         }
       ]
     },
@@ -265,14 +265,6 @@
               "shrink": 0
             },
             "propConfig": {
-              "props.enabled": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "!{view.params.isLocked}"
-                  }
-                }
-              },
               "props.value": {
                 "binding": {
                   "type": "property",
@@ -391,7 +383,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "if({view.params.isLocked}, {view.params.lockReason}, {view.params.stateLabel})"
+                        "expression": "if({view.params.isLocked}, {view.params.lockReason} + \" -- count won't change, but this line's production is still recorded.\", {view.params.stateLabel})"
                       }
                     }
                   },

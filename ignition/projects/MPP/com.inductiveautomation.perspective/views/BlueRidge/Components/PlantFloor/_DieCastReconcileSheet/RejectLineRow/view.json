@@ -14,6 +14,7 @@
     "defectOptions": [],
     "partOptions": [],
     "approverOptions": [],
+    "isNew": false,
     "seedToken": -1
   },
   "propConfig": {
@@ -39,6 +40,9 @@
       "paramDirection": "input"
     },
     "params.approverOptions": {
+      "paramDirection": "input"
+    },
+    "params.isNew": {
       "paramDirection": "input"
     },
     "params.seedToken": {
@@ -269,12 +273,22 @@
         "meta": {
           "name": "RemoveButton",
           "tooltip": {
-            "text": "Remove this line"
+            "text": "Remove this staged line"
           }
         },
         "position": {
           "basis": "44px",
           "shrink": 0
+        },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.isNew}"
+              }
+            }
+          }
         },
         "props": {
           "text": "",
