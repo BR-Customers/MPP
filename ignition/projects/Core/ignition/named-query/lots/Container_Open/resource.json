@@ -30,11 +30,31 @@
       "timestamp": "2026-06-19T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "itemId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "containerConfigId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "cellLocationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "itemId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "containerConfigId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "cellLocationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "terminalLocationId",
+        "sqlType": 3
+      }
     ]
   }
 }

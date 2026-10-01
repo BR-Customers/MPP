@@ -33,14 +33,12 @@
       {
         "type": "Parameter",
         "identifier": "filterText",
-        "sqlType": 7,
-        "value": null
+        "sqlType": 7
       },
       {
         "type": "Parameter",
         "identifier": "filterTypeId",
-        "sqlType": 3,
-        "value": null
+        "sqlType": 3
       }
     ]
   }

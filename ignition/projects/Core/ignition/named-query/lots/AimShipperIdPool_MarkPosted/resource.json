@@ -30,9 +30,21 @@
       "timestamp": "2026-08-03T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "id", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "note", "sqlType": 7 }
+      {
+        "type": "Parameter",
+        "identifier": "id",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "note",
+        "sqlType": 7
+      }
     ]
   }
 }

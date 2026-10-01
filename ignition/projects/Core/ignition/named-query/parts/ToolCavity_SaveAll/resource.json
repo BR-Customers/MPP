@@ -3,7 +3,9 @@
   "version": 2,
   "restricted": false,
   "overridable": true,
-  "files": [ "query.sql" ],
+  "files": [
+    "query.sql"
+  ],
   "attributes": {
     "useMaxReturnSize": false,
     "autoBatchEnabled": false,
@@ -17,12 +19,32 @@
     "database": "MPP",
     "fallbackEnabled": false,
     "lastModificationSignature": "",
-    "permissions": [ { "zone": "", "role": "" } ],
-    "lastModification": { "actor": "claude", "timestamp": "2026-06-08T00:00:00Z" },
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-06-08T00:00:00Z"
+    },
     "parameters": [
-      { "type": "Parameter", "identifier": "toolId",    "sqlType": 3 },
-      { "type": "Parameter", "identifier": "rowsJson",  "sqlType": 7 },
-      { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "toolId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "rowsJson",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      }
     ]
   }
 }

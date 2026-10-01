@@ -18,7 +18,7 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
-    "lastModificationSignature": "",
+    "lastModificationSignature": "2dc842873125aa39979eb45436dae6f170b2cb5cdf9ccf90aaa905ea59c7bae5",
     "permissions": [
       {
         "zone": "",
@@ -26,8 +26,8 @@
       }
     ],
     "lastModification": {
-      "actor": "claude",
-      "timestamp": "2026-09-10T18:00:00Z"
+      "actor": "admin",
+      "timestamp": "2026-09-11T01:33:56Z"
     },
     "parameters": [
       {

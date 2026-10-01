@@ -30,10 +30,26 @@
       "timestamp": "2026-06-16T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "downtimeEventId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "downtimeReasonCodeId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "downtimeEventId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "downtimeReasonCodeId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "terminalLocationId",
+        "sqlType": 3
+      }
     ]
   }
 }

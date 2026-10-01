@@ -115,3 +115,6 @@ dist/
 [Bb]in/
 [Oo]bj/
 *.csproj.user
+
+# Local-only working files (extracted event-handler bodies, agent scratch)
+/scratch_script_*.py

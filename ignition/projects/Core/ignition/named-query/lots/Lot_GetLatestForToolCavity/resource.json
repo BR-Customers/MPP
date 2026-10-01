@@ -30,8 +30,16 @@
       "timestamp": "2026-07-07T14:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "toolId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "toolCavityId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "toolId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "toolCavityId",
+        "sqlType": 3
+      }
     ]
   }
 }

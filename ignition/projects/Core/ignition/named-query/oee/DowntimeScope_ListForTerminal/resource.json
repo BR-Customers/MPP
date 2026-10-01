@@ -3,7 +3,9 @@
   "version": 2,
   "restricted": false,
   "overridable": true,
-  "files": [ "query.sql" ],
+  "files": [
+    "query.sql"
+  ],
   "attributes": {
     "useMaxReturnSize": false,
     "autoBatchEnabled": false,
@@ -16,12 +18,28 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
-    "lastModificationSignature": "",
-    "permissions": [ { "zone": "", "role": "" } ],
-    "lastModification": { "actor": "claude", "timestamp": "2026-09-09T00:00:00Z" },
+    "lastModificationSignature": "2b00ae25aaf9c07203fc2d6095d2152d5484df39ffa6e59b242afd5145ca2c5f",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "admin",
+      "timestamp": "2026-09-11T01:33:56Z"
+    },
     "parameters": [
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "activeCellLocationId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "terminalLocationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "activeCellLocationId",
+        "sqlType": 3
+      }
     ]
   }
 }

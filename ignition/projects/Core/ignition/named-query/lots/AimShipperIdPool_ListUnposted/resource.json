@@ -30,7 +30,11 @@
       "timestamp": "2026-08-03T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "top", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "top",
+        "sqlType": 3
+      }
     ]
   }
 }

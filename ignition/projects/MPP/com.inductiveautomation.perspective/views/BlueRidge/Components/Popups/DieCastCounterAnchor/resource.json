@@ -7,9 +7,10 @@
     "view.json"
   ],
   "attributes": {
+    "lastModificationSignature": "0f37576fa46284393543c6d422b99c600397aa28b7abf55396d61e6b303bc9c8",
     "lastModification": {
-      "actor": "claude",
-      "timestamp": "2026-09-10T18:00:00Z"
+      "actor": "admin",
+      "timestamp": "2026-09-11T01:37:06Z"
     }
   }
 }

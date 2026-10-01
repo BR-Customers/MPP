@@ -30,7 +30,11 @@
       "timestamp": "2026-08-20T00:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "id", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "id",
+        "sqlType": 3
+      }
     ]
   }
 }

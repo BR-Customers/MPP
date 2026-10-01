@@ -30,8 +30,16 @@
       "timestamp": "2026-07-21T00:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "topN", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "terminalLocationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "topN",
+        "sqlType": 3
+      }
     ]
   }
 }

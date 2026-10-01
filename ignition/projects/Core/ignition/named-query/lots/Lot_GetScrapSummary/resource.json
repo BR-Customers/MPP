@@ -30,7 +30,11 @@
       "timestamp": "2026-07-06T18:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "lotId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "lotId",
+        "sqlType": 3
+      }
     ]
   }
 }

@@ -30,8 +30,16 @@
       "timestamp": "2026-08-19T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "locationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "instantUtc", "sqlType": 8 }
+      {
+        "type": "Parameter",
+        "identifier": "locationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "instantUtc",
+        "sqlType": 8
+      }
     ]
   }
 }

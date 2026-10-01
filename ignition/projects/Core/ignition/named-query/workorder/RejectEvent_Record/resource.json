@@ -30,16 +30,56 @@
       "timestamp": "2026-06-16T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "lotId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "defectCodeId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "quantity", "sqlType": 2 },
-      { "type": "Parameter", "identifier": "productionEventId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "chargeToArea", "sqlType": 7 },
-      { "type": "Parameter", "identifier": "remarks", "sqlType": 7 },
-      { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "operationTypeCode", "sqlType": 7 },
-      { "type": "Parameter", "identifier": "allowHeldLot", "sqlType": 6 }
+      {
+        "type": "Parameter",
+        "identifier": "lotId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "defectCodeId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "quantity",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "productionEventId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "chargeToArea",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "remarks",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "terminalLocationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "operationTypeCode",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "allowHeldLot",
+        "sqlType": 6
+      }
     ]
   }
 }

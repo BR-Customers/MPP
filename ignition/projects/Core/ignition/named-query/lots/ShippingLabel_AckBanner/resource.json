@@ -30,7 +30,11 @@
       "timestamp": "2026-08-07T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "shippingLabelId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "shippingLabelId",
+        "sqlType": 3
+      }
     ]
   }
 }

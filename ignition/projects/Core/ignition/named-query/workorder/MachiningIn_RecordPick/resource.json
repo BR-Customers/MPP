@@ -30,10 +30,26 @@
       "timestamp": "2026-07-06T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "lotId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "lineLocationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "lotId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lineLocationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "terminalLocationId",
+        "sqlType": 3
+      }
     ]
   }
 }

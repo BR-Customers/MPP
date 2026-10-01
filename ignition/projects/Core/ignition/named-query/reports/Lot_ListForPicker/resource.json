@@ -19,7 +19,10 @@
     "database": "MPP",
     "fallbackEnabled": false,
     "lastModificationSignature": "",
-    "lastModification": { "actor": "claude", "timestamp": "2026-08-10T00:00:00Z" },
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-08-10T00:00:00Z"
+    },
     "parameters": []
   }
 }

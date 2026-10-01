@@ -7,10 +7,10 @@
     "view.json"
   ],
   "attributes": {
-    "lastModificationSignature": "",
     "lastModification": {
       "actor": "claude",
       "timestamp": "2026-08-20T00:00:00Z"
-    }
+    },
+    "lastModificationSignature": ""
   }
 }

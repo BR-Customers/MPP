@@ -20,7 +20,10 @@
     "fallbackEnabled": false,
     "lastModificationSignature": "",
     "permissions": [
-      { "zone": "", "role": "" }
+      {
+        "zone": "",
+        "role": ""
+      }
     ],
     "lastModification": {
       "actor": "claude",

@@ -30,7 +30,11 @@
       "timestamp": "2026-07-28T12:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "labelTypeCode", "sqlType": 7 }
+      {
+        "type": "Parameter",
+        "identifier": "labelTypeCode",
+        "sqlType": 7
+      }
     ]
   }
 }

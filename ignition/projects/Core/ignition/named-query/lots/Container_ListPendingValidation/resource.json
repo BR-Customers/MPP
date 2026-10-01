@@ -30,8 +30,16 @@
       "timestamp": "2026-08-18T00:00:00Z"
     },
     "parameters": [
-      { "type": "Parameter", "identifier": "locationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "containerId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "locationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "containerId",
+        "sqlType": 3
+      }
     ]
   }
 }
