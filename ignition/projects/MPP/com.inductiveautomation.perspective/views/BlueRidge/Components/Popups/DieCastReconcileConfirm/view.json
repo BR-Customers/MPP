@@ -29,6 +29,7 @@
       "lots": [],
       "scrap": []
     },
+    "pressName": "",
     "payload": {}
   },
   "propConfig": {
@@ -41,6 +42,10 @@
       "persistent": true
     },
     "params.plan": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.pressName": {
       "paramDirection": "input",
       "persistent": true
     },
@@ -128,7 +133,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "{view.params.plan.pressCode} + \" \" + char(183) + \" \" + {view.params.plan.dieName} + \" (Asset # \" + {view.params.plan.assetNumber} + \") \" + char(183) + \" \" + toStr({view.params.plan.activeCavities}) + \" active cavities\""
+                    "expression": "{view.params.pressName} + \" \" + char(183) + \" \" + {view.params.plan.dieName} + \" \" + char(183) + \" \" + toStr({view.params.plan.activeCavities}) + \" active cavities\""
                   }
                 }
               }
@@ -560,7 +565,7 @@
                       "transforms": [
                         {
                           "type": "script",
-                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\tdl = plan.get(\"dieLife\") or {}\n\tbefore = dl.get(\"before\") or 0\n\tdelta = dl.get(\"delta\") or 0\n\tafter = dl.get(\"after\") or 0\n\tsign = \"+\" if delta >= 0 else \"\"\n\treturn \"Asset # %s (%s): %s -> %s (%s%s shots).\" % (\n\t\tplan.get(\"assetNumber\") or \"\", plan.get(\"dieName\") or \"\",\n\t\t\"{:,}\".format(before), \"{:,}\".format(after), sign, \"{:,}\".format(delta))"
+                          "code": "\tU = BlueRidge.Common.Util\n\tplan = U.extractQualifiedValues(value) or {}\n\tdl = plan.get(\"dieLife\") or {}\n\tbefore = dl.get(\"before\") or 0\n\tdelta = dl.get(\"delta\") or 0\n\tafter = dl.get(\"after\") or 0\n\tsign = \"+\" if delta >= 0 else \"\"\n\treturn \"%s: %s -> %s (%s%s shots).\" % (\n\t\tplan.get(\"dieName\") or \"\",\n\t\t\"{:,}\".format(before), \"{:,}\".format(after), sign, \"{:,}\".format(delta))"
                         }
                       ]
                     }

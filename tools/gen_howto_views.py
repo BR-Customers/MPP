@@ -521,12 +521,10 @@ def die_cast_reconcile_source():
         'behind.' % (_b('Review & Save'), _b('Discard'))))
 
     parts.append(_step(1, 'Check the banner',
-        'It names the exact %s, %s and %s you are reconciling &ndash; the '
-        'die by its name first, with its %s underneath &ndash; plus '
-        'current die life. If any of the three is wrong, use %s below to '
-        'go back and pick again.'
-        % (_b('shift'), _b('press'), _b('die'), _b('Asset #'),
-           _b('All shifts'))))
+        'It names the exact %s, %s and %s you are reconciling &ndash; '
+        'plus current die life. If any of the three is wrong, use %s '
+        'below to go back and pick again.'
+        % (_b('shift'), _b('press'), _b('die'), _b('All shifts'))))
     parts.append(_note(
         'The line under the banner names who this save will be credited '
         'to &ndash; that is not decorative.'))

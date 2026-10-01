@@ -67,7 +67,7 @@
         {
           "name": "rebuildDisplayRows",
           "params": [],
-          "script": "\t# Presentation-only grouping: two rows sharing a ShiftId but differing in\n\t# ToolId are a mid-shift die change. They are collapsed under one\n\t# synthetic header row that is never itself sent to reconcileShiftChosen\n\t# (see ShiftsTable's onSelectionChange) -- each member row stays its own\n\t# selectable reconciliation. Default is EXPANDED (collapsedShiftIds starts\n\t# empty) so nothing an operator needs to act on starts out hidden.\n\trows = self.view.custom.rows or []\n\tcollapsed = self.view.custom.collapsedShiftIds or []\n\torder = []\n\tbyShift = {}\n\tfor r in rows:\n\t\tsid = r.get(\"ShiftId\")\n\t\tif sid not in byShift:\n\t\t\tbyShift[sid] = []\n\t\t\torder.append(sid)\n\t\tbyShift[sid].append(r)\n\tout = []\n\tfor sid in order:\n\t\tmembers = byShift[sid]\n\t\ttoolIds = set([m.get(\"ToolId\") for m in members])\n\t\tif len(members) > 1 and len(toolIds) > 1:\n\t\t\tisCollapsed = sid in collapsed\n\t\t\tsep = u\" \" + unichr(183) + u\" Asset # \"\n\t\t\tlabels = []\n\t\t\tfor m in members:\n\t\t\t\tname = m.get(\"DieName\") or \"\"\n\t\t\t\tcode = m.get(\"AssetNumber\") or \"\"\n\t\t\t\tlabels.append((name + sep + code) if code else name)\n\t\t\theader = dict(members[0])\n\t\t\theader[\"StatusCode\"] = \"GroupHeaderCollapsed\" if isCollapsed else \"GroupHeaderExpanded\"\n\t\t\theader[\"AssetNumber\"] = u\" / \".join(labels)\n\t\t\theader[\"ContributionRows\"] = None\n\t\t\theader[\"GoodRecorded\"] = None\n\t\t\theader[\"RecordedTotalShots\"] = None\n\t\t\tmarker = \"[+] \" if isCollapsed else \"[-] \"\n\t\t\theader[\"ShiftLabel\"] = marker + (members[0].get(\"ShiftLabel\") or \"\") + \" (mid-shift die change)\"\n\t\t\tout.append(header)\n\t\t\tif not isCollapsed:\n\t\t\t\tout.extend(members)\n\t\telse:\n\t\t\tout.extend(members)\n\tself.view.custom.displayRows = out"
+          "script": "\t# Presentation-only grouping: two rows sharing a ShiftId but differing in\n\t# ToolId are a mid-shift die change. They are collapsed under one\n\t# synthetic header row that is never itself sent to reconcileShiftChosen\n\t# (see ShiftsTable's onSelectionChange) -- each member row stays its own\n\t# selectable reconciliation. Default is EXPANDED (collapsedShiftIds starts\n\t# empty) so nothing an operator needs to act on starts out hidden.\n\trows = self.view.custom.rows or []\n\tcollapsed = self.view.custom.collapsedShiftIds or []\n\torder = []\n\tbyShift = {}\n\tfor r in rows:\n\t\tsid = r.get(\"ShiftId\")\n\t\tif sid not in byShift:\n\t\t\tbyShift[sid] = []\n\t\t\torder.append(sid)\n\t\tbyShift[sid].append(r)\n\tout = []\n\tfor sid in order:\n\t\tmembers = byShift[sid]\n\t\ttoolIds = set([m.get(\"ToolId\") for m in members])\n\t\tif len(members) > 1 and len(toolIds) > 1:\n\t\t\tisCollapsed = sid in collapsed\n\t\t\tlabels = []\n\t\t\tfor m in members:\n\t\t\t\tname = m.get(\"DieName\") or \"\"\n\t\t\t\tlabels.append(name)\n\t\t\theader = dict(members[0])\n\t\t\theader[\"StatusCode\"] = \"GroupHeaderCollapsed\" if isCollapsed else \"GroupHeaderExpanded\"\n\t\t\theader[\"DieName\"] = u\" / \".join(labels)\n\t\t\theader[\"ContributionRows\"] = None\n\t\t\theader[\"GoodRecorded\"] = None\n\t\t\theader[\"RecordedTotalShots\"] = None\n\t\t\tmarker = \"[+] \" if isCollapsed else \"[-] \"\n\t\t\theader[\"ShiftLabel\"] = marker + (members[0].get(\"ShiftLabel\") or \"\") + \" (mid-shift die change)\"\n\t\t\tout.append(header)\n\t\t\tif not isCollapsed:\n\t\t\t\tout.extend(members)\n\t\telse:\n\t\t\tout.extend(members)\n\tself.view.custom.displayRows = out"
         }
       ],
       "extensionFunctions": null,
@@ -271,7 +271,7 @@
               "boolean": "checkbox",
               "dateFormat": "MM/DD/YYYY",
               "editable": false,
-              "field": "AssetNumber",
+              "field": "DieName",
               "filter": {
                 "boolean": { "condition": "" },
                 "date": { "condition": "", "value": "" },
@@ -281,7 +281,7 @@
                 "visible": "on-hover"
               },
               "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Die asset #" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Die" },
               "justify": "auto",
               "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
               "number": "value",
