@@ -82,6 +82,18 @@ is never claimed.
 is consumed, so this is safe to call at any time and is the basis of the
 Config Tool's "Test this printer" action.
 
+**`ready` reports the printer's status bits and nothing more.** A Windows queue
+whose device is unplugged or powered off keeps accepting jobs and stacking them,
+and Windows sets no error, offline, paused or not-available bit while it does --
+so such a queue answers `ready=true` with `jobs` climbing and never falling.
+Observed 2026-09-30: two labels spooled cleanly, `jobs=2`, nothing printed, the
+Zebra was unplugged.
+
+**A client must read `ready` and `jobs` together.** A healthy queue drains in
+milliseconds, so `jobs > 0` at probe time is itself a signal worth surfacing.
+This is a reading rule, not a format change -- nothing in the grammar above
+moves.
+
 Commands are case-insensitive. An unrecognised command is an `ERR`, never
 silence.
 

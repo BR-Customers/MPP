@@ -360,6 +360,51 @@ Step 1 is what makes 54 printers tractable. Without it, the only test is manufac
 container, which on 2026-09-29 required seeding ten component LOTs, two purchased-part LOTs, and
 temporarily shrinking a container configuration.
 
+### 9.1 `ready=true` does not mean the device is attached
+
+**Observed 2026-09-30.** Two labels dispatched cleanly all the way to the Windows spooler --
+`Spooled queue='Zebra GX420d (RAW)' job=28`, `ShippingLabel.PrintedAt` set, `InterfaceLog` clean
+-- and nothing came out. The Zebra was unplugged. The probe said:
+
+    OK bridge=1.0.0 queue='Zebra GX420d (RAW)' ready=true jobs=2
+
+**A Windows print queue outlives its device.** It keeps accepting jobs and stacking them, and
+Windows sets **no** error, offline, paused, not-available or no-toner bit while it does -- which
+are exactly the bits `ready` is computed from. So `ready=true` is accurate about what it measures
+and useless for the question being asked. The only signal present was `jobs` climbing and not
+falling.
+
+This cost a diagnostic round trip with a coworker over a USB cable. Across 54 terminals it is
+worse than that: a queue that silently backs up looks identical to a healthy one, and the first
+person to notice is an operator holding a basket with no label.
+
+**The fix, in two stages. Stage one needs no protocol change and is the one to ship.**
+
+A healthy queue drains in milliseconds: it reads `jobs=0` before a print and `jobs=0` a few
+seconds after (verified 2026-09-30, job 30). So **`jobs > 0` at probe time is itself the signal**,
+and the Config Tool's test action should surface it rather than reporting a bare success:
+
+> Bridge 1.0.0 at 10.20.11.157:9100, bound to queue 'Zebra GX420d (RAW)', **but 2 job(s) are
+> already queued.** A queue that does not drain usually means the printer is unplugged or powered
+> off -- Windows reports the queue healthy either way.
+
+It is a commissioning check, so a false positive on a genuinely busy printer is cheap and a false
+negative is not. `_describeBridgeResult` is the single place this lives.
+
+**Stage two, only if stage one proves noisy:** add an `oldest=<seconds>` key to `?STATUS` -- the
+age of the oldest queued job -- which separates "busy right now" from "stuck since Tuesday".
+Deferred rather than done, because it costs an `EnumJobs` P/Invoke in **both** implementations and
+stage one already catches the observed case.
+
+Adding that key would be **non-breaking**: `_parseAck` skips keys it does not recognise, so an
+older Gateway reads a newer bridge without complaint. That is a property worth preserving
+deliberately in any future protocol change, not an accident.
+
+**What is NOT changing: `ready` keeps its current meaning.** It reports the printer status bits
+and nothing else. Folding a backlog heuristic into it would make one boolean answer two different
+questions, and the bridge's job is to report facts while the client applies policy -- the same
+split that keeps `DispatchFailed` and `QueueRejected` apart in section 6.3.
+
 ## 10. Risks
 
 ### 10.1 Address drift
