@@ -623,6 +623,49 @@ ORDER BY p.PartNumber
     }
 }
 
+if (& $has "0098_rejectevent_quantity_nonneg") {
+    # 0098 adds CK_RejectEvent_QuantityNonNeg WITH CHECK, so SQL Server validates
+    # EVERY existing row before the constraint is trusted. One negative quantity
+    # anywhere in history fails the ALTER, the whole release rolls back, and the
+    # window is gone. The migration's own failure is recoverable -- the cost is
+    # the window, which is why this is worth knowing an hour beforehand rather
+    # than at 06:10.
+    $neg = S "SELECT COUNT(*) FROM Workorder.RejectEvent WHERE Quantity < 0"
+    if ($neg -gt 0) {
+        $negDetail = Q "SELECT TOP 5 Id, Quantity, RejectedAt FROM Workorder.RejectEvent WHERE Quantity < 0 ORDER BY Id"
+        Save-Csv $negDetail "rejectevent_negative_quantity.csv"
+        Finding "BLOCK" "0098" "$neg Workorder.RejectEvent row(s) have Quantity < 0 -- the WITH CHECK constraint will fail the ALTER and roll the whole release back. Correct them through Workorder.RejectEvent_Record's reversal path first; the first 5 are in rejectevent_negative_quantity.csv."
+    }
+    # The validation scan is NOT partition-aware: it reads every partition of
+    # RejectEvent under a whole-table Sch-M lock, which blocks every scrap write
+    # and reject report for its duration. RejectEvent is not in
+    # Audit.PartitionRetention, so it only ever grows -- the scan is as cheap now
+    # as it will ever be, and the row count is what sizes the window.
+    $reRows = S "SELECT COUNT(*) FROM Workorder.RejectEvent"
+    Finding "WARN" "0098" "validates $reRows Workorder.RejectEvent row(s) under a whole-table Sch-M lock -- every scrap write and reject report blocks for the duration. Deploy with the presses idle."
+}
+
+if (& $has "0099_diecast_shift_attribution_source") {
+    # ADD <col> NOT NULL ... DEFAULT is metadata-only on Enterprise and a full
+    # table REWRITE on Standard, which this instance is. Same Sch-M lock, and the
+    # duration scales with the row count -- so the count IS the window estimate.
+    $dcRows = S "SELECT COUNT(*) FROM Workorder.DieCastContribution"
+    Finding "WARN" "0099" "rewrites Workorder.DieCastContribution ($dcRows row(s)) -- ADD NOT NULL DEFAULT is NOT metadata-only on Standard Edition. Whole-table Sch-M lock; die cast entry and release block for the duration. Deploy with the presses idle."
+    # ShiftOverride_Restamp keys off this column to skip rows a reconciliation
+    # wrote. An override applied but not yet reverted spans the deploy, and the
+    # backfill stamps every existing row 'Derived' -- correct, but worth seeing.
+    $openOv = S "SELECT COUNT(*) FROM Oee.ShiftOverride WHERE RevertedAt IS NULL"
+    if ($openOv -gt 0) { Finding "WARN" "0099" "$openOv un-reverted Oee.ShiftOverride row(s) at deploy time -- every existing contribution backfills as 'Derived', which is what ShiftOverride_Restamp expects, but confirm the override set is the one you think it is." }
+}
+
+if (& $has "0102_shippinglabel_print_error_condition") {
+    # Metadata-only (nullable, no default), so there is nothing to gate on size.
+    # What IS worth saying out loud: existing failed labels keep a NULL condition
+    # and therefore show the GENERIC operator guidance until they next fail.
+    $banner = S "SELECT COUNT(*) FROM Lots.ShippingLabel WHERE PrintFailedAt IS NOT NULL AND BannerAcknowledgedAt IS NULL"
+    Finding "INFO" "0102" "adds Lots.ShippingLabel.LastPrintErrorCondition (nullable, metadata-only). $banner label(s) are currently failed-and-unacknowledged; they keep a NULL condition and show the generic 'tell a supervisor' guidance until their next dispatch attempt."
+}
+
 if (@($Findings | Where-Object { $_.Gate -match '^00\d\d$' }).Count -eq 0 -and $pending.Count -gt 0) { Log "  No gates fired." "Green" }
 
 # ---------- [6] live activity + backups ----------
