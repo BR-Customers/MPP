@@ -5,7 +5,8 @@
 **Rehearsed against:** `MPP_MES_ProdSim`, built at `e3e0aa25` -- prod's exact migration state (94 applied,
 highest `0095`; `Workorder.ProductionEvent.ShiftId`, `Workorder.DieCastContribution.ShiftAttributionSourceId`
 and `Lots.ShippingLabel.LastPrintErrorCondition` all absent). Preview + Rehearse both clean, rollback verified.
-**Archives built from:** `1dc270e2`, verified against git.
+**Archives built from:** `792364b0`, verified against git. The 13:50 set went STALE when the Gateway churn and
+a Designer save were committed after it; the staleness check below is exactly what caught that. Rebuilt 14:39.
 **SQL suite:** 4219 assertions / 4219 passed / 0 failed / exit 0, zero `ERROR running` lines.
 
 > ## STOP -- read section 3 before scheduling this
@@ -19,7 +20,7 @@ and `Lots.ShippingLabel.LastPrintErrorCondition` all absent). Preview + Rehearse
 > What matters is that **no deployable moved after the archives were built**:
 >
 > ```bash
-> git diff --stat 1dc270e2..HEAD -- ignition/ sql/migrations/
+> git diff --stat 792364b0..HEAD -- ignition/ sql/migrations/
 > ```
 >
 > Expect **no output**. Anything listed means the archives are stale -- rebuild and re-preview.
@@ -78,12 +79,20 @@ there is a WARN and the release stands).
 
 | Archive | Resources | Entries |
 |---|---|---|
-| `Core_diecast-zebra-bundle_2026-10-01_1350.zip` | 36 | 73 |
-| `MPP_diecast-zebra-bundle_2026-10-01_1350.zip` | 28 | 57 |
-| `MPP_Config_diecast-zebra-bundle_2026-10-01_1350.zip` | 2 | 5 |
+| `Core_diecast-zebra-bundle_2026-10-01_1439.zip` | 40 | 81 |
+| `MPP_diecast-zebra-bundle_2026-10-01_1439.zip` | 31 | 63 |
+| `MPP_Config_diecast-zebra-bundle_2026-10-01_1439.zip` | 4 | 9 |
 
-Full `NEW`/`MOD` list per project: `dist/ignition-exports/diecast-zebra-bundle_2026-10-01_1350_CONTENTS.txt`.
+Full `NEW`/`MOD` list per project: `dist/ignition-exports/diecast-zebra-bundle_2026-10-01_1439_CONTENTS.txt`.
 **No resources were deleted in this range**, so there is no by-hand deletion step.
+
+**Nine of the 75 resources carry no behaviour change** and ride along only because their `resource.json`
+moved beyond the thumbnail entry the builder strips (it skipped 367 that were thumbnail-only):
+`Printer_GetById`, `PrinterFgAssignment_ListForStation`, `PrinterFgAssignment_SaveAll` and `Hold_ListOpen`
+(named queries whose SQL this release changes anyway), both print-failure timers, `AssemblyNonSerialized`
+(a real Designer save), and `page-config` + `session-props` for MPP and MPP_Config. That last pair pushes
+`props.address` into prod's session-props -- verified harmless (nothing in MPP_Config reads it, and
+Perspective overwrites it per session), flagged so it is not a surprise at the import dialog.
 
 ### In the range but shipping nothing
 
@@ -291,12 +300,12 @@ lives in Core.
 **Designer -> File -> Import**, one zip at a time, accepting overwrite for the listed resources.
 **Do not use the Gateway web page's project import** -- these are partial exports, not whole projects.
 
-1. `Core_diecast-zebra-bundle_2026-10-01_1350.zip` -- 36 resources
-2. `MPP_diecast-zebra-bundle_2026-10-01_1350.zip` -- 28 resources
-3. `MPP_Config_diecast-zebra-bundle_2026-10-01_1350.zip` -- 2 resources (`Views/Audit/Users`,
-   `Views/Location/PlantHierarchy`)
+1. `Core_diecast-zebra-bundle_2026-10-01_1439.zip` -- 40 resources
+2. `MPP_diecast-zebra-bundle_2026-10-01_1439.zip` -- 31 resources
+3. `MPP_Config_diecast-zebra-bundle_2026-10-01_1439.zip` -- 4 resources (`Views/Audit/Users`,
+   `Views/Location/PlantHierarchy`, plus `page-config` and `session-props` bookkeeping)
 
-Tick each resource off against `diecast-zebra-bundle_2026-10-01_1350_CONTENTS.txt`.
+Tick each resource off against `diecast-zebra-bundle_2026-10-01_1439_CONTENTS.txt`.
 
 **Two import slips from 2026-09-18 that cost time -- do not repeat them:**
 
