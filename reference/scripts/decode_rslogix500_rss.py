@@ -42,7 +42,16 @@ OPCODES = {
 # immediately followed by its first CBranchLeg ref.
 TAG_RUNG = b"\x07\x80\x09\x80"
 TAG_INS = b"\x0b\x80"
-TAG_FILE = re.compile(rb"\x03\x80(..)\x01\x00([A-Za-z0-9_ ]{1,10})\x00*(..)", re.S)
+
+# A CLadFile reference is a FIXED-WIDTH 21-byte record:
+#   03 80 | rungs u16 | 01 00 | name[10] | file# u16 | 00 | rungs u16
+# The name is a 10-byte NUL-padded field and is frequently BLANK -- MPP ships
+# unnamed ladder files (59BCH has nothing else, MPP_COG's file 2 and SORTCAGE's
+# file 5 are unnamed). Keying on the name therefore finds nothing and silently
+# merges the file into its predecessor, so key on the record SHAPE and let the
+# file number -- what RSLogix itself shows as "LAD 2", "LAD 3" -- do the naming.
+TAG_FILE = b"\x03\x80"
+FILE_REC = 21
 
 
 def stream(ole, name):
@@ -50,6 +59,44 @@ def stream(ole, name):
     if len(data) > 18 and data[16:18] == b"\x78\x9c":
         return zlib.decompress(data[16:])
     return data
+
+
+def program(path):
+    """The decompressed PROGRAM FILES stream of a .RSS."""
+    return stream(olefile.OleFileIO(path), "PROGRAM FILES/ObjectData")
+
+
+def _ladder_records(prog):
+    """[(offset, file_number, name, rungs)] for every CLadFile reference, in
+       stream order. name is '' for an unnamed file.
+
+       The trailing rung count repeats the leading one; requiring the two to
+       agree is what keeps a stray 0x8003 byte pair from inventing a file. The
+       CProgHolder's own forward reference near the top of the stream carries
+       rungs = 0 and fails that check, which is why it never appears here."""
+    out = []
+    for m in re.finditer(re.escape(TAG_FILE), prog):
+        o = m.start()
+        if o + FILE_REC > len(prog):
+            continue
+        rungs, const, name, num, pad, again = struct.unpack_from(
+            "<HH10sHBH", prog, o + 2)
+        if const != 1 or pad != 0 or rungs != again or not 0 < rungs < 2000:
+            continue
+        if not 2 <= num <= 255:
+            continue
+        head = name.split(b"\x00", 1)[0]
+        if not all(0x20 <= c < 0x7f for c in head):
+            continue
+        if name[len(head):].strip(b"\x00"):      # printable bytes after the pad
+            continue
+        out.append((o, num, head.decode().strip(), rungs))
+    return out
+
+
+def ladder_files(prog):
+    """[(file_number, name, rungs)] in stream order; name is '' when unnamed."""
+    return [(num, name, rungs) for _, num, name, rungs in _ladder_records(prog)]
 
 
 def comments(memdb):
@@ -129,10 +176,9 @@ def decode(path):
     first_rung = prog.find(b"CRung")                 # rung 0 of the first file
     if first_rung > 0:
         events.append((first_rung, "rung", None))
-    for m in TAG_FILE.finditer(prog):
-        rungs = struct.unpack("<H", m.group(1))[0]
-        events.append((m.start(), "file", "%s (%d rungs incl. END)"
-                       % (m.group(2).decode().strip(), rungs)))
+    for o, num, name, rungs in _ladder_records(prog):
+        label = "%d %s" % (num, name) if name else "%d" % num
+        events.append((o, "file", "%s (%d rungs incl. END)" % (label, rungs)))
     events += [(o, "ins", fmt(op, ops)) for o, op, ops in instructions(prog)]
     events.sort(key=lambda e: e[0])
 

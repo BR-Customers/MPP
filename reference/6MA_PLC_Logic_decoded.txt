@@ -1,5 +1,5 @@
 
-=== LAD MAIN (53 rungs incl. END)
+=== LAD 2 MAIN (53 rungs incl. END)
   000: XIC S:4/12  |  XIC B3:1/9  |  MSG MG11:5 (N17:0 / N20:0)
          ; MG11:5 = READ RESULTS DATA FROM VISION SYSTEM
          ; N17:0 = PART#1 FROM VISION
@@ -242,7 +242,7 @@
          ; B3:3/1 = TURN MOTOR ON TO GO TO BAD SIDE
   051: JSR U:3  |  JSR U:4
 
-=== LAD VISION (13 rungs incl. END)
+=== LAD 3 VISION (13 rungs incl. END)
   000: XIC B3:0/0  |  XIO B3:9/0  |  LIM? 0 <= N16:2 <= 2  |  NEQ? N16:2 , N7:2  |  ONS B3:0/3  |  MOV N7:2 -> N16:2  |  OTL B3:24/0
          ; B3:0/0 = SYSTEM STARTED
          ; B3:9/0 = RABBIT TEST IN PROGRESS
@@ -295,7 +295,7 @@
          ; L9:1 = BAD PARTS
          ; L9:2 = TOTAL PARTS
 
-=== LAD HOST (8 rungs incl. END)
+=== LAD 4 HOST (8 rungs incl. END)
   000: XIC B3:0/0  |  XIO B3:9/0  |  MOV 1 -> N7:0
          ; B3:0/0 = SYSTEM STARTED
          ; B3:9/0 = RABBIT TEST IN PROGRESS
