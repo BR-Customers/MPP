@@ -1,0 +1,283 @@
+{
+  "custom": {},
+  "params": {
+    "title": "The label did not print",
+    "what": "The reason was not recorded.",
+    "action": "Tell a supervisor and read them this message.",
+    "canSelfFix": false,
+    "detail": "",
+    "popupId": "mpp-print-failure"
+  },
+  "propConfig": {
+    "params.title": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.what": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.action": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.canSelfFix": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.detail": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 420,
+      "width": 620
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Banner"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.style.background": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.canSelfFix}, 'var(--mpp-warning, #B45309)', 'var(--mpp-danger, #B91C1C)')"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.title"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "#FFFFFF",
+            "fontSize": "22px",
+            "fontWeight": "700",
+            "padding": "18px 22px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "What"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.what"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "17px",
+            "lineHeight": "1.5",
+            "padding": "20px 22px 8px 22px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "ActionHeading"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary, #94A3B8)",
+                "fontSize": "12px",
+                "fontWeight": "700",
+                "letterSpacing": "0.08em",
+                "paddingBottom": "6px"
+              },
+              "text": "WHAT TO DO"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ActionText"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.action"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "19px",
+                "fontWeight": "600",
+                "lineHeight": "1.45"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "ActionBox"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "background": "var(--mpp-surface-raised, rgba(255,255,255,0.04))",
+            "borderLeft": "4px solid var(--mpp-accent, #2563EB)",
+            "borderRadius": "var(--mpp-radius-sm, 4px)",
+            "margin": "6px 22px 10px 22px",
+            "padding": "14px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "Detail"
+        },
+        "position": {
+          "basis": "auto",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.detail"
+              },
+              "type": "property"
+            }
+          },
+          "props.style.display": {
+            "binding": {
+              "config": {
+                "expression": "if(len({view.params.detail}) > 0, 'block', 'none')"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary, #94A3B8)",
+            "fontFamily": "monospace",
+            "fontSize": "12px",
+            "overflow": "auto",
+            "padding": "0 22px 10px 22px",
+            "whiteSpace": "pre-wrap"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(self.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DismissButton"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary"
+              },
+              "text": "OK"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "row",
+          "justify": "flex-end",
+          "style": {
+            "borderTop": "1px solid var(--mpp-border, rgba(255,255,255,0.08))",
+            "gap": "10px",
+            "padding": "12px 22px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

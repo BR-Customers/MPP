@@ -24,7 +24,7 @@ MODULE = os.path.join(
 )
 
 WANTED = ("_parseAck", "_unquote", "_dispatchLogParams", "_resolveLogParams",
-          "_describeProbe")
+          "_describeProbe", "operatorGuidance")
 
 
 def load_helpers(path=MODULE):
@@ -254,3 +254,66 @@ def test_a_good_status_carries_the_bound_queue(helpers):
     assert got["queue"] == "Zebra GX420d (RAW)"
     assert got["bridge"] == "1.0.0"
     assert got["jobs"] == 0
+
+
+# ------------------------------------------------- operator-facing guidance
+# The failure taxonomy exists so a diagnosis points at ONE machine. These tests
+# pin the translation of each condition into something an operator standing at a
+# station can act on -- and, critically, whether they can fix it themselves or
+# must fetch a supervisor. Telling an operator to "check the endpoint
+# configuration" is the same as telling them nothing.
+
+
+def test_an_unplugged_printer_is_something_the_operator_can_fix(helpers):
+    """The 2026-09-30 case: labels spooled, nothing printed, the Zebra was
+       unplugged. This is the one failure an operator fixes in ten seconds, so
+       it must not read like a configuration problem."""
+    g = helpers["operatorGuidance"]("QueueNotDraining", "2 job(s) waiting")
+    assert g["canSelfFix"] is True
+    assert "plug" in g["action"].lower() or "power" in g["action"].lower()
+
+
+def test_no_printer_configured_sends_them_for_a_supervisor(helpers):
+    g = helpers["operatorGuidance"]("EndpointUnresolved", "No printer endpoint")
+    assert g["canSelfFix"] is False
+    assert "supervisor" in g["action"].lower()
+
+
+def test_a_wrong_queue_name_is_not_an_operator_problem(helpers):
+    """The bridge answered, so nothing on the floor is broken. Retrying cannot
+       help and would just stack labels."""
+    g = helpers["operatorGuidance"]("QueueRejected", "queue not found: 'X'")
+    assert g["canSelfFix"] is False
+    assert "supervisor" in g["action"].lower()
+    assert "again" not in g["action"].lower()
+
+
+def test_an_unreachable_printer_pc_names_the_machine_to_check(helpers):
+    g = helpers["operatorGuidance"]("DispatchFailed", "Connection refused: getsockopt")
+    assert g["canSelfFix"] is True
+    assert "printer" in g["action"].lower()
+
+
+def test_a_timeout_and_a_refusal_read_differently(helpers):
+    """Same condition, different cause: refused means the PC is up and the
+       service is down; timed out means packets are dropped. An operator cannot
+       act on that distinction, but the text they read a supervisor is."""
+    refused = helpers["operatorGuidance"]("DispatchFailed", "Connection refused: getsockopt")
+    timeout = helpers["operatorGuidance"]("DispatchFailed", "Connect timed out")
+    assert refused["what"] != timeout["what"]
+
+
+def test_an_unknown_condition_still_produces_something_usable(helpers):
+    """A condition nobody anticipated must not render an empty dialog."""
+    g = helpers["operatorGuidance"]("SomethingNew", "who knows")
+    assert g["title"]
+    assert g["action"]
+    assert g["canSelfFix"] is False
+
+
+def test_every_guidance_carries_the_three_fields_the_popup_renders(helpers):
+    for cond in ("QueueNotDraining", "EndpointUnresolved", "QueueRejected",
+                 "DispatchFailed", None, ""):
+        g = helpers["operatorGuidance"](cond, "detail")
+        assert g["title"] and g["what"] and g["action"]
+        assert isinstance(g["canSelfFix"], bool)

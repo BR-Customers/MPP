@@ -189,3 +189,52 @@ def notifyResultCrtAware(result, successTitle, successMsg=None, errorTitle=None)
         return True
     notifyResult(result, successTitle, successMsg, errorTitle)
     return False
+
+
+_PRINT_POPUP_ID = "mpp-print-failure"
+_PRINT_POPUP_PATH = "BlueRidge/Components/Popups/PrintFailure"
+
+
+def printFailureNotice(errorCondition, errorDescription=None, detail=None):
+    """Modal, centre-screen, for a print that failed. Same reasoning as
+       crtNotice: a toast an operator does not happen to be looking at is the
+       same as no message, and on 2026-09-30 a label silently failed to print
+       with nothing on screen to say so.
+
+       The WORDS come from BlueRidge.Lots.LabelTransport.operatorGuidance, which
+       owns the failure taxonomy -- so there is one place that decides what each
+       condition means and whether the operator can fix it themselves. This
+       function only presents it.
+
+       detail is the technical line (endpoint, queue, WinError) shown small at
+       the bottom. It is there to be read aloud to a supervisor, not to be
+       understood by the operator.
+
+       Returns True when the popup was opened."""
+    g = BlueRidge.Lots.LabelTransport.operatorGuidance(errorCondition, errorDescription)
+    system.perspective.openPopup(
+        _PRINT_POPUP_ID, _PRINT_POPUP_PATH,
+        params={"title": g["title"], "what": g["what"], "action": g["action"],
+                "canSelfFix": g["canSelfFix"], "detail": "%s" % (detail or ""),
+                "popupId": _PRINT_POPUP_ID},
+        modal=True, showCloseIcon=False)
+    return True
+
+
+def notifyPrintResult(result, successTitle, successMsg=None):
+    """notifyResult(), except a print FAILURE gets the modal instead of a toast.
+
+       Success still toasts -- an operator who got their label does not need a
+       dialog to dismiss. Only the failure is modal, because that is the case
+       where they are standing there waiting for a label that is not coming.
+
+       result carries the dispatch outcome; errorCondition and errorDescription
+       are read from it when present so the modal can name the right next step,
+       and fall back to the generic guidance when they are not."""
+    r = BlueRidge.Common.Util.extractQualifiedValues(result) or {}
+    if r.get("Status"):
+        BlueRidge.Common.Notify.toast(
+            successTitle, successMsg or r.get("Message") or "", "success")
+        return True
+    printFailureNotice(r.get("ErrorCondition"), r.get("Message"), r.get("Detail"))
+    return False

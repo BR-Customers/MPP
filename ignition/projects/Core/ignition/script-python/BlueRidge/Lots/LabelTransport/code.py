@@ -227,6 +227,79 @@ def _describeProbe(outcome):
             "jobs": ack.get("jobs"), "error": None}
 
 
+def operatorGuidance(errorCondition, errorDescription=None):
+    """Translate a dispatch failure into something an operator at a station can
+       act on. Self-contained (no BlueRidge.*, no java) so the tests can exec it.
+
+       Returns {title, what, action, canSelfFix}:
+         title      -- the headline, in the operator's words
+         what       -- one sentence on what actually happened
+         action     -- the NEXT STEP, not a description of the fault
+         canSelfFix -- True when the operator can resolve it where they stand
+
+       canSelfFix is the field that matters. Section 6.3's taxonomy exists so a
+       diagnosis points at one machine; this turns that into "go do X". Telling
+       an operator to check an endpoint configuration is the same as telling
+       them nothing, and telling them to try again when the queue name is wrong
+       just stacks labels nobody asked for.
+
+       An unrecognised condition is NOT self-fixable: an empty or guessy dialog
+       in front of someone holding a basket is worse than an honest 'fetch a
+       supervisor'."""
+    cond = ("%s" % (errorCondition or "")).strip()
+    detail = ("%s" % (errorDescription or "")).strip()
+
+    if cond == "QueueNotDraining":
+        return {
+            "title": "The printer is not taking labels",
+            "what": "The label reached the printer's PC, but its queue is not emptying.",
+            "action": "Check the printer is plugged in and powered on. The label will "
+                      "print by itself once it is -- do not send it again.",
+            "canSelfFix": True}
+
+    if cond == "DispatchFailed":
+        # Refused and timed out are the same condition and different faults.
+        # An operator cannot act on the distinction, but the sentence they read
+        # out to a supervisor is what makes the callout useful.
+        if "refused" in detail.lower():
+            what = ("The printer's PC answered, but the printing service on it is not "
+                    "running.")
+        elif "timed out" in detail.lower():
+            what = ("The printer's PC did not answer at all -- it may be switched off or "
+                    "off the network.")
+        else:
+            what = "The label could not be sent to the printer's PC."
+        return {
+            "title": "Cannot reach the printer",
+            "what": what,
+            "action": "Check the PC next to the printer is switched on. If it is, tell a "
+                      "supervisor and read them this message.",
+            "canSelfFix": True}
+
+    if cond == "QueueRejected":
+        return {
+            "title": "The printer is set up wrong",
+            "what": "The printer's PC answered and refused the label: %s"
+                    % (detail or "it does not recognise its printer."),
+            "action": "Tell a supervisor -- this needs fixing on that PC. Sending it "
+                      "once more will not help.",
+            "canSelfFix": False}
+
+    if cond == "EndpointUnresolved":
+        return {
+            "title": "No printer set up for this station",
+            "what": "This station has no printer configured, so nothing was sent.",
+            "action": "Tell a supervisor. The station needs a printer assigned before "
+                      "it can print.",
+            "canSelfFix": False}
+
+    return {
+        "title": "The label did not print",
+        "what": detail or "The reason was not recorded.",
+        "action": "Tell a supervisor and read them this message.",
+        "canSelfFix": False}
+
+
 def probeStatus(host, port):
     """PROTOCOL.md section "?STATUS": connect, send the command, half-close, read
        one line. NO LABEL IS CONSUMED, so this is safe to call against a live

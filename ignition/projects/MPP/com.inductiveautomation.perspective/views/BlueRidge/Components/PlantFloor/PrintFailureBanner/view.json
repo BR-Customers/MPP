@@ -47,7 +47,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsid = self.view.custom.alert.shippingLabelId\n\tif sid is None:\n\t\treturn\n\tresult = BlueRidge.Lots.Shipping.reprintAndDispatch(sid, None, BlueRidge.Common.Session.currentAppUserId(self.session), None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Label reprinted\")"
+                    "script": "\tsid = self.view.custom.alert.shippingLabelId\n\tif sid is None:\n\t\treturn\n\tresult = BlueRidge.Lots.Shipping.reprintAndDispatch(sid, None, BlueRidge.Common.Session.currentAppUserId(self.session), None)\n\tBlueRidge.Common.Ui.notifyPrintResult(result, \"Label reprinted\")"
                   },
                   "scope": "G",
                   "type": "script"
