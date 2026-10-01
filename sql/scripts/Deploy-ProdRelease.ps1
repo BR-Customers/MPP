@@ -654,8 +654,8 @@ if (& $has "0099_diecast_shift_attribution_source") {
     # ShiftOverride_Restamp keys off this column to skip rows a reconciliation
     # wrote. An override applied but not yet reverted spans the deploy, and the
     # backfill stamps every existing row 'Derived' -- correct, but worth seeing.
-    $openOv = S "SELECT COUNT(*) FROM Oee.ShiftOverride WHERE RevertedAt IS NULL"
-    if ($openOv -gt 0) { Finding "WARN" "0099" "$openOv un-reverted Oee.ShiftOverride row(s) at deploy time -- every existing contribution backfills as 'Derived', which is what ShiftOverride_Restamp expects, but confirm the override set is the one you think it is." }
+    $openOv = S "SELECT COUNT(*) FROM Oee.ShiftOverride WHERE DeprecatedAt IS NULL"
+    if ($openOv -gt 0) { Finding "WARN" "0099" "$openOv active Oee.ShiftOverride row(s) at deploy time -- every existing contribution backfills as 'Derived', which is what ShiftOverride_Restamp expects, but confirm the override set is the one you think it is." }
 }
 
 if (& $has "0102_shippinglabel_print_error_condition") {
