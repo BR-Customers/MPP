@@ -30,7 +30,62 @@
 
 > **2026-09-22 -- Trim partial checkpoint at shift end, built and smoke-tested on Dev.** A blast operator can record the total trimmed so far on a LOT at shift end without moving the LOT off Trim IN. Migration `0096` adds `Workorder.ProductionEvent.ShiftId`; new proc `Workorder.TrimPartial_Record` (route `TrimIn` template, operator-picked shift, never defaulted); `Workorder.TrimOut_Record` v1.5 gains a trim-scoped guard, requires a count after a partial, and stamps `ShiftId` via `Oee.ufn_ShiftIdForInstant`; new read `Workorder.TrimCheckpoint_GetLatestForLot` backs an "already recorded" line on the LOT card. Core NQs + `BlueRidge.Workorder.TrimPartial`; new popup `Components/Popups/TrimPartial`; `TrimBody` gained the **Record partial trim - shift end** button. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. **Verified on `MPP_MES_Dev`:** LOT `TPC-SMOKE-1` took a partial of 700 filed under Third Shift, then Trim OUT at 953, crediting 700 and 253 with `ShiftId` stamped on both checkpoints; full SQL suite 3885/3885, exit 0. **Dev only -- not yet released to prod.** Natural follow-up: the Trim Shop Detail report / credit rollup read (spec section 3.2 is its contract, out of scope here).
 
-**Last updated:** 2026-09-29 -- **Die cast shift reconciliation, SQL layer (Plan 1): built, green and applied to Dev. 42 commits (`507cb3bb..591c6bf6`), migrations `0097`-`0099`, 26 new/changed repeatables. NOT deployed, and the acceptance replay against a real press sheet has never been run -- see "Still owed" below before planning a release.**
+**Last updated:** 2026-10-01 -- **Zebra label printing works end to end, on production components, across a VPN.** A shipping label dispatched from the Gateway in gateway scope, through the new `MesZebraBridge` C# Windows service on another machine, to a physical Zebra. No Python in the path. Previous entry (die cast reconciliation Task 13) below, unchanged.
+
+> ### Zebra bridge + print traceability -- shipped 2026-09-29 / 10-01
+>
+> **Spec:** `docs/superpowers/specs/2026-09-29-zebra-bridge-service-and-print-traceability-design.md` (the authority -- read it before touching any of this).
+> **Wire contract:** `zebraPrinter/PROTOCOL.md` v1.0.0. **FROZEN.** Three workstreams build against it; change it there first, with agreement.
+>
+> **What exists now.** `MesZebraBridge` -- a self-installing .NET Framework 4.8 Windows service (`zebraPrinter/MesZebraBridge/`, 113 xunit tests) that accepts ZPL on TCP 9100 and spools it RAW to a local Zebra queue. Deploys as **two files** (exe + `MesZebraBridge.conf` beside it); `install` is idempotent and `set-queue "<name>"` handles a printer swap without a reinstall. **No runtime queue detection** -- the queue name is explicit config, because a real host carried three candidate queues, two of them live on the same USB port. The Gateway address for the firewall rule lives in the conf (`172.17.10.161`, the plant Gateway) and is **never compiled in**; `--gateway` overrides it.
+>
+> **The MES side.** Endpoint derivation moved into SQL: `Location.ufn_PrinterEndpoint` composes a `UsbBridge` printer's endpoint from its parent Terminal's `IpAddress` + 9100, and the three read procs (`Printer_GetById`, `Terminal_GetPrinter`, `PrinterFgAssignment_ListForStation`) return it in the **existing** `Endpoint` column -- which is why `ShippingDispatcher`, `LotLabel` and `Terminal.applyToSession` needed no change at all. `LabelTransport` now reads the bridge's ACK, so `ok` means "the named Windows queue took this as job N" rather than "bytes left the Gateway". Every dispatch leaves one `Audit.InterfaceLog` row naming the stage it reached.
+>
+> **The failure taxonomy (section 6.3) was produced against real hardware, not predicted.** `EndpointUnresolved` (config, nothing attempted), `DispatchFailed` + `Connection refused` (service down) vs `Connect timed out` (firewall), `QueueRejected` (bridge answered, queue name wrong). Those distinctions are load-bearing -- each sends a diagnosis to a different machine, and collapsing them is what cost most of 2026-09-29.
+>
+> **`?STATUS` probe.** Connect, send `?STATUS`, read one line -- **no label consumed**. Proves route, firewall, service *and* queue binding in one call. It is what makes commissioning 54 printers tractable; without it the only test is manufacturing a real container. Surfaced as **Test printer** on Plant Hierarchy.
+>
+> **Commissioning is ONE VISIT per terminal** (spec section 7, rewritten from Jacques's actual flow): read the PC's address and queue name, set the **Terminal IpAddress** in the Config Tool, install the driver, run `install`, add the Printer row as `ConnectionKind = UsbBridge` (**no endpoint typed -- it derives**), probe, launch the workstation. The terminal IP is a commissioning step, **not** a prerequisite: as of 2026-09-30 only **17 of 77** terminals carry one and **38 terminals already have a printer and no address**. That list is the rollout worklist, not a defect list.
+>
+> ### Where to pick up
+>
+> 1. **Config Tool plan Task 9 and C# plan Task 15** -- both hardware commissioning of one real printer, both blocked only on a terminal PC with a Zebra and exclusive use of 9100. Everything they depend on has now run.
+> 2. **Wire the print-failure popup into the ASYNC path.** `Popups/PrintFailure` + `Ui.printFailureNotice` + `LabelTransport.operatorGuidance` are built and wired to the `PrintFailureBanner` retry. `ShippingDispatcher._dispatchWorker` runs on a gateway thread with **no session to push to**, so it needs the `sessionId + pageId` enumeration (`feedback_ignition_gateway_sendmessage_needs_session_page`). Deliberately left rather than half-done.
+> 3. **Open items, spec section 12.** Config file and service account are settled as built (`key=value` beside the exe; `LocalSystem`). **Signing is Jacques's call and currently "click through SmartScreen"** -- the build is byte-reproducible with SHA-256 `6A208EDD...5B70` recorded in `RELEASE.md` for hash-allowlisting if IT prefers. Worth asking MPP IT whether they have a deployment channel, since that likely answers signing *and* how 54 installs happen.
+>
+> ### Cleanup owed (Dev only, nothing in prod)
+>
+> - **Terminal 147 (`MA2-6MACH-AOUT3`) holds `10.20.11.157`** -- a laptop on the office network, left from the bring-up. A live 6MA parallel-run row carrying a test address. Harmless while `SuppressAimAndLabel = 1`; must not reach a release.
+> - `TEST-6MACH-*` seed LOTs (10 castings at 198 pcs + 2 dowel boxes), container 20029, shipping labels 20015-20028, one consumed `DEVAIM-5G0-FG-001`.
+> - Stale firewall rules both ends: two duplicate `MES Zebra USB bridge (TCP 9100)` on Hunter's PC from the Python-bridge era, and two Windows-auto-created `meszebrabridge.exe` rules on Jacques's (any port, TCP+UDP, pointing into a deleted worktree) -- **removal needs an elevated prompt**.
+>
+> ### Gotchas worth inheriting
+>
+> - **`ready=true` does not mean a printer is attached.** A Windows queue outlives its device, keeps accepting jobs and sets no error/offline/paused bit. Spec section 9.1; the Test-printer action now warns when `jobs > 0`.
+> - **`EXEC` parameters must be literals or `@variables`** -- an inline `CAST` is `Msg 102`. Caught twice.
+> - **`PlantHierarchy/view.json` is MIXED-escape**: 189 GSON `=` alongside four literal ` = `. Anchor file edits on escape-free text.
+> - **`Audit_LogInterfaceCall` NULLs both payloads unless `IsHighFidelity = 1`** (FRS 3.17.4). Putting something in `ResponsePayload` on a low-fidelity row silently discards it.
+> - **Agents caught two defects in plans I had reviewed** -- the C# plan could not have built Tasks 1-11 (`OutputType=Exe`, no `Main` until Task 12, CS5001), and a test used an inline `CAST`. Both surfaced only by running the red step. Keep the TDD cycle honest.
+
+**Last updated:** 2026-09-30 -- **Die cast shift reconciliation, Plan 2 Task 13 (live smoke test): partial, BLOCKED by the Ignition Perspective client's 2-hour trial expiring mid-session. Elevation-bypass path confirmed; PIN sign-in confirmed (AppUser 6); Scenario A reached by normal navigation (Machine 11, 09-28 Second Shift, a true "No entry" shift) and its empty-shift banner text confirmed live; 5 of the screen's blocking checks captured live with exact rendered text; no save reached, no rows written this session. Full report `.superpowers/sdd/p2-task-13-report.md`.**
+
+> ### Die cast shift reconciliation -- Task 13 live smoke, partial (2026-09-30)
+>
+> Full detail, every exact string captured, and the source-only fallback for everything the blocker cut off: `.superpowers/sdd/p2-task-13-report.md`. Summary:
+>
+> **Confirmed live:** the `ElevationModal` renders with the screen visible beneath it and its footer **Cancel** button dismisses it cleanly (no credential entered, matching Jacques's 2026-09-29 decision to smoke with the AD gate bypassed); a PIN sign-in (`00006` -> AppUser 6, John Doe) populates `session.custom.user` and therefore the sheet's "Reconciling as ..." banner, even with no AD elevation granted -- re-navigating to the route after a PIN sign-in still raises the `ElevationModal` again, confirming a PIN alone does **not** bypass the gate; the landing list, press picker and shift picker all work and reach a true `NO ENTRY` shift (`ShiftId=20148`, Machine 11, 09-28 Second Shift) by ordinary navigation, no param hardcoding needed; the empty-shift banner text matches spec verbatim with the press name substituted correctly; the header's die name + asset number ordering and cavity count match `..._GetHeader` exactly; five blocking checks rendered their exact text on screen (reason missing, nothing-to-save, total != good+warm, LOT-list-total mismatch, a LOT quantity above good shots) and are quoted verbatim in the report.
+>
+> **The blocker.** The gateway-wide Perspective trial (2 hours) ran out mid-edit. Recovery needs a gateway admin login (no credentials available to this session) or an `Ignition` service restart (`Restart-Service` was **refused by the sandbox's own auto-mode classifier**, correctly, since this is the one shared Dev gateway used across worktrees) -- neither was forced. Everything past that point (finishing Scenario A's save; Scenario B's move popup, Save-confirmation panel, ConfirmUnsaved's two exits, the HowTo popup, the reduction/amber-tick-box path, the remaining 7 blocking checks, and the three new-LTT refusal paths) is reported **source-verified only** (read from `R__Workorder_DieCastShiftReconciliation_Save.sql`, the sheet's client-side `blockers` mirror, and `R__Lots_DieCastLot_ResolveLtt.sql`), clearly labelled as not exercised on screen this session.
+>
+> **Cross-checked, not created by this session:** Task 10's real save (reconciliation `Id=1`, shift 20126) is still in the database -- re-verified independently in SQL this session: the header row, 2 `DieCastContribution` rows tagged `ShiftAttributionSourceId=2` (`Reconciled`), the `DieCastCounterAnchor` reason `ShiftReconciliation`, the `Audit.OperationLog` row (confirmed **not** `ConfigLog`), and the 2 new released LOTs (71000111/71000112). Matches `progress.md`'s own record of that task exactly.
+>
+> **No footprint left behind.** `git status` before/after this session differs only in files this session never touched (concurrent edits elsewhere in the shared worktree). No SQL write happened this session; the staged test LTT (`90000001`) never reached a Save and does not exist in `Lots.Lot`.
+>
+> **An observation, not a filed defect:** editing a value inside the LOT list or shift-totals panel repeatedly scrolled the whole embedded sheet back to its top the moment the edit committed, which cost real time re-locating fields. Not traced to a cause, not confirmed as a real-browser behavior vs. a tool artifact -- worth a quick look on a real terminal, noted rather than escalated.
+>
+> **Needed to finish:** a fresh Ignition trial -- gateway admin login, or a service restart at a time that will not disturb anyone else on the shared Dev gateway -- then a follow-up pass to close out everything the blocker left source-only above.
+
+**Previously:** 2026-09-29 -- **Die cast shift reconciliation, SQL layer (Plan 1): built, green and applied to Dev. 42 commits (`507cb3bb..591c6bf6`), migrations `0097`-`0099`, 26 new/changed repeatables. NOT deployed, and the acceptance replay against a real press sheet has never been run -- see "Still owed" below before planning a release.**
 
 > ### Die cast shift reconciliation -- the SQL layer (2026-09-29)
 >
