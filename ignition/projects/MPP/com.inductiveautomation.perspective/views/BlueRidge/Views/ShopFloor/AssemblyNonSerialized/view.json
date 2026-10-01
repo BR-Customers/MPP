@@ -1,91 +1,14 @@
 {
   "custom": {
-    "closureMethodTracker": "",
-    "container": {
-      "AccumulatedParts": 0,
-      "ClosedTrays": 0,
-      "ClosureMethod": "",
-      "Id": null,
-      "IsSerialized": false,
-      "ItemDescription": "",
-      "ItemId": null,
-      "ItemPartNumber": "",
-      "PartsPerTray": 0,
-      "TargetParts": 0,
-      "TraysPerContainer": 0
-    },
     "draft": {
       "partsCount": "",
       "trayPosition": ""
     },
     "refreshToken": 0,
-    "scaleInstancePath": "",
-    "selectedFinishedGoodItemId": null,
-    "printerCards": [],
-    "usePrinterCards": false,
-    "crtEnabled": false,
-    "crtPending": []
+    "selectedFinishedGoodItemId": null
   },
   "params": {},
   "propConfig": {
-    "custom.scaleInstancePath": {
-      "binding": {
-        "config": {
-          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.TerminalPlcDevice.getByTerminal\", 0, {session.custom.terminal.terminalLocationId}), \"\")"
-        },
-        "transforms": [
-          {
-            "code": "\trows \u003d value or []\n\tfor r in rows:\n\t\tif (r.get(\"DeviceTypeCode\") or \"\") \u003d\u003d \"ScaleStation\":\n\t\t\treturn r.get(\"UdtInstancePath\") or \"\"\n\treturn \"\"",
-            "type": "script"
-          }
-        ],
-        "type": "expr"
-      }
-    },
-    "custom.printerCards": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.PrinterFgAssignment.listCardsForStation\", 0, {session.custom.terminal.terminalLocationId}, {session.custom.cell.locationId}, {view.custom.refreshToken}), [])"
-        }
-      }
-    },
-    "custom.usePrinterCards": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "len({view.custom.printerCards}) > 1"
-        }
-      }
-    },
-    "custom.crtEnabled": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.Terminal.getCrtEnabled\", 0, {session.custom.terminal.terminalLocationId}), \"\")"
-        },
-        "transforms": [
-          {
-            "type": "script",
-            "code": "\treturn bool(value)"
-          }
-        ]
-      }
-    },
-    "custom.crtPending": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.listPendingValidation\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
-        },
-        "transforms": [
-          {
-            "type": "script",
-            "code": "\treturn value or []"
-          }
-        ]
-      }
-    },
     "custom.closureMethodTracker": {
       "binding": {
         "config": {
@@ -109,11 +32,39 @@
     "custom.container": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Workorder.Assembly.getStationContainerRows\", 0, {session.custom.cell.locationId}, {session.custom.terminal.terminalLocationId}, {session.custom.closureMethod}, {view.custom.selectedFinishedGoodItemId}, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Workorder.Assembly.getStationContainerRows\", 0, {session.custom.cell.locationId}, {session.custom.terminal.terminalLocationId}, {session.custom.closureMethod}, {view.custom.selectedFinishedGoodItemId}, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
             "code": "\trows \u003d value or []\n\tr \u003d rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemId\": r.get(\"ItemId\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False, \"ClosureMethod\": r.get(\"ClosureMethod\") or \"\"}",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.crtEnabled": {
+      "binding": {
+        "config": {
+          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.Terminal.getCrtEnabled\", 0, {session.custom.terminal.terminalLocationId}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\treturn bool(value)",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.crtPending": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.listPendingValidation\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\treturn value or []",
             "type": "script"
           }
         ],
@@ -130,6 +81,36 @@
       "onChange": {
         "enabled": true,
         "script": "\t# Auto-populate from the part\u0027s container config: prefill the parts-in-tray\n\t# field with PartsPerTray (only into an EMPTY field - never overwrite input).\n\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif ppt and d.get(\"partsCount\") in (None, \"\"):\n\t\tself.view.custom.draft \u003d {\"partsCount\": ppt, \"trayPosition\": d.get(\"trayPosition\") or \"\"}\n\t# --- Flow A: push the checkweigh setpoint when the running part changes ---\n\t# ByWeight lines only. A ByCount / ByVision line has no ByWeight container\n\t# config, so the push would raise a persistent error toast on every change.\n\tif self.session.custom.closureMethod !\u003d \"ByWeight\":\n\t\treturn\n\tcontainer \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.container) or {}\n\titemId \u003d container.get(\"ItemId\") or self.view.custom.selectedFinishedGoodItemId\n\tif not itemId:\n\t\treturn\n\t# The scale\u0027s UDT instance path is per-terminal and lives on the terminal\u0027s\n\t# PLC-device mapping (session.custom.plcDevices), NOT on session.custom.terminal.\n\t# Rows arrive as Java ImmutableMaps: dev[\u0027Key\u0027] works, dev.get(...) does not.\n\tscalePath \u003d \"\"\n\tfor dev in (self.session.custom.plcDevices or []):\n\t\tif dev and dev[\"DeviceTypeCode\"] \u003d\u003d \"ScaleStation\":\n\t\t\tscalePath \u003d \"%s\" % (dev[\"UdtInstancePath\"] or \"\")\n\t\t\tbreak\n\tif not scalePath:\n\t\treturn\n\t# ok means \"the config was valid and the push STARTED\", NOT \"the terminal is\n\t# enforcing this target\" -- the command sequence runs asynchronously (spec\n\t# 6.5). Setpoint/State reaching Active is the authoritative signal, and that\n\t# is what gates the Weigh \u0026 Close Tray button.\n\tsetpoint \u003d BlueRidge.Workorder.ScaleWatcher.loadSetpointForItem(scalePath, self.session.custom.terminal.terminalLocationId, itemId)\n\tif not setpoint[\"ok\"]:\n\t\tBlueRidge.Common.Notify.toast(\"Scale setpoint not sent\", setpoint[\"message\"], \"error\", 0)"
+      }
+    },
+    "custom.printerCards": {
+      "binding": {
+        "config": {
+          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.PrinterFgAssignment.listCardsForStation\", 0, {session.custom.terminal.terminalLocationId}, {session.custom.cell.locationId}, {view.custom.refreshToken}), [])"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.scaleInstancePath": {
+      "binding": {
+        "config": {
+          "expression": "if(!isNull({session.custom.terminal.terminalLocationId}), runScript(\"BlueRidge.Location.TerminalPlcDevice.getByTerminal\", 0, {session.custom.terminal.terminalLocationId}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\trows \u003d value or []\n\tfor r in rows:\n\t\tif (r.get(\"DeviceTypeCode\") or \"\") \u003d\u003d \"ScaleStation\":\n\t\t\treturn r.get(\"UdtInstancePath\") or \"\"\n\treturn \"\"",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.usePrinterCards": {
+      "binding": {
+        "config": {
+          "expression": "len({view.custom.printerCards}) \u003e 1"
+        },
+        "type": "expr"
       }
     }
   },
@@ -154,27 +135,6 @@
                     "fontWeight": 700
                   },
                   "text": "Assembly - Non-Serialized Line"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "Subtitle"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Dedicated terminal - operator-driven count - no MIP per-piece handshake\""
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  }
                 },
                 "type": "ia.display.label"
               }
@@ -372,7 +332,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-scrap-entry\", \"BlueRidge/Components/Popups/ScrapEntry\", params={\"cellLocationId\": self.session.custom.cell.locationId, \"operationTypeCode\": \"AssemblyOut\", \"popupId\": \"mpp-scrap-entry\"}, modal=True, showCloseIcon=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-scrap-entry\", \"BlueRidge/Components/Popups/ScrapEntry\", params\u003d{\"cellLocationId\": self.session.custom.cell.locationId, \"operationTypeCode\": \"AssemblyOut\", \"popupId\": \"mpp-scrap-entry\"}, modal\u003dTrue, showCloseIcon\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -401,36 +361,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tresult = BlueRidge.Lots.Shipping.reprintLastForTerminal(self.session.custom.terminal.terminalLocationId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Label reprinted\")"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "ReprintButton",
-              "tooltip": {
-                "text": "Reprint the last shipping label at this terminal (dropped or damaged label)"
-              }
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "classes": "pf-btn pf-btn-secondary"
-              },
-              "text": "Reprint"
-            },
-            "type": "ia.input.button"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-crt-validation\", \"BlueRidge/Components/Popups/CrtValidation\", params={\"terminalLocationId\": self.session.custom.terminal.terminalLocationId, \"lineLocationId\": self.session.custom.cell.locationId}, modal=True, showCloseIcon=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-crt-validation\", \"BlueRidge/Components/Popups/CrtValidation\", params\u003d{\"terminalLocationId\": self.session.custom.terminal.terminalLocationId, \"lineLocationId\": self.session.custom.cell.locationId}, modal\u003dTrue, showCloseIcon\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -450,10 +381,10 @@
             "propConfig": {
               "position.display": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "{view.custom.crtEnabled} || len({view.custom.crtPending}) > 0"
-                  }
+                    "expression": "{view.custom.crtEnabled} || len({view.custom.crtPending}) \u003e 0"
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -470,7 +401,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.navigate(\"/\")"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-shipping-reprint\", \"BlueRidge/Components/PlantFloor/ShippingLabelReprint\", params\u003d{\"cellLocationId\": self.session.custom.cell.locationId, \"terminalLocationId\": self.session.custom.terminal.terminalLocationId}, modal\u003dTrue, showCloseIcon\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -478,13 +409,17 @@
               }
             },
             "meta": {
-              "name": "CloseButton"
+              "name": "ReprintShippingLabelButton"
+            },
+            "position": {
+              "basis": "220px",
+              "shrink": 0
             },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
               },
-              "text": "Close"
+              "text": "Reprint Shipping Label"
             },
             "type": "ia.input.button"
           },
@@ -1262,24 +1197,24 @@
                         "meta": {
                           "name": "TrayBody"
                         },
+                        "position": {
+                          "grow": 1
+                        },
                         "props": {
                           "style": {
                             "overflow": "visible"
                           },
                           "wrap": "wrap"
                         },
-                        "type": "ia.container.flex",
-                        "position": {
-                          "grow": 1
-                        }
+                        "type": "ia.container.flex"
                       }
                     ],
                     "meta": {
                       "name": "TrayClosePanel"
                     },
                     "position": {
-                      "shrink": 0,
-                      "grow": 1
+                      "grow": 1,
+                      "shrink": 0
                     },
                     "props": {
                       "direction": "column",
@@ -1327,7 +1262,7 @@
                               "component": {
                                 "onActionPerformed": {
                                   "config": {
-                                    "script": "\tc \u003d self.view.custom.container\n\tcellId \u003d self.session.custom.cell.locationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed\u003dTrue, terminalLocationId\u003dself.session.custom.terminal.terminalLocationId, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                                    "script": "\tc \u003d self.view.custom.container\n\tcellId \u003d self.session.custom.cell.locationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed\u003dTrue, terminalLocationId\u003dself.session.custom.terminal.terminalLocationId, appUserId\u003dBlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                                   },
                                   "scope": "G",
                                   "type": "script"
@@ -1374,7 +1309,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "!isNull({view.custom.container.Id}) && {session.custom.closureMethod} = \"ByCount\""
+                            "expression": "!isNull({view.custom.container.Id}) \u0026\u0026 {session.custom.closureMethod} \u003d \"ByCount\""
                           },
                           "type": "expr"
                         }
@@ -1400,8 +1335,10 @@
                 "propConfig": {
                   "position.display": {
                     "binding": {
-                      "type": "expr",
-                      "config": { "expression": "!{view.custom.usePrinterCards}" }
+                      "config": {
+                        "expression": "!{view.custom.usePrinterCards}"
+                      },
+                      "type": "expr"
                     }
                   }
                 },
@@ -1424,35 +1361,49 @@
             "type": "ia.container.flex"
           },
           {
-            "type": "ia.display.flex-repeater",
-            "meta": { "name": "PrinterCardPanel" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "PrinterCardPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
             "propConfig": {
               "position.display": {
-                "binding": { "type": "expr", "config": { "expression": "{view.custom.usePrinterCards}" } }
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.usePrinterCards}"
+                  },
+                  "type": "expr"
+                }
               },
               "props.instances": {
                 "binding": {
-                  "type": "property",
-                  "config": { "path": "view.custom.printerCards" },
+                  "config": {
+                    "path": "view.custom.printerCards"
+                  },
                   "transforms": [
                     {
-                      "type": "script",
-                      "code": "\trows = value or []\n\tn = len(rows)\n\tterm = None\n\tcell = None\n\ttry:\n\t\tterm = self.session.custom.terminal.terminalLocationId\n\t\tcell = self.session.custom.cell.locationId\n\texcept:\n\t\tpass\n\treturn [\n\t\t{\n\t\t\t\"index\": i, \"totalRows\": n,\n\t\t\t\"printerLocationId\": r.get(\"PrinterLocationId\"),\n\t\t\t\"printerCode\": r.get(\"PrinterCode\") or \"\",\n\t\t\t\"printerName\": r.get(\"PrinterName\") or \"\",\n\t\t\t\"endpoint\": r.get(\"Endpoint\") or \"\",\n\t\t\t\"connectionKind\": r.get(\"ConnectionKind\") or \"\",\n\t\t\t\"assignedItemId\": r.get(\"AssignedItemId\"),\n\t\t\t\"partNumber\": r.get(\"PartNumber\") or \"\",\n\t\t\t\"description\": r.get(\"Description\") or \"\",\n\t\t\t\"sortOrder\": r.get(\"SortOrder\") or 0,\n\t\t\t\"openContainerId\": r.get(\"OpenContainerId\"),\n\t\t\t\"fillAccum\": r.get(\"FillAccum\") or 0,\n\t\t\t\"fillTarget\": r.get(\"FillTarget\") or 0,\n\t\t\t\"isFull\": r.get(\"IsFull\") or 0,\n\t\t\t\"cellLocationId\": cell,\n\t\t\t\"terminalLocationId\": term\n\t\t}\n\t\tfor i, r in enumerate(rows)\n\t]"
+                      "code": "\trows \u003d value or []\n\tn \u003d len(rows)\n\tterm \u003d None\n\tcell \u003d None\n\ttry:\n\t\tterm \u003d self.session.custom.terminal.terminalLocationId\n\t\tcell \u003d self.session.custom.cell.locationId\n\texcept:\n\t\tpass\n\treturn [\n\t\t{\n\t\t\t\"index\": i, \"totalRows\": n,\n\t\t\t\"printerLocationId\": r.get(\"PrinterLocationId\"),\n\t\t\t\"printerCode\": r.get(\"PrinterCode\") or \"\",\n\t\t\t\"printerName\": r.get(\"PrinterName\") or \"\",\n\t\t\t\"endpoint\": r.get(\"Endpoint\") or \"\",\n\t\t\t\"connectionKind\": r.get(\"ConnectionKind\") or \"\",\n\t\t\t\"assignedItemId\": r.get(\"AssignedItemId\"),\n\t\t\t\"partNumber\": r.get(\"PartNumber\") or \"\",\n\t\t\t\"description\": r.get(\"Description\") or \"\",\n\t\t\t\"sortOrder\": r.get(\"SortOrder\") or 0,\n\t\t\t\"openContainerId\": r.get(\"OpenContainerId\"),\n\t\t\t\"fillAccum\": r.get(\"FillAccum\") or 0,\n\t\t\t\"fillTarget\": r.get(\"FillTarget\") or 0,\n\t\t\t\"isFull\": r.get(\"IsFull\") or 0,\n\t\t\t\"cellLocationId\": cell,\n\t\t\t\"terminalLocationId\": term\n\t\t}\n\t\tfor i, r in enumerate(rows)\n\t]",
+                      "type": "script"
                     }
-                  ]
+                  ],
+                  "type": "property"
                 }
               }
             },
             "props": {
-              "direction": "row",
-              "wrap": "wrap",
-              "elementPosition": { "basis": "320px", "grow": 0, "shrink": 0 },
+              "elementPosition": {
+                "basis": "320px",
+                "grow": 0,
+                "shrink": 0
+              },
               "path": "BlueRidge/Components/PlantFloor/PrinterCard",
-              "useDefaultViewHeight": true,
-              "useDefaultViewWidth": true,
-              "style": { "gap": "12px" }
-            }
+              "style": {
+                "gap": "12px"
+              },
+              "wrap": "wrap"
+            },
+            "type": "ia.display.flex-repeater"
           }
         ],
         "meta": {
@@ -1469,53 +1420,6 @@
           }
         },
         "type": "ia.container.flex"
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Footer"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "props": {
-          "direction": "row",
-          "alignItems": "center",
-          "justify": "flex-end",
-          "style": {
-            "classes": "modal-footer",
-            "gap": "10px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "ReprintShippingLabelButton"
-            },
-            "position": {
-              "basis": "220px",
-              "shrink": 0
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-shipping-reprint\", \"BlueRidge/Components/PlantFloor/ShippingLabelReprint\", params\u003d{\"cellLocationId\": self.session.custom.cell.locationId, \"terminalLocationId\": self.session.custom.terminal.terminalLocationId}, modal\u003dTrue, showCloseIcon\u003dTrue)"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Reprint Shipping Label",
-              "style": {
-                "classes": "pf-btn pf-btn-secondary"
-              }
-            }
-          }
-        ]
       }
     ],
     "events": {
@@ -1545,17 +1449,23 @@
         {
           "name": "refreshCards",
           "params": [],
-          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "name": "handleAssign",
-          "params": ["printerLocationId", "itemId"],
-          "script": "\tcards = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.printerCards) or []\n\trows = []\n\tfor c in cards:\n\t\tc = c or {}\n\t\tpid = c.get(\"PrinterLocationId\")\n\t\tiid = c.get(\"AssignedItemId\")\n\t\tif pid == printerLocationId:\n\t\t\tiid = itemId\n\t\telif iid == itemId:\n\t\t\tiid = None\n\t\trows.append({\"PrinterLocationId\": pid, \"ItemId\": iid, \"SortOrder\": c.get(\"SortOrder\") or 0})\n\tresult = BlueRidge.Location.PrinterFgAssignment.saveAll(self.session.custom.terminal.terminalLocationId, rows, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Printer assignment saved\")\n\tself.refreshCards()"
+          "params": [
+            "printerLocationId",
+            "itemId"
+          ],
+          "script": "\tcards \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.printerCards) or []\n\trows \u003d []\n\tfor c in cards:\n\t\tc \u003d c or {}\n\t\tpid \u003d c.get(\"PrinterLocationId\")\n\t\tiid \u003d c.get(\"AssignedItemId\")\n\t\tif pid \u003d\u003d printerLocationId:\n\t\t\tiid \u003d itemId\n\t\telif iid \u003d\u003d itemId:\n\t\t\tiid \u003d None\n\t\trows.append({\"PrinterLocationId\": pid, \"ItemId\": iid, \"SortOrder\": c.get(\"SortOrder\") or 0})\n\tresult \u003d BlueRidge.Location.PrinterFgAssignment.saveAll(self.session.custom.terminal.terminalLocationId, rows, appUserId\u003dBlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Printer assignment saved\")\n\tself.refreshCards()"
         },
         {
           "name": "handleReorder",
-          "params": ["printerLocationId", "direction"],
-          "script": "\tcards = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.printerCards) or []\n\tidx = -1\n\tfor i, c in enumerate(cards):\n\t\tif (c or {}).get(\"PrinterLocationId\") == printerLocationId:\n\t\t\tidx = i\n\t\t\tbreak\n\tif idx < 0:\n\t\treturn\n\tj = idx - 1 if direction == \"up\" else idx + 1\n\tif j < 0 or j >= len(cards):\n\t\treturn\n\tcards[idx], cards[j] = cards[j], cards[idx]\n\trows = []\n\tfor i, c in enumerate(cards):\n\t\tc = c or {}\n\t\trows.append({\"PrinterLocationId\": c.get(\"PrinterLocationId\"), \"ItemId\": c.get(\"AssignedItemId\"), \"SortOrder\": i + 1})\n\tresult = BlueRidge.Location.PrinterFgAssignment.saveAll(self.session.custom.terminal.terminalLocationId, rows, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Reordered\")\n\tself.refreshCards()"
+          "params": [
+            "printerLocationId",
+            "direction"
+          ],
+          "script": "\tcards \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.printerCards) or []\n\tidx \u003d -1\n\tfor i, c in enumerate(cards):\n\t\tif (c or {}).get(\"PrinterLocationId\") \u003d\u003d printerLocationId:\n\t\t\tidx \u003d i\n\t\t\tbreak\n\tif idx \u003c 0:\n\t\treturn\n\tj \u003d idx - 1 if direction \u003d\u003d \"up\" else idx + 1\n\tif j \u003c 0 or j \u003e\u003d len(cards):\n\t\treturn\n\tcards[idx], cards[j] \u003d cards[j], cards[idx]\n\trows \u003d []\n\tfor i, c in enumerate(cards):\n\t\tc \u003d c or {}\n\t\trows.append({\"PrinterLocationId\": c.get(\"PrinterLocationId\"), \"ItemId\": c.get(\"AssignedItemId\"), \"SortOrder\": i + 1})\n\tresult \u003d BlueRidge.Location.PrinterFgAssignment.saveAll(self.session.custom.terminal.terminalLocationId, rows, appUserId\u003dBlueRidge.Common.Session.currentAppUserId(self.session))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Reordered\")\n\tself.refreshCards()"
         }
       ],
       "extensionFunctions": null,
@@ -1570,14 +1480,14 @@
         {
           "messageType": "printerCardAssign",
           "pageScope": true,
-          "script": "\tp = payload or {}\n\tself.handleAssign(p.get(\"printerLocationId\"), p.get(\"itemId\"))",
+          "script": "\tp \u003d payload or {}\n\tself.handleAssign(p.get(\"printerLocationId\"), p.get(\"itemId\"))",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "printerCardReorder",
           "pageScope": true,
-          "script": "\tp = payload or {}\n\tself.handleReorder(p.get(\"printerLocationId\"), p.get(\"dir\"))",
+          "script": "\tp \u003d payload or {}\n\tself.handleReorder(p.get(\"printerLocationId\"), p.get(\"dir\"))",
           "sessionScope": false,
           "viewScope": false
         },
