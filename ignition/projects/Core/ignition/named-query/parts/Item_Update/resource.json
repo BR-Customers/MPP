@@ -94,6 +94,11 @@
         "type": "Parameter",
         "identifier": "boxQuantity",
         "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "dcPartLevel",
+        "sqlType": 2
       }
     ]
   }

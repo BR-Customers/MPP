@@ -140,7 +140,7 @@ _ITEM_SHAPE_KEYS = (
     "CreatedAt", "CreatedByUserId",
     "UpdatedAt", "UpdatedByUserId",
     "DeprecatedAt",
-    "CrtEnabled", "BoxQuantity",
+    "CrtEnabled", "BoxQuantity", "DcPartLevel",
 )
 
 
@@ -396,6 +396,37 @@ def add(meta, appUserId=None):
     )
 
 
+def _blankToClearLevel(v):
+    """Transport-mapping helper for dcPartLevel ONLY.
+
+    Same shape as _blankToClear, DIFFERENT sentinel, and the difference is the
+    whole point: 0 is a VALID D/C part level ('00' on the label), so 0 cannot
+    mean "clear" the way it does for boxQuantity. Parts.Item_Update takes -1 for
+    that instead.
+
+      ""   (operator emptied the field) -> -1  -> proc clears the column to NULL
+      None (key omitted entirely)       -> None -> proc leaves the stored value
+      0                                 -> 0   -> stored as a real 0, prints '00'
+
+    Without this an emptied field would forward SQL NULL, which the proc reads as
+    "leave alone", so clearing would silently keep the old level -- the same
+    defect _blankToClear was written for.
+    """
+    if v is None:
+        return None
+    if isinstance(v, basestring):
+        v = v.strip()
+        if v == "":
+            return -1
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            # Not a number: forward unchanged and let the proc's range guard
+            # refuse it with a readable message rather than guessing here.
+            return v
+    return v
+
+
 def _blankToClear(v):
     """Transport-mapping helper for boxQuantity ONLY.
 
@@ -423,7 +454,8 @@ def update(meta, appUserId=None):
         maxLotSize, uomId, unitWeight, weightUomId,
         countryOfOrigin, maxParts, crtEnabled,
         boxQuantity (NULL-preserving; 0 clears -- same rule as crtEnabled,
-        enforced in the proc)
+        enforced in the proc),
+        dcPartLevel (NULL-preserving; -1 clears, NOT 0 -- 0 is a valid level)
 
     Returns {Status, Message}.
 
@@ -468,6 +500,7 @@ def update(meta, appUserId=None):
             "appUserId":        BlueRidge.Common.Util.requireAppUserId(appUserId),
             "crtEnabled":       None if _crt is None else (1 if _crt else 0),
             "boxQuantity":      _blankToClear(_pick("boxQuantity", "BoxQuantity")),
+            "dcPartLevel":      _blankToClearLevel(_pick("dcPartLevel", "DcPartLevel")),
         },
     )
 

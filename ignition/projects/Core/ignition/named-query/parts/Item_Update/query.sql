@@ -11,4 +11,5 @@ EXEC Parts.Item_Update
     @MaxParts         = :maxParts,
     @AppUserId        = :appUserId,
     @CrtEnabled       = :crtEnabled,
-    @BoxQuantity      = :boxQuantity
+    @BoxQuantity      = :boxQuantity,
+    @DcPartLevel      = :dcPartLevel
