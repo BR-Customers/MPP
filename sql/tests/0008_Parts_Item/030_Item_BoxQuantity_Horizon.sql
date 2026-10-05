@@ -163,7 +163,8 @@ CREATE TABLE #G (
     MacolaPartNumber NVARCHAR(50), DefaultSubLotQty INT, MaxLotSize INT, UomId BIGINT, UomCode NVARCHAR(20),
     UnitWeight DECIMAL(10,4), WeightUomId BIGINT, WeightUomCode NVARCHAR(20), CountryOfOrigin NVARCHAR(2),
     MaxParts INT, CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), CreatedByUserId BIGINT, UpdatedByUserId BIGINT,
-    DeprecatedAt DATETIME2(3), CrtEnabled BIT, BoxQuantity INT);
+    DeprecatedAt DATETIME2(3), CrtEnabled BIT, BoxQuantity INT,
+    DcPartLevel TINYINT);   -- APPEND-LAST (0104)
 INSERT INTO #G EXEC Parts.Item_Get @Id = @Pt;
 DECLARE @GBox NVARCHAR(10) = (SELECT CAST(BoxQuantity AS NVARCHAR(10)) FROM #G);
 DROP TABLE #G;

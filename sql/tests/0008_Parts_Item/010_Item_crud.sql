@@ -398,7 +398,8 @@ CREATE TABLE #Get1 (
     CrtEnabled        BIT,
     -- Line inventory sidebar (0091): BoxQuantity appended LAST. (LowInventoryHorizon,
     -- also 0091, was retired by migration 0094.)
-    BoxQuantity       INT
+    BoxQuantity       INT,
+    DcPartLevel       TINYINT   -- APPEND-LAST (0104)
 );
 
 INSERT INTO #Get1

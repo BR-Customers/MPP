@@ -95,8 +95,22 @@ EXEC test.Assert_IsEqual @TestName = N'[Render] quantity (12) present', @Expecte
 -- ^FD{value}^FS is ZPL's field-data start/stop delimiter -- anchoring on it (not a
 -- bare '%03%') avoids a false-positive match against unrelated coordinates/font
 -- codes elsewhere in the template, which is full of two-digit numbers.
-DECLARE @HasLevel NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD03^FS%' THEN N'1' ELSE N'0' END;
-EXEC test.Assert_IsEqual @TestName = N'[Render] dc part level (BOM version, zero-padded) present', @Expected = N'1', @Actual = @HasLevel;
+--
+-- D/C PART LEVEL comes from Parts.Item.DcPartLevel as of migration 0104, NOT from
+-- the BOM version. This item's BOM is version 3 and its DcPartLevel is NULL, so the
+-- label must read 00 and must NOT read 03 -- asserting both is what pins the
+-- decoupling, since asserting 00 alone would still pass if the two happened to agree.
+DECLARE @HasLevel NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD00^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Render] dc part level renders 00 when the part has none', @Expected = N'1', @Actual = @HasLevel;
+DECLARE @HasBomVer NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD03^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Render] dc part level is NOT the BOM version (3)', @Expected = N'0', @Actual = @HasBomVer;
+
+-- Set it on the part and re-render: the entered value is what prints.
+UPDATE Parts.Item SET DcPartLevel = 5 WHERE Id = @Item;
+DECLARE @Zpl5 NVARCHAR(MAX) = Lots.ufn_ShippingLabelZpl(@Cont, N'AIM12345678');
+DECLARE @HasFive NVARCHAR(10) = CASE WHEN @Zpl5 LIKE N'%^FD05^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Render] entered dc part level 5 renders zero-padded as 05', @Expected = N'1', @Actual = @HasFive;
+UPDATE Parts.Item SET DcPartLevel = NULL WHERE Id = @Item;
 DECLARE @HasMfgLot NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%AIM12345678%' THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName = N'[Render] mfg lot (AIM serial) present', @Expected = N'1', @Actual = @HasMfgLot;
 DECLARE @HasSerial NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%1321800112345678%' THEN N'1' ELSE N'0' END;

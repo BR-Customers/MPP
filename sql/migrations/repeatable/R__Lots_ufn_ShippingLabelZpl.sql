@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable: R__Lots_ufn_ShippingLabelZpl.sql
 -- Author:     Blue Ridge Automation
--- Version:    1.3
+-- Version:    1.4
 -- Description: Brief D (FAT-LBL-050) -- render the container shipping-label ZPL.
 --   Resolves the ACTIVE Container Lots.LabelTemplate.ZplBody and substitutes the
 --   {Placeholder} tokens from the container + its Item + the BOM version used to
@@ -14,17 +14,21 @@
 --     {Description}   <- Parts.Item.Description
 --     {MfgLotNumber}  <- @AimShipperId (AIM minted serial)
 --     {MfgDate}       <- Container.CompletedAt, UTC->Eastern, M/dd/yy
---     {DcPartLevel}   <- the BOM VersionNumber actually used to mint the container's
---                        trays (Lots.ContainerTray -> FinishedGoodLotId -> Lot.BomId
---                        -> Parts.Bom.VersionNumber), zero-padded to 2 digits ('00',
---                        '01', '02', ...; FORMAT does not truncate past 2 digits, so
---                        a 3-digit version like 100 still renders correctly). v1.1
---                        (2026-08-20): was Tools.ufn_ContainerOriginDieRankCode
---                        (genealogy die-rank trace) -- deliberately traces the BOM
---                        actually recorded on the tray's FG LOT at mint time, NOT
---                        whichever BOM version is currently active/published, so a
---                        later reprint still shows the version the container was
---                        actually built against.
+--     {DcPartLevel}   <- v1.4 (2026-10-05): Parts.Item.DcPartLevel, ENTERED per part,
+--                        zero-padded to two digits; NULL renders '00'.
+--
+--                        WAS the BOM version actually recorded on the tray's finished-good
+--                        LOT. That was internally consistent but did not mean what Honda
+--                        means by this field: onsite, 1223A-6MA -J000 printed '04' because
+--                        four BOM revisions exist for it, while its true D/C part level is
+--                        '00'. Two unrelated numbers that happened to share a format.
+--
+--                        There is deliberately NO fallback to the BOM version when the
+--                        column is NULL. A fallback would put two different numbers in one
+--                        field depending on whether anyone had edited that part yet, which
+--                        is harder to audit than a consistent default. The cost is stated
+--                        in migration 0104: a part whose real level is not 00 prints 00
+--                        until its row is set.
 --     {Quantity}      <- SUM(closed tray PartsClosedCount)
 --     {SerialBarcode} <- '13218001' (fixed MPP->Honda supplier code) + last 8 of the AIM
 --                        serial, UNSEPARATED. This is what Honda scans, so it carries NO
@@ -82,14 +86,11 @@ BEGIN
     DECLARE @Description  NVARCHAR(500) = ISNULL((SELECT Description FROM Parts.Item WHERE Id = @ItemId), N'');
     DECLARE @Qty         INT           = ISNULL((SELECT SUM(PartsClosedCount) FROM Lots.ContainerTray
                                                  WHERE ContainerId = @ContainerId AND ClosedAt IS NOT NULL), 0);
-    DECLARE @BomVersion INT = (
-        SELECT TOP 1 b.VersionNumber
-        FROM Lots.ContainerTray ct
-        INNER JOIN Lots.Lot l  ON l.Id = ct.FinishedGoodLotId
-        INNER JOIN Parts.Bom b ON b.Id = l.BomId
-        WHERE ct.ContainerId = @ContainerId
-        ORDER BY ct.TrayPosition DESC);
-    DECLARE @DcPartLevel NVARCHAR(20)  = CASE WHEN @BomVersion IS NULL THEN N'' ELSE FORMAT(@BomVersion, N'00') END;
+    -- D/C PART LEVEL (2P): an ENTERED value on the part, zero-padded to two
+    -- digits. NULL renders '00' -- see the header for why there is no fallback
+    -- to the BOM version any more.
+    DECLARE @DcPartLevel NVARCHAR(20) =
+        FORMAT(ISNULL((SELECT DcPartLevel FROM Parts.Item WHERE Id = @ItemId), 0), N'00');
     DECLARE @Aim         NVARCHAR(50)  = ISNULL(@AimShipperId, N'');
     -- WIDTH IS LOAD-BEARING. '13218001' + 8 is exactly 16 chars, so the old
     -- NVARCHAR(16) fit it precisely -- and a dashed 17-char value assigned to it

@@ -28,6 +28,8 @@
 --   2026-04-27 - 2.2 - OI-12 correction: MaxParts exposed (moved from ContainerConfig)
 --   2026-08-20 - 2.3 - Part-scoped CRT (Task 8): CrtEnabled appended LAST so the
 --                       Config Tool Item Master Identity checkbox can read it back.
+--   2026-10-05 - 2.5 - DcPartLevel appended LAST (0104): the entered D/C PART LEVEL,
+--                       replacing the label's BOM-version derivation.
 --   2026-09-17 - 2.4 - BoxQuantity, LowInventoryHorizon appended (line inventory sidebar).
 --   2026-09-17 - 2.5 - LowInventoryHorizon retired (migration 0094): Line Inventory
 --                       rev 2 colours by the line's ItemLocation.MaxQuantity instead
@@ -61,7 +63,8 @@ BEGIN
         i.UpdatedByUserId,
         i.DeprecatedAt,
         i.CrtEnabled,         -- APPEND-LAST: see Result set note above
-        i.BoxQuantity         -- APPEND-LAST (2026-09-17, 0091)
+        i.BoxQuantity,        -- APPEND-LAST (2026-09-17, 0091)
+        i.DcPartLevel         -- APPEND-LAST (2026-10-05, 0104): D/C PART LEVEL (2P) on the shipping label; NULL renders '00'
     FROM Parts.Item i
     INNER JOIN Parts.ItemType it ON it.Id = i.ItemTypeId
     INNER JOIN Parts.Uom u       ON u.Id  = i.UomId

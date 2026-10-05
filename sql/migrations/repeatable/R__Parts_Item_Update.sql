@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.7
+-- Version:     2.8
 --
 -- Description:
 --   Updates mutable fields of an active Item. PartNumber and ItemTypeId
@@ -95,6 +95,13 @@
 --                       @BoxQuantity behaviour is byte-for-byte unchanged
 --                       apart from losing its half of the combined negative
 --                       check's message. Result-set shape UNCHANGED.
+--   2026-10-05 - 2.8 - @DcPartLevel (migration 0104): the D/C PART LEVEL (2P) on the
+--                       Container shipping label, entered per part instead of derived
+--                       from the BOM version. SMALLINT rather than TINYINT ONLY so a
+--                       clear is expressible -- 0 is a VALID level, so BoxQuantity's
+--                       0-means-clear sentinel would make '00' unsettable. NULL =
+--                       leave alone, -1 = clear, 0-255 = set; out of range is refused
+--                       before the transaction.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Update
     @Id               BIGINT,
@@ -109,7 +116,12 @@ CREATE OR ALTER PROCEDURE Parts.Item_Update
     @MaxParts         INT            = NULL,
     @AppUserId        BIGINT,
     @CrtEnabled          BIT            = NULL,
-    @BoxQuantity         INT            = NULL
+    @BoxQuantity         INT            = NULL,
+    -- D/C PART LEVEL (2P) on the shipping label. SMALLINT, not TINYINT, ONLY so a
+    -- clear can be expressed: 0 is a VALID level ('00'), so the 0-means-clear
+    -- sentinel BoxQuantity uses above would make '00' unsettable. NULL = leave
+    -- alone, -1 = clear to NULL, 0-255 = set. Anything else is refused.
+    @DcPartLevel         SMALLINT       = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -218,6 +230,15 @@ BEGIN
             RETURN;
         END
 
+        -- Business rule: D/C part level is 0-255, or -1 meaning clear. Rejected
+        -- BEFORE the transaction like every other validation here, so a bad value
+        -- is a status row rather than an arithmetic overflow out of the UPDATE.
+        IF @DcPartLevel IS NOT NULL AND (@DcPartLevel < -1 OR @DcPartLevel > 255)
+        BEGIN
+            SET @Message = N'D/C part level must be between 0 and 255 (or -1 to clear).';
+            SELECT @Status AS Status, @Message AS Message; RETURN;
+        END
+
         -- Business rule: BoxQuantity never negative (0 = clear)
         IF @BoxQuantity IS NOT NULL AND @BoxQuantity < 0
         BEGIN
@@ -281,6 +302,7 @@ BEGIN
         DECLARE @OldMaxParts         INT;
         DECLARE @OldCrtEnabled       BIT;
         DECLARE @OldBoxQuantity      INT;
+        DECLARE @OldDcPartLevel      TINYINT;
 
         SELECT @OldPartNumber       = PartNumber,
                @OldDescription      = Description,
@@ -293,7 +315,8 @@ BEGIN
                @OldCountryOfOrigin  = CountryOfOrigin,
                @OldMaxParts         = MaxParts,
                @OldCrtEnabled       = CrtEnabled,
-               @OldBoxQuantity      = BoxQuantity
+               @OldBoxQuantity      = BoxQuantity,
+               @OldDcPartLevel      = DcPartLevel
         FROM Parts.Item WHERE Id = @Id;
 
         -- Resolve the NULL-preserving CRT flag against the row's current value BEFORE
@@ -305,6 +328,14 @@ BEGIN
         -- NULL = leave alone; 0 = clear; > 0 = set.
         SET @BoxQuantity = CASE WHEN @BoxQuantity IS NULL THEN @OldBoxQuantity
                                 WHEN @BoxQuantity = 0 THEN NULL ELSE @BoxQuantity END;
+
+        -- D/C part level: NULL = leave alone, -1 = clear, 0-255 = set. The column is
+        -- TINYINT, so resolve to a TINYINT-safe value here rather than letting the
+        -- UPDATE fail on an out-of-range assignment.
+        DECLARE @ResolvedDcPartLevel TINYINT =
+            CASE WHEN @DcPartLevel IS NULL THEN @OldDcPartLevel
+                 WHEN @DcPartLevel = -1   THEN NULL
+                 ELSE CAST(@DcPartLevel AS TINYINT) END;
 
         -- Resolved-FK OldValue snapshot (pre-update state)
         DECLARE @OldValue NVARCHAR(MAX) = (
@@ -322,7 +353,7 @@ BEGIN
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS WeightUom,
                 i.CountryOfOrigin,
                 i.MaxParts,
-                i.CrtEnabled, i.BoxQuantity
+                i.CrtEnabled, i.BoxQuantity, i.DcPartLevel
             FROM Parts.Item i
             WHERE i.Id = @Id
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
@@ -369,6 +400,13 @@ BEGIN
             CASE WHEN ISNULL(@OldCrtEnabled, 0) <> @CrtEnabled
                  THEN N', CrtEnabled ' + CAST(ISNULL(@OldCrtEnabled, 0) AS NVARCHAR(1)) + @Arrow + CAST(@CrtEnabled AS NVARCHAR(1))
                  ELSE N'' END,
+            -- CAST BEFORE ISNULL. ISNULL returns the type of its FIRST argument, so
+            -- ISNULL(<tinyint>, -1) coerces the sentinel into a TINYINT and overflows
+            -- on anything outside 0-255. Caught on Dev 2026-10-05 with a 999 sentinel,
+            -- which failed every call that reached this line.
+            CASE WHEN ISNULL(CAST(@OldDcPartLevel AS INT), -1) <> ISNULL(CAST(@ResolvedDcPartLevel AS INT), -1)
+                 THEN N', DcPartLevel ' + ISNULL(CAST(@OldDcPartLevel AS NVARCHAR(20)), N'null') + @Arrow + ISNULL(CAST(@ResolvedDcPartLevel AS NVARCHAR(20)), N'null')
+                 ELSE N'' END +
             CASE WHEN ISNULL(@OldBoxQuantity, -1) <> ISNULL(@BoxQuantity, -1)
                  THEN N', BoxQuantity ' + ISNULL(CAST(@OldBoxQuantity AS NVARCHAR(20)), N'null') + @Arrow + ISNULL(CAST(@BoxQuantity AS NVARCHAR(20)), N'null')
                  ELSE N'' END
@@ -397,6 +435,7 @@ BEGIN
             MaxParts         = @MaxParts,
             CrtEnabled       = @CrtEnabled,
             BoxQuantity      = @BoxQuantity,
+            DcPartLevel      = @ResolvedDcPartLevel,
             UpdatedAt        = SYSUTCDATETIME(),
             UpdatedByUserId  = @AppUserId
         WHERE Id = @Id;
@@ -417,7 +456,7 @@ BEGIN
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS WeightUom,
                 i.CountryOfOrigin,
                 i.MaxParts,
-                i.CrtEnabled, i.BoxQuantity
+                i.CrtEnabled, i.BoxQuantity, i.DcPartLevel
             FROM Parts.Item i
             WHERE i.Id = @Id
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER

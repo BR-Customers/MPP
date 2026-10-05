@@ -86,7 +86,9 @@ CREATE TABLE #g (
     CrtEnabled        BIT,
     -- Line inventory sidebar (0091): BoxQuantity appended LAST. (LowInventoryHorizon,
     -- also 0091, was retired by migration 0094.)
-    BoxQuantity       INT
+    BoxQuantity       INT,
+    -- D/C part level (0104): appended LAST.
+    DcPartLevel       TINYINT
 );
 
 CREATE TABLE #u (Status BIT, Message NVARCHAR(500));

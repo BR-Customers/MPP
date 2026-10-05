@@ -113,8 +113,14 @@ EXEC test.Assert_IsEqual @TestName = N'[Complete] persisted ZPL carries part num
 
 -- ^FD{value}^FS is ZPL's field-data start/stop delimiter -- anchoring on it avoids a
 -- false-positive match against unrelated coordinates/font codes in the template.
-DECLARE @HasLevel NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD07^FS%' THEN N'1' ELSE N'0' END;
-EXEC test.Assert_IsEqual @TestName = N'[Complete] persisted ZPL carries DC part level (BOM version, zero-padded)', @Expected = N'1', @Actual = @HasLevel;
+--
+-- As of migration 0104 the level is Parts.Item.DcPartLevel, not the BOM version.
+-- This item's BOM is version 7 and its DcPartLevel is NULL, so the PERSISTED ZPL
+-- must carry 00 and must not carry 07.
+DECLARE @HasLevel NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD00^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Complete] persisted ZPL carries dc part level 00 when the part has none', @Expected = N'1', @Actual = @HasLevel;
+DECLARE @HasBomVer NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD07^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Complete] persisted ZPL does NOT carry the BOM version (7)', @Expected = N'0', @Actual = @HasBomVer;
 
 -- ==========================================================================
 -- Part 2 -- ShippingLabel_Reprint re-renders ZplContent (Task 5 / LBL-060)
