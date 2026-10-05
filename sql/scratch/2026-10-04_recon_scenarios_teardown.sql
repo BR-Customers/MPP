@@ -15,7 +15,7 @@
 --   (b) BY SHIFT x PRESS x DIE -- the rows that carry no LotId: cavity-attributed
 --       scrap (RejectEvent.LotId is nullable since 0084), counter anchors, and
 --       the reconciliation headers and their move records. Safe at this scope
---       because every one of the four shift x press combinations was verified
+--       because every one of the five shift x press combinations was verified
 --       EMPTY before the seed ran.
 --
 -- WHAT IT DELIBERATELY DOES NOT TOUCH.
@@ -44,15 +44,15 @@ IF OBJECT_ID('dbo.ReconScenarioSeedState') IS NULL
     PRINT N'WARNING: dbo.ReconScenarioSeedState is missing, so Tools.Tool.ShotCount CANNOT be restored. Rows will still be removed. Original values were DMO125 13894, DM0144 2068, DMO126 1408, DMO145 1368.';
 
 -- ------------------------------------------------------------
--- the four shift x press x die combinations the scenarios used
+-- the five shift x press x die combinations the scenarios used
 -- ------------------------------------------------------------
 DECLARE @Scope TABLE (ShiftId BIGINT, CellLocationId BIGINT, ToolId BIGINT);
 INSERT INTO @Scope (ShiftId, CellLocationId, ToolId)
 SELECT s.Id, loc.Id, t.Id
 FROM (VALUES ('2026-10-04', N'Weekend First',  N'DC1-M11',  N'DMO125'),   -- scenario 1
              ('2026-10-04', N'Weekend First',  N'DC2-M202', N'DM0144'),   -- scenario 2
-             ('2026-10-04', N'Weekend Second', N'DC2-M202', N'DM0144'),   -- scenario 2, the probe's release shift
-             ('2026-09-29', N'First Shift',    N'DC3-M305', N'DMO126'),   -- scenario 3a
+             ('2026-10-04', N'Weekend Second', N'DC1-M11',  N'DMO125'),   -- scenario 1, the trim ProductionEvent's shift
+             ('2026-10-01', N'First Shift',    N'DC3-M305', N'DMO126'),   -- scenario 3a
              ('2026-09-24', N'Third Shift',    N'DC3-M304', N'DMO145')    -- scenario 3b
      ) v (Dt, Sched, Press, Die)
 INNER JOIN Oee.ShiftSchedule ss ON ss.Name = v.Sched

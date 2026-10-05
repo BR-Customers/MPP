@@ -20,10 +20,10 @@
 --       shift)            counter reading -- the ReleasedNoShiftEnd shape that
 --                         Machine 202 produced every shift of the week this
 --                         feature was designed against. One basket was opened
---                         during the shift and is still open. One PROBE basket
---                         spans the whole shift with no event inside it.
+--                         during the shift and is still open, so the shift's
+--                         remaining production has somewhere to be credited.
 --
---   3  CAUGHT DAYS LATER  3a Machine 305 / DMO126 / First 09-29  (5 days back)
+--   3  CAUGHT DAYS LATER  3a Machine 305 / DMO126 / First 10-01  (4 days back)
 --                            Nothing recorded at all -- NoEntry. Seeds NOTHING;
 --                            every basket is created from paper at save time.
 --                         3b Machine 304 / DMO145 / Third 09-24  (10 days back)
@@ -98,15 +98,17 @@ DECLARE @TrimOut  BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
 
 -- Shifts, resolved by Eastern date + schedule name so the script does not carry
 -- an id that a Dev rebuild would renumber.
-DECLARE @S1 BIGINT, @S1Prev BIGINT, @S1Next BIGINT, @S3a BIGINT, @S3b BIGINT;
+DECLARE @S1 BIGINT, @S1Next BIGINT, @S3a BIGINT, @S3b BIGINT;
 SELECT @S1 = s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId
  WHERE CAST(s.ActualStart AS DATE) = '2026-10-04' AND ss.Name = N'Weekend First';
-SELECT @S1Prev = s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId
- WHERE CAST(s.ActualStart AS DATE) = '2026-10-03' AND ss.Name = N'Weekend Third';
 SELECT @S1Next = s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId
  WHERE CAST(s.ActualStart AS DATE) = '2026-10-04' AND ss.Name = N'Weekend Second';
+-- Scenario 3a sits 4 days back ON PURPOSE. The landing list's window is seven
+-- days (see 3b), so a shift chosen at 5-6 days back silently leaves the screen
+-- after a day or two of slippage and the scenario then looks like the ceiling
+-- bug instead of the case it is meant to show. 10-01 stays reachable until 10-08.
 SELECT @S3a = s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId
- WHERE CAST(s.ActualStart AS DATE) = '2026-09-29' AND ss.Name = N'First Shift';
+ WHERE CAST(s.ActualStart AS DATE) = '2026-10-01' AND ss.Name = N'First Shift';
 SELECT @S3b = s.Id FROM Oee.Shift s INNER JOIN Oee.ShiftSchedule ss ON ss.Id = s.ShiftScheduleId
  WHERE CAST(s.ActualStart AS DATE) = '2026-09-24' AND ss.Name = N'Third Shift';
 
@@ -137,7 +139,7 @@ IF @M11 IS NULL OR @M202 IS NULL OR @M304 IS NULL OR @M305 IS NULL OR @Whse IS N
     OR @T125 IS NULL OR @T126 IS NULL OR @T145 IS NULL OR @T144 IS NULL
     OR @Warm IS NULL OR @Test IS NULL OR @Op IS NULL OR @Sup IS NULL
     OR @Origin IS NULL OR @StOpen IS NULL OR @StGood IS NULL OR @TrimOut IS NULL
-    OR @S1 IS NULL OR @S1Prev IS NULL OR @S1Next IS NULL OR @S3a IS NULL OR @S3b IS NULL
+    OR @S1 IS NULL OR @S1Next IS NULL OR @S3a IS NULL OR @S3b IS NULL
     OR @Cav126 IS NULL OR @Cav145 IS NULL OR @Cav144 IS NULL
 BEGIN
     RAISERROR (N'Could not resolve a prerequisite. Presses DC1-M11/DC2-M202/DC3-M304/DC3-M305, dies DMO125/DMO126/DMO145/DM0144, WHSE, defect codes 999/008, users JD/JGP, a published TrimOut template, and the five shifts must all exist.', 16, 1);
@@ -155,11 +157,10 @@ BEGIN
 END
 
 -- shift windows, in UTC, derived from the Eastern wall clock Oee.Shift stores (OI-38)
-DECLARE @S1StartUtc DATETIME2(3), @S1EndUtc DATETIME2(3), @S1PrevStartUtc DATETIME2(3), @S3bStartUtc DATETIME2(3);
+DECLARE @S1StartUtc DATETIME2(3), @S1EndUtc DATETIME2(3), @S3bStartUtc DATETIME2(3);
 SELECT @S1StartUtc = CAST(ActualStart AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)),
        @S1EndUtc   = CAST(ActualEnd   AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3))
 FROM Oee.Shift WHERE Id = @S1;
-SELECT @S1PrevStartUtc = CAST(ActualStart AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)) FROM Oee.Shift WHERE Id = @S1Prev;
 SELECT @S3bStartUtc    = CAST(ActualStart AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS DATETIME2(3)) FROM Oee.Shift WHERE Id = @S3b;
 
 BEGIN TRANSACTION;
@@ -311,34 +312,29 @@ INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth) VAL
 INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, MovedAt)
 VALUES (@LotId, NULL, @M202, @Op, @OpenAt);
 
--- THE PROBE. Opened in the PREVIOUS shift, released in the NEXT one, so it spans
--- the shift being reconciled with no event inside it. It is on neither branch of
--- _ListLots' ids CTE -- not in rec (its contribution belongs to the next shift)
--- and not in the CreatedAt branch (it was created before this shift started) --
--- so I expect it to be ABSENT from the LOT list. The entry bar can still pull it
--- in by LTT, because Lots.DieCastLot_ResolveLtt is scoped by die and not by
--- shift. Seeded to be looked at, not because the arithmetic needs it: the sheet
--- in the walkthrough does not include it.
-SET @OpenAt = DATEADD(MINUTE, 30, @S1PrevStartUtc);
-SET @RelAt  = DATEADD(MINUTE, 60, @S1EndUtc);
-INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
-                      ToolId, ToolCavityId, CurrentLocationId, TotalInProcess, InventoryAvailable,
-                      CreatedByUserId, CreatedAt, CrtActive, CastDate, ProducedAtLocationId)
-SELECT N'77700020', @Item144, @Origin, @StGood, 180, i.MaxLotSize, @T144, @Cav144, @Whse, 0, 180, @Op, @OpenAt, 0,
-       CAST(CAST(@OpenAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS DATE), @M202
-FROM Parts.Item i WHERE i.Id = @Item144;
-SET @LotId = SCOPE_IDENTITY();
-INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, ChangedAt)
-VALUES (@LotId, NULL, @StOpen, N'Die-cast basket opened.', @Op, @OpenAt),
-       (@LotId, @StOpen, @StGood, N'Die-cast basket released to storage.', @Op, @RelAt);
-INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth) VALUES (@LotId, @LotId, 0);
-INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, MovedAt)
-VALUES (@LotId, NULL, @M202, @Op, @OpenAt), (@LotId, @M202, @Whse, @Op, @RelAt);
-INSERT INTO Workorder.DieCastContribution (LotId, ShiftId, PieceDelta, AppUserId, EventAt, CellLocationId, ShotCounterReading, ToolCavityId)
-VALUES (@LotId, @S1Next, 180, @Op, @RelAt, @M202, NULL, @Cav144);
+-- NO SPANNING-BASKET PROBE HERE, and the reason is a plant fact, not an
+-- oversight. An earlier draft seeded one: a basket opened in the previous shift
+-- and released in the next, spanning the shift being reconciled with no event
+-- inside it, to show that Workorder.DieCastShiftReconciliation_ListLots offers
+-- neither branch for it (no contribution IN the shift, CreatedAt before it).
+--
+-- It is PHYSICALLY IMPOSSIBLE on this press. DM0144 has ONE cavity, and
+-- Lots.DieCastLot_Open enforces one open basket per (Tool, ToolCavity), so a
+-- basket that spans the whole shift IS the only basket on that cavity -- it
+-- cannot coexist with the three releases above. (The guard is in the proc, not
+-- a unique index, so a raw INSERT like this one slips past it and produces a
+-- state the plant cannot reach. That is exactly what the earlier draft did.)
+--
+-- Spanning is real -- Jacques, 2026-10-04: a basket can span an entire shift or
+-- even two -- but the shift-end entry credits the open basket on every cavity
+-- (Workorder.DieCast_GetShiftOutputBreakdown proposes reading minus the cavity
+-- watermark; Workorder.DieCastShiftOutput_Record writes it), so a spanning
+-- basket normally HAS a contribution in each shift it spans and _ListLots finds
+-- it. The hole only opens where a MULTI-CAVITY die had its shift-end missed:
+-- that needs its own scenario on its own press, not a row smuggled in here.
 
 -- ============================================================
--- SCENARIO 3a -- Machine 305 / DMO126 / First 09-29
+-- SCENARIO 3a -- Machine 305 / DMO126 / First 10-01
 -- ============================================================
 -- Nothing is seeded, deliberately. The shift must read NoEntry: no production,
 -- no scrap, no anchor, no header. Every basket is created from paper at save

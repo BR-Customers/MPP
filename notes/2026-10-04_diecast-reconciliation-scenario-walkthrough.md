@@ -1,8 +1,8 @@
 # Die cast shift reconciliation — three scenarios on Dev
 
-**Date:** 2026-10-04
+**Date:** 2026-10-04, corrected 2026-10-05
 **Seed:** `sql/scratch/2026-10-04_recon_scenarios_seed.sql` — **applied to `MPP_MES_Dev`**
-**Teardown:** `sql/scratch/2026-10-04_recon_scenarios_teardown.sql` — previewed green, not run
+**Teardown:** `sql/scratch/2026-10-04_recon_scenarios_teardown.sql` — run once for real on 10-05, then re-seeded
 **Screen:** `/shop-floor/die-cast/reconcile` (also reachable from the Supervisor Dashboard tile)
 **Spec:** `docs/superpowers/specs/2026-09-21-diecast-shift-reconciliation-design.md`
 
@@ -37,7 +37,7 @@ This closes runbook precondition 2 (`notes/2026-10-01_prod-release-runbook-dieca
 |---|---|---|---|---|---|---|
 | 1 | Machine 11 | DMO125 | 10-04 Weekend First | `EntryRecorded` | 12 rows, 19,960 pcs | 9910 |
 | 2 | Machine 202 | DM0144 | 10-04 Weekend First | `ReleasedNoShiftEnd` ⚠ | 3 rows, 1,450 pcs | — |
-| 3a | Machine 305 | DMO126 | 09-29 First | `NoEntry` | nothing | — |
+| 3a | Machine 305 | DMO126 | 10-01 First Shift | `NoEntry` | nothing | — |
 | 3b | Machine 304 | DMO145 | 09-24 Third | **not on the list** | 2 rows, 600 pcs | — |
 
 The dashboard tile counts **exactly one** alerting row: scenario 2. Everything else
@@ -135,7 +135,6 @@ Seeded:
 | `77700022` | Good, Warehouse | 500 | released 12:00, no reading |
 | `77700023` | Good, Warehouse | 450 | released 14:30, no reading |
 | `77700024` | **Open**, at the press | 0 | opened 14:40, never credited |
-| `77700020` | Good, Warehouse | 180 | **the probe — see below** |
 
 ### What to type
 
@@ -166,40 +165,51 @@ reconciliation credits it 140 for the shift that is being settled and does not t
 the one that is running. Worth confirming on the live die cast screen afterwards
 that its Weekend Second proposal is unaffected.
 
-### The probe — `77700020`, and the question I want your read on
+### The spanning basket — corrected 2026-10-05, and where it actually bites
 
-`77700020` was opened in **Weekend Third (10-03)** and released in **Weekend Second
-(10-04)**, so it spans the whole of Weekend First with no event inside it. It is
-**absent from the LOT list** — confirmed, not predicted:
-`DieCastShiftReconciliation_ListLots` finds a LOT either because it has a
-contribution in the shift or because its `CreatedAt` falls inside the shift, and a
-carry-over basket satisfies neither.
+An earlier draft of this note seeded a probe basket (`77700020`) opened in the
+previous shift and released in the next, spanning Weekend First with no event
+inside it, and reported that it was absent from the LOT list. **That seed was
+physically invalid and has been removed.**
 
-It is recoverable — type `77700020` into the entry bar and `DieCastLot_ResolveLtt`
-resolves it as on-this-die (that proc takes no shift), so it joins the list and can
-be given an actual. Nothing is lost.
+DM0144 has **one** cavity, and `Lots.DieCastLot_Open:106-109` enforces one open
+basket per `(Tool, ToolCavity)`. A basket that spans the whole shift on a
+single-cavity die therefore *is* the only basket on that cavity — it cannot coexist
+with the three releases above. The guard lives in the proc, not in a unique index,
+so the raw INSERT walked straight past it and produced a state the plant cannot
+reach. Dev has been torn down and re-seeded without it.
 
-**What I don't know is whether this is physically reachable.** It needs a basket to
-sit unreleased across an entire eight-hour shift. On a 1-cavity oil-pan die I'd
-guess baskets fill in well under a shift and this never happens; the case I can
-imagine is a press that went down most of a shift, and then there's little
-production to reconcile anyway. You know the basket sizes and cycle times — if it
-can't happen, this is a non-finding and I'd drop it. If it can, the current
-behaviour is that the shift's arithmetic won't close and the message blames a typo.
-Measured — a sheet of 1,800 shots that *includes* the probe's 180 pieces is refused
-with, verbatim:
+**The underlying mechanism, confirmed (Jacques, 2026-10-04).** A basket can span an
+entire shift or even two — but the shift-end entry credits the open basket on
+*every* cavity: `DieCast_GetShiftOutputBreakdown` proposes `reading − cavity
+watermark` per cavity (lines 211-231) and `DieCastShiftOutput_Record` writes it. So
+a spanning basket normally **does** carry a contribution in each shift it spans, and
+`_ListLots` finds it through its `rec` branch. No hole.
+
+**The hole only opens where the two conditions meet: a MULTI-CAVITY die whose
+shift-end entry was missed.** Then one cavity's basket can span the shift while
+other cavities cycle and release, and nothing ever credits the spanner — the entry
+that would have done it is the entry that was missed. Its `CreatedAt` is in an
+earlier shift, so neither branch of `_ListLots` offers it, and the arithmetic gate
+forces the issue regardless of how the sheet records partials: the shift's total
+good is `good shots × cavities − no-good`, which includes that cavity's production,
+and no LOT row can absorb it. Measured refusal shape, from the invalid seed before
+it was removed:
 
 > *"LOT list totals 1590; actual total good is 1770 (1780 good shots x 1 - 10
 > no-good). One of them has a typo."*
 
-…when the real cause is a basket the list never offered. The team lead's only way
-through is to know to type the LTT into the entry bar.
+A typo message for a basket the list never offered. The team lead's only way through
+is to already know to type the LTT into the entry bar.
 
----
+**This is not seeded yet** — it needs its own scenario on its own press (a
+multi-cavity die with a missed shift-end, e.g. Machine 11 on a shift other than the
+one scenario 1 uses). Worth building only if you agree the combination is real;
+see the question at the end.
 
 ## Scenario 3 — nobody noticed for days
 
-### 3a · Machine 305 · DMO126 · 09-29 First Shift (5 days back) — reachable
+### 3a · Machine 305 · DMO126 · 10-01 First Shift (4 days back) — reachable
 
 Nothing was recorded at all. The landing row reads **`No entry`** in neutral grey,
 not amber, because the MES cannot know whether the press ran — and the screen opens
@@ -222,8 +232,13 @@ Reason **Shift not entered**. Every basket is created from paper:
 Expect: **2 LOTs created and released to Warehouse**, die life `1,408 → 2,608
 (+1,200)`, 1,180 pieces added, no reduction.
 
+> 3a sits four days back on purpose. The window is seven days, so a shift picked at
+> five or six silently drops off the screen after a day of slippage and then looks
+> like the 3b ceiling instead of the case it is meant to show. 10-01 stays reachable
+> until 10-08; past that, re-point `@S3a` in the seed.
+
 **The open question here is the two new baskets.** They are minted and released to
-Warehouse **today**, five days after the castings were made — and in a real plant
+Warehouse **today**, four days after the castings were made — and in a real plant
 those baskets went through trim days ago. D4 says a retroactively created LOT is
 released to default storage exactly as the live path does, and that is precisely
 what happens, but five days later it puts two baskets of stock into the warehouse
@@ -267,8 +282,10 @@ sqlcmd -S localhost -d MPP_MES_Dev -E -C -i sql\scratch\2026-10-04_recon_scenari
 
 Runs every delete inside a transaction and rolls back, printing the counts. Read
 them, then set `@Commit = 1` at the top of the script and re-run. Previewed against
-the seeded state it reports **19 LOTs, 18 contributions, 24 reject rows, 1 production
-event**, restores all four dies' `ShotCount`, and leaves zero `777000xx` LOTs.
+the seeded state it reports **18 LOTs, 17 contributions, 24 reject rows, 1 production
+event**, restores all four dies' `ShotCount`, and leaves zero `777000xx` LOTs. It has
+been run armed once already, on 10-05, to clear the invalid spanning-basket seed —
+so the round trip is proven, not just previewed.
 
 It also removes whatever the reconciliations wrote — headers, moves, counter anchors,
 compensating rows, count corrections, minted LOTs. Audit rows are deliberately left:
@@ -283,15 +300,29 @@ to tidy a test is the wrong habit.
 gate and produce exactly the plan the spec describes, including the three-error save,
 the firm count lock, the compensating negative, and the per-approver scrap grain.
 
-Three things to rule on, none of them a bug:
+Four things to rule on, none of them a bug in the arithmetic:
 
-1. **The seven-day landing ceiling** (3b). A real finding is unreachable from the
+1. **The spanning basket on a multi-cavity die with a missed shift-end.** The
+   sharpest of the four, and the one that needs your yes before it is worth seeding.
+   Spanning is real and the shift-end entry normally credits the spanner — so the
+   hole needs both conditions at once, and when they meet, `_ListLots` offers
+   neither branch and the arithmetic gate reports a typo. Is a multi-cavity press
+   missing its shift-end while one cavity's basket runs long a combination you
+   expect to see? If yes, this wants a scenario 2b and probably a fix to the read.
+2. **The seven-day landing ceiling** (3b). A real finding is unreachable from the
    screen and says nothing when it is. One literal, plus whether a control is wanted.
-2. **Retroactive LOTs released to Warehouse days later** (3a). Specified behaviour
+3. **Retroactive LOTs released to Warehouse days later** (3a). Specified behaviour
    whose consequence changes with elapsed time.
-3. **24 scrap rows to add one approver** (1). Correct, and unreadable in the
+4. **24 scrap rows to add one approver** (1). Correct, and unreadable in the
    confirmation as currently worded.
 
-And one question I can't answer myself: **whether a basket can span a whole shift
-with no event in it** (scenario 2's probe). If it can, the LOT list has a hole with a
-misleading error message. If it can't, there is nothing here.
+### Correction log
+
+- **2026-10-05.** The spanning-basket probe `77700020` was seeded on a single-cavity
+  die alongside three same-cavity releases — two open baskets on one cavity, which
+  `Lots.DieCastLot_Open` forbids and only a raw INSERT could produce. Removed; Dev
+  torn down and re-seeded. The finding survives in a narrower and better-founded
+  form (item 1 above), thanks to Jacques's correction that the shift-end entry
+  credits the open basket on every cavity.
+- **2026-10-05.** Scenario 3a moved from 09-29 to 10-01 so it does not drift out of
+  the seven-day landing window mid-exercise and masquerade as the 3b ceiling.
