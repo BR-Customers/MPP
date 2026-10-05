@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable: R__Lots_ufn_ShippingLabelZpl.sql
 -- Author:     Blue Ridge Automation
--- Version:    1.1
+-- Version:    1.2
 -- Description: Brief D (FAT-LBL-050) -- render the container shipping-label ZPL.
 --   Resolves the ACTIVE Container Lots.LabelTemplate.ZplBody and substitutes the
 --   {Placeholder} tokens from the container + its Item + the BOM version used to
@@ -26,7 +26,16 @@
 --                        later reprint still shows the version the container was
 --                        actually built against.
 --     {Quantity}      <- SUM(closed tray PartsClosedCount)
---     {Serial}        <- '13218001' (fixed MPP->Honda supplier code) + last 8 of the AIM serial
+--     {SerialBarcode} <- '13218001' (fixed MPP->Honda supplier code) + last 8 of the AIM
+--                        serial, UNSEPARATED. This is what Honda scans, so it carries NO
+--                        dash -- adding one would change the scanned payload.
+--     {SerialText}    <- the same value with a '-' between the supplier code and the AIM 8,
+--                        for the human-readable line only (matches the legacy label).
+--                        v1.2 (2026-10-05): split from a single {Serial} token after the
+--                        first real container label printed without the separator. The
+--                        two MUST stay different: text is read by people, barcode by
+--                        Honda. {Serial} is still substituted (to the barcode form) so an
+--                        un-migrated template row cannot print a literal '{Serial}'.
 --     {Coo}           <- 'USA'
 --     {PartNumberExt} / {DataMatrix} / {Auditor} <- blank by design (empty on every
 --                        real MPP container label; layout + captions retained)
@@ -60,7 +69,13 @@ BEGIN
         ORDER BY ct.TrayPosition DESC);
     DECLARE @DcPartLevel NVARCHAR(20)  = CASE WHEN @BomVersion IS NULL THEN N'' ELSE FORMAT(@BomVersion, N'00') END;
     DECLARE @Aim         NVARCHAR(50)  = ISNULL(@AimShipperId, N'');
-    DECLARE @Serial      NVARCHAR(16)  = N'13218001' + RIGHT(@Aim, 8);
+    -- WIDTH IS LOAD-BEARING. '13218001' + 8 is exactly 16 chars, so the old
+    -- NVARCHAR(16) fit it precisely -- and a dashed 17-char value assigned to it
+    -- would have been TRUNCATED SILENTLY (T-SQL does not error on variable
+    -- assignment), dropping the last digit of every Honda serial with nothing in
+    -- any log. Declared wide deliberately; do not tighten it back.
+    DECLARE @SerialBarcode NVARCHAR(32) = N'13218001' + RIGHT(@Aim, 8);
+    DECLARE @SerialText    NVARCHAR(32) = N'13218001-' + RIGHT(@Aim, 8);
     DECLARE @MfgDate     NVARCHAR(20)  =
         CASE WHEN @CompletedAt IS NULL THEN N''
              ELSE FORMAT(CAST(@CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)), N'M/dd/yy') END;
@@ -71,7 +86,12 @@ BEGIN
     SET @Zpl = REPLACE(@Zpl, N'{MfgDate}',       @MfgDate);
     SET @Zpl = REPLACE(@Zpl, N'{DcPartLevel}',   @DcPartLevel);
     SET @Zpl = REPLACE(@Zpl, N'{Quantity}',      CAST(@Qty AS NVARCHAR(20)));
-    SET @Zpl = REPLACE(@Zpl, N'{Serial}',        @Serial);
+    SET @Zpl = REPLACE(@Zpl, N'{SerialText}',    @SerialText);
+    SET @Zpl = REPLACE(@Zpl, N'{SerialBarcode}', @SerialBarcode);
+    -- Fallback for a template row that still carries the pre-v1.2 single token:
+    -- resolve it to the BARCODE form, which is the safe side of the split (a
+    -- scanned payload that matches Honda, and a human line missing a dash).
+    SET @Zpl = REPLACE(@Zpl, N'{Serial}',        @SerialBarcode);
     SET @Zpl = REPLACE(@Zpl, N'{Coo}',           N'USA');
     -- blank-by-design fields (layout + captions retained)
     SET @Zpl = REPLACE(@Zpl, N'{PartNumberExt}', N'');
