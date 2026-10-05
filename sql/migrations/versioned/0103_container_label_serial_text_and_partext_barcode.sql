@@ -40,10 +40,12 @@
 --   to. A label template is a Honda traceability artifact; a REPLACE that
 --   silently matched nothing would ship a label that looks fixed and is not.
 -- ============================================================
+-- NO EXPLICIT TRANSACTION HERE, deliberately. Deploy-ProdRelease.ps1 runs every
+-- migration inside ONE release transaction and BLOCKS on a nested 'BEGIN TRAN'
+-- (it refused this file's first draft, which is what the pre-flight is for).
+-- Atomicity comes from the release transaction; the THROWs below abort it and
+-- roll the whole release back, which is exactly the wanted behaviour.
 SET NOCOUNT ON;
-SET XACT_ABORT ON;
-
-BEGIN TRANSACTION;
 
 DECLARE @ContainerTypeId BIGINT = (SELECT Id FROM Lots.LabelTypeCode WHERE Code = N'Container');
 IF @ContainerTypeId IS NULL
@@ -107,9 +109,7 @@ END
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0103_container_label_serial_text_and_partext_barcode')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
     VALUES (N'0103_container_label_serial_text_and_partext_barcode',
-            N'Container shipping label: {Serial} split into {SerialText} (dashed, human-readable) and {SerialBarcode} (unseparated, the payload Honda scans); PART NO. EXT (C) Code 39 removed because an empty ^B3 still prints start/stop bars. Apply with Lots.ufn_ShippingLabelZpl v1.2.');
-
-COMMIT TRANSACTION;
+            N'Container shipping label: {Serial} split into {SerialText} (dashed, human-readable) and {SerialBarcode} (unseparated, the payload Honda scans); PART NO. EXT (C) Code 39 removed because an empty ^B3 still prints start/stop bars. Apply with Lots.ufn_ShippingLabelZpl v1.3, which also populates {DataMatrix}.');
 GO
 PRINT 'Migration 0103 (container_label_serial_text_and_partext_barcode) applied.';
 GO
