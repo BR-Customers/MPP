@@ -33,13 +33,17 @@ migration state (81 migrations, highest `0081`, `Lots.Lot.ProducedAtLocationId` 
 
 Then the commit-drift rule, stated where it cannot be missed:
 
-> **Nothing may be committed between the preview you read and the Execute.** The plan fingerprint covers HEAD; Execute refuses if anything moved.
+> **Nothing may be committed between the preview you read and the Execute.** The plan fingerprint's first
+> hashed line is the raw HEAD sha, so **any** commit changes it — a docs-only commit included — and
+> Execute refuses. Re-preview and use the new fingerprint.
 >
-> HEAD will be this runbook, or a later docs-only commit — that is fine and expected. What matters is not which commit HEAD is, but that **no deployable moved after the archives were built**:
+> **Two separate tests, two separate answers. Do not collapse them.** A docs-only commit invalidates the
+> **fingerprint** but leaves the **archives** valid, because they are built from git over `ignition/`:
 > ```bash
 > git diff --stat e0cc9577..HEAD -- ignition/ sql/
 > ```
-> Expect **no output**. If anything is listed, the archives are stale — rebuild and re-preview.
+> Expect **no output**. If anything is listed, the archives are stale — rebuild them, then re-preview.
+> No output means the archives stand and you need a fresh preview only to get a live fingerprint.
 
 ### 1. What this ships
 
@@ -119,4 +123,4 @@ Write the sideways parts down. The retyped-fingerprint abort is in the 2026-09-1
 
 Artifact for the person running it — readable on a phone at the press. `notes/<date>_prod-release-runbook-<slug>.md` for git. Same content; the note is the record, the Artifact is the instrument.
 
-Commit the note **before** the preview, so it is part of the release commit range rather than a change that invalidates your fingerprint later.
+Commit the note **before** the preview, so it is part of the release commit range rather than a change that invalidates your fingerprint later. The 2026-10-01 bundle is the cautionary case: the runbook and two status commits landed *after* the preview, and the fingerprint it published (`ef6e2f8b766a`) was dead on arrival.

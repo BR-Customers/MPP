@@ -50,7 +50,7 @@ Copy the preview's numbers verbatim — pending list, `N identical, N changed, N
 
 > **Prod's numbers may differ from these** if prod carries any proc the repo does not, or a hand-patched definition. The script compares text on the target, not commit history, so a larger `CHANGED` list is information, not an error — read the per-object diffs before continuing.
 
-> **Take the plan fingerprint from YOUR preview.** ProdSim's will differ, because the fingerprint covers the target's own state as well as `HEAD`.
+> **Take the plan fingerprint from YOUR preview.** ProdSim's will match prod's whenever both are at the same state under the same `HEAD` — a match is corroboration, not a problem. What it will *not* do is tell you which database you are pointed at. See `03_deploy_prodrelease.md` § The fingerprint.
 
 ---
 
@@ -61,6 +61,30 @@ Copy the preview's numbers verbatim — pending list, `N identical, N changed, N
 | The migrations and repeatables apply cleanly, in order, to a database at prod's state | That they apply to **prod's actual rows** — only the prod rehearsal proves that |
 | The expected preview shape, so a deviation on prod is visible | Anything a gate reads from live plant data (open baskets, running shifts, unmapped cavities) |
 | The rollback is clean | Lock contention against real plant traffic |
+
+### Three legs a rehearsal structurally cannot reach
+
+`Rehearse` rolls back, and it rolls back *before* `[9]` and `[11]`. So it never exercises:
+
+1. **`[9]` the `COPY_ONLY` + `CHECKSUM` backup** — the one step standing between a bad release and a lost
+   plant. No rehearsal has ever taken one.
+2. **`[11]` the post-commit `R__Descriptions_ExtendedProperties.sql`** — it runs *outside* the transaction by
+   design, so a rolled-back run skips it entirely.
+3. **Every post-commit verification query in the runbook's section 6.5** — there is nothing committed to query.
+
+**Run a real `Execute` against a SECOND throwaway sim to cover them.** Build it the same way under a different
+name (`MPP_MES_ProdSim3`), preview it, then Execute for real. It costs one database build, and it converts the
+runbook's section 6.5 from *expected* values into *confirmed* ones — so a deviation on prod becomes a signal
+rather than an unknown.
+
+**Keep the first sim at prod's state.** Executing against it consumes the baseline, and the live window then
+has to rebuild it from a worktree before it can rehearse. That is the whole reason this is a second database
+and not the same one.
+
+2026-10-02 is what put this here: `is_not_trusted = 0` on `0098`'s `CK_RejectEvent_QuantityNonNeg` had been
+*assumed* through two rehearsals and was first actually verified this way. It is the only proof that a
+`WITH CHECK` constraint validated the existing rows instead of being accepted unvalidated — which is the
+entire reason that migration takes a whole-table lock.
 
 This is exactly why the prod rehearsal is not optional even after a perfect local one. The 2026-09-12 release matched its local rehearsal precisely and still rehearsed against prod first, with 1 open basket and 1 running shift — a 2.8 s lock window it could not have measured locally.
 

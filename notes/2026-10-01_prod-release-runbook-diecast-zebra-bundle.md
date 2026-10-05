@@ -8,6 +8,22 @@ and `Lots.ShippingLabel.LastPrintErrorCondition` all absent). Preview + Rehearse
 **Archives built from:** `792364b0`, verified against git. The 13:50 set went STALE when the Gateway churn and
 a Designer save were committed after it; the staleness check below is exactly what caught that. Rebuilt 14:39.
 **SQL suite:** 4219 assertions / 4219 passed / 0 failed / exit 0, zero `ERROR running` lines.
+**Re-verified 2026-10-02 at HEAD `17a28e46`**, after `792364b0` repaired two pre-flight gates that the
+2026-10-01 rehearsal had never actually run. Preview + Rehearse clean again on `MPP_MES_ProdSim` (0.9 s,
+rollback re-verified); SQL suite 4219/4219/0 again; archives re-checked against git. Additionally a full
+**Execute** was run against a second throwaway sim (`MPP_MES_ProdSim3`, built at `e3e0aa25`) to exercise the
+three legs a rehearsal structurally cannot reach -- the `COPY_ONLY` backup, the post-commit
+extended-properties step, and the section 6.5 proofs. All passed; `MPP_MES_ProdSim` was left untouched at
+`0095` so the live window does not have to rebuild it. **Preconditions 1 and 2 in section 3.0 are unchanged
+and still unmet -- this release is still prepared, not cleared.**
+**ARCHIVES STALE as of 2026-10-04.** `1ab8c9be` ("clear the die cast reconcile sheet on exit, and refuse a
+stale draft write") lands a real behaviour fix in `MPP` /
+`Components/PlantFloor/DieCastReconcileSheet/view.json`, so the staleness check below now returns a row and
+the 14:39 archives no longer carry HEAD's Ignition state. **Rebuild the MPP archive and re-preview before
+scheduling.** The SQL half is untouched -- `sql/migrations/` has not moved since `792364b0`, so `0096`-`0102`
+and the 40 repeatables are exactly as described. This is also the second guard this release has had do its
+job: the fix is a stale-draft refusal on a Honda traceability record, which is precisely the class of thing
+precondition 2 exists to find.
 
 > ## STOP -- read section 3 before scheduling this
 >
@@ -15,15 +31,22 @@ a Designer save were committed after it; the staleness check below is exactly wh
 > **never been run** and whose screen **no human has clicked through**. It also needs **the presses idle**.
 > It is prepared, not cleared. Section 3.0 is the precondition list.
 
-> **Nothing may be committed between the preview you read and the Execute.** The plan fingerprint covers HEAD;
-> Execute refuses if anything moved. HEAD being this runbook or a later docs-only commit is fine and expected.
-> What matters is that **no deployable moved after the archives were built**:
+> **Nothing may be committed between the preview you read and the Execute.** The plan fingerprint's first
+> line is the raw `HEAD` SHA, so **any** commit changes it -- a docs-only commit included -- and Execute
+> refuses. That is the guard working, not a bug to route around: re-preview and use the new fingerprint.
+> This exact thing happened here. The fingerprint this runbook first recorded (`ef6e2f8b766a`) went dead
+> when two docs commits landed behind it. `prod-release-context-pack/07_writing_the_runbook.md` says to
+> commit the note **before** the preview for precisely this reason.
+>
+> **Two separate questions, and they have different answers.** A docs-only commit changes the fingerprint
+> but does **not** make the Ignition archives stale, because they are built from git over `ignition/`:
 >
 > ```bash
 > git diff --stat 792364b0..HEAD -- ignition/ sql/migrations/
 > ```
 >
-> Expect **no output**. Anything listed means the archives are stale -- rebuild and re-preview.
+> Expect **no output**. Anything listed means the archives *are* stale -- rebuild them, then re-preview.
+> No output means the archives stand and you need only a fresh preview for the fingerprint.
 
 ---
 
@@ -109,11 +132,13 @@ commissioning, not through this release), `ignition-context-pack/`, `prod-releas
 | Migrations | 7 -- `0096` through `0102` |
 | Repeatables | 40 -- 23 new, 17 changed |
 | Post-commit | `R__Descriptions_ExtendedProperties.sql` (documentation only) |
-| Rehearsal lock window | **1.2 s on ProdSim -- see the warning below** |
+| Rehearsal lock window | **1.2 s / 0.9 s on ProdSim, 1.0 s on an Execute -- see the warning below** |
 
 **The ProdSim lock window is not a prediction.** `MPP_MES_ProdSim` is built from migrations and seeds, so it
 holds **0 `RejectEvent` rows and 0 `DieCastContribution` rows**. The two expensive operations in this release
-scale with exactly those counts, so 1.2 s is a floor, not an estimate. Prod's preview prints the real counts
+scale with exactly those counts, so ~1 s is a floor, not an estimate. Three runs on empty tables measured
+1.2 s, 0.9 s and 1.0 s -- that spread is scheduling noise on an idle instance, and none of the three carries
+information about prod. Prod's preview prints the real counts
 in the `[5]` gates -- read them before you commit to a window. For reference, the 2026-09-18 release measured
 0.4 s on ProdSim and **9.3 s** on prod with no table rewrite at all.
 
@@ -183,7 +208,12 @@ A new BLOCK gate catches the one way `0098` can burn a window: any `RejectEvent.
 **Yes -- in that order only, and the order is load-bearing here beyond the usual reason.**
 
 `ShippingLabel_MarkDispatch` gains `@ErrorCondition NVARCHAR(50) = NULL`. Because it is **optional with a
-default**, prod's current Ignition keeps calling it successfully after the SQL lands. The reverse is not true:
+default**, prod's current Ignition keeps calling it successfully after the SQL lands. **Measured, not
+assumed** (2026-10-02, on `MPP_MES_ProdSim3` after a real Execute): the old four-argument call shape and the
+new five-argument one both return the same status row, with no missing-parameter error. Note that
+`sys.parameters.has_default_value` reads `0` for this parameter -- that column is only populated for CLR
+objects and says nothing about a T-SQL default, so it is not evidence either way. The proc source and a live
+call are. The reverse is not true:
 if the Ignition archives were imported first, the new named query would pass a parameter the old proc does not
 declare and **every dispatch outcome would fail to record**. SQL first is not a nicety in this release.
 
@@ -252,8 +282,17 @@ Expect, section by section (ProdSim's values; prod's `[5]` counts will be real n
   deploys past a BLOCK.
 
 **Copy the plan fingerprint. Do not retype it.** A dropped character aborted a window on 2026-09-12 and again
-on 2026-09-18. ProdSim's was `ef6e2f8b766a`; **prod's will differ**, because the fingerprint covers the
-target's own state as well as HEAD. Use the one your preview printed.
+on 2026-09-18. **Use the one your preview printed** -- always, whatever this runbook says.
+
+That said, the expected value is worth knowing, because it is a free cross-check. At HEAD `17a28e46` the
+fingerprint is **`7abee037cdc7`**, and it is *reproducible*: the plan lines are the `HEAD` SHA plus a content
+hash per pending migration and per repeatable to apply, so two targets at the same state give the same
+fingerprint. Two independently rebuilt sims (`MPP_MES_ProdSim`, `MPP_MES_ProdSim3`) both printed it.
+
+- **Prod prints `7abee037cdc7` too** -> prod is at exactly the state this runbook assumes. Corroborating.
+- **Prod prints something else** -> either HEAD has moved since this was written (likely, and harmless --
+  just use prod's value), or prod's pending/changed lists are not the ones in `[3]`/`[4]` above, which means
+  prod has drifted from git. Read `[3]` and `[4]` before deciding which it is.
 
 ### Step 2 -- Rehearse (runs the real script on live data, then rolls back)
 
@@ -270,8 +309,9 @@ Expect 47 step markers, then:
   REHEARSAL PASSED and was rolled back. Lock window: N.Ns.
 ```
 
-**Note the lock window.** ProdSim was 1.2 s with empty tables; prod's is the number that matters, and it is
-roughly what Execute will take.
+**Note the lock window.** ProdSim measured 1.2 s and 0.9 s on two runs, both with empty `RejectEvent` and
+`DieCastContribution` tables -- a floor, not a forecast. Prod's is the number that matters, and it is roughly
+what Execute will take.
 
 **If the rehearsal fails, stop.** It failed against prod's actual rows, which is the one thing no amount of
 local testing simulates. Nothing was written.
@@ -360,12 +400,34 @@ must still resolve from its stored endpoint.
 
 ### 6.5 Quick SQL proofs
 
+Every expected value below was confirmed on `MPP_MES_ProdSim3` after a real Execute on 2026-10-02, so a
+deviation on prod is a signal rather than an unknown.
+
 ```sql
 SELECT COUNT(*) AS Applied, MAX(MigrationId) AS Highest FROM dbo.SchemaVersion;   -- 101 / 0102_shippinglabel_print_error_condition
-SELECT COL_LENGTH('Lots.ShippingLabel','LastPrintErrorCondition');                -- not NULL
-SELECT COL_LENGTH('Workorder.DieCastContribution','ShiftAttributionSourceId');    -- not NULL
-SELECT name, is_not_trusted FROM sys.check_constraints WHERE name = 'CK_RejectEvent_QuantityNonNeg'; -- is_not_trusted = 0
+SELECT COL_LENGTH('Lots.ShippingLabel','LastPrintErrorCondition');                -- 100
+SELECT COL_LENGTH('Workorder.DieCastContribution','ShiftAttributionSourceId');    -- 8
+SELECT COL_LENGTH('Workorder.ProductionEvent','ShiftId');                         -- 8
+SELECT COL_LENGTH('Location.SessionPolicy','ElevationMaxSeconds');                -- 4
+SELECT name, is_not_trusted, is_disabled FROM sys.check_constraints
+ WHERE name = 'CK_RejectEvent_QuantityNonNeg';                                    -- is_not_trusted = 0, is_disabled = 0
+
+-- 0101: ConnectionKind is a LocationAttributeDefinition on the Printer type (LTD 16), NOT a code table.
+SELECT AttributeName, IsRequired FROM Location.LocationAttributeDefinition
+ WHERE LocationTypeDefinitionId = 16 AND AttributeName IN ('ConnectionKind','Endpoint');
+-- ConnectionKind.Description mentions UsbBridge; Endpoint.IsRequired = 0
+
+-- the four new objects most of this release hangs off
+SELECT OBJECT_ID('Location.ufn_PrinterEndpoint'), OBJECT_ID('Workorder.DieCastShiftReconciliation_Save'),
+       OBJECT_ID('Workorder.TrimPartial_Record'), OBJECT_ID('Workorder.ufn_DieCastShiftStamp');  -- all non-NULL
+
+-- [11] ran the extended properties outside the transaction; prove it landed and stayed ASCII
+SELECT COUNT(*) FROM sys.extended_properties WHERE name = 'MS_Description';       -- 376
 ```
+
+**`is_not_trusted = 0` is the one that matters most.** It is the proof that `0098`'s `WITH CHECK` actually
+validated every existing row rather than being accepted unvalidated -- which is the whole reason that
+migration takes a whole-table lock.
 
 ---
 

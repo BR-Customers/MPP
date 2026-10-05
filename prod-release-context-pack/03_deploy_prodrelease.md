@@ -98,11 +98,29 @@ Ends with: `Import the Ignition exports NOW -- Core first.`
 
 ## The fingerprint
 
-It covers `HEAD` **and** the target's own state, because the plan is a function of both. Consequences:
+It covers the **plan**, and nothing else. The hashed lines are exactly:
 
-- Prod's fingerprint will differ from your local rehearsal's. Use the one **your** preview printed.
-- Any commit between preview and Execute changes it. That is the guard working.
-- A different target changes it. Pointing at the wrong database cannot be papered over.
+```
+HEAD|<commit sha>
+M|<migration file name>|<sha of its text>      (one per pending migration)
+R|<repeatable file name>|<sha of its text>     (one per repeatable to apply)
+```
+
+So it is a function of `HEAD` plus *which* items the target's state makes pending or changed. Consequences:
+
+- Any commit between preview and Execute changes it -- **including a docs-only commit**, because the first
+  hashed line is the raw `HEAD` sha. That is the guard working. Re-preview and use the new fingerprint.
+- It is **reproducible**: two targets at the same state, under the same `HEAD`, produce the *same*
+  fingerprint. Verified 2026-10-02 -- `MPP_MES_ProdSim` and `MPP_MES_ProdSim3`, independently rebuilt at the
+  same commit, both printed `7abee037cdc7`. This is useful: if prod prints the value your local rehearsal
+  did, prod is at the state you rehearsed against.
+- **It does NOT identify the target.** `$DatabaseName` and `$ServerInstance` are not hashed. A fingerprint
+  taken from one database is accepted by an Execute against a *different* database at an equivalent state --
+  demonstrated accidentally on 2026-10-02, when ProdSim's fingerprint validated against ProdSim3. **The
+  fingerprint will not save you from a wrong `-DatabaseName`.** Read `[2] Connection` in the report, every
+  time; that is the only thing that names the target.
+- Prod's fingerprint may differ from your local rehearsal's -- but only if prod's pending/changed lists
+  differ, which is itself worth knowing. Either way, use the one **your** preview printed.
 
 ```
 ABORT: plan is <a> but -ExpectedPlan is <b> -- the target or the checkout changed since the preview.

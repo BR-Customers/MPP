@@ -77,7 +77,7 @@
 >
 > **Four preconditions, two of them not satisfied today** (runbook section 3.0): the acceptance replay against the 2026-09-17 Machine 11 press sheet has never been run; no human has driven the reconciliation screen past Scenario A; a **presses-idle** window is required because `0098` validates a constraint across every partition of `RejectEvent` and `0099` rewrites `DieCastContribution`, both under whole-table `Sch-M` locks; and the preview's `[5]` row counts must be read, because they are the only real lock-window estimate.
 >
-> **Done and verified.** ProdSim worktree at `e3e0aa25` + `MPP_MES_ProdSim` built to prod's exact state (94 applied, highest `0095`, all three new columns absent). **Preview clean** -- 7 pending, 459 identical / 17 changed / 23 new, fingerprint `ef6e2f8b766a`. **Rehearsal passed** -- 47 steps, `checks passed`, lock window **1.2 s**, rolled back, and the rollback re-verified against the baseline. SQL suite **4219/4219/0**. Scoped exports built **from git** at `1dc270e2` and structurally verified by re-opening each zip (root `project.json`, no backslash entries, no thumbnails or bytecode, every manifest promise kept): Core 36 resources / 73 entries, MPP 28/57, MPP_Config 2/5, **no deletions**.
+> **Done and verified.** ProdSim worktree at `e3e0aa25` + `MPP_MES_ProdSim` built to prod's exact state (94 applied, highest `0095`, all three new columns absent). **Preview clean** -- 7 pending, 459 identical / 17 changed / 23 new, fingerprint `ef6e2f8b766a` (**now dead** -- two docs commits landed behind it; at HEAD `17a28e46` it is `7abee037cdc7`, see the 2026-10-02 entry below). **Rehearsal passed** -- 47 steps, `checks passed`, lock window **1.2 s**, rolled back, and the rollback re-verified against the baseline. SQL suite **4219/4219/0**. Scoped exports built **from git** and structurally verified by re-opening each zip (root `project.json`, no backslash entries, no thumbnails or bytecode, every manifest promise kept), **no deletions**. The counts above described the `1dc270e2` / 13:50 set, which went stale the same day; **the shipping set is the 14:39 rebuild at `792364b0` -- Core 40 resources / 81 entries, MPP 31/63, MPP_Config 4/9** (corrected 2026-10-02 by re-opening the archives; the runbook's table always carried the right figures).
 >
 > **`MPP_MES_ProdSim` is left in place at `0095`** so the window does not have to rebuild it. The worktree was removed.
 >
@@ -90,7 +90,60 @@
 > **One gate was written wrong and the local rehearsal caught it** -- it queried `Oee.ShiftOverride.RevertedAt`, a column that does not exist, and the ProdSim preview died on `Invalid column name`. That is the argument for rehearsing a gate rather than reasoning about one.
 >
 > Instruction guide published as an Artifact (copyable commands, verbatim expected output with an *if it differs* branch per section, import checklist, rollback) and mirrored in git as the runbook note.
->> ### Still owed on this
+>> ### Re-verified 2026-10-02 -- full simulation re-run, including a real Execute
+>
+> Re-run at HEAD `17a28e46` because `792364b0` had repaired two pre-flight gates **after** the rehearsal above
+> was recorded -- so those gates had never actually executed. They have now.
+>
+> **`MPP_MES_Dev` needed nothing:** 0 pending, **499 repeatables identical / 0 changed / 0 new**, verdict
+> *"already matches this checkout"*. Dev has been current since the `0102` apply.
+>
+> **Against `MPP_MES_ProdSim` (prod's state, untouched and left at `0095`):** Preview identical to the one
+> above -- 7 pending, 459/17/23, same object lists; all three gates fired; Rehearse 47 steps, `checks passed`,
+> rolled back in 0.9 s, rollback re-verified. SQL suite **4219/4219/0**, exit 0, zero `ERROR running` lines.
+> Archives re-checked against git at `792364b0`: **145 of 150 entries byte-identical**, the 5 differences
+> being the deliberate `thumbnail.png` manifest strip with `lastModificationSignature` preserved (shipping a
+> manifest that names a missing file is what causes the Designer NPE).
+>
+> **And a real Execute, on a second throwaway sim.** A rehearsal rolls back before the post-commit step, so
+> three legs of the contract are structurally unreachable from one: the `COPY_ONLY` backup, the
+> extended-properties run, and the section 6.5 proofs. A fresh `MPP_MES_ProdSim3` built at `e3e0aa25` took the
+> full Execute -- backup written **and verified**, 47 steps committed in 1.0 s, `[11]` clean, and every 6.5
+> value confirmed including **`CK_RejectEvent_QuantityNonNeg is_not_trusted = 0`**, which is the only real
+> proof that `0098`'s `WITH CHECK` validated rather than being accepted unvalidated. Section 3.4's
+> old-Ignition-compatibility claim is now **measured**: both call shapes of `ShippingLabel_MarkDispatch`
+> return the same status row.
+>
+> **The fingerprint is reproducible, which makes it a cross-check rather than an opaque token.** Its plan
+> lines are the `HEAD` SHA plus a content hash per pending migration and per repeatable to apply, so two
+> targets at the same state produce the same value -- `MPP_MES_ProdSim` and `MPP_MES_ProdSim3`, independently
+> rebuilt, both printed `7abee037cdc7`. If prod's preview prints it too, prod is where the runbook assumes.
+>
+> **Runbook corrected** (`notes/2026-10-01_prod-release-runbook-diecast-zebra-bundle.md`): the dead
+> fingerprint, the lock-window figures, 6.5's expected values, and a sentence that read *"a later docs-only
+> commit is fine and expected"* -- which contradicts `prod-release-context-pack/01_the_release_contract.md`.
+> Any commit changes the fingerprint; a docs commit leaves the **archives** valid but still needs a
+> re-preview. Those are two different questions and the runbook now separates them.
+>
+> **Nothing here moves the release forward.** Preconditions 1 and 2 of section 3.0 -- the acceptance replay
+> and a human driving the reconciliation screen -- are untouched. Still prepared, not cleared.
+>
+> **2026-10-04 follow-on: the Ignition archives are now STALE.** `1ab8c9be` lands a behaviour fix in
+> `DieCastReconcileSheet` (clear the sheet on exit; refuse a stale draft write), so the runbook's staleness
+> check returns a row and the 14:39 set no longer carries HEAD's Ignition state. **The MPP archive needs a
+> rebuild and the release needs a re-preview.** `sql/migrations/` has not moved, so the SQL half of the
+> release stands exactly as described. Worth noting what this is: somebody driving the reconciliation screen
+> found a real stale-draft defect on a Honda traceability record -- which is precondition 2 doing its job
+> rather than a formality.
+>
+> **Side finding, unrelated to the release:** `Reset-DevDatabase.ps1` fails its last step (7/7) on
+> `seed_demo.sql` -- *"LOT 800000001 is not ready for Machining IN; its next operation is TrimIn"*. The demo
+> thread skips Trim. `seed_demo.sql` and `029_seed_item_routes.sql` are **unchanged between `e3e0aa25` and
+> HEAD**, so this is pre-existing and equally broken at HEAD. The database is otherwise fully built
+> (migrations, repeatables, seeds all applied), but the documented way to get smoke LOTs into a dev DB does
+> not currently work. Not diagnosed.
+
+> ### Still owed on this
 >
 > 1. ~~**Nobody has seen the modal on a screen.**~~ **CLOSED later the same session** -- see the broadcast entry above: a fresh session at a terminal with a failed label showed the banner and the modal unprompted, correctly worded, and dismissing it did not bring it back over four more ticks. What remains is narrower: it was a 1600-wide browser, not a plant terminal, so sizing and contrast on the real hardware are still unseen.
 > 2. **Whether a reprint whose send failed should stop reading as success** is spec open item 2 and stayed undecided -- `reprintAndDispatch` still returns `Status 1`, so the Reprint button toasts green. It is no longer the only signal (the async path catches it within ~5 s and opens the modal for the new label row), which is why it was left rather than decided unilaterally. The blast radius the spec worried about does not actually apply: `notifyPrintResult` is print-specific with one caller, unlike `notifyResult`.
