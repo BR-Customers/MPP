@@ -717,7 +717,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} \u003e 0, \u0027Per-Tray Close - first tray opens a container (\u0027 + toStr({view.custom.fgConfig.TraysPerContainer}) + \u0027 trays x \u0027 + toStr({view.custom.fgConfig.PartsPerTray}) + \u0027 parts/tray)\u0027, \u0027Per-Tray Close - completing the first tray opens a container\u0027), \u0027Per-Tray Close - \u0027 + if({session.custom.closureMethod} \u003d \"ByVision\", \"Vision\", if({session.custom.closureMethod} \u003d \"ByWeight\", \"Weight\", \"Count\")) + \u0027 - Tray \u0027 + toStr(({view.custom.container.ClosedTrays} + 1)) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer}))"
+                                    "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} \u003e 0, \u0027Per-Tray Close - first tray opens a container (\u0027 + toStr({view.custom.fgConfig.TraysPerContainer}) + \u0027 trays x \u0027 + toStr({view.custom.fgConfig.PartsPerTray}) + \u0027 parts/tray)\u0027, \u0027Per-Tray Close - completing the first tray opens a container\u0027), \u0027Per-Tray Close - \u0027 + if({session.custom.closureMethod} \u003d \"ByVision\", \"Vision\", if({session.custom.closureMethod} \u003d \"ByWeight\", \"Weight\", \"Count\")) + \u0027 - Closed \u0027 + toStr({view.custom.container.ClosedTrays}) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer}))"
                                   },
                                   "type": "expr"
                                 }

@@ -556,7 +556,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "\u0027Tray \u0027 + toStr(({view.custom.container.ClosedTrays} + 1)) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer})"
+                            "expression": "\u0027Closed \u0027 + toStr({view.custom.container.ClosedTrays}) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer})"
                           },
                           "type": "expr"
                         }
@@ -643,7 +643,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "\u0027Tray Fill - Tray \u0027 + toStr(({view.custom.container.ClosedTrays} + 1))"
+                            "expression": "\u0027Tray Fill - Closed \u0027 + toStr({view.custom.container.ClosedTrays})"
                           },
                           "type": "expr"
                         }
