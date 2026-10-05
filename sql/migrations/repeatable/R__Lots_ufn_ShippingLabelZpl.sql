@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable: R__Lots_ufn_ShippingLabelZpl.sql
 -- Author:     Blue Ridge Automation
--- Version:    1.2
+-- Version:    1.3
 -- Description: Brief D (FAT-LBL-050) -- render the container shipping-label ZPL.
 --   Resolves the ACTIVE Container Lots.LabelTemplate.ZplBody and substitutes the
 --   {Placeholder} tokens from the container + its Item + the BOM version used to
@@ -37,8 +37,30 @@
 --                        Honda. {Serial} is still substituted (to the barcode form) so an
 --                        un-migrated template row cannot print a literal '{Serial}'.
 --     {Coo}           <- 'USA'
---     {PartNumberExt} / {DataMatrix} / {Auditor} <- blank by design (empty on every
---                        real MPP container label; layout + captions retained)
+--     {DataMatrix}    <- v1.3 (2026-10-05). The 2D payload, reconstructed from a scan of
+--                        the legacy label for 1223A-6MA -J000 taken onsite:
+--                            13933626 P1223A6MA J000 96
+--                        i.e. <last 8 of the AIM shipper> + ' P' + <PartNumber with
+--                        every '-' removed> + ' ' + <quantity>. The 'P' is the AIAG
+--                        data identifier for part number, matching the label's own
+--                        'PART NO. (P)' caption.
+--
+--                        SEPARATORS ARE ASSUMED TO BE LITERAL SPACES, and that is the
+--                        one soft spot. The reference came from a scan pasted into a
+--                        text editor, which renders an ASCII GS (29) / RS (30) as
+--                        nothing or as whitespace -- so a space here is indistinguishable
+--                        from a control character there. If Honda's scanner rejects the
+--                        payload, re-scan into something that shows hex and compare;
+--                        the fix would be to swap these two spaces, nothing more.
+--
+--                        Takes the last 8 of the AIM shipper rather than stripping a
+--                        leading zero: both produce '13933626' from '013933626', so the
+--                        single reference sample cannot tell them apart, and RIGHT(,8) is
+--                        the rule the serial already uses two lines below. Consistency
+--                        was the tie-break, not evidence.
+--     {PartNumberExt} / {Auditor} <- blank by design (empty on every real MPP container
+--                        label; captions retained, and 0103 removed the empty-^B3 stub
+--                        barcode that PartNumberExt was still emitting)
 --
 --   Unresolved-source tokens render as '' (label still prints). ASCII-only body.
 -- ============================================================
@@ -76,6 +98,9 @@ BEGIN
     -- any log. Declared wide deliberately; do not tighten it back.
     DECLARE @SerialBarcode NVARCHAR(32) = N'13218001' + RIGHT(@Aim, 8);
     DECLARE @SerialText    NVARCHAR(32) = N'13218001-' + RIGHT(@Aim, 8);
+    -- See the header for the shape and for why the separators are spaces.
+    DECLARE @DataMatrix  NVARCHAR(400) =
+        RIGHT(@Aim, 8) + N' P' + REPLACE(@PartNumber, N'-', N'') + N' ' + CAST(@Qty AS NVARCHAR(20));
     DECLARE @MfgDate     NVARCHAR(20)  =
         CASE WHEN @CompletedAt IS NULL THEN N''
              ELSE FORMAT(CAST(@CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)), N'M/dd/yy') END;
@@ -93,9 +118,9 @@ BEGIN
     -- scanned payload that matches Honda, and a human line missing a dash).
     SET @Zpl = REPLACE(@Zpl, N'{Serial}',        @SerialBarcode);
     SET @Zpl = REPLACE(@Zpl, N'{Coo}',           N'USA');
-    -- blank-by-design fields (layout + captions retained)
+    -- blank-by-design fields (captions retained; DataMatrix is populated as of v1.3)
     SET @Zpl = REPLACE(@Zpl, N'{PartNumberExt}', N'');
-    SET @Zpl = REPLACE(@Zpl, N'{DataMatrix}',    N'');
+    SET @Zpl = REPLACE(@Zpl, N'{DataMatrix}',    @DataMatrix);
     SET @Zpl = REPLACE(@Zpl, N'{Auditor}',       N'');
 
     RETURN @Zpl;
