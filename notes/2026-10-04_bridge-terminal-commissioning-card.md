@@ -113,7 +113,14 @@ Logs: `%ProgramData%\BlueRidge\MesZebraBridge\logs\bridge-YYYYMMDD.log`, local t
 
 ## Status
 
-Hardware commissioning of the first real printer is Config Tool plan Task 9 / C# plan Task 15. Both were
-blocked only on a terminal PC with a Zebra and exclusive use of port 9100 -- everything they depend on has
-run. **The bridge has never been verified against a physical Zebra over the network**; the 113-test suite
-covers protocol and socket behaviour only. The first terminal is therefore also the bring-up.
+**The path is proven end to end on real hardware, across a VPN.** A shipping label went from the Gateway in
+gateway scope, through this service on another machine, to a physical Zebra -- installed by a second person
+working from these instructions, running under the real SCM, printed from a remote Ignition instance over
+VPN. So the first terminal is **not** a bring-up: the technology, the wire contract and the failure taxonomy
+(spec 6.3, produced against that hardware) are all settled.
+
+What is still per-terminal is **commissioning**, not proof: each machine's driver, its exact queue name, its
+Terminal `IpAddress`, and its firewall rule. `?STATUS` confirms all four per machine without consuming a
+label, which is what makes 54 of them tractable. The live risks are therefore the mundane ones -- a queue
+named differently than expected, a terminal with no `IpAddress` set yet (38 of 77 as of 2026-09-30), or
+something else already holding port 9100.

@@ -24,7 +24,8 @@ Spec: `docs/superpowers/specs/2026-09-29-zebra-bridge-service-and-print-traceabi
 
 | Signed | **No.** Spec open item 12.4 is unresolved -- this hash is what MPP IT can allowlist in the meantime. |
 | Service account | `LocalSystem`. Spec open item 12.3, assumption stated in the plan's Global Constraints. |
-| Verified | Protocol and socket behaviour by the 113-test suite, and the two-file pair run standalone. **Not yet against a physical Zebra or over the network** -- that is the plan's Task 15, which needs a terminal PC with a printer attached. |
+| Verified | **End to end on real hardware, across a VPN.** A shipping label dispatched from the Gateway in gateway scope, through this service on another machine, to a physical Zebra -- installed by a second person from these instructions, running under the real SCM, printed from a remote Ignition instance over VPN. That is the substance of the plan's Task 15 and of spec section 6.3's failure taxonomy, which was produced against that hardware rather than predicted. The 113-test suite covers protocol and socket behaviour underneath it. |
+| Still per-terminal | What each of the 54 machines needs is its own **commissioning**, not a re-proof of the path: its driver, its exact queue name, its Terminal `IpAddress`, and its firewall rule. That is the one-visit procedure below, and `?STATUS` is what confirms it per machine without consuming a label. |
 
 Rebuild:
 
