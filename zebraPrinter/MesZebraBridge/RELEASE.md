@@ -11,8 +11,17 @@ Spec: `docs/superpowers/specs/2026-09-29-zebra-bridge-service-and-print-traceabi
 | Target | .NET Framework 4.8 (`net48`), AnyCPU |
 | Toolchain | .NET SDK 10.0.201, `Microsoft.NETFramework.ReferenceAssemblies` 1.0.3 |
 | Size | 54784 bytes |
-| SHA-256 | `6A208EDD2C8AEB5DC62CDD31F603939A15DB98BD418CAA970EE5092803C85B70` |
-| Reproducible | Yes. `Deterministic=true`; two clean rebuilds produced the same hash, so the value above is a stable allowlist target rather than a one-off. |
+| SHA-256 | **`A4DCFDA1B0B3903990C42F349183B1C77DF2405400D1EB96E1C8D0F50F574430`** -- rebuilt 2026-10-04 at `55b925a8`, and this is the copy staged in `dist/bridge-flashdrive/`. |
+| Superseded hash | `6A208EDD...5B70` was recorded on 2026-09-30 and **does not match any binary that now exists**. Do not give it to MPP IT. |
+| Reproducible | **Only for a fixed source + build directory + toolchain.** `Deterministic=true` makes repeated clean rebuilds in the same checkout byte-identical (verified twice on 2026-10-04: both `A4DCFDA1...`), but it does NOT make the hash portable: there is no `PathMap`, so a build from a different directory embeds different absolute paths and lands on a different hash. Three builds of this same unchanged source have produced three hashes (`6A208EDD...` in an agent worktree, `DD0467AB...` in the main tree on 2026-09-30, `A4DCFDA1...` in the main tree on 2026-10-04). |
+
+> **Rule that follows from this: ship ONE exe and hash THAT FILE.** Never quote a hash from this
+> file to MPP IT without first running `sha256sum` (or `Get-FileHash`) over the exact binary going
+> on the flash drive. The source has not changed since `c3827380` -- no `.cs` or `.csproj` commit
+> after it -- so all three builds are the same reviewed 1.0.0 code; they are simply not the same
+> bytes. If a portable, quotable hash is ever actually required, add `<PathMap>` to the csproj and
+> re-record; that is the fix, and it has not been done.
+
 | Signed | **No.** Spec open item 12.4 is unresolved -- this hash is what MPP IT can allowlist in the meantime. |
 | Service account | `LocalSystem`. Spec open item 12.3, assumption stated in the plan's Global Constraints. |
 | Verified | Protocol and socket behaviour by the 113-test suite, and the two-file pair run standalone. **Not yet against a physical Zebra or over the network** -- that is the plan's Task 15, which needs a terminal PC with a printer attached. |

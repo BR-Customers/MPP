@@ -16,14 +16,18 @@ three legs a rehearsal structurally cannot reach -- the `COPY_ONLY` backup, the 
 extended-properties step, and the section 6.5 proofs. All passed; `MPP_MES_ProdSim` was left untouched at
 `0095` so the live window does not have to rebuild it. **Preconditions 1 and 2 in section 3.0 are unchanged
 and still unmet -- this release is still prepared, not cleared.**
-**ARCHIVES STALE as of 2026-10-04.** `1ab8c9be` ("clear the die cast reconcile sheet on exit, and refuse a
-stale draft write") lands a real behaviour fix in `MPP` /
-`Components/PlantFloor/DieCastReconcileSheet/view.json`, so the staleness check below now returns a row and
-the 14:39 archives no longer carry HEAD's Ignition state. **Rebuild the MPP archive and re-preview before
-scheduling.** The SQL half is untouched -- `sql/migrations/` has not moved since `792364b0`, so `0096`-`0102`
-and the 40 repeatables are exactly as described. This is also the second guard this release has had do its
-job: the fix is a stale-draft refusal on a Honda traceability record, which is precisely the class of thing
-precondition 2 exists to find.
+**ARCHIVES REBUILT 2026-10-04 at HEAD `55b925a8` -- use the `onsite-20261005_2026-10-04_2151` set.** The
+14:39 set went stale when `1ab8c9be` ("clear the die cast reconcile sheet on exit, and refuse a stale draft
+write") landed a behaviour fix in `MPP` / `Components/PlantFloor/DieCastReconcileSheet/view.json`. The new set
+was built from git over `e3e0aa25..HEAD` and verified by re-opening each zip against `55b925a8`: **145 of 150
+entries byte-identical**, 5 thumbnail-manifest strips, no backslash entries, no thumbnails, no bytecode,
+nothing absent from git. Counts are unchanged (Core 40/81, MPP 31/63, MPP_Config 4/9) because the fix touched
+a view already in the MPP archive. **`sql/migrations/` has not moved since `792364b0`**, so `0096`-`0102` and
+the 40 repeatables are exactly as described below and the SQL plan is identical.
+
+That fix is worth reading as a signal rather than a nuisance: it is a stale-draft refusal on a Honda
+traceability record, found by somebody driving the reconciliation screen. That is precondition 2 doing its
+job.
 
 > ## STOP -- read section 3 before scheduling this
 >
@@ -100,13 +104,13 @@ there is a WARN and the release stands).
 
 ### Ignition -- 66 resources, no deletions
 
-| Archive | Resources | Entries |
+| Archive (use the `onsite` set -- the `1439` set is superseded) | Resources | Entries |
 |---|---|---|
-| `Core_diecast-zebra-bundle_2026-10-01_1439.zip` | 40 | 81 |
-| `MPP_diecast-zebra-bundle_2026-10-01_1439.zip` | 31 | 63 |
-| `MPP_Config_diecast-zebra-bundle_2026-10-01_1439.zip` | 4 | 9 |
+| `Core_onsite-20261005_2026-10-04_2151.zip` | 40 | 81 |
+| `MPP_onsite-20261005_2026-10-04_2151.zip` | 31 | 63 |
+| `MPP_Config_onsite-20261005_2026-10-04_2151.zip` | 4 | 9 |
 
-Full `NEW`/`MOD` list per project: `dist/ignition-exports/diecast-zebra-bundle_2026-10-01_1439_CONTENTS.txt`.
+Full `NEW`/`MOD` list per project: `dist/ignition-exports/onsite-20261005_2026-10-04_2151_CONTENTS.txt`.
 **No resources were deleted in this range**, so there is no by-hand deletion step.
 
 **Nine of the 75 resources carry no behaviour change** and ride along only because their `resource.json`
@@ -284,15 +288,17 @@ Expect, section by section (ProdSim's values; prod's `[5]` counts will be real n
 **Copy the plan fingerprint. Do not retype it.** A dropped character aborted a window on 2026-09-12 and again
 on 2026-09-18. **Use the one your preview printed** -- always, whatever this runbook says.
 
-That said, the expected value is worth knowing, because it is a free cross-check. At HEAD `17a28e46` the
-fingerprint is **`7abee037cdc7`**, and it is *reproducible*: the plan lines are the `HEAD` SHA plus a content
-hash per pending migration and per repeatable to apply, so two targets at the same state give the same
-fingerprint. Two independently rebuilt sims (`MPP_MES_ProdSim`, `MPP_MES_ProdSim3`) both printed it.
+That said, the expected value is worth knowing, because it is a free cross-check. **At HEAD `55b925a8` the
+fingerprint is `0ae2e519a73e`** (it was `7abee037cdc7` at `17a28e46`, and `ef6e2f8b766a` before that -- the
+value moves with every commit, which is the whole point). It is *reproducible*: the plan lines are the `HEAD`
+SHA plus a content hash per pending migration and per repeatable to apply, so two targets at the same state
+give the same fingerprint. Two independently rebuilt sims (`MPP_MES_ProdSim`, `MPP_MES_ProdSim3`) both printed
+the `17a28e46` value.
 
-- **Prod prints `7abee037cdc7` too** -> prod is at exactly the state this runbook assumes. Corroborating.
-- **Prod prints something else** -> either HEAD has moved since this was written (likely, and harmless --
-  just use prod's value), or prod's pending/changed lists are not the ones in `[3]`/`[4]` above, which means
-  prod has drifted from git. Read `[3]` and `[4]` before deciding which it is.
+- **Prod prints `0ae2e519a73e` too** -> prod is at exactly the state this runbook assumes. Corroborating.
+- **Prod prints something else** -> either HEAD has moved since this was written (check `git log -1`; if so
+  this is harmless, just use prod's value), or prod's pending/changed lists are not the ones in `[3]`/`[4]`
+  above, which means prod has drifted from git. Read `[3]` and `[4]` before deciding which it is.
 
 ### Step 2 -- Rehearse (runs the real script on live data, then rolls back)
 
@@ -340,12 +346,12 @@ lives in Core.
 **Designer -> File -> Import**, one zip at a time, accepting overwrite for the listed resources.
 **Do not use the Gateway web page's project import** -- these are partial exports, not whole projects.
 
-1. `Core_diecast-zebra-bundle_2026-10-01_1439.zip` -- 40 resources
-2. `MPP_diecast-zebra-bundle_2026-10-01_1439.zip` -- 31 resources
-3. `MPP_Config_diecast-zebra-bundle_2026-10-01_1439.zip` -- 4 resources (`Views/Audit/Users`,
+1. `Core_onsite-20261005_2026-10-04_2151.zip` -- 40 resources
+2. `MPP_onsite-20261005_2026-10-04_2151.zip` -- 31 resources
+3. `MPP_Config_onsite-20261005_2026-10-04_2151.zip` -- 4 resources (`Views/Audit/Users`,
    `Views/Location/PlantHierarchy`, plus `page-config` and `session-props` bookkeeping)
 
-Tick each resource off against `diecast-zebra-bundle_2026-10-01_1439_CONTENTS.txt`.
+Tick each resource off against `onsite-20261005_2026-10-04_2151_CONTENTS.txt`.
 
 **Two import slips from 2026-09-18 that cost time -- do not repeat them:**
 
