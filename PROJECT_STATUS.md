@@ -30,7 +30,27 @@
 
 > **2026-09-22 -- Trim partial checkpoint at shift end, built and smoke-tested on Dev.** A blast operator can record the total trimmed so far on a LOT at shift end without moving the LOT off Trim IN. Migration `0096` adds `Workorder.ProductionEvent.ShiftId`; new proc `Workorder.TrimPartial_Record` (route `TrimIn` template, operator-picked shift, never defaulted); `Workorder.TrimOut_Record` v1.5 gains a trim-scoped guard, requires a count after a partial, and stamps `ShiftId` via `Oee.ufn_ShiftIdForInstant`; new read `Workorder.TrimCheckpoint_GetLatestForLot` backs an "already recorded" line on the LOT card. Core NQs + `BlueRidge.Workorder.TrimPartial`; new popup `Components/Popups/TrimPartial`; `TrimBody` gained the **Record partial trim - shift end** button. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. **Verified on `MPP_MES_Dev`:** LOT `TPC-SMOKE-1` took a partial of 700 filed under Third Shift, then Trim OUT at 953, crediting 700 and 253 with `ShiftId` stamped on both checkpoints; full SQL suite 3885/3885, exit 0. **Dev only -- not yet released to prod.** Natural follow-up: the Trim Shop Detail report / credit rollup read (spec section 3.2 is its contract, out of scope here).
 
-**Last updated:** 2026-10-06 -- **THREE RELEASES TO PROD IN ONE DAY: supplier lot (08:31), EPrint scale watcher (11:59), Pack-Out editing on the Pass-Through Parts screen (13:23). Prod is at `0105`, 104 migrations; the last Execute proved its SQL matches `jacques/working` at `46464cb8`.** All three went through Preview -> Rehearse -> Execute with a verified `COPY_ONLY` backup; every preview matched its runbook's prediction and no gate or warning fired.
+**Last updated:** 2026-10-06 (afternoon) -- **Pass-through repack: a finished good with no BOM now packs from received stock of the same part. SQL only, two changed procs, PACKAGED for prod and NOT deployed.** Runbook `notes/2026-10-06_prod-release-runbook-passthrough-repack.md`; release commit `f840f4b5`.
+
+> ### Why the pass-through Assembly tab could not run (found 2026-10-06, on prod, by Jacques)
+>
+> Jacques received 66V Thermo Case stock on the Pass-Through Parts screen and the Assembly tab stayed on "No part in production". The screen is `ReceivingDock` + the standard `AssemblyNonSerialized`, i.e. plain assembly-out: it lists finished goods that have a published BOM and closes a tray by consuming that BOM. The pass-through parts are received finished and repackaged under the **same part number**, so they have no BOM and cannot have one (a BOM cannot name its own parent). On Dev all 14 pass-through lines carry exactly one finished good with no published BOM. The 2026-07-23 spec had flagged this as open question Q3 ("release the same LOT" vs "assembly-out with a BOM"); the build took the assembly-out route without settling it.
+>
+> **Fix (option 2 of two offered; Jacques chose it, and confirmed each box gets a full MPP shipping label + AIM serial):**
+>
+> - `Workorder.Assembly_CompleteTray` v1.5 -- no published BOM is the repack case instead of the "No active BOM" refusal. The tray LOT is minted as before and consumes 1:1, FIFO, from `Received` / `ReceivedOffsite` LOTs of the same Item at the line, with the same `Consumption` genealogy. Containers, AIM and the shipping label are untouched.
+> - `Parts.Item_ListEligibleFinishedGoodsRanked` v1.1 -- lists no-BOM finished goods, satisfied when that stock is at the line, ranked behind a BOM'd part at equal satisfaction.
+> - No Ignition change. New test file `0028_PlantFloor_Assembly/100_Assembly_CompleteTray_repack.sql` (22 assertions). Durable rule added to `CLAUDE.md` (terminal-mint section).
+>
+> **Left open:**
+>
+> - **No repack tray has been closed through the screen yet.** Dev's pass-through terminal is By Weight with no scale. The first close on prod is the runbook's section 6.1.
+> - **No inspection gate.** A received LOT packs without a recorded inspection result; only a Hold keeps it out. The 2026-07-23 spec's inspect step was never built into `ThirdPartyInspection`.
+> - **The rule is "no BOM", not a flag.** A real assembled finished good that is missing its BOM, with received-origin stock of itself at its line, would pack without consuming components. The runbook's Step 0 query lists such parts on prod.
+> - **Part-type recategorization interacts with this.** The ranked list filters `ItemType.Code = 'FinishedGood'`. When the vendor finished goods move to the `PassThrough` type (the open TODO at the top), that filter must admit them or they vanish from the Assembly tab again.
+> - Uncommitted Designer edits to `AssemblyNonSerialized` and `session-props` (saved 13:55, Jacques's) were in the working tree during this work and were left alone.
+
+**Previously (same day):** 2026-10-06 -- **THREE RELEASES TO PROD IN ONE DAY: supplier lot (08:31), EPrint scale watcher (11:59), Pack-Out editing on the Pass-Through Parts screen (13:23). Prod is at `0105`, 104 migrations; the last Execute proved its SQL matches `jacques/working` at `46464cb8`.** All three went through Preview -> Rehearse -> Execute with a verified `COPY_ONLY` backup; every preview matched its runbook's prediction and no gate or warning fired.
 
 > ### Prod releases, 2026-10-06
 >
