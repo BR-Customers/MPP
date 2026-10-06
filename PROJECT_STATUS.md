@@ -696,7 +696,7 @@ An operator adding a box of purchased parts must now give the supplier's lot num
 
 - Two 1-piece test LOTs of `90701-5R0-3000` were left open on Dev by the on-screen checks: `MESL3000151` (6MA Cam Holder Line 1, supplier lot `TEST1`) and `MESL3000152` (Warehouse, `NONE`).
 - `Components/PlantFloor/AddLotQty` is no longer opened by anything and can be deleted.
-- Not yet on prod. The scoped export must carry the Core scripts, the `Lot_Create` named query, `AddLotBox`, `LineInventoryRow`, the three Cutover Scan views and the session props together.
+- **Packaged for prod 2026-10-06, not yet deployed.** Runbook `notes/2026-10-06_prod-release-runbook-supplier-lot.md`; archives `supplier-lot_2026-10-06_0819` built from `2e8b6847`; previous release `882d0736`. One repeatable (`R__Lots_Lot_Create.sql`), no migrations. Rehearsed on `MPP_MES_ProdSimVL` (kept at prod state) and executed for real on `MPP_MES_ProdSimVL2`.
 
 Spec: `docs/superpowers/specs/2026-10-05-required-supplier-lot-on-purchased-parts-design.md`. Plan: `docs/superpowers/plans/2026-10-05-required-supplier-lot-on-purchased-parts.md`.
 
