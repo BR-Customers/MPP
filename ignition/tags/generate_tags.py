@@ -6,7 +6,7 @@
 #
 # Emits, from the ONE member catalog + the device manifest, so real UDTs and the
 # sim device can never drift (spec Sec 3.1 / Sec 8):
-#   ignition/tags/udt/<Type>.json          -- 4 UDT definitions
+#   ignition/tags/udt/<Type>.json          -- 5 UDT definitions
 #   ignition/tags/instances/PlcDevices.json -- 22 UDT instances (a Folder)
 #   ignition/tags/sim/MPP_Sim_program.csv   -- Programmable Device Simulator program
 #
@@ -42,7 +42,8 @@ SIM_DEVICE = "MPP_Sim"
 
 # ---- datatype maps ----------------------------------------------------------
 # kind -> Ignition tag-JSON dataType
-TAG_DTYPE = {"bool": "Boolean", "int": "Int4", "real": "Float8", "str": "String"}
+TAG_DTYPE = {"bool": "Boolean", "int": "Int4", "real": "Float8", "str": "String",
+             "datetime": "DateTime", "bytes": "ByteArray"}
 # kind -> Programmable Device Simulator CSV "Data Type"
 SIM_DTYPE = {"bool": "Boolean", "int": "Int32", "real": "Double", "str": "String"}
 # kind -> writeable literal default (a plain literal = a writeable sim tag)
@@ -250,11 +251,45 @@ def scale_members():
     ]
 
 
+# ---- IND570 scale over EPrint demand output (TCP driver) ---------------------
+# Spec: docs/superpowers/specs/2026-08-31-ind570-eprint-demand-output-design.md
+# For terminals with NO PLC option card: the terminal publishes its print
+# template on the secondary Ethernet port and Ignition's TCP driver exposes it
+# as a folder named after the port:
+#
+#   [<device>]1702/Message            the whole template, one value per press
+#   [<device>]1702/MessageBytes       the same, raw
+#   [<device>]1702/Last Receive Time  stamped on every receipt
+#
+# So {BasePath} is "<port>/" and the members are the driver's own tag names.
+# There are no registers, no setpoint and no device verdict here -- the MES
+# parses the net line out of Message and SQL judges it against ContainerConfig.
+#
+# One press arrives as ONE Message holding every template line (CR/LF between
+# them), observed 2026-10-01:   35.13 lb / 16.93 lb T / 18.20 lb N / CAM=1
+# The CAM= line exists only on a head whose template was extended by
+# Add-IND570CameraField.ps1; a weight-only head sends the first three.
+#
+# LastReceiveTime is exposed because two trays of identical weight produce an
+# identical Message, and a tag whose value did not change raises no change
+# event. The receive stamp moves on every press.
+EPRINT_PORT_DEFAULT = "1702"
+
+
+def eprint_scale_members():
+    return [
+        opc_member("Message",         "str"),
+        opc_member("MessageBytes",    "bytes"),
+        opc_member("LastReceiveTime", "datetime", "Last Receive Time"),
+    ]
+
+
 # UDT type -> (members, has WriteDisplayEnabled memory member).
 # Members are either (name, kind) tuples -- address derived from the name --
 # or already-built member dicts (ScaleStation's folder tree).
 CATALOG = {
     "ScaleStation":            (scale_members(), False),
+    "ScaleStationEPrint":      (eprint_scale_members(), False),
     "SerializedMipStation":    (SERIALIZED, True),
     "NonSerializedMipStation": (NONSERIALIZED, True),
     "TrayInspectionStation":   (TRAY + [memory_member("Protocol", "str",
@@ -299,6 +334,12 @@ def build_udt_def(type_name):
         # MPP's terminals are configured in pounds (verified at commissioning
         # via command 30, report units). Weight/Uom mirrors this parameter.
         params["WeightUom"] = {"dataType": "String", "value": "lb"}
+    if type_name == "ScaleStationEPrint":
+        # No simulator behind this type, so no sim default: Device is the TCP
+        # driver device name, set per instance. BasePath is the driver's port
+        # folder with its trailing separator.
+        params["Device"]["value"] = ""
+        params["BasePath"]["value"] = EPRINT_PORT_DEFAULT + "/"
     return {
         "name": type_name,
         "tagType": "UdtType",
@@ -383,8 +424,8 @@ def main():
     # the catalog entry would count folders, and would include the memory and
     # expression members that never get a sim row.
     n_members = sum(len(flatten_opc(build_members(t))) for _, t in devices)
-    print("Wrote 4 UDT defs, %d instances, %d sim rows (%d devices)."
-          % (len(devices), n_members, len(devices)))
+    print("Wrote %d UDT defs, %d instances, %d sim rows (%d devices)."
+          % (len(CATALOG), len(devices), n_members, len(devices)))
 
 
 if __name__ == "__main__":

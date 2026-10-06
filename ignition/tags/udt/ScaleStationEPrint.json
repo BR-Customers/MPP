@@ -1,0 +1,62 @@
+{
+  "name": "ScaleStationEPrint",
+  "parameters": {
+    "BasePath": {
+      "dataType": "String",
+      "value": "1702/"
+    },
+    "Device": {
+      "dataType": "String",
+      "value": ""
+    },
+    "OpcServer": {
+      "dataType": "String",
+      "value": "Ignition OPC UA Server"
+    }
+  },
+  "tagType": "UdtType",
+  "tags": [
+    {
+      "dataType": "String",
+      "name": "Message",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}Message"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "ByteArray",
+      "name": "MessageBytes",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}MessageBytes"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "DateTime",
+      "name": "LastReceiveTime",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}Last Receive Time"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    }
+  ]
+}

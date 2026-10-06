@@ -10,7 +10,7 @@ project scan). Spec: `docs/superpowers/specs/2026-07-10-plc-udt-terminal-mapping
 | Path | What |
 |------|------|
 | `generate_tags.py` | **Source of truth.** One member catalog + the device manifest -> all three artifacts below, so real UDTs and the sim can't drift (spec Sec 8). |
-| `udt/*.json` | 4 UDT **definitions** — ScaleStation, SerializedMipStation, NonSerializedMipStation, TrayInspectionStation. |
+| `udt/*.json` | 5 UDT **definitions** — ScaleStation (IND570 over Modbus TCP, needs the PLC option card), ScaleStationEPrint (IND570 over the TCP driver, no option card), SerializedMipStation, NonSerializedMipStation, TrayInspectionStation. |
 | `instances/PlcDevices.json` | 22 UDT **instances** (a Folder), one per active device, all pointed at `MPP_Sim`. |
 | `sim/MPP_Sim_program.csv` | The **Programmable Device Simulator** program — one writeable row per OPC member per device. |
 

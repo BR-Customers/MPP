@@ -46,3 +46,9 @@
 [MPP]PlcDevices/Sort_Totes/TrayLocked
 [MPP]PlcDevices/Sort_Totes/InspectionComplete
 
+
+# --- ScaleStationEPrint (separate Tag Change script: MPP/tag-change/ScaleEPrintMessage) ---
+# Different entrypoint -- the trigger is a receive stamp, not a boolean:
+#   BlueRidge.Workorder.PlcWatcher.dispatchMessage(str(event.tagPath), event.previousValue, event.currentValue, initialChange)
+# One path per instance, none seeded yet:
+#   [MPP]PlcDevices/<device>/LastReceiveTime
