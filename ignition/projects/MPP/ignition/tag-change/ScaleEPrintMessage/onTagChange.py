@@ -1,0 +1,2 @@
+def onTagChange(initialChange, newValue, previousValue, event, executionCount):
+	BlueRidge.Workorder.PlcWatcher.dispatchMessage(str(event.tagPath), event.previousValue, event.currentValue, initialChange)

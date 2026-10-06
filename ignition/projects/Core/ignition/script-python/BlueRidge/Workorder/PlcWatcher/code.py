@@ -362,6 +362,52 @@ def dispatch(tagPath, previousValue, currentValue):
             "dispatch error tagPath=%s: %s" % (tagPath, e), level="error")
 
 
+def dispatchMessage(tagPath, previousValue, currentValue, initialChange=False):
+    """Entrypoint for the Tag Change script on an EPrint scale's
+       LastReceiveTime member. The counterpart of dispatch() for a device whose
+       trigger is NOT a boolean: the terminal pushes a whole weighment record,
+       and the driver's receive stamp moving is the event.
+
+       dispatch() cannot carry this -- its rising-edge guard would read a
+       timestamp as 'already high' and either drop every press or replay the
+       last one on subscription. The replay / duplicate / stale guards for a
+       stamp live in ScaleEPrintWatcher.onReceive, which is handed
+       initialChange for exactly that reason.
+
+       Fully guarded -- a tag-change script must never throw."""
+    try:
+        try:
+            if not currentValue.quality.isGood():
+                return
+        except AttributeError:
+            pass
+        stamp = _val(currentValue)
+        if stamp is None:
+            return
+        instancePath, row = None, None
+        for candidatePath, _member in _splitCandidates(tagPath):
+            row = resolveInstance(candidatePath)
+            if row is not None:
+                instancePath = candidatePath
+                break
+        if row is None:
+            BlueRidge.Common.Util.log(
+                "no TerminalPlcDevice mapping under %s (message ignored)"
+                % tagPath, level="warn")
+            return
+        code = row.get("DeviceTypeCode")
+        if code != "ScaleStationEPrint":
+            BlueRidge.Common.Util.log(
+                "%s is a %s, not a ScaleStationEPrint (message ignored)"
+                % (instancePath, code), level="warn")
+            return
+        BlueRidge.Workorder.ScaleEPrintWatcher.onReceive(
+            instancePath, row.get("TerminalLocationId"), stamp, bool(initialChange))
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log(
+            "dispatchMessage error tagPath=%s: %s" % (tagPath, e), level="error")
+
+
 def _route(deviceTypeCode, instancePath, terminalLocationId, member):
     """Route a rising edge to the per-type watcher. Watchers referenced fully-
        qualified (no import) to avoid a cycle."""

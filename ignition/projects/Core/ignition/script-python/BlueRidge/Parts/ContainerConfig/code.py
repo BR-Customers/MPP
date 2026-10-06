@@ -18,6 +18,7 @@
 #   2026-05-20 - 1.0 - Initial version (getByItem only).
 #   2026-05-26 - 1.1 - Phase 4: add() + update() mutation surface.
 #   2026-08-27 - 1.2 - ToleranceWeight threaded through the shape + add/update.
+#   2026-10-06 - 1.3 - judgeWeight(): the SQL checkweigh verdict (EPrint scales).
 # =============================================================================
 
 
@@ -99,6 +100,22 @@ def getByItemAndMethod(itemId, method):
         "parts/ContainerConfig_GetByItemAndMethod",
         {"itemId": itemId, "closureMethod": method})
     return row if row is not None else {}
+
+
+def judgeWeight(itemId, method, weight):
+    """The checkweigh verdict for one tray, computed in SQL
+       (Parts.ContainerConfig_JudgeWeight) against the part's TargetWeight +/-
+       ToleranceWeight. Returns the proc's single row:
+         {Verdict, Message, Weight, TargetWeight, ToleranceWeight, LowLimit, HighLimit}
+       Verdict is Ok | Under | Over | NoConfig | NoTolerance | NoWeight.
+
+       No comparison happens here. A caller acts on Verdict == 'Ok' and shows
+       Message otherwise; it never re-derives the window. Returns None only if
+       the query itself returned nothing, which the caller must treat as a
+       refusal, not a pass."""
+    return BlueRidge.Common.Db.execOne(
+        "parts/ContainerConfig_JudgeWeight",
+        {"itemId": _u(itemId), "closureMethod": _u(method), "weight": _u(weight)})
 
 
 def getByItemAndMethodOrEmpty(itemId, method, _refreshToken=None):
