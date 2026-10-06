@@ -1,18 +1,10 @@
 # Prod release runbook -- Pack-Out editing on the Pass-Through Parts screen
 
 **Release commit:** `20334b41` on `jacques/working` -- the commit the archives were built and verified from.
-**Previous release:** `5c482c49` (2026-10-06, EPrint scale watcher). **Its Outcome section is not filled in**,
-so this runbook covers both states prod can be in:
-
-- **State A** -- the EPrint release was executed: 104 migrations applied, highest `0105`.
-- **State B** -- it was not: 103 applied, highest `0104`. This release then carries `0105` and
-  `R__Parts_ContainerConfig_JudgeWeight.sql` with it, exactly as that runbook describes them.
-
-Step 1's `[3]` line tells you which one you are in. Both are fine; they print different numbers.
-
-**Rehearsed against:** `MPP_MES_ProdSimEP2` (State A: 104 applied, highest `0105`, no
-`Parts.ContainerConfig_ListHistory`). Preview, Rehearse and a full Execute all clean. State B was previewed
-(read-only) against `MPP_MES_ProdSimEP`, which is untouched and still at `0104`.
+**Previous release:** `5c482c49` (2026-10-06, EPrint scale watcher). Jacques confirmed on 2026-10-06 that it
+was executed: prod is at SQL **`0105`**, 104 migrations applied.
+**Rehearsed against:** `MPP_MES_ProdSimEP2`, at prod's migration state (104 applied, highest `0105`, no
+`Parts.ContainerConfig_ListHistory`). Preview, Rehearse and a full Execute all clean.
 The SQL rehearsal ran at `2c40a81a`; `20334b41` changes two `view.json` files and no SQL
 (`git diff --stat 2c40a81a..20334b41 -- sql/` prints nothing).
 **SQL suite:** 4263 assertions / 4263 passed / 0 failed (the previous release's 4252 plus 11 new), run on
@@ -60,8 +52,6 @@ the same underlying view and does not get it.
 | File | | Effect |
 |---|---|---|
 | `R__Parts_ContainerConfig_ListHistory.sql` | NEW | Read proc. Past pack-out value sets for a part: the values each in-place update replaced (from `Audit.ConfigLog`) plus cleared pack-outs, de-duplicated, without the set that is currently live. Top 30. |
-| `0105_plcdevicetype_scalestation_eprint.sql` | State B only | From the EPrint release. |
-| `R__Parts_ContainerConfig_JudgeWeight.sql` | State B only | From the EPrint release. |
 
 ### Ignition -- 5 resources, no deletions
 
@@ -84,12 +74,12 @@ is untouched.
 
 ## 2. What the database change is
 
-| | State A | State B |
-|---|---|---|
-| Migrations | 0 | 1 -- `0105` |
-| Repeatables | 1 new | 2 new |
-| Post-commit | `R__Descriptions_ExtendedProperties.sql` (documentation only) | same |
-| Rehearsal lock window | 0.2 s (local sim) | not rehearsed locally |
+| | |
+|---|---|
+| Migrations | 0 |
+| Repeatables | 1 new -- `R__Parts_ContainerConfig_ListHistory.sql` |
+| Post-commit | `R__Descriptions_ExtendedProperties.sql` (documentation only) |
+| Rehearsal lock window | 0.2 s (local sim) |
 
 One new read-only stored procedure. No table, column, index or row is created or changed. No
 release-specific gate was written: a new read proc gives the same result whatever the plant is doing.
@@ -153,7 +143,7 @@ $env:SQLCMDPASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtim
 .\sql\scripts\Deploy-ProdRelease.ps1 -ServerInstance 172.17.10.148 -Username Ignition -DatabaseName MPP_MES_Prod
 ```
 
-Expect, in **State A** (`[2]`, `[6]` and `[7]` will show prod's own values):
+Expect (`[2]`, `[6]` and `[7]` will show prod's own values):
 
 ```
 [3] Versioned migrations
@@ -175,32 +165,12 @@ Verdict
   Clear to deploy. 0 warning(s) to read above.
 ```
 
-In **State B**:
-
-```
-[3] Versioned migrations
-  Database: 103 applied, highest 0104. Most recent:
-  Pending (1):
-    + 0105_plcdevicetype_scalestation_eprint.sql
-
-[4] Repeatables -- target definitions vs this checkout
-  499 identical, 0 changed, 2 new on the target.
-    NEW      R__Parts_ContainerConfig_JudgeWeight.sql
-    NEW      R__Parts_ContainerConfig_ListHistory.sql
-
-[8] Plan
-  1 migration(s), 2 repeatable(s) in one transaction; then R__Descriptions_ExtendedProperties.sql after commit.
-```
-
 **Read `[2]` every time.** It is the only line that names the database you are pointed at.
 
 **If it differs:**
 
-- *State B* -- you are also deploying the EPrint release's SQL. Read
-  `notes/2026-10-06_prod-release-runbook-scale-eprint-watcher.md` sections 2 and 3 before continuing, and
-  remember its Ignition imports are a separate step from this runbook's.
-- *Any other pending migration, or any CHANGED repeatable* -- prod is not where either state assumes. Stop
-  and reconcile; per-object diffs are in the report's `diffs` folder.
+- *Any pending migration, or any CHANGED repeatable* -- prod is not where this runbook assumes. Stop and
+  reconcile; per-object diffs are in the report's `diffs` folder.
 - *"already matches this checkout"* -- the SQL is already there. Skip to section 5.
 - *A WARN in `[6]`* -- a long transaction is open and will block the deploy's locks. Wait for it.
 
@@ -213,7 +183,7 @@ differ because later commits moved `HEAD`. Copy it, do not retype it.
 .\sql\scripts\Deploy-ProdRelease.ps1 -ServerInstance 172.17.10.148 -Username Ignition -DatabaseName MPP_MES_Prod -Mode Rehearse -ExpectedPlan <fingerprint>
 ```
 
-Type `REHEARSE` when asked. Expect (State A):
+Type `REHEARSE` when asked. Expect:
 
 ```
 [10] Running the release transaction
@@ -226,7 +196,6 @@ Type `REHEARSE` when asked. Expect (State A):
   REHEARSAL PASSED and was rolled back. Lock window: 0.2s.
 ```
 
-State B shows the `0105` migration and the JudgeWeight step first, as in the EPrint runbook's Step 2.
 **If the rehearsal fails, stop.** It failed against prod's real state and nothing was written.
 
 ### Step 3 -- Execute
@@ -235,7 +204,7 @@ State B shows the `0105` migration and the JudgeWeight step first, as in the EPr
 .\sql\scripts\Deploy-ProdRelease.ps1 -ServerInstance 172.17.10.148 -Username Ignition -DatabaseName MPP_MES_Prod -Mode Execute -ExpectedPlan <fingerprint>
 ```
 
-Type `MPP_MES_Prod` when asked. Expect (State A):
+Type `MPP_MES_Prod` when asked. Expect:
 
 ```
 [9] Backup
@@ -285,10 +254,8 @@ rewrites on purpose to stop naming the excluded `thumbnail.png`.
 
 No deletions. No tags, devices or Gateway settings.
 
-**If the EPrint release's imports were never done:** this Core archive's `ContainerConfig` script already
-contains that release's `judgeWeight` function, so importing this one over the top is safe. The EPrint
-release's other resources (`PlcWatcher`, `ScaleEPrintWatcher`, the tag-change script) are **not** in these
-archives and still need its own import.
+This Core archive's `ContainerConfig` script is the EPrint release's version plus three functions, so it
+imports cleanly over what that release put there.
 
 **Then reload the open sessions.** F5 on each non-serialized assembly workstation and each pass-through
 station. This release changes a view those sessions have open, and on the Dev Gateway a session left open
@@ -347,7 +314,7 @@ It was seen on Dev before and after this change and is not caused by it.
 SELECT COUNT(*) AS Applied, MAX(MigrationId) AS Highest FROM dbo.SchemaVersion;
 ```
 
-Expect `104`, `0105_plcdevicetype_scalestation_eprint` (both states end here).
+Expect `104`, `0105_plcdevicetype_scalestation_eprint` (unchanged: this release adds no migration).
 
 ```sql
 EXEC Parts.ContainerConfig_ListHistory @ItemId = -1;
@@ -385,7 +352,7 @@ _(still to fill in)_
 | | |
 |---|---|
 | Executed at (ET) | |
-| Prod before (State A or B) | |
+| Prod before | SQL `0105`, 104 migrations |
 | Plan fingerprint | |
 | Backup path | |
 | Preview `[4]` | |
