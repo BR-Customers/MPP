@@ -115,6 +115,23 @@ DECLARE @HasMfgLot NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%AIM12345678%' THEN N'1'
 EXEC test.Assert_IsEqual @TestName = N'[Render] mfg lot (AIM serial) present', @Expected = N'1', @Actual = @HasMfgLot;
 DECLARE @HasSerial NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%1321800112345678%' THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName = N'[Render] composed serial 13218001+last8', @Expected = N'1', @Actual = @HasSerial;
+-- Migration 0106: the four linear barcodes are Code 128 and each payload leads with
+-- its data identifier, matching the AIM batch label. Anchored on ^FD...^FS so the
+-- prefixed form cannot be satisfied by the un-prefixed human-readable field.
+DECLARE @BcPart NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FDPPNRENDER^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Render] part barcode = P + part number without dashes', @Expected = N'1', @Actual = @BcPart;
+DECLARE @BcLevel NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD2P00^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Render] dc level barcode = 2P + level', @Expected = N'1', @Actual = @BcLevel;
+DECLARE @BcQty NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FDQ12^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Render] quantity barcode = Q + quantity', @Expected = N'1', @Actual = @BcQty;
+DECLARE @BcSerial NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD1S1321800112345678^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Render] serial barcode = 1S + 16-digit serial, no dash', @Expected = N'1', @Actual = @BcSerial;
+DECLARE @SerialTextKept NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^FD13218001-12345678^FS%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[Render] human-readable serial keeps its dash and has no 1S', @Expected = N'1', @Actual = @SerialTextKept;
+DECLARE @NoCode39 NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%^B3%' THEN N'0' ELSE N'1' END;
+EXEC test.Assert_IsEqual @TestName = N'[Render] no Code 39 field remains', @Expected = N'1', @Actual = @NoCode39;
+DECLARE @Code128Count NVARCHAR(10) = CAST((LEN(@Zpl) - LEN(REPLACE(@Zpl, N'^BCR', N''))) / 4 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[Render] exactly four Code 128 fields', @Expected = N'4', @Actual = @Code128Count;
 DECLARE @NoTokens NVARCHAR(10) = CASE WHEN @Zpl LIKE N'%{%}%' THEN N'0' ELSE N'1' END;
 EXEC test.Assert_IsEqual @TestName = N'[Render] no unresolved {tokens} remain', @Expected = N'1', @Actual = @NoTokens;
 

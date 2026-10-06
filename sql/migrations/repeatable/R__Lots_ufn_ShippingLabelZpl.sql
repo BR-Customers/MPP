@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable: R__Lots_ufn_ShippingLabelZpl.sql
 -- Author:     Blue Ridge Automation
--- Version:    1.4
+-- Version:    1.5
 -- Description: Brief D (FAT-LBL-050) -- render the container shipping-label ZPL.
 --   Resolves the ACTIVE Container Lots.LabelTemplate.ZplBody and substitutes the
 --   {Placeholder} tokens from the container + its Item + the BOM version used to
@@ -11,6 +11,13 @@
 --
 --   Token map:
 --     {PartNumber}    <- Parts.Item.PartNumber (container's Item)
+--     {PartNumberBarcode} <- v1.5 (2026-10-06): PartNumber with every '-' removed (space
+--                        kept), e.g. '1223A-6MA -J000' -> '1223A6MA J000'. The form the
+--                        AIM batch label's PART NO. barcode scans as, less its 'P'.
+--                        DATA IDENTIFIERS (P / 2P / Q / 1S) ARE TEMPLATE LITERALS as of
+--                        migration 0106 -- no token here carries one. Do not add a prefix
+--                        to {SerialBarcode} or {DcPartLevel}: the template already does,
+--                        and it would double.
 --     {Description}   <- Parts.Item.Description
 --     {MfgLotNumber}  <- @AimShipperId (AIM minted serial)
 --     {MfgDate}       <- Container.CompletedAt, UTC->Eastern, M/dd/yy
@@ -106,6 +113,7 @@ BEGIN
         CASE WHEN @CompletedAt IS NULL THEN N''
              ELSE FORMAT(CAST(@CompletedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)), N'M/dd/yy') END;
 
+    SET @Zpl = REPLACE(@Zpl, N'{PartNumberBarcode}', REPLACE(@PartNumber, N'-', N''));
     SET @Zpl = REPLACE(@Zpl, N'{PartNumber}',    @PartNumber);
     SET @Zpl = REPLACE(@Zpl, N'{Description}',   @Description);
     SET @Zpl = REPLACE(@Zpl, N'{MfgLotNumber}',  @Aim);
