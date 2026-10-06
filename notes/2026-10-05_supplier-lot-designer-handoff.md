@@ -32,7 +32,7 @@ new popup; the second opens with 2500 in Quantity.
 
 ## 2. Cutover Scan -- Tablet, Phone, Desktop
 
-> **Done 2026-10-06** by file edit, at Jacques's request: the placeholder binding, a `VendorLotNoneButton` beside the field, and the field label changed from "Vendor lot -- optional" to "Supplier lot -- required". On Desktop the input was wrapped in a new `VendorLotInputRow` to hold the button. **Not yet seen on screen** (the gateway trial had expired); run the check below. Close and reopen Designer before touching these views.
+> **Done 2026-10-06** by file edit, at Jacques's request: the placeholder binding, a `VendorLotNoneButton` beside the field, and the field label changed from "Vendor lot -- optional" to "Supplier lot -- required". On Desktop the input was wrapped in a new `VendorLotInputRow` to hold the button. Checked on screen 2026-10-06 in all three layouts: a blank supplier lot is refused, and **No lot on box** then Add box created `MESL3000152` with `VendorLotNumber = NONE`. On Phone the button sits on its own line under the field, because beside it the field was squeezed to about 145 px. Close and reopen Designer before touching these views.
 
 `Views/ShopFloor/_CutoverScan/{Tablet,Phone,Desktop}`, the purchased-box
 form. In each:

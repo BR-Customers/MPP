@@ -694,7 +694,7 @@ An operator adding a box of purchased parts must now give the supplier's lot num
 
 ### Left open
 
-- The **No lot on box** button on the three Cutover Scan views was added by file edit on 2026-10-06 and has **not been seen on screen yet** (gateway trial expired). Check it per `notes/2026-10-05_supplier-lot-designer-handoff.md` section 2.
+- Two 1-piece test LOTs of `90701-5R0-3000` were left open on Dev by the on-screen checks: `MESL3000151` (6MA Cam Holder Line 1, supplier lot `TEST1`) and `MESL3000152` (Warehouse, `NONE`).
 - `Components/PlantFloor/AddLotQty` is no longer opened by anything and can be deleted.
 - Not yet on prod. The scoped export must carry the Core scripts, the `Lot_Create` named query, `AddLotBox`, `LineInventoryRow`, the three Cutover Scan views and the session props together.
 

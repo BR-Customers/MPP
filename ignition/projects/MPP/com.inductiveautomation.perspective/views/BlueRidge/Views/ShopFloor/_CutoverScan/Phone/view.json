@@ -2096,49 +2096,48 @@
                                     }
                                   }
                                 }
-                              },
-                              {
-                                "type": "ia.input.button",
-                                "meta": {
-                                  "name": "VendorLotNoneButton",
-                                  "tooltip": {
-                                    "text": "The box has no supplier lot number on it"
-                                  }
-                                },
-                                "position": {
-                                  "basis": "120px",
-                                  "shrink": 0
-                                },
-                                "props": {
-                                  "text": "No lot on box",
-                                  "style": {
-                                    "classes": "pf-btn pf-btn-secondary",
-                                    "minHeight": "38px"
-                                  }
-                                },
-                                "propConfig": {
-                                  "props.style.classes": {
-                                    "binding": {
-                                      "type": "expr",
-                                      "config": {
-                                        "expression": "if({session.custom.cutover.purchased.vendorLotAbsent} && len(trim({session.custom.cutover.purchased.vendorLot})) = 0, \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
-                                      }
-                                    }
-                                  }
-                                },
-                                "events": {
-                                  "component": {
-                                    "onActionPerformed": {
-                                      "type": "script",
-                                      "scope": "G",
-                                      "config": {
-                                        "script": "\tBlueRidge.Cutover.Scan.setVendorLotAbsent(self.session)"
-                                      }
-                                    }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "ia.input.button",
+                            "meta": {
+                              "name": "VendorLotNoneButton",
+                              "tooltip": {
+                                "text": "The box has no supplier lot number on it"
+                              }
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "No lot on box",
+                              "style": {
+                                "classes": "pf-btn pf-btn-secondary",
+                                "minHeight": "38px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.style.classes": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({session.custom.cutover.purchased.vendorLotAbsent} && len(trim({session.custom.cutover.purchased.vendorLot})) = 0, \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
                                   }
                                 }
                               }
-                            ]
+                            },
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "type": "script",
+                                  "scope": "G",
+                                  "config": {
+                                    "script": "\tBlueRidge.Cutover.Scan.setVendorLotAbsent(self.session)"
+                                  }
+                                }
+                              }
+                            }
                           }
                         ],
                         "meta": {
