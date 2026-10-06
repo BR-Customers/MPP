@@ -30,7 +30,49 @@
 
 > **2026-09-22 -- Trim partial checkpoint at shift end, built and smoke-tested on Dev.** A blast operator can record the total trimmed so far on a LOT at shift end without moving the LOT off Trim IN. Migration `0096` adds `Workorder.ProductionEvent.ShiftId`; new proc `Workorder.TrimPartial_Record` (route `TrimIn` template, operator-picked shift, never defaulted); `Workorder.TrimOut_Record` v1.5 gains a trim-scoped guard, requires a count after a partial, and stamps `ShiftId` via `Oee.ufn_ShiftIdForInstant`; new read `Workorder.TrimCheckpoint_GetLatestForLot` backs an "already recorded" line on the LOT card. Core NQs + `BlueRidge.Workorder.TrimPartial`; new popup `Components/Popups/TrimPartial`; `TrimBody` gained the **Record partial trim - shift end** button. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. **Verified on `MPP_MES_Dev`:** LOT `TPC-SMOKE-1` took a partial of 700 filed under Third Shift, then Trim OUT at 953, crediting 700 and 253 with `ShiftId` stamped on both checkpoints; full SQL suite 3885/3885, exit 0. **Dev only -- not yet released to prod.** Natural follow-up: the Trim Shop Detail report / credit rollup read (spec section 3.2 is its contract, out of scope here).
 
-**Last updated:** 2026-10-01 (session 2) -- **The async print path now reaches the operator; the gateway broadcast it rides on had been delivering nothing since 2026-08-20; and the `0096`-`0102` prod release is PREPARED but NOT cleared.** A shipping label that fails on its own -- the `Container_Complete` path, which is how a failure actually happens -- opens the operator-guidance modal once and keeps the banner up, instead of a yellow bar reading "A shipping label failed to print." Migration `0102`. Previous entry (the Zebra bridge itself) below, unchanged.
+**Last updated:** 2026-10-06 -- **THREE RELEASES TO PROD IN ONE DAY: supplier lot (08:31), EPrint scale watcher (11:59), Pack-Out editing on the Pass-Through Parts screen (13:23). Prod is at `0105`, 104 migrations, and matches `jacques/working` for everything under `sql/` and `ignition/`.** All three went through Preview -> Rehearse -> Execute with a verified `COPY_ONLY` backup; every preview matched its runbook's prediction and no gate or warning fired.
+
+> ### Prod releases, 2026-10-06
+>
+> | | Supplier lot | EPrint scale watcher | Pack-Out editing |
+> |---|---|---|---|
+> | Release commit | `2e8b6847` | `5c482c49` | `20334b41` |
+> | HEAD at execute | `392947f0` | `6611b504` | `46464cb8` |
+> | Executed (report stamp) | 08:31 | 11:59 | 13:23 |
+> | Prod before -> after | `0104` -> `0104` | `0104` -> `0105` | `0105` -> `0105` |
+> | SQL | 1 changed repeatable (`R__Lots_Lot_Create.sql`) | 1 migration (`0105`), 1 new repeatable (`ContainerConfig_JudgeWeight`) | 1 new repeatable (`ContainerConfig_ListHistory`) |
+> | Plan fingerprint | `ea71fbdc34dc` | `5765958c58a1` | `bc14efbb42f0` |
+> | Prod rehearsal lock window | 0.4 s | 0.3 s | 0.4 s |
+> | Plant at the time | 12 open baskets, 1 running shift | 36 open baskets, 1 running shift | 36 open baskets, 1 running shift |
+> | Backup (`...\MSSQL16.MSSQLSERVER\MSSQL\Backup\`) | `MPP_MES_Prod_pre-release_0104_20261006_083145.bak` | `MPP_MES_Prod_pre-release_0104_20261006_115934.bak` | `MPP_MES_Prod_pre-release_0105_20261006_132356.bak` |
+> | Ignition archives | `supplier-lot_2026-10-06_0819` | `scale-eprint-watcher_2026-10-06_1153` (Core 4, MPP 1) | `packout-edit_2026-10-06_1307` (Core 2, MPP 3) |
+> | Runbook (`notes/2026-10-06_prod-release-runbook-...`) | `supplier-lot.md` | `scale-eprint-watcher.md` | `packout-edit.md` |
+>
+> Reports for all three are under `dist/deploy-reports/MPP_MES_Prod_*_20261006_*` on the release machine (not in git).
+>
+> **Confirmed by Jacques:** the EPrint and Pack-Out releases are good on prod, Ignition imports included. **Not on record:** the supplier-lot Ignition import (its runbook's Outcome is still unfilled; the SQL Execute report is the only evidence), and the per-check verification results for any of the three.
+>
+> ### Pack-Out editing on the Pass-Through Parts screen (new today)
+>
+> The Assembly tab of **Pass-Through Parts** (`ThirdPartyInspection`) has a **Pack-Out** button that opens `Components/Popups/PackOutEdit`: a part picker (parts eligible at the line), the By Count / By Weight / By Vision pack-outs with the same fields as Item Master's Container Config tab, the shop-floor numpad plus a decimal key, and a per-method "Load a previous pack-out" dropdown.
+>
+> - **Any signed-in operator, no elevation -- Jacques's decision.** Parts run through the pass-through stations never run through die cast, so a pack-out change mid-run is acceptable there. Saves go through the existing `ContainerConfig_Create` / `_Update` / `_Deprecate` procs and are audited to the operator.
+> - **Pass-through only.** `AssemblyNonSerialized` is shared by every non-serialized line; the button sits behind a new `allowPackOutEdit` param (default false) that only `ThirdPartyInspection` passes.
+> - **History is read, not stored.** `Parts.ContainerConfig_ListHistory` rebuilds past value sets from `Audit.ConfigLog` 'Updated' snapshots plus deprecated rows; `ContainerConfig_Update` still overwrites in place.
+> - **The pack-out re-read rides its own token.** `fgConfig` re-evaluates on `view.custom.packOutToken`, bumped only by the `packOutChanged` handler -- NOT on `refreshToken`, because its `onChange` pushes the scale setpoint and `refreshToken` moves on every tray close on every line.
+> - **The popup needs a part picker because the screen's default selection is narrow:** `getDefaultFinishedGoodId` only offers a finished good that already has a pack-out for the terminal's closure method (and a published BOM), so "No part in production" is exactly when a pack-out is missing.
+> - Core gained `ContainerConfig.getDraftForItem` / `saveDraft` / `getHistoryForItem`. The Item Master Container Config tab was not refactored onto them and still carries its own copy of the load/save logic.
+> - Suite 4263 / 4263. Browser-verified on Dev (open, numpad, Save, audit row, header update, history restore).
+>
+> **Left open:**
+>
+> - Not observed anywhere yet: field selection by **touch**, the **scale setpoint re-send** after a By Weight save, and the screen **picking up a part when none was selected**.
+> - Keys pressed faster than the gateway round trip can land out of order in the popup's numpad. The PIN pad (`InitialsEntry`) showed the same behaviour under zero-gap automated clicks; at a normal pace both are correct.
+> - `view.custom.closureMethodTracker`'s change script in `AssemblyNonSerialized` logs `AttributeError: ... no attribute 'container'` when the screen opens. Seen on Dev before and after this change; not investigated.
+> - Dev: `19321-66V -A000` now carries a By Weight target of 18.25 +/- 0.5 from a test save (it had none).
+> - EPrint: whether a scale has been switched on (that runbook's section 5.4), and what the first presses showed, is not recorded.
+
+**Previously:** 2026-10-01 (session 2) -- **The async print path now reaches the operator; the gateway broadcast it rides on had been delivering nothing since 2026-08-20; and the `0096`-`0102` prod release is PREPARED but NOT cleared.** A shipping label that fails on its own -- the `Container_Complete` path, which is how a failure actually happens -- opens the operator-guidance modal once and keeps the banner up, instead of a yellow bar reading "A shipping label failed to print." Migration `0102`. Previous entry (the Zebra bridge itself) below, unchanged.
 
 > ### Async print failure wired to the operator modal -- 2026-10-01 (session 2), commit `a01e5838`
 >
@@ -696,7 +738,7 @@ An operator adding a box of purchased parts must now give the supplier's lot num
 
 - Two 1-piece test LOTs of `90701-5R0-3000` were left open on Dev by the on-screen checks: `MESL3000151` (6MA Cam Holder Line 1, supplier lot `TEST1`) and `MESL3000152` (Warehouse, `NONE`).
 - `Components/PlantFloor/AddLotQty` is no longer opened by anything and can be deleted.
-- **Packaged for prod 2026-10-06, not yet deployed.** Runbook `notes/2026-10-06_prod-release-runbook-supplier-lot.md`; archives `supplier-lot_2026-10-06_0819` built from `2e8b6847`; previous release `882d0736`. One repeatable (`R__Lots_Lot_Create.sql`), no migrations. Rehearsed on `MPP_MES_ProdSimVL` (kept at prod state) and executed for real on `MPP_MES_ProdSimVL2`.
+- **Released to prod 2026-10-06 08:31** (SQL Execute report `MPP_MES_Prod_Execute_20261006_083145`, fingerprint `ea71fbdc34dc`; the Ignition import is not on record -- see the 2026-10-06 header). Runbook `notes/2026-10-06_prod-release-runbook-supplier-lot.md`; archives `supplier-lot_2026-10-06_0819` built from `2e8b6847`; previous release `882d0736`. One repeatable (`R__Lots_Lot_Create.sql`), no migrations. Rehearsed on `MPP_MES_ProdSimVL` (kept at prod state) and executed for real on `MPP_MES_ProdSimVL2`.
 
 Spec: `docs/superpowers/specs/2026-10-05-required-supplier-lot-on-purchased-parts-design.md`. Plan: `docs/superpowers/plans/2026-10-05-required-supplier-lot-on-purchased-parts.md`.
 
