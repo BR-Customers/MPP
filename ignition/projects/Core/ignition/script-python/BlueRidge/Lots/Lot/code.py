@@ -37,7 +37,8 @@ def create(data, appUserId=None, terminalLocationId=None, lotName=None):
     """Mint a new LOT. data carries every Lot_Create field (itemId,
        lotOriginTypeId, currentLocationId, pieceCount, weight, weightUomId,
        toolId, toolCavityId, vendorLotNumber, minSerialNumber, maxSerialNumber,
-       entryRouteSequence, castDate, producedAtLocationId).
+       entryRouteSequence, castDate, producedAtLocationId, requireVendorLot,
+       vendorLotAbsent).
        lotName (D4): None = server mint (default); a value = use it verbatim (the
        pre-printed LTT).
        Returns {Status, Message, NewId, MintedLotName}."""
@@ -72,6 +73,10 @@ def create(data, appUserId=None, terminalLocationId=None, lotName=None):
         # Cutover scan: the die cast machine off the paper tag (0082). None for
         # every normal mint, where the creating terminal's parent IS the machine.
         "producedAtLocationId": d.get("producedAtLocationId"),
+        # v1.8: the operator check-in screens require a supplier lot. Absent =
+        # the box carries none and the proc stores its own marker. 0/1 -> BIT.
+        "requireVendorLot":   1 if d.get("requireVendorLot") else 0,
+        "vendorLotAbsent":    1 if d.get("vendorLotAbsent") else 0,
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_Create", params)
 
@@ -735,29 +740,40 @@ def getLineInventoryFooter(locationId, terminalRole=None, lineWide=False, _refre
     return u"+%d more below \u00b7 none low" % len(hidden)
 
 
-def checkInBox(itemId, locationId, pieceCount, appUserId=None, terminalLocationId=None):
+def checkInBox(itemId, locationId, pieceCount, appUserId=None, terminalLocationId=None,
+               vendorLotNumber=None, vendorLotAbsent=False, requireVendorLot=False):
     """Create one Received LOT of pieceCount at locationId (one box = one LOT).
        Thin wrapper over create(); Lot_Create's eligibility and cap gates apply.
+       vendorLotNumber is the supplier's lot off the box; vendorLotAbsent means
+       the box carries none. requireVendorLot asks the PROC to refuse a box
+       with neither -- this function decides nothing itself.
        Returns the create() status dict."""
     data = {
         "itemId":            _u(itemId),
         "lotOriginTypeId":   getOriginTypeIdByCode("Received"),
         "currentLocationId": _u(locationId),
         "pieceCount":        _u(pieceCount),
+        "vendorLotNumber":   _u(vendorLotNumber),
+        "vendorLotAbsent":   bool(_u(vendorLotAbsent)),
+        "requireVendorLot":  bool(_u(requireVendorLot)),
     }
     return create(data, appUserId, terminalLocationId)
 
 
-def checkInAndNotify(itemId, locationId, pieceCount, description, appUserId=None, terminalLocationId=None):
-    """Perspective-session helper shared by LineInventoryRow and AddLotQty:
+def checkInAndNotify(itemId, locationId, pieceCount, description, appUserId=None, terminalLocationId=None,
+                     vendorLotNumber=None, vendorLotAbsent=False, requireVendorLot=False):
+    """Perspective-session helper for the Line Inventory add popups:
        check in one box, toast the outcome, raise the CRT notice, and tell the
-       page to refresh. Callers pass session.custom.appUserId and the terminal id.
+       page to refresh. Callers pass the session's app user id and the terminal id.
        Returns the create() status dict."""
-    res = checkInBox(itemId, locationId, pieceCount, appUserId, terminalLocationId)
-    BlueRidge.Common.Ui.notifyResult(
-        res, "Box checked in",
-        "LOT %s - %s - %s pcs" % ((res or {}).get("MintedLotName") or "",
-                                  description or "", _thousands(pieceCount)))
+    res = checkInBox(itemId, locationId, pieceCount, appUserId, terminalLocationId,
+                     vendorLotNumber, vendorLotAbsent, requireVendorLot)
+    lotText = "no supplier lot" if vendorLotAbsent else ("supplier lot %s" % vendorLotNumber if vendorLotNumber else "")
+    body = "LOT %s - %s - %s pcs" % ((res or {}).get("MintedLotName") or "",
+                                     description or "", _thousands(pieceCount))
+    if lotText:
+        body = "%s - %s" % (body, lotText)
+    BlueRidge.Common.Ui.notifyResult(res, "Box checked in", body)
     if res and res.get("Status"):
         BlueRidge.Common.Ui.crtNotice(crtNamesFor([res.get("NewId")]))
         system.perspective.sendMessage("inventoryChanged",

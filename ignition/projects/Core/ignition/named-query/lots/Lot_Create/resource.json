@@ -119,6 +119,16 @@
         "type": "Parameter",
         "identifier": "producedAtLocationId",
         "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "requireVendorLot",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "vendorLotAbsent",
+        "sqlType": 2
       }
     ]
   }

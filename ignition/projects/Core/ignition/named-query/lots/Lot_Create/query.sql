@@ -16,4 +16,6 @@ EXEC Lots.Lot_Create
     @DepositToStorage   = :depositToStorage,
     @EntryRouteSequence = :entryRouteSequence,
     @CastDate           = :castDate,
-    @ProducedAtLocationId = :producedAtLocationId
+    @ProducedAtLocationId = :producedAtLocationId,
+    @RequireVendorLot   = :requireVendorLot,
+    @VendorLotAbsent    = :vendorLotAbsent
