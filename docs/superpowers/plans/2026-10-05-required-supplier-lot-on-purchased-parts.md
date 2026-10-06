@@ -636,7 +636,7 @@ Reference for the focus-tracking + embedded-keyboard pattern: `Components/Popups
                 "binding": {"type": "expr", "config": {"expression": "if({view.custom.absent} && len(trim({view.custom.vendorLot})) = 0, \"No lot on box\", \"Scan or type the supplier lot\")"}}
               },
               "props.style.border": {
-                "binding": {"type": "expr", "config": {"expression": "if({view.custom.activeField} = \"lot\", \"2px solid var(--callToAction)\", \"2px solid transparent\")"}}
+                "binding": {"type": "expr", "config": {"expression": "if({view.custom.activeField} = \"lot\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"}}
               }
             },
             "events": {
@@ -689,7 +689,7 @@ Reference for the focus-tracking + embedded-keyboard pattern: `Components/Popups
             "propConfig": {
               "props.text": {"binding": {"type": "expr", "config": {"expression": "if(len({view.custom.qty}) = 0, \"0\", {view.custom.qty})"}}},
               "props.style.border": {
-                "binding": {"type": "expr", "config": {"expression": "if({view.custom.activeField} = \"qty\", \"2px solid var(--callToAction)\", \"2px solid transparent\")"}}
+                "binding": {"type": "expr", "config": {"expression": "if({view.custom.activeField} = \"qty\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"}}
               }
             },
             "events": {

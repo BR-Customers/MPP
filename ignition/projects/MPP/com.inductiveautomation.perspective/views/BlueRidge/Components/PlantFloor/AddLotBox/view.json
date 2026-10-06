@@ -1,0 +1,234 @@
+{
+  "custom": {
+    "vendorLot": "",
+    "absent": false,
+    "qty": "",
+    "activeField": "lot",
+    "busyUntil": 0
+  },
+  "params": {
+    "description": "",
+    "itemId": null,
+    "locationId": null,
+    "boxQuantity": null
+  },
+  "propConfig": {
+    "params.description": {"paramDirection": "input"},
+    "params.itemId": {"paramDirection": "input"},
+    "params.locationId": {"paramDirection": "input"},
+    "params.boxQuantity": {"paramDirection": "input"}
+  },
+  "props": {
+    "defaultSize": {"height": 740, "width": 840}
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "direction": "column",
+      "style": {"gap": "10px", "padding": "16px", "classes": "pf-inv-panel"}
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tbq = self.view.params.boxQuantity\n\tif bq is not None:\n\t\ttry:\n\t\t\tself.view.custom.qty = \"%d\" % int(bq)\n\t\texcept:\n\t\t\tself.view.custom.qty = \"\"\n\ttry:\n\t\tself.getChild(\"LotRow\").getChild(\"LotInput\").focus()\n\texcept:\n\t\tpass"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "submit",
+          "params": [],
+          "script": "\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tlot = (\"%s\" % (self.view.custom.vendorLot or \"\")).strip()\n\tabsent = bool(self.view.custom.absent) and lot == \"\"\n\tif lot == \"\" and not absent:\n\t\tself.view.custom.activeField = \"lot\"\n\t\tBlueRidge.Common.Notify.toast(\"Supplier lot required\", \"Scan or type the supplier lot, or tap No lot on box.\", \"warning\")\n\t\treturn\n\traw = (\"%s\" % (self.view.custom.qty or \"\")).strip()\n\tif not raw.isdigit() or int(raw) <= 0:\n\t\tself.view.custom.activeField = \"qty\"\n\t\tBlueRidge.Common.Notify.toast(\"Quantity required\", \"Enter how many pieces are in the box.\", \"warning\")\n\t\treturn\n\t# double-tap guard: the button stays disabled for 2 s\n\tself.view.custom.busyUntil = nowMs + 2000\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tappUserId = BlueRidge.Common.Session.currentAppUserId(self.session)\n\tres = BlueRidge.Lots.Lot.checkInAndNotify(self.view.params.itemId, self.view.params.locationId, int(raw), self.view.params.description, appUserId, termId, lot or None, absent, True)\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.closePopup(\"mpp-add-lot-box\")"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "addLotBoxLotKey",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\ta = payload.get(\"action\") if payload else None\n\tv = self.view.custom.vendorLot or \"\"\n\tif a == \"key\" or a == \"space\":\n\t\tif len(v) < 100:\n\t\t\tself.view.custom.vendorLot = v + (\"%s\" % payload.get(\"key\"))\n\t\t\tself.view.custom.absent = False\n\telif a == \"backspace\":\n\t\tself.view.custom.vendorLot = v[:-1]\n\telif a == \"clear\":\n\t\tself.view.custom.vendorLot = \"\"\n\telif a == \"enter\":\n\t\tself.view.custom.activeField = \"qty\""
+        },
+        {
+          "messageType": "addLotBoxQtyKey",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\ta = payload.get(\"action\") if payload else None\n\tq = self.view.custom.qty or \"\"\n\tif a == \"key\":\n\t\tif len(q) < 6:\n\t\t\tself.view.custom.qty = q + (\"%s\" % payload.get(\"key\"))\n\telif a == \"backspace\":\n\t\tself.view.custom.qty = q[:-1]\n\telif a == \"clear\":\n\t\tself.view.custom.qty = \"\"\n\telif a == \"enter\":\n\t\tself.submit()"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Title"},
+        "position": {"shrink": 0},
+        "props": {"text": "Add LOT", "style": {"classes": "pf-inv-title"}}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "Part"},
+        "position": {"shrink": 0},
+        "props": {"style": {"classes": "pf-inv-sub"}},
+        "propConfig": {
+          "props.text": {"binding": {"type": "expr", "config": {"expression": "{view.params.description}"}}}
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "LotRow"},
+        "position": {"basis": "52px", "shrink": 0},
+        "props": {"alignItems": "center", "style": {"gap": "10px"}},
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "LotCaption"},
+            "position": {"basis": "130px", "shrink": 0},
+            "props": {"text": "Supplier lot", "style": {"classes": "pf-inv-sub"}}
+          },
+          {
+            "type": "ia.input.text-field",
+            "meta": {"name": "LotInput"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {
+              "deferUpdates": false,
+              "style": {"fontSize": "22px", "padding": "6px 12px", "height": "48px"}
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {"type": "property", "config": {"path": "view.custom.vendorLot", "bidirectional": true}}
+              },
+              "props.placeholder": {
+                "binding": {"type": "expr", "config": {"expression": "if({view.custom.absent} && len(trim({view.custom.vendorLot})) = 0, \"No lot on box\", \"Scan or type the supplier lot\")"}}
+              },
+              "props.style.border": {
+                "binding": {"type": "expr", "config": {"expression": "if({view.custom.activeField} = \"lot\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"}}
+              }
+            },
+            "events": {
+              "dom": {
+                "onFocus": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {"script": "\tself.view.custom.activeField = \"lot\""}
+                },
+                "onKeyDown": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {"script": "\tif event.key == \"Enter\":\n\t\tself.view.custom.activeField = \"qty\""}
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "NoLot"},
+            "position": {"basis": "170px", "shrink": 0},
+            "props": {"text": "No lot on box", "style": {"minHeight": "48px"}},
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {"type": "expr", "config": {"expression": "if({view.custom.absent} && len(trim({view.custom.vendorLot})) = 0, \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"}}
+              }
+            },
+            "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+              "config": {"script": "\tself.view.custom.vendorLot = \"\"\n\tself.view.custom.absent = True\n\tself.view.custom.activeField = \"qty\""}}}}
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "QtyRow"},
+        "position": {"basis": "52px", "shrink": 0},
+        "props": {"alignItems": "center", "style": {"gap": "10px"}},
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "QtyCaption"},
+            "position": {"basis": "130px", "shrink": 0},
+            "props": {"text": "Quantity", "style": {"classes": "pf-inv-sub"}}
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "QtyDisplay"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"style": {"classes": "pf-inv-qty", "fontSize": "30px", "padding": "6px 12px", "cursor": "pointer"}},
+            "propConfig": {
+              "props.text": {"binding": {"type": "expr", "config": {"expression": "if(len({view.custom.qty}) = 0, \"0\", {view.custom.qty})"}}},
+              "props.style.border": {
+                "binding": {"type": "expr", "config": {"expression": "if({view.custom.activeField} = \"qty\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"}}
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {"script": "\tself.view.custom.activeField = \"qty\""}
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {"name": "KeyboardHost"},
+        "position": {"basis": "424px", "shrink": 0},
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/Keyboard",
+          "params": {"messageName": "addLotBoxLotKey"}
+        },
+        "propConfig": {
+          "position.display": {"binding": {"type": "expr", "config": {"expression": "{view.custom.activeField} = \"lot\""}}}
+        }
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {"name": "NumpadHost"},
+        "position": {"basis": "424px", "shrink": 0},
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/Numpad",
+          "params": {"messageName": "addLotBoxQtyKey"}
+        },
+        "propConfig": {
+          "position.display": {"binding": {"type": "expr", "config": {"expression": "{view.custom.activeField} = \"qty\""}}}
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "Buttons"},
+        "position": {"shrink": 0},
+        "props": {"style": {"gap": "10px"}},
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "Cancel"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"text": "Cancel", "style": {"classes": "pf-btn pf-btn-secondary", "minHeight": "44px"}},
+            "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+              "config": {"script": "\tsystem.perspective.closePopup(\"mpp-add-lot-box\")"}}}}
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "Add"},
+            "position": {"basis": "0", "grow": 1},
+            "props": {"style": {"classes": "pf-btn pf-btn-primary", "minHeight": "44px"}},
+            "propConfig": {
+              "props.text": {"binding": {"type": "expr", "config": {"expression": "\"Add \" + if(len({view.custom.qty}) = 0, \"0\", {view.custom.qty}) + \" pcs\""}}},
+              "props.enabled": {"binding": {"type": "expr", "config": {"expression": "toMillis(now(500)) > {view.custom.busyUntil} && (len(trim({view.custom.vendorLot})) > 0 || {view.custom.absent}) && toInt({view.custom.qty}, 0) > 0"}}}
+            },
+            "events": {"component": {"onActionPerformed": {"type": "script", "scope": "G",
+              "config": {"script": "\tself.view.rootContainer.submit()"}}}}
+          }
+        ]
+      }
+    ]
+  }
+}
