@@ -1,12 +1,14 @@
 # Supplier lot -- Designer handoff (2026-10-05)
 
-Four existing views need a change that has to be made in Designer, not by
-file edit. Spec: `docs/superpowers/specs/2026-10-05-required-supplier-lot-on-purchased-parts-design.md`.
+Three existing views still need a change made in Designer (section 2).
+Section 1 is already done. Spec: `docs/superpowers/specs/2026-10-05-required-supplier-lot-on-purchased-parts-design.md`.
 
 Close and reopen Designer after `.\scan.ps1` so it has the new `AddLotBox`
 view and the updated scripts before starting.
 
 ## 1. `Components/PlantFloor/LineInventoryRow` -- AddButton
+
+> **Done 2026-10-05** by file edit (commit `908a19ec`), at Jacques's request. Kept here as the record of what changed. If Designer was open at the time, close and reopen it before touching this view so it does not write its cached copy back.
 
 `root > Slot > AddButton`, event `onActionPerformed`. Replace the whole
 script with this (the body starts with a tab in the saved file; Designer
@@ -57,5 +59,5 @@ Run `git diff --stat` before committing. A view saved while it was showing
 live data embeds the rows; if any of the four diffs is large, clear the
 runtime data and save again.
 
-Then tell Claude the Designer edits are in, so Task 6 of the plan (making
-the supplier lot unconditional on the Line Inventory path) can run.
+Task 6 of the plan (the supplier lot is unconditional on the Line Inventory
+path) is already in; it depended only on section 1.
