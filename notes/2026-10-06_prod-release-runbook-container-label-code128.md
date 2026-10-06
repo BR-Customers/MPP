@@ -293,22 +293,24 @@ row.
 
 ## 8. Outcome -- filled in after the release
 
-_(still to fill in)_
+Taken from the Execute report on this machine and from Jacques's scans of the first label printed.
 
 | | |
 |---|---|
-| Executed at | |
-| Prod before | |
-| State A or B | |
-| Step 0 result | |
-| Plan fingerprint | |
-| Backup path | |
-| Preview `[4]` | |
-| Prod rehearsal lock window | |
-| Report folder | |
-| 6.1 four scans (exact strings) | |
-| 6.1 side-by-side with AIM label | |
+| Executed at | 2026-10-06 16:17 ET, from `jacques/working @ d3735225` |
+| Prod before | SQL `0105`, 104 migrations (`MESDBSRV`, 172.17.10.148) |
+| State A or B | **B** -- the repack procs were already on prod |
+| Step 0 result | not recorded |
+| Plan fingerprint | `a1bd711591ee` |
+| Backup path | `C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\MPP_MES_Prod_pre-release_0105_20261006_161720.bak` |
+| Preview `[4]` | 500 identical, 1 changed (`R__Lots_ufn_ShippingLabelZpl.sql`), 0 new; 0 warnings |
+| Live activity `[6]` | 36 open baskets, 1 running shift |
+| Prod rehearsal lock window | 0.4 s (Execute transaction: 0.3 s) |
+| Report folder | `dist\deploy-reports\MPP_MES_Prod_Execute_20261006_161720` (preview `..._161630`, rehearse `..._161701`) |
+| 6.1 four scans (exact strings) | `P1223A6MA J000`, `Q96`, `1S1321800113906405` scanned from the first printed label (AIM serial `113906405`). **`2P00` not yet evidenced** -- the D/C level barcode printed, but no scan of it was captured. |
+| 6.1 side-by-side with AIM label | not recorded. All four barcodes printed whole, shorter than before, clear of the text. |
 
 **What went differently from the plan:**
 
-_(still to fill in)_
+- Prod turned out to be in State B, which means the pass-through repack release had already been executed.
+  Its own runbook's Outcome section is still blank.
