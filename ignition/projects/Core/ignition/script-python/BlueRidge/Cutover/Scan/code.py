@@ -203,7 +203,7 @@ _EMPTY = {
     "entry": {"lotName": "", "toolCavityId": None, "cavityCode": "",
               "castDate": None, "pieceCount": ""},
     "purchased": {"partNumber": "", "partDescription": "", "itemId": None,
-                  "qty": "", "vendorLot": ""},
+                  "qty": "", "vendorLot": "", "vendorLotAbsent": False},
     "cavityOptions": [], "toolOptions": [], "rows": [],
     "totals": {"baskets": 0, "pieces": 0}, "mode": "cast",
 }
@@ -565,8 +565,9 @@ def addBasket(appUserId, terminalLocationId, session):
 @_guard
 def addBox(appUserId, terminalLocationId, session):
     """Create one received purchased-component LOT. The box has no LTT, so the
-       LOT name is minted server-side and the supplier lot goes to
-       VendorLotNumber. Returns {Status, Message, NewId}."""
+       LOT name is minted server-side. The supplier lot is required: it goes
+       to VendorLotNumber, or the box is marked as carrying none.
+       Returns {Status, Message, NewId}."""
     appUserId = _u(appUserId)
     terminalLocationId = _u(terminalLocationId)
 
@@ -587,12 +588,18 @@ def addBox(appUserId, terminalLocationId, session):
     if qty <= 0:
         return {"Status": 0, "Message": "Enter how many are in the box."}
 
+    # The supplier lot is required here; the PROC refuses a box with neither a
+    # lot nor the explicit "no lot on box" answer. Absent only counts while the
+    # field is blank -- a lot typed or scanned after the button wins.
+    vendorLot = (p.get("vendorLot") or "").strip()
     res = BlueRidge.Lots.Lot.create({
         "itemId": itemId,
         "lotOriginTypeId": BlueRidge.Lots.Lot.getOriginTypeIdByCode("Received"),
         "currentLocationId": s.get("destinationLocationId"),
         "pieceCount": qty,
-        "vendorLotNumber": (p.get("vendorLot") or "").strip() or None,
+        "vendorLotNumber": vendorLot or None,
+        "vendorLotAbsent": bool(p.get("vendorLotAbsent")) and vendorLot == "",
+        "requireVendorLot": True,
     }, appUserId, terminalLocationId)
     if not (res and res.get("Status")):
         return res
@@ -601,13 +608,24 @@ def addBox(appUserId, terminalLocationId, session):
     rows.insert(0, {"LotId": res.get("NewId"), "LotName": res.get("MintedLotName"),
                     "PartNumber": p.get("partNumber"), "CavityCode": "",
                     "CastDate": None, "PieceCount": qty})
-    st["purchased"] = {"partNumber": "", "partDescription": "", "itemId": None,
-                       "qty": "", "vendorLot": ""}
+    st["purchased"] = dict(_EMPTY["purchased"])
     st["rows"] = rows
     st["totals"] = {"baskets": len(rows),
                     "pieces": sum([r.get("PieceCount") or 0 for r in rows])}
     _write(st, session)
     return res
+
+
+@_guard
+def setVendorLotAbsent(session):
+    """The operator's explicit 'No lot on box' answer for a purchased box.
+       Clears any typed supplier lot and flags the absence; addBox passes the
+       flag and the proc stores its marker. Returns {Status, Message}."""
+    st = getState(session)
+    st["purchased"]["vendorLot"] = ""
+    st["purchased"]["vendorLotAbsent"] = True
+    _write(st, session)
+    return {"Status": 1, "Message": "Marked: no lot on box."}
 
 
 @_guard

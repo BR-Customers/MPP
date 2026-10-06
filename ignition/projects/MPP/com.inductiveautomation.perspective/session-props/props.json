@@ -23,7 +23,8 @@
         "partDescription": "",
         "partNumber": "",
         "qty": "",
-        "vendorLot": ""
+        "vendorLot": "",
+        "vendorLotAbsent": false
       },
       "rows": [],
       "session": {
