@@ -741,12 +741,13 @@ def getLineInventoryFooter(locationId, terminalRole=None, lineWide=False, _refre
 
 
 def checkInBox(itemId, locationId, pieceCount, appUserId=None, terminalLocationId=None,
-               vendorLotNumber=None, vendorLotAbsent=False, requireVendorLot=False):
+               vendorLotNumber=None, vendorLotAbsent=False, requireVendorLot=True):
     """Create one Received LOT of pieceCount at locationId (one box = one LOT).
        Thin wrapper over create(); Lot_Create's eligibility and cap gates apply.
        vendorLotNumber is the supplier's lot off the box; vendorLotAbsent means
-       the box carries none. requireVendorLot asks the PROC to refuse a box
-       with neither -- this function decides nothing itself.
+       the box carries none. requireVendorLot defaults True: a box checked in
+       at a line needs a supplier lot or the explicit absent answer, and the
+       PROC enforces it -- this function decides nothing itself.
        Returns the create() status dict."""
     data = {
         "itemId":            _u(itemId),
@@ -761,7 +762,7 @@ def checkInBox(itemId, locationId, pieceCount, appUserId=None, terminalLocationI
 
 
 def checkInAndNotify(itemId, locationId, pieceCount, description, appUserId=None, terminalLocationId=None,
-                     vendorLotNumber=None, vendorLotAbsent=False, requireVendorLot=False):
+                     vendorLotNumber=None, vendorLotAbsent=False, requireVendorLot=True):
     """Perspective-session helper for the Line Inventory add popups:
        check in one box, toast the outcome, raise the CRT notice, and tell the
        page to refresh. Callers pass the session's app user id and the terminal id.

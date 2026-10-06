@@ -683,6 +683,25 @@
 
 ---
 
+## 🔖 2026-10-05 — Supplier lot required on purchased-part check-in
+
+An operator adding a box of purchased parts must now give the supplier's lot number, by scan or on-screen keyboard, or press **No lot on box**.
+
+- **Rule in SQL, opt-in.** `Lots.Lot_Create` v1.8 adds `@RequireVendorLot` / `@VendorLotAbsent` (both default 0, no migration). Required + blank is rejected before the transaction; absent stores the marker `NONE`. The supplier lot is now trimmed on every call.
+- **Line Inventory.** Both `+ LOT` and the one-tap `+<box qty>` buttons open the new `Components/PlantFloor/AddLotBox` popup (one-tap parts open with the box quantity pre-filled). `Lot.checkInBox` / `checkInAndNotify` require the supplier lot by default.
+- **Cutover Scan.** `Cutover.Scan.addBox` requires it too; `setVendorLotAbsent` is the "No lot on box" answer.
+- **Unchanged on purpose:** Inventory Manager's receive form and Receiving Dock still treat the supplier lot as optional.
+
+### Left open
+
+- The **No lot on box** button and required marker on the three Cutover Scan views are a Designer job: `notes/2026-10-05_supplier-lot-designer-handoff.md` section 2. Until then a cutover box with no supplier lot on it cannot be added.
+- `Components/PlantFloor/AddLotQty` is no longer opened by anything and can be deleted.
+- Not yet on prod. The scoped export must carry the Core scripts, the `Lot_Create` named query, `AddLotBox` and `LineInventoryRow` together.
+
+Spec: `docs/superpowers/specs/2026-10-05-required-supplier-lot-on-purchased-parts-design.md`. Plan: `docs/superpowers/plans/2026-10-05-required-supplier-lot-on-purchased-parts.md`.
+
+---
+
 ## 🔖 2026-09-10 (session 2) — Die cast counter anchor: see the shift total, declare the real one
 
 Day-two feedback from the die cast floor. An operator on basket `10627564` typed a counter reading, got
