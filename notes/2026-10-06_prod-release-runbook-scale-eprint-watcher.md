@@ -441,25 +441,28 @@ if you want them gone.
 
 ---
 
-## 8. Outcome -- filled in after the release
+## 8. Outcome
 
-_(still to fill in)_
+Released 2026-10-06. Filled in afterwards from the deploy reports on the release machine and Jacques's
+confirmation that it was a good release.
 
 | | |
 |---|---|
-| Executed at (ET) | |
+| Executed at | 2026-10-06 11:59 (report stamp, release machine's clock) |
 | Prod before | SQL `0104`, 103 migrations |
-| Plan fingerprint | |
-| Backup path | |
-| Preview `[4]` | |
-| Live activity `[6]` | |
-| Prod rehearsal lock window | |
-| Report folder | |
-| 6.1 console checks | |
-| 6.2 camera cell still books | |
-| First scale switched on (which, when) | |
-| 6.1 press results (pass / same weight twice / light tray) | |
+| HEAD at execute | `6611b504` (docs-only after release commit `5c482c49`) |
+| Plan fingerprint | `5765958c58a1` |
+| Backup path | `C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\MPP_MES_Prod_pre-release_0104_20261006_115934.bak` |
+| Preview `[4]` | 499 identical, 0 changed, 1 new -- as predicted |
+| Live activity `[6]` | 36 open baskets, 1 running shift; 0 warnings |
+| Prod rehearsal lock window | 0.3 s |
+| Report folder | `dist\deploy-reports\MPP_MES_Prod_Execute_20261006_115934` |
+| 6.1 console checks | Not recorded |
+| 6.2 camera cell still books | Not recorded |
+| First scale switched on (which, when) | Not recorded |
+| 6.1 press results (pass / same weight twice / light tray) | Not recorded |
 
 **What went differently from the plan:**
 
-_(still to fill in)_
+Nothing reported. Jacques confirmed the release good on 2026-10-06 without per-check detail, so whether a
+scale has been switched on (section 5.4), and what the first presses showed, is not on record here.

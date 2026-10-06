@@ -345,23 +345,28 @@ are inert once the button is gone; delete them in the Designer if you want them 
 
 ---
 
-## 8. Outcome -- filled in after the release
+## 8. Outcome
 
-_(still to fill in)_
+Released 2026-10-06. Filled in from the deploy reports on the release machine and Jacques's confirmation.
 
 | | |
 |---|---|
-| Executed at (ET) | |
+| Executed at | 2026-10-06 13:23 (report stamp, release machine's clock) |
 | Prod before | SQL `0105`, 104 migrations |
-| Plan fingerprint | |
-| Backup path | |
-| Preview `[4]` | |
-| Live activity `[6]` | |
-| Prod rehearsal lock window | |
-| Report folder | |
-| 6.1 touch / scale / no-part / audit row | |
-| 6.2 other line still closes a tray; Item Master tab | |
+| HEAD at execute | `46464cb8` (docs-only after release commit `20334b41`) |
+| Plan fingerprint | `bc14efbb42f0` |
+| Backup path | `C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\MPP_MES_Prod_pre-release_0105_20261006_132356.bak` |
+| Preview `[4]` | 500 identical, 0 changed, 1 new -- as predicted |
+| Live activity `[6]` | 36 open baskets, 1 running shift; 0 warnings |
+| Prod rehearsal lock window | 0.4 s |
+| Execute | `COMMITTED`, sqlcmd 0.3 s; post-commit proofs both green |
+| Report folder | `dist\deploy-reports\MPP_MES_Prod_Execute_20261006_132356` |
+| Ignition imports | Done (Jacques) |
+| 6.1 touch / scale / no-part / audit row | Not recorded per check. Jacques: "looks good". |
+| 6.2 other line still closes a tray; Item Master tab | Not recorded per check. |
 
 **What went differently from the plan:**
 
-_(still to fill in)_
+Nothing reported. The section 6.1 items (touch-screen field selection, the scale setpoint re-send, the
+no-part-selected path) were named as unverified before the release; no individual result for them was
+written down, so treat them as unconfirmed until someone notes one.
