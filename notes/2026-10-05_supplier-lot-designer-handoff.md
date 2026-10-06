@@ -1,7 +1,7 @@
 # Supplier lot -- Designer handoff (2026-10-05)
 
-Three existing views still need a change made in Designer (section 2).
-Section 1 is already done. Spec: `docs/superpowers/specs/2026-10-05-required-supplier-lot-on-purchased-parts-design.md`.
+Both sections are now done by file edit. Nothing here is left for Designer;
+the checks under each section are still worth running. Spec: `docs/superpowers/specs/2026-10-05-required-supplier-lot-on-purchased-parts-design.md`.
 
 Close and reopen Designer after `.\scan.ps1` so it has the new `AddLotBox`
 view and the updated scripts before starting.
@@ -31,6 +31,8 @@ Check: tapping `+ LOT` and tapping a `+2,500` style button both open the
 new popup; the second opens with 2500 in Quantity.
 
 ## 2. Cutover Scan -- Tablet, Phone, Desktop
+
+> **Done 2026-10-06** by file edit, at Jacques's request: the placeholder binding, a `VendorLotNoneButton` beside the field, and the field label changed from "Vendor lot -- optional" to "Supplier lot -- required". On Desktop the input was wrapped in a new `VendorLotInputRow` to hold the button. **Not yet seen on screen** (the gateway trial had expired); run the check below. Close and reopen Designer before touching these views.
 
 `Views/ShopFloor/_CutoverScan/{Tablet,Phone,Desktop}`, the purchased-box
 form. In each:

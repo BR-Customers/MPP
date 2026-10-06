@@ -694,9 +694,9 @@ An operator adding a box of purchased parts must now give the supplier's lot num
 
 ### Left open
 
-- The **No lot on box** button and required marker on the three Cutover Scan views are a Designer job: `notes/2026-10-05_supplier-lot-designer-handoff.md` section 2. Until then a cutover box with no supplier lot on it cannot be added.
+- The **No lot on box** button on the three Cutover Scan views was added by file edit on 2026-10-06 and has **not been seen on screen yet** (gateway trial expired). Check it per `notes/2026-10-05_supplier-lot-designer-handoff.md` section 2.
 - `Components/PlantFloor/AddLotQty` is no longer opened by anything and can be deleted.
-- Not yet on prod. The scoped export must carry the Core scripts, the `Lot_Create` named query, `AddLotBox` and `LineInventoryRow` together.
+- Not yet on prod. The scoped export must carry the Core scripts, the `Lot_Create` named query, `AddLotBox`, `LineInventoryRow`, the three Cutover Scan views and the session props together.
 
 Spec: `docs/superpowers/specs/2026-10-05-required-supplier-lot-on-purchased-parts-design.md`. Plan: `docs/superpowers/plans/2026-10-05-required-supplier-lot-on-purchased-parts.md`.
 
