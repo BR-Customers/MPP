@@ -30,7 +30,32 @@
 
 > **2026-09-22 -- Trim partial checkpoint at shift end, built and smoke-tested on Dev.** A blast operator can record the total trimmed so far on a LOT at shift end without moving the LOT off Trim IN. Migration `0096` adds `Workorder.ProductionEvent.ShiftId`; new proc `Workorder.TrimPartial_Record` (route `TrimIn` template, operator-picked shift, never defaulted); `Workorder.TrimOut_Record` v1.5 gains a trim-scoped guard, requires a count after a partial, and stamps `ShiftId` via `Oee.ufn_ShiftIdForInstant`; new read `Workorder.TrimCheckpoint_GetLatestForLot` backs an "already recorded" line on the LOT card. Core NQs + `BlueRidge.Workorder.TrimPartial`; new popup `Components/Popups/TrimPartial`; `TrimBody` gained the **Record partial trim - shift end** button. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. **Verified on `MPP_MES_Dev`:** LOT `TPC-SMOKE-1` took a partial of 700 filed under Third Shift, then Trim OUT at 953, crediting 700 and 253 with `ShiftId` stamped on both checkpoints; full SQL suite 3885/3885, exit 0. **Dev only -- not yet released to prod.** Natural follow-up: the Trim Shop Detail report / credit rollup read (spec section 3.2 is its contract, out of scope here).
 
-**Last updated:** 2026-10-06 (afternoon) -- **Pass-through repack: a finished good with no BOM now packs from received stock of the same part. SQL only, two changed procs, PACKAGED for prod and NOT deployed.** Runbook `notes/2026-10-06_prod-release-runbook-passthrough-repack.md`; release commit `f840f4b5`.
+**Last updated:** 2026-10-06 (16:17 ET) -- **Container shipping label: the four linear barcodes are now Code 128 and carry their data identifiers (P / 2P / Q / 1S), matching the label Honda's AIM batch-print tool produces. RELEASED TO PROD. Prod is at `0106`, 105 migrations.** Runbook + Outcome `notes/2026-10-06_prod-release-runbook-container-label-code128.md`; release commit `44ea9f82`, executed from `d3735225`.
+
+> ### Container label barcodes brought in line with the AIM batch label (found onsite 2026-10-06 by Jacques)
+>
+> Our label's barcodes printed far longer than AIM's for the same part. Scanning both showed the payloads differed too: AIM leads each barcode with the identifier in its caption and drops the dashes from the part number. The legacy template's separate text/barcode fields (`SERIAL-NUMBER` vs `SERIAL-NUMBER2`) were most likely fed the prefixed form by the legacy application; our port gave both the same value.
+>
+> | Barcode | Before | Now (= AIM) |
+> |---|---|---|
+> | PART NO. (P) | `1223A-6MA -J000` | `P1223A6MA J000` |
+> | D/C PART LEVEL (2P) | `00` | `2P00` |
+> | QUANTITY (Q) | `Q96` | `Q96` |
+> | SERIAL (1S) | 16 digits | `1S` + 16 digits |
+>
+> - Migration `0106_container_label_code128_and_data_identifiers` rewrites four lines of the active Container `Lots.LabelTemplate` (`^B3` -> `^BCR,...,A`, `^BY3` kept; prefixes are template literals like `Q` always was). `Lots.ufn_ShippingLabelZpl` v1.5 adds `{PartNumberBarcode}` (part number with every `-` removed, space kept -- the rule `{DataMatrix}` already used). Human-readable text, the 2D symbol, positions and heights untouched. SQL only, no Ignition.
+> - **Release:** fingerprint `a1bd711591ee`; preview 500 identical / 1 changed / 0 warnings; 36 open baskets and 1 running shift; rehearsal lock 0.4 s, Execute 0.3 s; backup `MPP_MES_Prod_pre-release_0105_20261006_161720.bak`; report `dist\deploy-reports\MPP_MES_Prod_Execute_20261006_161720`. SQL suite 4292/4292.
+> - **Verified on prod:** a reprint made after the release scanned `P1223A6MA J000`, `2P00`, `Q96`, `1S1321800113906405` -- all four as expected.
+>
+> **Left open:**
+>
+> - **Length is close to AIM's, not identical, and has not been compared side by side since the release.** AIM's bars measure about 13 mil (tape-measure estimate from photos); our printer appears to be 203 dpi, where `^BY3` gives about 15 mil, so ours should run roughly 11% longer. A 300 dpi head would be needed to match exactly.
+> - **Code 128 was inferred from measured lengths, never reported by a scanner.** The payloads are confirmed by scan; the symbology match with AIM is not.
+> - **The dash-stripping rule rests on one part** (`1223A-6MA -J000`). Compare the first label of a different part against its AIM equivalent.
+> - **No rollback migration exists.** Reverting means a forward migration swapping the four template lines back; v1.5 of the function renders the old template correctly.
+> - **The pass-through repack procs were already on prod** when this release's preview ran (only 1 changed repeatable), so that release has been executed. Its runbook's Outcome section is still blank and the entry below still reads "NOT deployed".
+
+**Previously (same day):** 2026-10-06 (afternoon) -- **Pass-through repack: a finished good with no BOM now packs from received stock of the same part. SQL only, two changed procs, PACKAGED for prod and NOT deployed.** Runbook `notes/2026-10-06_prod-release-runbook-passthrough-repack.md`; release commit `f840f4b5`.
 
 > ### Why the pass-through Assembly tab could not run (found 2026-10-06, on prod, by Jacques)
 >
