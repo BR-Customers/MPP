@@ -1,11 +1,19 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Create.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-18
--- Version:     1.7
+-- Modified:    2026-10-05
+-- Version:     1.8
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
 --              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +
 --              FDS-05-034/-035).
+--
+--              v1.8 (2026-10-05, Jacques): @RequireVendorLot + @VendorLotAbsent.
+--              Both default 0, so every existing caller is unaffected. With
+--              @RequireVendorLot = 1 a missing or blank supplier lot is
+--              rejected BEFORE BEGIN TRANSACTION. @VendorLotAbsent = 1 stores
+--              the marker NONE (the box has no supplier lot) and replaces any
+--              value supplied with it. @VendorLotNumber is now trimmed on every
+--              call and a whitespace-only value is stored as NULL.
 --
 --              v1.7 (2026-09-18, Jacques): the step-6b consumption-point cap
 --              counts only USABLE stock. A LOT whose status blocks production
@@ -110,7 +118,9 @@ CREATE OR ALTER PROCEDURE Lots.Lot_Create
     @DepositToStorage   BIT           = 0,      -- die-cast: after birth at the machine, auto-move to the Warehouse (storage). OFF by default -> other origins (receiving, etc.) unaffected.
     @EntryRouteSequence INT           = NULL,  -- cutover: route step at which this LOT joined its route. NULL = the route start (every normal mint).
     @CastDate           DATE          = NULL,  -- cutover: date read off the physical LTT. Drives FIFO for migrated stock. NULL for a normal mint.
-    @ProducedAtLocationId BIGINT      = NULL   -- cutover: the die cast machine off the tag (0082). NULL for every normal mint.
+    @ProducedAtLocationId BIGINT      = NULL,  -- cutover: the die cast machine off the tag (0082). NULL for every normal mint.
+    @RequireVendorLot   BIT           = 0,     -- v1.8: 1 = reject when no supplier lot is supplied. Set by the operator check-in screens.
+    @VendorLotAbsent    BIT           = 0      -- v1.8: 1 = the box carries no supplier lot; store the marker NONE.
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -129,7 +139,8 @@ BEGIN
                @VendorLotNumber AS VendorLotNumber, @AppUserId AS AppUserId,
                @TerminalLocationId AS TerminalLocationId,
                @EntryRouteSequence AS EntryRouteSequence, @CastDate AS CastDate,
-               @ProducedAtLocationId AS ProducedAtLocationId
+               @ProducedAtLocationId AS ProducedAtLocationId,
+               @RequireVendorLot AS RequireVendorLot, @VendorLotAbsent AS VendorLotAbsent
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
@@ -196,6 +207,28 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = @AppUserId)
         BEGIN
             SET @Message = N'AppUser not found.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+            RETURN;
+        END
+
+        -- ---- 2a. Supplier lot (v1.8) ----
+        -- Normalised on every call: a whitespace-only value is no value.
+        SET @VendorLotNumber = NULLIF(LTRIM(RTRIM(@VendorLotNumber)), N'');
+
+        -- The box carries no supplier lot. The marker lives here and nowhere
+        -- else, so a report can tell a recorded absence from a real number.
+        -- It replaces anything supplied alongside it.
+        IF @VendorLotAbsent = 1
+            SET @VendorLotNumber = N'NONE';
+
+        IF @RequireVendorLot = 1 AND @VendorLotNumber IS NULL
+        BEGIN
+            SET @Message = N'Supplier lot number is required.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
