@@ -1,0 +1,2133 @@
+{
+  "custom": {
+    "activeField": "",
+    "busyUntil": 0,
+    "partLabel": "",
+    "itemId": null,
+    "partOptions": [],
+    "history": {
+      "options": {
+        "ByCount": [],
+        "ByWeight": [],
+        "ByVision": []
+      },
+      "rows": {}
+    },
+    "editDraft": {
+      "ByCount": {
+        "Id": null,
+        "ItemId": null,
+        "ClosureMethod": "ByCount",
+        "Active": false,
+        "PartsPerTray": "",
+        "TraysPerContainer": "",
+        "DunnageCode": "",
+        "CustomerCode": "",
+        "IsSerialized": false,
+        "TargetWeight": "",
+        "ToleranceWeight": ""
+      },
+      "ByWeight": {
+        "Id": null,
+        "ItemId": null,
+        "ClosureMethod": "ByWeight",
+        "Active": false,
+        "PartsPerTray": "",
+        "TraysPerContainer": "",
+        "DunnageCode": "",
+        "CustomerCode": "",
+        "IsSerialized": false,
+        "TargetWeight": "",
+        "ToleranceWeight": ""
+      },
+      "ByVision": {
+        "Id": null,
+        "ItemId": null,
+        "ClosureMethod": "ByVision",
+        "Active": false,
+        "PartsPerTray": "",
+        "TraysPerContainer": "",
+        "DunnageCode": "",
+        "CustomerCode": "",
+        "IsSerialized": false,
+        "TargetWeight": "",
+        "ToleranceWeight": ""
+      }
+    }
+  },
+  "params": {
+    "itemId": null,
+    "cellLocationId": null
+  },
+  "propConfig": {
+    "params.itemId": {
+      "paramDirection": "input"
+    },
+    "params.cellLocationId": {
+      "paramDirection": "input"
+    },
+    "custom.itemId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.loadPart()"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 760,
+      "width": 1080
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "padding": "16px"
+      }
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tself.load()"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\tcell = self.view.params.cellLocationId\n\topts = BlueRidge.Parts.Item.getEligibleForLocationDropdown(cell) if cell else []\n\titemId = self.view.params.itemId\n\tif not itemId and len(opts) == 1:\n\t\titemId = opts[0][\"value\"]\n\tself.view.custom.partOptions = opts\n\tself.view.custom.itemId = itemId\n\tself.loadPart()"
+        },
+        {
+          "name": "loadPart",
+          "params": [],
+          "script": "\titemId = self.view.custom.itemId\n\tself.view.custom.activeField = \"\"\n\tself.view.custom.editDraft = BlueRidge.Parts.ContainerConfig.getDraftForItem(itemId)\n\tself.view.custom.history = BlueRidge.Parts.ContainerConfig.getHistoryForItem(itemId)\n\tpn = \"\"\n\tif itemId:\n\t\titem = BlueRidge.Parts.Item.getOneOrEmpty(itemId) or {}\n\t\tpn = \"%s\" % (item[\"PartNumber\"] or \"\")\n\tself.view.custom.partLabel = pn"
+        },
+        {
+          "name": "addMethod",
+          "params": [
+            "method"
+          ],
+          "script": "\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.editDraft)) or {}\n\tblock = draft.get(method) or {}\n\tblock[\"Active\"] = True\n\tblock[\"ClosureMethod\"] = method\n\tblock[\"ItemId\"] = self.view.custom.itemId\n\tdraft[method] = block\n\tself.view.custom.editDraft = draft\n\tself.view.custom.activeField = method + \".PartsPerTray\""
+        },
+        {
+          "name": "clearMethod",
+          "params": [
+            "method"
+          ],
+          "script": "\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.editDraft)) or {}\n\tcur = draft.get(method) or {}\n\tdraft[method] = {\"Id\": cur.get(\"Id\"), \"ItemId\": self.view.custom.itemId, \"ClosureMethod\": method, \"Active\": False, \"PartsPerTray\": \"\", \"TraysPerContainer\": \"\", \"DunnageCode\": \"\", \"CustomerCode\": \"\", \"IsSerialized\": False, \"TargetWeight\": \"\", \"ToleranceWeight\": \"\"}\n\tself.view.custom.editDraft = draft\n\tif (self.view.custom.activeField or \"\").startswith(method + \".\"):\n\t\tself.view.custom.activeField = \"\""
+        },
+        {
+          "name": "applyHistory",
+          "params": [
+            "method",
+            "key"
+          ],
+          "script": "\thist = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.history)) or {}\n\trow = (hist.get(\"rows\") or {}).get(\"%s\" % key)\n\tif not row:\n\t\treturn\n\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.editDraft)) or {}\n\tcur = draft.get(method) or {}\n\tblock = dict(row)\n\tblock[\"Id\"] = cur.get(\"Id\")\n\tblock[\"ItemId\"] = self.view.custom.itemId\n\tblock[\"ClosureMethod\"] = method\n\tblock[\"Active\"] = True\n\tdraft[method] = block\n\tself.view.custom.editDraft = draft\n\tself.view.custom.activeField = \"\"\n\tBlueRidge.Common.Notify.toast(\"Previous pack-out loaded\", \"Check the values, then press Save to apply.\", \"info\")"
+        },
+        {
+          "name": "save",
+          "params": [],
+          "script": "\tif not self.view.custom.itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No part selected\", \"Pick the part this pack-out is for.\", \"warning\")\n\t\treturn\n\tnowMs = system.date.toMillis(system.date.now())\n\tif nowMs < (self.view.custom.busyUntil or 0):\n\t\treturn\n\tself.view.custom.busyUntil = nowMs + 2000\n\tres = BlueRidge.Parts.ContainerConfig.saveDraft(self.view.custom.itemId, self.view.custom.editDraft, appUserId=BlueRidge.Common.Session.currentAppUserId(self.session))\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Common.Notify.toast(\"Pack-out saved\", self.view.custom.partLabel, \"success\")\n\t\tsystem.perspective.sendMessage(\"packOutChanged\", payload={\"itemId\": self.view.custom.itemId}, scope=\"page\")\n\t\tsystem.perspective.closePopup(\"mpp-packout-edit\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Pack-out not saved\", (res or {}).get(\"Message\") or \"Unknown error\", \"error\")\n\t\tself.view.custom.busyUntil = 0\n\t\tself.loadPart()"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "packOutKeyPressed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taf = self.view.custom.activeField or \"\"\n\tif \".\" not in af:\n\t\treturn\n\tmethod, fld = af.split(\".\", 1)\n\ta = payload.get(\"action\") if payload else None\n\t# Read and write ONLY the one leaf: a whole-draft rewrite per key lets\n\t# fast presses overwrite each other and scrambles the digits.\n\tblock = self.view.custom.editDraft[method]\n\tcur = \"%s\" % (block[fld] or \"\")\n\tif a == \"key\":\n\t\tk = \"%s\" % payload.get(\"key\")\n\t\tif k == \".\" and (fld not in (\"TargetWeight\", \"ToleranceWeight\") or \".\" in cur):\n\t\t\treturn\n\t\tif len(cur) < 10:\n\t\t\tcur = cur + k\n\telif a == \"backspace\":\n\t\tcur = cur[:-1]\n\telif a == \"clear\":\n\t\tcur = \"\"\n\telse:\n\t\treturn\n\tblock[fld] = cur"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Title"
+        },
+        "props": {
+          "text": "Pack-Out Configuration",
+          "style": {
+            "classes": "pf-inv-title"
+          }
+        },
+        "position": {
+          "shrink": 0
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "PartRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "12px",
+            "overflow": "visible"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PartCaption"
+            },
+            "props": {
+              "text": "Part",
+              "style": {
+                "classes": "pf-field-label"
+              }
+            },
+            "position": {
+              "shrink": 0
+            }
+          },
+          {
+            "type": "ia.input.dropdown",
+            "meta": {
+              "name": "PartSelect"
+            },
+            "position": {
+              "grow": 1,
+              "basis": "0"
+            },
+            "props": {
+              "value": null,
+              "options": [],
+              "showClearIcon": false,
+              "search": {
+                "enabled": true
+              },
+              "placeholder": {
+                "text": "Select the part to configure..."
+              },
+              "style": {
+                "classes": "pf-field-select",
+                "height": "44px",
+                "fontSize": "18px"
+              }
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.partOptions"
+                  }
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.itemId"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "style": {
+            "gap": "16px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "MethodsCol"
+            },
+            "position": {
+              "grow": 1,
+              "basis": "0"
+            },
+            "propConfig": {
+              "props.style.opacity": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(isNull({view.custom.itemId}), 0.35, 1)"
+                  }
+                }
+              },
+              "props.style.pointerEvents": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(isNull({view.custom.itemId}), \"none\", \"auto\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "10px",
+                "overflowY": "auto"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "MethodBlock_ByCount"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-inv-panel",
+                    "gap": "8px",
+                    "padding": "12px 14px",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "HeaderRow_ByCount"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "12px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Title_ByCount"
+                        },
+                        "props": {
+                          "text": "By Count",
+                          "style": {
+                            "classes": "pf-inv-title"
+                          }
+                        },
+                        "position": {
+                          "grow": 1,
+                          "shrink": 0,
+                          "basis": "auto"
+                        }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": {
+                          "name": "History_ByCount"
+                        },
+                        "position": {
+                          "basis": "330px",
+                          "shrink": 1
+                        },
+                        "props": {
+                          "value": null,
+                          "options": [],
+                          "showClearIcon": false,
+                          "placeholder": {
+                            "text": "Load a previous pack-out..."
+                          },
+                          "style": {
+                            "classes": "pf-field-select",
+                            "height": "40px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "len({view.custom.history.options.ByCount}) > 0"
+                              }
+                            }
+                          },
+                          "props.options": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.history.options.ByCount"
+                              }
+                            }
+                          },
+                          "props.value": {
+                            "onChange": {
+                              "enabled": true,
+                              "script": "\tif currentValue is None or currentValue.value is None:\n\t\treturn\n\tself.view.rootContainer.applyHistory(\"ByCount\", currentValue.value)\n\tself.props.value = None"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "Btn_Clear_ByCount"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Clear",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "36px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "{view.custom.editDraft.ByCount.Active} = true"
+                              }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.clearMethod(\"ByCount\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "FieldsRow_ByCount"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "wrap": "wrap",
+                      "alignItems": "flex-end",
+                      "style": {
+                        "gap": "12px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.editDraft.ByCount.Active} = true"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByCount_PartsPerTray"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByCount_PartsPerTray"
+                            },
+                            "props": {
+                              "text": "Parts Per Tray",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByCount_PartsPerTray"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "110px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByCount.PartsPerTray"
+                                  }
+                                }
+                              },
+                              "props.style.outline": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.activeField} = \"ByCount.PartsPerTray\", \"2px solid #4fc3f7\", \"none\")"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"ByCount.PartsPerTray\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByCount_TraysPerContainer"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByCount_TraysPerContainer"
+                            },
+                            "props": {
+                              "text": "Trays Per Container",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByCount_TraysPerContainer"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "110px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByCount.TraysPerContainer"
+                                  }
+                                }
+                              },
+                              "props.style.outline": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.activeField} = \"ByCount.TraysPerContainer\", \"2px solid #4fc3f7\", \"none\")"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"ByCount.TraysPerContainer\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByCount_DunnageCode"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByCount_DunnageCode"
+                            },
+                            "props": {
+                              "text": "Dunnage Code",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByCount_DunnageCode"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "130px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByCount.DunnageCode"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByCount_Serialized"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByCount_Serialized"
+                            },
+                            "props": {
+                              "text": "Serialized",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.checkbox",
+                            "meta": {
+                              "name": "Input_ByCount_Serialized"
+                            },
+                            "props": {
+                              "text": "",
+                              "style": {
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.selected": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByCount.IsSerialized"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "AddRow_ByCount"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "12px"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!({view.custom.editDraft.ByCount.Active} = true)"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnAdd_ByCount"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Add By Count pack-out",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "40px"
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.addMethod(\"ByCount\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Hint_ByCount"
+                        },
+                        "props": {
+                          "text": "No By Count pack-out configured for this part.",
+                          "style": {
+                            "classes": "pf-inv-sub"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "MethodBlock_ByWeight"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-inv-panel",
+                    "gap": "8px",
+                    "padding": "12px 14px",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "HeaderRow_ByWeight"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "12px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Title_ByWeight"
+                        },
+                        "props": {
+                          "text": "By Weight",
+                          "style": {
+                            "classes": "pf-inv-title"
+                          }
+                        },
+                        "position": {
+                          "grow": 1,
+                          "shrink": 0,
+                          "basis": "auto"
+                        }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": {
+                          "name": "History_ByWeight"
+                        },
+                        "position": {
+                          "basis": "330px",
+                          "shrink": 1
+                        },
+                        "props": {
+                          "value": null,
+                          "options": [],
+                          "showClearIcon": false,
+                          "placeholder": {
+                            "text": "Load a previous pack-out..."
+                          },
+                          "style": {
+                            "classes": "pf-field-select",
+                            "height": "40px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "len({view.custom.history.options.ByWeight}) > 0"
+                              }
+                            }
+                          },
+                          "props.options": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.history.options.ByWeight"
+                              }
+                            }
+                          },
+                          "props.value": {
+                            "onChange": {
+                              "enabled": true,
+                              "script": "\tif currentValue is None or currentValue.value is None:\n\t\treturn\n\tself.view.rootContainer.applyHistory(\"ByWeight\", currentValue.value)\n\tself.props.value = None"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "Btn_Clear_ByWeight"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Clear",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "36px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "{view.custom.editDraft.ByWeight.Active} = true"
+                              }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.clearMethod(\"ByWeight\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "FieldsRow_ByWeight"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "wrap": "wrap",
+                      "alignItems": "flex-end",
+                      "style": {
+                        "gap": "12px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.editDraft.ByWeight.Active} = true"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByWeight_PartsPerTray"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByWeight_PartsPerTray"
+                            },
+                            "props": {
+                              "text": "Parts Per Tray",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByWeight_PartsPerTray"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "110px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByWeight.PartsPerTray"
+                                  }
+                                }
+                              },
+                              "props.style.outline": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.activeField} = \"ByWeight.PartsPerTray\", \"2px solid #4fc3f7\", \"none\")"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"ByWeight.PartsPerTray\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByWeight_TraysPerContainer"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByWeight_TraysPerContainer"
+                            },
+                            "props": {
+                              "text": "Trays Per Container",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByWeight_TraysPerContainer"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "110px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByWeight.TraysPerContainer"
+                                  }
+                                }
+                              },
+                              "props.style.outline": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.activeField} = \"ByWeight.TraysPerContainer\", \"2px solid #4fc3f7\", \"none\")"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"ByWeight.TraysPerContainer\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByWeight_TargetWeight"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByWeight_TargetWeight"
+                            },
+                            "props": {
+                              "text": "Target Weight",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByWeight_TargetWeight"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "120px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByWeight.TargetWeight"
+                                  }
+                                }
+                              },
+                              "props.style.outline": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.activeField} = \"ByWeight.TargetWeight\", \"2px solid #4fc3f7\", \"none\")"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"ByWeight.TargetWeight\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByWeight_ToleranceWeight"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByWeight_ToleranceWeight"
+                            },
+                            "props": {
+                              "text": "Tolerance (+/-)",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByWeight_ToleranceWeight"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "120px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByWeight.ToleranceWeight"
+                                  }
+                                }
+                              },
+                              "props.style.outline": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.activeField} = \"ByWeight.ToleranceWeight\", \"2px solid #4fc3f7\", \"none\")"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"ByWeight.ToleranceWeight\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByWeight_DunnageCode"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByWeight_DunnageCode"
+                            },
+                            "props": {
+                              "text": "Dunnage Code",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByWeight_DunnageCode"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "130px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByWeight.DunnageCode"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByWeight_Serialized"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByWeight_Serialized"
+                            },
+                            "props": {
+                              "text": "Serialized",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.checkbox",
+                            "meta": {
+                              "name": "Input_ByWeight_Serialized"
+                            },
+                            "props": {
+                              "text": "",
+                              "style": {
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.selected": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByWeight.IsSerialized"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "AddRow_ByWeight"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "12px"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!({view.custom.editDraft.ByWeight.Active} = true)"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnAdd_ByWeight"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Add By Weight pack-out",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "40px"
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.addMethod(\"ByWeight\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Hint_ByWeight"
+                        },
+                        "props": {
+                          "text": "No By Weight pack-out configured for this part.",
+                          "style": {
+                            "classes": "pf-inv-sub"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "MethodBlock_ByVision"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-inv-panel",
+                    "gap": "8px",
+                    "padding": "12px 14px",
+                    "overflow": "visible"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "HeaderRow_ByVision"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "12px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Title_ByVision"
+                        },
+                        "props": {
+                          "text": "By Vision",
+                          "style": {
+                            "classes": "pf-inv-title"
+                          }
+                        },
+                        "position": {
+                          "grow": 1,
+                          "shrink": 0,
+                          "basis": "auto"
+                        }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": {
+                          "name": "History_ByVision"
+                        },
+                        "position": {
+                          "basis": "330px",
+                          "shrink": 1
+                        },
+                        "props": {
+                          "value": null,
+                          "options": [],
+                          "showClearIcon": false,
+                          "placeholder": {
+                            "text": "Load a previous pack-out..."
+                          },
+                          "style": {
+                            "classes": "pf-field-select",
+                            "height": "40px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "len({view.custom.history.options.ByVision}) > 0"
+                              }
+                            }
+                          },
+                          "props.options": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.history.options.ByVision"
+                              }
+                            }
+                          },
+                          "props.value": {
+                            "onChange": {
+                              "enabled": true,
+                              "script": "\tif currentValue is None or currentValue.value is None:\n\t\treturn\n\tself.view.rootContainer.applyHistory(\"ByVision\", currentValue.value)\n\tself.props.value = None"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "Btn_Clear_ByVision"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Clear",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "36px"
+                          }
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "{view.custom.editDraft.ByVision.Active} = true"
+                              }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.clearMethod(\"ByVision\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "FieldsRow_ByVision"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "wrap": "wrap",
+                      "alignItems": "flex-end",
+                      "style": {
+                        "gap": "12px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.editDraft.ByVision.Active} = true"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByVision_PartsPerTray"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByVision_PartsPerTray"
+                            },
+                            "props": {
+                              "text": "Parts Per Tray",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByVision_PartsPerTray"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "110px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByVision.PartsPerTray"
+                                  }
+                                }
+                              },
+                              "props.style.outline": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.activeField} = \"ByVision.PartsPerTray\", \"2px solid #4fc3f7\", \"none\")"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"ByVision.PartsPerTray\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByVision_TraysPerContainer"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByVision_TraysPerContainer"
+                            },
+                            "props": {
+                              "text": "Trays Per Container",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByVision_TraysPerContainer"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "110px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByVision.TraysPerContainer"
+                                  }
+                                }
+                              },
+                              "props.style.outline": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.activeField} = \"ByVision.TraysPerContainer\", \"2px solid #4fc3f7\", \"none\")"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"ByVision.TraysPerContainer\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByVision_DunnageCode"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByVision_DunnageCode"
+                            },
+                            "props": {
+                              "text": "Dunnage Code",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Input_ByVision_DunnageCode"
+                            },
+                            "props": {
+                              "deferUpdates": false,
+                              "style": {
+                                "classes": "pf-field-input",
+                                "width": "130px",
+                                "fontSize": "20px",
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByVision.DunnageCode"
+                                  }
+                                }
+                              }
+                            },
+                            "events": {
+                              "dom": {
+                                "onFocus": {
+                                  "config": {
+                                    "script": "\tself.view.custom.activeField = \"\""
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "Field_ByVision_Serialized"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "Label_ByVision_Serialized"
+                            },
+                            "props": {
+                              "text": "Serialized",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.checkbox",
+                            "meta": {
+                              "name": "Input_ByVision_Serialized"
+                            },
+                            "props": {
+                              "text": "",
+                              "style": {
+                                "height": "44px"
+                              }
+                            },
+                            "propConfig": {
+                              "props.selected": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.ByVision.IsSerialized"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "AddRow_ByVision"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "12px"
+                      }
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "!({view.custom.editDraft.ByVision.Active} = true)"
+                          }
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnAdd_ByVision"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Add By Vision pack-out",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary",
+                            "minHeight": "40px"
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.addMethod(\"ByVision\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "Hint_ByVision"
+                        },
+                        "props": {
+                          "text": "No By Vision pack-out configured for this part.",
+                          "style": {
+                            "classes": "pf-inv-sub"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PadCol"
+            },
+            "position": {
+              "basis": "400px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PadHint"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-inv-sub"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.activeField} = \"\", \"Tap a number field, then use the keypad\", \"Keypad types into the highlighted field\")"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "Numpad"
+                },
+                "position": {
+                  "basis": "424px",
+                  "shrink": 0
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/Numpad",
+                  "params": {
+                    "messageName": "packOutKeyPressed"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "DecimalKey"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "text": ".  (decimal point)",
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary",
+                    "minHeight": "56px",
+                    "width": "380px",
+                    "fontSize": "20px"
+                  }
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "indexOf({view.custom.activeField}, \"Weight.T\") >= 0"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.sendMessage(\"packOutKeyPressed\", payload={\"action\": \"key\", \"key\": \".\"}, scope=\"page\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Buttons"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "justify": "flex-end",
+          "style": {
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "Cancel"
+            },
+            "position": {
+              "basis": "180px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Cancel",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary",
+                "minHeight": "48px"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(\"mpp-packout-edit\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "Save"
+            },
+            "position": {
+              "basis": "180px",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Save",
+              "style": {
+                "classes": "pf-btn pf-btn-primary",
+                "minHeight": "48px"
+              }
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.itemId}) && toMillis(now(500)) > {view.custom.busyUntil}"
+                  }
+                }
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.save()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
