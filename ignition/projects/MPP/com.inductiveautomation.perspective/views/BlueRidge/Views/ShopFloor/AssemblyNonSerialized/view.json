@@ -4,6 +4,7 @@
       "partsCount": "",
       "trayPosition": ""
     },
+    "packOutToken": 0,
     "refreshToken": 0,
     "selectedFinishedGoodItemId": null
   },
@@ -79,7 +80,7 @@
     "custom.fgConfig": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty\", 0, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}), {session.custom.closureMethod}, {view.custom.refreshToken})"
+          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty\", 0, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}), {session.custom.closureMethod}, {view.custom.packOutToken})"
         },
         "type": "expr"
       },
@@ -1538,7 +1539,7 @@
         {
           "messageType": "packOutChanged",
           "pageScope": true,
-          "script": "\t# A pack-out was saved from the Pack-Out popup. When no part is selected yet\n\t# (the default only picks a part that HAS a pack-out for this closure method,\n\t# so it was empty until now), re-run the default selection; then refresh.\n\tt \u003d self.session.custom.terminal\n\tif not self.view.custom.selectedFinishedGoodItemId and t and t.get(\"zoneLocationId\"):\n\t\tself.view.custom.selectedFinishedGoodItemId \u003d BlueRidge.Workorder.Assembly.getDefaultFinishedGoodId(t.get(\"zoneLocationId\"), t.get(\"terminalLocationId\"), self.session.custom.closureMethod)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "script": "\t# A pack-out was saved from the Pack-Out popup. When no part is selected yet\n\t# (the default only picks a part that HAS a pack-out for this closure method,\n\t# so it was empty until now), re-run the default selection; then refresh.\n\tt \u003d self.session.custom.terminal\n\tif not self.view.custom.selectedFinishedGoodItemId and t and t.get(\"zoneLocationId\"):\n\t\tself.view.custom.selectedFinishedGoodItemId \u003d BlueRidge.Workorder.Assembly.getDefaultFinishedGoodId(t.get(\"zoneLocationId\"), t.get(\"terminalLocationId\"), self.session.custom.closureMethod)\n\t# fgConfig re-reads on packOutToken ONLY: a re-read on every refresh would re-run its\n\t# onChange (scale setpoint push) on every line that shares this view.\n\tself.view.custom.packOutToken \u003d (self.view.custom.packOutToken or 0) + 1\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },

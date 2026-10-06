@@ -355,7 +355,7 @@
                           "name": "History_ByCount"
                         },
                         "position": {
-                          "basis": "330px",
+                          "basis": "420px",
                           "shrink": 1
                         },
                         "props": {
@@ -854,7 +854,7 @@
                           "name": "History_ByWeight"
                         },
                         "position": {
-                          "basis": "330px",
+                          "basis": "420px",
                           "shrink": 1
                         },
                         "props": {
@@ -1501,7 +1501,7 @@
                           "name": "History_ByVision"
                         },
                         "position": {
-                          "basis": "330px",
+                          "basis": "420px",
                           "shrink": 1
                         },
                         "props": {
