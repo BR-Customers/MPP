@@ -307,7 +307,7 @@ Taken from the Execute report on this machine and from Jacques's scans of the fi
 | Live activity `[6]` | 36 open baskets, 1 running shift |
 | Prod rehearsal lock window | 0.4 s (Execute transaction: 0.3 s) |
 | Report folder | `dist\deploy-reports\MPP_MES_Prod_Execute_20261006_161720` (preview `..._161630`, rehearse `..._161701`) |
-| 6.1 four scans (exact strings) | `P1223A6MA J000`, `Q96`, `1S1321800113906405` scanned from the first printed label (AIM serial `113906405`). **`2P00` not yet evidenced** -- the D/C level barcode printed, but no scan of it was captured. |
+| 6.1 four scans (exact strings) | `P1223A6MA J000`, `2P00`, `Q96`, `1S1321800113906405` -- all four scanned from a reprint made after the release (AIM serial `113906405`). |
 | 6.1 side-by-side with AIM label | not recorded. All four barcodes printed whole, shorter than before, clear of the text. |
 
 **What went differently from the plan:**
