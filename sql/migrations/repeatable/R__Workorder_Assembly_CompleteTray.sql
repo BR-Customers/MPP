@@ -1,6 +1,20 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_Assembly_CompleteTray.sql
 -- Author:      Blue Ridge Automation
+-- Version:     1.5 (2026-10-06) - PASS-THROUGH REPACK. A finished good with NO
+--              published BOM used to be refused ("No active BOM"). It is now
+--              treated as a part MPP receives finished, inspects and repackages
+--              under the SAME part number: the tray LOT is minted exactly as
+--              before and consumes 1:1 from RECEIVED-origin LOTs (Received /
+--              ReceivedOffsite) of that same Item at the line, FIFO, with the same
+--              Consumption genealogy (RelationshipTypeId = 3). The vendor lot
+--              therefore stays reachable from the shipped container.
+--              The origin filter is load-bearing: the tray LOTs this proc mints
+--              are the same Item, at the same line, status Good -- without it a
+--              second tray would consume the first. Minted LOTs are Manufactured,
+--              so they can never be repack stock.
+--              A finished good WITH a published BOM is untouched: same checks,
+--              same consume. The minted LOT's BomId is NULL in repack.
 -- Version:     1.4 (2026-09-11, migration 0078) - the open box is scoped to the
 --              STATION. When @TerminalLocationId is a Terminal it is the station:
 --              the tray goes to that station's open box for (line, part); failing
@@ -112,6 +126,10 @@ BEGIN
     DECLARE @ClosedStatusId       BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
     DECLARE @ManufacturedOriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 
+    -- Pass-through repack (v1.5): set in step 6 when the part has no published BOM.
+    DECLARE @Repack BIT = 0;
+    DECLARE @RepackAvail INT = 0;
+
     DECLARE @ContainerConfigId BIGINT, @PartsPerTray INT, @TraysPerContainer INT, @MaxLotSize INT;
     DECLARE @BomId BIGINT, @CellCode NVARCHAR(50), @PartNumber NVARCHAR(50);
     DECLARE @Accum INT, @Target INT, @TrayPosition INT;
@@ -217,13 +235,29 @@ BEGIN
         SET @BomId = (SELECT TOP 1 Id FROM Parts.Bom
             WHERE ParentItemId = @FinishedGoodItemId AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL
             ORDER BY VersionNumber DESC);
+        -- v1.5: no published BOM = pass-through repack. Nothing is assembled; the
+        -- tray is filled from received LOTs of this same part. The stock test below
+        -- uses the SAME predicate as the B4 consume walk -- keep the two in lock-step.
         IF @BomId IS NULL
         BEGIN
-            SET @Message = N'No active BOM for the finished-good Item.';
-            EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
-                @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
-                @ProcedureName = @ProcName, @AttemptedParameters = @Params;
-            GOTO Reply;
+            SET @Repack = 1;
+            SET @RepackAvail = (
+                SELECT ISNULL(SUM(l.InventoryAvailable), 0) FROM Lots.Lot l
+                INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
+                INNER JOIN Lots.LotOriginType o ON o.Id = l.LotOriginTypeId
+                WHERE l.ItemId = @FinishedGoodItemId AND l.CurrentLocationId = @CellLocationId
+                  AND o.Code IN (N'Received', N'ReceivedOffsite')
+                  AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0);
+            IF @RepackAvail < @PieceCount
+            BEGIN
+                SET @Message = N'Insufficient received stock of this part at the line to repackage (need '
+                             + CAST(@PieceCount AS NVARCHAR(20)) + N', have ' + CAST(@RepackAvail AS NVARCHAR(20))
+                             + N'). The part has no BOM, so it is packed from received LOTs of the same part number.';
+                EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
+                    @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
+                    @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+                GOTO Reply;
+            END
         END
 
         -- ---- 7. Pre-check FIFO stock sufficiency for every BOM line (advisory; the
@@ -437,7 +471,10 @@ BEGIN
         --      R__Workorder_ConsumptionEvent_RecordWithBomCheck: ConsumptionEvent +
         --      Consumption genealogy edge RelationshipTypeId=3 + closure) ----
         DECLARE bom_cur CURSOR LOCAL FAST_FORWARD FOR
-            SELECT bl.ChildItemId, bl.QtyPer FROM Parts.BomLine bl WHERE bl.BomId = @BomId;
+            SELECT bl.ChildItemId, bl.QtyPer FROM Parts.BomLine bl WHERE bl.BomId = @BomId
+            UNION ALL
+            -- v1.5 repack: no BOM, so the single "line" is the part itself, 1:1.
+            SELECT @FinishedGoodItemId, CAST(1 AS DECIMAL(18,4)) WHERE @Repack = 1;
         OPEN bom_cur;
         FETCH NEXT FROM bom_cur INTO @ChildItemId, @ChildQtyPer;
         WHILE @@FETCH_STATUS = 0
@@ -452,6 +489,11 @@ BEGIN
                 WHERE l.ItemId = @ChildItemId AND l.CurrentLocationId = @CellLocationId
                       AND sc.Code NOT IN (N'Closed', N'Open') AND sc.BlocksProduction = 0   -- exclude Hold/Scrap (B2 guard; mirrors MachiningOut_Mint)
                       AND l.InventoryAvailable > 0
+                      -- v1.5 repack: received LOTs only. Without this the tray LOT minted
+                      -- in B1 (same Item, same line, Good) would be its own source.
+                      AND (@Repack = 0 OR EXISTS (SELECT 1 FROM Lots.LotOriginType o
+                                                  WHERE o.Id = l.LotOriginTypeId
+                                                    AND o.Code IN (N'Received', N'ReceivedOffsite')))
                 ORDER BY l.CreatedAt, l.Id;              -- FIFO
                 IF @SrcLotId IS NULL
                     RAISERROR(N'Component stock drained mid-consume.', 16, 1);   -- -> CATCH -> ROLLBACK
