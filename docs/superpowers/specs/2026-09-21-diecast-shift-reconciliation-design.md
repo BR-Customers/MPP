@@ -480,6 +480,15 @@ now reads *Reconciled -- JGP*. Discard with unsaved changes uses the existing `C
 
 ## 9. Recorded, not changed
 
+> **Superseded 2026-10-07 (D6 reversed).** The consequence recorded below happened on prod
+> (Machine 11, 10-07 First Shift: 515 released per cavity without a reading, then the shift-end
+> entry at 1,092 credited 1,038 to each successor basket instead of 523). The variance could not
+> show the gap, because the shot count it is measured against came off the same watermark.
+> Operators cannot be made to type a reading at release, so `Workorder.ufn_CavityShotWatermark`
+> v4.0 now counts a reading-less credit toward the **cavity** watermark (last reading + pieces
+> credited without a reading since). The **die** watermark and die life are unchanged. The text
+> below is kept as the history of the decision.
+
 - **Release with a count and no reading** does not move either watermark and does not advance die
   life (`DieCastLot_Release` lines 225-240: `MAX` ignores NULL; `ISNULL(@CounterReading,0) -
   watermark` is not positive). Jacques, 2026-09-21: *the shift is waiting on its shift-end number;
