@@ -563,10 +563,13 @@ def addBasket(appUserId, terminalLocationId, session):
 
 
 @_guard
-def addBox(appUserId, terminalLocationId, session):
+def addBox(appUserId, terminalLocationId, session, confirmedDuplicate=False):
     """Create one received purchased-component LOT. The box has no LTT, so the
        LOT name is minted server-side. The supplier lot is required: it goes
        to VendorLotNumber, or the box is marked as carrying none.
+       A supplier lot that was already entered opens the confirm popup and
+       returns a pending dict (Status 0, Pending True); its Continue re-enters
+       here with confirmedDuplicate=True.
        Returns {Status, Message, NewId}."""
     appUserId = _u(appUserId)
     terminalLocationId = _u(terminalLocationId)
@@ -592,6 +595,11 @@ def addBox(appUserId, terminalLocationId, session):
     # lot nor the explicit "no lot on box" answer. Absent only counts while the
     # field is blank -- a lot typed or scanned after the button wins.
     vendorLot = (p.get("vendorLot") or "").strip()
+    if vendorLot and not confirmedDuplicate:
+        pending = BlueRidge.Lots.Lot.warnIfVendorLotUsed(vendorLot, "cutover", {
+            "appUserId": appUserId, "terminalLocationId": terminalLocationId})
+        if pending is not None:
+            return pending
     res = BlueRidge.Lots.Lot.create({
         "itemId": itemId,
         "lotOriginTypeId": BlueRidge.Lots.Lot.getOriginTypeIdByCode("Received"),

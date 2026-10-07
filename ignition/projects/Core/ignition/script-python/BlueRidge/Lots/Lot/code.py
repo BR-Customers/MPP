@@ -802,12 +802,94 @@ def checkInBox(itemId, locationId, pieceCount, appUserId=None, terminalLocationI
     return create(data, appUserId, terminalLocationId)
 
 
+SUPPLIER_LOT_POPUP_ID = "mpp-supplier-lot-in-use"
+
+
+def findVendorLotUse(vendorLotNumber):
+    """Lots.Lot_ListByVendorLot rows: LOTs already carrying this supplier lot,
+       newest first (TOP 5; TotalMatches has the full count). [] when the number
+       was never entered. The PROC decides what counts as a match (any part, any
+       status; blank and NONE never match). Never raises: a failed lookup must
+       not stop a box being checked in."""
+    v = _u(vendorLotNumber)
+    if v is None or not ("%s" % v).strip():
+        return []
+    try:
+        return BlueRidge.Common.Db.execList(
+            "lots/Lot_ListByVendorLot", {"vendorLotNumber": ("%s" % v).strip()}) or []
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("findVendorLotUse failed: %s" % e, level="warn")
+        return []
+
+
+def warnIfVendorLotUsed(vendorLotNumber, kind, args):
+    """If the supplier lot was already entered, open the confirm popup and
+       return a PENDING status dict ({Status 0, Pending True}); else None and the
+       caller carries on. `kind` + `args` are what confirmVendorLotReuse needs to
+       finish the SAME check-in if the operator taps Continue. Display glue only:
+       Lots.Lot_ListByVendorLot decides, the operator chooses."""
+    rows = findVendorLotUse(vendorLotNumber)
+    if not rows:
+        return None
+    r = rows[0] or {}
+    enteredAt = r.get("EnteredAt")
+    try:
+        enteredAt = system.date.format(enteredAt, "MM/dd/yyyy h:mm a") if enteredAt is not None else ""
+    except (Exception, java.lang.Exception):
+        enteredAt = "%s" % (enteredAt or "")
+    system.perspective.openPopup(
+        SUPPLIER_LOT_POPUP_ID, "BlueRidge/Components/Popups/SupplierLotInUse",
+        params={"popupId": SUPPLIER_LOT_POPUP_ID,
+                "vendorLot": ("%s" % _u(vendorLotNumber)).strip(),
+                "partDescription": r.get("ItemDescription") or "",
+                "locationName": r.get("EnteredLocationName") or "",
+                "lotName": r.get("LotName") or "",
+                "enteredAt": enteredAt,
+                "totalMatches": r.get("TotalMatches") or 1,
+                "kind": kind,
+                "argsJson": system.util.jsonEncode(args)},
+        modal=True, showCloseIcon=False, overlayDismiss=False, draggable=False, resizable=False,
+        position={"width": 560, "height": 360})
+    return {"Status": 0, "Pending": True,
+            "Message": "Supplier lot %s was already entered -- waiting for the operator." % vendorLotNumber}
+
+
+def confirmVendorLotReuse(kind, argsJson, session):
+    """The Continue button of Popups/SupplierLotInUse: finish the check-in the
+       warning interrupted, with the duplicate accepted. Returns the status dict."""
+    a = system.util.jsonDecode(_u(argsJson) or "{}") or {}
+    if _u(kind) == "cutover":
+        res = BlueRidge.Cutover.Scan.addBox(a.get("appUserId"), a.get("terminalLocationId"), session, True)
+        BlueRidge.Common.Ui.notifyResult(res, "Box added", res.get("Message") if res else None)
+        return res
+    res = checkInAndNotify(a.get("itemId"), a.get("locationId"), a.get("pieceCount"), a.get("description"),
+                           a.get("appUserId"), a.get("terminalLocationId"), a.get("vendorLotNumber"),
+                           False, True, True)
+    if res and res.get("Status"):
+        # The add form that raised the warning is still open with the same text.
+        system.perspective.closePopup("mpp-add-lot-box")
+        system.perspective.sendMessage("supplierLotConfirmed", payload={}, scope="page")
+    return res
+
+
 def checkInAndNotify(itemId, locationId, pieceCount, description, appUserId=None, terminalLocationId=None,
-                     vendorLotNumber=None, vendorLotAbsent=False, requireVendorLot=True):
+                     vendorLotNumber=None, vendorLotAbsent=False, requireVendorLot=True,
+                     confirmedDuplicate=False):
     """Perspective-session helper for the Line Inventory add popups:
        check in one box, toast the outcome, raise the CRT notice, and tell the
        page to refresh. Callers pass the session's app user id and the terminal id.
+       A supplier lot that was already entered opens the confirm popup instead
+       and returns a pending dict (Status 0, Pending True, no toast); the popup's
+       Continue re-enters here with confirmedDuplicate=True.
        Returns the create() status dict."""
+    if vendorLotNumber and not vendorLotAbsent and not confirmedDuplicate:
+        pending = warnIfVendorLotUsed(vendorLotNumber, "line", {
+            "itemId": _u(itemId), "locationId": _u(locationId), "pieceCount": _u(pieceCount),
+            "description": _u(description), "appUserId": _u(appUserId),
+            "terminalLocationId": _u(terminalLocationId),
+            "vendorLotNumber": ("%s" % _u(vendorLotNumber)).strip()})
+        if pending is not None:
+            return pending
     res = checkInBox(itemId, locationId, pieceCount, appUserId, terminalLocationId,
                      vendorLotNumber, vendorLotAbsent, requireVendorLot)
     lotText = "no supplier lot" if vendorLotAbsent else ("supplier lot %s" % vendorLotNumber if vendorLotNumber else "")

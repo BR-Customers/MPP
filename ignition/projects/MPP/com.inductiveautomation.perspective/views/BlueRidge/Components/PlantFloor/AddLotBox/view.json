@@ -57,6 +57,13 @@
       "extensionFunctions": null,
       "messageHandlers": [
         {
+          "messageType": "supplierLotConfirmed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\t# A repeated supplier lot was accepted on the confirm popup and the box is in.\n\t# Embedded (low-inventory lock): clear the form for the next box. As a popup\n\t# this view was already closed by Lots.Lot.confirmVendorLotReuse.\n\tif self.view.params.embedded:\n\t\tself.resetForm()"
+        },
+        {
           "messageType": "addLotBoxLotKey",
           "pageScope": true,
           "sessionScope": false,

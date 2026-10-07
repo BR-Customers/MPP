@@ -1,0 +1,371 @@
+{
+  "custom": {
+    "busy": false
+  },
+  "params": {
+    "argsJson": "{}",
+    "enteredAt": "",
+    "kind": "line",
+    "locationName": "",
+    "lotName": "",
+    "partDescription": "",
+    "popupId": "mpp-supplier-lot-in-use",
+    "totalMatches": 1,
+    "vendorLot": ""
+  },
+  "propConfig": {
+    "params.argsJson": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.enteredAt": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.kind": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.locationName": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.lotName": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.partDescription": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.totalMatches": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.vendorLot": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 360,
+      "width": 560
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "WarnIcon"
+            },
+            "position": {
+              "basis": "24px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/warning",
+              "style": {
+                "width": "24px",
+                "height": "24px",
+                "color": "var(--mpp-text-accent)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "basis": "auto",
+              "grow": 1
+            },
+            "props": {
+              "text": "Supplier Lot Already Entered"
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body",
+            "gap": "8px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Message"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "This supplier lot was already entered.",
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "15px"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LotNumber"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.vendorLot"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "24px",
+                "fontWeight": 700,
+                "overflowWrap": "anywhere"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PartLine"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Part: \" + if(len({view.params.partDescription}) = 0, \"-\", {view.params.partDescription})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "16px",
+                "fontWeight": 600
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LocationLine"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Entered at: \" + if(len({view.params.locationName}) = 0, \"-\", {view.params.locationName})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "16px",
+                "fontWeight": 600
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "DetailLine"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"LOT \" + {view.params.lotName} + if(len({view.params.enteredAt}) = 0, \"\", \" on \" + {view.params.enteredAt}) + if({view.params.totalMatches} > 1, \"  (entered \" + toStr({view.params.totalMatches}) + \" times so far)\", \"\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "13px"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Prompt"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Cancel to check the number. Continue only if this is a different box.",
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "13px",
+                "marginTop": "6px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "space-between",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "ContinueButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!{view.custom.busy}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Continue",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary",
+                "fontSize": "13px",
+                "minHeight": "36px"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tif self.view.custom.busy:\n\t\treturn\n\tself.view.custom.busy = True\n\ttry:\n\t\tBlueRidge.Lots.Lot.confirmVendorLotReuse(self.view.params.kind, self.view.params.argsJson, self.session)\n\tfinally:\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Cancel",
+              "style": {
+                "classes": "pf-btn pf-btn-primary",
+                "fontSize": "18px",
+                "fontWeight": 700,
+                "minHeight": "52px",
+                "minWidth": "200px"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

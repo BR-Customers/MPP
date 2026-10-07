@@ -66,6 +66,10 @@ def notifyResult(result, successTitle, successMsg=None, errorTitle=None):
         None. Toasts dispatch via session message; caller continues
         synchronously.
     """
+    # A pending result is not an outcome yet: a confirm popup is open and will
+    # report the real one (e.g. Lots.Lot.warnIfVendorLotUsed). Say nothing.
+    if result and result.get("Pending"):
+        return
     status = result.get("Status") if result else 0
     if status:
         BlueRidge.Common.Notify.toast(
