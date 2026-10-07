@@ -1,16 +1,16 @@
 {
   "custom": {
     "forceSetup": false,
+    "headerExpanded": false,
     "phoneShowRows": false,
     "setupDraft": {
-      "lineLocationId": null,
-      "isLine": false,
+      "destinationLocationId": null,
       "entryRoleCode": "MachiningIn",
+      "isLine": false,
       "itemId": null,
-      "machineLocationId": null,
-      "destinationLocationId": null
-    },
-    "headerExpanded": false
+      "lineLocationId": null,
+      "machineLocationId": null
+    }
   },
   "params": {},
   "props": {
@@ -53,7 +53,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -70,7 +70,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -158,6 +158,9 @@
                     "meta": {
                       "name": "LineFieldLabel"
                     },
+                    "position": {
+                      "shrink": 0
+                    },
                     "props": {
                       "style": {
                         "classes": "pf-field-label"
@@ -167,27 +170,30 @@
                     "type": "ia.display.label"
                   },
                   {
-                    "meta": {
-                      "name": "LineDropdown"
-                    },
                     "events": {
                       "component": {
                         "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
                           "config": {
-                            "script": "\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.applySetupChange(self.view.custom.setupDraft, \"line\", self.props.value)"
-                          }
+                            "script": "\tself.view.custom.setupDraft \u003d BlueRidge.Cutover.Scan.applySetupChange(self.view.custom.setupDraft, \"line\", self.props.value)"
+                          },
+                          "scope": "G",
+                          "type": "script"
                         }
                       }
+                    },
+                    "meta": {
+                      "name": "LineDropdown"
+                    },
+                    "position": {
+                      "shrink": 0
                     },
                     "propConfig": {
                       "props.options": {
                         "binding": {
-                          "type": "expr",
                           "config": {
                             "expression": "runScript(\"BlueRidge.Location.Location.getCutoverSourceDropdown\", 0)"
-                          }
+                          },
+                          "type": "expr"
                         }
                       },
                       "props.value": {
@@ -230,6 +236,9 @@
                     "meta": {
                       "name": "EntryRoleFieldLabel"
                     },
+                    "position": {
+                      "shrink": 0
+                    },
                     "props": {
                       "style": {
                         "classes": "pf-field-label"
@@ -246,6 +255,9 @@
                             "meta": {
                               "name": "MachiningInLbl"
                             },
+                            "position": {
+                              "shrink": 0
+                            },
                             "props": {
                               "text": "Machining IN"
                             },
@@ -256,7 +268,7 @@
                           "dom": {
                             "onClick": {
                               "config": {
-                                "script": "\tself.view.custom.setupDraft.entryRoleCode = \"MachiningIn\""
+                                "script": "\tself.view.custom.setupDraft.entryRoleCode \u003d \"MachiningIn\""
                               },
                               "scope": "G",
                               "type": "script"
@@ -266,11 +278,14 @@
                         "meta": {
                           "name": "MachiningInBtn"
                         },
+                        "position": {
+                          "shrink": 0
+                        },
                         "propConfig": {
                           "props.style.classes": {
                             "binding": {
                               "config": {
-                                "expression": "if({view.custom.setupDraft.entryRoleCode} = \"MachiningIn\", 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
+                                "expression": "if({view.custom.setupDraft.entryRoleCode} \u003d \"MachiningIn\", \u0027pf-toggle-btn pf-toggle-btn-selected\u0027, \u0027pf-toggle-btn\u0027)"
                               },
                               "type": "expr"
                             }
@@ -292,6 +307,9 @@
                             "meta": {
                               "name": "AssemblyInLbl"
                             },
+                            "position": {
+                              "shrink": 0
+                            },
                             "props": {
                               "text": "Assembly IN"
                             },
@@ -302,7 +320,7 @@
                           "dom": {
                             "onClick": {
                               "config": {
-                                "script": "\tself.view.custom.setupDraft.entryRoleCode = \"AssemblyIn\""
+                                "script": "\tself.view.custom.setupDraft.entryRoleCode \u003d \"AssemblyIn\""
                               },
                               "scope": "G",
                               "type": "script"
@@ -312,11 +330,14 @@
                         "meta": {
                           "name": "AssemblyInBtn"
                         },
+                        "position": {
+                          "shrink": 0
+                        },
                         "propConfig": {
                           "props.style.classes": {
                             "binding": {
                               "config": {
-                                "expression": "if({view.custom.setupDraft.entryRoleCode} = \"AssemblyIn\", 'pf-toggle-btn pf-toggle-btn-selected', 'pf-toggle-btn')"
+                                "expression": "if({view.custom.setupDraft.entryRoleCode} \u003d \"AssemblyIn\", \u0027pf-toggle-btn pf-toggle-btn-selected\u0027, \u0027pf-toggle-btn\u0027)"
                               },
                               "type": "expr"
                             }
@@ -336,6 +357,9 @@
                     "meta": {
                       "name": "EntryRoleToggle"
                     },
+                    "position": {
+                      "shrink": 0
+                    },
                     "props": {
                       "style": {
                         "classes": "pf-toggle-group"
@@ -350,6 +374,16 @@
                 "position": {
                   "shrink": 0
                 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.setupDraft.isLine}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -357,23 +391,16 @@
                     "gap": "3px"
                   }
                 },
-                "type": "ia.container.flex",
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.setupDraft.isLine}"
-                      }
-                    }
-                  }
-                }
+                "type": "ia.container.flex"
               },
               {
                 "children": [
                   {
                     "meta": {
                       "name": "ItemFieldLabel"
+                    },
+                    "position": {
+                      "shrink": 0
                     },
                     "props": {
                       "style": {
@@ -384,16 +411,30 @@
                     "type": "ia.display.label"
                   },
                   {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.custom.setupDraft \u003d BlueRidge.Cutover.Scan.applySetupChange(self.view.custom.setupDraft, \"item\", self.props.value)"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
                     "meta": {
                       "name": "ItemDropdown"
+                    },
+                    "position": {
+                      "shrink": 0
                     },
                     "propConfig": {
                       "props.options": {
                         "binding": {
-                          "type": "expr",
                           "config": {
                             "expression": "runScript(\"BlueRidge.Parts.Item.getForCutoverLocationDropdown\", 0, {view.custom.setupDraft.lineLocationId})"
-                          }
+                          },
+                          "type": "expr"
                         }
                       },
                       "props.value": {
@@ -412,18 +453,7 @@
                         "minHeight": "36px"
                       }
                     },
-                    "type": "ia.input.dropdown",
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.applySetupChange(self.view.custom.setupDraft, \"item\", self.props.value)"
-                          }
-                        }
-                      }
-                    }
+                    "type": "ia.input.dropdown"
                   }
                 ],
                 "meta": {
@@ -447,6 +477,9 @@
                     "meta": {
                       "name": "MachineFieldLabel"
                     },
+                    "position": {
+                      "shrink": 0
+                    },
                     "props": {
                       "style": {
                         "classes": "pf-field-label"
@@ -458,6 +491,9 @@
                   {
                     "meta": {
                       "name": "MachineDropdown"
+                    },
+                    "position": {
+                      "shrink": 0
                     },
                     "propConfig": {
                       "props.options": {
@@ -508,6 +544,9 @@
                     "meta": {
                       "name": "DestinationFieldLabel"
                     },
+                    "position": {
+                      "shrink": 0
+                    },
                     "props": {
                       "style": {
                         "classes": "pf-field-label"
@@ -520,13 +559,16 @@
                     "meta": {
                       "name": "DestinationDropdown"
                     },
+                    "position": {
+                      "shrink": 0
+                    },
                     "propConfig": {
                       "props.options": {
                         "binding": {
-                          "type": "expr",
                           "config": {
                             "expression": "runScript(\"BlueRidge.Location.Location.getCutoverDestinationDropdown\", 0, {view.custom.setupDraft.lineLocationId}, {view.custom.setupDraft.itemId})"
-                          }
+                          },
+                          "type": "expr"
                         }
                       },
                       "props.value": {
@@ -554,6 +596,16 @@
                 "position": {
                   "shrink": 0
                 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.setupDraft.isLine}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -561,17 +613,7 @@
                     "gap": "3px"
                   }
                 },
-                "type": "ia.container.flex",
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{view.custom.setupDraft.isLine}"
-                      }
-                    }
-                  }
-                }
+                "type": "ia.container.flex"
               },
               {
                 "events": {
@@ -592,7 +634,7 @@
                   "props.enabled": {
                     "binding": {
                       "config": {
-                        "expression": "!isNull({view.custom.setupDraft.lineLocationId}) && !isNull({view.custom.setupDraft.itemId})"
+                        "expression": "!isNull({view.custom.setupDraft.lineLocationId}) \u0026\u0026 !isNull({view.custom.setupDraft.itemId})"
                       },
                       "type": "expr"
                     }
@@ -647,28 +689,25 @@
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "type": "property",
                               "config": {
-                                "path": "session.custom.cutover.session.partNumber"
-                              }
+                                "path": "session.custom.cutover.session.partDescription"
+                              },
+                              "type": "property"
                             }
                           }
                         },
                         "props": {
                           "style": {
+                            "fontFamily": "var(--mpp-font-mono)",
                             "fontSize": "16px",
                             "fontWeight": 700,
                             "minWidth": "0px",
                             "overflow": "hidden",
                             "textOverflow": "ellipsis",
-                            "whiteSpace": "nowrap",
-                            "fontFamily": "var(--mpp-font-mono)"
+                            "whiteSpace": "nowrap"
                           }
                         },
-                        "type": "ia.display.label",
-                        "position": {
-                          "shrink": 1
-                        }
+                        "type": "ia.display.label"
                       },
                       {
                         "meta": {
@@ -680,7 +719,41 @@
                         "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.container.flex",
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "HeaderChevron"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if({view.custom.headerExpanded}, \"▴\", \"▾\")"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "color": "--mpp-accent-60",
+                                "fontSize": "24px"
+                              }
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tself.view.custom.headerExpanded \u003d not self.view.custom.headerExpanded"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
                         "meta": {
                           "name": "HeaderToggle",
                           "tooltip": {
@@ -692,49 +765,14 @@
                           "shrink": 0
                         },
                         "props": {
-                          "direction": "row",
-                          "justify": "center",
                           "alignItems": "center",
+                          "justify": "center",
                           "style": {
                             "cursor": "pointer",
                             "minHeight": "36px"
                           }
                         },
-                        "events": {
-                          "dom": {
-                            "onClick": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": {
-                                "script": "\tself.view.custom.headerExpanded = not self.view.custom.headerExpanded"
-                              }
-                            }
-                          }
-                        },
-                        "children": [
-                          {
-                            "type": "ia.display.label",
-                            "meta": {
-                              "name": "HeaderChevron"
-                            },
-                            "props": {
-                              "style": {
-                                "color": "var(--mpp-accent-60)",
-                                "fontSize": "15px"
-                              }
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {
-                                    "expression": "if({view.custom.headerExpanded}, \"▴\", \"▾\")"
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        ]
+                        "type": "ia.container.flex"
                       },
                       {
                         "events": {
@@ -751,16 +789,16 @@
                         "meta": {
                           "name": "ChangeButton"
                         },
+                        "position": {
+                          "shrink": 0
+                        },
                         "props": {
                           "style": {
                             "classes": "pf-btn pf-btn-secondary"
                           },
                           "text": "Change"
                         },
-                        "type": "ia.input.button",
-                        "position": {
-                          "shrink": 0
-                        }
+                        "type": "ia.input.button"
                       }
                     ],
                     "meta": {
@@ -777,9 +815,43 @@
                   {
                     "children": [
                       {
-                        "type": "ia.container.flex",
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "MachineKvK"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-label"
+                              },
+                              "text": "Machine"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "MachineV"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "path": "session.custom.cutover.session.machineName"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-value-mono"
+                              }
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
                         "meta": {
-                          "name": "LineKv"
+                          "name": "MachineKv"
                         },
                         "position": {
                           "shrink": 0
@@ -790,41 +862,7 @@
                             "gap": "2px"
                           }
                         },
-                        "children": [
-                          {
-                            "type": "ia.display.label",
-                            "meta": {
-                              "name": "LineKvK"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-label"
-                              },
-                              "text": "Location"
-                            }
-                          },
-                          {
-                            "type": "ia.display.label",
-                            "meta": {
-                              "name": "LineV"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-value"
-                              }
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "property",
-                                  "config": {
-                                    "path": "session.custom.cutover.session.lineName"
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        ]
+                        "type": "ia.container.flex"
                       },
                       {
                         "children": [
@@ -928,7 +966,7 @@
                                       },
                                       "transforms": [
                                         {
-                                          "code": "\trows = value or []\n\topts = [{\"label\": r.get(\"Name\") or r.get(\"Code\") or \"\", \"value\": r.get(\"Id\")} for r in rows]\n\treturn sorted(opts, key=lambda o: o[\"label\"])",
+                                          "code": "\trows \u003d value or []\n\topts \u003d [{\"label\": r.get(\"Name\") or r.get(\"Code\") or \"\", \"value\": r.get(\"Id\")} for r in rows]\n\treturn sorted(opts, key\u003dlambda o: o[\"label\"])",
                                           "type": "script"
                                         }
                                       ],
@@ -978,120 +1016,117 @@
                       {
                         "children": [
                           {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "LineKvK"
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "pf-kpi-label"
+                                  },
+                                  "text": "entering from"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "LineV"
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "path": "session.custom.cutover.session.lineName"
+                                      },
+                                      "type": "property"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "pf-kpi-value-mono"
+                                  }
+                                },
+                                "type": "ia.display.label"
+                              }
+                            ],
                             "meta": {
-                              "name": "MachineKvK"
+                              "name": "LineKv"
+                            },
+                            "position": {
+                              "shrink": 0
                             },
                             "props": {
+                              "direction": "column",
                               "style": {
-                                "classes": "pf-kpi-label"
-                              },
-                              "text": "Machine"
+                                "gap": "2px"
+                              }
                             },
-                            "type": "ia.display.label"
+                            "type": "ia.container.flex"
                           },
                           {
-                            "meta": {
-                              "name": "MachineV"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "path": "session.custom.cutover.session.machineName"
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "DestinationKvK"
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "pf-kpi-label"
                                   },
-                                  "type": "property"
-                                }
+                                  "text": "Destination"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
+                                "meta": {
+                                  "name": "DestinationValue"
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "path": "session.custom.cutover.session.destinationName"
+                                      },
+                                      "type": "property"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "pf-kpi-value-mono"
+                                  }
+                                },
+                                "type": "ia.display.label"
                               }
+                            ],
+                            "meta": {
+                              "name": "DestinationKv"
+                            },
+                            "position": {
+                              "shrink": 0
                             },
                             "props": {
+                              "direction": "column",
                               "style": {
-                                "classes": "pf-kpi-value-mono"
+                                "gap": "2px"
                               }
                             },
-                            "type": "ia.display.label"
+                            "type": "ia.container.flex"
                           }
                         ],
                         "meta": {
-                          "name": "MachineKv"
-                        },
-                        "position": {
-                          "shrink": 0
+                          "name": "FlexContainer"
                         },
                         "props": {
-                          "direction": "column",
-                          "style": {
-                            "gap": "2px"
-                          }
+                          "justify": "space-between"
                         },
                         "type": "ia.container.flex"
                       },
                       {
                         "children": [
                           {
-                            "meta": {
-                              "name": "DestinationKvK"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-label"
-                              },
-                              "text": "Destination"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "DestinationValue"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "path": "session.custom.cutover.session.destinationName"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-value-mono"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
-                        "meta": {
-                          "name": "DestinationKv"
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "StepKv"
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "gap": "2px"
-                          }
-                        },
-                        "children": [
-                          {
-                            "type": "ia.display.label",
                             "meta": {
                               "name": "StepKvK"
                             },
@@ -1100,17 +1135,21 @@
                                 "classes": "pf-kpi-label"
                               },
                               "text": "Entering at"
-                            }
+                            },
+                            "type": "ia.display.label"
                           },
                           {
                             "meta": {
                               "name": "StepPill"
                             },
+                            "position": {
+                              "shrink": 0
+                            },
                             "propConfig": {
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if({session.custom.cutover.session.entryRoleCode} = \"MachiningIn\", \"MACHINING IN\", \"ASSEMBLY IN\")"
+                                    "expression": "if({session.custom.cutover.session.entryRoleCode} \u003d \"MachiningIn\", \"MACHINING IN\", \"ASSEMBLY IN\")"
                                   },
                                   "type": "expr"
                                 }
@@ -1121,44 +1160,55 @@
                                 "classes": "pf-pill pf-pill-warn"
                               }
                             },
-                            "type": "ia.display.label",
-                            "position": {
-                              "shrink": 0
-                            }
+                            "type": "ia.display.label"
                           }
                         ],
+                        "meta": {
+                          "name": "StepKv"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
-                              "type": "expr",
                               "config": {
                                 "expression": "{session.custom.cutover.session.isLine}"
-                              }
+                              },
+                              "type": "expr"
                             }
                           }
-                        }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       }
                     ],
                     "meta": {
                       "name": "LatchedKvRow"
                     },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.headerExpanded} || {session.custom.cutover.session.toolIsAmbiguous}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
                     "props": {
+                      "direction": "column",
                       "style": {
                         "flexWrap": "wrap",
                         "gap": "16px"
                       }
                     },
-                    "type": "ia.container.flex",
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "{view.custom.headerExpanded} || {session.custom.cutover.session.toolIsAmbiguous}"
-                          }
-                        }
-                      }
-                    }
+                    "type": "ia.container.flex"
                   }
                 ],
                 "meta": {
@@ -1197,7 +1247,7 @@
                           "dom": {
                             "onClick": {
                               "config": {
-                                "script": "\tself.session.custom.cutover.mode = \"cast\""
+                                "script": "\tself.session.custom.cutover.mode \u003d \"cast\""
                               },
                               "scope": "G",
                               "type": "script"
@@ -1211,7 +1261,7 @@
                           "props.style.classes": {
                             "binding": {
                               "config": {
-                                "expression": "if({session.custom.cutover.mode} = \"cast\", 'pf-tab pf-tab-active', 'pf-tab')"
+                                "expression": "if({session.custom.cutover.mode} \u003d \"cast\", \u0027pf-tab pf-tab-active\u0027, \u0027pf-tab\u0027)"
                               },
                               "type": "expr"
                             }
@@ -1243,7 +1293,7 @@
                           "dom": {
                             "onClick": {
                               "config": {
-                                "script": "\tself.session.custom.cutover.mode = \"purchased\""
+                                "script": "\tself.session.custom.cutover.mode \u003d \"purchased\""
                               },
                               "scope": "G",
                               "type": "script"
@@ -1257,7 +1307,7 @@
                           "props.style.classes": {
                             "binding": {
                               "config": {
-                                "expression": "if({session.custom.cutover.mode} = \"purchased\", 'pf-tab pf-tab-active', 'pf-tab')"
+                                "expression": "if({session.custom.cutover.mode} \u003d \"purchased\", \u0027pf-tab pf-tab-active\u0027, \u0027pf-tab\u0027)"
                               },
                               "type": "expr"
                             }
@@ -1304,24 +1354,14 @@
                             "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.container.flex",
-                            "meta": {
-                              "name": "LttInputRow"
-                            },
-                            "position": {
-                              "shrink": 0
-                            },
-                            "props": {
-                              "direction": "row",
-                              "alignItems": "stretch",
-                              "style": {
-                                "gap": "8px"
-                              }
-                            },
                             "children": [
                               {
                                 "meta": {
                                   "name": "LttInput"
+                                },
+                                "position": {
+                                  "basis": "0px",
+                                  "grow": 1
                                 },
                                 "propConfig": {
                                   "props.text": {
@@ -1344,37 +1384,9 @@
                                     "minWidth": "0px"
                                   }
                                 },
-                                "type": "ia.input.text-field",
-                                "position": {
-                                  "grow": 1,
-                                  "shrink": 1,
-                                  "basis": "0px"
-                                }
+                                "type": "ia.input.text-field"
                               },
                               {
-                                "type": "ia.input.button",
-                                "meta": {
-                                  "name": "LttInputScanButton",
-                                  "tooltip": {
-                                    "text": "Scan the LTT barcode with the camera"
-                                  }
-                                },
-                                "position": {
-                                  "basis": "44px",
-                                  "shrink": 0
-                                },
-                                "props": {
-                                  "text": "",
-                                  "image": {
-                                    "icon": {
-                                      "path": "mpp/qr_code_scanner"
-                                    }
-                                  },
-                                  "style": {
-                                    "classes": "pf-btn pf-btn-secondary",
-                                    "minHeight": "38px"
-                                  }
-                                },
                                 "events": {
                                   "dom": {
                                     "onClick": {
@@ -1386,17 +1398,52 @@
                                           "uuid": "60374fad-23f5-4c31-bd20-521da90bcaf0"
                                         },
                                         "context": {
-                                          "screen": "cutover",
-                                          "field": "lotName"
+                                          "field": "lotName",
+                                          "screen": "cutover"
                                         }
                                       },
                                       "scope": "C",
                                       "type": "native/barcode"
                                     }
                                   }
-                                }
+                                },
+                                "meta": {
+                                  "name": "LttInputScanButton",
+                                  "tooltip": {
+                                    "text": "Scan the LTT barcode with the camera"
+                                  }
+                                },
+                                "position": {
+                                  "basis": "44px",
+                                  "shrink": 0
+                                },
+                                "props": {
+                                  "image": {
+                                    "icon": {
+                                      "path": "mpp/qr_code_scanner"
+                                    }
+                                  },
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "minHeight": "38px"
+                                  },
+                                  "text": ""
+                                },
+                                "type": "ia.input.button"
                               }
-                            ]
+                            ],
+                            "meta": {
+                              "name": "LttInputRow"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "props": {
+                              "style": {
+                                "gap": "8px"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           }
                         ],
                         "meta": {
@@ -1520,37 +1567,37 @@
                                 "type": "ia.input.button"
                               },
                               {
-                                "type": "ia.input.date-time-input",
                                 "meta": {
                                   "name": "CastDatePicker"
                                 },
                                 "position": {
                                   "basis": "0px",
-                                  "grow": 1,
-                                  "shrink": 1
-                                },
-                                "props": {
-                                  "format": "ddd, MMM D YYYY",
-                                  "pickerMode": "date",
-                                  "style": {
-                                    "classes": "pf-field-select",
-                                    "minHeight": "38px",
-                                    "minWidth": "0px",
-                                    "fontSize": "15px",
-                                    "fontWeight": 600
-                                  }
+                                  "grow": 1
                                 },
                                 "propConfig": {
                                   "props.value": {
                                     "binding": {
-                                      "type": "property",
                                       "config": {
-                                        "path": "session.custom.cutover.entry.castDate",
-                                        "bidirectional": true
-                                      }
+                                        "bidirectional": true,
+                                        "path": "session.custom.cutover.entry.castDate"
+                                      },
+                                      "type": "property"
                                     }
                                   }
-                                }
+                                },
+                                "props": {
+                                  "format": "ddd, MMM D YYYY",
+                                  "formattedValue": "Tue, Oct 6 2026",
+                                  "pickerMode": "date",
+                                  "style": {
+                                    "classes": "pf-field-select",
+                                    "fontSize": "15px",
+                                    "fontWeight": 600,
+                                    "minHeight": "38px",
+                                    "minWidth": "0px"
+                                  }
+                                },
+                                "type": "ia.input.date-time-input"
                               },
                               {
                                 "events": {
@@ -1578,8 +1625,8 @@
                                       },
                                       "transforms": [
                                         {
-                                          "type": "script",
-                                          "code": "\treturn BlueRidge.Cutover.Scan.canStepForward(value)"
+                                          "code": "\treturn BlueRidge.Cutover.Scan.canStepForward(value)",
+                                          "type": "script"
                                         }
                                       ],
                                       "type": "property"
@@ -1657,6 +1704,9 @@
                             "props": {
                               "deferUpdates": false,
                               "placeholder": "Count",
+                              "spinner": {
+                                "enabled": false
+                              },
                               "style": {
                                 "classes": "pf-field-input-mono",
                                 "fontSize": "15px",
@@ -1696,6 +1746,9 @@
                         "meta": {
                           "name": "AddBasketButton"
                         },
+                        "position": {
+                          "shrink": 0
+                        },
                         "props": {
                           "style": {
                             "classes": "pf-btn pf-btn-primary pf-btn-large",
@@ -1703,20 +1756,20 @@
                           },
                           "text": "Add basket"
                         },
-                        "type": "ia.input.button",
-                        "position": {
-                          "shrink": 0
-                        }
+                        "type": "ia.input.button"
                       }
                     ],
                     "meta": {
                       "name": "CastEntryPanel"
                     },
+                    "position": {
+                      "shrink": 0
+                    },
                     "propConfig": {
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "{session.custom.cutover.mode} = \"cast\""
+                            "expression": "{session.custom.cutover.mode} \u003d \"cast\""
                           },
                           "type": "expr"
                         }
@@ -1740,6 +1793,9 @@
                             "meta": {
                               "name": "PurchasedPartFieldLabel"
                             },
+                            "position": {
+                              "shrink": 0
+                            },
                             "props": {
                               "style": {
                                 "classes": "pf-field-label"
@@ -1749,24 +1805,15 @@
                             "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.container.flex",
-                            "meta": {
-                              "name": "PurchasedPartInputRow"
-                            },
-                            "position": {
-                              "shrink": 0
-                            },
-                            "props": {
-                              "direction": "row",
-                              "alignItems": "stretch",
-                              "style": {
-                                "gap": "8px"
-                              }
-                            },
                             "children": [
                               {
                                 "meta": {
                                   "name": "PurchasedPartInput"
+                                },
+                                "position": {
+                                  "basis": "0px",
+                                  "grow": 1,
+                                  "shrink": 0
                                 },
                                 "propConfig": {
                                   "props.text": {
@@ -1789,37 +1836,9 @@
                                     "minWidth": "0px"
                                   }
                                 },
-                                "type": "ia.input.text-field",
-                                "position": {
-                                  "grow": 1,
-                                  "shrink": 1,
-                                  "basis": "0px"
-                                }
+                                "type": "ia.input.text-field"
                               },
                               {
-                                "type": "ia.input.button",
-                                "meta": {
-                                  "name": "PurchasedPartInputScanButton",
-                                  "tooltip": {
-                                    "text": "Scan the part number with the camera"
-                                  }
-                                },
-                                "position": {
-                                  "basis": "44px",
-                                  "shrink": 0
-                                },
-                                "props": {
-                                  "text": "",
-                                  "image": {
-                                    "icon": {
-                                      "path": "mpp/qr_code_scanner"
-                                    }
-                                  },
-                                  "style": {
-                                    "classes": "pf-btn pf-btn-secondary",
-                                    "minHeight": "38px"
-                                  }
-                                },
                                 "events": {
                                   "dom": {
                                     "onClick": {
@@ -1831,17 +1850,52 @@
                                           "uuid": "b1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f"
                                         },
                                         "context": {
-                                          "screen": "cutover",
-                                          "field": "purchasedPartNumber"
+                                          "field": "purchasedPartNumber",
+                                          "screen": "cutover"
                                         }
                                       },
                                       "scope": "C",
                                       "type": "native/barcode"
                                     }
                                   }
-                                }
+                                },
+                                "meta": {
+                                  "name": "PurchasedPartInputScanButton",
+                                  "tooltip": {
+                                    "text": "Scan the part number with the camera"
+                                  }
+                                },
+                                "position": {
+                                  "basis": "44px",
+                                  "shrink": 0
+                                },
+                                "props": {
+                                  "image": {
+                                    "icon": {
+                                      "path": "mpp/qr_code_scanner"
+                                    }
+                                  },
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "minHeight": "38px"
+                                  },
+                                  "text": ""
+                                },
+                                "type": "ia.input.button"
                               }
-                            ]
+                            ],
+                            "meta": {
+                              "name": "PurchasedPartInputRow"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "props": {
+                              "style": {
+                                "gap": "8px"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           }
                         ],
                         "meta": {
@@ -1865,6 +1919,9 @@
                             "meta": {
                               "name": "PurchasedQtyFieldLabel"
                             },
+                            "position": {
+                              "shrink": 0
+                            },
                             "props": {
                               "style": {
                                 "classes": "pf-field-label"
@@ -1874,24 +1931,15 @@
                             "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.container.flex",
-                            "meta": {
-                              "name": "PurchasedQtyInputRow"
-                            },
-                            "position": {
-                              "shrink": 0
-                            },
-                            "props": {
-                              "direction": "row",
-                              "alignItems": "stretch",
-                              "style": {
-                                "gap": "8px"
-                              }
-                            },
                             "children": [
                               {
                                 "meta": {
                                   "name": "PurchasedQtyInput"
+                                },
+                                "position": {
+                                  "basis": "0px",
+                                  "grow": 1,
+                                  "shrink": 0
                                 },
                                 "propConfig": {
                                   "props.value": {
@@ -1914,37 +1962,9 @@
                                     "minWidth": "0px"
                                   }
                                 },
-                                "type": "ia.input.numeric-entry-field",
-                                "position": {
-                                  "grow": 1,
-                                  "shrink": 1,
-                                  "basis": "0px"
-                                }
+                                "type": "ia.input.numeric-entry-field"
                               },
                               {
-                                "type": "ia.input.button",
-                                "meta": {
-                                  "name": "PurchasedQtyInputScanButton",
-                                  "tooltip": {
-                                    "text": "Scan the quantity with the camera"
-                                  }
-                                },
-                                "position": {
-                                  "basis": "44px",
-                                  "shrink": 0
-                                },
-                                "props": {
-                                  "text": "",
-                                  "image": {
-                                    "icon": {
-                                      "path": "mpp/qr_code_scanner"
-                                    }
-                                  },
-                                  "style": {
-                                    "classes": "pf-btn pf-btn-secondary",
-                                    "minHeight": "38px"
-                                  }
-                                },
                                 "events": {
                                   "dom": {
                                     "onClick": {
@@ -1956,17 +1976,52 @@
                                           "uuid": "e4a5b6c7-8d9e-4f0a-1b2c-3d4e5f607182"
                                         },
                                         "context": {
-                                          "screen": "cutover",
-                                          "field": "purchasedQty"
+                                          "field": "purchasedQty",
+                                          "screen": "cutover"
                                         }
                                       },
                                       "scope": "C",
                                       "type": "native/barcode"
                                     }
                                   }
-                                }
+                                },
+                                "meta": {
+                                  "name": "PurchasedQtyInputScanButton",
+                                  "tooltip": {
+                                    "text": "Scan the quantity with the camera"
+                                  }
+                                },
+                                "position": {
+                                  "basis": "44px",
+                                  "shrink": 0
+                                },
+                                "props": {
+                                  "image": {
+                                    "icon": {
+                                      "path": "mpp/qr_code_scanner"
+                                    }
+                                  },
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "minHeight": "38px"
+                                  },
+                                  "text": ""
+                                },
+                                "type": "ia.input.button"
                               }
-                            ]
+                            ],
+                            "meta": {
+                              "name": "PurchasedQtyInputRow"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "props": {
+                              "style": {
+                                "gap": "8px"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           }
                         ],
                         "meta": {
@@ -1990,6 +2045,9 @@
                             "meta": {
                               "name": "VendorLotFieldLabel"
                             },
+                            "position": {
+                              "shrink": 0
+                            },
                             "props": {
                               "style": {
                                 "classes": "pf-field-label"
@@ -1999,26 +2057,25 @@
                             "type": "ia.display.label"
                           },
                           {
-                            "type": "ia.container.flex",
-                            "meta": {
-                              "name": "VendorLotInputRow"
-                            },
-                            "position": {
-                              "shrink": 0
-                            },
-                            "props": {
-                              "direction": "row",
-                              "alignItems": "stretch",
-                              "style": {
-                                "gap": "8px"
-                              }
-                            },
                             "children": [
                               {
                                 "meta": {
                                   "name": "VendorLotInput"
                                 },
+                                "position": {
+                                  "basis": "0px",
+                                  "grow": 1,
+                                  "shrink": 0
+                                },
                                 "propConfig": {
+                                  "props.placeholder": {
+                                    "binding": {
+                                      "config": {
+                                        "expression": "if({session.custom.cutover.purchased.vendorLotAbsent} \u0026\u0026 len(trim({session.custom.cutover.purchased.vendorLot})) \u003d 0, \"No lot on box\", \"Supplier lot (required)\")"
+                                      },
+                                      "type": "expr"
+                                    }
+                                  },
                                   "props.text": {
                                     "binding": {
                                       "config": {
@@ -2027,55 +2084,18 @@
                                       },
                                       "type": "property"
                                     }
-                                  },
-                                  "props.placeholder": {
-                                    "binding": {
-                                      "type": "expr",
-                                      "config": {
-                                        "expression": "if({session.custom.cutover.purchased.vendorLotAbsent} && len(trim({session.custom.cutover.purchased.vendorLot})) = 0, \"No lot on box\", \"Supplier lot (required)\")"
-                                      }
-                                    }
                                   }
                                 },
                                 "props": {
                                   "deferUpdates": false,
-                                  "placeholder": "Supplier lot (required)",
                                   "style": {
                                     "classes": "pf-field-input",
                                     "minWidth": "0px"
                                   }
                                 },
-                                "type": "ia.input.text-field",
-                                "position": {
-                                  "grow": 1,
-                                  "shrink": 1,
-                                  "basis": "0px"
-                                }
+                                "type": "ia.input.text-field"
                               },
                               {
-                                "type": "ia.input.button",
-                                "meta": {
-                                  "name": "VendorLotInputScanButton",
-                                  "tooltip": {
-                                    "text": "Scan the vendor lot with the camera"
-                                  }
-                                },
-                                "position": {
-                                  "basis": "44px",
-                                  "shrink": 0
-                                },
-                                "props": {
-                                  "text": "",
-                                  "image": {
-                                    "icon": {
-                                      "path": "mpp/qr_code_scanner"
-                                    }
-                                  },
-                                  "style": {
-                                    "classes": "pf-btn pf-btn-secondary",
-                                    "minHeight": "38px"
-                                  }
-                                },
                                 "events": {
                                   "dom": {
                                     "onClick": {
@@ -2087,20 +2107,65 @@
                                           "uuid": "f5b6c7d8-9e0f-4a1b-2c3d-4e5f60718293"
                                         },
                                         "context": {
-                                          "screen": "cutover",
-                                          "field": "vendorLot"
+                                          "field": "vendorLot",
+                                          "screen": "cutover"
                                         }
                                       },
                                       "scope": "C",
                                       "type": "native/barcode"
                                     }
                                   }
-                                }
+                                },
+                                "meta": {
+                                  "name": "VendorLotInputScanButton",
+                                  "tooltip": {
+                                    "text": "Scan the vendor lot with the camera"
+                                  }
+                                },
+                                "position": {
+                                  "basis": "44px",
+                                  "shrink": 0
+                                },
+                                "props": {
+                                  "image": {
+                                    "icon": {
+                                      "path": "mpp/qr_code_scanner"
+                                    }
+                                  },
+                                  "style": {
+                                    "classes": "pf-btn pf-btn-secondary",
+                                    "minHeight": "38px"
+                                  },
+                                  "text": ""
+                                },
+                                "type": "ia.input.button"
                               }
-                            ]
+                            ],
+                            "meta": {
+                              "name": "VendorLotInputRow"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "props": {
+                              "style": {
+                                "gap": "8px"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           },
                           {
-                            "type": "ia.input.button",
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "config": {
+                                    "script": "\tBlueRidge.Cutover.Scan.setVendorLotAbsent(self.session)"
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            },
                             "meta": {
                               "name": "VendorLotNoneButton",
                               "tooltip": {
@@ -2110,34 +2175,23 @@
                             "position": {
                               "shrink": 0
                             },
-                            "props": {
-                              "text": "No lot on box",
-                              "style": {
-                                "classes": "pf-btn pf-btn-secondary",
-                                "minHeight": "38px"
-                              }
-                            },
                             "propConfig": {
                               "props.style.classes": {
                                 "binding": {
-                                  "type": "expr",
                                   "config": {
-                                    "expression": "if({session.custom.cutover.purchased.vendorLotAbsent} && len(trim({session.custom.cutover.purchased.vendorLot})) = 0, \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
-                                  }
+                                    "expression": "if({session.custom.cutover.purchased.vendorLotAbsent} \u0026\u0026 len(trim({session.custom.cutover.purchased.vendorLot})) \u003d 0, \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+                                  },
+                                  "type": "expr"
                                 }
                               }
                             },
-                            "events": {
-                              "component": {
-                                "onActionPerformed": {
-                                  "type": "script",
-                                  "scope": "G",
-                                  "config": {
-                                    "script": "\tBlueRidge.Cutover.Scan.setVendorLotAbsent(self.session)"
-                                  }
-                                }
-                              }
-                            }
+                            "props": {
+                              "style": {
+                                "minHeight": "38px"
+                              },
+                              "text": "No lot on box"
+                            },
+                            "type": "ia.input.button"
                           }
                         ],
                         "meta": {
@@ -2159,16 +2213,16 @@
                         "meta": {
                           "name": "PurchasedNote"
                         },
+                        "position": {
+                          "shrink": 0
+                        },
                         "props": {
                           "style": {
                             "classes": "pf-field-help"
                           },
                           "text": "No cavity, die or cast date -- a purchased part has no casting history of ours to record. The supplier lot goes to VendorLotNumber; the LOT name is minted by us."
                         },
-                        "type": "ia.display.label",
-                        "position": {
-                          "shrink": 0
-                        }
+                        "type": "ia.display.label"
                       },
                       {
                         "events": {
@@ -2185,6 +2239,9 @@
                         "meta": {
                           "name": "AddBoxButton"
                         },
+                        "position": {
+                          "shrink": 0
+                        },
                         "props": {
                           "style": {
                             "classes": "pf-btn pf-btn-primary pf-btn-large",
@@ -2192,20 +2249,20 @@
                           },
                           "text": "Add box"
                         },
-                        "type": "ia.input.button",
-                        "position": {
-                          "shrink": 0
-                        }
+                        "type": "ia.input.button"
                       }
                     ],
                     "meta": {
                       "name": "PurchasedEntryPanel"
                     },
+                    "position": {
+                      "shrink": 0
+                    },
                     "propConfig": {
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "{session.custom.cutover.mode} = \"purchased\""
+                            "expression": "{session.custom.cutover.mode} \u003d \"purchased\""
                           },
                           "type": "expr"
                         }
@@ -2220,302 +2277,18 @@
                       }
                     },
                     "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "SummaryCount"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "toStr({session.custom.cutover.totals.baskets}) + \" entries  ·  \" + toStr({session.custom.cutover.totals.pieces}) + \" pcs\""
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "fontSize": "15px",
-                                "fontWeight": 600
-                              }
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "SummarySub"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-sub"
-                              },
-                              "text": "This session -- tap to view"
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
-                        "meta": {
-                          "name": "SummaryText"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "meta": {
-                          "name": "SummarySpacer"
-                        },
-                        "position": {
-                          "grow": 1
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "meta": {
-                          "name": "SummaryChevron"
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "if({view.custom.phoneShowRows}, \"▴\", \"▾\")"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
-                        "props": {
-                          "style": {
-                            "color": "var(--mpp-accent-60)",
-                            "fontSize": "15px"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      }
-                    ],
-                    "events": {
-                      "dom": {
-                        "onClick": {
-                          "config": {
-                            "script": "\tself.view.custom.phoneShowRows = not self.view.custom.phoneShowRows"
-                          },
-                          "scope": "G",
-                          "type": "script"
-                        }
-                      }
-                    },
-                    "meta": {
-                      "name": "SummaryBar"
-                    },
-                    "position": {
-                      "shrink": 0
-                    },
-                    "props": {
-                      "alignItems": "center",
-                      "style": {
-                        "classes": "pf-panel",
-                        "cursor": "pointer",
-                        "gap": "6px",
-                        "padding": "6px 10px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "SessionTitle"
-                            },
-                            "props": {
-                              "style": {
-                                "color": "var(--mpp-text-secondary)",
-                                "fontSize": "14px",
-                                "fontWeight": "600",
-                                "letterSpacing": "0.06em",
-                                "textTransform": "uppercase"
-                              },
-                              "text": "This session"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "SessionHeaderSpacer"
-                            },
-                            "position": {
-                              "grow": 1
-                            },
-                            "type": "ia.container.flex"
-                          },
-                          {
-                            "meta": {
-                              "name": "SessionTotals"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "toStr({session.custom.cutover.totals.baskets}) + \" entries  ·  \" + toStr({session.custom.cutover.totals.pieces}) + \" pcs\""
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "color": "var(--pf-status-good-fg)",
-                                "fontSize": "14px",
-                                "fontWeight": 600
-                              }
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
-                        "meta": {
-                          "name": "SessionHeader"
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "alignItems": "center",
-                          "style": {
-                            "classes": "pf-panel-header"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "SessionEmptyText"
-                            },
-                            "props": {
-                              "style": {
-                                "fontSize": "13px",
-                                "textAlign": "center"
-                              },
-                              "text": "No entries yet. Scan a basket or box above to begin."
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
-                        "meta": {
-                          "name": "SessionEmpty"
-                        },
-                        "propConfig": {
-                          "position.display": {
-                            "binding": {
-                              "config": {
-                                "expression": "len({session.custom.cutover.rows}) = 0"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
-                        "props": {
-                          "alignItems": "center",
-                          "justify": "center",
-                          "style": {
-                            "classes": "pf-empty-state",
-                            "padding": "12px 12px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "meta": {
-                          "name": "SessionRowsRepeater"
-                        },
-                        "propConfig": {
-                          "position.display": {
-                            "binding": {
-                              "config": {
-                                "expression": "len({session.custom.cutover.rows}) > 0"
-                              },
-                              "type": "expr"
-                            }
-                          },
-                          "props.instances": {
-                            "binding": {
-                              "config": {
-                                "path": "session.custom.cutover.rows"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "direction": "column",
-                          "elementPosition": {
-                            "basis": "52px",
-                            "grow": 0,
-                            "shrink": 0
-                          },
-                          "path": "BlueRidge/Components/PlantFloor/Cutover/SessionRow",
-                          "style": {
-                            "flexWrap": "nowrap",
-                            "gap": "3px",
-                            "overflowY": "auto"
-                          },
-                          "useDefaultViewWidth": false
-                        },
-                        "type": "ia.display.flex-repeater"
-                      }
-                    ],
-                    "meta": {
-                      "name": "SessionPanel"
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "{view.custom.phoneShowRows}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-panel",
-                        "gap": "6px",
-                        "maxHeight": "320px",
-                        "overflow": "hidden",
-                        "padding": "8px 10px"
-                      }
-                    },
-                    "type": "ia.container.flex"
                   }
                 ],
                 "meta": {
                   "name": "ContentArea"
                 },
                 "position": {
-                  "basis": "0px",
-                  "grow": 1
+                  "shrink": 0
                 },
                 "props": {
                   "direction": "column",
                   "style": {
-                    "flex": "1",
-                    "gap": "8px",
-                    "overflowY": "auto"
+                    "gap": "8px"
                   }
                 },
                 "type": "ia.container.flex"
@@ -2525,14 +2298,13 @@
               "name": "MainPanel"
             },
             "position": {
-              "basis": "0px",
-              "grow": 1
+              "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "!isNull({session.custom.cutover.session.itemId}) && !{view.custom.forceSetup}"
+                    "expression": "!isNull({session.custom.cutover.session.itemId}) \u0026\u0026 !{view.custom.forceSetup}"
                   },
                   "type": "expr"
                 }
@@ -2557,15 +2329,26 @@
         "props": {
           "direction": "column",
           "style": {
-            "flex": "1",
             "gap": "8px",
+            "minHeight": "0px",
             "overflowY": "auto",
-            "padding": "10px 12px"
+            "padding": "10px 12px 64px 12px"
           }
         },
         "type": "ia.container.flex"
       }
     ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\t# Opens on the default source (the warehouse); a breakpoint re-render keeps\n\t# the picks and only re-derives isLine.\n\tself.view.custom.setupDraft \u003d BlueRidge.Cutover.Scan.initSetup(self.view.custom.setupDraft)"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
     "meta": {
       "name": "root"
     },
@@ -2582,45 +2365,34 @@
         {
           "name": "startSession",
           "params": [],
-          "script": "\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres = BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineLocationId\"), d.get(\"destinationLocationId\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup = False"
+          "script": "\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.setupDraft) or {}\n\tres \u003d BlueRidge.Cutover.Scan.loadSession(d.get(\"lineLocationId\"), d.get(\"itemId\"), d.get(\"entryRoleCode\"), d.get(\"machineLocationId\"), d.get(\"destinationLocationId\"), self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Session ready\", res.get(\"Message\") if res else None)\n\tif res and res.get(\"Status\"):\n\t\tBlueRidge.Cutover.Scan.stepCastDate(0, self.session)\n\t\tself.view.custom.forceSetup \u003d False"
         },
         {
           "name": "openChange",
           "params": [],
-          "script": "\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.draftFromSession(self.session)\n\tself.view.custom.forceSetup = True"
+          "script": "\tself.view.custom.setupDraft \u003d BlueRidge.Cutover.Scan.draftFromSession(self.session)\n\tself.view.custom.forceSetup \u003d True"
         },
         {
           "name": "onToolChanged",
           "params": [
             "toolId"
           ],
-          "script": "\tst = BlueRidge.Cutover.Scan.getState(self.session)\n\titemId = st[\"session\"].get(\"itemId\")\n\tst[\"cavityOptions\"] = BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId)\n\tst[\"entry\"][\"toolCavityId\"] = None\n\tst[\"entry\"][\"cavityCode\"] = \"\"\n\tself.session.custom.cutover = st"
+          "script": "\tst \u003d BlueRidge.Cutover.Scan.getState(self.session)\n\titemId \u003d st[\"session\"].get(\"itemId\")\n\tst[\"cavityOptions\"] \u003d BlueRidge.Tools.Tool.listCavitiesForItemTool(itemId, toolId)\n\tst[\"entry\"][\"toolCavityId\"] \u003d None\n\tst[\"entry\"][\"cavityCode\"] \u003d \"\"\n\tself.session.custom.cutover \u003d st"
         },
         {
           "name": "addBasket",
           "params": [],
-          "script": "\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Cutover.Scan.addBasket(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Basket added\", res.get(\"Message\") if res else None)"
+          "script": "\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tres \u003d BlueRidge.Cutover.Scan.addBasket(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Basket added\", res.get(\"Message\") if res else None)"
         },
         {
           "name": "addBox",
           "params": [],
-          "script": "\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tres = BlueRidge.Cutover.Scan.addBox(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Box added\", res.get(\"Message\") if res else None)"
+          "script": "\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tres \u003d BlueRidge.Cutover.Scan.addBox(appUserId, termId, self.session)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Box added\", res.get(\"Message\") if res else None)"
         }
       ],
       "extensionFunctions": null,
       "messageHandlers": []
     },
-    "type": "ia.container.flex",
-    "events": {
-      "system": {
-        "onStartup": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": "\t# Opens on the default source (the warehouse); a breakpoint re-render keeps\n\t# the picks and only re-derives isLine.\n\tself.view.custom.setupDraft = BlueRidge.Cutover.Scan.initSetup(self.view.custom.setupDraft)"
-          }
-        }
-      }
-    }
+    "type": "ia.container.flex"
   }
 }

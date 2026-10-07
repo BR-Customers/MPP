@@ -12,9 +12,6 @@
     "allowPackOutEdit": false
   },
   "propConfig": {
-    "params.allowPackOutEdit": {
-      "paramDirection": "input"
-    },
     "custom.closureMethodTracker": {
       "binding": {
         "config": {
@@ -108,13 +105,13 @@
             "type": "script"
           }
         ],
+        "type": "expr"
+      }
+    },
     "custom.selectedFinishedGoodItemId": {
       "onChange": {
         "enabled": true,
         "script": "\t# Mirror the running part to the session so the Line Inventory dock\n\t# (low-inventory lock) can see it -- a dock cannot read this view\u0027s custom props.\n\tself.session.custom.selectedFinishedGoodItemId \u003d currentValue.value if currentValue is not None else None"
-      }
-    },
-        "type": "expr"
       }
     },
     "custom.usePrinterCards": {
@@ -124,6 +121,9 @@
         },
         "type": "expr"
       }
+    },
+    "params.allowPackOutEdit": {
+      "paramDirection": "input"
     }
   },
   "props": {
@@ -567,7 +567,7 @@
                   "style": {
                     "color": "var(--mpp-text-primary)",
                     "fontFamily": "var(--mpp-font-mono, monospace)",
-                    "fontSize": "34px",
+                    "fontSize": "24px",
                     "fontWeight": 700
                   }
                 },
@@ -613,7 +613,6 @@
               }
             },
             "props": {
-              "direction": "column",
               "gap": "2px",
               "style": {
                 "classes": "pf-panel"
@@ -660,76 +659,58 @@
                   {
                     "children": [
                       {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "L"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-label"
-                              },
-                              "text": "Open Container"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "V"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "if(isNull({view.custom.container.Id}), \"None open\", \"Open\")"
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-value pf-kpi-value-mono"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "S"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "if(isNull({view.custom.container.Id}), \"\", \"Container #\" + toStr({view.custom.container.Id}))"
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-kpi-sub"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
                         "meta": {
-                          "name": "KpiItem"
-                        },
-                        "position": {
-                          "basis": "240px",
-                          "grow": 1
+                          "name": "L"
                         },
                         "props": {
-                          "direction": "column",
                           "style": {
-                            "classes": "pf-kpi"
+                            "classes": "pf-kpi-label"
+                          },
+                          "text": "Open Container"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "V"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.container.Id}), \"None open\", \"Open\")"
+                              },
+                              "type": "expr"
+                            }
                           }
                         },
-                        "type": "ia.container.flex"
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-value pf-kpi-value-mono"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "S"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.container.Id}), \"\", \"Container #\" + toStr({view.custom.container.Id}))"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        },
+                        "type": "ia.display.label"
                       }
                     ],
                     "meta": {
@@ -926,7 +907,7 @@
                                 "borderRadius": "var(--mpp-radius-lg)",
                                 "minHeight": "280px",
                                 "overflow": "hidden",
-                                "padding": "16px",
+                                "padding": "4px",
                                 "position": "relative"
                               }
                             },
@@ -1466,8 +1447,8 @@
         "props": {
           "direction": "column",
           "style": {
-            "gap": "16px",
-            "padding": "16px"
+            "gap": "4px",
+            "padding": "4px"
           }
         },
         "type": "ia.container.flex"
@@ -1491,8 +1472,8 @@
       "direction": "column",
       "style": {
         "classes": "canvas",
-        "gap": "16px",
-        "padding": "24px"
+        "gap": "4px",
+        "padding": "12px"
       }
     },
     "scripts": {

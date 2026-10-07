@@ -9,7 +9,6 @@
   },
   "props": {
     "defaultSize": {
-      "height": 800,
       "width": 560
     }
   },
@@ -116,13 +115,13 @@
           }
         },
         "props": {
+          "deferUpdates": false,
           "placeholder": "Scan badge or type PIN",
           "style": {
             "classes": "pf-field-input-mono",
             "textAlign": "center",
             "width": "260px"
-          },
-          "deferUpdates": false
+          }
         },
         "type": "ia.input.text-field"
       },
@@ -234,23 +233,23 @@
         {
           "messageType": "pinKeyPressed",
           "pageScope": true,
+          "script": "\ta \u003d payload.get(\"action\") if payload else None\n\tif a \u003d\u003d \"key\":\n\t\tself.appendKey(payload.get(\"key\"))\n\telif a \u003d\u003d \"backspace\":\n\t\tself.backspaceKey()\n\telif a \u003d\u003d \"clear\":\n\t\tself.clearKeys()\n\telif a \u003d\u003d \"enter\":\n\t\tself.submitPin()",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\ta \u003d payload.get(\"action\") if payload else None\n\tif a \u003d\u003d \"key\":\n\t\tself.appendKey(payload.get(\"key\"))\n\telif a \u003d\u003d \"backspace\":\n\t\tself.backspaceKey()\n\telif a \u003d\u003d \"clear\":\n\t\tself.clearKeys()\n\telif a \u003d\u003d \"enter\":\n\t\tself.submitPin()"
+          "viewScope": false
         },
         {
           "messageType": "unknownInitialsResult",
           "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"register\":\n\t\tsystem.perspective.openPopup(id\u003d\"mpp-register-operator\", view\u003d\"BlueRidge/Components/Popups/RegisterOperator\", params\u003d{\"pin\": (self.view.custom.pin or \"\").strip(), \"replyMessage\": \"registerOperatorResult\", \"popupId\": \"mpp-register-operator\"}, modal\u003dTrue, showCloseIcon\u003dFalse)\n\telse:\n\t\t# \"retype\" -- and any unexpected reply -- returns to a blank pad rather\n\t\t# than leaving a half-entered PIN on screen for the next person.\n\t\tself.view.custom.dialogOpen \u003d False\n\t\tself.clearKeys()",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"register\":\n\t\tsystem.perspective.openPopup(id\u003d\"mpp-register-operator\", view\u003d\"BlueRidge/Components/Popups/RegisterOperator\", params\u003d{\"pin\": (self.view.custom.pin or \"\").strip(), \"replyMessage\": \"registerOperatorResult\", \"popupId\": \"mpp-register-operator\"}, modal\u003dTrue, showCloseIcon\u003dFalse)\n\telse:\n\t\t# \"retype\" -- and any unexpected reply -- returns to a blank pad rather\n\t\t# than leaving a half-entered PIN on screen for the next person.\n\t\tself.view.custom.dialogOpen \u003d False\n\t\tself.clearKeys()"
+          "viewScope": false
         },
         {
           "messageType": "registerOperatorResult",
           "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tself.view.custom.dialogOpen \u003d False\n\tif action \u003d\u003d \"registered\":\n\t\tself.loginAs(payload.get(\"appUserId\"), payload.get(\"initials\"), payload.get(\"displayName\"), None)\n\telse:\n\t\tself.clearKeys()",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tself.view.custom.dialogOpen \u003d False\n\tif action \u003d\u003d \"registered\":\n\t\tself.loginAs(payload.get(\"appUserId\"), payload.get(\"initials\"), payload.get(\"displayName\"), None)\n\telse:\n\t\tself.clearKeys()"
+          "viewScope": false
         }
       ]
     },
