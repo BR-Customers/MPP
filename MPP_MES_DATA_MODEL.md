@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 3.2 | 2026-10-06 | Blue Ridge Automation | **`Lots.LotNote`** (migration `0107_lot_note`) — append-only free-text notes against a LOT, written from the LOT Detail *Notes* tab. Any signed-in user may add one; there is no edit and no delete. Each row carries the author, the terminal, whether an elevation window was open, a **snapshot of the LOT at write time** (status, location, piece count, stamped by `Lots.LotNote_Add` itself) and a `ContextJson` blob of the session the note came from. No `Audit.*` rows: the table is the record. Procs `Lots.LotNote_Add` v1.0, `Lots.LotNote_ListByLot` v1.0. Also this session, no schema change: `Lots.Lot_SearchAdvanced` v1.3 returns `ItemDescription`, matches free text against it, and takes `@ExcludeFinishedGoods BIT = 0`. |
 | 3.1 | 2026-09-22 | Blue Ridge Automation | **Die cast shift reconciliation** (migration `0097`, spec `docs/superpowers/specs/2026-09-21-diecast-shift-reconciliation-design.md`). A team lead settles one past `(Shift, Press, Die)` against its press sheet: production that was never entered, entries filed against the wrong shift, and numbers that disagree — in either direction. New `Workorder.DieCastShiftReconciliation` (header), `DieCastReconciliationMove` (what was re-filed) and `DieCastReconciliationReason`; `ReconciliationId` on `DieCastContribution`, `RejectEvent` and `DieCastCounterAnchor`; `RejectEvent.ApprovedByUserId` (the sheet's QAS). `CK_DieCastContribution_DeltaNonNeg` relaxed so a **reconciliation row, and only a reconciliation row**, may carry a negative delta — corrections are compensating rows, never edits to recorded history. |
 | 3.0 | 2026-09-22 | Blue Ridge Automation | **Trim partial checkpoint (migration `0096`).** `Workorder.ProductionEvent.ShiftId` added. A blast operator can record the total trimmed so far on the LOT at shift end (`Workorder.TrimPartial_Record`, route `TrimIn` template, LOT does not move); Trim OUT is unchanged for the operator and now stamps the shift. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. |
 | 2.9 | 2026-09-18 | Blue Ridge Automation | **`Parts.ItemLocation.MaxQuantity` description corrected** -- it was still described as a per-scan-in hint (v1.8/OI-18 wording). As of the Line Inventory sidebar (rev 2, migration `0091`+), it is the consumption-point lineside cap `Lots.Lot_Create` enforces against a Received LOT, AND the colour scale for the Line Inventory panel (orange at or below 30% of Max, red at or below 10%), editable from the shop floor through the Tolerances popup (`Parts.ItemLocation_SetMaxQuantity`). No schema change -- documentation catching up to the rev-2 build. |
@@ -870,6 +871,41 @@ State derivation:
 - `IX_PauseEvent_Lot` on `(LotId, PausedAt DESC)` — supports per-LOT pause history (Lot Details view).
 
 **Audit:** `Audit.LogEntityType` carries a `PauseEvent` row. Place / Resume operations write to `Audit.OperationLog`.
+
+### LotNote
+
+**Added v3.2 (migration `0107_lot_note`).** Free-text notes against a LOT, written from the LOT Detail *Notes* tab. **Append-only** — there is an add proc and a list proc and deliberately nothing else; correcting a note means writing another. A note changes nothing about the LOT (not status, quantity or location), so adding one is **not** a protected action: any signed-in user may write a note on a LOT in any status, including Closed. If a note should stop a LOT, that is a Hold.
+
+Because a PIN is an identifier and not a credential, attribution on a note is only as strong as the sign-in behind it. The table therefore records as much of the moment as it can, in three layers: typed who/where columns, a snapshot of the LOT, and the session context.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK IDENTITY | |
+| LotId | BIGINT | FK → Lot.Id, NOT NULL | The LOT the note is about. |
+| NoteText | NVARCHAR(1000) | NOT NULL | Trimmed by the proc. A note over 1000 characters is **rejected**, not truncated. |
+| AppUserId | BIGINT | FK → AppUser.Id, NOT NULL | Who wrote it. During an elevation window this is the supervisor, by design (`Common.Session.beginElevatedWindow`). |
+| TerminalLocationId | BIGINT | FK → Location.Id, NULL | The terminal it was typed at. NULL when the session had no registered terminal. |
+| WasElevated | BIT | NOT NULL, DEFAULT 0 | 1 when an AD elevation window was open. Lets the tab badge supervisor notes. |
+| LotStatusId | BIGINT | FK → LotStatusCode.Id, NOT NULL | **Snapshot** — the LOT's status when the note was written. |
+| LotLocationId | BIGINT | FK → Location.Id, NOT NULL | **Snapshot** — `Lot.CurrentLocationId` when the note was written. |
+| LotPieceCount | INT | NOT NULL | **Snapshot** — `Lot.PieceCount` when the note was written. |
+| ContextJson | NVARCHAR(MAX) | NULL, CHECK ISJSON | Session and screen context: session id, client address, device and user agent, AD login if any, page path, elevation state, and `session.custom` (terminal, zone, cell, user, printer, LOT trail) minus bulk UI state. Evidence only — nothing reads it for behaviour. |
+| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | UTC; `LotNote_ListByLot` converts to Eastern. |
+
+**Snapshot columns are stamped by `Lots.LotNote_Add` from `Lots.Lot`.** The caller cannot supply them, so a stale screen cannot record a state the LOT was not in.
+
+**`ContextJson` never fails a note.** Malformed JSON is wrapped as `{"Unparsed": "..."}` rather than rejected. It is deliberately **not** a dump of the LOT Detail view's custom props — those are copies of rows the database already holds and can re-read as of `CreatedAt`. `LotNote_ListByLot` does not return it; it is read in SQL during an investigation.
+
+**Constraints:**
+
+- `CK_LotNote_NoteText` — the trimmed text is not empty.
+- `CK_LotNote_ContextJson` — `ContextJson IS NULL OR ISJSON(ContextJson) = 1`.
+
+**Indexes:**
+
+- `IX_LotNote_LotId_CreatedAt` on `(LotId, CreatedAt DESC, Id DESC)` — the Notes tab read.
+
+**Audit:** none. The table is itself the append-only, attributed record. Consequence: notes do not appear in the LOT history timeline (`Lots.LotEventLog`). Not partitioned — notes are human-typed, low volume, and must live as long as the LOT.
 
 ### AimShipperIdPool
 

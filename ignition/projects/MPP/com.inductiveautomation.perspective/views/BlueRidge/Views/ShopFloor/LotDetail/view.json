@@ -64,6 +64,8 @@
       "Weight": null,
       "WeightUomId": null
     },
+    "noteDraft": "",
+    "notes": [],
     "parents": [],
     "pauses": [],
     "samples": [],
@@ -1997,6 +1999,228 @@
                   "direction": "column"
                 },
                 "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "NoteInput"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.noteDraft"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "deferUpdates": false,
+                          "placeholder": "Type a note about this LOT. Notes cannot be edited or deleted.",
+                          "style": {
+                            "classes": "pf-field-input",
+                            "height": "76px",
+                            "resize": "none"
+                          }
+                        },
+                        "type": "ia.input.text-area"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "NoteLength"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.style.color": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if(len({view.custom.noteDraft}) \u003e 1000, \"var(--mpp-state-bad-fg, #f85149)\", \"var(--mpp-text-secondary)\")"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "toStr(len({view.custom.noteDraft})) + \" / 1000\""
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "12px",
+                                "textAlign": "right"
+                              }
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "config": {
+                                    "script": "\tself.view.rootContainer.addNote()"
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            },
+                            "meta": {
+                              "name": "AddNoteButton"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-btn pf-btn-primary",
+                                "height": "40px",
+                                "minWidth": "120px"
+                              },
+                              "text": "Add note"
+                            },
+                            "type": "ia.input.button"
+                          }
+                        ],
+                        "meta": {
+                          "name": "AddNoteActions"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "justify": "flex-end",
+                          "style": {
+                            "gap": "6px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "AddNoteRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "stretch",
+                      "style": {
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "EmptyState"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "len({view.custom.notes}) \u003d 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-empty-state",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "15px",
+                        "padding": "32px",
+                        "textAlign": "center"
+                      },
+                      "text": "No notes on this LOT yet."
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "NotesRepeater"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "len({view.custom.notes}) \u003e 0"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.notes"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\treturn BlueRidge.Lots.LotNote.mapInstances(value)",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/NoteRow",
+                      "style": {
+                        "gap": "0px",
+                        "overflowY": "auto"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  }
+                ],
+                "meta": {
+                  "name": "PanelNotes"
+                },
+                "position": {
+                  "tabIndex": 8
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "12px",
+                    "padding": "12px"
+                  }
+                },
+                "type": "ia.container.flex"
               }
             ],
             "meta": {
@@ -2069,6 +2293,11 @@
                   "disabled": false,
                   "runWhileHidden": true,
                   "text": "Correct Count"
+                },
+                {
+                  "disabled": false,
+                  "runWhileHidden": true,
+                  "text": "Notes"
                 }
               ]
             },
@@ -2294,6 +2523,11 @@
     "scripts": {
       "customMethods": [
         {
+          "name": "addNote",
+          "params": [],
+          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"No LOT loaded.\", \"warning\")\n\t\treturn\n\ttext \u003d self.view.custom.noteDraft\n\t# Attribution, terminal, elevation state and the stored context are all\n\t# resolved from the session inside addFromSession, so any later entry\n\t# point records exactly what this one does.\n\tresult \u003d BlueRidge.Lots.LotNote.addFromSession(self.session, lotId, text, \"/shop-floor/lot-detail/%s\" % lotId, {\"view\": \"LotDetail\", \"tab\": \"Notes\"})\n\tBlueRidge.Common.Ui.notifyResult(result, \"Note added\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.noteDraft \u003d \"\"\n\t\tself.view.custom.notes \u003d BlueRidge.Lots.LotNote.listByLot(lotId)"
+        },
+        {
           "name": "reprintLabel",
           "params": [],
           "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"No LOT loaded to reprint.\", \"warning\")\n\t\treturn\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tresult \u003d BlueRidge.Lots.LotLabel.reprint(lotId, None, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"LTT reprinted\")"
@@ -2301,7 +2535,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      \u003d BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  \u003d BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children \u003d BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   \u003d BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container \u003d BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples \u003d BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold \u003d BlueRidge.Quality.Hold.getOpenByLotOne(lotId)\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0), \"containerId\": 0, \"allowLookup\": False}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotScrapPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotCountPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tBlueRidge.Lots.LotTrail.sync(self.session, lotId, self.view.custom.lot)"
+          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      \u003d BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  \u003d BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children \u003d BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   \u003d BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.notes    \u003d BlueRidge.Lots.LotNote.listByLot(lotId)\n\tself.view.custom.scrapSummary \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.container \u003d BlueRidge.Lots.Lot.getLinkedContainerOrEmpty(lotId)\n\tself.view.custom.samples \u003d BlueRidge.Quality.QualitySample.listByLotInstances(lotId, 0)\n\tself.view.custom.hold \u003d BlueRidge.Quality.Hold.getOpenByLotOne(lotId)\n\tsystem.perspective.sendMessage(\"holdPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0), \"containerId\": 0, \"allowLookup\": False}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotScrapPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tsystem.perspective.sendMessage(\"lotCountPanelLoad\", payload\u003d{\"lotId\": (self.view.params.lotId or 0)}, scope\u003d\"page\")\n\tBlueRidge.Lots.LotTrail.sync(self.session, lotId, self.view.custom.lot)"
         },
         {
           "name": "doCrtToggle",
