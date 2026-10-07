@@ -346,7 +346,7 @@ def completeBoxToPrinter(containerId, terminalLocationId, printerLocationId, app
 # (docs/superpowers/specs/2026-10-06-assembly-out-low-inventory-lock-design.md)
 # ---------------------------------------------------------------------------
 
-_LOW_INV_REASON_CODE = "MA-LOWINV"     # Oee.DowntimeReasonCode, migration 0106
+_LOW_INV_REASON_CODE = "MA-LOWINV"     # Oee.DowntimeReasonCode, migration 0108
 _LOW_INV_SOURCE_CODE = "System"
 
 _EMPTY_LOW_INV_LOCK = {"short": False, "itemId": None, "description": "", "partNumber": "",
@@ -406,7 +406,7 @@ def getLowInventoryLock(cellLocationId, finishedGoodItemId, closureMethod, _refr
 
 def _lowInvId(kind):
     """'source' -> the System DowntimeSourceCode id; 'reason' -> the MA-LOWINV
-       DowntimeReasonCode id. None when the row is missing (migration 0106 not
+       DowntimeReasonCode id. None when the row is missing (migration 0108 not
        applied) -- the caller then records nothing instead of a wrong reason."""
     if _lowInvIds.get(kind) is None:
         if kind == "source":

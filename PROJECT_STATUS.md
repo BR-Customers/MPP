@@ -786,6 +786,24 @@
 
 ---
 
+## 🔖 2026-10-06 (evening) — Assembly OUT low-inventory lock (non-serialized). Built on Dev, NOT deployed
+
+Spec `docs/superpowers/specs/2026-10-06-assembly-out-low-inventory-lock-design.md` (rev 2 = as built).
+
+- When the finished good selected at a non-serialized Assembly OUT terminal is **3 trays or fewer** from running out of a purchased part, a full-screen banner (`Popups/LowInventoryLock`) locks the terminal, names the part and embeds the add-inventory form. A supervisor AD elevation (`LowInventoryRelease`) releases it until stock next changes at the line.
+- A `System` / `MA-LOWINV` (Low Inventory) downtime event runs from the banner opening until the shortage clears.
+- SQL: migration `0108_downtime_reason_low_inventory` (renumbered from 0106 after a collision) and new read `Workorder.Assembly_GetTraysRemaining`, which mirrors `Assembly_CompleteTray`'s stock predicate. Both applied to `MPP_MES_Dev`.
+- The watcher lives in the Line Inventory dock, enabled by `lockEnabled` in page-config for `/shop-floor/assembly-nonserialized` only. The view mirrors its selected part to `session.custom.selectedFinishedGoodItemId`.
+
+### Left open
+
+- **The banner locks the screen, not the line.** ByWeight / ByVision trays close through the gateway behind it. The PLC hold flag (asked of MPP's automation engineer) is the follow-up.
+- **Serialized Assembly OUT is not covered.** It has no part selection and does not use `Assembly_CompleteTray`; what it consumes has not been traced.
+- **The supervisor release was not exercised end to end** (needs an AD credential). The prompt opens over the banner.
+- **The threshold (3 trays) is a constant in the proc.**
+- **`Lots.Lot_GetLineInventorySummary` does a bare `RETURN` (no result set) for a cell with no WorkCenter ancestor.** Whether that is what makes the Line Inventory dock show a Component Error off-line was not established: the errors seen while testing also coincided with loading a page seconds after a gateway rescan. Not fixed.
+- **`MPP_MES_Dev` has no `SchemaVersion` row for `0106_container_label_code128_and_data_identifiers`** as of this session.
+
 ## 🔖 2026-10-05 — Supplier lot required on purchased-part check-in
 
 An operator adding a box of purchased parts must now give the supplier's lot number, by scan or on-screen keyboard, or press **No lot on box**.

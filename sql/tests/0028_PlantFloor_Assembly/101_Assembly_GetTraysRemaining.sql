@@ -15,7 +15,7 @@
 --                 5) no-BOM repack part: the part itself, received stock only --
 --                    a Manufactured tray LOT of the same part is not counted;
 --                 6) no pack-out for the closure method / NULL part -> empty set;
---                 7) migration 0106 seeded the Low Inventory downtime reason.
+--                 7) migration 0108 seeded the Low Inventory downtime reason.
 --               Fixture cell: MA1-COMPBR-AOUT (assembly-out).
 -- =============================================
 SET NOCOUNT ON;
@@ -153,7 +153,7 @@ EXEC test.Assert_IsEqual @TestName = N'[TraysLeft] no pack-out for the method / 
 GO
 
 -- =============================================
--- Test 7: migration 0106 -- the Low Inventory downtime reason.
+-- Test 7: migration 0108 -- the Low Inventory downtime reason.
 -- =============================================
 DECLARE @Reason NVARCHAR(200) = (
     SELECT rc.Description + N'/' + oc.Code + N'/' + src.Code + N'/' + CAST(rc.IsExcused AS NVARCHAR(1))

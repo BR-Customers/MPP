@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration:   0106_downtime_reason_low_inventory.sql
+-- Migration:   0108_downtime_reason_low_inventory.sql
 -- Author:      Blue Ridge Automation
 -- Created:     2026-10-06
 -- Description: Oee.DowntimeReasonCode += MA-LOWINV 'Low Inventory'.
@@ -18,7 +18,7 @@
 -- ============================================================
 IF EXISTS (SELECT 1 FROM Oee.DowntimeReasonCode WHERE Code = N'MA-LOWINV')
 BEGIN
-    PRINT 'Migration 0106: DowntimeReasonCode MA-LOWINV already present -- no change.';
+    PRINT 'Migration 0108: DowntimeReasonCode MA-LOWINV already present -- no change.';
 END
 ELSE
 BEGIN
@@ -28,18 +28,18 @@ BEGIN
     FROM Parts.OperationCategory oc
     CROSS JOIN Oee.DowntimeSourceCode src
     WHERE oc.Code = N'MachiningAssembly' AND src.Code = N'System';
-    PRINT 'Migration 0106: DowntimeReasonCode MA-LOWINV added.';
+    PRINT 'Migration 0108: DowntimeReasonCode MA-LOWINV added.';
 END
 GO
 
 IF NOT EXISTS (SELECT 1 FROM Oee.DowntimeReasonCode WHERE Code = N'MA-LOWINV' AND DeprecatedAt IS NULL)
-    THROW 51000, 'Migration 0106: DowntimeReasonCode MA-LOWINV did not land.', 1;
+    THROW 51000, 'Migration 0108: DowntimeReasonCode MA-LOWINV did not land.', 1;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0106_downtime_reason_low_inventory')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0108_downtime_reason_low_inventory')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0106_downtime_reason_low_inventory',
+    VALUES (N'0108_downtime_reason_low_inventory',
             N'Oee.DowntimeReasonCode += MA-LOWINV Low Inventory (System source): the reason the Assembly OUT low-inventory lock stamps on its downtime event.');
 GO
-PRINT 'Migration 0106 (downtime_reason_low_inventory) applied.';
+PRINT 'Migration 0108 (downtime_reason_low_inventory) applied.';
 GO

@@ -33,9 +33,9 @@
 --              IsShort = 1 when TraysLeft <= @ThresholdTrays (3, Jacques
 --              2026-10-06: "stop when we are 3 trays from an inventory failure").
 --
---              FDS-11-011: no OUTPUT params; single result set; empty set = no
---              calc (NULL input / no pack-out for the closure method / NULL
---              PartsPerTray / BOM with no purchased line).
+--              FDS-11-011: no OUTPUT params; single result set, ALWAYS emitted;
+--              empty set = no calc (NULL input / no pack-out for the closure
+--              method / NULL PartsPerTray / BOM with no purchased line).
 --
 -- Change Log:
 --   2026-10-06 - 1.0 - Initial version.
@@ -48,9 +48,6 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF @CellLocationId IS NULL OR @FinishedGoodItemId IS NULL
-        RETURN;
-
     DECLARE @ThresholdTrays INT = 3;
 
     -- pack-out for THIS (Item, closure method) -- same resolution as CompleteTray 4b
@@ -61,8 +58,11 @@ BEGIN
           AND cc.ClosureMethod = @ClosureMethod
           AND cc.DeprecatedAt IS NULL);
 
-    IF @PartsPerTray IS NULL OR @PartsPerTray <= 0
-        RETURN;
+    -- Nothing to calculate -> @Need stays empty and the final SELECT returns an
+    -- EMPTY SET. Never a bare RETURN: a proc that emits no result set at all makes
+    -- an Ignition named query of type Query throw.
+    DECLARE @CanCalc BIT = CASE WHEN @CellLocationId IS NULL OR @FinishedGoodItemId IS NULL
+                                     OR @PartsPerTray IS NULL OR @PartsPerTray <= 0 THEN 0 ELSE 1 END;
 
     -- active BOM -- same resolution as CompleteTray 6
     DECLARE @BomId BIGINT = (
@@ -74,10 +74,10 @@ BEGIN
 
     DECLARE @Need TABLE (ItemId BIGINT NOT NULL PRIMARY KEY, PiecesPerTray INT NOT NULL, ReceivedOnly BIT NOT NULL);
 
-    IF @BomId IS NULL
+    IF @CanCalc = 1 AND @BomId IS NULL
         INSERT INTO @Need (ItemId, PiecesPerTray, ReceivedOnly)
         VALUES (@FinishedGoodItemId, @PartsPerTray, 1);
-    ELSE
+    ELSE IF @CanCalc = 1
         INSERT INTO @Need (ItemId, PiecesPerTray, ReceivedOnly)
         SELECT bl.ChildItemId, SUM(CAST(bl.QtyPer * @PartsPerTray AS INT)), 0
         FROM Parts.BomLine bl

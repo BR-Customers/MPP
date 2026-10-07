@@ -1,15 +1,16 @@
 # Assembly OUT low-inventory lock -- design
 
 **Date:** 2026-10-06
-**Status:** Design approved by Jacques 2026-10-06; not built
+**Status:** Built 2026-10-06 on Dev (non-serialized Assembly OUT); checked on the Dev gateway; not deployed to prod
 **Requested by:** Jacques (2026-10-06)
-**Screens:** Assembly OUT, serialized and non-serialized
+**Screens:** Assembly OUT, non-serialized. Serialized is not covered (see 2.1).
 
 ## Revision history
 
 | Rev | Date | Change |
 |---|---|---|
 | 1 | 2026-10-06 | Initial design. |
+| 2 | 2026-10-06 | **As built.** Two errors in rev 1 corrected. (a) The running part is not a session property: it lives in the non-serialized view's `view.custom.selectedFinishedGoodItemId`, which a dock cannot read, so the view now mirrors it to `session.custom.selectedFinishedGoodItemId` (Jacques chose this over resolving it server-side, which picks the station's oldest open box and is wrong where METTs keeps several open). (b) The serialized screen has no part selection and never calls `Assembly_CompleteTray`, so it is out of scope. Also: the proc always emits a result set; the downtime event is ended only on a short-to-clear transition seen by the terminal; the operator's tray close now sends `inventoryChanged`. |
 
 ---
 
@@ -33,6 +34,9 @@ with the reason **Low Inventory** runs from the moment the banner opens until st
   (`plcCompleteTray`), and those keep closing behind the banner. A PLC hold flag that MES sets when
   inventory is low and clears when it is added has been requested from MPP's automation engineer
   and is a separate, later feature.
+- **The serialized Assembly OUT screen.** It has no part selection and its parts are minted one at a
+  time by the MIP watcher (`SerializedPart_Mint`), not by `Assembly_CompleteTray`. Whether that path
+  draws purchased parts has not been traced, so "3 trays left" has no defined meaning there yet.
 - **Castings and sub-assemblies.** Only parts the operator can add from this terminal trigger the
   lock. A casting shortage still surfaces as it does today.
 - **The sidebar colours.** Red stays "10% of Max". The lock is a separate rule, so a row can be red
@@ -42,8 +46,8 @@ with the reason **Low Inventory** runs from the moment the banner opens until st
 
 ### 3.1 The calc
 
-For the finished good selected at the terminal (`session.custom.selectedFinishedGoodItemId`) and
-the terminal's closure method, `PartsPerTray` comes from the part's `Parts.ContainerConfig`.
+For the finished good selected in the screen's part dropdown (mirrored by the view to
+`session.custom.selectedFinishedGoodItemId`) and the terminal's closure method, `PartsPerTray` comes from the part's `Parts.ContainerConfig`.
 
 | Finished good | Parts checked | Pieces per tray | Stock counted |
 |---|---|---|---|
@@ -87,7 +91,8 @@ The threshold (3) is a constant in the proc. Making it configurable per line is 
 - **Start:** when the banner opens. Source `System`, reason `Low Inventory`. If any event is
   already open at the unit, nothing is started (`DowntimeEvent_Start` already refuses, and the
   refusal is not surfaced to the operator).
-- **End:** when the calc reports no short part. Only an open event at the unit whose source is
+- **End:** when this terminal sees the calc go from short to clear (never on first page load, so
+  another station's page opening cannot end an event that is still warranted). Only an open event at the unit whose source is
   `System` **and** whose reason is `Low Inventory` is ended; an operator's or the PLC's event is
   never touched. Remarks name the part that was short.
 - **Attribution:** the signed-in operator, else the system user.
@@ -97,13 +102,15 @@ The threshold (3) is a constant in the proc. Making it configurable per line is 
   a terminal on that line next sees the calc clear, or someone ends it in the Downtime Manager.
 
 Two stations on one line (METTs A / B) share a downtime unit, so they share one event; whichever
-sees the shortage clear ends it.
+sees its own shortage clear ends it. If both were short on different parts, the first to clear ends
+the event while the other is still short, and no second event starts until that station's state
+changes again. Accepted as a known limit.
 
 ## 4. Build
 
 ### 4.1 SQL
 
-- **Migration `0106_downtime_reason_low_inventory.sql`** -- seeds one internal reason code:
+- **Migration `0108_downtime_reason_low_inventory.sql`** -- seeds one internal reason code:
   `Code = N'MA-LOWINV'`, `Description = N'Low Inventory'`, operation category
   `MachiningAssembly`, source `System`, `IsExcused = 0`, type NULL. Idempotent on `Code`.
   ASCII only. This is an internal code baked into a migration, not a Seeding Registry item.
@@ -111,7 +118,8 @@ sees the shortage clear ends it.
   `@CellLocationId BIGINT, @FinishedGoodItemId BIGINT, @ClosureMethod NVARCHAR(20) = NULL`.
   One row per checked part: `ItemId, PartNumber, Description, BoxQuantity, PiecesPerTray,
   Available, TraysLeft, IsShort, ThresholdTrays`, ordered `TraysLeft, Description, ItemId`.
-  Empty set when there is no calc. No OUTPUT params (FDS-11-011).
+  Empty set when there is no calc -- always a result set, never a bare `RETURN` (a proc that emits
+  none makes an Ignition named query throw). No OUTPUT params (FDS-11-011).
 - **Tests** in `sql/tests/0028_PlantFloor_Assembly/`: BOM part short / not short at exactly 3 and
   4 trays; non-PassThrough BOM children ignored; held LOT excluded; repack part counts received
   stock only (a minted tray LOT of the same item is not counted); no config -> empty set.
@@ -129,7 +137,6 @@ sees the shortage clear ends it.
     terminalLocationId)` -- start or end per 3.4. Same shape as `DowntimePlc.tickWatcher`.
 - `BlueRidge.Common.Session._ELEVATED_REPLAY_MESSAGES`: add
   `"LowInventoryRelease": "lowInventoryReleaseRequested"`.
-- NQ `oee/DowntimeReasonCode_GetByCode` if no existing read resolves a reason by `Code`.
 
 ### 4.3 Views (MPP)
 
@@ -142,13 +149,18 @@ sees the shortage clear ends it.
   hidden and a successful add does not call `closePopup("mpp-add-lot-box")`. Default false, so the
   sidebar's use is unchanged.
 - **`PlantFloor/LineInventory`** (the dock) -- gains the watcher: `custom.lock` bound to
-  `getLowInventoryLock` (only when `params.terminalRole = "AssemblyOut"`), `custom.released`, and
-  an `onChange` that opens or closes the popup and calls `syncLowInventoryDowntime`. Its existing
-  `inventoryChanged` handler also clears `custom.released`.
+  `getLowInventoryLock` (only when the new `params.lockEnabled` is true), `custom.released`, and
+  `onChange` scripts that open or close the popup and call `syncLowInventoryDowntime`. Its existing
+  `inventoryChanged` handler also clears `custom.released` when the message is for this line.
+- **Page config** -- `lockEnabled: true` on the `/shop-floor/assembly-nonserialized` dock only.
+- **`Views/ShopFloor/AssemblyNonSerialized`** -- a change script on
+  `custom.selectedFinishedGoodItemId` mirrors it to the session (cleared in `onStartup`), and the
+  tray-complete script sends a page-scoped `inventoryChanged`. Before this an operator's tray close
+  did not refresh the dock until its 30-second poll.
+- **Session props** -- `custom.selectedFinishedGoodItemId`.
 - **Core stylesheet** -- `psc-pf-lock-*` classes for the banner.
 
-Neither Assembly OUT view is edited. `AssemblyNonSerialized` carries uncommitted Designer edits
-today and is left alone.
+`AssemblySerialized` is not edited.
 
 ## 5. Verification
 
@@ -158,6 +170,13 @@ today and is left alone.
   box -> banner closes and the event is ended; supervisor release -> banner closes, event stays
   open, banner returns after the next tray.
 - The sidebar's own `+` add still opens and closes `AddLotBox` as before.
+
+**Result, 2026-10-06 (Dev gateway, METTs Assembly Out A, part 1223A-6MA -J000):** banner opened at
+965 pcs / 0 trays; a `System` / `MA-LOWINV` event opened at MA2-6MACH; adding 3,400 pcs through the
+embedded form closed the banner and ended the event with the part in the remarks. The supervisor
+prompt opens over the banner; the release itself was NOT exercised (it needs an AD credential). The
+sidebar's own `+ LOT` popup still opens with its Cancel button and closes on Cancel; a completed add
+from the sidebar was not repeated after the `AddLotBox` change.
 
 ## 6. Deployment
 
