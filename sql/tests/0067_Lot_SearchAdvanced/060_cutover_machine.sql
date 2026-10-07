@@ -48,7 +48,7 @@ CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName 
 CREATE TABLE #LS (
     Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeId BIGINT,
     LotStatusId BIGINT, PieceCount INT, VendorLotNumber NVARCHAR(100),
-    CurrentLocationId BIGINT, CreatedAt DATETIME2(3), ItemPartNumber NVARCHAR(100),
+    CurrentLocationId BIGINT, CreatedAt DATETIME2(3), ItemPartNumber NVARCHAR(100), ItemDescription NVARCHAR(500),
     LotStatusCode NVARCHAR(50), LotOriginTypeCode NVARCHAR(50),
     CurrentLocationName NVARCHAR(200), LastOperationName NVARCHAR(100),
     ToolCode NVARCHAR(50), ToolName NVARCHAR(100), CavityCode NVARCHAR(4), OriginMachineName NVARCHAR(200),

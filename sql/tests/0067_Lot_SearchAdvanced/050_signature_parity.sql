@@ -1,10 +1,11 @@
 -- =============================================
 -- File:         0067_Lot_SearchAdvanced/050_signature_parity.sql
 -- Author:       Blue Ridge Automation
--- Description:  Lots.Lot_SearchAdvanced must expose EXACTLY the 12 canonical
---               filter parameters (design spec section 3.1). The named query's
+-- Description:  Lots.Lot_SearchAdvanced must expose EXACTLY the 13 canonical
+--               filter parameters (design spec section 3.1, plus
+--               @ExcludeFinishedGoods from v1.3). The named query's
 --               parameters[] and BlueRidge.Lots.Lot._EMPTY_FILTERS carry the
---               same twelve names; this file pins the SQL end so drift is
+--               same thirteen names; this file pins the SQL end so drift is
 --               caught here rather than as a filter that silently stops
 --               filtering -- the failure mode that motivated explicit named
 --               parameters over a JSON blob.
@@ -25,12 +26,13 @@ DECLARE @Expected TABLE (Name SYSNAME PRIMARY KEY);
 INSERT INTO @Expected (Name) VALUES
     (N'@Query'), (N'@ItemId'), (N'@CreatedFromEt'), (N'@CreatedToEt'),
     (N'@ToolId'), (N'@ToolCavityId'), (N'@LocationId'), (N'@MachineLocationId'),
-    (N'@ShiftId'), (N'@LotStatusId'), (N'@LotOriginTypeId'), (N'@LimitRows');
+    (N'@ShiftId'), (N'@LotStatusId'), (N'@LotOriginTypeId'), (N'@LimitRows'),
+    (N'@ExcludeFinishedGoods');
 
 SELECT @n = COUNT(*) FROM sys.parameters
 WHERE object_id = OBJECT_ID(N'Lots.Lot_SearchAdvanced');
-EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] proc exposes exactly 12 parameters',
-    @Expected = N'12', @Actual = @n;
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] proc exposes exactly 13 parameters',
+    @Expected = N'13', @Actual = @n;
 
 SELECT @n = COUNT(*) FROM sys.parameters p
 WHERE p.object_id = OBJECT_ID(N'Lots.Lot_SearchAdvanced')

@@ -10,4 +10,5 @@ EXEC Lots.Lot_SearchAdvanced
     @ShiftId           = :shiftId,
     @LotStatusId       = :lotStatusId,
     @LotOriginTypeId   = :lotOriginTypeId,
-    @LimitRows         = :limitRows
+    @LimitRows         = :limitRows,
+    @ExcludeFinishedGoods = :excludeFinishedGoods

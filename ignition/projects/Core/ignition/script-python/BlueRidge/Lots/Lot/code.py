@@ -1288,17 +1288,22 @@ def crtNamesFor(lotIds):
 # ---------------------------------------------------------------------------
 
 _EMPTY_FILTERS = {
-    "query": None, "itemId": None, "createdFromEt": None, "createdToEt": None,
+    # query is "" (never None): the Query text-field is bidi-bound to it, and a
+    # null there renders as the literal text "null" that the operator then has
+    # to delete before typing. The proc already treats blank as "no filter".
+    "query": "", "itemId": None, "createdFromEt": None, "createdToEt": None,
     "toolId": None, "toolCavityId": None, "locationId": None,
     "machineLocationId": None, "shiftId": None, "lotStatusId": None,
     "lotOriginTypeId": None, "limitRows": 100,
+    # Finished-good tray LOTs are hidden unless the operator asks for them.
+    "excludeFinishedGoods": True,
 }
 
 
 def emptyFilters():
     """The canonical FDS-12-004 filter shape. The view seeds view.custom.filters
        from this and Reset reseeds from it; searchAdvanced fills gaps from it.
-       ONE source of truth for the twelve names -- the SQL side is pinned by
+       ONE source of truth for the thirteen names -- the SQL side is pinned by
        sql/tests/0067_Lot_SearchAdvanced/050_signature_parity.sql."""
     return dict(_EMPTY_FILTERS)
 
@@ -1341,20 +1346,63 @@ def searchAdvanced(filters=None):
     params["createdToEt"] = _toSqlDate(params["createdToEt"])
     if not params["limitRows"]:
         params["limitRows"] = 100
+    params["query"] = ("%s" % params["query"]).strip() if params["query"] is not None else ""
+    if params["excludeFinishedGoods"] is None:
+        params["excludeFinishedGoods"] = _EMPTY_FILTERS["excludeFinishedGoods"]
+    params["excludeFinishedGoods"] = bool(params["excludeFinishedGoods"])
     BlueRidge.Common.Util.log("searchAdvanced params=%s" % params)
     return BlueRidge.Common.Db.execList("lots/Lot_SearchAdvanced", params)
 
 
+# (row key, CSV header) in grid order. Explicit rather than "every key the proc
+# returns": the ids and TotalCount are noise in a spreadsheet, and a fixed list
+# keeps the column order stable when the proc grows a column.
+_EXPORT_COLUMNS = [
+    ("LotName", "LOT Name"), ("LotOriginTypeCode", "Origin"),
+    ("VendorLotNumber", "Vendor LOT"), ("ItemPartNumber", "Part Number"),
+    ("ItemDescription", "Description"), ("PieceCount", "Pcs"),
+    ("CurrentLocationName", "Location"), ("LotStatusCode", "Status"),
+    ("ToolName", "Die"), ("CavityCode", "Cavity"),
+    ("OriginMachineName", "Machine"), ("LastOperationName", "Last Operation"),
+    ("CreatedAt", "Created"),
+]
+
+
+def _csvCell(value):
+    """One CSV field: dates as 'yyyy-MM-dd HH:mm', None as blank, always quoted."""
+    if value is None:
+        text = u""
+    elif hasattr(value, "getTime"):
+        text = system.date.format(value, "yyyy-MM-dd HH:mm")
+    else:
+        text = u"%s" % (value,)
+    return u'"' + text.replace(u'"', u'""') + u'"'
+
+
 def exportCsv(rows):
     """FRS 3.5.10 -- export the current filtered result set as CSV. No-op with
-       an info toast when there is nothing to export."""
-    rows = _u(rows) or []
-    if not rows:
-        BlueRidge.Common.Notify.toast("Nothing to export", "Run a search first.", "info")
-        return
-    BlueRidge.Common.Util.log("exportCsv rows=%d" % len(rows))
-    ds = system.dataset.toDataSet(rows)
-    system.perspective.download("lot-search.csv", system.dataset.toCSV(ds))
+       an info toast when there is nothing to export.
+
+       The CSV is built by hand. The original went through
+       system.dataset.toDataSet(rows), which takes (headers, rows) and throws on
+       a list of dicts -- inside a button event, so the operator saw nothing at
+       all. Any failure now surfaces as a toast."""
+    from java.lang import Throwable
+    try:
+        rows = _u(rows) or []
+        if not rows:
+            BlueRidge.Common.Notify.toast("Nothing to export", "Run a search first.", "info")
+            return
+        BlueRidge.Common.Util.log("exportCsv rows=%d" % len(rows))
+        lines = [u",".join(_csvCell(header) for _key, header in _EXPORT_COLUMNS)]
+        for row in rows:
+            lines.append(u",".join(_csvCell(row.get(key)) for key, _header in _EXPORT_COLUMNS))
+        name = "lot-search-%s.csv" % system.date.format(system.date.now(), "yyyyMMdd-HHmm")
+        system.perspective.download(name, u"\r\n".join(lines) + u"\r\n", "text/csv")
+        BlueRidge.Common.Notify.toast("Export sent", "%d rows to %s" % (len(rows), name), "success")
+    except (Exception, Throwable) as e:
+        BlueRidge.Common.Util.log("exportCsv failed: %s" % (e,), level="error")
+        BlueRidge.Common.Notify.toast("Export failed", "%s" % (e,), "error")
 
 
 # ---------------------------------------------------------------------------

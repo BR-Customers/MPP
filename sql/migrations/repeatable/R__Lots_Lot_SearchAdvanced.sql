@@ -1,8 +1,8 @@
 -- =============================================
 -- Repeatable:  R__Lots_Lot_SearchAdvanced.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-09-21
--- Version:     1.2
+-- Modified:    2026-10-06
+-- Version:     1.3
 -- Description: FDS-12-004 LOT Search. Filtered browse: free text, item, Eastern
 --              created-day range, die, cavity, location (always incl.
 --              descendants), origin machine, shift, status, origin type.
@@ -44,6 +44,17 @@
 --              v1.2 (2026-09-21): + t.Name AS ToolName after ToolCode. The
 --              LOT Search grid shows the die by NAME -- the code is known
 --              only to the die manager and is on no shop-floor screen.
+--
+--              v1.3 (2026-10-06): + i.Description AS ItemDescription after
+--              ItemPartNumber -- the grid shows the part by description, and
+--              the free text matches it too, so what is on screen is
+--              searchable. + @ExcludeFinishedGoods BIT = 0 (LAST param,
+--              default keeps every existing caller's result). The LOT Search
+--              screen passes 1 by default: finished-good tray LOTs outnumber
+--              everything else and are rarely what is being looked for.
+--              Same predicate as Lots.Lot_GetLineInventoryByPart.
+--              Callers using a fixed-shape INSERT-EXEC capture must widen
+--              to 20 columns.
 -- =============================================
 CREATE OR ALTER PROCEDURE Lots.Lot_SearchAdvanced
     @Query             NVARCHAR(100) = NULL,
@@ -57,12 +68,14 @@ CREATE OR ALTER PROCEDURE Lots.Lot_SearchAdvanced
     @ShiftId           BIGINT        = NULL,
     @LotStatusId       BIGINT        = NULL,
     @LotOriginTypeId   BIGINT        = NULL,
-    @LimitRows         INT           = 100
+    @LimitRows         INT           = 100,
+    @ExcludeFinishedGoods BIT        = 0
 AS
 BEGIN
     SET NOCOUNT ON;
 
     IF @LimitRows IS NULL OR @LimitRows < 1 SET @LimitRows = 100;
+    IF @ExcludeFinishedGoods IS NULL SET @ExcludeFinishedGoods = 0;
 
     DECLARE @Q NVARCHAR(120) = CASE
         WHEN @Query IS NULL OR LTRIM(RTRIM(@Query)) = N'' THEN NULL
@@ -88,6 +101,7 @@ BEGIN
         l.VendorLotNumber, l.CurrentLocationId,
         CAST(l.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CreatedAt,
         i.PartNumber         AS ItemPartNumber,
+        i.Description        AS ItemDescription,
         sc.Code              AS LotStatusCode,
         ot.Code              AS LotOriginTypeCode,
         loc.Name             AS CurrentLocationName,
@@ -120,7 +134,8 @@ BEGIN
         WHERE dcc.LotId = l.Id AND dcc.CellLocationId IS NOT NULL
         ORDER BY dcc.EventAt ASC, dcc.Id ASC
     ) press
-    WHERE (@Q IS NULL OR l.LotName LIKE @Q OR l.VendorLotNumber LIKE @Q OR i.PartNumber LIKE @Q)
+    WHERE (@Q IS NULL OR l.LotName LIKE @Q OR l.VendorLotNumber LIKE @Q OR i.PartNumber LIKE @Q
+           OR i.Description LIKE @Q)
       AND (@ItemId          IS NULL OR l.ItemId          = @ItemId)
       AND (@FromUtc         IS NULL OR l.CreatedAt      >= @FromUtc)
       AND (@ToUtc           IS NULL OR l.CreatedAt       < @ToUtc)
@@ -128,6 +143,8 @@ BEGIN
       AND (@ToolCavityId    IS NULL OR l.ToolCavityId    = @ToolCavityId)
       AND (@LotStatusId     IS NULL OR l.LotStatusId     = @LotStatusId)
       AND (@LotOriginTypeId IS NULL OR l.LotOriginTypeId = @LotOriginTypeId)
+      AND (@ExcludeFinishedGoods = 0
+           OR i.ItemTypeId <> (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood'))
       AND (@LocationId      IS NULL OR l.CurrentLocationId IN (SELECT Id FROM Descendants))
       -- Origin machine has TWO recorded sources, and a LOT has at most one of
       -- them. A normally-produced LOT accumulates DieCastContribution rows at

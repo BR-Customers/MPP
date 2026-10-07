@@ -89,6 +89,11 @@
         "type": "Parameter",
         "identifier": "limitRows",
         "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "excludeFinishedGoods",
+        "sqlType": 6
       }
     ]
   }

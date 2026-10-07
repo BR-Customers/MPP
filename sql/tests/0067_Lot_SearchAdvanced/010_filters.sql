@@ -22,7 +22,7 @@ IF OBJECT_ID(N'tempdb..#LS') IS NOT NULL DROP TABLE #LS;
 CREATE TABLE #LS (
     Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeId BIGINT,
     LotStatusId BIGINT, PieceCount INT, VendorLotNumber NVARCHAR(100),
-    CurrentLocationId BIGINT, CreatedAt DATETIME2(3), ItemPartNumber NVARCHAR(100),
+    CurrentLocationId BIGINT, CreatedAt DATETIME2(3), ItemPartNumber NVARCHAR(100), ItemDescription NVARCHAR(500),
     LotStatusCode NVARCHAR(50), LotOriginTypeCode NVARCHAR(50),
     CurrentLocationName NVARCHAR(200), LastOperationName NVARCHAR(100),
     ToolCode NVARCHAR(50), ToolName NVARCHAR(100), CavityCode NVARCHAR(4), OriginMachineName NVARCHAR(200),
@@ -122,6 +122,45 @@ INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @Query = N'VND-ADV', @ItemId = @Ite
 SELECT @n = COUNT(*) FROM #LS;
 EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] combined filters still return the fixture',
     @Expected = N'2', @Actual = @n;
+DELETE FROM #LS;
+
+-- 9. ItemDescription carries Parts.Item.Description for every row (v1.3).
+INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @Query = N'VND-ADV';
+SELECT @n = COUNT(*) FROM #LS ls
+INNER JOIN Parts.Item i ON i.Id = ls.ItemId
+WHERE ISNULL(ls.ItemDescription, N'') <> ISNULL(i.Description, N'');
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] ItemDescription matches Parts.Item.Description',
+    @Expected = N'0', @Actual = @n;
+DELETE FROM #LS;
+
+-- 10-12. @ExcludeFinishedGoods (v1.3). The fixture item's type is whatever the
+-- seed gave it, so the test pins it both ways and restores it afterwards.
+DECLARE @OrigType BIGINT = (SELECT ItemTypeId FROM Parts.Item WHERE Id = @ItemId);
+DECLARE @FgType   BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood');
+DECLARE @OtherType BIGINT = (SELECT TOP 1 Id FROM Parts.ItemType WHERE Code <> N'FinishedGood' ORDER BY Id);
+
+UPDATE Parts.Item SET ItemTypeId = @FgType WHERE Id = @ItemId;
+
+INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @Query = N'VND-ADV', @ExcludeFinishedGoods = 1;
+SELECT @n = COUNT(*) FROM #LS;
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] @ExcludeFinishedGoods = 1 drops finished-good LOTs',
+    @Expected = N'0', @Actual = @n;
+DELETE FROM #LS;
+
+INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @Query = N'VND-ADV';
+SELECT @n = COUNT(*) FROM #LS;
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] default (0) still returns finished-good LOTs',
+    @Expected = N'2', @Actual = @n;
+DELETE FROM #LS;
+
+UPDATE Parts.Item SET ItemTypeId = @OtherType WHERE Id = @ItemId;
+
+INSERT INTO #LS EXEC Lots.Lot_SearchAdvanced @Query = N'VND-ADV', @ExcludeFinishedGoods = 1;
+SELECT @n = COUNT(*) FROM #LS;
+EXEC test.Assert_IsEqual @TestName = N'[SearchAdv] @ExcludeFinishedGoods = 1 keeps non-finished-good LOTs',
+    @Expected = N'2', @Actual = @n;
+
+UPDATE Parts.Item SET ItemTypeId = @OrigType WHERE Id = @ItemId;
 GO
 
 -- ---- Teardown (closure BEFORE the LOTs -- Lot_Create writes a self-row) ----
