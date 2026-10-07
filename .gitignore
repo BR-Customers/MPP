@@ -110,6 +110,7 @@ dist/
 /sql/scratch/2026-09-16_legacy_*.sql
 /ignition/tags/instances/PlcDevices_tags.json
 /sql/scratch/_prod_config_*/
+/sql/scratch/_out_line_consumption_*/
 
 # .NET build output (zebraPrinter/MesZebraBridge)
 [Bb]in/
