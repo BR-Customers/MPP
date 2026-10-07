@@ -17,6 +17,8 @@
       "traysLeft": 0
     },
     "lockShort": false,
+    "lockTick": null,
+    "lockTicks": 0,
     "refreshToken": 0,
     "released": false,
     "showLock": false
@@ -61,6 +63,18 @@
       "onChange": {
         "enabled": true,
         "script": "\t# Low-inventory lock -\u003e downtime. Start when a part goes short; end only on a\n\t# real short -\u003e clear transition seen by THIS terminal (never on first load, so\n\t# another station\u0027s page opening cannot end an event that is still warranted).\n\tnow \u003d bool(currentValue.value) if currentValue is not None else False\n\twas \u003d bool(previousValue.value) if previousValue is not None else False\n\tif now \u003d\u003d was or not self.params.lockEnabled:\n\t\treturn\n\tif now:\n\t\tself.custom.lastShortPart \u003d self.custom.lock.description\n\tuid \u003d BlueRidge.Common.Session.currentAppUserId(self.session) or BlueRidge.Common.Util.systemAppUserId()\n\ttid \u003d None\n\ttry:\n\t\ttid \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttid \u003d None\n\tBlueRidge.Workorder.Assembly.syncLowInventoryDowntime(self.custom.locationId, now, self.custom.lastShortPart, uid, tid)"
+      }
+    },
+    "custom.lockTick": {
+      "binding": {
+        "config": {
+          "expression": "now(5000)"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Re-assert the low-inventory lock while it should be showing.\n\t#\n\t# WHY. showLock.onChange opens the banner on the False -> True edge. On a page\n\t# RELOAD with the part already short, that edge lands about 300 ms into page\n\t# start: the gateway starts the popup view but the browser, still booting,\n\t# never draws it, and showLock never changes again -- a short line with no\n\t# banner (reproduced on Dev 2026-10-07). Opening a popup id that is already\n\t# open is a no-op, so repeating the open is safe and heals that case.\n\t#\n\t# The first tick is the binding's own initial value at view start -- skipped,\n\t# it would be lost the same way.\n\tif not self.params.lockEnabled:\n\t\treturn\n\tn \u003d (self.custom.lockTicks or 0) + 1\n\tself.custom.lockTicks \u003d n\n\tif n \u003e\u003d 2 and self.custom.showLock:\n\t\tsystem.perspective.openPopup(\"mpp-low-inventory-lock\", \"BlueRidge/Components/Popups/LowInventoryLock\", params\u003d{\"locationId\": self.custom.locationId, \"finishedGoodItemId\": self.session.custom.selectedFinishedGoodItemId, \"closureMethod\": self.session.custom.closureMethod}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse, draggable\u003dFalse, resizable\u003dFalse, position\u003d{\"left\": 0, \"top\": 0, \"width\": \"100%\", \"height\": \"100%\"})"
       }
     },
     "custom.showLock": {
