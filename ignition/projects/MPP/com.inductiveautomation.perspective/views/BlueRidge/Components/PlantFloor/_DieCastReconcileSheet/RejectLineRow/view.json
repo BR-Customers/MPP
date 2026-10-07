@@ -249,6 +249,9 @@
           }
         },
         "props": {
+          "spinner": {
+            "enabled": false
+          },
           "deferUpdates": false,
           "style": {
             "classes": "pf-field-input",

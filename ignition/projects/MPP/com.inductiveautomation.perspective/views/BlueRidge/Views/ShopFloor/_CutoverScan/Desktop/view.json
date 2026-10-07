@@ -1701,6 +1701,9 @@
                                   "name": "PieceCountInput"
                                 },
                                 "props": {
+                                  "spinner": {
+                                    "enabled": false
+                                  },
                                   "placeholder": "Count",
                                   "deferUpdates": false,
                                   "style": {
@@ -1866,6 +1869,9 @@
                                   "name": "PurchasedQtyInput"
                                 },
                                 "props": {
+                                  "spinner": {
+                                    "enabled": false
+                                  },
                                   "placeholder": "Quantity",
                                   "deferUpdates": false,
                                   "style": {

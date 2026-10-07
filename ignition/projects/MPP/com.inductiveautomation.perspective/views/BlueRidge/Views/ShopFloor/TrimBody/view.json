@@ -988,6 +988,9 @@
                               }
                             },
                             "props": {
+                              "spinner": {
+                                "enabled": false
+                              },
                               "style": {
                                 "classes": "pf-field-input",
                                 "minHeight": "32px"

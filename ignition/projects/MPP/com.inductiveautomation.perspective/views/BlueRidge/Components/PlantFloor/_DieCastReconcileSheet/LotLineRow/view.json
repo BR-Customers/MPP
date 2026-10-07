@@ -276,6 +276,9 @@
               }
             },
             "props": {
+              "spinner": {
+                "enabled": false
+              },
               "deferUpdates": false,
               "min": 0,
               "style": {

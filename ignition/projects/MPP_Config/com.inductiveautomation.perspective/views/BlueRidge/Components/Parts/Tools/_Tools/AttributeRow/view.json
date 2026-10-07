@@ -232,6 +232,9 @@
           }
         },
         "props": {
+          "spinner": {
+            "enabled": false
+          },
           "placeholder": "Value",
           "style": {
             "classes": "search-input",
