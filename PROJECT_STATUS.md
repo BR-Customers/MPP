@@ -30,7 +30,23 @@
 
 > **2026-09-22 -- Trim partial checkpoint at shift end, built and smoke-tested on Dev.** A blast operator can record the total trimmed so far on a LOT at shift end without moving the LOT off Trim IN. Migration `0096` adds `Workorder.ProductionEvent.ShiftId`; new proc `Workorder.TrimPartial_Record` (route `TrimIn` template, operator-picked shift, never defaulted); `Workorder.TrimOut_Record` v1.5 gains a trim-scoped guard, requires a count after a partial, and stamps `ShiftId` via `Oee.ufn_ShiftIdForInstant`; new read `Workorder.TrimCheckpoint_GetLatestForLot` backs an "already recorded" line on the LOT card. Core NQs + `BlueRidge.Workorder.TrimPartial`; new popup `Components/Popups/TrimPartial`; `TrimBody` gained the **Record partial trim - shift end** button. Spec `docs/superpowers/specs/2026-09-22-trim-partial-shift-end-design.md`. **Verified on `MPP_MES_Dev`:** LOT `TPC-SMOKE-1` took a partial of 700 filed under Third Shift, then Trim OUT at 953, crediting 700 and 253 with `ShiftId` stamped on both checkpoints; full SQL suite 3885/3885, exit 0. **Dev only -- not yet released to prod.** Natural follow-up: the Trim Shop Detail report / credit rollup read (spec section 3.2 is its contract, out of scope here).
 
-**Last updated:** 2026-10-06 (16:17 ET) -- **Container shipping label: the four linear barcodes are now Code 128 and carry their data identifiers (P / 2P / Q / 1S), matching the label Honda's AIM batch-print tool produces. RELEASED TO PROD. Prod is at `0106`, 105 migrations.** Runbook + Outcome `notes/2026-10-06_prod-release-runbook-container-label-code128.md`; release commit `44ea9f82`, executed from `d3735225`.
+**Last updated:** 2026-10-06 (evening) -- **OPEN, BLOCKS SHIPPING OF MES-LABELLED BOXES: AIM issues the MES serials starting with `1`; the shipping tablet looks them up with `0` and reports "Not On File". Cause located, fix not decided, question with MPP IT.** Full findings `notes/2026-10-06_aim-serial-leading-1-shipping-scan.md`.
+
+> ### AIM serial leading digit vs the shipping scan (found 2026-10-06 at the dock, by Jacques)
+>
+> - A box posted to AIM as serial `113906404` (reply OK) scanned on AIM Mobility as `S013906404 Not On File`. The label carries `13218001` + the **last 8** digits; the tablet pads those 8 back to 9 with a zero. That only round-trips when the AIM serial starts with `0`.
+> - **The `1` comes from AIM.** On prod, 20 of 20 recent pool rows sit 2-4 ms after an OK `nextserial` call; every 9-digit pool row ever fetched starts with `1`; the code stores AIM's reply unmodified. Config is company `99` (production, per the 2026-07-28 contract note).
+> - The last 8 digits run in the plant's real sequence (legacy `13933626` on 10/05, ours `13934769`+ on 10/06, AIM batch `13936248` later that day), so it looks like one counter with a `1` prefixed for our interface. Test company `01` returned no such prefix.
+> - AIM's `acsAutosys.dbo.shipper_container` shows shipped legacy serials filed as 9 digits with a leading `0` and `serial_prefix = 'S'` -- the tablet's key. The table holding the `postserial` record has not been found.
+>
+> **Left open:**
+>
+> - **Every MES-labelled container fails the shipping scan** until this is resolved; those boxes need an AIM-printed label to ship.
+> - Whether the `1` is deliberate, and how AIM prints a serial of 100,000,000 or more (reprinting `113906404` from AIM would show it).
+> - **Do not swap the `1` for a `0` on our side** without the vendor's answer -- it would post a serial AIM never issued us, in the range legacy still draws from.
+> - Not caused by the Code 128 release below: the 16 serial digits are composed as before.
+
+**Previously (same day):** 2026-10-06 (16:17 ET) -- **Container shipping label: the four linear barcodes are now Code 128 and carry their data identifiers (P / 2P / Q / 1S), matching the label Honda's AIM batch-print tool produces. RELEASED TO PROD. Prod is at `0106`, 105 migrations.** Runbook + Outcome `notes/2026-10-06_prod-release-runbook-container-label-code128.md`; release commit `44ea9f82`, executed from `d3735225`.
 
 > ### Container label barcodes brought in line with the AIM batch label (found onsite 2026-10-06 by Jacques)
 >
